@@ -9,6 +9,7 @@ import {
   type BbDesktopBrowserScopedOpenTabRequest,
   type BbDesktopBrowserSetBoundsRequest,
   type BbDesktopBrowserSetVisibleRequest,
+  type BbDesktopBrowserFavicon,
   type BbDesktopBrowserSnapshot,
   type BbDesktopBrowserState,
   type BbDesktopBrowserViewportBounds,
@@ -16,11 +17,17 @@ import {
 } from "@bb/desktop-contract";
 import type { AppCommandId, AppShortcutInput } from "@bb/domain";
 import {
+  BB_DESKTOP_BROWSER_FAVICON_CHANNEL,
   BB_DESKTOP_BROWSER_OPEN_TAB_CHANNEL,
   BB_DESKTOP_BROWSER_SCOPED_OPEN_TAB_CHANNEL,
   BB_DESKTOP_BROWSER_SNAPSHOT_CHANNEL,
   BB_DESKTOP_BROWSER_STATE_CHANNEL,
 } from "./desktop-browser-ipc.js";
+import {
+  resolveBrowserFaviconDataUrl,
+  resolveBrowserFaviconPageKey,
+  selectBrowserFaviconUrl,
+} from "./desktop-browser-favicon.js";
 import {
   evaluatePopupRate,
   isAllowedBrowserUrl,
@@ -43,6 +50,12 @@ const POPUP_RATE_MAX_IN_WINDOW = 3;
 const RESIZE_SNAPSHOT_HIDE_CAP_MS = 80;
 /** Placeholder quality: transient, stretched during the drag — favor size. */
 const RESIZE_SNAPSHOT_JPEG_QUALITY = 70;
+
+// A page can rewrite its `<link rel=icon>` from script as often as it likes, and
+// each distinct URL is a fetch. The same sliding-window shape the popup limiter
+// uses caps that; a page that trips it keeps whichever icon it had.
+const FAVICON_FETCH_WINDOW_MS = 10_000;
+const FAVICON_FETCH_MAX_IN_WINDOW = 5;
 
 function truncate(value: string, max: number): string {
   return value.length > max ? value.slice(0, max) : value;
@@ -74,6 +87,12 @@ interface BrowserViewEntry {
    */
   desiredBounds: BbDesktopBrowserViewBounds;
   popupTimestamps: number[];
+  /** URL of the icon currently pushed to the renderer, for change detection. */
+  faviconUrl: string | null;
+  /** Page the icon was resolved for (origin); a mismatch is what makes it stale. */
+  faviconPageKey: string | null;
+  /** Fetch stamps behind the same sliding-window limiter the popups use. */
+  faviconFetchTimestamps: number[];
   visible: boolean;
 }
 
@@ -81,7 +100,8 @@ export type DesktopBrowserHostWebContentsPayload =
   | BbDesktopBrowserState
   | BbDesktopBrowserOpenTabRequest
   | BbDesktopBrowserScopedOpenTabRequest
-  | BbDesktopBrowserSnapshot;
+  | BbDesktopBrowserSnapshot
+  | BbDesktopBrowserFavicon;
 
 export interface DesktopBrowserHostContentBounds {
   height: number;
@@ -434,6 +454,101 @@ export function createDesktopBrowserViewManager(
     return browserSession;
   }
 
+  function pushFavicon(
+    hostWindow: DesktopBrowserHostWindow,
+    tabId: string,
+    dataUrl: string | null,
+  ): void {
+    send(hostWindow, BB_DESKTOP_BROWSER_FAVICON_CHANNEL, { tabId, dataUrl });
+  }
+
+  /**
+   * Drop an icon that belongs to a page the tab has left, once loading settles.
+   *
+   * The icon is keyed to the page URL it was resolved for, and this runs at
+   * `did-stop-loading` rather than at commit, which is what makes a **reload keep
+   * its icon**: the page is the same page, so nothing has to be re-declared or
+   * re-fetched. Clearing at commit instead made the icon depend on the new
+   * document re-announcing it, and a reload does not always do that — the bug this
+   * replaces. The cost is a page that drops its icon on reload keeping the old one,
+   * which is also what a real browser's favicon cache does.
+   */
+  function dropStaleFavicon(
+    hostWindow: DesktopBrowserHostWindow,
+    tabId: string,
+    entry: BrowserViewEntry,
+  ): void {
+    if (entry.faviconUrl === null) {
+      return;
+    }
+    if (
+      entry.faviconPageKey ===
+      resolveBrowserFaviconPageKey(entry.view.webContents.getURL())
+    ) {
+      return;
+    }
+    entry.faviconUrl = null;
+    entry.faviconPageKey = null;
+    pushFavicon(hostWindow, tabId, null);
+  }
+
+  /**
+   * Fetch a newly declared favicon in the browsing session and push it as a data
+   * URI. The page's URL never leaves this process — see
+   * `desktop-browser-favicon.ts` for why that is the point rather than a detail.
+   */
+  async function updateFavicon(
+    hostWindow: DesktopBrowserHostWindow,
+    tabId: string,
+    entry: BrowserViewEntry,
+    urls: readonly string[],
+  ): Promise<void> {
+    const selected = selectBrowserFaviconUrl(urls);
+    if (selected === null) {
+      // Nothing usable declared. The icon the tab already wears is dropped when
+      // loading settles, not here, so a page that declares its icon in stages
+      // does not flicker through the generic mark.
+      return;
+    }
+    if (selected === entry.faviconUrl) {
+      // Same icon, re-announced (a reload, a re-parse). Re-key it to the page it
+      // was announced for and skip the fetch: the renderer already has it.
+      entry.faviconPageKey = resolveBrowserFaviconPageKey(
+        entry.view.webContents.getURL(),
+      );
+      return;
+    }
+    const rate = evaluatePopupRate({
+      timestamps: entry.faviconFetchTimestamps,
+      now: Date.now(),
+      windowMs: FAVICON_FETCH_WINDOW_MS,
+      maxInWindow: FAVICON_FETCH_MAX_IN_WINDOW,
+    });
+    entry.faviconFetchTimestamps = rate.timestamps;
+    if (!rate.allowed) {
+      return;
+    }
+
+    const session = ensureHardenedSession();
+    const dataUrl = await resolveBrowserFaviconDataUrl({
+      fetchFavicon: (url) => session.fetch(url),
+      urls: [selected],
+    });
+    if (dataUrl === null) {
+      return;
+    }
+    // The view may have navigated away or been destroyed while the icon was in
+    // flight; a late icon must not land on whatever the tab shows now.
+    if (entry.view.webContents.isDestroyed()) {
+      return;
+    }
+    entry.faviconUrl = selected;
+    entry.faviconPageKey = resolveBrowserFaviconPageKey(
+      entry.view.webContents.getURL(),
+    );
+    pushFavicon(hostWindow, tabId, dataUrl);
+  }
+
   function pushState(
     hostWindow: DesktopBrowserHostWindow,
     tabId: string,
@@ -560,7 +675,10 @@ export function createDesktopBrowserViewManager(
 
     const refresh = () => pushState(hostWindow, tabId);
     webContents.on("did-start-loading", refresh);
-    webContents.on("did-stop-loading", refresh);
+    webContents.on("did-stop-loading", () => {
+      dropStaleFavicon(hostWindow, tabId, entry);
+      refresh();
+    });
     webContents.on("did-navigate", (_event, url) => {
       commitEntryMainFrameUrl(entry, url);
       entry.lastErrorText = null;
@@ -577,9 +695,13 @@ export function createDesktopBrowserViewManager(
       refresh();
     });
     webContents.on("page-title-updated", refresh);
-    // Favicons are intentionally NOT forwarded: a remote, attacker-controlled
-    // favicon URL must never be rendered (or fetched) by the trusted bb app
-    // surface. The renderer shows a generic globe icon instead.
+    // A page's favicon URL is still never forwarded: the renderer receives only a
+    // `data:` URI the shell built from bytes it fetched in the browsing session,
+    // so the trusted bb app neither sees nor requests anything the page chose.
+    // `desktop-browser-favicon.ts` carries the reasoning and the limits.
+    webContents.on("page-favicon-updated", (_event, urls) => {
+      void updateFavicon(hostWindow, tabId, entry, urls);
+    });
     webContents.on(
       "did-fail-load",
       (_event, errorCode, errorDescription, validatedURL, isMainFrame) => {
@@ -615,6 +737,9 @@ export function createDesktopBrowserViewManager(
       currentMainFrameLocalOriginKey: null,
       desiredBounds: args.desiredBounds,
       popupTimestamps: [],
+      faviconUrl: null,
+      faviconPageKey: null,
+      faviconFetchTimestamps: [],
       visible: false,
     };
     wireWebContents(args.hostWindow, args.tabId, entry);

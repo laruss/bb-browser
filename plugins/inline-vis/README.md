@@ -47,5 +47,5 @@ a workspace HTML file, then ask the agent to visualize it with the directive
 ## Tests
 
 ```bash
-pnpm exec turbo run test typecheck --filter=bb-plugin-inline-vis
+bunx turbo run test typecheck --filter=bb-plugin-inline-vis
 ```

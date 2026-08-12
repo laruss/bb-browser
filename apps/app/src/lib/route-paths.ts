@@ -56,6 +56,11 @@ export const THREAD_DETAIL_ROUTE_PATH =
   "/projects/:projectId/threads/:threadId";
 // Trailing splat: the remainder is the panel's `subPath` (empty at the root).
 export const PLUGIN_PANEL_ROUTE_PATH = "/plugins/:pluginId/:panelPath/*";
+/**
+ * The browser as a top-level surface. Its tabs belong to no thread, so the path
+ * carries no thread or project segment.
+ */
+export const BROWSER_SURFACE_ROUTE_PATH = "/browser";
 
 export interface ThreadRoutePathArgs {
   projectId: string;
@@ -274,6 +279,7 @@ const baseRoutePatterns: readonly string[] = [
   PROJECTLESS_THREAD_DETAIL_ROUTE_PATH,
   THREAD_DETAIL_ROUTE_PATH,
   PLUGIN_PANEL_ROUTE_PATH,
+  BROWSER_SURFACE_ROUTE_PATH,
 ];
 
 export const ROUTE_PATTERNS = baseRoutePatterns;

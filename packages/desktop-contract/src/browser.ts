@@ -222,8 +222,44 @@ export type BbDesktopBrowserSnapshot = z.infer<
   typeof bbDesktopBrowserSnapshotSchema
 >;
 
+/**
+ * Cap on a favicon data URL. Favicons cross the wire as the page's own image
+ * bytes, so this is the wire-side twin of the shell's byte cap
+ * (`BB_DESKTOP_BROWSER_MAX_FAVICON_BYTES`): base64 expands by 4/3, and the value
+ * leaves room for the `data:<mime>;base64,` prefix on top of that.
+ */
+export const BB_DESKTOP_BROWSER_MAX_FAVICON_DATA_URL_LENGTH = 196_608;
+
+/**
+ * The icon a browser tab shows, pushed main → renderer when a page declares one
+ * and `null` when a navigation leaves the previous page's icon stale.
+ *
+ * `dataUrl` is built by the shell from bytes **it** fetched inside the browsing
+ * session, and its media type comes from the shell's allowlist rather than from
+ * the response. The page-controlled favicon URL never reaches the trusted bb app,
+ * which is what keeps a tab icon from becoming a beacon on the app's own origin,
+ * a loopback/LAN probe carrying app credentials, or a `javascript:`/`data:`
+ * payload of the page's choosing. See `resolveBrowserFaviconDataUrl` in
+ * apps/desktop.
+ */
+export const bbDesktopBrowserFaviconSchema = z
+  .object({
+    tabId: z.string().min(1),
+    dataUrl: z
+      .string()
+      .max(BB_DESKTOP_BROWSER_MAX_FAVICON_DATA_URL_LENGTH)
+      .nullable(),
+  })
+  .strict();
+export type BbDesktopBrowserFavicon = z.infer<
+  typeof bbDesktopBrowserFaviconSchema
+>;
+
 export type BbDesktopBrowserStateHandler = (
   state: BbDesktopBrowserState,
+) => void;
+export type BbDesktopBrowserFaviconHandler = (
+  favicon: BbDesktopBrowserFavicon,
 ) => void;
 export type BbDesktopBrowserOpenTabHandler = (
   request: BbDesktopBrowserOpenTabRequest,
@@ -270,5 +306,15 @@ export interface BbDesktopBrowserApi {
    */
   onSnapshot?(
     listener: BbDesktopBrowserSnapshotHandler,
+  ): BbDesktopBrowserUnsubscribe;
+  /**
+   * Subscribe to tab favicon pushes. Optional for the same version skew as
+   * {@link BbDesktopBrowserApi.onSnapshot} — an older shell's preload has no
+   * favicon channel — and feature-detection here is the negotiation that lets
+   * the icon ride a new channel instead of a new field on the wire-frozen state.
+   * Callers fall back to a generic icon.
+   */
+  onFavicon?(
+    listener: BbDesktopBrowserFaviconHandler,
   ): BbDesktopBrowserUnsubscribe;
 }

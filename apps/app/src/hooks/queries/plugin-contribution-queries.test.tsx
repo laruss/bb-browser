@@ -111,6 +111,7 @@ describe("usePluginContributions", () => {
             triggers: ["@", "#"],
           },
         ],
+        omniboxProviders: [],
       });
     });
     expect(fetchMock).toHaveBeenCalledWith(
@@ -129,6 +130,7 @@ describe("usePluginContributions", () => {
     await waitFor(() => {
       expect(result.current.data).toEqual({
         mentionProviders: [],
+        omniboxProviders: [],
       });
     });
   });

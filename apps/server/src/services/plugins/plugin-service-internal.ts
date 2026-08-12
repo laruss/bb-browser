@@ -106,6 +106,10 @@ export interface PluginServiceDeps {
   mentionSearchTimeoutMs?: number;
   /** Time box per mention provider resolve call at send; tests shrink it. */
   mentionResolveTimeoutMs?: number;
+  /** Time box per omnibox provider suggest call; tests shrink it. */
+  omniboxSuggestTimeoutMs?: number;
+  /** Time box per omnibox `run` action; tests shrink it. */
+  omniboxRunTimeoutMs?: number;
   /** Failed candidates must remain healthy for this long before activation commits. */
   stabilizationWindowMs?: number;
   /** Previous artifacts and activation snapshots remain rollbackable for this long. */
@@ -180,6 +184,40 @@ export interface PluginMentionSearchGroup {
   label: string;
   items: PluginMentionSearchItem[];
 }
+
+/** One omnibox provider contributed by a running plugin
+ * (`browser.omnibox.providers`). */
+export interface PluginOmniboxProviderContribution {
+  pluginId: string;
+  id: string;
+  label: string;
+}
+
+/**
+ * One row in an omnibox suggest group. `itemId` is the wire-composed
+ * "<providerId>:<provider item id>"; a `run` action is performed by posting it
+ * back, so nothing about the plugin's internals reaches the client.
+ */
+export interface PluginOmniboxSuggestItem {
+  itemId: string;
+  title: string;
+  subtitle: string | null;
+  score: number;
+  action: { type: "navigate"; url: string } | { type: "run" };
+}
+
+/** One provider's results for GET /plugins/omnibox/suggest. */
+export interface PluginOmniboxSuggestGroup {
+  pluginId: string;
+  providerId: string;
+  label: string;
+  items: PluginOmniboxSuggestItem[];
+}
+
+/** Result of performing one plugin omnibox `run` action. */
+export type PluginOmniboxRunOutcome =
+  | { ok: true; navigate: string | null }
+  | { ok: false; error: string };
 
 /** Result of resolving one plugin mention at send time (design §4.9). */
 export type PluginMentionResolveResult =

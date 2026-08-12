@@ -2,7 +2,7 @@
 
 Date: 2026-03-31
 Operator: Codex
-Standalone workflow: `pnpm qa:standalone:start` / `pnpm qa:standalone:stop`
+Standalone workflow: `bun run qa:standalone:start` / `bun run qa:standalone:stop`
 
 ## Smoke
 
@@ -196,7 +196,7 @@ Critical issues fixed during the Pi rerun:
 Date: 2026-04-16
 Operator: Codex
 Status: passed after critical fixes
-Standalone workflow: `pnpm qa:standalone:start` / `pnpm qa:standalone:stop`
+Standalone workflow: `bun run qa:standalone:start` / `bun run qa:standalone:stop`
 Primary standalone state path: `/var/folders/lr/f3ynv4xj6p77kvx_rz7zgzg00000gn/T/bb-standalone-z2RVe2/standalone-state.json`
 Fixed restart/Pi rerun state path: `/var/folders/lr/f3ynv4xj6p77kvx_rz7zgzg00000gn/T/bb-standalone-0C0WIF/standalone-state.json`
 Resolved models: `codex=gpt-5.4`, `claude-code=claude-haiku-4-5`, `pi=openai/gpt-5.4`
@@ -273,7 +273,7 @@ Residual notes:
 Date: 2026-04-16
 Operator: Codex
 Status: passed after runbook prompt clarification
-Standalone workflow: `pnpm qa:standalone:start` / `pnpm qa:standalone:stop`
+Standalone workflow: `bun run qa:standalone:start` / `bun run qa:standalone:stop`
 
 Old-prompt rerun:
 
@@ -345,7 +345,7 @@ Findings:
 Date: 2026-04-17
 Operator: Codex
 Status: passed
-Standalone workflow: `pnpm qa:standalone:start` / `pnpm qa:standalone:stop`
+Standalone workflow: `bun run qa:standalone:start` / `bun run qa:standalone:stop`
 Run log: `/tmp/bb-manual-qa.log`
 
 Resolved models:
@@ -400,14 +400,14 @@ Validated:
 Cleanup:
 
 - The scripted pass completed, then its zsh cleanup trap hit the read-only variable name `status`.
-- Explicit cleanup immediately after the pass succeeded: `pnpm qa:standalone:stop --state ...` killed PIDs `66108` and `66115` and removed the standalone root; `pnpm qa:standalone:cleanup` reported no remaining roots.
+- Explicit cleanup immediately after the pass succeeded: `bun run qa:standalone:stop --state ...` killed PIDs `66108` and `66115` and removed the standalone root; `bun run qa:standalone:cleanup` reported no remaining roots.
 
 ## Full Standalone Run
 
 Date: 2026-04-27
 Operator: Codex
 Status: passed
-Standalone workflow: `pnpm qa:standalone:start` / `pnpm qa:standalone:stop`
+Standalone workflow: `bun run qa:standalone:start` / `bun run qa:standalone:stop`
 Run log: `/tmp/manual-runbook-final.txt`
 
 Resolved models:
@@ -470,8 +470,8 @@ Validated:
 
 Cleanup:
 
-- Teardown succeeded: `pnpm qa:standalone:stop --state ...` killed PIDs `4054` and `4108` and removed the standalone root.
-- `pnpm qa:standalone:cleanup` reported no remaining roots.
+- Teardown succeeded: `bun run qa:standalone:stop --state ...` killed PIDs `4054` and `4108` and removed the standalone root.
+- `bun run qa:standalone:cleanup` reported no remaining roots.
 
 ## Timeline Scope Targeted Validation
 
@@ -483,7 +483,7 @@ Validated:
 
 - Replayed known bad Claude thread `thr_m22cr9ggq7` from the active dev database (`<dev-data-dir>/bb.db`) through the server timeline builder. The rendered timeline had 13 rows, 6 `Unhandled Claude Code event` entries, and 0 such entries in the trailing 30 rendered lines.
 - Spot-checked all 13 unarchived development threads in the active dev database (`<dev-data-dir>/bb.db`) through `buildThreadTimeline`; 0 failed to project.
-- Re-ran malformed turn-scope projection coverage with `pnpm exec turbo run test --filter=@bb/core-ui -- --run test/to-view-messages.turn-lifecycle.test.ts`; 9 tests passed.
+- Re-ran malformed turn-scope projection coverage with `bunx turbo run test --filter=@bb/core-ui -- --run test/to-view-messages.turn-lifecycle.test.ts`; 9 tests passed.
 
 Notes:
 
@@ -494,7 +494,7 @@ Notes:
 Date: 2026-04-27
 Operator: Codex
 Status: passed
-Standalone workflow: `pnpm qa:standalone:start` / `pnpm qa:standalone:stop`
+Standalone workflow: `bun run qa:standalone:start` / `bun run qa:standalone:stop`
 Run log: `/tmp/manual-runbook-scope-final.log`
 
 Resolved models:
@@ -545,8 +545,8 @@ Validated:
 
 Cleanup:
 
-- Teardown succeeded: `pnpm qa:standalone:stop --state ...` killed PIDs `66237` and `66297` and removed the standalone root.
-- `pnpm qa:standalone:cleanup` reported no remaining roots.
+- Teardown succeeded: `bun run qa:standalone:stop --state ...` killed PIDs `66237` and `66297` and removed the standalone root.
+- `bun run qa:standalone:cleanup` reported no remaining roots.
 
 ## Claude Code Thinking Display Regression
 
@@ -569,7 +569,7 @@ Notes:
 Date: 2026-05-01
 Operator: Codex
 Status: passed
-Standalone workflow: `pnpm qa:standalone:start` / `pnpm qa:standalone:stop`
+Standalone workflow: `bun run qa:standalone:start` / `bun run qa:standalone:stop`
 Run log: `/tmp/bb-manual-runbook.log`
 
 Resolved models:
@@ -631,15 +631,15 @@ Notes:
 
 Cleanup:
 
-- Teardown succeeded: `pnpm qa:standalone:stop --state ...` killed PIDs `39234` and `39286` and removed the standalone root.
-- `pnpm qa:standalone:cleanup` reported no remaining roots.
+- Teardown succeeded: `bun run qa:standalone:stop --state ...` killed PIDs `39234` and `39286` and removed the standalone root.
+- `bun run qa:standalone:cleanup` reported no remaining roots.
 
 ## Full Lint/Test/Build/Runbook Pass With Real Providers
 
 Date: 2026-06-12
 Operator: Codex
 Status: passed after fixes
-Standalone workflow: `pnpm qa:standalone:start` / `pnpm qa:standalone:stop`
+Standalone workflow: `bun run qa:standalone:start` / `bun run qa:standalone:stop`
 Run logs: `qa/logs/2026-06-12-full-qa/` (local run output; never checked in)
 
 Resolved models:

@@ -187,7 +187,7 @@ isolated|reuse`, or anchor with `--source-seq-end`. Permission mode inherits
   https://getbb.app). Pairing returns immediately — the
   server itself holds the tunnel and reconnects on restart, so there is no
   foreground process.
-  In a source checkout, `pnpm dev` automatically sets
+  In a source checkout, `bun run dev` automatically sets
   `BB_DEV_CONNECT_BASE_URL` to the worktree's local Cloud origin. Connect uses
   it only as the unpaired default; explicit `--server` and `--base-url` values
   still win, including when pairing the dev bb with getbb.app.
@@ -413,7 +413,7 @@ For review or fix pipelines, get the environment ID from
   Add `--cwd <path>` only to a machine scope. Machine targets resolve to an
   explicit host ID; terminal commands never silently fall back to primary.
 - Start a server with
-  `bb terminal create --thread <thread-id> --title "pnpm dev" --command "pnpm dev"`.
+  `bb terminal create --thread <thread-id> --title "bun run dev" --command "bun run dev"`.
 - All existing-session operations need only the terminal ID. Use
   `bb terminal wait <terminal-id> --contains "Local:" --timeout 120` to wait
   for readiness from new output. Pass `--from-start` only when matching existing

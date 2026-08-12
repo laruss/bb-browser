@@ -4,6 +4,8 @@ import { getDesktopBrowserApi } from "@/lib/bb-desktop";
 import {
   BrowserTabContent,
   type BrowserAddressFocusRequest,
+  type BrowserTabFaviconArgs,
+  type BrowserTabLoadingArgs,
 } from "./BrowserTabContent";
 import {
   createBrowserViewVisibilityCoordinator,
@@ -23,8 +25,14 @@ export interface BrowserTabDeckProps {
    * for drawer animation completion plus the post-open bounds sync.
    */
   canShowNativeBrowserView: boolean;
+  /** Forwarded to the tab content — see `BrowserTabContentProps.showChrome`. */
+  showChrome?: boolean;
   threadId: string;
   onUpdate: (args: UpdateBrowserTabArgs) => void;
+  /** Forwarded to the tab content — see `BrowserTabContentProps.onFavicon`. */
+  onFavicon?: (args: BrowserTabFaviconArgs) => void;
+  /** Forwarded to the tab content — see `BrowserTabContentProps.onLoadingChange`. */
+  onLoadingChange?: (args: BrowserTabLoadingArgs) => void;
 }
 
 interface BrowserTabIdSnapshot {
@@ -80,8 +88,11 @@ export function BrowserTabDeck({
   onAddressFocusRequestConsumed,
   environmentId,
   canShowNativeBrowserView,
+  showChrome = true,
   threadId,
   onUpdate,
+  onFavicon,
+  onLoadingChange,
 }: BrowserTabDeckProps) {
   const desktopBrowser = useMemo(() => getDesktopBrowserApi(), []);
   const previousTabIdsRef = useRef<BrowserTabIdSnapshot | null>(null);
@@ -133,8 +144,11 @@ export function BrowserTabDeck({
         canShowNativeBrowserView={canShowNativeBrowserView}
         visibilityCoordinator={visibilityCoordinator}
         environmentId={environmentId}
+        showChrome={showChrome}
         threadId={threadId}
         onUpdate={onUpdate}
+        onFavicon={onFavicon}
+        onLoadingChange={onLoadingChange}
       />
     </div>
   );

@@ -50,5 +50,5 @@ panel's Refresh button (or `bb github sync`) forces it.
 Run the checks from the repository root:
 
 ```sh
-pnpm exec turbo run typecheck test --filter=bb-plugin-github
+bunx turbo run typecheck test --filter=bb-plugin-github
 ```

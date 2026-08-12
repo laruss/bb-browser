@@ -590,6 +590,94 @@ export interface PluginUi {
   registerMentionProvider(provider: PluginMentionProviderRegistration): void;
 }
 
+// ---------------------------------------------------------------------------
+// Browser contributions: browser.omnibox.providers.
+// ---------------------------------------------------------------------------
+
+/** Search context handed to an omnibox provider. */
+export interface PluginOmniboxSuggestContext {
+  /** What the user has typed, trimmed. Never empty. */
+  query: string;
+}
+
+/** What selecting a plugin's omnibox suggestion does. */
+export type PluginOmniboxAction =
+  /** Open a URL in the browser tab the omnibox belongs to. */
+  | { type: "navigate"; url: string }
+  /**
+   * Call this provider's `run(itemId)` back on the server. Use it when the
+   * suggestion is an action rather than a destination — asking an agent,
+   * starting a job — and optionally return a URL to open afterwards.
+   */
+  | { type: "run" };
+
+/**
+ * One row an omnibox provider returns. `id` is the provider's own item id —
+ * the host namespaces it before it reaches the wire.
+ */
+export interface PluginOmniboxSuggestion {
+  id: string;
+  title: string;
+  subtitle?: string;
+  /**
+   * Rank in [0, 1], clamped by the host; defaults to 0.5 when omitted. Score 1
+   * belongs to the browser's own default action — what pressing Enter does with
+   * nothing selected — and plugin rows are ranked after the built-in providers
+   * at equal scores, so a plugin cannot take the top row away from it.
+   */
+  score?: number;
+  action: PluginOmniboxAction;
+}
+
+/** What a `run` action asks the browser to do once the plugin is done. */
+export interface PluginOmniboxRunResult {
+  /** Open this URL in the tab the suggestion was picked from. */
+  navigate?: string;
+}
+
+/** Context handed to `run`, so an action can use the query it was offered for. */
+export interface PluginOmniboxRunContext {
+  /** The query the picked suggestion was produced for. */
+  query: string;
+}
+
+export interface PluginOmniboxProviderRegistration {
+  /** Unique within this plugin: [a-zA-Z0-9_-]+ (no ":" — the host composes
+   * wire item ids as "<providerId>:<itemId>"). */
+  id: string;
+  /** Source label shown on this provider's rows, next to the browser's own. */
+  label: string;
+  /**
+   * Runs server-side as the user types in the browser's omnibox. Each call is
+   * time-boxed (2s) and failure-isolated: a slow or throwing provider
+   * contributes nothing — it can never break the omnibox, whose built-in rows
+   * keep working regardless.
+   */
+  suggest(
+    ctx: PluginOmniboxSuggestContext,
+  ): PluginOmniboxSuggestion[] | Promise<PluginOmniboxSuggestion[]>;
+  /**
+   * Performs a `{ type: "run" }` suggestion, called once when the user picks
+   * that row. `itemId` is this provider's own item id. Required if any returned
+   * suggestion uses a `run` action.
+   */
+  run?(
+    itemId: string,
+    ctx: PluginOmniboxRunContext,
+  ): PluginOmniboxRunResult | void | Promise<PluginOmniboxRunResult | void>;
+}
+
+export interface PluginBrowser {
+  /**
+   * Register an omnibox provider for the browser surface's address bar
+   * (`browser.omnibox.providers`). Rows appear in the same ranked list as the
+   * browser's own address, search, open-tab and history rows, labelled with
+   * `label` so their source is visible. Multiple providers per plugin; ids must
+   * be unique within the plugin.
+   */
+  registerOmniboxProvider(provider: PluginOmniboxProviderRegistration): void;
+}
+
 export interface PluginEvents {
   /**
    * Add a thread lifecycle listener. Multiple listeners for the same event are
@@ -689,6 +777,8 @@ export interface BbPluginApi {
   readonly agents: PluginAgents;
   /** Host-rendered UI contributions (design §4.9). */
   readonly ui: PluginUi;
+  /** Browser-surface contributions (`browser.omnibox.providers`). */
+  readonly browser: PluginBrowser;
   /** Additive plugin lifecycle listeners (design §4.5). */
   readonly events: PluginEvents;
   /** Plugin-reported status (needs-configuration). */

@@ -98,6 +98,10 @@ import type {
   PluginMentionResolveResult,
   PluginMentionSearchGroup,
   PluginMentionSearchItem,
+  PluginOmniboxProviderContribution,
+  PluginOmniboxRunOutcome,
+  PluginOmniboxSuggestGroup,
+  PluginOmniboxSuggestItem,
   PluginServiceDeps,
   PluginSourceView,
   PluginThreadEventEmitter,
@@ -117,6 +121,10 @@ export type {
   PluginMentionResolveResult,
   PluginMentionSearchGroup,
   PluginMentionSearchItem,
+  PluginOmniboxProviderContribution,
+  PluginOmniboxRunOutcome,
+  PluginOmniboxSuggestGroup,
+  PluginOmniboxSuggestItem,
   PluginRuntimeStatus,
   PluginScheduleEntry,
   PluginServiceDeps,
@@ -344,6 +352,34 @@ export interface PluginService {
     itemId: string;
   }): Promise<PluginMentionResolveResult>;
   /**
+   * Omnibox providers of running plugins (bb.browser.registerOmniboxProvider),
+   * ordered by plugin id then registration order, for
+   * GET /plugins/contributions. No plugin code runs.
+   */
+  listOmniboxProviderContributions(): PluginOmniboxProviderContribution[];
+  /**
+   * Run every loaded plugin's omnibox providers against one query
+   * (`browser.omnibox.providers`). Providers run concurrently, each wrapped in
+   * the failure-isolation discipline (invokeWrapped) and time-boxed (2s); a
+   * slow, throwing, or malformed provider contributes nothing, so the
+   * browser's own rows are never held up or lost. Groups are ordered by plugin
+   * id, then registration order; empty groups are dropped. Item ids are
+   * namespaced "<providerId>:<item id>".
+   */
+  suggestOmnibox(args: { query: string }): Promise<PluginOmniboxSuggestGroup[]>;
+  /**
+   * Perform one picked `{ type: "run" }` suggestion. `itemId` is the
+   * wire-composed "<providerId>:<item id>" from suggestOmnibox. Dispatch and
+   * handler problems map to `{ ok: false, error }` so the browser can report
+   * the failure instead of navigating somewhere wrong.
+   */
+  runOmniboxAction(args: {
+    itemId: string;
+    pluginId: string;
+    /** The query the picked suggestion was produced for. */
+    query: string;
+  }): Promise<PluginOmniboxRunOutcome>;
+  /**
    * Last `tail` lines of the plugin's JSONL log file (bb.log output).
    * Undefined when the plugin is not installed.
    */
@@ -363,6 +399,15 @@ const DEFAULT_MENTION_SEARCH_TIMEOUT_MS = 2_000;
 // to, so it may do one real fetch — but it must not hang POST /threads/:id/send
 // forever when a provider never settles.
 const DEFAULT_MENTION_RESOLVE_TIMEOUT_MS = 10_000;
+/** Same 2s box as mention search: the omnibox must stay responsive per keystroke. */
+const DEFAULT_OMNIBOX_SUGGEST_TIMEOUT_MS = 2_000;
+/**
+ * A picked `run` action is a deliberate user action, not a keystroke, and may
+ * spawn a thread — so it gets the same longer box as mention resolve.
+ */
+const DEFAULT_OMNIBOX_RUN_TIMEOUT_MS = 10_000;
+/** Plugin scores are advisory; the browser owns the top row. */
+const DEFAULT_OMNIBOX_SUGGESTION_SCORE = 0.5;
 const DEFAULT_STABILIZATION_WINDOW_MS = 30_000;
 const DEFAULT_ARTIFACT_RETENTION_MS = 7 * 24 * 60 * 60_000;
 const SCHEDULE_SWEEP_BATCH_SIZE = 100;
@@ -669,6 +714,113 @@ function normalizeMentionSearchItems(
   });
 }
 
+/**
+ * Validate an omnibox provider's suggest() result and namespace item ids for
+ * the wire ("<providerId>:<item id>"). Malformed results throw — the caller
+ * runs this inside invokeWrapped, so a bad provider contributes nothing and
+ * the browser's own rows are unaffected.
+ *
+ * `hasRun` gates `run` actions: a row whose action the provider cannot perform
+ * would fail only once the user picked it, so it is rejected here instead.
+ */
+function normalizeOmniboxSuggestItems(args: {
+  hasRun: boolean;
+  providerId: string;
+  result: unknown;
+}): PluginOmniboxSuggestItem[] {
+  if (!Array.isArray(args.result)) {
+    throw new Error(
+      `omnibox provider "${args.providerId}" suggest() must return an array of suggestions`,
+    );
+  }
+  return args.result.map((item, index) => {
+    const typed = item as {
+      id?: unknown;
+      title?: unknown;
+      subtitle?: unknown;
+      score?: unknown;
+      action?: unknown;
+    } | null;
+    if (
+      typeof typed?.id !== "string" ||
+      typed.id.length === 0 ||
+      typeof typed.title !== "string" ||
+      typed.title.trim().length === 0 ||
+      (typed.subtitle !== undefined && typeof typed.subtitle !== "string") ||
+      (typed.score !== undefined && typeof typed.score !== "number")
+    ) {
+      throw new Error(
+        `omnibox provider "${args.providerId}" items[${index}] must be { id: string, title: string, subtitle?, score?, action }`,
+      );
+    }
+    const action = typed.action as
+      | { type?: unknown; url?: unknown }
+      | null
+      | undefined;
+    let normalizedAction: PluginOmniboxSuggestItem["action"];
+    if (action?.type === "navigate") {
+      if (typeof action.url !== "string" || action.url.trim().length === 0) {
+        throw new Error(
+          `omnibox provider "${args.providerId}" items[${index}] navigate action must carry a url`,
+        );
+      }
+      normalizedAction = { type: "navigate", url: action.url };
+    } else if (action?.type === "run") {
+      if (!args.hasRun) {
+        throw new Error(
+          `omnibox provider "${args.providerId}" items[${index}] uses a run action but the provider registered no run(itemId)`,
+        );
+      }
+      normalizedAction = { type: "run" };
+    } else {
+      throw new Error(
+        `omnibox provider "${args.providerId}" items[${index}] action must be { type: "navigate", url } or { type: "run" }`,
+      );
+    }
+    const score =
+      typeof typed.score === "number" && Number.isFinite(typed.score)
+        ? Math.min(Math.max(typed.score, 0), 1)
+        : DEFAULT_OMNIBOX_SUGGESTION_SCORE;
+    return {
+      itemId: `${args.providerId}:${typed.id}`,
+      title: typed.title,
+      subtitle:
+        typeof typed.subtitle === "string" && typed.subtitle.trim().length > 0
+          ? typed.subtitle
+          : null,
+      score,
+      action: normalizedAction,
+    };
+  });
+}
+
+/**
+ * Race a plugin call against a time box. The abandoned promise keeps a catch
+ * attached so a late rejection cannot surface as an unhandled rejection.
+ */
+async function withPluginTimeout<T>(args: {
+  run: () => Promise<T>;
+  timeoutMs: number;
+}): Promise<T> {
+  const call = args.run();
+  call.catch(() => {});
+  let timer: NodeJS.Timeout | undefined;
+  try {
+    return await Promise.race([
+      call,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(
+          () => reject(new Error(`timed out after ${args.timeoutMs}ms`)),
+          args.timeoutMs,
+        );
+        timer.unref?.();
+      }),
+    ]);
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+  }
+}
+
 const PLUGIN_AGENT_SELECTION_MAX_IDS = 256;
 const PLUGIN_AGENT_DYNAMIC_INSTRUCTIONS_MAX_CHARS = 4096;
 const PLUGIN_AGENT_TOOL_PARAMETERS_MAX_BYTES = 128 * 1024;
@@ -894,6 +1046,10 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
     deps.mentionSearchTimeoutMs ?? DEFAULT_MENTION_SEARCH_TIMEOUT_MS;
   const mentionResolveTimeoutMs =
     deps.mentionResolveTimeoutMs ?? DEFAULT_MENTION_RESOLVE_TIMEOUT_MS;
+  const omniboxSuggestTimeoutMs =
+    deps.omniboxSuggestTimeoutMs ?? DEFAULT_OMNIBOX_SUGGEST_TIMEOUT_MS;
+  const omniboxRunTimeoutMs =
+    deps.omniboxRunTimeoutMs ?? DEFAULT_OMNIBOX_RUN_TIMEOUT_MS;
   const stabilizationWindowMs =
     deps.stabilizationWindowMs ?? DEFAULT_STABILIZATION_WINDOW_MS;
   const artifactRetentionMs =
@@ -2095,6 +2251,113 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
         },
       );
       if (outcome.ok) return { ok: true, context: outcome.value };
+      return { ok: false, error: outcome.error };
+    },
+
+    listOmniboxProviderContributions() {
+      const contributions: PluginOmniboxProviderContribution[] = [];
+      for (const [id, plugin] of [...loaded.entries()].sort(([a], [b]) =>
+        a.localeCompare(b),
+      )) {
+        for (const record of plugin.handle.omniboxProviders) {
+          contributions.push({
+            pluginId: id,
+            id: record.id,
+            label: record.label,
+          });
+        }
+      }
+      return contributions;
+    },
+
+    async suggestOmnibox({ query }) {
+      const entries = [...loaded.entries()].sort(([a], [b]) =>
+        a.localeCompare(b),
+      );
+      if (entries.length === 0) return [];
+      const tasks: Array<Promise<PluginOmniboxSuggestGroup | null>> = [];
+      for (const [id, plugin] of entries) {
+        for (const record of [...plugin.handle.omniboxProviders]) {
+          tasks.push(
+            (async () => {
+              const outcome = await invokeWrapped(
+                id,
+                `omnibox suggest ${record.id}`,
+                async () =>
+                  normalizeOmniboxSuggestItems({
+                    hasRun: record.run !== null,
+                    providerId: record.id,
+                    result: await withPluginTimeout({
+                      run: async () => record.suggest({ query }),
+                      timeoutMs: omniboxSuggestTimeoutMs,
+                    }),
+                  }),
+              );
+              if (!outcome.ok || outcome.value.length === 0) return null;
+              return {
+                pluginId: id,
+                providerId: record.id,
+                label: record.label,
+                items: outcome.value,
+              };
+            })(),
+          );
+        }
+      }
+      return (await Promise.all(tasks)).filter(
+        (group): group is PluginOmniboxSuggestGroup => group !== null,
+      );
+    },
+
+    async runOmniboxAction({ itemId, pluginId, query }) {
+      const separatorIndex = itemId.indexOf(":");
+      const providerId =
+        separatorIndex > 0 ? itemId.slice(0, separatorIndex) : "";
+      const providerItemId =
+        separatorIndex > 0 ? itemId.slice(separatorIndex + 1) : "";
+      if (providerId.length === 0 || providerItemId.length === 0) {
+        return {
+          ok: false,
+          error: `malformed plugin omnibox item id ${JSON.stringify(itemId)}`,
+        };
+      }
+      const plugin = loaded.get(pluginId);
+      const record = plugin?.handle.omniboxProviders.find(
+        (candidate) => candidate.id === providerId,
+      );
+      if (!plugin || !record) {
+        return {
+          ok: false,
+          error: `plugin "${pluginId}" has no omnibox provider "${providerId}"`,
+        };
+      }
+      const run = record.run;
+      if (run === null) {
+        return {
+          ok: false,
+          error: `omnibox provider "${providerId}" has no run(itemId)`,
+        };
+      }
+      const outcome = await invokeWrapped(
+        pluginId,
+        `omnibox run ${providerId}`,
+        async () => {
+          const result = await withPluginTimeout({
+            run: async () => run(providerItemId, { query }),
+            timeoutMs: omniboxRunTimeoutMs,
+          });
+          if (result === undefined || result === null) return null;
+          const navigate = (result as { navigate?: unknown }).navigate;
+          if (navigate === undefined) return null;
+          if (typeof navigate !== "string" || navigate.trim().length === 0) {
+            throw new Error(
+              `omnibox provider "${providerId}" run() navigate must be a non-empty url`,
+            );
+          }
+          return navigate;
+        },
+      );
+      if (outcome.ok) return { ok: true, navigate: outcome.value };
       return { ok: false, error: outcome.error };
     },
 

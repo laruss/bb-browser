@@ -8,6 +8,7 @@ import {
 } from "react-router-dom";
 import { AppLayout } from "./components/layout/AppLayout";
 import { AuthCallbackView } from "./views/AuthCallbackView";
+import { useBrowserFirstStartupRoute } from "./lib/browser-first-startup";
 import { QuickCreateProjectProvider } from "./hooks/useQuickCreateProject";
 import { RouteNavigationProvider } from "./components/ui/app-route-anchor";
 import { useAppTheme } from "./hooks/useAppTheme";
@@ -17,6 +18,7 @@ import { usePluginFrontendBoot } from "./hooks/usePluginFrontendBoot";
 import { useWebSocket } from "./hooks/useWebSocket";
 import {
   AUTH_CALLBACK_ROUTE_PATH,
+  BROWSER_SURFACE_ROUTE_PATH,
   LEGACY_AUTOMATION_DETAIL_ROUTE_PATH,
   LEGACY_AUTOMATIONS_ROUTE_PATH,
   LEGACY_SKILLS_ROUTE_PATH,
@@ -75,6 +77,7 @@ const ProjectSettingsView = lazy(() =>
   })),
 );
 const SplitWorkspaceRoute = lazy(() => import("./views/SplitWorkspaceRoute"));
+const BrowserSurfaceView = lazy(() => import("./views/BrowserSurfaceView"));
 
 export function LegacyAutomationDetailRedirect() {
   const location = useLocation();
@@ -134,6 +137,7 @@ export function LegacyPluginBrowseRedirect() {
 }
 
 function AppRoutes() {
+  useBrowserFirstStartupRoute();
   return (
     <AppLayout>
       <Suspense fallback={null}>
@@ -239,6 +243,10 @@ function AppRoutes() {
               element={<Navigate to={SKILLS_ROUTE_PATH} replace />}
             />
           </Route>
+          <Route
+            path={BROWSER_SURFACE_ROUTE_PATH}
+            element={<BrowserSurfaceView />}
+          />
           <Route path="*" element={<SplitWorkspaceRoute />} />
         </Routes>
       </Suspense>

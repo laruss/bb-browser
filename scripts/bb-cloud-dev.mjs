@@ -38,19 +38,32 @@ function fail(message) {
   process.exit(1);
 }
 
-function run(args) {
-  const result = spawnSync("pnpm", args, {
-    cwd: REPO_ROOT,
+// bun has no equivalent of `pnpm --filter <pkg> exec <cmd>`, so a
+// workspace-scoped command runs as `bunx <cmd>` from that package's directory.
+const WORKSPACE_DIRS = {
+  "@bb/connect": path.join(REPO_ROOT, "apps", "connect"),
+  "@bb/web": path.join(REPO_ROOT, "apps", "web"),
+};
+
+function workspaceCommand(packageName, argv) {
+  const cwd = WORKSPACE_DIRS[packageName];
+  if (cwd === undefined) fail(`unknown workspace package ${packageName}`);
+  return { argv, cwd };
+}
+
+function run({ argv, cwd }) {
+  const result = spawnSync("bunx", argv, {
+    cwd,
     env: { ...process.env, CI: "1" },
     stdio: "inherit",
   });
   if (result.error) fail(result.error.message);
-  if (result.status !== 0) fail(`command failed: pnpm ${args.join(" ")}`);
+  if (result.status !== 0) fail(`command failed: bunx ${argv.join(" ")}`);
 }
 
-function spawnService(args, env = {}) {
-  const child = spawn("pnpm", args, {
-    cwd: REPO_ROOT,
+function spawnService({ argv, cwd }, env = {}) {
+  const child = spawn("bunx", argv, {
+    cwd,
     detached: process.platform !== "win32",
     env: { ...process.env, ...env },
     stdio: "inherit",
@@ -161,19 +174,18 @@ try {
 
 await mkdir(STATE_DIR, { recursive: true });
 console.log(`Preparing local Cloud data in ${STATE_DIR}`);
-run([
-  "--filter",
-  "@bb/connect",
-  "exec",
-  "wrangler",
-  "d1",
-  "migrations",
-  "apply",
-  "DB",
-  "--local",
-  "--persist-to",
-  STATE_DIR,
-]);
+run(
+  workspaceCommand("@bb/connect", [
+    "wrangler",
+    "d1",
+    "migrations",
+    "apply",
+    "DB",
+    "--local",
+    "--persist-to",
+    STATE_DIR,
+  ]),
+);
 
 const proxy = createCloudDevProxy();
 gateway = createServer((request, response) => {
@@ -206,10 +218,8 @@ try {
   await stop(1);
 }
 
-const worker = spawnService([
-  "--filter",
-  "@bb/connect",
-  "exec",
+const worker = spawnService(
+  workspaceCommand("@bb/connect", [
   "wrangler",
   "dev",
   "--port",
@@ -227,20 +237,18 @@ const worker = spawnService([
   "--var",
   "CLOUD_DEV:true",
   "--show-interactive-dev-session=false",
-]);
+  ]),
+);
 
 const web = spawnService(
-  [
-    "--filter",
-    "@bb/web",
-    "exec",
+  workspaceCommand("@bb/web", [
     "vite",
     "dev",
     "--host",
     "127.0.0.1",
     "--port",
     String(webPort),
-  ],
+  ]),
   {
     BB_CLOUD_DEV_APP_URL: CLOUD_URL,
     BB_CLOUD_DEV_SERVER_URL_TEMPLATE: `http://{label}.${DEV_BASE_DOMAIN}:${ports.cloudPort}`,
@@ -277,7 +285,7 @@ console.log(`
 Local bb Cloud is ready at ${BOLD}${CLOUD_URL}/dashboard${RESET}
 
 Claim a handle, generate a pairing code, and run the command shown in the
-dashboard against a bb started with pnpm dev. Local handles use:
+dashboard against a bb started with `bun run dev`. Local handles use:
   http://<handle>.${DEV_BASE_DOMAIN}:${ports.cloudPort}
 
 Press Ctrl-C to stop local Cloud.

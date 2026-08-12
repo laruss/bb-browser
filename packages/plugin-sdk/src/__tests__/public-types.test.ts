@@ -5,6 +5,7 @@ import type { BbPluginApi } from "../index.js";
 type ExpectedBbPluginApiKey =
   | "agents"
   | "background"
+  | "browser"
   | "cli"
   | "events"
   | "hosts"
@@ -33,6 +34,7 @@ const EXPECTED_BACKEND_ROOT_TYPE_EXPORTS = [
   "PluginAgentToolResult",
   "PluginAgentToolSelection",
   "PluginBackground",
+  "PluginBrowser",
   "PluginCli",
   "PluginCliCommandInfo",
   "PluginCliContext",
@@ -54,6 +56,12 @@ const EXPECTED_BACKEND_ROOT_TYPE_EXPORTS = [
   "PluginMentionProviderRegistration",
   "PluginMentionSearchContext",
   "PluginMentionTrigger",
+  "PluginOmniboxAction",
+  "PluginOmniboxProviderRegistration",
+  "PluginOmniboxRunContext",
+  "PluginOmniboxRunResult",
+  "PluginOmniboxSuggestContext",
+  "PluginOmniboxSuggestion",
   "PluginRealtime",
   "PluginRpc",
   "PluginServerApi",

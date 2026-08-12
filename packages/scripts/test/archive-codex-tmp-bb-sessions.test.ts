@@ -107,7 +107,7 @@ describe("archive-codex-tmp-bb-sessions", () => {
 
   it("documents the command and default pattern", () => {
     const help = renderHelpText();
-    expect(help).toContain("pnpm codex:archive-tmp-bb-sessions");
+    expect(help).toContain("bun run codex:archive-tmp-bb-sessions");
     expect(help).toContain("*/bb-standalone-*");
     expect(help).toContain("*/bb-integration-*");
     expect(help).toContain("*/bb-integ-*");

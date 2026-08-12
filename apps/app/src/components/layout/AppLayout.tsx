@@ -65,6 +65,7 @@ import {
 } from "@/lib/bb-desktop";
 import { useDesktopWindowState } from "@/hooks/useDesktopWindowState";
 import {
+  BROWSER_SURFACE_ROUTE_PATH,
   getLegacyProjectComposeRoutePath,
   getProjectSettingsRoutePath,
   getRootComposeRoutePath,
@@ -517,6 +518,12 @@ export function AppLayout({ children }: AppLayoutProps) {
   const toolsHubEnabled = systemConfigQuery.data?.experiments.toolsHub === true;
   const isGlobalToolsView =
     toolsHubEnabled && isToolsRoutePath(location.pathname);
+  // The browser surface is chrome of its own: its tab strip takes the window's
+  // title-bar row (reserving the pinned sidebar trigger the way a page header
+  // would) and the page fills everything below, so the shell adds neither a
+  // header nor content padding here.
+  const isBrowserSurfaceView =
+    matchPath(BROWSER_SURFACE_ROUTE_PATH, location.pathname) !== null;
   const pluginPanelMatch = matchPath(
     PLUGIN_PANEL_ROUTE_PATH,
     location.pathname,
@@ -584,6 +591,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const showHeader =
     !isThreadView &&
     !isRootView &&
+    !isBrowserSurfaceView &&
     !(splitWorkspaceActive && pluginPanelMatch !== null);
   const [desktopInfo] = useState(getBbDesktopInfo);
   const desktopWindowState = useDesktopWindowState();
@@ -877,7 +885,12 @@ export function AppLayout({ children }: AppLayoutProps) {
                       meta={meta}
                     />
                   ) : null}
-                  <main className="flex min-h-0 flex-1 flex-col p-4 md:p-5">
+                  <main
+                    className={cn(
+                      "flex min-h-0 flex-1 flex-col",
+                      !isBrowserSurfaceView && "p-4 md:p-5",
+                    )}
+                  >
                     {children}
                   </main>
                 </div>

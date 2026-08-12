@@ -202,6 +202,7 @@ export function registerPluginRoutes(
     context.json({
       cliCommands: plugins.listCliContributions(),
       mentionProviders: plugins.listMentionProviderContributions(),
+      omniboxProviders: plugins.listOmniboxProviderContributions(),
     }),
   );
 
@@ -237,6 +238,64 @@ export function registerPluginRoutes(
       threadId: threadId !== null && threadId.length > 0 ? threadId : null,
     });
     return context.json({ ok: true, groups });
+  });
+
+  // Browser omnibox suggestions across every plugin provider
+  // (`browser.omnibox.providers`). Executes plugin code, so it takes the same
+  // local-origin guard as the rpc dispatcher, and is registered before the
+  // /plugins/:id/* routes so the static "omnibox" segment cannot be captured
+  // as an id.
+  app.get("/plugins/omnibox/suggest", async (context) => {
+    const problem = localAuthProblem(context, deps);
+    if (problem) {
+      return context.json({ ok: false, error: problem.error }, problem.status);
+    }
+    const query = (context.req.query("q") ?? "").trim();
+    if (query.length === 0) {
+      return context.json({ ok: true, groups: [] });
+    }
+    return context.json({
+      ok: true,
+      groups: await plugins.suggestOmnibox({ query }),
+    });
+  });
+
+  // Perform a picked `{ type: "run" }` omnibox suggestion. A POST because it
+  // runs the plugin's action; the response carries an optional url for the
+  // browser to open afterwards.
+  app.post("/plugins/omnibox/run", async (context) => {
+    const problem = localAuthProblem(context, deps);
+    if (problem) {
+      return context.json({ ok: false, error: problem.error }, problem.status);
+    }
+    const body = (await context.req.json().catch(() => null)) as {
+      itemId?: unknown;
+      pluginId?: unknown;
+      query?: unknown;
+    } | null;
+    const pluginId = body?.pluginId;
+    const itemId = body?.itemId;
+    const query = body?.query;
+    if (
+      typeof pluginId !== "string" ||
+      pluginId.length === 0 ||
+      typeof itemId !== "string" ||
+      itemId.length === 0 ||
+      typeof query !== "string"
+    ) {
+      return context.json(
+        {
+          ok: false,
+          error: "expected { pluginId: string, itemId: string, query: string }",
+        },
+        400,
+      );
+    }
+    const outcome = await plugins.runOmniboxAction({ itemId, pluginId, query });
+    if (!outcome.ok) {
+      return context.json({ ok: false, error: outcome.error }, 422);
+    }
+    return context.json({ ok: true, navigate: outcome.navigate });
   });
 
   // Proxied `bb <plugin-command>` / `bb plugin run` invocation (design §4.4).

@@ -82,16 +82,22 @@ const desktopPackageJsonSchema = z
   })
   .passthrough();
 
-const workspacePackageJsonSchema = z
-  .object({
-    pnpm: z.object({
-      supportedArchitectures: z.object({
-        cpu: z.array(z.string().min(1)),
-        os: z.array(z.string().min(1)),
-      }),
-    }),
-  })
-  .passthrough();
+/**
+ * Per-arch macOS prebuilds the *checkout* needs available to resolve — not
+ * something the packaged app ships (see "ships no plugin build toolchain
+ * binaries" above). `node-pty` carries every prebuild in one tarball, but
+ * esbuild, sharp and rollup publish one package per platform+arch, so the
+ * lockfile has to name both macOS arches for the repo to install on Intel and
+ * Apple Silicon alike.
+ */
+const CROSS_ARCH_PREBUILD_PACKAGES = [
+  "@esbuild/darwin-arm64",
+  "@esbuild/darwin-x64",
+  "@img/sharp-darwin-arm64",
+  "@img/sharp-darwin-x64",
+  "@rollup/rollup-darwin-arm64",
+  "@rollup/rollup-darwin-x64",
+];
 
 const signingEnvironmentKeys = [
   "APPLE_APP_SPECIFIC_PASSWORD",
@@ -238,10 +244,7 @@ describe("electron-builder signing config", () => {
     );
 
     expect(Object.keys(packageJson.optionalDependencies ?? {})).not.toEqual(
-      expect.arrayContaining([
-        "@esbuild/darwin-arm64",
-        "@esbuild/darwin-x64",
-      ]),
+      expect.arrayContaining(["@esbuild/darwin-arm64", "@esbuild/darwin-x64"]),
     );
   });
 
@@ -270,27 +273,30 @@ describe("electron-builder signing config", () => {
     ).resolves.toBeUndefined();
   });
 
-  it("installs native plugin build packages for arm64 and x64", async () => {
-    const packageJsonText = await readFile(
-      resolve(desktopPackageRoot, "..", "..", "package.json"),
+  it("locks native prebuild packages for both macOS arches", async () => {
+    // Under pnpm this guarantee came from `pnpm.supportedArchitectures`
+    // (cpu: arm64 + x64), which physically installed both arches everywhere.
+    // Bun's lockfile is platform-agnostic instead: it records every optional
+    // prebuild variant and each machine extracts only its own, so the property
+    // worth asserting moved from "both installed" to "both locked". Losing it
+    // would leave a checkout uninstallable on one of the two macOS arches.
+    const lockText = await readFile(
+      resolve(desktopPackageRoot, "..", "..", "bun.lock"),
       "utf8",
     );
-    const packageJson = workspacePackageJsonSchema.parse(
-      JSON.parse(packageJsonText),
-    );
 
-    expect(packageJson.pnpm.supportedArchitectures).toEqual({
-      cpu: ["arm64", "x64"],
-      os: ["current"],
-    });
+    for (const packageName of CROSS_ARCH_PREBUILD_PACKAGES) {
+      expect(lockText).toContain(`"${packageName}@`);
+    }
   });
 
-  it("disables in-place native rebuilds so the shared pnpm store is not mutated", async () => {
+  it("disables in-place native rebuilds so the shared package store is not mutated", async () => {
     // electron-builder's npmRebuild rebuilds better-sqlite3 through the
-    // workspace symlink into the shared content-addressed store, flipping the
-    // binary to Electron's ABI and breaking every plain-node consumer (the
-    // server test suite). The afterPack hook fetches the Electron prebuild into
-    // the packaged copy instead, so this must stay false.
+    // workspace symlink into the shared content-addressed store (node_modules/.bun,
+    // previously node_modules/.pnpm), flipping the binary to Electron's ABI and
+    // breaking every plain-node consumer (the server test suite). The afterPack
+    // hook fetches the Electron prebuild into the packaged copy instead, so this
+    // must stay false.
     const configText = await readFile(
       resolve(desktopPackageRoot, "electron-builder.config.json"),
       "utf8",

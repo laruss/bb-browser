@@ -333,3 +333,101 @@ describe("hero plugin: slack-bot", () => {
     }
   });
 });
+
+describe("hero plugin: omnibox-agent", () => {
+  it("contributes omnibox rows, and a picked ask spawns an attributed thread", async () => {
+    const server = await startTestServer({ appVersion: APP_VERSION });
+    try {
+      const { host } = seedHostSession(server.deps);
+      seedPrimaryHost(server.deps, host.id);
+      const { project } = seedProjectWithSource(server.deps, {
+        hostId: host.id,
+        path: "/tmp/omnibox-agent-hero-source",
+      });
+      server.pluginService.bindSdk({ baseUrl: server.baseUrl });
+
+      const suggest = async (query: string) => {
+        const response = await fetch(
+          `${server.baseUrl}/api/v1/plugins/omnibox/suggest?q=${encodeURIComponent(query)}`,
+        );
+        expect(response.status).toBe(200);
+        const body = (await response.json()) as {
+          groups: Array<{
+            items: Array<{ itemId: string; score: number; action: unknown }>;
+            label: string;
+            providerId: string;
+          }>;
+        };
+        return body.groups;
+      };
+
+      const entry = await server.pluginService.installPath(
+        join(EXAMPLES_DIR, "omnibox-agent"),
+      );
+      expect(entry.id).toBe("omnibox-agent");
+      // Unconfigured: loaded, but honestly reporting what it needs.
+      expect(entry.status).toBe("needs-configuration");
+      expect(entry.statusDetail).toContain("bb plugin config omnibox-agent");
+
+      // The navigate row needs no configuration, so the plugin contributes to
+      // the omnibox before anyone opens its settings.
+      const unconfigured = await suggest("flaky tests");
+      expect(unconfigured).toHaveLength(1);
+      expect(unconfigured[0]?.label).toBe("Agent");
+      expect(unconfigured[0]?.items.map((item) => item.itemId)).toEqual([
+        "agent:github",
+      ]);
+
+      // Configure (as `bb plugin config omnibox-agent set ...` would) + reload:
+      // the omnibox gains a row with no browser-core change.
+      await server.pluginService.updateSettings("omnibox-agent", {
+        project: project.id,
+      });
+      await server.pluginService.reload("omnibox-agent");
+      expect(
+        server.pluginService.list().find((p) => p.id === "omnibox-agent")
+          ?.status,
+      ).toBe("running");
+
+      const configured = await suggest("flaky tests");
+      expect(configured[0]?.items.map((item) => item.itemId)).toEqual([
+        "agent:ask",
+        "agent:github",
+      ]);
+      expect(configured[0]?.items[0]?.action).toEqual({ type: "run" });
+      // Below 1: the browser's own default action keeps the top row.
+      expect(configured[0]?.items[0]?.score).toBeLessThan(1);
+
+      // Picking the ask row runs the plugin, which spawns a BB thread through
+      // its loopback SDK and hands the browser the thread's URL to open.
+      const run = await fetch(`${server.baseUrl}/api/v1/plugins/omnibox/run`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          itemId: "agent:ask",
+          pluginId: "omnibox-agent",
+          query: "flaky tests",
+        }),
+      });
+      expect(run.status).toBe(200);
+      const runBody = (await run.json()) as { navigate: string; ok: boolean };
+      expect(runBody.ok).toBe(true);
+      expect(runBody.navigate.startsWith(`${server.baseUrl}/threads/`)).toBe(
+        true,
+      );
+
+      const threadId = runBody.navigate.split("/threads/")[1] ?? "";
+      const threadRow = getThread(server.db, threadId);
+      expect(threadRow?.originPluginId).toBe("omnibox-agent");
+      expect(threadRow?.title).toBe("Omnibox: flaky tests");
+
+      const listed = server.pluginService
+        .list()
+        .find((p) => p.id === "omnibox-agent");
+      expect(listed?.handlerStats.errorCount).toBe(0);
+    } finally {
+      await server.pluginService.stop();
+      await server.close();
+    }
+  });
+});

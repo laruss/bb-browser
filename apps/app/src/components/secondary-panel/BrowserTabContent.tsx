@@ -65,8 +65,37 @@ export interface BrowserTabContentProps {
    */
   visibilityCoordinator: BrowserViewVisibilityCoordinator | null;
   environmentId: string | null;
+  /**
+   * Whether this component renders its own navigation bar. The browser surface
+   * turns it off because it renders the omnibox chrome itself, above the deck;
+   * the thread panel, where the tab content *is* the browser, leaves it on.
+   */
+  showChrome?: boolean;
   threadId: string;
   onUpdate: (args: UpdateBrowserTabArgs) => void;
+  /**
+   * The tab's page icon, or null when a navigation left the previous one stale.
+   * Optional: only surfaces that show icons subscribe, and an older desktop
+   * shell has no favicon channel to subscribe to at all.
+   */
+  onFavicon?: (args: BrowserTabFaviconArgs) => void;
+  /**
+   * Whether this tab is loading a page. Optional, and reported only while this
+   * component is mounted — the deck mounts one tab at a time, so a surface can
+   * show progress for the tab in view and nothing for the rest.
+   */
+  onLoadingChange?: (args: BrowserTabLoadingArgs) => void;
+}
+
+export interface BrowserTabLoadingArgs {
+  tabId: string;
+  isLoading: boolean;
+}
+
+export interface BrowserTabFaviconArgs {
+  tabId: string;
+  /** A `data:` URI built by the desktop shell — never a page-supplied URL. */
+  dataUrl: string | null;
 }
 
 export interface BrowserAddressFocusRequest {
@@ -442,8 +471,11 @@ export function BrowserTabContent({
   canShowNativeBrowserView,
   visibilityCoordinator,
   environmentId,
+  showChrome = true,
   threadId,
   onUpdate,
+  onFavicon,
+  onLoadingChange,
 }: BrowserTabContentProps) {
   const locationShortcut = useAppCommandShortcut("browser.focusLocation");
   const reloadShortcut = useAppCommandShortcut("browser.reload");
@@ -476,6 +508,16 @@ export function BrowserTabContent({
   const recordVisitRef = useRef(recordVisit);
   onUpdateRef.current = onUpdate;
   recordVisitRef.current = recordVisit;
+  // Same purpose as the two above, updated in a layout effect rather than during
+  // render: writing a ref in render is what `react-hooks` warns about, and these
+  // two are new enough to follow the rule. It runs before the subscribe effect
+  // below (declaration order), so the listeners never see an empty ref.
+  const onFaviconRef = useRef(onFavicon);
+  const onLoadingChangeRef = useRef(onLoadingChange);
+  useLayoutEffect(() => {
+    onFaviconRef.current = onFavicon;
+    onLoadingChangeRef.current = onLoadingChange;
+  }, [onFavicon, onLoadingChange]);
   // The URL to load when the view is first created. Captured once so navigation
   // (which updates the persisted `initialUrl` prop) never re-runs the attach
   // effect — and the live view keeps its page across tab switches.
@@ -586,6 +628,10 @@ export function BrowserTabContent({
       }
       setState(nextState);
       setCurrentUrl(nextState.url);
+      onLoadingChangeRef.current?.({
+        tabId,
+        isLoading: nextState.isLoading,
+      });
       onUpdateRef.current({
         tabId,
         url: nextState.url,
@@ -608,9 +654,23 @@ export function BrowserTabContent({
       setResizeSnapshotUrl(snapshot.dataUrl);
     });
 
+    // Also optional for version skew (an older shell pushes no icons), and this
+    // component keeps none of it: the icon belongs to the tab, which outlives
+    // this mount, so it goes straight to whoever owns the tab list.
+    const unsubscribeFavicon = desktopBrowser.onFavicon?.((favicon) => {
+      if (favicon.tabId !== tabId) {
+        return;
+      }
+      onFaviconRef.current?.({ tabId, dataUrl: favicon.dataUrl });
+    });
+
     return () => {
       unsubscribe();
       unsubscribeSnapshot?.();
+      unsubscribeFavicon?.();
+      // Nothing observes this tab's loading state once its content unmounts, so
+      // leaving it "loading" would spin forever on a tab nobody is watching.
+      onLoadingChangeRef.current?.({ tabId, isLoading: false });
       // The native view survives this unmount. Only explicit tab close/thread
       // deletion owns detach; unmount just disconnects this component's state
       // listener and forgets any stale visibility ownership.
@@ -764,6 +824,9 @@ export function BrowserTabContent({
 
   const handleFocusLocation = useCallback((): boolean => {
     if (!canShowNativeBrowserView || desktopBrowser === null) return false;
+    // With the chrome hidden there is no input to focus, so decline and let
+    // whoever renders the address bar instead handle the command.
+    if (addressInputRef.current === null) return false;
     setAddressDraft(currentUrl);
     setIsEditing(true);
     addressInputRef.current?.focus({ preventScroll: true });
@@ -797,27 +860,29 @@ export function BrowserTabContent({
 
   return (
     <div data-app-browser className="flex h-full min-h-0 flex-col">
-      <BrowserChrome
-        addressDraft={addressDraft}
-        isEditing={isEditing}
-        state={state}
-        currentUrl={currentUrl}
-        addressInputRef={addressInputRef}
-        onAddressChange={setAddressDraft}
-        onAddressFocus={handleAddressFocus}
-        onAddressBlur={() => setIsEditing(false)}
-        onSubmit={handleAddressSubmit}
-        onBack={() => {
-          desktopBrowser.goBack(tabId);
-        }}
-        onForward={() => {
-          desktopBrowser.goForward(tabId);
-        }}
-        onReloadOrStop={handleReloadOrStop}
-        onOpenExternal={handleOpenExternal}
-        locationShortcut={locationShortcut}
-        reloadShortcut={reloadShortcut}
-      />
+      {showChrome ? (
+        <BrowserChrome
+          addressDraft={addressDraft}
+          isEditing={isEditing}
+          state={state}
+          currentUrl={currentUrl}
+          addressInputRef={addressInputRef}
+          onAddressChange={setAddressDraft}
+          onAddressFocus={handleAddressFocus}
+          onAddressBlur={() => setIsEditing(false)}
+          onSubmit={handleAddressSubmit}
+          onBack={() => {
+            desktopBrowser.goBack(tabId);
+          }}
+          onForward={() => {
+            desktopBrowser.goForward(tabId);
+          }}
+          onReloadOrStop={handleReloadOrStop}
+          onOpenExternal={handleOpenExternal}
+          locationShortcut={locationShortcut}
+          reloadShortcut={reloadShortcut}
+        />
+      ) : null}
       <div ref={contentRef} className="relative min-h-0 flex-1">
         {hasPageLoadError ? (
           <BrowserPageLoadError

@@ -32,7 +32,7 @@ function parseArgs() {
       const nextArg = process.argv[index + 1];
       if (nextArg !== "env" && nextArg !== "json") {
         throw new Error(
-          "Usage: pnpm --filter @bb/qa standalone:start --format json|env",
+          "Usage: bun run --filter @bb/qa standalone:start --format json|env",
         );
       }
       format = nextArg;
@@ -41,7 +41,7 @@ function parseArgs() {
     }
 
     throw new Error(
-      "Usage: pnpm --filter @bb/qa standalone:start --format json|env",
+      "Usage: bun run --filter @bb/qa standalone:start --format json|env",
     );
   }
 
@@ -125,10 +125,13 @@ async function main() {
       source: { type: "local_path", hostId: host.id, path: projectRoot },
     });
 
+    // bun run has no --dir/--cwd equivalent of pnpm's, so the copy-pasteable
+    // cleanup command cds into the repo once and chains both scripts from there.
     const cleanupCommand =
-      `pnpm --silent --dir ${shellQuote(repoRoot)} --filter @bb/qa standalone:stop ` +
+      `cd ${shellQuote(repoRoot)} && ` +
+      `bun run --silent --filter @bb/qa --elide-lines=0 standalone:stop ` +
       `--state ${shellQuote(statePath)} && ` +
-      `pnpm --silent --dir ${shellQuote(repoRoot)} --filter @bb/qa standalone:cleanup`;
+      `bun run --silent --filter @bb/qa --elide-lines=0 standalone:cleanup`;
     const restartDaemonCommand = buildDaemonRestartCommand({
       cwd: repoRoot,
       daemonPid: daemonProcess.pid,

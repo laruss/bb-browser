@@ -230,6 +230,7 @@ describe("desktop preload browser API", () => {
       "goBack",
       "goForward",
       "navigate",
+      "onFavicon",
       "onOpenTab",
       "onScopedOpenTab",
       "onSnapshot",

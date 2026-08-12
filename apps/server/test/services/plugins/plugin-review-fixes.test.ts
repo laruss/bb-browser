@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -67,6 +67,18 @@ describe("review fixes: idempotent enable, cli auth, dispose drain", () => {
       }),
     );
     await writeFile(join(rootDir, "server.ts"), FIXTURE_SOURCE);
+    // Fixtures load from source outside the repo, so their bare imports resolve
+    // only through their own directory chain. Linking the server's node_modules
+    // keeps that deterministic instead of relying on the package manager exposing
+    // a tree-wide hoisted directory reachable from a temp dir.
+    await symlink(
+      join(process.cwd(), "node_modules"),
+      join(rootDir, "node_modules"),
+      "dir",
+    ).catch((error: NodeJS.ErrnoException) => {
+      // Fixtures are rewritten in place to simulate a new tip.
+      if (error.code !== "EEXIST") throw error;
+    });
     await harness.pluginService.installPath(rootDir);
   });
 

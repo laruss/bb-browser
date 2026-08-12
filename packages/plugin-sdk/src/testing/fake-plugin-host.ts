@@ -34,6 +34,11 @@ import type {
   PluginMentionItem,
   PluginMentionSearchContext,
   PluginMentionTrigger,
+  PluginBrowser,
+  PluginOmniboxRunContext,
+  PluginOmniboxRunResult,
+  PluginOmniboxSuggestContext,
+  PluginOmniboxSuggestion,
   PluginRealtime,
   PluginRpc,
   PluginServerApi,
@@ -154,6 +159,7 @@ function enforcePluginCliOutputLimit(
     : { exitCode: 1, stdout: "", stderr: error.message, error };
 }
 const MENTION_PROVIDER_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
+const OMNIBOX_PROVIDER_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
 const PLUGIN_MENTION_TRIGGER_VALUES = [
   "@",
   "#",
@@ -283,7 +289,6 @@ export interface FakeAgentToolRecord {
   ): PluginAgentToolResult | Promise<PluginAgentToolResult>;
 }
 
-
 export interface FakeMentionProviderRecord {
   id: string;
   label: string;
@@ -294,6 +299,23 @@ export interface FakeMentionProviderRecord {
   resolve: (
     itemId: string,
   ) => { context: string } | Promise<{ context: string }>;
+}
+
+export interface FakeOmniboxProviderRecord {
+  id: string;
+  label: string;
+  suggest: (
+    ctx: PluginOmniboxSuggestContext,
+  ) => PluginOmniboxSuggestion[] | Promise<PluginOmniboxSuggestion[]>;
+  run:
+    | ((
+        itemId: string,
+        ctx: PluginOmniboxRunContext,
+      ) =>
+        | PluginOmniboxRunResult
+        | void
+        | Promise<PluginOmniboxRunResult | void>)
+    | null;
 }
 
 export interface FakeRealtimeSignal {
@@ -321,6 +343,7 @@ export interface FakePluginRegistrations {
     | null;
   threadEventHandlers: Record<PluginThreadEventName, number>;
   mentionProviders: FakeMentionProviderRecord[];
+  omniboxProviders: FakeOmniboxProviderRecord[];
 }
 
 /** Read-only state for assertions after a plugin registers or handles work. */
@@ -1641,6 +1664,45 @@ function createFakePluginHostInternal(
     },
   };
 
+  // --- browser ---
+  const omniboxProviders: FakeOmniboxProviderRecord[] = [];
+  const browser: PluginBrowser = {
+    registerOmniboxProvider(provider) {
+      assertLive();
+      const id = provider?.id;
+      if (typeof id !== "string" || !OMNIBOX_PROVIDER_ID_PATTERN.test(id)) {
+        throw new Error(
+          `invalid omnibox provider id ${JSON.stringify(id)} — use letters, digits, "-" and "_"`,
+        );
+      }
+      if (omniboxProviders.some((record) => record.id === id)) {
+        throw new Error(`omnibox provider "${id}" is already registered`);
+      }
+      if (
+        typeof provider.label !== "string" ||
+        provider.label.trim().length === 0
+      ) {
+        throw new Error(`omnibox provider "${id}" must provide a label`);
+      }
+      if (typeof provider.suggest !== "function") {
+        throw new Error(
+          `omnibox provider "${id}" must provide a suggest({ query }) function`,
+        );
+      }
+      if (provider.run !== undefined && typeof provider.run !== "function") {
+        throw new Error(
+          `omnibox provider "${id}" run must be a function when provided`,
+        );
+      }
+      omniboxProviders.push({
+        id,
+        label: provider.label.trim(),
+        suggest: provider.suggest.bind(provider),
+        run: provider.run === undefined ? null : provider.run.bind(provider),
+      });
+    },
+  };
+
   // --- status ---
   const needsConfigurationMessages: string[] = [];
   const status: PluginStatusApi = {
@@ -1845,6 +1907,7 @@ function createFakePluginHostInternal(
     cli,
     agents,
     ui,
+    browser,
     events,
     status,
     server,
@@ -1935,6 +1998,7 @@ function createFakePluginHostInternal(
         };
       },
       mentionProviders,
+      omniboxProviders,
     },
     get pendingInteractions() {
       return [...pendingInteractions].map(([id, pending]) => ({

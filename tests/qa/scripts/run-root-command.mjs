@@ -59,9 +59,8 @@ function run(commandName, commandArgs, stdio, env = process.env) {
 
 function runTurboCheck(checkArgs) {
   return run(
-    "pnpm",
+    "bunx",
     [
-      "exec",
       "turbo",
       "run",
       ...checkArgs,
@@ -98,8 +97,16 @@ function main() {
       : process.env;
 
   return run(
-    "pnpm",
-    ["--silent", "--filter", "@bb/qa", config.packageScript, ...args],
+    "bun",
+    [
+      "run",
+      "--silent",
+      "--filter",
+      "@bb/qa",
+      "--elide-lines=0",
+      config.packageScript,
+      ...args,
+    ],
     "inherit",
     packageEnv,
   );

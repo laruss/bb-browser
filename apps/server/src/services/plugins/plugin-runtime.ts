@@ -1,4 +1,4 @@
-import { existsSync, realpathSync, type FSWatcher } from "node:fs";
+import { existsSync, readFileSync, realpathSync, type FSWatcher } from "node:fs";
 import { readFile, stat } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -7,7 +7,7 @@ import { performance } from "node:perf_hooks";
 import { createJiti } from "jiti";
 import semver from "semver";
 import { PLUGIN_SDK_MAJOR, PLUGIN_SDK_VERSION, type Thread } from "@bb/domain";
-import { buildPluginApp } from "@bb/plugin-build";
+import { buildPluginApp, PLUGIN_SERVER_EXTERNALS } from "@bb/plugin-build";
 import { getPluginBuildToolchain } from "./build-toolchain.js";
 import { createNodeBbSdk, type BbSdk } from "@bb/sdk";
 import {
@@ -46,22 +46,79 @@ import type {
 } from "./plugin-service-internal.js";
 
 /**
- * Plugin server bundles keep `@bb/plugin-sdk` external (see @bb/plugin-build),
- * and plugin authors never have it installed — the scaffold maps the specifier
- * to bundled `.d.ts` files only. Source-checkout servers resolve the workspace
- * package naturally, but built and packaged servers have no node_modules copy,
- * so the server build ships a self-contained SDK runtime bundle next to the
- * server bundle and the loader aliases the specifier to it.
+ * Plugin server bundles leave `PLUGIN_SERVER_EXTERNALS` unresolved (see
+ * @bb/plugin-build), and plugin authors never have `@bb/plugin-sdk` installed —
+ * the scaffold maps that specifier to bundled `.d.ts` files only. Built and
+ * packaged servers have no node_modules copy, so the server build ships a
+ * self-contained SDK runtime bundle next to the server bundle and the loader
+ * aliases the specifier to it.
+ *
+ * A source checkout has no such bundle, and a plugin root can sit anywhere on
+ * disk (a `path:` install, or the data dir), so nothing along the plugin's own
+ * directory chain resolves the specifier. This used to work by accident: pnpm's
+ * hidden hoisted `node_modules/.pnpm/node_modules` is reachable from any
+ * directory that Node's resolver happens to probe, and it holds every installed
+ * package whether or not the importer declared it. Package managers with strict
+ * per-package linking (bun's isolated linker) have no such directory, so the
+ * checkout case is aliased explicitly to the workspace copy the server itself
+ * resolves rather than left to the resolver's layout.
  */
 const pluginSdkRuntimePath = join(
   dirname(fileURLToPath(import.meta.url)),
   "plugin-sdk-runtime.js",
 );
-const pluginSdkAlias: Record<string, string> | undefined = existsSync(
+
+/**
+ * The entry a plain Node consumer would load, deliberately ignoring the
+ * workspace `source` export condition. A plugin tree sits anywhere on disk, and
+ * an aliased TypeScript source entry would still have to resolve *its own*
+ * imports from the plugin's directory chain — which fails. Published runtime
+ * entries carry their dependencies or have none.
+ */
+function resolveRuntimeEntry(require_: NodeRequire, specifier: string): string {
+  const resolved = require_.resolve(specifier);
+  if (!/\.tsx?$/u.test(resolved)) return resolved;
+  // Walk up for the manifest rather than resolving `<specifier>/package.json`:
+  // an `exports` map that omits that subpath makes the direct resolve throw.
+  let dir = dirname(resolved);
+  for (;;) {
+    const manifestPath = join(dir, "package.json");
+    if (existsSync(manifestPath)) {
+      const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as {
+        exports?: { "."?: Record<string, string> };
+        main?: string;
+      };
+      const entry =
+        manifest.exports?.["."]?.import ??
+        manifest.exports?.["."]?.default ??
+        manifest.main;
+      return entry === undefined ? resolved : join(dir, entry);
+    }
+    const parent = dirname(dir);
+    if (parent === dir) return resolved;
+    dir = parent;
+  }
+}
+
+function resolveWorkspaceExternalsAlias(): Record<string, string> | undefined {
+  const require_ = createRequire(import.meta.url);
+  const alias: Record<string, string> = {};
+  for (const specifier of PLUGIN_SERVER_EXTERNALS) {
+    try {
+      alias[specifier] = resolveRuntimeEntry(require_, specifier);
+    } catch {
+      // Nothing to alias for this one; a load that needs it fails with its own
+      // "Cannot find module" naming the real problem.
+    }
+  }
+  return Object.keys(alias).length === 0 ? undefined : alias;
+}
+
+const pluginExternalsAlias: Record<string, string> | undefined = existsSync(
   pluginSdkRuntimePath,
 )
   ? { "@bb/plugin-sdk": pluginSdkRuntimePath }
-  : undefined;
+  : resolveWorkspaceExternalsAlias();
 
 /**
  * Per-root reload generation for mutable (path:/source-builtin) plugin trees.
@@ -1078,7 +1135,7 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
       // Fresh instance per load: guarantees re-imports see current sources.
       const jiti = createJiti(import.meta.url, {
         moduleCache: false,
-        ...(pluginSdkAlias === undefined ? {} : { alias: pluginSdkAlias }),
+        ...(pluginExternalsAlias === undefined ? {} : { alias: pluginExternalsAlias }),
       });
       // Same jiti instance for source and prebuilt dist/server.js, so the
       // @bb/plugin-sdk resolution applies identically to both.

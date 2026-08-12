@@ -206,10 +206,9 @@ describe("run-dev", () => {
     expect(env.BB_PROJECT_ID).toBe("proj_parent");
   });
 
-  it("runs the same persistent dev tasks as pnpm dev", () => {
+  it("runs the same persistent dev tasks as bun run dev", () => {
     expect(createDevTurboCommand()).toEqual({
       args: [
-        "exec",
         "turbo",
         "run",
         "dev",
@@ -222,7 +221,7 @@ describe("run-dev", () => {
         "20",
         "--no-update-notifier",
       ],
-      command: "pnpm",
+      command: "bunx",
     });
   });
 

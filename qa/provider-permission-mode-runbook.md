@@ -42,7 +42,7 @@ Core behaviors under test:
 Build the runtime artifacts:
 
 ```bash
-pnpm build
+bun run build
 ```
 
 Verify provider CLIs and support tools:
@@ -57,8 +57,8 @@ git --version
 Start an isolated standalone server and daemon:
 
 ```bash
-pnpm qa:standalone:cleanup
-eval "$(pnpm --silent qa:standalone:start --format env)"
+bun run qa:standalone:cleanup
+eval "$(bun run --silent qa:standalone:start --format env)"
 alias bb="node apps/cli/dist/index.js"
 
 bb status

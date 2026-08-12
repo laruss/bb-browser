@@ -80,7 +80,7 @@ attached. Development/source runs never send. Opt out any run with
 Use the development loop when working on bb itself:
 
 ```bash
-pnpm dev
+bun run dev
 ```
 
 That starts the Vite app and proxies API and WebSocket traffic to a separate
@@ -94,7 +94,7 @@ can run alongside each other and the packaged `npx bb-app@latest` instance.
 To run that same source dev server with the Electron desktop shell:
 
 ```bash
-pnpm dev:desktop
+bun run dev:desktop
 ```
 
 This uses `scripts/bb-dev-app current --desktop`, which stops stale launcher
@@ -102,7 +102,7 @@ sessions, checks dependencies and native modules, starts the source dev server,
 then opens the desktop shell against that dev app. The launcher prints the web
 URL but does not open a browser unless you pass `--open`.
 
-To use the dev app from another machine over Tailscale, run `pnpm dev`, note the
+To use the dev app from another machine over Tailscale, run `bun run dev`, note the
 printed app port, and publish the loopback Vite listener:
 
 ```bash
@@ -116,11 +116,11 @@ WebSocket traffic.
 To use the component storybook from another machine, run:
 
 ```bash
-pnpm storybook
+bun run storybook
 ```
 
 Ladle binds to all interfaces and configures its HMR WebSocket to use the
-browser's current host instead of `localhost`. Do not run `pnpm storybook` on an
+browser's current host instead of `localhost`. Do not run `bun run storybook` on an
 untrusted network.
 
 Development behavior is intentionally split:
@@ -132,9 +132,9 @@ Development behavior is intentionally split:
 When you want the server and host daemon to pick up the latest build output, use:
 
 ```bash
-pnpm dev:restart
-pnpm dev:restart-server
-pnpm dev:restart-host-daemon
+bun run dev:restart
+bun run dev:restart-server
+bun run dev:restart-host-daemon
 ```
 
 These rebuild first, then restart only the targeted stateful services.
@@ -142,7 +142,7 @@ These rebuild first, then restart only the targeted stateful services.
 To run a production-mode build from a source checkout:
 
 ```bash
-pnpm start
+bun run start
 ```
 
 That builds only the app, server, and host-daemon runtime artifacts, then runs
@@ -151,13 +151,13 @@ tarball smoke task when validating the published `npx bb-app@latest` package
 layout.
 
 ```bash
-pnpm bb --help            # built CLI, targets the default/prod instance
-pnpm reset                # clear production state
+bun run bb --help            # built CLI, targets the default/prod instance
+bun run reset                # clear production state
 
-pnpm bb:dev --help        # source CLI, targets this checkout's dev instance
-pnpm reset:dev            # clear this checkout's dev state
+bun run bb:dev --help        # source CLI, targets this checkout's dev instance
+bun run reset:dev            # clear this checkout's dev state
 
-pnpm reset:all            # clear both production and dev states
+bun run reset:all            # clear both production and dev states
 ```
 
 These reset commands prompt for confirmation before deleting anything.

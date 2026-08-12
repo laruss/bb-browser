@@ -13,7 +13,6 @@ const repoRoot = resolve(packageRoot, "..", "..");
 
 export function createTurboBuildCommand(filters: string[]): TurboBuildCommand {
   const args = [
-    "exec",
     "turbo",
     "run",
     "build",
@@ -31,7 +30,7 @@ export function createTurboBuildCommand(filters: string[]): TurboBuildCommand {
 
   return {
     args,
-    command: "pnpm",
+    command: "bunx",
   };
 }
 

@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer, webFrame } from "electron";
 import { appCommandIdSchema } from "@bb/domain";
 import {
+  bbDesktopBrowserFaviconSchema,
   bbDesktopBrowserOpenTabRequestSchema,
   bbDesktopBrowserScopedOpenTabRequestSchema,
   bbDesktopBrowserSnapshotSchema,
@@ -10,6 +11,7 @@ import {
   type BbDesktopApi,
   type BbDesktopAppCommandHandler,
   type BbDesktopBrowserApi,
+  type BbDesktopBrowserFaviconHandler,
   type BbDesktopBrowserOpenTabHandler,
   type BbDesktopBrowserScopedOpenTabHandler,
   type BbDesktopBrowserSnapshotHandler,
@@ -36,6 +38,7 @@ import {
 import {
   BB_DESKTOP_BROWSER_ATTACH_CHANNEL,
   BB_DESKTOP_BROWSER_DETACH_CHANNEL,
+  BB_DESKTOP_BROWSER_FAVICON_CHANNEL,
   BB_DESKTOP_BROWSER_GO_BACK_CHANNEL,
   BB_DESKTOP_BROWSER_GO_FORWARD_CHANNEL,
   BB_DESKTOP_BROWSER_NAVIGATE_CHANNEL,
@@ -160,6 +163,7 @@ const browserOpenTabListeners = new Set<BbDesktopBrowserOpenTabHandler>();
 const browserScopedOpenTabListeners =
   new Set<BbDesktopBrowserScopedOpenTabHandler>();
 const browserSnapshotListeners = new Set<BbDesktopBrowserSnapshotHandler>();
+const browserFaviconListeners = new Set<BbDesktopBrowserFaviconHandler>();
 const closeWindowRequestListeners =
   new Set<BbDesktopCloseWindowRequestHandler>();
 const openNewTabListeners = new Set<BbDesktopOpenNewTabHandler>();
@@ -265,6 +269,12 @@ const bbBrowserApi: BbDesktopBrowserApi = {
     browserSnapshotListeners.add(listener);
     return () => {
       browserSnapshotListeners.delete(listener);
+    };
+  },
+  onFavicon(listener): BbDesktopBrowserUnsubscribe {
+    browserFaviconListeners.add(listener);
+    return () => {
+      browserFaviconListeners.delete(listener);
     };
   },
 };
@@ -420,6 +430,19 @@ ipcRenderer.on(
       return;
     }
     for (const listener of browserSnapshotListeners) {
+      listener(parsed.data);
+    }
+  },
+);
+
+ipcRenderer.on(
+  BB_DESKTOP_BROWSER_FAVICON_CHANNEL,
+  (_event, payload: unknown) => {
+    const parsed = bbDesktopBrowserFaviconSchema.safeParse(payload);
+    if (!parsed.success) {
+      return;
+    }
+    for (const listener of browserFaviconListeners) {
       listener(parsed.data);
     }
   },

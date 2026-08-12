@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -93,6 +93,19 @@ async function writePlugin(
     }),
   );
   await writeFile(join(rootDir, "server.ts"), options.serverSource);
+  // The fixture is loaded from source outside the repo, so its bare imports
+  // (zod here) resolve through its own directory chain — nothing else. Linking
+  // the server's node_modules keeps that deterministic instead of depending on
+  // whether the package manager happens to expose a tree-wide hoisted
+  // directory the resolver can reach from a temp dir.
+  await symlink(
+    join(process.cwd(), "node_modules"),
+    join(rootDir, "node_modules"),
+    "dir",
+  ).catch((error: NodeJS.ErrnoException) => {
+    // Fixtures are rewritten in place to simulate a new tip.
+    if (error.code !== "EEXIST") throw error;
+  });
   return rootDir;
 }
 

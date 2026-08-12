@@ -2,7 +2,7 @@
 // Fails when the boot payload grows past bundle-budget.json, or when a heavy
 // package that should load on demand reaches the boot path again.
 //
-// Run after `pnpm build` in apps/app. Reads bundle-stats.json (written by the
+// Run after `bun run build` in apps/app. Reads bundle-stats.json (written by the
 // bb:bundle-stats Vite plugin) and the brotli files written by
 // scripts/precompress-app-dist.mjs.
 import fs from "node:fs";
@@ -59,8 +59,12 @@ for (const chunk of stats.bootChunks) {
   }
 }
 
-console.log(`boot payload: ${kb(bootBytes)} raw / ${kb(bootBrotliBytes)} brotli`);
-console.log(`  budget:     ${kb(budget.maxBootBytes)} raw / ${kb(budget.maxBootBrotliBytes)} brotli`);
+console.log(
+  `boot payload: ${kb(bootBytes)} raw / ${kb(bootBrotliBytes)} brotli`,
+);
+console.log(
+  `  budget:     ${kb(budget.maxBootBytes)} raw / ${kb(budget.maxBootBrotliBytes)} brotli`,
+);
 console.log(`  chunks:     ${stats.bootChunks.length}`);
 
 if (missingBrotli.length > 0) {
@@ -79,7 +83,9 @@ if (bootBrotliBytes > budget.maxBootBrotliBytes) {
   );
 }
 for (const [pkg, chunks] of offenders) {
-  failures.push(`${pkg} is in the boot payload (${chunks.join(", ")}). It must load on demand.`);
+  failures.push(
+    `${pkg} is in the boot payload (${chunks.join(", ")}). It must load on demand.`,
+  );
 }
 
 if (failures.length > 0) {

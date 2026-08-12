@@ -135,7 +135,7 @@ Remote access (bb connect):
   Without an installed bb, pair via npm:
   `npx -p bb-app@latest bb connect --code <code> --server <url>`.
 
-  In a source checkout, `pnpm dev` automatically points the unpaired Connect
+  In a source checkout, `bun run dev` automatically points the unpaired Connect
   settings and code-only pairing at that worktree's local Cloud origin through
   `BB_DEV_CONNECT_BASE_URL`. Explicit `--server` and `--base-url` targets still
   win, so the dev bb can also pair with getbb.app.

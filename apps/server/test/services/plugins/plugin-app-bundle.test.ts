@@ -1,7 +1,7 @@
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
 import { createServer, type Server } from "node:http";
-import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
+import { mkdir, readFile, stat, symlink, writeFile } from "node:fs/promises";
 import type { AddressInfo } from "node:net";
 import { join } from "node:path";
 import { promisify } from "node:util";
@@ -95,6 +95,18 @@ async function writeAppPluginFixture(
   if (options.app !== false) {
     await writeFile(join(rootDir, "app.tsx"), options.appSource ?? APP_SOURCE);
   }
+  // Fixtures load from source outside the repo, so their bare imports resolve
+  // only through their own directory chain. Linking the server's node_modules
+  // keeps that deterministic instead of relying on the package manager exposing
+  // a tree-wide hoisted directory reachable from a temp dir.
+  await symlink(
+    join(process.cwd(), "node_modules"),
+    join(rootDir, "node_modules"),
+    "dir",
+  ).catch((error: NodeJS.ErrnoException) => {
+    // Fixtures are rewritten in place to simulate a new tip.
+    if (error.code !== "EEXIST") throw error;
+  });
 }
 
 describe("plugin app bundles (build policy, inventory, asset routes)", () => {

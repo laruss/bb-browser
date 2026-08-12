@@ -33,7 +33,7 @@ function renderHelpText(): string {
   Seed a large, realistic BB database for performance testing.
 
   ${dim("Usage")}
-    pnpm seed:perf [-- options]
+    bun run seed:perf [options]
 
   ${dim("Options")}
     --data-dir <path>  Target data dir (default: this checkout's dev data dir)

@@ -776,6 +776,42 @@ There is deliberately no plugin slash-command surface: the composer's `/`
 menu lists skills, so a plugin capability that crafts a prompt for the agent
 ships as a `skills/` entry instead.
 
+### bb.browser — omnibox suggestions in the browser surface
+
+```ts
+bb.browser.registerOmniboxProvider({
+  id: "agent",
+  label: "Agent", // shown as the row's source, next to the browser's own rows
+  suggest({ query }) {
+    // 2s time box, failure = no rows; the browser's own rows are unaffected
+    return [
+      {
+        id: "ask",
+        title: `Ask an agent: ${query}`,
+        score: 0.8, // optional, [0, 1], defaults to 0.5
+        action: { type: "run" }, // calls run(itemId) below when picked
+      },
+      {
+        id: "docs",
+        title: `Search the docs for ${query}`,
+        action: { type: "navigate", url: `https://example.test/?q=${query}` },
+      },
+    ];
+  },
+  run(itemId) {
+    // only for { type: "run" } rows; return a url to open it afterwards
+    return { navigate: "https://example.test/done" };
+  },
+});
+```
+
+Rows land in the same ranked list as the browser's address, search, open-tab
+and history rows. Score 1 belongs to the browser's default action — what Enter
+does with nothing selected — and plugin rows lose score ties to the built-in
+providers, so a plugin can never take the top row away from what the user
+typed. Handlers run server-side; changing them and running `bb plugin reload`
+updates the omnibox with no browser-core change.
+
 ### bb.status
 
 `bb.status.needsConfiguration(message)` — mark the plugin

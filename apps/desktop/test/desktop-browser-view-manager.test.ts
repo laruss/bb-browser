@@ -1,6 +1,7 @@
 import type { WebContentsView } from "electron";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { BbDesktopBrowserViewBounds } from "@bb/desktop-contract";
+import { BB_DESKTOP_BROWSER_FAVICON_CHANNEL } from "../src/desktop-browser-ipc.js";
 import {
   createDesktopBrowserViewManager as createProductionDesktopBrowserViewManager,
   isAllowedBrowserPermission,
@@ -64,6 +65,11 @@ type FakeDidNavigateInPageListener = (
   isMainFrame: boolean,
 ) => void;
 
+type FakePageFaviconUpdatedListener = (
+  event: FakeWebContentsEvent,
+  urls: string[],
+) => void;
+
 type FakeDidFailLoadListener = (
   event: FakeWebContentsEvent,
   errorCode: number,
@@ -115,6 +121,7 @@ interface FakeWebContentsEventMap {
   "did-navigate-in-page": FakeDidNavigateInPageListener;
   "did-start-navigation": FakeVoidWebContentsListener;
   "page-title-updated": FakeVoidWebContentsListener;
+  "page-favicon-updated": FakePageFaviconUpdatedListener;
   "did-fail-load": FakeDidFailLoadListener;
   "context-menu": FakeContextMenuListener;
 }
@@ -272,6 +279,7 @@ const electronMock = vi.hoisted(() => {
       "did-navigate-in-page": [],
       "did-start-navigation": [],
       "page-title-updated": [],
+      "page-favicon-updated": [],
       "did-fail-load": [],
       "context-menu": [],
     };
@@ -380,6 +388,18 @@ const electronMock = vi.hoisted(() => {
       return event.defaultPrevented;
     }
 
+    emitDidStopLoading(): void {
+      for (const listener of this.listeners["did-stop-loading"]) {
+        listener();
+      }
+    }
+
+    emitPageFaviconUpdated(urls: string[]): void {
+      for (const listener of this.listeners["page-favicon-updated"]) {
+        listener(fakeWebContentsEvent, urls);
+      }
+    }
+
     emitDidNavigate(url: string): void {
       this.url = url;
       for (const listener of this.listeners["did-navigate"]) {
@@ -460,6 +480,12 @@ const electronMock = vi.hoisted(() => {
     }
   }
 
+  interface FakeFaviconFetchResponse {
+    ok: boolean;
+    headers: { get(name: string): string | null };
+    arrayBuffer(): Promise<Buffer>;
+  }
+
   class FakeSession {
     public readonly willDownloadListeners: FakeSessionListener[] = [];
     public beforeRequestListener: FakeOnBeforeRequestListener | null = null;
@@ -470,6 +496,18 @@ const electronMock = vi.hoisted(() => {
         this.beforeRequestListener = listener;
       },
     };
+
+    public readonly fetchedUrls: string[] = [];
+    public fetchResponse: FakeFaviconFetchResponse = {
+      ok: true,
+      headers: { get: () => "image/png" },
+      arrayBuffer: async () => Buffer.from("icon-bytes"),
+    };
+
+    fetch(url: string): Promise<FakeFaviconFetchResponse> {
+      this.fetchedUrls.push(url);
+      return Promise.resolve(this.fetchResponse);
+    }
 
     on(eventName: "will-download", listener: FakeSessionListener): void {
       this.willDownloadListeners.push(listener);
@@ -520,6 +558,10 @@ interface FakeHostWindowArgs {
 class FakeHostWebContents implements DesktopBrowserHostWebContents {
   public destroyed = false;
   public readonly sentPayloads: DesktopBrowserHostWebContentsPayload[] = [];
+  public readonly sentMessages: Array<{
+    channel: string;
+    payload: DesktopBrowserHostWebContentsPayload;
+  }> = [];
   public readonly id: number;
 
   constructor(id: number) {
@@ -530,8 +572,9 @@ class FakeHostWebContents implements DesktopBrowserHostWebContents {
     return this.destroyed;
   }
 
-  send(_channel: string, payload: DesktopBrowserHostWebContentsPayload): void {
+  send(channel: string, payload: DesktopBrowserHostWebContentsPayload): void {
     this.sentPayloads.push(payload);
+    this.sentMessages.push({ channel, payload });
   }
 }
 
@@ -696,6 +739,160 @@ function scopedOpenTabPushesOf(
   }
   return pushes;
 }
+
+function faviconPushesOf(
+  hostWindow: FakeHostWindow,
+): Array<{ tabId: string; dataUrl: string | null }> {
+  const pushes: Array<{ tabId: string; dataUrl: string | null }> = [];
+  for (const message of hostWindow.webContents.sentMessages) {
+    if (
+      message.channel === BB_DESKTOP_BROWSER_FAVICON_CHANNEL &&
+      "dataUrl" in message.payload
+    ) {
+      pushes.push(message.payload);
+    }
+  }
+  return pushes;
+}
+
+function requireFakeSession(): (typeof electronMock.fakeSessions)[number] {
+  const fakeSession = electronMock.fakeSessions.at(-1);
+  expect(fakeSession).toBeDefined();
+  if (fakeSession === undefined) {
+    throw new Error("Expected a browser session to be created.");
+  }
+  return fakeSession;
+}
+
+/** Let a favicon fetch and its push drain. */
+async function settleFavicons(): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+// Tab icons are the one page-supplied resource the trusted app renders, so the
+// shell fetches them itself, in the browsing session, and hands over a data URI.
+describe("DesktopBrowserViewManager favicons", () => {
+  function attachTabForFavicons(): {
+    hostWindow: FakeHostWindow;
+    webContents: ReturnType<typeof requireFakeView>["webContents"];
+  } {
+    const manager = createDesktopBrowserViewManager({
+      partition: "persist:test",
+    });
+    const hostWindow = new FakeHostWindow({
+      contentBounds: { width: 700, height: 450 },
+      webContentsId: 70,
+    });
+    attachBrowserTab({
+      manager,
+      hostWindow,
+      tabId: "browser:a",
+      url: "https://example.com",
+    });
+    return { hostWindow, webContents: requireFakeView(0).webContents };
+  }
+
+  it("fetches a declared icon in the browsing session and pushes it as a data URI", async () => {
+    const { hostWindow, webContents } = attachTabForFavicons();
+
+    webContents.emitPageFaviconUpdated(["https://example.com/icon.png"]);
+    await settleFavicons();
+
+    // Fetched by the shell, through the session that owns the page's cookies and
+    // the network firewall — never by the bb app origin.
+    expect(requireFakeSession().fetchedUrls).toEqual([
+      "https://example.com/icon.png",
+    ]);
+    expect(faviconPushesOf(hostWindow)).toEqual([
+      {
+        tabId: "browser:a",
+        dataUrl: `data:image/png;base64,${Buffer.from("icon-bytes").toString("base64")}`,
+      },
+    ]);
+  });
+
+  it("never fetches a candidate the page did not declare over http(s)", async () => {
+    const { hostWindow, webContents } = attachTabForFavicons();
+
+    webContents.emitPageFaviconUpdated(["data:image/png;base64,AAAA"]);
+    await settleFavicons();
+
+    expect(requireFakeSession().fetchedUrls).toEqual([]);
+    expect(faviconPushesOf(hostWindow)).toEqual([]);
+  });
+
+  it("does not refetch an icon it already pushed", async () => {
+    const { webContents } = attachTabForFavicons();
+
+    webContents.emitPageFaviconUpdated(["https://example.com/icon.png"]);
+    await settleFavicons();
+    webContents.emitPageFaviconUpdated(["https://example.com/icon.png"]);
+    await settleFavicons();
+
+    expect(requireFakeSession().fetchedUrls).toHaveLength(1);
+  });
+
+  // The bug this replaces: the icon was dropped at commit, so a reload — which
+  // does not always re-announce an icon — left the tab bare.
+  it("keeps the icon when the same page is reloaded", async () => {
+    const { hostWindow, webContents } = attachTabForFavicons();
+
+    webContents.emitPageFaviconUpdated(["https://example.com/icon.png"]);
+    await settleFavicons();
+    const pushedIcon = faviconPushesOf(hostWindow);
+
+    // A reload commits the same URL and settles without announcing anything.
+    webContents.emitDidNavigate("https://example.com/");
+    webContents.emitDidStopLoading();
+
+    expect(faviconPushesOf(hostWindow)).toEqual(pushedIcon);
+  });
+
+  it("re-keys a re-announced icon to the reloaded page without refetching", async () => {
+    const { hostWindow, webContents } = attachTabForFavicons();
+
+    webContents.emitPageFaviconUpdated(["https://example.com/icon.png"]);
+    await settleFavicons();
+    webContents.emitDidNavigate("https://example.com/");
+    webContents.emitPageFaviconUpdated(["https://example.com/icon.png"]);
+    await settleFavicons();
+    webContents.emitDidStopLoading();
+
+    expect(requireFakeSession().fetchedUrls).toHaveLength(1);
+    expect(faviconPushesOf(hostWindow)).toHaveLength(1);
+  });
+
+  // The other half of the rule: an icon must not follow the tab to a page that
+  // never claimed it.
+  it("drops the icon once the tab settles on a different page", async () => {
+    const { hostWindow, webContents } = attachTabForFavicons();
+
+    webContents.emitPageFaviconUpdated(["https://example.com/icon.png"]);
+    await settleFavicons();
+    webContents.emitDidNavigate("https://other.test/");
+    webContents.emitDidStopLoading();
+
+    expect(faviconPushesOf(hostWindow).at(-1)).toEqual({
+      tabId: "browser:a",
+      dataUrl: null,
+    });
+  });
+
+  // A page can rewrite its icon from script in a loop; the limiter is what stops
+  // that from becoming an unbounded fetch loop in the shell.
+  it("stops fetching a page that churns its icon", async () => {
+    const { webContents } = attachTabForFavicons();
+
+    for (let index = 0; index < 8; index += 1) {
+      webContents.emitPageFaviconUpdated([
+        `https://example.com/icon-${index}.png`,
+      ]);
+    }
+    await settleFavicons();
+
+    expect(requireFakeSession().fetchedUrls).toHaveLength(5);
+  });
+});
 
 describe("DesktopBrowserViewManager", () => {
   it("forwards resolved browser shortcuts and suppresses the untrusted page", () => {

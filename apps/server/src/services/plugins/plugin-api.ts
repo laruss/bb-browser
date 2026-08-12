@@ -34,9 +34,14 @@ import type {
   PluginHosts,
   PluginKvStorage,
   PluginLogger,
+  PluginBrowser,
   PluginMentionItem,
   PluginMentionSearchContext,
   PluginMentionTrigger,
+  PluginOmniboxRunContext,
+  PluginOmniboxRunResult,
+  PluginOmniboxSuggestContext,
+  PluginOmniboxSuggestion,
   PluginRealtime,
   PluginRpc,
   PluginRpcMethodContract,
@@ -91,6 +96,11 @@ export type {
   PluginMentionProviderRegistration,
   PluginMentionSearchContext,
   PluginMentionTrigger,
+  PluginOmniboxProviderRegistration,
+  PluginOmniboxRunContext,
+  PluginOmniboxRunResult,
+  PluginOmniboxSuggestContext,
+  PluginOmniboxSuggestion,
   PluginRealtime,
   PluginRpc,
   PluginRpcContract,
@@ -278,6 +288,24 @@ export interface PluginMentionProviderRecord {
   ) => { context: string } | Promise<{ context: string }>;
 }
 
+/** Runtime record of a registered omnibox provider. */
+export interface PluginOmniboxProviderRecord {
+  id: string;
+  label: string;
+  suggest: (
+    ctx: PluginOmniboxSuggestContext,
+  ) => PluginOmniboxSuggestion[] | Promise<PluginOmniboxSuggestion[]>;
+  /** Null when the provider registered no `run` handler. */
+  run:
+    | ((
+        itemId: string,
+        ctx: PluginOmniboxRunContext,
+      ) =>
+        | PluginOmniboxRunResult
+        | void
+        | Promise<PluginOmniboxRunResult | void>)
+    | null;
+}
 
 /** Runtime record of a registered background service. */
 export interface PluginBackgroundServiceRecord {
@@ -333,6 +361,7 @@ const PLUGIN_AGENT_STATUS_LABEL_MAX_CHARS = 80;
 // Mention provider ids prefix wire item ids ("<providerId>:<itemId>"), so
 // ":" is excluded to keep the split unambiguous.
 const MENTION_PROVIDER_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
+const OMNIBOX_PROVIDER_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
 export const PLUGIN_MENTION_TRIGGER_VALUES = [
   "@",
   "#",
@@ -426,6 +455,8 @@ export interface PluginApiHandle {
   instructionProvider: PluginInstructionProvider | null;
   /** Mention providers recorded by `bb.ui.registerMentionProvider`. */
   mentionProviders: PluginMentionProviderRecord[];
+  /** Omnibox providers recorded by `bb.browser.registerOmniboxProvider`. */
+  omniboxProviders: PluginOmniboxProviderRecord[];
   /** Publish factory-time host declarations and status only after commit. */
   activate(): void;
   /** Poison every method on the handle. */
@@ -1162,6 +1193,44 @@ export function createPluginApi(options: {
     },
   };
 
+  const omniboxProviders: PluginOmniboxProviderRecord[] = [];
+  const browser: PluginBrowser = {
+    registerOmniboxProvider(provider) {
+      assertLive();
+      const id = provider?.id;
+      if (typeof id !== "string" || !OMNIBOX_PROVIDER_ID_PATTERN.test(id)) {
+        throw new Error(
+          `invalid omnibox provider id ${JSON.stringify(id)} — use letters, digits, "-" and "_"`,
+        );
+      }
+      if (omniboxProviders.some((record) => record.id === id)) {
+        throw new Error(`omnibox provider "${id}" is already registered`);
+      }
+      if (
+        typeof provider.label !== "string" ||
+        provider.label.trim().length === 0
+      ) {
+        throw new Error(`omnibox provider "${id}" must provide a label`);
+      }
+      if (typeof provider.suggest !== "function") {
+        throw new Error(
+          `omnibox provider "${id}" must provide a suggest({ query }) function`,
+        );
+      }
+      if (provider.run !== undefined && typeof provider.run !== "function") {
+        throw new Error(
+          `omnibox provider "${id}" run must be a function when provided`,
+        );
+      }
+      omniboxProviders.push({
+        id,
+        label: provider.label.trim(),
+        suggest: provider.suggest.bind(provider),
+        run: provider.run === undefined ? null : provider.run.bind(provider),
+      });
+    },
+  };
+
   const cliRecord: PluginApiHandle["cli"] = { registration: null };
   const cli: PluginCli = {
     register(registration) {
@@ -1292,6 +1361,7 @@ export function createPluginApi(options: {
     cli,
     agents,
     ui,
+    browser,
     events,
     status,
     server,
@@ -1333,6 +1403,7 @@ export function createPluginApi(options: {
       return instructionProvider;
     },
     mentionProviders,
+    omniboxProviders,
     activate() {
       if (activated) return;
       assertLive();

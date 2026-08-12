@@ -9,7 +9,10 @@ import { sharedUiEnvSeam } from "./vite-shared-ui-seam.js";
 
 const appDir = dirname(fileURLToPath(import.meta.url));
 
-export const sharedViteConfig = {
+// Annotated rather than inferred: the inferred plugin array names types from
+// whichever `rolldown` copy a transitive vite pulls in, which is not portable
+// across installs (TS2883).
+export const sharedViteConfig: UserConfig = {
   plugins: [
     sharedUiEnvSeam(),
     react(),

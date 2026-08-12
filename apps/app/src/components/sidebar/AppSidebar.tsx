@@ -31,7 +31,11 @@ import {
   MACOS_WINDOW_DRAG_CLASS,
   shouldUseMacosDesktopChrome,
 } from "@/lib/bb-desktop";
-import { getRootComposeRoutePath, getThreadRoutePath } from "@/lib/route-paths";
+import {
+  BROWSER_SURFACE_ROUTE_PATH,
+  getRootComposeRoutePath,
+  getThreadRoutePath,
+} from "@/lib/route-paths";
 import { useThreadSplitsEnabled } from "@/hooks/useThreadSplitsEnabled";
 import { usePaneContentSplitDrag } from "./usePaneContentSplitDrag";
 import { openUrlInExternalBrowser } from "@/lib/url-open-routing";
@@ -376,6 +380,23 @@ export function AppSidebar({
                 <Link to={settingsRoutePath} onClick={closeOnMobile}>
                   <Icon name="Settings" />
                   <span className="sr-only">Settings</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem className="min-w-0">
+              <SidebarMenuButton
+                asChild
+                aria-label="Browser"
+                tooltip={{
+                  children: "Browser",
+                  hidden: false,
+                  side: "top",
+                }}
+                className={SIDEBAR_FOOTER_ACTION_CLASS}
+              >
+                <Link to={BROWSER_SURFACE_ROUTE_PATH} onClick={closeOnMobile}>
+                  <Icon name="Browser" />
+                  <span className="sr-only">Browser</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>

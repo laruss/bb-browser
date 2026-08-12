@@ -23,3 +23,7 @@ export const BB_DESKTOP_BROWSER_SCOPED_OPEN_TAB_CHANNEL =
   "bb-desktop:browser:scoped-open-tab";
 export const BB_DESKTOP_BROWSER_SNAPSHOT_CHANNEL =
   "bb-desktop:browser:snapshot";
+// Tab icons ride their own channel rather than a field on the wire-frozen state
+// payload, so an older SPA's strict parser never sees a shape it would reject
+// (invariant 2 in docs/architecture/bb-migration.md).
+export const BB_DESKTOP_BROWSER_FAVICON_CHANNEL = "bb-desktop:browser:favicon";

@@ -4,6 +4,7 @@
 node_modules
 /.pnp
 .pnp.*
+.idea
 .yarn/*
 !.yarn/patches
 !.yarn/plugins
@@ -62,13 +63,11 @@ output.txt
 
 # codex, claude code
 .claude/settings.local.json
-.codex
 .hermes/plans/
 .otto/
 
 # turborepo
 .turbo
-.claude/
 
 # Temp roots from the CLI packaged-plugin build test (mkdtemp under apps/cli)
 apps/cli/.packaged-plugin-build-*

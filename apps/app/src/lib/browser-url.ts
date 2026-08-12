@@ -135,14 +135,21 @@ export function looksLikeUrl(input: string): boolean {
   if (trimmed.length === 0 || WHITESPACE_PATTERN.test(trimmed)) {
     return false;
   }
-  return normalizeUrl(trimmed) !== null;
+  return normalizeBrowserUrl(trimmed) !== null;
 }
 
-function buildSearchUrl(query: string): string {
+/** The default search engine's URL for `query`. */
+export function buildBrowserSearchUrl(query: string): string {
   return `${SEARCH_ENGINE_URL}?q=${encodeURIComponent(query)}`;
 }
 
-function normalizeUrl(input: string): string | null {
+/**
+ * The navigable `http(s)` URL an input denotes, or null when it is not an
+ * address at all (and therefore a search query). Exported for the omnibox,
+ * whose navigation and search providers need the two halves of
+ * {@link resolveBrowserAddressInput} separately.
+ */
+export function normalizeBrowserUrl(input: string): string | null {
   if (WHITESPACE_PATTERN.test(input)) {
     return null;
   }
@@ -185,7 +192,7 @@ export function resolveBrowserAddressInput(rawInput: string): string | null {
   if (input.length === 0) {
     return null;
   }
-  return normalizeUrl(input) ?? buildSearchUrl(input);
+  return normalizeBrowserUrl(input) ?? buildBrowserSearchUrl(input);
 }
 
 /** Security posture of a loaded URL, for the address-bar indicator. */

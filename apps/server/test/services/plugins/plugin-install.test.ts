@@ -8,6 +8,7 @@ import {
   readdir,
   rm,
   stat,
+  symlink,
   writeFile,
 } from "node:fs/promises";
 import type { AddressInfo } from "node:net";
@@ -96,6 +97,18 @@ async function writePluginFixture(
   if (options.appSource !== undefined) {
     await writeFile(join(rootDir, "app.tsx"), options.appSource);
   }
+  // Fixtures load from source outside the repo, so their bare imports resolve
+  // only through their own directory chain. Linking the server's node_modules
+  // keeps that deterministic instead of relying on the package manager exposing
+  // a tree-wide hoisted directory reachable from a temp dir.
+  await symlink(
+    join(process.cwd(), "node_modules"),
+    join(rootDir, "node_modules"),
+    "dir",
+  ).catch((error: NodeJS.ErrnoException) => {
+    // Fixtures are rewritten in place to simulate a new tip.
+    if (error.code !== "EEXIST") throw error;
+  });
 }
 
 async function git(cwd: string, args: string[]): Promise<string> {
@@ -965,6 +978,16 @@ describe("plugin install flows", () => {
     await stat(join(targetDir, "skills", "example-skill", "SKILL.md"));
     await stat(join(targetDir, ".gitignore"));
     await stat(join(targetDir, "README.md"));
+
+    // A `path:` install never runs the scaffold's own dependency install, so the
+    // generated server's imports (zod) have to resolve through this tree.
+    await symlink(
+      join(process.cwd(), "node_modules"),
+      join(targetDir, "node_modules"),
+      "dir",
+    ).catch((error: NodeJS.ErrnoException) => {
+      if (error.code !== "EEXIST") throw error;
+    });
 
     const entry = await service.install(`path:${targetDir}`);
     expect(entry.id).toBe("scaffolded");
