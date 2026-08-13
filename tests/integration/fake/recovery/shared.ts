@@ -9,7 +9,17 @@ import type { IntegrationHarness } from "../../helpers/harness.js";
 import { scaleTimeoutMs } from "../../helpers/time.js";
 
 // Setup waits: create the thread and observe the first ready/idle state.
-export const DEFAULT_TIMEOUT_MS = scaleTimeoutMs(10_000);
+/**
+ * How long a thread gets to become ready.
+ *
+ * Ten seconds was too tight, and not by a little: becoming ready here means a
+ * real server provisions a workspace — a managed worktree is several `git`
+ * processes — and under a full `turbo run test` that reliably lost the same
+ * test while the suite's own `testTimeout` sat at sixty seconds. A helper that
+ * gives up first turns a busy machine into a failed assertion about the
+ * product.
+ */
+export const DEFAULT_TIMEOUT_MS = scaleTimeoutMs(30_000);
 // Whole-turn waits: standard provider turns should settle within this budget.
 export const TURN_TIMEOUT_MS = scaleTimeoutMs(15_000);
 // Recovery waits: allow for disconnect detection plus daemon restart and reconciliation.

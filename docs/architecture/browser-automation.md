@@ -8,10 +8,11 @@ Where this started is [agent-browser-tools.md](agent-browser-tools.md): 12 tools
 covering navigation, tab bookkeeping and reading page text, plus `bb browser` as
 a terminal path onto the same API — roughly PW's `goto` / `go-back` /
 `go-forward` / `reload` / `tab-*` and half of `snapshot`, with **no interaction
-at all**. Stages A through E closed that: an agent can now snapshot a page,
+at all**. Stages A through F closed that: an agent can now snapshot a page,
 address its elements, act on them, see what it did, carry a signed-in session in
-and out, and — where none of that reaches — run its own code in the page, act at
-raw coordinates, and answer the page's requests itself.
+and out, run its own code in the page where none of that reaches, act at raw
+coordinates, answer the page's requests itself — and leave a record of the whole
+session behind.
 
 ## Two decisions that shape everything else
 
@@ -85,11 +86,11 @@ equivalent of `install --skills`.
 | PW group | Plan | Mechanism |
 | --- | --- | --- |
 | Core — navigation | done | existing |
-| Core — `snapshot` | **Stage A** | `Accessibility.getFullAXTree` |
+| Core — `snapshot` | **Stage A** | `Accessibility.getFullAXTree`, scoped by `DOM.querySelector` |
 | Core — dialogs | **Stage A** (also a live bug) | `Page.javascriptDialogOpening` / `handleJavaScriptDialog` |
 | Core — click/fill/type/select/check/hover/drag/upload/press | done | `Input.*`, `DOM.setFileInputFiles` |
 | Core — `resize` | done | `Emulation.setDeviceMetricsOverride` |
-| Core — `screenshot` | done | `capturePage()` |
+| Core — `screenshot` | done | `capturePage()`; `Page.captureScreenshot` for `--full-page` |
 | PDF | done | `printToPDF()` |
 | DevTools — `console` | done | `console-message` (**not** CDP — see Stage C) |
 | Network — observe | done | `webRequest` (**not** CDP — see Stage C) |
@@ -98,8 +99,8 @@ equivalent of `install --skills`.
 | Vision — mousemove/down/up/wheel | done | `Input.dispatchMouseEvent` by coordinate |
 | Core — `eval` | done | `Runtime.callFunctionOn` in the page's own world |
 | Core — `run-code` | **out** | PW's is a driver-side script with the Playwright API; ours would be arbitrary code in the shell — see Stage E |
-| DevTools — tracing | Stage F | our own action log (see below) |
-| DevTools — video | Stage F | `Page.startScreencast` → encode |
+| DevTools — tracing | done | our own action log, kept in the app (see Stage F) |
+| DevTools — video | done | `Page.startScreencast` → frames + timings; the system's ffmpeg encodes on `--encode` |
 | Sessions (`-s`, `--profile`, `--persistent`) | **n/a** | PW runs separate browsers; ours is the user's one browser, and tabs are the unit |
 | Testing (assertions, locator generation) | **out** | we are not a test runner |
 
@@ -137,12 +138,37 @@ PW exists to avoid.
   `Page.handleJavaScriptDialog` and the view returns. Agents answer the same
   dialog through `browser_handle_dialog` / `bb browser dialog`.
 
-**Still open in this stage:**
+- **Selector-scoped snapshots**, added after F. `bb browser snapshot --selector
+  "form.checkout"` — and the `selector` parameter on the snapshot tool — render
+  the matched element's subtree instead of the page, with refs for it alone.
 
-- **Selector-scoped snapshots.** `maxDepth` is in; scoping to a CSS selector
-  needs `DOM.querySelector` + `Accessibility.getPartialAXTree`, whose result
-  shape differs. It is an optimization for large pages, not a capability, so it
-  waits.
+  It does **not** work the way this plan guessed. `Accessibility.getPartialAXTree`
+  answers with the node and one level of children, so building a subtree from it
+  would be a protocol round trip per level; the tree is fetched whole as before
+  and the render starts at the matched node. So the saving is the *caller's
+  context*, not the protocol traffic — which is the scarce thing here anyway,
+  and the honest way to describe the feature.
+
+  The lookup is `DOM.getDocument` → `DOM.querySelector` → `DOM.describeNode`,
+  the last of those only to turn the DOM agent's node id into the backend id the
+  accessibility tree carries. Three refusals are worth their own names, because
+  each sends a caller somewhere different: a selector the browser will not parse
+  (`invalid-selector` — its complaint is passed through, since only the browser
+  can judge one), a selector that matched nothing (`no-match`, which the
+  protocol reports as node id zero rather than as an error), and a selector that
+  matched an element the accessibility tree does not describe — a hidden one —
+  which is `no-match` with a message that says so rather than a silent fallback
+  to the whole page.
+
+  It rides **its own channel and its own optional method**, which is the part
+  that looks like overkill and is not: the unscoped snapshot request is
+  `.strict()` and wire-frozen, so a `selector` added to it would be rejected
+  outright by any older shell — and rejected as "no view", advice about a
+  problem the caller does not have. On the agent wire, which ships with the
+  server that serves it, the same capability is one nullable field.
+
+  A scoped snapshot replaces the tab's ref table like any other, because it
+  hands out `e1` again for a different element.
 
 Done when: an agent can snapshot a real page and refer to its elements. ✅
 
@@ -214,14 +240,12 @@ it at all would be pretending the race does not exist.
 that two of the four came out on a different mechanism than this plan sketched,
 and the reason is not convenience.
 
-**Nothing in this stage attaches the browser debugger.** That is the property the
-whole stage is built around, and it is why the mechanisms moved:
+**Nothing in this stage attaches the browser debugger**, except the one capture
+added afterwards that cannot avoid it. That is the property the whole stage is
+built around, and it is why the mechanisms moved:
 
 - **`screenshot`** — `capturePage()`, the visible viewport, JPEG by default and
-  PNG on request. Not full-page: Electron captures the composited view, so a
-  whole-document capture would need `Page.captureScreenshot` with
-  `captureBeyondViewport`, and that means the debugger. Deferred rather than
-  faked.
+  PNG on request. Full-page is the exception below.
 - **`pdf`** — `printToPDF()`, which *is* the whole document. It is also the one
   call that can come back `result_too_large`; a truncated PDF is not a smaller
   PDF, so the cap is a refusal.
@@ -263,6 +287,58 @@ the same turn, and it cannot open a file. The other three are
 the right answer because a terminal cannot show an image and a human can open
 one. The CLI resolves a relative path against the invoking shell's `cwd`, not the
 server process's.
+
+#### Full-page capture, added after F
+
+`bb browser screenshot out.jpg --full-page`, the `fullPage` parameter on the
+screenshot tool, and `bb.browser.page.screenshot({ fullPage: true })` capture the
+whole scrollable document. This is the item Stage C deferred, and it is deferred
+no longer for the reason it was deferred in the first place: there is no way to
+do it without the debugger, so the only honest options were to attach one or to
+keep saying no.
+
+**It pays for exactly as much of the debugger as it needs.** A session is
+attached; the `Page` domain is **not** enabled. That distinction is the whole
+design: enabling `Page` is what moves a tab's dialogs off Chromium's native modal
+and onto ours, and a picture must not cost a browsing human that. So this is the
+one automation command that attaches without taking the tab over — and the one
+observation that can answer `debugger_unavailable`, which it does rather than
+quietly handing back a viewport picture when DevTools holds the tab.
+
+The region is measured by a script in the **page-read isolated world**, not by
+`Page.getLayoutMetrics`, which is the obvious CDP answer and wants the `Page`
+domain. That script takes the largest of `scrollHeight`/`offsetHeight`/
+`clientHeight` across `documentElement` and `body`, because no single one of them
+is right everywhere — standards mode grows one element, quirks mode the other,
+and out-of-flow content reports a `scrollHeight` smaller than its `offsetHeight`.
+Measuring too large costs blank pixels at the bottom; measuring too small cuts
+the page off silently.
+
+Then `Page.captureScreenshot` with an explicit clip and `captureBeyondViewport`.
+The clip carries `scale: 1`, which is what makes the result **CSS pixels** — a
+viewport capture comes back in the display's device pixels, so on a retina screen
+the two report sizes in different units for the same page. The result says which
+it is (`fullPage`), and the SDK's type documents both.
+
+Two limits, reported rather than hidden:
+
+- **~16k pixels.** A composited capture is a GPU texture, and past the driver's
+  maximum size the answer is a blank image, not a bigger one. A longer document
+  is captured down to its top with `truncated` set — the opposite of the PDF's
+  cap, which refuses, because half a PDF is not a smaller PDF while the top of a
+  page is a useful picture of the top of a page.
+- **The bridge's 8MB.** Past that it is `result_too_large`, with the message
+  naming the three ways out (JPEG, lower quality, or print it to a PDF).
+
+It rides its own channel and its own optional method, and for a sharper reason
+than the scoped snapshot's. The observation union's members are plain objects, so
+an older shell would not *reject* a `fullPage` flag added to the screenshot
+member — it would **strip** it, capture the viewport, and report success. A
+caller cannot see that it got the wrong answer. Feature-detecting `captureFullPage`
+turns a silent wrong picture into "this version cannot do that, ask for the
+viewport". The agent wire keeps one union and one required boolean, so the
+executor rebuilds the shell's screenshot observation rather than forwarding it;
+the drift-guard test pins both halves of that (`observation-contract.test.ts`).
 
 Done when: an agent can see the page and read what went wrong on it. ✅ (against
 fakes, as with A and B)
@@ -394,11 +470,117 @@ decide what a page is told. ✅ (against fakes, as with A through D)
 
 ### Stage F — recording
 
-- **Tracing** means our own artifact, not PW's: PW traces are a bespoke format
-  read by PW's viewer. Ours is an action log — command, snapshot, screenshot per
-  step — which is what makes an agent's browser session reviewable after the
-  fact.
-- **Video** — `Page.startScreencast` frames encoded to webm.
+**Done**, and it is two features rather than one. They record different things,
+they live in different processes, and the only thing they share is a command.
+
+**The trace is the app's**, and that is the decision in this stage worth
+arguing about. The shell sees more of the browser and holds the pixels, but it
+cannot tell an agent's command from a person's: a `navigate` arriving there
+looks identical whether a tool call or the user's omnibox sent it, and a log of
+"what the agent did" that also logs what the user did is not that log. The
+executor in the app is the only place a browser command exists *as a command*,
+so the trace is kept there — which also means it needs no IPC channel, no
+desktop-contract change and no version skew.
+
+So this is the fifth of these command unions and the first deliberately **not**
+mirrored on both wires: the shell's half carries the three `video-*` members and
+refuses `trace-start` / `trace-stop`. The drift test pins both halves of that,
+because a later tidy-up making the two identical would break the second one
+silently.
+
+**Tracing** is our own artifact, as planned: PW's traces are a bespoke format
+its own viewer opens, and ours is a JSON log — sequence, elapsed time, the
+command, a rendered detail line, the outcome, and optionally a JPEG of the
+visible tab after each step that could have changed it. Rendered rather than
+serialized, deliberately: the JSON of a `state.load` is a set of the user's
+cookies, and a trace is a file people save and send each other. So keys are
+named and their values are not — while text typed into a field *is* kept, since
+a log that will not say what was filled in is not a log of what happened.
+
+**Video is `Page.startScreencast`, and the recording stops at the frames.** What
+comes back over the wire is JPEGs with their timings, not a webm — the artifact
+is the frames plus an ffconcat playlist that carries them, and the encode is a
+separate, optional step over an artifact that is already complete.
+
+### The encoder decision
+
+**bb ships no encoder and downloads none. `--encode` runs the ffmpeg the machine
+already has.** The alternatives, and why each lost:
+
+- **Bundling ffmpeg** — 40–80MB in every auto-update payload for a mac-arm64-only
+  app, a GPL build inside the distribution, and another binary to sign once
+  notarization is turned on (today `identity: null`, `notarize: false`). Real
+  costs, for a feature most sessions never use.
+- **Downloading one on demand** — worse, not better. bb would execute a binary
+  that was never part of a bb release: responsibly done that means a pinned URL,
+  a checksum, and a story for updates, and on Apple Silicon it also means
+  depending on how a third party signed their build, with a quarantine flag to
+  strip if it comes to that. Writing code whose job is to remove a Gatekeeper
+  attribute from a freshly downloaded executable is not a thing to do quietly.
+  It would also install onto the *server's* machine, which on a remote server is
+  not the machine the terminal is on.
+- **`MediaRecorder` in a renderer** — the dependency-free path, and it fails on
+  timing rather than on packaging: MediaRecorder timestamps frames by when they
+  arrive on the stream, so preserving a 30-second recording's pacing costs 30
+  seconds of wall clock inside a tool call. (The hidden-window painting problem
+  is real too, but this one alone settles it.)
+
+So: `bb browser video-stop <dir> --encode` writes `video.mp4` beside the frames,
+and `bb browser install-ffmpeg` installs one with Homebrew when there is none.
+Three properties make that acceptable rather than a shrug:
+
+- **The frames are the artifact, the video is a rendering of it.** A missing or
+  failing encoder costs the convenience, never the recording — and the failure
+  message says so, because the alternative is someone re-recording a session
+  they still have on disk.
+- **The lookup is a candidate list, not `PATH`.** `BB_FFMPEG` → `PATH` →
+  `/opt/homebrew/bin` → `/usr/local/bin`, and each candidate is *run* rather than
+  stat-ed, because a path can exist and be the wrong architecture. A server
+  started from a macOS GUI inherits `/usr/bin:/bin` and nothing else, so `PATH`
+  alone finds neither Homebrew's ffmpeg nor Homebrew — the lesson the automations
+  plugin already paid for and wrote down.
+- **Installing is its own command.** It is the one thing here that changes the
+  machine it runs on, so it is never a side effect of stopping a recording. An
+  agent that hits a missing encoder is told the exact command; it has shell
+  access, so that *is* the button, pressed by something with the right to press
+  it and installing a signed, updatable build.
+
+One bug this fixed on the way: the `ffmpeg` line the CLI used to print has no
+`-vf scale=trunc(iw/2)*2:trunc(ih/2)*2`, and Chromium scales screencast frames
+to fit the cap while keeping the aspect ratio — so an odd height is the normal
+case and H.264 with `yuv420p` refuses it outright. The documented command failed
+on exactly the recordings people make.
+
+Three implementation notes, in the order they bite:
+
+- **Every screencast frame is acknowledged, including the ones dropped for
+  pacing.** Chromium sends the next frame only once the last has been answered,
+  so a frame that is silently ignored does not cost one frame — it ends the
+  recording. Pacing therefore keeps or discards *after* the ack, never instead
+  of it.
+- **The frames are budgeted while filming, not at the end.** They arrive at the
+  page's paint rate for as long as it runs, so an unbounded buffer is a
+  page-controlled allocation in the main process; the recording stops keeping
+  frames at its cap and reports how many it dropped.
+- **A film dies with the debugger session**, like the routes, because Chromium
+  stops the screencast when its client detaches. A recording that survived would
+  answer `video-stop` with a film that stopped growing minutes earlier.
+
+Two smaller ones. PW's `video-start [file]` names the file when filming begins;
+ours names a directory when it ends, because the artifact crosses the command
+wire and the CLI is the writer — the same shape as `screenshot <path>` and
+`state-save <path>`, and it keeps the shell out of the business of writing files
+at a path someone else chose. And the tab has to stay **visible**: a
+`WebContentsView` that is not on screen paints nothing, so it produces no
+frames — the same reason a step screenshot is taken of the active tab and of no
+other.
+
+What the trace does not record, stated because a reader will assume otherwise:
+anything the *user* does in the same browser while it runs, and any navigation a
+*page* starts by itself. It records the commands bb was asked to run.
+
+Done when: a session an agent drove can be reviewed after the fact. ✅ (against
+fakes, as with A through E)
 
 ### How the dialog UI works, and why it looks like that
 
@@ -442,7 +624,7 @@ composites above the DOM (the same constraint that forces the omnibox list to
 take layout space). Attaching CDP lazily, per tab, on first automation command
 is what keeps ordinary browsing on the native path.
 
-## What Stages A through E are and are not verified against
+## What Stages A through F are and are not verified against
 
 Covered by tests: the key table and chord parsing, including the one genuinely
 ambiguous case (`"Shift++"` is the plus key, `"Shift+"` is nothing); the probe
@@ -487,7 +669,49 @@ isolated one, with a ref resolved into that same world; a page's own exception
 text surviving as the answer; and the control union parsing identically on both
 wires.
 
-**Untested, and worth knowing:** the argument normalizers in the server's plugin
+The full-page capture added after F is covered where it can go wrong: that the
+region comes from the isolated-world measurement and reaches the clip, that
+`captureBeyondViewport` is set and `Page` is never enabled — the two halves of
+"attach, but do not take the tab over"; that PNG is asked for without a quality,
+which has no meaning for it; that a document past the texture limit is clipped
+and says so while one past the bridge's cap is refused instead; that a page which
+never answers how large it is costs no capture request at all; and that DevTools
+holding the tab is reported as itself rather than as a generic failure. On the
+agent side: that `fullPage` picks the channel instead of travelling on the
+observation, that an older shell is reported as unsupported rather than answered
+with a viewport picture, and that the shell's union *strips* the flag — which is
+the fact the whole channel decision rests on.
+
+The selector scoping added after F is covered where it can go wrong: that the
+render starts at the matched element and its siblings are gone, that a wrapper
+the tree calls generic renders as its contents (which is what `#app` names on
+most pages), that a scoped snapshot invalidates the previous one's refs because
+it hands out `e1` again, and that the three refusals stay apart — a selector the
+browser will not parse, one that matched nothing, and one that matched something
+the accessibility tree does not describe.
+
+Stage F adds: the screencast's pacing arithmetic, including the property the
+whole recording rests on — every frame acknowledged, including the ones the
+pacing throws away, because an unacknowledged frame ends the film rather than
+shortening it; a second `video-start` on the same tab refused instead of
+replacing the first, and the film forgotten when the debugger detaches; frames
+handed back even when the stop command itself fails; the trace recording one
+step per command an agent issued, including the case where one command runs
+another internally; a step's failure carried as its code, which is what a trace
+is read for; the caps dropping images while the log keeps going; that cookie and
+storage *values* never reach a step's detail line while filled-in text does;
+that the recording union is the same on both wires for video and deliberately
+not for the trace; and, end to end through the CLI, a trace written as a
+directory of JSON and JPEGs and a film written with the ffconcat playlist that
+carries its timings.
+
+**Untested, and worth knowing:** `bb browser install-ffmpeg` end to end, which
+would mean running Homebrew from a test suite — the candidate lists and the
+messages are covered, the `brew install` is not. The encode path *is* covered,
+against a stand-in binary the test writes: what is worth pinning there is the
+argv bb passes and that it checks a file appeared, neither of which needs a real
+encoder, and a test that encodes video is a test that fails on a machine without
+one. Also untested: the argument normalizers in the server's plugin
 API — the observation defaults (JPEG at 80, a limit of 100), Stage D's cookie
 defaults (host-only, path `/`, non-secure, `Lax`, session), Stage E's route
 defaults (200, and a content type read off the body's first character) and their
@@ -517,7 +741,22 @@ documented:
   not only its main frame, and that a fulfilled body reaches the page as the
   content type it was given — Stage E's routes are inert if either is wrong;
 - that `Runtime.evaluate` with no execution context id really lands in the main
-  world here, which is what makes `eval` able to see the page's globals at all.
+  world here, which is what makes `eval` able to see the page's globals at all;
+- that `Page.startScreencast` delivers frames for a `WebContentsView` at all,
+  and keeps delivering them while the BB window is merely unfocused rather than
+  hidden — Stage F's video is a blank directory if it does not;
+- that a `capturePage` taken immediately after an action shows the page *after*
+  it, rather than the frame before the compositor caught up, which is what a
+  trace's step images are for;
+- that `Page.captureScreenshot` with a clip and `captureBeyondViewport` renders
+  the region below the fold for a `WebContentsView` — it is the one call here
+  that asks Chromium to render something nobody is looking at, and if it answers
+  with the viewport padded out instead, a full-page capture is a tall picture of
+  mostly blank;
+- that what the page measures as its document is what Chromium then renders — a
+  page whose layout depends on scroll position (sticky headers, viewport-unit
+  sections, lazy images) can disagree with itself, and the capture is the version
+  that wins.
 
 The shortest way to find out, in order:
 
@@ -526,16 +765,22 @@ bun run dev            # and, in another shell, bun run dev:desktop
 bun run bb:dev plugin enable browser-tools
 # open /browser in the desktop app and load a page with a form, then:
 bun run bb:dev browser snapshot        # refs, and the generation on stderr
+bun run bb:dev browser snapshot --selector form   # the form alone?
 bun run bb:dev browser fill e2 hello
 bun run bb:dev browser click e1
 bun run bb:dev browser console        # does anything at all come back?
 bun run bb:dev browser network        # the page's own request, with its status?
 bun run bb:dev browser screenshot /tmp/shot.png
+bun run bb:dev browser screenshot /tmp/full.jpg --full-page   # taller than the window?
 bun run bb:dev browser cookie-list     # on a site you are signed into
 bun run bb:dev browser localstorage-list   # empty here would mean the world is wrong
 bun run bb:dev browser eval "() => location.href"   # the page's world, or not?
 bun run bb:dev browser route "**/*.json" --body '{"mocked":true}'
 bun run bb:dev browser reload && bun run bb:dev browser route-list  # matched > 0?
+bun run bb:dev browser tracing-start --screenshots
+bun run bb:dev browser click e1 && bun run bb:dev browser tracing-stop /tmp/trace
+bun run bb:dev browser video-start && bun run bb:dev browser reload
+bun run bb:dev browser video-stop /tmp/film --encode   # frames, then video.mp4?
 # then, from the page's own console: alert("hi") — whose modal appears?
 ```
 
@@ -561,6 +806,11 @@ by how much a command hands over, because that is the line a permission would
 one day be drawn along. `bb browser eval` and `bb browser route` have nothing in
 common as verbs and everything in common as a thing to grant.
 
+Stage F cuts across it differently: `tracing-*` and `video-*` are one CLI group
+and one plugin-API namespace, while only half of them ever reaches the shell.
+The line there is not how much a command hands over but where the thing being
+recorded exists — commands in the app, pixels in the browser.
+
 ## Sizing
 
 Stage A + B together came out comparable in size to all of Phase 5, as expected,
@@ -574,8 +824,21 @@ the plumbing. E came out as predicted: moderate, and the first stage since B
 that genuinely needed CDP. Its body of work was not the protocol but the
 interception's lifecycle — an enabled `Fetch` domain that nothing answers is a
 wedged tab, so when it is on, when it is off and what happens to a request that
-matches nothing is the whole of it. F is the largest per unit of value and
-should stay last.
+matches nothing is the whole of it.
+
+F was predicted to be the largest per unit of value, and it came out smaller
+than that — but only because it stops where it does. The trace needed no wire at
+all, and the video is a bounded buffer, an acknowledgement rule and a playlist.
+Everything expensive about "video" is in the encoding, and the encoding is not
+here — the decision that would have been large turned out to be a decision *not*
+to ship an encoder, which cost one small module and a candidate list.
+
+The two additions after F are both small, and both were small for the same
+reason: the mechanism was already in the building. The scoped snapshot is one
+lookup in front of a tree that was already fetched; the full-page capture is one
+measurement in front of a session that already attaches everywhere else. What
+each one actually cost was the wire decision — which of them can grow a field,
+which needs a channel, and what an older shell does with the difference.
 
 ## Upload, and what it does not add
 

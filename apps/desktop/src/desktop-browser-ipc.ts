@@ -65,3 +65,20 @@ export const BB_DESKTOP_BROWSER_STORAGE_CHANNEL =
 // also the line per-plugin permissions would one day be drawn along.
 export const BB_DESKTOP_BROWSER_CONTROL_CHANNEL =
   "bb-desktop:browser:control";
+// The accessibility snapshot of one part of a page. Its own channel because the
+// unscoped snapshot's request is strict and frozen: a `selector` added to it
+// would be refused by every shell that predates this, and refused as "no view",
+// which is advice about the wrong problem.
+export const BB_DESKTOP_BROWSER_SNAPSHOT_IN_CHANNEL =
+  "bb-desktop:browser:snapshot-in";
+// A picture of the whole document. Its own channel because the observe request
+// carries a frozen union: a `fullPage` flag added to its screenshot member would
+// be silently dropped by an older shell, which would answer with a viewport
+// picture and call it a success. It is also the one capture that attaches the
+// debugger, which is the property the observe channel exists to guarantee.
+export const BB_DESKTOP_BROWSER_CAPTURE_FULL_PAGE_CHANNEL =
+  "bb-desktop:browser:capture-full-page";
+// Filming a tab. Its own channel because it is the only automation command whose
+// answer is an artifact rather than a fact about the page — megabytes of frames,
+// bounded by the recording's own caps rather than by a single result's.
+export const BB_DESKTOP_BROWSER_RECORD_CHANNEL = "bb-desktop:browser:record";

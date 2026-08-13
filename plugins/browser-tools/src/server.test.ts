@@ -439,7 +439,26 @@ describe("browser-tools observation", () => {
     expect(textOf(result)).toContain("https://example.com/");
     expect(host.harness.inspection.browserCalls.at(-1)).toEqual({
       type: "page.screenshot",
-      args: { tabId: "tab-1" },
+      args: { tabId: "tab-1", fullPage: false },
+    });
+  });
+
+  it("captures the whole document when asked, and says which it captured", async () => {
+    const host = createHost();
+
+    const result = await host.harness.behavior.callAgentTool(
+      "browser_screenshot",
+      { tabId: "tab-1", fullPage: true },
+    );
+
+    expect(isError(result)).toBe(false);
+    // The picture cannot say whether it is a viewport or a document, so the
+    // text beside it has to: a model told "viewport" of a full-page capture
+    // would scroll and shoot again for nothing.
+    expect(textOf(result)).toContain("Whole page");
+    expect(host.harness.inspection.browserCalls.at(-1)).toEqual({
+      type: "page.screenshot",
+      args: { tabId: "tab-1", fullPage: true },
     });
   });
 

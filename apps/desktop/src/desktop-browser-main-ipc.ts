@@ -5,13 +5,18 @@ import {
   bbDesktopBrowserSetBoundsRequestSchema,
   bbDesktopBrowserSetVisibleRequestSchema,
   bbDesktopBrowserDialogRespondRequestSchema,
+  bbDesktopBrowserCaptureFullPageRequestSchema,
   bbDesktopBrowserControlRequestSchema,
+  bbDesktopBrowserRecordRequestSchema,
   bbDesktopBrowserInteractRequestSchema,
   bbDesktopBrowserObserveRequestSchema,
   bbDesktopBrowserSnapshotRequestSchema,
+  bbDesktopBrowserSnapshotInRequestSchema,
   bbDesktopBrowserStorageRequestSchema,
   bbDesktopBrowserTabRefSchema,
+  type BbDesktopBrowserCaptureFullPageResult,
   type BbDesktopBrowserControlResult,
+  type BbDesktopBrowserRecordResult,
   type BbDesktopBrowserInteractResult,
   type BbDesktopBrowserObserveResult,
   type BbDesktopBrowserPageReadResult,
@@ -26,10 +31,13 @@ import {
   BB_DESKTOP_BROWSER_NAVIGATE_CHANNEL,
   BB_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
   BB_DESKTOP_BROWSER_DIALOG_RESPOND_CHANNEL,
+  BB_DESKTOP_BROWSER_CAPTURE_FULL_PAGE_CHANNEL,
   BB_DESKTOP_BROWSER_CONTROL_CHANNEL,
+  BB_DESKTOP_BROWSER_RECORD_CHANNEL,
   BB_DESKTOP_BROWSER_INTERACT_CHANNEL,
   BB_DESKTOP_BROWSER_OBSERVE_CHANNEL,
   BB_DESKTOP_BROWSER_SNAPSHOT_TREE_CHANNEL,
+  BB_DESKTOP_BROWSER_SNAPSHOT_IN_CHANNEL,
   BB_DESKTOP_BROWSER_STORAGE_CHANNEL,
   BB_DESKTOP_BROWSER_RELOAD_CHANNEL,
   BB_DESKTOP_BROWSER_SET_BOUNDS_CHANNEL,
@@ -206,6 +214,35 @@ export function registerDesktopBrowserIpc(
     },
   );
 
+  // The same snapshot, scoped to a selector. A malformed payload answers
+  // `failed` rather than `no-view` for the reason the interaction handler
+  // below gives: the tab is not the problem, the request is.
+  ipcMain.handle(
+    BB_DESKTOP_BROWSER_SNAPSHOT_IN_CHANNEL,
+    async (
+      event,
+      payload: unknown,
+    ): Promise<BbDesktopBrowserSnapshotResult> => {
+      const hostWindow = BrowserWindow.fromWebContents(event.sender);
+      if (hostWindow === null) {
+        return { ok: false, reason: "no-view" };
+      }
+      const parsed = bbDesktopBrowserSnapshotInRequestSchema.safeParse(payload);
+      if (!parsed.success) {
+        return {
+          ok: false,
+          reason: "failed",
+          message: "That is not a snapshot request this browser understands.",
+        };
+      }
+      try {
+        return await manager.snapshotIn({ hostWindow, request: parsed.data });
+      } catch {
+        return { ok: false, reason: "failed" };
+      }
+    },
+  );
+
   // Acting on a page. A malformed payload answers `failed` rather than
   // `no-view`: the tab is not the problem, the request is, and telling the
   // caller to go activate a tab would send it after the wrong fix.
@@ -257,6 +294,38 @@ export function registerDesktopBrowserIpc(
     },
   );
 
+  // A picture of the whole document. Same discipline as the observe channel,
+  // and the same reason a malformed payload is not `no-view`.
+  ipcMain.handle(
+    BB_DESKTOP_BROWSER_CAPTURE_FULL_PAGE_CHANNEL,
+    async (
+      event,
+      payload: unknown,
+    ): Promise<BbDesktopBrowserCaptureFullPageResult> => {
+      const hostWindow = BrowserWindow.fromWebContents(event.sender);
+      if (hostWindow === null) {
+        return { ok: false, reason: "no-view" };
+      }
+      const parsed =
+        bbDesktopBrowserCaptureFullPageRequestSchema.safeParse(payload);
+      if (!parsed.success) {
+        return {
+          ok: false,
+          reason: "failed",
+          message: "That is not a capture this browser understands.",
+        };
+      }
+      try {
+        return await manager.captureFullPage({
+          hostWindow,
+          request: parsed.data,
+        });
+      } catch {
+        return { ok: false, reason: "failed" };
+      }
+    },
+  );
+
   // Cookies and web storage. Same discipline again, and the same reason a
   // malformed payload is not `no-view`.
   ipcMain.handle(
@@ -302,6 +371,32 @@ export function registerDesktopBrowserIpc(
       }
       try {
         return await manager.control({ hostWindow, request: parsed.data });
+      } catch {
+        return { ok: false, reason: "failed" };
+      }
+    },
+  );
+
+  // Filming a tab. The frames cross here in one reply, so this is the widest
+  // payload the browser bridge carries; what bounds it is the recording's caps,
+  // applied while it films rather than discovered at the end.
+  ipcMain.handle(
+    BB_DESKTOP_BROWSER_RECORD_CHANNEL,
+    async (event, payload: unknown): Promise<BbDesktopBrowserRecordResult> => {
+      const hostWindow = BrowserWindow.fromWebContents(event.sender);
+      if (hostWindow === null) {
+        return { ok: false, reason: "no-view" };
+      }
+      const parsed = bbDesktopBrowserRecordRequestSchema.safeParse(payload);
+      if (!parsed.success) {
+        return {
+          ok: false,
+          reason: "failed",
+          message: "That is not a recording request this browser understands.",
+        };
+      }
+      try {
+        return await manager.record({ hostWindow, request: parsed.data });
       } catch {
         return { ok: false, reason: "failed" };
       }

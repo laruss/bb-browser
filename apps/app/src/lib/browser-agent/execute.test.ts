@@ -1,12 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
 import type {
   BbDesktopBrowserApi,
+  BbDesktopBrowserCaptureFullPageResult,
   BbDesktopBrowserInteractResult,
   BbDesktopBrowserObserveResult,
   BbDesktopBrowserPageReadResult,
   BbDesktopBrowserSnapshotResult,
   BbDesktopBrowserState,
   BbDesktopBrowserControlResult,
+  BbDesktopBrowserRecordResult,
   BbDesktopBrowserStorageResult,
 } from "@bb/desktop-contract";
 import type { BrowserCommandOutcome } from "@bb/domain";
@@ -16,6 +18,7 @@ import {
   type BrowserSurfaceTabsState,
 } from "../browser-surface-tabs";
 import { executeBrowserCommand, type BrowserCommandDeps } from "./execute";
+import { BrowserTraceRecorder } from "./trace";
 
 /**
  * The executor is the whole of the agent-facing browser behaviour, so these
@@ -50,19 +53,26 @@ interface HarnessArgs {
   omitReadPage?: boolean;
   snapshot?: BbDesktopBrowserSnapshotResult;
   omitSnapshot?: boolean;
+  omitSnapshotIn?: boolean;
   interact?: BbDesktopBrowserInteractResult;
   omitInteract?: boolean;
   observe?: BbDesktopBrowserObserveResult;
   omitObserve?: boolean;
+  captureFullPage?: BbDesktopBrowserCaptureFullPageResult;
+  omitCaptureFullPage?: boolean;
   storage?: BbDesktopBrowserStorageResult;
   omitStorage?: boolean;
   control?: BbDesktopBrowserControlResult;
   omitControl?: boolean;
+  record?: BbDesktopBrowserRecordResult;
+  omitRecord?: boolean;
+  trace?: BrowserTraceRecorder;
   noDesktop?: boolean;
 }
 
 function createHarness(args: HarnessArgs = {}) {
   let state = args.state ?? EMPTY_BROWSER_SURFACE_TABS_STATE;
+  let clock = 0;
   const live = new Map(Object.entries(args.live ?? {}));
   const calls = {
     navigate: [] as Array<{ tabId: string; url: string }>,
@@ -71,10 +81,13 @@ function createHarness(args: HarnessArgs = {}) {
     reload: [] as string[],
     destroyed: [] as string[],
     settled: [] as string[],
+    snapshots: [] as unknown[],
     interactions: [] as unknown[],
     observations: [] as unknown[],
+    fullPageCaptures: [] as unknown[],
     storage: [] as unknown[],
     control: [] as unknown[],
+    record: [] as unknown[],
   };
   let nextTabId = 0;
 
@@ -101,13 +114,28 @@ function createHarness(args: HarnessArgs = {}) {
     ...(args.omitSnapshot === true
       ? {}
       : {
-          snapshot: () =>
-            Promise.resolve(
+          snapshot: (request: unknown) => {
+            calls.snapshots.push(request);
+            return Promise.resolve(
               args.snapshot ?? {
                 ok: false as const,
                 reason: "failed" as const,
               },
-            ),
+            );
+          },
+        }),
+    ...(args.omitSnapshotIn === true
+      ? {}
+      : {
+          snapshotIn: (request: unknown) => {
+            calls.snapshots.push(request);
+            return Promise.resolve(
+              args.snapshot ?? {
+                ok: false as const,
+                reason: "failed" as const,
+              },
+            );
+          },
         }),
     ...(args.omitInteract === true
       ? {}
@@ -142,6 +170,26 @@ function createHarness(args: HarnessArgs = {}) {
             );
           },
         }),
+    ...(args.omitCaptureFullPage === true
+      ? {}
+      : {
+          captureFullPage: (request: unknown) => {
+            calls.fullPageCaptures.push(request);
+            return Promise.resolve(
+              args.captureFullPage ?? {
+                ok: true as const,
+                tabId: "t",
+                url: "https://example.com/",
+                title: "Example",
+                mimeType: "image/jpeg" as const,
+                base64: "FULL",
+                width: 1280,
+                height: 4200,
+                truncated: false,
+              },
+            );
+          },
+        }),
     ...(args.omitStorage === true
       ? {}
       : {
@@ -168,6 +216,23 @@ function createHarness(args: HarnessArgs = {}) {
                 tabId: "t",
                 url: "https://example.com/",
                 title: "Example",
+              },
+            );
+          },
+        }),
+    ...(args.omitRecord === true
+      ? {}
+      : {
+          record: (request: unknown) => {
+            calls.record.push(request);
+            return Promise.resolve(
+              args.record ?? {
+                ok: true as const,
+                kind: "recording" as const,
+                tabId: "t",
+                url: "https://example.com/",
+                title: "Example",
+                active: true,
               },
             );
           },
@@ -210,12 +275,17 @@ function createHarness(args: HarnessArgs = {}) {
     destroyView: ({ tabId }) => {
       calls.destroyed.push(tabId);
     },
+    ...(args.trace === undefined ? {} : { trace: args.trace }),
+    now: () => clock,
   };
 
   return {
     calls,
     deps,
     live,
+    advance(ms: number) {
+      clock += ms;
+    },
     get state() {
       return state;
     },
@@ -690,7 +760,7 @@ describe("executeBrowserCommand — snapshot", () => {
 
     await expect(
       executeBrowserCommand(
-        { type: "page.snapshot", tabId: null, maxDepth: null },
+        { type: "page.snapshot", tabId: null, maxDepth: null, selector: null },
         harness.deps,
       ),
     ).resolves.toEqual({
@@ -721,7 +791,7 @@ describe("executeBrowserCommand — snapshot", () => {
     });
 
     const outcome = await executeBrowserCommand(
-      { type: "page.snapshot", tabId: null, maxDepth: null },
+      { type: "page.snapshot", tabId: null, maxDepth: null, selector: null },
       harness.deps,
     );
 
@@ -743,12 +813,110 @@ describe("executeBrowserCommand — snapshot", () => {
       });
       expectFailure(
         await executeBrowserCommand(
-          { type: "page.snapshot", tabId: null, maxDepth: null },
+          { type: "page.snapshot", tabId: null, maxDepth: null, selector: null },
           harness.deps,
         ),
         code,
       );
     }
+  });
+
+  it("sends a selector down the scoped channel, and nothing else there", async () => {
+    const harness = createHarness({
+      state: { activeTabId: "a", tabs: [tab("a")] },
+      snapshot: {
+        ok: true,
+        tabId: "a",
+        url: "https://example.com/",
+        title: "Example",
+        snapshot: '- button "Pay" [ref=e1]',
+        generation: 4,
+        refCount: 1,
+        truncated: false,
+      },
+    });
+
+    await executeBrowserCommand(
+      { type: "page.snapshot", tabId: null, maxDepth: null, selector: null },
+      harness.deps,
+    );
+    await executeBrowserCommand(
+      {
+        type: "page.snapshot",
+        tabId: null,
+        maxDepth: 3,
+        selector: "form.checkout",
+      },
+      harness.deps,
+    );
+
+    expect(harness.calls.snapshots).toEqual([
+      { tabId: "a" },
+      { tabId: "a", selector: "form.checkout", maxDepth: 3 },
+    ]);
+  });
+
+  it("tells a bad selector apart from one that matched nothing", async () => {
+    for (const [reason, code] of [
+      ["invalid-selector", "invalid_selector"],
+      ["no-match", "no_match"],
+    ] as const) {
+      const harness = createHarness({
+        state: { activeTabId: "a", tabs: [tab("a")] },
+        snapshot: { ok: false, reason, message: "because" },
+      });
+
+      expectFailure(
+        await executeBrowserCommand(
+          {
+            type: "page.snapshot",
+            tabId: null,
+            maxDepth: null,
+            selector: "#nope",
+          },
+          harness.deps,
+        ),
+        code,
+      );
+    }
+  });
+
+  it("says a shell can snapshot a page but not part of one", async () => {
+    const harness = createHarness({
+      state: { activeTabId: "a", tabs: [tab("a")] },
+      omitSnapshotIn: true,
+      snapshot: {
+        ok: true,
+        tabId: "a",
+        url: "https://example.com/",
+        title: null,
+        snapshot: "- main",
+        generation: 1,
+        refCount: 0,
+        truncated: false,
+      },
+    });
+
+    // Scoping rides its own channel, so an older shell has to be told what it
+    // cannot do rather than quietly handed the whole page.
+    expectFailure(
+      await executeBrowserCommand(
+        {
+          type: "page.snapshot",
+          tabId: null,
+          maxDepth: null,
+          selector: "#main",
+        },
+        harness.deps,
+      ),
+      "unsupported_command",
+    );
+    await expect(
+      executeBrowserCommand(
+        { type: "page.snapshot", tabId: null, maxDepth: null, selector: null },
+        harness.deps,
+      ),
+    ).resolves.toMatchObject({ ok: true });
   });
 
   it("reports a desktop build with no snapshot channel", async () => {
@@ -759,7 +927,7 @@ describe("executeBrowserCommand — snapshot", () => {
 
     expectFailure(
       await executeBrowserCommand(
-        { type: "page.snapshot", tabId: null, maxDepth: null },
+        { type: "page.snapshot", tabId: null, maxDepth: null, selector: null },
         harness.deps,
       ),
       "unsupported_command",
@@ -966,7 +1134,12 @@ describe("executeBrowserCommand — observation", () => {
       {
         type: "page.observe",
         tabId: null,
-        observation: { kind: "screenshot", format: "jpeg", quality: 80 },
+        observation: {
+          kind: "screenshot",
+          format: "jpeg",
+          quality: 80,
+          fullPage: false,
+        },
       },
       harness.deps,
     );
@@ -988,8 +1161,143 @@ describe("executeBrowserCommand — observation", () => {
         base64: "AAA=",
         width: 1440,
         height: 900,
+        fullPage: false,
+        // The viewport is a different question, not a cut-off document.
+        truncated: false,
       },
     });
+  });
+
+  it("sends a full-page capture down its own channel, not the observe one", async () => {
+    const harness = createHarness({
+      state: { tabs: [tab("t")], activeTabId: "t" },
+      live: { t: liveState("t") },
+    });
+
+    const outcome = await executeBrowserCommand(
+      {
+        type: "page.observe",
+        tabId: null,
+        observation: {
+          kind: "screenshot",
+          format: "jpeg",
+          quality: 80,
+          fullPage: true,
+        },
+      },
+      harness.deps,
+    );
+
+    // `fullPage` never reaches the shell's observation union, which has no such
+    // field and would drop it — the flag picks the channel instead.
+    expect(harness.calls.observations).toEqual([]);
+    expect(harness.calls.fullPageCaptures).toEqual([
+      { tabId: "t", format: "jpeg", quality: 80 },
+    ]);
+    expect(outcome).toEqual({
+      ok: true,
+      value: {
+        type: "image",
+        tabId: "t",
+        url: "https://example.com/",
+        title: "Example",
+        mimeType: "image/jpeg",
+        base64: "FULL",
+        width: 1280,
+        height: 4200,
+        fullPage: true,
+        truncated: false,
+      },
+    });
+  });
+
+  it("passes on a capture that stopped at the height limit", async () => {
+    const harness = createHarness({
+      state: { tabs: [tab("t")], activeTabId: "t" },
+      live: { t: liveState("t") },
+      captureFullPage: {
+        ok: true,
+        tabId: "t",
+        url: "https://example.com/",
+        title: "Example",
+        mimeType: "image/jpeg",
+        base64: "FULL",
+        width: 1280,
+        height: 16_384,
+        truncated: true,
+      },
+    });
+
+    await expect(
+      executeBrowserCommand(
+        {
+          type: "page.observe",
+          tabId: null,
+          observation: {
+            kind: "screenshot",
+            format: "jpeg",
+            quality: 80,
+            fullPage: true,
+          },
+        },
+        harness.deps,
+      ),
+    ).resolves.toMatchObject({ ok: true, value: { truncated: true } });
+  });
+
+  it("tells the caller to ask for the viewport when the shell is older", async () => {
+    // Feature detection, not a silent fallback: a viewport picture returned as
+    // a full-page one is a wrong answer nobody can see is wrong.
+    const harness = createHarness({
+      state: { tabs: [tab("t")], activeTabId: "t" },
+      live: { t: liveState("t") },
+      omitCaptureFullPage: true,
+    });
+
+    const outcome = await executeBrowserCommand(
+      {
+        type: "page.observe",
+        tabId: null,
+        observation: {
+          kind: "screenshot",
+          format: "jpeg",
+          quality: 80,
+          fullPage: true,
+        },
+      },
+      harness.deps,
+    );
+
+    expect(outcome).toMatchObject({ ok: false, code: "unsupported_command" });
+    expect(harness.calls.observations).toEqual([]);
+  });
+
+  it("reports DevTools holding the tab rather than a generic failure", async () => {
+    const harness = createHarness({
+      state: { tabs: [tab("t")], activeTabId: "t" },
+      live: { t: liveState("t") },
+      captureFullPage: {
+        ok: false,
+        reason: "debugger-unavailable",
+        message: "Another debugger is attached",
+      },
+    });
+
+    await expect(
+      executeBrowserCommand(
+        {
+          type: "page.observe",
+          tabId: null,
+          observation: {
+            kind: "screenshot",
+            format: "jpeg",
+            quality: 80,
+            fullPage: true,
+          },
+        },
+        harness.deps,
+      ),
+    ).resolves.toMatchObject({ ok: false, code: "debugger_unavailable" });
   });
 
   it("carries a log through with the count of what it is not showing", async () => {
@@ -1409,6 +1717,362 @@ describe("executeBrowserCommand direct control", () => {
           generation: null,
           operation: { kind: "route-list" },
         },
+        harness.deps,
+      ),
+    ).resolves.toMatchObject({ ok: false, code: "unsupported_command" });
+  });
+});
+
+describe("executeBrowserCommand — recording", () => {
+  function trace(): BrowserTraceRecorder {
+    return new BrowserTraceRecorder();
+  }
+
+  it("records the commands it ran, in order, with their outcomes", async () => {
+    const harness = createHarness({
+      state: { tabs: [tab("t")], activeTabId: "t" },
+      live: { t: liveState("t") },
+      trace: trace(),
+    });
+
+    await executeBrowserCommand(
+      {
+        type: "page.record",
+        tabId: null,
+        operation: { kind: "trace-start", screenshots: false },
+      },
+      harness.deps,
+    );
+    harness.advance(500);
+    await executeBrowserCommand({ type: "tabs.list" }, harness.deps);
+    await executeBrowserCommand(
+      { type: "navigation.open", tabId: null, url: "not a url", newTab: false },
+      harness.deps,
+    );
+    harness.advance(500);
+    const stopped = await executeBrowserCommand(
+      { type: "page.record", tabId: null, operation: { kind: "trace-stop" } },
+      harness.deps,
+    );
+
+    expect(stopped).toMatchObject({
+      ok: true,
+      value: {
+        type: "trace",
+        durationMs: 1_000,
+        droppedSteps: 0,
+        droppedImages: 0,
+        steps: [
+          { seq: 1, at: 500, command: "tabs.list", ok: true, error: null },
+          {
+            seq: 2,
+            at: 500,
+            command: "navigation.open",
+            detail: "not a url",
+            ok: false,
+            error: "blocked_url",
+          },
+        ],
+      },
+    });
+  });
+
+  it("does not record the commands that control the trace", async () => {
+    const harness = createHarness({
+      state: { tabs: [tab("t")], activeTabId: "t" },
+      live: { t: liveState("t") },
+      trace: trace(),
+    });
+
+    await executeBrowserCommand(
+      {
+        type: "page.record",
+        tabId: null,
+        operation: { kind: "trace-start", screenshots: false },
+      },
+      harness.deps,
+    );
+    const stopped = await executeBrowserCommand(
+      { type: "page.record", tabId: null, operation: { kind: "trace-stop" } },
+      harness.deps,
+    );
+
+    expect(stopped).toMatchObject({ ok: true, value: { steps: [] } });
+  });
+
+  it("counts a command an agent issued once, even when it fans out", async () => {
+    const harness = createHarness({
+      state: { tabs: [tab("t")], activeTabId: "t" },
+      live: { t: liveState("t") },
+      trace: trace(),
+    });
+    await executeBrowserCommand(
+      {
+        type: "page.record",
+        tabId: null,
+        operation: { kind: "trace-start", screenshots: false },
+      },
+      harness.deps,
+    );
+
+    // `navigation.open --new-tab` runs the tab-opening command internally; two
+    // steps here would be the trace describing work nobody asked for.
+    await executeBrowserCommand(
+      {
+        type: "navigation.open",
+        tabId: null,
+        url: "https://example.com/",
+        newTab: true,
+      },
+      harness.deps,
+    );
+
+    const stopped = await executeBrowserCommand(
+      { type: "page.record", tabId: null, operation: { kind: "trace-stop" } },
+      harness.deps,
+    );
+    expect(stopped).toMatchObject({
+      ok: true,
+      value: { steps: [{ command: "navigation.open" }] },
+    });
+  });
+
+  it("attaches a picture of the visible tab after a step that could change it", async () => {
+    const harness = createHarness({
+      state: { tabs: [tab("t")], activeTabId: "t" },
+      live: { t: liveState("t") },
+      trace: trace(),
+      observe: {
+        ok: true,
+        kind: "screenshot",
+        tabId: "t",
+        url: "https://example.com/",
+        title: "Example",
+        mimeType: "image/jpeg",
+        base64: "AAAA",
+        width: 800,
+        height: 600,
+      },
+    });
+    await executeBrowserCommand(
+      {
+        type: "page.record",
+        tabId: null,
+        operation: { kind: "trace-start", screenshots: true },
+      },
+      harness.deps,
+    );
+
+    await executeBrowserCommand({ type: "tabs.list" }, harness.deps);
+    await executeBrowserCommand(
+      {
+        type: "page.interact",
+        tabId: null,
+        generation: null,
+        interaction: { action: "hover", ref: "e1" },
+      },
+      harness.deps,
+    );
+
+    const stopped = await executeBrowserCommand(
+      { type: "page.record", tabId: null, operation: { kind: "trace-stop" } },
+      harness.deps,
+    );
+    // A picture after `tabs.list` would be a picture of nothing happening.
+    expect(stopped).toMatchObject({
+      ok: true,
+      value: {
+        steps: [
+          { command: "tabs.list", image: null },
+          { command: "page.interact", image: "AAAA" },
+        ],
+      },
+    });
+    expect(harness.calls.observations).toEqual([
+      {
+        tabId: "t",
+        observation: { kind: "screenshot", format: "jpeg", quality: 50 },
+      },
+    ]);
+  });
+
+  it("leaves the step without a picture rather than failing the step", async () => {
+    const harness = createHarness({
+      state: { tabs: [tab("t")], activeTabId: "t" },
+      live: { t: liveState("t") },
+      trace: trace(),
+      observe: { ok: false, reason: "failed" },
+    });
+    await executeBrowserCommand(
+      {
+        type: "page.record",
+        tabId: null,
+        operation: { kind: "trace-start", screenshots: true },
+      },
+      harness.deps,
+    );
+
+    await executeBrowserCommand(
+      {
+        type: "page.interact",
+        tabId: null,
+        generation: null,
+        interaction: { action: "hover", ref: "e1" },
+      },
+      harness.deps,
+    );
+
+    await expect(
+      executeBrowserCommand(
+        { type: "page.record", tabId: null, operation: { kind: "trace-stop" } },
+        harness.deps,
+      ),
+    ).resolves.toMatchObject({
+      ok: true,
+      value: { steps: [{ command: "page.interact", ok: true, image: null }] },
+    });
+  });
+
+  it("refuses a second trace, and a stop with nothing running", async () => {
+    const harness = createHarness({
+      state: { tabs: [tab("t")], activeTabId: "t" },
+      live: { t: liveState("t") },
+      trace: trace(),
+    });
+
+    await expect(
+      executeBrowserCommand(
+        { type: "page.record", tabId: null, operation: { kind: "trace-stop" } },
+        harness.deps,
+      ),
+    ).resolves.toMatchObject({ ok: false, code: "not_recording" });
+    await executeBrowserCommand(
+      {
+        type: "page.record",
+        tabId: null,
+        operation: { kind: "trace-start", screenshots: false },
+      },
+      harness.deps,
+    );
+    await expect(
+      executeBrowserCommand(
+        {
+          type: "page.record",
+          tabId: null,
+          operation: { kind: "trace-start", screenshots: false },
+        },
+        harness.deps,
+      ),
+    ).resolves.toMatchObject({ ok: false, code: "already_recording" });
+  });
+
+  it("starts a trace with no tab open, because it is not about a tab", async () => {
+    const harness = createHarness({ trace: trace() });
+
+    await expect(
+      executeBrowserCommand(
+        {
+          type: "page.record",
+          tabId: null,
+          operation: { kind: "trace-start", screenshots: false },
+        },
+        harness.deps,
+      ),
+    ).resolves.toMatchObject({
+      ok: true,
+      value: { type: "recording", recording: "trace", active: true },
+    });
+  });
+
+  it("sends the video half to the shell and answers with its frames", async () => {
+    const harness = createHarness({
+      state: { tabs: [tab("t")], activeTabId: "t" },
+      live: { t: liveState("t") },
+      record: {
+        ok: true,
+        kind: "video",
+        tabId: "t",
+        url: "https://example.com/",
+        title: "Example",
+        frames: [{ at: 0, base64: "AAAA" }],
+        chapters: [{ at: 10, title: "signed in" }],
+        droppedFrames: 12,
+        durationMs: 900,
+      },
+    });
+
+    await expect(
+      executeBrowserCommand(
+        {
+          type: "page.record",
+          tabId: null,
+          operation: { kind: "video-stop" },
+        },
+        harness.deps,
+      ),
+    ).resolves.toMatchObject({
+      ok: true,
+      value: {
+        type: "video",
+        frames: [{ at: 0, base64: "AAAA" }],
+        droppedFrames: 12,
+        durationMs: 900,
+      },
+    });
+    expect(harness.calls.record).toEqual([
+      { tabId: "t", operation: { kind: "video-stop" } },
+    ]);
+  });
+
+  it("maps the shell's filming refusals onto codes an agent can act on", async () => {
+    const cases = [
+      ["no-page", "tab_not_live"],
+      ["already-recording", "already_recording"],
+      ["not-recording", "not_recording"],
+      ["debugger-unavailable", "debugger_unavailable"],
+    ] as const;
+
+    for (const [reason, code] of cases) {
+      const harness = createHarness({
+        state: { tabs: [tab("t")], activeTabId: "t" },
+        live: { t: liveState("t") },
+        record: { ok: false, reason, message: "because" },
+      });
+
+      await expect(
+        executeBrowserCommand(
+          {
+            type: "page.record",
+            tabId: null,
+            operation: { kind: "video-start", fps: 5 },
+          },
+          harness.deps,
+        ),
+      ).resolves.toMatchObject({ ok: false, code });
+    }
+  });
+
+  it("reports an older shell that cannot film, and a session that keeps no trace", async () => {
+    const harness = createHarness({
+      state: { tabs: [tab("t")], activeTabId: "t" },
+      live: { t: liveState("t") },
+      omitRecord: true,
+    });
+
+    await expect(
+      executeBrowserCommand(
+        {
+          type: "page.record",
+          tabId: null,
+          operation: { kind: "video-start", fps: 5 },
+        },
+        harness.deps,
+      ),
+    ).resolves.toMatchObject({ ok: false, code: "unsupported_command" });
+    // No recorder in the deps at all: tracing is unavailable rather than idle.
+    await expect(
+      executeBrowserCommand(
+        { type: "page.record", tabId: null, operation: { kind: "trace-stop" } },
         harness.deps,
       ),
     ).resolves.toMatchObject({ ok: false, code: "unsupported_command" });

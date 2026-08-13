@@ -26,6 +26,8 @@ export const BROWSER_COMMAND_MAX_TITLE_LENGTH = 1024;
  * wanting less passes a smaller `maxLength`.
  */
 export const BROWSER_COMMAND_MAX_PAGE_TEXT_LENGTH = 65_536;
+/** Mirrors BB_DESKTOP_BROWSER_MAX_SELECTOR_LENGTH. */
+export const BROWSER_COMMAND_MAX_SELECTOR_LENGTH = 1024;
 
 /**
  * What the browser knows about one surface tab.
@@ -154,15 +156,27 @@ export const BROWSER_COMMAND_MAX_CONSOLE_TEXT_LENGTH = 4096;
 /**
  * What to look at, without touching the page.
  *
- * Structurally identical to the desktop contract's observation union, for the
- * same reason the interaction union is: the app forwards it rather than
- * rebuilding it.
+ * Structurally identical to the desktop contract's observation union — with one
+ * deliberate exception, `fullPage`. That flag is why the executor rebuilds the
+ * screenshot member instead of forwarding it: the shell's copy of this union is
+ * frozen and does not have it, and a shell would *strip* it rather than refuse
+ * it, which is the failure mode a mirrored union exists to prevent. A full-page
+ * capture goes down its own channel; see `bbDesktopBrowserCaptureFullPageRequestSchema`.
  */
 export const browserObservationSchema = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("screenshot"),
     format: z.enum(["png", "jpeg"]),
     quality: z.number().int().min(1).max(100),
+    /**
+     * The whole document rather than the visible viewport.
+     *
+     * The one observation that attaches the browser debugger, because a
+     * composited capture is a viewport by construction. Required rather than
+     * optional so that every caller states which of the two it wants — the two
+     * pictures differ in what they show *and* in what they cost.
+     */
+    fullPage: z.boolean(),
   }),
   z.object({ kind: z.literal("pdf") }),
   z.object({
@@ -361,6 +375,95 @@ export type BrowserControlOperation = z.infer<
   typeof browserControlOperationSchema
 >;
 
+/**
+ * Caps on a recording. The video half mirrors the desktop contract's and must
+ * not drift; the trace half has no counterpart there, and that asymmetry is the
+ * point — see {@link browserRecordOperationSchema}.
+ */
+export const BROWSER_COMMAND_MAX_TRACE_STEPS = 200;
+export const BROWSER_COMMAND_MAX_TRACE_DETAIL_LENGTH = 512;
+/** What a trace's step images may weigh together — one screenshot's worth. */
+export const BROWSER_COMMAND_MAX_TRACE_IMAGE_BASE64_LENGTH = 8_388_608;
+export const BROWSER_COMMAND_MAX_VIDEO_FRAMES = 300;
+export const BROWSER_COMMAND_MAX_VIDEO_FRAME_BASE64_LENGTH = 262_144;
+/** What all the frames together may weigh, which is the bound that matters. */
+export const BROWSER_COMMAND_MAX_VIDEO_BASE64_LENGTH = 16_777_216;
+export const BROWSER_COMMAND_MAX_VIDEO_CHAPTERS = 50;
+export const BROWSER_COMMAND_MAX_CHAPTER_TITLE_LENGTH = 200;
+export const BROWSER_COMMAND_MAX_VIDEO_FPS = 30;
+
+/**
+ * Recording what an agent did and what the page looked like while it did it.
+ *
+ * The two halves record different things and live in different processes, which
+ * is why this union has no exact twin in the desktop contract the way the other
+ * four do. **The trace is the app's own log of the commands it executed** — it
+ * spans tabs, it knows an outcome the shell never sees, and the shell could not
+ * produce it anyway, because a `navigate` reaching the shell looks identical
+ * whether an agent or the user's omnibox sent it. **The video is the shell's**,
+ * because only the shell has the frames. So the desktop contract mirrors the
+ * three `video-*` members and nothing else.
+ *
+ * `tabId` on the command names the tab to film; the trace is not tab-scoped and
+ * ignores it.
+ */
+export const browserRecordOperationSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("trace-start"),
+    /** Capture the visible tab after each step that could have changed it. */
+    screenshots: z.boolean(),
+  }),
+  z.object({ kind: z.literal("trace-stop") }),
+  z.object({
+    kind: z.literal("video-start"),
+    fps: z.number().int().min(1).max(BROWSER_COMMAND_MAX_VIDEO_FPS),
+  }),
+  z.object({
+    kind: z.literal("video-chapter"),
+    title: z.string().min(1).max(BROWSER_COMMAND_MAX_CHAPTER_TITLE_LENGTH),
+  }),
+  z.object({ kind: z.literal("video-stop") }),
+]);
+export type BrowserRecordOperation = z.infer<
+  typeof browserRecordOperationSchema
+>;
+
+/**
+ * One command an agent issued, as the trace remembers it.
+ *
+ * `detail` is a rendered line rather than the command's own JSON, because the
+ * JSON of a `state.load` is a set of the user's cookies and a trace is a file
+ * someone saves and shares. What was typed into a field is kept — a log that
+ * will not say what was filled in is not a log of what happened.
+ */
+const browserTraceStepSchema = z.object({
+  seq: z.number().int().positive(),
+  /** Milliseconds since the trace started, so a saved trace stays readable. */
+  at: z.number().int().nonnegative(),
+  command: z.string().max(64),
+  detail: z.string().max(BROWSER_COMMAND_MAX_TRACE_DETAIL_LENGTH),
+  ok: z.boolean(),
+  /** The failure's code, or null when the step succeeded. */
+  error: z.string().max(64).nullable(),
+  /** JPEG of the visible tab after the step, when the trace was asked for them. */
+  image: z
+    .string()
+    .max(BROWSER_COMMAND_MAX_VIDEO_FRAME_BASE64_LENGTH)
+    .nullable(),
+});
+export type BrowserTraceStep = z.infer<typeof browserTraceStepSchema>;
+
+const browserVideoFrameSchema = z.object({
+  at: z.number().int().nonnegative(),
+  base64: z.string().max(BROWSER_COMMAND_MAX_VIDEO_FRAME_BASE64_LENGTH),
+});
+export type BrowserVideoFrame = z.infer<typeof browserVideoFrameSchema>;
+
+const browserVideoChapterSchema = z.object({
+  at: z.number().int().nonnegative(),
+  title: z.string().max(BROWSER_COMMAND_MAX_CHAPTER_TITLE_LENGTH),
+});
+
 export const browserCommandSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("tabs.list") }),
   z.object({
@@ -395,6 +498,14 @@ export const browserCommandSchema = z.discriminatedUnion("type", [
     type: z.literal("page.snapshot"),
     tabId: optionalTabIdSchema,
     maxDepth: z.number().int().positive().max(100).nullable(),
+    /**
+     * Snapshot only what this CSS selector matches, instead of the page.
+     *
+     * A field here and a whole separate channel on the shell wire, which is the
+     * asymmetry version skew buys: this wire ships with the server that serves
+     * it, so it can grow a field; that one cannot.
+     */
+    selector: z.string().min(1).max(BROWSER_COMMAND_MAX_SELECTOR_LENGTH).nullable(),
   }),
   z.object({
     type: z.literal("page.interact"),
@@ -410,8 +521,10 @@ export const browserCommandSchema = z.discriminatedUnion("type", [
   z.object({
     /**
      * Reading a tab without acting on it. Unlike every other page command this
-     * one never attaches the browser debugger, so it works on a tab a human is
-     * simply browsing and leaves that tab's dialogs where they were.
+     * one works on a tab a human is simply browsing: it attaches no debugger,
+     * so that tab's dialogs stay where they were. The single exception is a
+     * full-page screenshot, which cannot be taken any other way — and which
+     * still stops short of taking the tab's dialogs over.
      */
     type: z.literal("page.observe"),
     tabId: optionalTabIdSchema,
@@ -438,6 +551,16 @@ export const browserCommandSchema = z.discriminatedUnion("type", [
     /** Only `evaluate` with a ref uses it; null skips the staleness check. */
     generation: z.number().int().nonnegative().nullable(),
     operation: browserControlOperationSchema,
+  }),
+  z.object({
+    /**
+     * Recording the session — the app's log of what it was asked to do, and the
+     * shell's film of what the page did about it.
+     */
+    type: z.literal("page.record"),
+    /** The tab to film. The trace spans tabs and ignores this. */
+    tabId: optionalTabIdSchema,
+    operation: browserRecordOperationSchema,
   }),
   z.object({
     type: z.literal("navigation.open"),
@@ -500,8 +623,16 @@ export const browserCommandValueSchema = z.discriminatedUnion("type", [
     title: z.string().max(BROWSER_COMMAND_MAX_TITLE_LENGTH).nullable(),
     mimeType: z.enum(["image/png", "image/jpeg"]),
     base64: z.string().max(BROWSER_COMMAND_MAX_SCREENSHOT_BASE64_LENGTH),
+    /**
+     * The captured pixels — device pixels for a viewport capture, which on a
+     * retina display are twice the CSS ones, and CSS pixels for a full-page
+     * capture, which is rendered at 1:1. `fullPage` is what says which.
+     */
     width: z.number().int().nonnegative(),
     height: z.number().int().nonnegative(),
+    fullPage: z.boolean(),
+    /** A full-page capture that stopped at the height one capture can hold. */
+    truncated: z.boolean(),
   }),
   z.object({
     type: z.literal("pdf"),
@@ -592,6 +723,51 @@ export const browserCommandValueSchema = z.discriminatedUnion("type", [
     offline: z.boolean(),
   }),
   z.object({
+    /** A recording is now running (or, for a chapter, still running). */
+    type: z.literal("recording"),
+    recording: z.enum(["trace", "video"]),
+    active: z.boolean(),
+  }),
+  z.object({
+    type: z.literal("trace"),
+    steps: z
+      .array(browserTraceStepSchema)
+      .max(BROWSER_COMMAND_MAX_TRACE_STEPS)
+      .refine(
+        (steps) =>
+          steps.reduce((total, step) => total + (step.image?.length ?? 0), 0) <=
+          BROWSER_COMMAND_MAX_TRACE_IMAGE_BASE64_LENGTH,
+        "The step images together are past what the browser bridge will carry.",
+      ),
+    /**
+     * Steps and images the recording did not keep. A trace that silently stops
+     * being complete reads as a session that stopped doing anything.
+     */
+    droppedSteps: z.number().int().nonnegative(),
+    droppedImages: z.number().int().nonnegative(),
+    durationMs: z.number().int().nonnegative(),
+  }),
+  z.object({
+    type: z.literal("video"),
+    tabId: z.string().min(1),
+    url: z.string().max(BROWSER_COMMAND_MAX_URL_LENGTH),
+    title: z.string().max(BROWSER_COMMAND_MAX_TITLE_LENGTH).nullable(),
+    frames: z
+      .array(browserVideoFrameSchema)
+      .max(BROWSER_COMMAND_MAX_VIDEO_FRAMES)
+      .refine(
+        (frames) =>
+          frames.reduce((total, frame) => total + frame.base64.length, 0) <=
+          BROWSER_COMMAND_MAX_VIDEO_BASE64_LENGTH,
+        "The frames together are past what the browser bridge will carry.",
+      ),
+    chapters: z
+      .array(browserVideoChapterSchema)
+      .max(BROWSER_COMMAND_MAX_VIDEO_CHAPTERS),
+    droppedFrames: z.number().int().nonnegative(),
+    durationMs: z.number().int().nonnegative(),
+  }),
+  z.object({
     type: z.literal("snapshot"),
     tabId: z.string().min(1),
     url: z.string().max(BROWSER_COMMAND_MAX_URL_LENGTH),
@@ -638,6 +814,10 @@ export const browserCommandErrorCodeSchema = z.enum([
   "stale_refs",
   /** No such ref in the tab's current snapshot. */
   "unknown_ref",
+  /** The browser could not parse that CSS selector. */
+  "invalid_selector",
+  /** The selector matched nothing the accessibility tree describes. */
+  "no_match",
   /** The element never became clickable: covered, hidden, disabled, moving. */
   "not_actionable",
   /** The key named is not one the browser can press. */
@@ -651,6 +831,10 @@ export const browserCommandErrorCodeSchema = z.enum([
   "evaluation_failed",
   /** The tab already holds as many route mocks as it will. */
   "too_many_routes",
+  /** A recording of that kind is already running; stop it before starting one. */
+  "already_recording",
+  /** Nothing to stop, or to add a chapter to. */
+  "not_recording",
   /** The command or its parameters did not parse. */
   "invalid_command",
 ]);

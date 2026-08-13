@@ -11,6 +11,14 @@ import {
 
 afterEach(cleanupTempDirs);
 
+/**
+ * Each of these builds a real repository: `init`, `config` twice, `add`,
+ * `commit` and a `branch` or two, each its own process. That is fast alone and
+ * not fast when the rest of the suite has the machine, which is why the
+ * package-wide 15s was not enough for the two that also refresh remotes.
+ */
+const GIT_REPO_TEST_TIMEOUT_MS = 45_000;
+
 async function initBranchRepo(): Promise<string> {
   const repoPath = await makeTempDir("bb-host-branches-repo-");
   await runGitCommand(["init", "-b", "develop"], { cwd: repoPath });
@@ -52,7 +60,7 @@ describe("host.list_branches dispatch", () => {
     expect(result.branches).toEqual(
       expect.arrayContaining(["main", "develop", "release/1.2"]),
     );
-  });
+  }, GIT_REPO_TEST_TIMEOUT_MS);
 
   it("lists remote branches separately from local checkout branches", async () => {
     const repoPath = await initBranchRepo();
@@ -77,7 +85,7 @@ describe("host.list_branches dispatch", () => {
       "upstream/develop",
       "upstream/main",
     ]);
-  });
+  }, GIT_REPO_TEST_TIMEOUT_MS);
 
   it("pins origin default branch first in remote branch results", async () => {
     const repoPath = await initBranchRepo();
@@ -101,7 +109,7 @@ describe("host.list_branches dispatch", () => {
     expect(result.defaultBranch).toBe("main");
     expect(result.remoteBranches).toEqual(["origin/main"]);
     expect(result.remoteBranchesTruncated).toBe(true);
-  });
+  }, GIT_REPO_TEST_TIMEOUT_MS);
 
   it("classifies a selected branch before filtering and pagination", async () => {
     const repoPath = await initBranchRepo();
@@ -149,7 +157,7 @@ describe("host.list_branches dispatch", () => {
       name: "origin/main",
       kind: "missing",
     });
-  });
+  }, GIT_REPO_TEST_TIMEOUT_MS);
 
   it("refreshes remote branches before filtering branch lists", async () => {
     const repoPath = await initBranchRepo();
@@ -191,7 +199,7 @@ describe("host.list_branches dispatch", () => {
     );
 
     expect(result.remoteBranches).toEqual(["origin/feature/remote-only"]);
-  });
+  }, GIT_REPO_TEST_TIMEOUT_MS);
 
   it("filters and limits branch lists", async () => {
     const repoPath = await initBranchRepo();
@@ -209,7 +217,7 @@ describe("host.list_branches dispatch", () => {
 
     expect(result.branches).toEqual(["develop"]);
     expect(result.branchesTruncated).toBe(true);
-  });
+  }, GIT_REPO_TEST_TIMEOUT_MS);
 
   it("reports detached HEAD in checkout state", async () => {
     const repoPath = await initBranchRepo();
@@ -225,7 +233,7 @@ describe("host.list_branches dispatch", () => {
     expect(result.branches).toEqual(
       expect.arrayContaining(["main", "develop", "release/1.2"]),
     );
-  });
+  }, GIT_REPO_TEST_TIMEOUT_MS);
 
   it("reports dirty primary checkouts", async () => {
     const repoPath = await initBranchRepo();
@@ -239,7 +247,7 @@ describe("host.list_branches dispatch", () => {
 
     expect(result.hasUncommittedChanges).toBe(true);
     expect(result.operation).toEqual({ kind: "none" });
-  });
+  }, GIT_REPO_TEST_TIMEOUT_MS);
 
   it("returns an empty list for non-git directories", async () => {
     const dirPath = await makeTempDir("bb-host-branches-nongit-");
@@ -263,7 +271,7 @@ describe("host.list_branches dispatch", () => {
       remoteBranchesTruncated: false,
       selectedBranch: null,
     });
-  });
+  }, GIT_REPO_TEST_TIMEOUT_MS);
 
   it("returns an empty list for missing paths", async () => {
     const parentPath = await makeTempDir("bb-host-branches-missing-parent-");
@@ -291,5 +299,5 @@ describe("host.list_branches dispatch", () => {
       remoteBranchesTruncated: false,
       selectedBranch: null,
     });
-  });
+  }, GIT_REPO_TEST_TIMEOUT_MS);
 });

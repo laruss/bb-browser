@@ -1,11 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   BB_DESKTOP_BROWSER_MAX_URL_LENGTH,
+  type BbDesktopBrowserCaptureFullPageResult,
   type BbDesktopBrowserInteractResult,
   type BbDesktopBrowserObserveResult,
   type BbDesktopBrowserPageReadResult,
   type BbDesktopBrowserSnapshotResult,
   type BbDesktopBrowserControlResult,
+  type BbDesktopBrowserRecordResult,
   type BbDesktopBrowserStorageResult,
   type BbDesktopBrowserAttachRequest,
   type BbDesktopBrowserNavigateRequest,
@@ -14,6 +16,7 @@ import {
 } from "@bb/desktop-contract";
 import {
   BB_DESKTOP_BROWSER_ATTACH_CHANNEL,
+  BB_DESKTOP_BROWSER_CAPTURE_FULL_PAGE_CHANNEL,
   BB_DESKTOP_BROWSER_DETACH_CHANNEL,
   BB_DESKTOP_BROWSER_GO_BACK_CHANNEL,
   BB_DESKTOP_BROWSER_GO_FORWARD_CHANNEL,
@@ -25,6 +28,8 @@ import {
   BB_DESKTOP_BROWSER_SET_VISIBLE_CHANNEL,
   BB_DESKTOP_BROWSER_STOP_CHANNEL,
   BB_DESKTOP_BROWSER_CONTROL_CHANNEL,
+  BB_DESKTOP_BROWSER_RECORD_CHANNEL,
+  BB_DESKTOP_BROWSER_SNAPSHOT_IN_CHANNEL,
   BB_DESKTOP_BROWSER_STORAGE_CHANNEL,
 } from "../src/desktop-browser-ipc.js";
 import { registerDesktopBrowserIpc } from "../src/desktop-browser-main-ipc.js";
@@ -86,6 +91,7 @@ type SetVisibleCall = Parameters<DesktopBrowserViewManager["setVisible"]>[0];
 type TabCommandCall = Parameters<DesktopBrowserViewManager["reload"]>[0];
 type ReadPageCall = Parameters<DesktopBrowserViewManager["readPage"]>[0];
 type SnapshotCall = Parameters<DesktopBrowserViewManager["snapshot"]>[0];
+type SnapshotInCall = Parameters<DesktopBrowserViewManager["snapshotIn"]>[0];
 type DialogRespondCall = Parameters<
   DesktopBrowserViewManager["respondToDialog"]
 >[0];
@@ -93,6 +99,10 @@ type InteractCall = Parameters<DesktopBrowserViewManager["interact"]>[0];
 type ObserveCall = Parameters<DesktopBrowserViewManager["observe"]>[0];
 type StorageCall = Parameters<DesktopBrowserViewManager["storage"]>[0];
 type ControlCall = Parameters<DesktopBrowserViewManager["control"]>[0];
+type RecordCall = Parameters<DesktopBrowserViewManager["record"]>[0];
+type CaptureFullPageCall = Parameters<
+  DesktopBrowserViewManager["captureFullPage"]
+>[0];
 type WindowResizeCall = Parameters<
   DesktopBrowserViewManager["beginWindowResize"]
 >[0];
@@ -165,6 +175,19 @@ class RecordingDesktopBrowserViewManager implements DesktopBrowserViewManager {
   public readonly controlCalls: ControlCall[] = [];
   public controlFailure: Error | null = null;
   public controlResult: BbDesktopBrowserControlResult = {
+    ok: false,
+    reason: "no-view",
+  };
+  public readonly snapshotInCalls: SnapshotInCall[] = [];
+  public readonly recordCalls: RecordCall[] = [];
+  public recordFailure: Error | null = null;
+  public recordResult: BbDesktopBrowserRecordResult = {
+    ok: false,
+    reason: "no-view",
+  };
+  public readonly captureFullPageCalls: CaptureFullPageCall[] = [];
+  public captureFullPageFailure: Error | null = null;
+  public captureFullPageResult: BbDesktopBrowserCaptureFullPageResult = {
     ok: false,
     reason: "no-view",
   };
@@ -264,6 +287,32 @@ class RecordingDesktopBrowserViewManager implements DesktopBrowserViewManager {
       return Promise.reject(this.controlFailure);
     }
     return Promise.resolve(this.controlResult);
+  }
+
+  snapshotIn(args: SnapshotInCall): Promise<BbDesktopBrowserSnapshotResult> {
+    this.snapshotInCalls.push(args);
+    if (this.snapshotFailure !== null) {
+      return Promise.reject(this.snapshotFailure);
+    }
+    return Promise.resolve(this.snapshotResult);
+  }
+
+  record(args: RecordCall): Promise<BbDesktopBrowserRecordResult> {
+    this.recordCalls.push(args);
+    if (this.recordFailure !== null) {
+      return Promise.reject(this.recordFailure);
+    }
+    return Promise.resolve(this.recordResult);
+  }
+
+  captureFullPage(
+    args: CaptureFullPageCall,
+  ): Promise<BbDesktopBrowserCaptureFullPageResult> {
+    this.captureFullPageCalls.push(args);
+    if (this.captureFullPageFailure !== null) {
+      return Promise.reject(this.captureFullPageFailure);
+    }
+    return Promise.resolve(this.captureFullPageResult);
   }
 
   storage(args: StorageCall): Promise<BbDesktopBrowserStorageResult> {
@@ -666,6 +715,133 @@ describe("registerDesktopBrowserIpc", () => {
       }),
     ).resolves.toMatchObject({ ok: false, reason: "failed" });
     expect(manager.controlCalls).toHaveLength(1);
+  });
+
+  it("routes a scoped snapshot to its own channel and refuses one without a selector", async () => {
+    const manager = new RecordingDesktopBrowserViewManager();
+    manager.snapshotResult = {
+      ok: true,
+      tabId: "browser:a",
+      url: "https://example.com/",
+      title: null,
+      snapshot: '- button "Pay" [ref=e1]',
+      generation: 3,
+      refCount: 1,
+      truncated: false,
+    };
+    registerDesktopBrowserIpc(manager);
+    const renderer = createTrustedRenderer("main-window");
+    const request = { tabId: "browser:a", selector: "form.checkout" };
+
+    await expect(
+      invokeBrowserIpc({
+        channel: BB_DESKTOP_BROWSER_SNAPSHOT_IN_CHANNEL,
+        payload: request,
+        sender: renderer.sender,
+      }),
+    ).resolves.toEqual(manager.snapshotResult);
+    expect(manager.snapshotInCalls).toEqual([
+      { hostWindow: renderer.hostWindow, request },
+    ]);
+    // The unscoped snapshot never reaches this channel, and a request without a
+    // selector is the request's fault rather than the tab's.
+    await expect(
+      invokeBrowserIpc({
+        channel: BB_DESKTOP_BROWSER_SNAPSHOT_IN_CHANNEL,
+        payload: { tabId: "browser:a" },
+        sender: renderer.sender,
+      }),
+    ).resolves.toMatchObject({ ok: false, reason: "failed" });
+    expect(manager.snapshotInCalls).toHaveLength(1);
+  });
+
+  it("routes a full-page capture to its own channel", async () => {
+    const manager = new RecordingDesktopBrowserViewManager();
+    manager.captureFullPageResult = {
+      ok: true,
+      tabId: "browser:a",
+      url: "https://example.com/",
+      title: null,
+      mimeType: "image/jpeg",
+      base64: "AAAA",
+      width: 1280,
+      height: 4200,
+      truncated: false,
+    };
+    registerDesktopBrowserIpc(manager);
+    const renderer = createTrustedRenderer("main-window");
+    const request = { tabId: "browser:a", format: "jpeg", quality: 70 };
+
+    await expect(
+      invokeBrowserIpc({
+        channel: BB_DESKTOP_BROWSER_CAPTURE_FULL_PAGE_CHANNEL,
+        payload: request,
+        sender: renderer.sender,
+      }),
+    ).resolves.toEqual(manager.captureFullPageResult);
+    expect(manager.captureFullPageCalls).toEqual([
+      { hostWindow: renderer.hostWindow, request },
+    ]);
+
+    // An observation payload sent here is the request's fault, not the tab's.
+    await expect(
+      invokeBrowserIpc({
+        channel: BB_DESKTOP_BROWSER_CAPTURE_FULL_PAGE_CHANNEL,
+        payload: {
+          tabId: "browser:a",
+          observation: { kind: "screenshot", format: "jpeg", quality: 70 },
+        },
+        sender: renderer.sender,
+      }),
+    ).resolves.toMatchObject({ ok: false, reason: "failed" });
+    expect(manager.captureFullPageCalls).toHaveLength(1);
+  });
+
+  it("routes recording operations and refuses a payload it cannot understand", async () => {
+    const manager = new RecordingDesktopBrowserViewManager();
+    manager.recordResult = {
+      ok: true,
+      kind: "video",
+      tabId: "browser:a",
+      url: "https://example.com/",
+      title: null,
+      frames: [{ at: 0, base64: "AAAA" }],
+      chapters: [],
+      droppedFrames: 3,
+      durationMs: 1_200,
+    };
+    registerDesktopBrowserIpc(manager);
+    const renderer = createTrustedRenderer("main-window");
+    const request = {
+      tabId: "browser:a",
+      operation: { kind: "video-stop" },
+    };
+
+    await expect(
+      invokeBrowserIpc({
+        channel: BB_DESKTOP_BROWSER_RECORD_CHANNEL,
+        payload: request,
+        sender: renderer.sender,
+      }),
+    ).resolves.toEqual(manager.recordResult);
+    expect(manager.recordCalls).toEqual([
+      { hostWindow: renderer.hostWindow, request },
+    ]);
+
+    // The trace half of the agent-facing union never reaches the shell, so this
+    // channel does not understand it — which is the wire saying what the note on
+    // the schema says.
+    await expect(
+      invokeBrowserIpc({
+        channel: BB_DESKTOP_BROWSER_RECORD_CHANNEL,
+        payload: {
+          tabId: "browser:a",
+          operation: { kind: "trace-start", screenshots: false },
+        },
+        sender: renderer.sender,
+      }),
+    ).resolves.toMatchObject({ ok: false, reason: "failed" });
+    expect(manager.recordCalls).toHaveLength(1);
   });
 
   it("converts a throwing manager read into a typed refusal", async () => {

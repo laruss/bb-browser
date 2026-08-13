@@ -221,7 +221,31 @@ to masquerade as migration regressions:
    shell that exports it — notably from inside a Claude Code session. With the
    variable unset, `@bb/host-daemon` is 46/46 files and 542/542 tests green.
    **Run host-daemon checks as `env -u CLAUDE_CONFIG_DIR ...`.**
-2. **Subprocess-spawning tests are load-sensitive, in either toolchain.**
+2. **The pinned Node version is load-bearing, and `.nvmrc` is the only thing
+   that says so.** Node 25 ships Web Storage globals enabled by default, and
+   that global `localStorage` shadows jsdom's inside vitest — as a plain empty
+   object, with a `--localstorage-file was provided without a valid path`
+   warning as the only clue. Every test touching `window.localStorage` then
+   fails with `clear is not a function`: on 25.6.1 that is 46 tests in
+   `bb-plugin-tasks` alone, plus `@bb/host-watcher` and `@bb/qa`. On the pinned
+   22.20.0 the same files pass. **Run the suite on the `.nvmrc` version**, and
+   distrust any failure list gathered without checking `node --version` first.
+3. **Test parallelism is bounded on purpose, at two levels.** Vitest sizes its
+   worker pool to the machine and `turbo run test` runs several packages at
+   once, so the untuned total is a multiple of the cores available. A worker
+   that is only computing degrades gracefully under that; one waiting on
+   `git commit`, an FSEvents callback or a daemon's first HTTP response does
+   not — it waits out its deadline and fails. So the root `test` script pins
+   `--concurrency=2`, and the packages whose tests drive real subsystems cap
+   their own workers (`SUBPROCESS_HEAVY_MAX_WORKERS` in `vitest.shared.ts`).
+   **Both are needed**: capping a package protects it from its own greed, not
+   from the ten uncapped packages queued alongside it — measured, a full run at
+   turbo's default concurrency failed eight packages even with the per-package
+   caps in place, including `@bb/process-utils`, whose entire job is spawning
+   processes. Lowering the outer number costs little: 8m16s at `--concurrency=2`
+   against 7m26s at the default, because the long pole is the two largest
+   packages either way.
+4. **Subprocess-spawning tests are load-sensitive, in either toolchain.**
    `apps/host-daemon/test/command/host-branches-dispatch.test.ts` builds a real
    git repository per test — `init`, `config` ×2, `add`, `commit`, `branch` ×2 as
    separate processes — against the hard `testTimeout: 15_000` in
@@ -232,16 +256,15 @@ to masquerade as migration regressions:
    the migration and on bun after it, so it is a property of the suite, not of
    either package manager.
 
-   `apps/desktop` fails even when it is the only package running, because the
-   contention is _inside_ it: vitest runs its 32 files concurrently, and
+   `apps/desktop` failed even when it was the only package running, because the
+   contention is _inside_ it: vitest ran its files concurrently while
    `bb-process.test.ts` allows the node process it spawns just `timeoutMs: 1_000`
-   to print `ready`. Node cold start alone can exceed that under load. The test
+   to print `ready`, and a Node cold start alone can exceed that. The test
    writes a temp script and spawns `process.execPath`, so no package manager or
-   `node_modules` layout is involved. With `--maxWorkers=2` the package is
-   32/32 files and 232/232 tests green.
-
-   Verify with `--concurrency=4` (and `--maxWorkers=2` for desktop) before
-   believing a failure is real.
+   `node_modules` layout is involved. That workaround used to be a
+   `--maxWorkers=2` you had to remember; it now lives in
+   `apps/desktop/vitest.config.ts`, with the other four packages in the same
+   position, under caveat 3.
 
 Also note that a pipeline like `bun run test | tail` reports the exit code of
 `tail`, not of the run — read turbo's `Tasks: N successful, M total` line

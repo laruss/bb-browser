@@ -74,7 +74,11 @@ jobs:
           cache-prefix: test-${{ matrix.shard }}
 
       - name: Test
-        run: bunx turbo run test ${{ matrix.filter }} --cache-dir=.turbo/cache --output-logs=new-only
+        # --concurrency matches the root `test` script: the packages shard runs
+        # everything that spawns git, watchers and daemons, and vitest already
+        # sizes each package's worker pool to the runner. See the test
+        # parallelism caveat in docs/architecture/bb-migration.md.
+        run: bunx turbo run test ${{ matrix.filter }} --concurrency=2 --cache-dir=.turbo/cache --output-logs=new-only
 
   package-smoke:
     name: Package Smoke (${{ matrix.os }}, Node ${{ matrix.node-version }})

@@ -305,6 +305,32 @@ describe("bb browser CLI interaction", () => {
     expect(result.stderr).toContain("generation");
   });
 
+  it("passes a selector through to the snapshot it scopes", async () => {
+    const host = interactionHost();
+
+    await host.harness.runCli([
+      "snapshot",
+      "--tab",
+      "tab-1",
+      "--selector",
+      "form.checkout",
+    ]);
+
+    expect(
+      host.harness.inspection.browserCalls
+        .filter((call) => call.type === "page.snapshot")
+        .map((call) => call.args.selector),
+    ).toEqual(["form.checkout"]);
+  });
+
+  it("refuses a selector flag with nothing after it", async () => {
+    const host = interactionHost();
+
+    await expect(
+      host.harness.runCli(["snapshot", "--selector"]),
+    ).resolves.toMatchObject({ exitCode: 2 });
+  });
+
   it("refuses an incomplete command instead of acting on a default", async () => {
     const host = interactionHost();
 
@@ -429,6 +455,22 @@ describe("bb browser observation commands", () => {
         .filter((call) => call.type === "page.screenshot")
         .map((call) => call.args.format),
     ).toEqual(["png", "jpeg"]);
+    await rm(directory, { recursive: true, force: true });
+  });
+
+  it("captures the whole document when asked for it", async () => {
+    const host = observationHost();
+    const directory = await mkdtemp(join(tmpdir(), "bb-browser-cli-"));
+
+    await host.harness.runCli(["screenshot", "long.jpg", "--full-page"], {
+      cwd: directory,
+    });
+
+    expect(
+      host.harness.inspection.browserCalls
+        .filter((call) => call.type === "page.screenshot")
+        .map((call) => call.args.fullPage),
+    ).toEqual([true]);
     await rm(directory, { recursive: true, force: true });
   });
 
@@ -902,5 +944,204 @@ describe("bb browser direct control commands", () => {
     expect(result.stdout).toContain("Direct control");
     expect(result.stdout).toContain("skip what makes the commands above safe");
     expect(result.stdout).toContain("network-state-set");
+  });
+  it("writes a trace as a directory a person can open", async () => {
+    const host = createHost();
+    const directory = await mkdtemp(join(tmpdir(), "bb-browser-cli-"));
+
+    await host.harness.runCli(["tracing-start", "--screenshots"]);
+    await host.harness.runCli(["tabs"]);
+    const stopped = await host.harness.runCli(["tracing-stop", "trace"], {
+      cwd: directory,
+    });
+
+    expect(stopped.exitCode).toBe(0);
+    const written = JSON.parse(
+      await readFile(join(directory, "trace", "trace.json"), "utf8"),
+    ) as { steps: { command: string; image: string | null }[] };
+    expect(written.steps.map((step) => step.command)).toEqual(["tabs.list"]);
+    await rm(directory, { recursive: true, force: true });
+  });
+
+  it("prints a trace with the images left out when given nowhere to put them", async () => {
+    const host = createHost();
+
+    await host.harness.runCli(["tracing-start"]);
+    await host.harness.runCli(["tabs"]);
+    const stopped = await host.harness.runCli(["tracing-stop"]);
+
+    // Base64 in a terminal is not a thing anyone reads, and the log is.
+    expect(JSON.parse(stopped.stdout)).toMatchObject({
+      steps: [{ command: "tabs.list", image: null }],
+    });
+  });
+
+  it("refuses to stop a trace that is not running", async () => {
+    const host = createHost();
+
+    const result = await host.harness.runCli(["tracing-stop"]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("trace");
+  });
+
+  it("writes the frames, their timings and an ffconcat playlist", async () => {
+    const host = createHost();
+    host.harness.behavior.browser.setPageContent("tab-1", {
+      frames: [
+        { at: 0, base64: Buffer.from("first").toString("base64") },
+        { at: 400, base64: Buffer.from("second").toString("base64") },
+      ],
+    });
+    const directory = await mkdtemp(join(tmpdir(), "bb-browser-cli-"));
+
+    await host.harness.runCli(["video-start", "--fps", "5", "--tab", "tab-1"]);
+    await host.harness.runCli(["video-chapter", "signed in", "--tab", "tab-1"]);
+    const stopped = await host.harness.runCli(
+      ["video-stop", "film", "--tab", "tab-1"],
+      { cwd: directory },
+    );
+
+    expect(stopped.exitCode).toBe(0);
+    expect(
+      await readFile(join(directory, "film", "frame-00001.jpg"), "utf8"),
+    ).toBe("first");
+    const playlist = await readFile(join(directory, "film", "frames.txt"), "utf8");
+    // The timings are the whole point of the playlist: frames arrive when the
+    // page repaints, so a numbered sequence would play back at the wrong speed.
+    expect(playlist).toContain("file frame-00001.jpg");
+    expect(playlist).toContain("duration 0.400");
+    expect(playlist.trimEnd().endsWith("file frame-00002.jpg")).toBe(true);
+    const manifest = JSON.parse(
+      await readFile(join(directory, "film", "video.json"), "utf8"),
+    ) as { chapters: { title: string }[] };
+    expect(manifest.chapters).toEqual([{ at: 0, title: "signed in" }]);
+    // Frames are frames until something encodes them, and this is where saying
+    // so is useful.
+    expect(stopped.stderr).toContain("--encode");
+    expect(stopped.stderr).toContain("-f concat");
+    await rm(directory, { recursive: true, force: true });
+  });
+
+  it("encodes the frames with the ffmpeg it was pointed at", async () => {
+    const host = createHost();
+    host.harness.behavior.browser.setPageContent("tab-1", {
+      frames: [
+        { at: 0, base64: Buffer.from("first").toString("base64") },
+        { at: 400, base64: Buffer.from("second").toString("base64") },
+      ],
+    });
+    const directory = await mkdtemp(join(tmpdir(), "bb-browser-cli-"));
+    // A stand-in for ffmpeg rather than the real one: what is worth pinning is
+    // the arguments bb passes and that it checks a file appeared, neither of
+    // which needs an encoder — and a test that encodes video is a test that
+    // fails on a machine without one.
+    const fake = join(directory, "fake-ffmpeg");
+    const argvLog = join(directory, "argv.txt");
+    await writeFile(
+      fake,
+      [
+        "#!/bin/sh",
+        'if [ "$1" = "-version" ]; then echo "fake ffmpeg"; exit 0; fi',
+        `printf '%s\\n' "$@" > ${argvLog}`,
+        'for out; do :; done',
+        'printf "fake video" > "$out"',
+      ].join("\n"),
+      { mode: 0o755 },
+    );
+    const previous = process.env.BB_FFMPEG;
+    process.env.BB_FFMPEG = fake;
+    try {
+      await host.harness.runCli(["video-start", "--tab", "tab-1"]);
+      const stopped = await host.harness.runCli(
+        ["video-stop", "film", "--encode", "--tab", "tab-1"],
+        { cwd: directory },
+      );
+
+      expect(stopped.exitCode).toBe(0);
+      const argv = (await readFile(argvLog, "utf8")).trim().split("\n");
+      expect(argv).toContain("concat");
+      expect(argv).toContain(join(directory, "film", "frames.txt"));
+      expect(argv.at(-1)).toBe(join(directory, "film", "video.mp4"));
+      expect(
+        await readFile(join(directory, "film", "video.mp4"), "utf8"),
+      ).toBe("fake video");
+      // The frames stay: they are the recording, and the video is a rendering
+      // of them that anything can redo.
+      expect(
+        await readFile(join(directory, "film", "frame-00001.jpg"), "utf8"),
+      ).toBe("first");
+      expect(stopped.stdout).toContain("video.mp4");
+    } finally {
+      if (previous === undefined) {
+        delete process.env.BB_FFMPEG;
+      } else {
+        process.env.BB_FFMPEG = previous;
+      }
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
+
+  it("keeps the frames when the encoder fails, and says why", async () => {
+    const host = createHost();
+    host.harness.behavior.browser.setPageContent("tab-1", {
+      frames: [{ at: 0, base64: Buffer.from("first").toString("base64") }],
+    });
+    const directory = await mkdtemp(join(tmpdir(), "bb-browser-cli-"));
+    const fake = join(directory, "fake-ffmpeg");
+    await writeFile(
+      fake,
+      [
+        "#!/bin/sh",
+        'if [ "$1" = "-version" ]; then exit 0; fi',
+        'echo "Invalid data found when processing input" >&2',
+        "exit 1",
+      ].join("\n"),
+      { mode: 0o755 },
+    );
+    const previous = process.env.BB_FFMPEG;
+    process.env.BB_FFMPEG = fake;
+    try {
+      await host.harness.runCli(["video-start", "--tab", "tab-1"]);
+      const stopped = await host.harness.runCli(
+        ["video-stop", "film", "--encode", "--tab", "tab-1"],
+        { cwd: directory },
+      );
+
+      expect(stopped.exitCode).toBe(1);
+      // ffmpeg's own words, and the reassurance that stops someone re-recording
+      // a session they still have on disk.
+      expect(stopped.stderr).toContain("Invalid data found");
+      expect(stopped.stderr).toContain("frames are written");
+      expect(
+        await readFile(join(directory, "film", "frame-00001.jpg"), "utf8"),
+      ).toBe("first");
+    } finally {
+      if (previous === undefined) {
+        delete process.env.BB_FFMPEG;
+      } else {
+        process.env.BB_FFMPEG = previous;
+      }
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
+
+  it("will not throw a film away for want of somewhere to put it", async () => {
+    const host = createHost();
+
+    const result = await host.harness.runCli(["video-stop"]);
+
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("directory is required");
+  });
+
+  it("lists the recording commands in help", async () => {
+    const host = createHost();
+
+    const result = await host.harness.runCli(["help"]);
+
+    expect(result.stdout).toContain("Recording");
+    expect(result.stdout).toContain("tracing-start");
+    expect(result.stdout).toContain("video-stop");
   });
 });

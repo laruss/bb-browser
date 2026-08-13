@@ -1,5 +1,6 @@
 import {
   browserCommandSchema,
+  type BrowserRecordOperation,
   type BrowserCommand,
   type BrowserCommandErrorCode,
   type BrowserCommandOutcome,
@@ -8,7 +9,9 @@ import {
 } from "@bb/domain";
 import type {
   BbDesktopBrowserApi,
+  BbDesktopBrowserCaptureFullPageResult,
   BbDesktopBrowserControlResult,
+  BbDesktopBrowserRecordResult,
   BbDesktopBrowserInteractResult,
   BbDesktopBrowserObserveResult,
   BbDesktopBrowserPageReadResult,
@@ -18,6 +21,11 @@ import type {
 } from "@bb/desktop-contract";
 import type { BrowserFixedPanelTab } from "../fixed-panel-tabs-state";
 import { normalizeBrowserUrl } from "../browser-url";
+import {
+  BROWSER_TRACE_SCREENSHOT_QUALITY,
+  browserCommandChangesPage,
+  type BrowserTraceRecorder,
+} from "./trace";
 import {
   BROWSER_SURFACE_NEW_TAB_URL,
   activateBrowserSurfaceTab,
@@ -61,6 +69,17 @@ export interface BrowserCommandDeps {
     desktopBrowser: BbDesktopBrowserApi;
     tabId: string;
   }) => void;
+  /**
+   * Where the session's trace is kept, when the bridge holds one. Absent here
+   * means tracing is simply unavailable rather than idle.
+   */
+  trace?: BrowserTraceRecorder;
+  /** Seam so a trace's timings are predictable in tests. */
+  now?: () => number;
+}
+
+function now(deps: BrowserCommandDeps): number {
+  return (deps.now ?? Date.now)();
 }
 
 function failure(
@@ -198,6 +217,18 @@ function snapshotFailure(
           result.message === undefined ? "" : ` (${result.message})`
         }. Close DevTools for that tab and try again.`,
       );
+    case "invalid-selector":
+      return failure(
+        "invalid_selector",
+        `That is not a CSS selector the browser can parse${
+          result.message === undefined ? "" : ` (${result.message})`
+        }.`,
+      );
+    case "no-match":
+      return failure(
+        "no_match",
+        result.message ?? "Nothing on the page matches that selector.",
+      );
     default:
       return failure(
         "page_read_failed",
@@ -247,9 +278,18 @@ function interactFailure(
   }
 }
 
-/** Maps the shell's observation refusals onto the codes the agent tools speak. */
+/**
+ * Maps the shell's observation refusals onto the codes the agent tools speak.
+ *
+ * Shared with the full-page capture, whose refusals are the same list plus
+ * `debugger-unavailable` — the one thing it can hit that a viewport capture
+ * cannot, because it is the one capture that needs the debugger.
+ */
 function observeFailure(
-  result: Extract<BbDesktopBrowserObserveResult, { ok: false }>,
+  result: Extract<
+    BbDesktopBrowserObserveResult | BbDesktopBrowserCaptureFullPageResult,
+    { ok: false }
+  >,
   tabId: string,
 ): BrowserCommandOutcome {
   const detail = result.message === undefined ? "" : ` ${result.message}`;
@@ -263,6 +303,11 @@ function observeFailure(
       return failure(
         "tab_not_live",
         `Browser tab ${tabId} has not loaded a page yet.`,
+      );
+    case "debugger-unavailable":
+      return failure(
+        "debugger_unavailable",
+        `The browser debugger could not attach to tab ${tabId}${detail}. Close DevTools for that tab and try again, or ask for the visible viewport instead.`,
       );
     case "too-large":
       return failure("result_too_large", `That is too large to return.${detail}`);
@@ -344,6 +389,122 @@ function controlFailure(
   }
 }
 
+/** Maps the shell's filming refusals onto the codes the agent tools speak. */
+function recordFailure(
+  result: Extract<BbDesktopBrowserRecordResult, { ok: false }>,
+  tabId: string,
+): BrowserCommandOutcome {
+  const detail = result.message === undefined ? "" : ` ${result.message}`;
+  switch (result.reason) {
+    case "no-view":
+      return failure(
+        "tab_not_live",
+        `Browser tab ${tabId} has no live page. ${NOT_LIVE_HINT}`,
+      );
+    case "no-page":
+      return failure(
+        "tab_not_live",
+        `Browser tab ${tabId} has not loaded a page yet, so there is nothing to film.`,
+      );
+    case "debugger-unavailable":
+      return failure(
+        "debugger_unavailable",
+        `The browser debugger could not attach to tab ${tabId}${detail}. Close DevTools for that tab and try again.`,
+      );
+    case "already-recording":
+      return failure("already_recording", `That tab is already being filmed.${detail}`);
+    case "not-recording":
+      return failure("not_recording", `That tab is not being filmed.${detail}`);
+    default:
+      return failure(
+        "page_read_failed",
+        `The browser could not film tab ${tabId}.${detail}`,
+      );
+  }
+}
+
+/**
+ * The half of `page.record` the app answers itself. The video half is the
+ * shell's; see the note on `browserRecordOperationSchema` for why the two halves
+ * of one command live in different processes.
+ */
+function runTraceOperation(
+  operation: Extract<
+    BrowserRecordOperation,
+    { kind: "trace-start" | "trace-stop" }
+  >,
+  deps: BrowserCommandDeps,
+): BrowserCommandOutcome {
+  const trace = deps.trace;
+  if (trace === undefined) {
+    return failure(
+      "unsupported_command",
+      "This browser session keeps no trace.",
+    );
+  }
+  if (operation.kind === "trace-start") {
+    if (!trace.start(now(deps), operation.screenshots)) {
+      return failure(
+        "already_recording",
+        "A trace is already running. Stop it first, which is also how you read it.",
+      );
+    }
+    return success({ type: "recording", recording: "trace", active: true });
+  }
+  const stopped = trace.stop(now(deps));
+  if (stopped === null) {
+    return failure("not_recording", "No trace is running.");
+  }
+  return success({ type: "trace", ...stopped });
+}
+
+/**
+ * A picture of what the user would be looking at, for the step just taken.
+ *
+ * The active tab, and only it: a `WebContentsView` that is not the visible one
+ * has nothing composited to capture, so a picture of the tab a background
+ * command addressed would come back empty anyway. A capture that fails leaves
+ * the step without an image rather than failing the step — the command already
+ * happened.
+ */
+async function captureTraceImage(
+  deps: BrowserCommandDeps,
+): Promise<string | null> {
+  const observe = deps.desktopBrowser?.observe;
+  const active = getActiveBrowserSurfaceTab(deps.getState());
+  if (observe === undefined || active === null) {
+    return null;
+  }
+  const result = await observe({
+    tabId: active.id,
+    observation: {
+      kind: "screenshot",
+      format: "jpeg",
+      quality: BROWSER_TRACE_SCREENSHOT_QUALITY,
+    },
+  }).catch(() => null);
+  return result !== null && result.ok && result.kind === "screenshot"
+    ? result.base64
+    : null;
+}
+
+async function recordTraceStep(
+  command: BrowserCommand,
+  outcome: BrowserCommandOutcome,
+  deps: BrowserCommandDeps,
+): Promise<void> {
+  const trace = deps.trace;
+  // A trace does not record the commands that control it.
+  if (trace === undefined || !trace.active || command.type === "page.record") {
+    return;
+  }
+  const image =
+    trace.wantsScreenshots && browserCommandChangesPage(command)
+      ? await captureTraceImage(deps)
+      : null;
+  trace.record(command, outcome, image, now(deps));
+}
+
 async function readPage(
   tabId: string,
   desktopBrowser: BbDesktopBrowserApi,
@@ -384,7 +545,17 @@ export async function executeBrowserCommand(
     );
   }
   const command: BrowserCommand = parsed.data;
+  const outcome = await runBrowserCommand(command, deps);
+  // After, not around: a trace records what happened, and the picture worth
+  // keeping is of the page the command left behind.
+  await recordTraceStep(command, outcome, deps);
+  return outcome;
+}
 
+async function runBrowserCommand(
+  command: BrowserCommand,
+  deps: BrowserCommandDeps,
+): Promise<BrowserCommandOutcome> {
   // Tab bookkeeping is renderer state and answers anywhere, including the web
   // build. Everything below the second switch touches a real page and needs the
   // desktop shell, which is why the guard sits between them rather than being
@@ -537,17 +708,33 @@ export async function executeBrowserCommand(
       }
       const { tab } = resolution.resolved;
       // Feature-detected like readPage: a shell predating the browser debugger
-      // has no such channel at all.
+      // has no such channel at all. Scoping rides its own channel, so it is
+      // detected separately — an older shell can snapshot a page but not a part
+      // of one, and saying that is better than snapshotting the whole thing.
       if (desktopBrowser.snapshot === undefined) {
         return failure(
           "unsupported_command",
           "This version of the BB desktop app cannot snapshot pages.",
         );
       }
-      const result = await desktopBrowser.snapshot({
-        tabId: tab.id,
-        ...(command.maxDepth === null ? {} : { maxDepth: command.maxDepth }),
-      });
+      const depth =
+        command.maxDepth === null ? {} : { maxDepth: command.maxDepth };
+      let result: BbDesktopBrowserSnapshotResult;
+      if (command.selector === null) {
+        result = await desktopBrowser.snapshot({ tabId: tab.id, ...depth });
+      } else {
+        if (desktopBrowser.snapshotIn === undefined) {
+          return failure(
+            "unsupported_command",
+            "This version of the BB desktop app cannot snapshot part of a page. Snapshot the whole page instead.",
+          );
+        }
+        result = await desktopBrowser.snapshotIn({
+          tabId: tab.id,
+          selector: command.selector,
+          ...depth,
+        });
+      }
       if (!result.ok) {
         return snapshotFailure(result, tab.id);
       }
@@ -619,9 +806,48 @@ export async function executeBrowserCommand(
           "This version of the BB desktop app cannot capture or inspect pages.",
         );
       }
+      // A full-page capture is a different channel and a different mechanism,
+      // so it is decided here rather than forwarded. This is also why the
+      // screenshot observation is rebuilt below instead of being passed
+      // through: the shell's union has no `fullPage`, and would drop it.
+      if (command.observation.kind === "screenshot" && command.observation.fullPage) {
+        if (desktopBrowser.captureFullPage === undefined) {
+          return failure(
+            "unsupported_command",
+            "This version of the BB desktop app cannot capture a whole page — ask for the visible viewport instead.",
+          );
+        }
+        const captured = await desktopBrowser.captureFullPage({
+          tabId: tab.id,
+          format: command.observation.format,
+          quality: command.observation.quality,
+        });
+        if (!captured.ok) {
+          return observeFailure(captured, tab.id);
+        }
+        return success({
+          type: "image",
+          tabId: captured.tabId,
+          url: captured.url,
+          title: captured.title,
+          mimeType: captured.mimeType,
+          base64: captured.base64,
+          width: captured.width,
+          height: captured.height,
+          fullPage: true,
+          truncated: captured.truncated,
+        });
+      }
       const result = await desktopBrowser.observe({
         tabId: tab.id,
-        observation: command.observation,
+        observation:
+          command.observation.kind === "screenshot"
+            ? {
+                kind: "screenshot",
+                format: command.observation.format,
+                quality: command.observation.quality,
+              }
+            : command.observation,
       });
       if (!result.ok) {
         return observeFailure(result, tab.id);
@@ -639,6 +865,10 @@ export async function executeBrowserCommand(
             base64: result.base64,
             width: result.width,
             height: result.height,
+            fullPage: false,
+            // The viewport is not a cut-off document; it is a different
+            // question. Only a full-page capture can come back short.
+            truncated: false,
           });
         case "pdf":
           return success({
@@ -758,6 +988,48 @@ export async function executeBrowserCommand(
       }
     }
 
+    case "page.record": {
+      const operation = command.operation;
+      if (operation.kind === "trace-start" || operation.kind === "trace-stop") {
+        return runTraceOperation(operation, deps);
+      }
+      const resolution = resolveTab(command.tabId, deps);
+      if (!resolution.ok) {
+        return resolution.outcome;
+      }
+      const { tab } = resolution.resolved;
+      if (desktopBrowser.record === undefined) {
+        return failure(
+          "unsupported_command",
+          "This version of the BB desktop app cannot film a tab.",
+        );
+      }
+      const result = await desktopBrowser.record({
+        tabId: tab.id,
+        operation,
+      });
+      if (!result.ok) {
+        return recordFailure(result, tab.id);
+      }
+      if (result.kind === "video") {
+        return success({
+          type: "video",
+          tabId: result.tabId,
+          url: result.url,
+          title: result.title,
+          frames: result.frames,
+          chapters: result.chapters,
+          droppedFrames: result.droppedFrames,
+          durationMs: result.durationMs,
+        });
+      }
+      return success({
+        type: "recording",
+        recording: "video",
+        active: result.active,
+      });
+    }
+
     case "page.get_selection": {
       const resolution = resolveTab(command.tabId, deps);
       if (!resolution.ok) {
@@ -787,7 +1059,9 @@ export async function executeBrowserCommand(
         );
       }
       if (command.newTab) {
-        return executeBrowserCommand(
+        // Straight to the runner rather than back through the front door, so
+        // one command an agent issued is one step in the trace.
+        return runBrowserCommand(
           { type: "tabs.open", url, activate: true },
           deps,
         );

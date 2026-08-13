@@ -440,8 +440,15 @@ rl.on("line", (line) => {
     const crashScript = join(tmpDir, "large-stderr-provider.cjs");
     writeFileSync(
       crashScript,
-      `process.stderr.write("a".repeat(100_000) + "stderr-tail");
-      process.exit(42);`,
+      // Exit from the write callback, not after it. Node's stderr is async
+      // when it is a pipe, so `process.exit` straight after a 100KB write
+      // discards everything past the pipe buffer — measured here as exactly
+      // 65536 bytes, with "stderr-tail" never leaving the child. The tail this
+      // test is about would then be missing from the fixture rather than from
+      // the bounding it means to check.
+      `process.stderr.write("a".repeat(100_000) + "stderr-tail", () => {
+        process.exit(42);
+      });`,
     );
     const manager = createProviderProcessManager({
       onProcessExit: exitInfo,

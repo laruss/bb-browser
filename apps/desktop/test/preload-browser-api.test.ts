@@ -17,6 +17,7 @@ import {
 } from "../src/desktop-update-ipc.js";
 import {
   BB_DESKTOP_BROWSER_ATTACH_CHANNEL,
+  BB_DESKTOP_BROWSER_CAPTURE_FULL_PAGE_CHANNEL,
   BB_DESKTOP_BROWSER_DETACH_CHANNEL,
   BB_DESKTOP_BROWSER_GO_BACK_CHANNEL,
   BB_DESKTOP_BROWSER_GO_FORWARD_CHANNEL,
@@ -34,6 +35,8 @@ import {
   BB_DESKTOP_BROWSER_SNAPSHOT_TREE_CHANNEL,
   BB_DESKTOP_BROWSER_STATE_CHANNEL,
   BB_DESKTOP_BROWSER_CONTROL_CHANNEL,
+  BB_DESKTOP_BROWSER_RECORD_CHANNEL,
+  BB_DESKTOP_BROWSER_SNAPSHOT_IN_CHANNEL,
   BB_DESKTOP_BROWSER_STORAGE_CHANNEL,
   BB_DESKTOP_BROWSER_STOP_CHANNEL,
 } from "../src/desktop-browser-ipc.js";
@@ -249,6 +252,7 @@ describe("desktop preload browser API", () => {
 
     expect(Object.keys(api.browser).sort()).toEqual([
       "attach",
+      "captureFullPage",
       "control",
       "detach",
       "goBack",
@@ -263,11 +267,13 @@ describe("desktop preload browser API", () => {
       "onSnapshot",
       "onState",
       "readPage",
+      "record",
       "reload",
       "respondToDialog",
       "setBounds",
       "setVisible",
       "snapshot",
+      "snapshotIn",
       "stop",
       "storage",
     ]);
@@ -401,6 +407,16 @@ describe("desktop preload browser API", () => {
       tabId: "browser:a",
       operation: { kind: "route-list" },
     });
+    await api.browser.record?.({
+      tabId: "browser:a",
+      operation: { kind: "video-stop" },
+    });
+    await api.browser.snapshotIn?.({ tabId: "browser:a", selector: "#main" });
+    await api.browser.captureFullPage?.({
+      tabId: "browser:a",
+      format: "jpeg",
+      quality: 80,
+    });
 
     // Loading the preload invokes its own startup channels first; only the
     // browser ones are this test's business.
@@ -416,6 +432,9 @@ describe("desktop preload browser API", () => {
       BB_DESKTOP_BROWSER_OBSERVE_CHANNEL,
       BB_DESKTOP_BROWSER_STORAGE_CHANNEL,
       BB_DESKTOP_BROWSER_CONTROL_CHANNEL,
+      BB_DESKTOP_BROWSER_RECORD_CHANNEL,
+      BB_DESKTOP_BROWSER_SNAPSHOT_IN_CHANNEL,
+      BB_DESKTOP_BROWSER_CAPTURE_FULL_PAGE_CHANNEL,
     ]);
   }, 10_000);
 

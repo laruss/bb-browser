@@ -3,7 +3,17 @@ import { expect } from "vitest";
 import { scaleTimeoutMs } from "../../helpers/time.js";
 
 // Setup and reprovision waits: environment creation, cleanup, and shared-workspace reloads.
-export const DEFAULT_TIMEOUT_MS = scaleTimeoutMs(10_000);
+/**
+ * How long a thread gets to become ready.
+ *
+ * Ten seconds was too tight, and not by a little: becoming ready here means a
+ * real server provisions a workspace — a managed worktree is several `git`
+ * processes — and under a full `turbo run test` that reliably lost the same
+ * test while the suite's own `testTimeout` sat at sixty seconds. A helper that
+ * gives up first turns a busy machine into a failed assertion about the
+ * product.
+ */
+export const DEFAULT_TIMEOUT_MS = scaleTimeoutMs(30_000);
 // Whole-turn waits: sibling threads should finish a standard turn inside this window.
 export const TURN_TIMEOUT_MS = scaleTimeoutMs(15_000);
 // Active-turn waits: enough time to observe concurrent threads become active.

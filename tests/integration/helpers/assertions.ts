@@ -13,6 +13,7 @@ import {
   previewThreadText,
   stringifyThreadEventData,
 } from "./thread-diagnostics.js";
+import { scaleTimeoutMs } from "./time.js";
 
 const POLL_INTERVAL_MS = 100;
 
@@ -148,11 +149,22 @@ async function buildThreadStatusFailureMessage(
   ].join("; ");
 }
 
+/**
+ * Wait for a thread to reach a status.
+ *
+ * The default is generous on purpose and runs through `scaleTimeoutMs`, which
+ * every one of the 62 call sites relies on since none passes its own. A thread
+ * reaching `idle` means a real server provisioned an environment and ran a
+ * turn, so this deadline measures the machine as much as the code: at ten
+ * seconds it tripped on provisioning under a full `turbo run test` while the
+ * suite's own `testTimeout` sat at sixty. A wait helper that gives up first
+ * turns a slow machine into a failed assertion about the product.
+ */
 export async function waitForThreadStatus(
   api: PublicApiClient,
   threadId: string,
   status: ThreadStatus,
-  timeoutMs = 10_000,
+  timeoutMs = scaleTimeoutMs(30_000),
 ): Promise<Thread> {
   let currentStatus: ThreadStatus | "unknown" = "unknown";
   try {
@@ -199,7 +211,7 @@ export async function waitForThreadOutputContaining(
   api: PublicApiClient,
   threadId: string,
   expectedText: string,
-  timeoutMs = 10_000,
+  timeoutMs = scaleTimeoutMs(10_000),
 ): Promise<string> {
   let currentOutput = "";
   return pollUntil(
@@ -218,7 +230,7 @@ export async function waitForEventType(
   api: PublicApiClient,
   threadId: string,
   eventType: string,
-  timeoutMs = 10_000,
+  timeoutMs = scaleTimeoutMs(10_000),
 ): Promise<ThreadEventRow> {
   let lastTypes = "none";
   return pollUntil(
@@ -235,7 +247,7 @@ export async function waitForEventType(
 
 export async function waitForHostConnected(
   api: PublicApiClient,
-  timeoutMs = 10_000,
+  timeoutMs = scaleTimeoutMs(10_000),
 ): Promise<Host> {
   let currentHosts = "none";
   return pollUntil(
@@ -258,7 +270,7 @@ export async function waitForHostConnected(
 export async function waitForHostDisconnected(
   api: PublicApiClient,
   hostId: string,
-  timeoutMs = 10_000,
+  timeoutMs = scaleTimeoutMs(10_000),
 ): Promise<void> {
   let currentStatus = "unknown";
   await pollUntil(
@@ -277,7 +289,7 @@ export async function waitForEnvironmentStatus(
   api: PublicApiClient,
   environmentId: string,
   status: EnvironmentStatus,
-  timeoutMs = 10_000,
+  timeoutMs = scaleTimeoutMs(10_000),
 ): Promise<Environment> {
   let currentStatus = "unknown";
   return pollUntil(
@@ -294,7 +306,7 @@ export async function waitForEnvironmentStatus(
 
 export async function waitForPathRemoval(
   pathToCheck: string,
-  timeoutMs = 10_000,
+  timeoutMs = scaleTimeoutMs(10_000),
 ): Promise<void> {
   await pollUntil(
     async () => {

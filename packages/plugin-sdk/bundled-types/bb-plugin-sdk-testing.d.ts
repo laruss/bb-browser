@@ -168,6 +168,11 @@ interface FakeBrowserDrivers {
          * expression it meant to send is the one that was sent.
          */
         evaluated?: string;
+        /** What `bb.browser.recording.videoStop` hands back, since a fake films nothing. */
+        frames?: readonly {
+            at: number;
+            base64: string;
+        }[];
     }): void;
     /** Pretend no app window is connected, so every call fails like production. */
     setConnected(connected: boolean): void;

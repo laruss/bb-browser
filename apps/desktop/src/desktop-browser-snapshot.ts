@@ -160,16 +160,39 @@ export interface BrowserSnapshot {
 
 export interface BuildBrowserSnapshotArgs {
   nodes: readonly AxNode[];
+  /** Render this node's subtree instead of the whole document. */
+  root?: AxNode;
   maxNodes?: number;
   maxDepth?: number;
   maxLength?: number;
 }
 
 /**
+ * The accessibility node describing a given DOM element, or null when the tree
+ * has none.
+ *
+ * Null is a real answer rather than an error case: an element inside a
+ * `display: none` subtree is not in the accessibility tree at all, and a caller
+ * that scoped a snapshot to one deserves to be told that rather than handed the
+ * whole page.
+ */
+export function findBrowserSnapshotRoot(
+  nodes: readonly AxNode[],
+  backendNodeId: number,
+): AxNode | null {
+  return (
+    nodes.find((node) => node.backendDOMNodeId === backendNodeId) ?? null
+  );
+}
+
+/**
  * Build the snapshot text and its ref table from a full AX tree.
  *
  * Ignored nodes are skipped but walked through: Chromium marks plenty of
- * wrappers ignored while their descendants are exactly what matters.
+ * wrappers ignored while their descendants are exactly what matters. That is
+ * also what makes a scoped snapshot work on the selector people actually
+ * write — `#app` usually names a `<div>` the tree calls generic, and what the
+ * caller wanted was its contents.
  */
 export function buildBrowserSnapshot(
   args: BuildBrowserSnapshotArgs,
@@ -196,7 +219,11 @@ export function buildBrowserSnapshot(
   // a malformed or cyclic response, but rendering nothing at all would look like
   // an empty page rather than a broken one, so start from the first node.
   const startingPoints =
-    roots.length > 0 ? roots : args.nodes.slice(0, 1);
+    args.root !== undefined
+      ? [args.root]
+      : roots.length > 0
+        ? roots
+        : args.nodes.slice(0, 1);
 
   const lines: string[] = [];
   const refs: BrowserSnapshotRef[] = [];

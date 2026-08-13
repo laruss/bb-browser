@@ -38,6 +38,18 @@ import { testLogger } from "../../helpers/test-app.js";
 const logger = testLogger as unknown as Logger;
 const run = promisify(execFile);
 
+/**
+ * The heaviest fixture in this package, and the budget says so.
+ *
+ * Every test here builds a real git-backed plugin and its `beforeEach`
+ * *installs* it — a bundler run, fourteen times over. Measured alone that is
+ * ~2.5s per test and 34s for the file; under a full `turbo run test` the same
+ * hook has blown 10s and then 30s, because a build competing with other builds
+ * does not degrade gently. So this covers the hook as well as the tests, and it
+ * is sized for the work rather than for a stopwatch on an idle machine.
+ */
+const GIT_TEST_TIMEOUT_MS = 60_000;
+
 async function git(cwd: string, args: string[]): Promise<string> {
   return (await run("git", args, { cwd })).stdout.trim();
 }
@@ -115,7 +127,10 @@ describe("plugin update service and routes", () => {
     await service.install(`git:${repo}@main`);
     app = new Hono();
     registerPluginRoutes(app, { config: { serverPort: 3334 }, db }, service);
-  });
+    // Same budget as the tests below, and for the same reason: this hook is a
+    // real `git init`, three commits and a plugin install from that repo, and
+    // vitest's 10s hook default was never chosen with that in mind.
+  }, GIT_TEST_TIMEOUT_MS);
 
   afterEach(async () => {
     vi.unstubAllGlobals();
@@ -215,7 +230,7 @@ describe("plugin update service and routes", () => {
         }),
       ]),
     );
-  });
+  }, GIT_TEST_TIMEOUT_MS);
 
   it("reports legacy retired-marketplace installs as unavailable without fetching", async () => {
     // Rows installed through the pre-bundling marketplace persist a synthetic
@@ -264,7 +279,7 @@ describe("plugin update service and routes", () => {
       }),
     ]);
     expect(fetched.filter((url) => url.includes("api.github.com"))).toEqual([]);
-  });
+  }, GIT_TEST_TIMEOUT_MS);
 
   it("checks, reads persisted state, and updates through the exact HTTP contract", async () => {
     // Simulate a Phase 1 normalized row migrated before ref classification
@@ -320,7 +335,7 @@ describe("plugin update service and routes", () => {
         { version: nextCommit, activatedAt: expect.any(Number) },
       ]),
     });
-  });
+  }, GIT_TEST_TIMEOUT_MS);
 
   it("checks a git candidate without installing or building it", async () => {
     // An update check is read-only by contract: it must not resolve a
@@ -348,7 +363,7 @@ describe("plugin update service and routes", () => {
     // ...and applying it does fail, so the check is not hiding a real problem.
     const applied = await service.applyUpdate("updater");
     expect(applied.ok ? applied.result.outcome : "failed").not.toBe("updated");
-  });
+  }, GIT_TEST_TIMEOUT_MS);
 
   it("returns an actionable 422 and keeps the installed commit for an incompatible candidate", async () => {
     const installedCommit = await git(repo, ["rev-parse", "HEAD"]);
@@ -391,7 +406,7 @@ describe("plugin update service and routes", () => {
       installed: { version: installedCommit },
       blocked: { version: incompatibleCommit },
     });
-  });
+  }, GIT_TEST_TIMEOUT_MS);
 
   it("serializes two updates for one plugin so only one applies", async () => {
     const before = getInstalledPluginRegistration(db, "updater");
@@ -439,7 +454,7 @@ describe("plugin update service and routes", () => {
       oldPackage,
     );
     expect(listPluginArtifacts(db, "updater")).toHaveLength(2);
-  });
+  }, GIT_TEST_TIMEOUT_MS);
 
   it("rolls back when a background service crashes during stabilization", async () => {
     const installedCommit = getInstalledPluginRegistration(
@@ -510,7 +525,7 @@ describe("plugin update service and routes", () => {
     expect(
       service.list().find((entry) => entry.id === "updater"),
     ).toMatchObject({ id: "updater", version: "1.0.0", status: "running" });
-  });
+  }, GIT_TEST_TIMEOUT_MS);
 
   it("finishes an interrupted rollback before loading plugins after restart", async () => {
     const pluginDir = join(workDir, "data", "plugins", "updater");
@@ -632,7 +647,7 @@ describe("plugin update service and routes", () => {
     expect(listPluginStateSnapshots(db, "updater")).toMatchObject([
       { status: "restored" },
     ]);
-  });
+  }, GIT_TEST_TIMEOUT_MS);
 
   it("retains rollback state through the grace period and collects it afterward", async () => {
     await service.stop();
@@ -683,7 +698,7 @@ describe("plugin update service and routes", () => {
       code: "ENOENT",
     });
     await stat(remaining[0]!.path);
-  });
+  }, GIT_TEST_TIMEOUT_MS);
 
   it("orders removal after an in-flight update without resurrecting the plugin", async () => {
     await commitPlugin(repo, "1.1.0");
@@ -711,7 +726,7 @@ describe("plugin update service and routes", () => {
     });
     await expect(removal).resolves.toBe(true);
     expect(getInstalledPluginRegistration(db, "updater")).toBeUndefined();
-  });
+  }, GIT_TEST_TIMEOUT_MS);
 
   it("orders disablement after an in-flight update without re-enabling it", async () => {
     await commitPlugin(repo, "1.1.0");
@@ -742,7 +757,7 @@ describe("plugin update service and routes", () => {
       version: "1.1.0",
       enabled: false,
     });
-  });
+  }, GIT_TEST_TIMEOUT_MS);
 
   it("uses isolated staging directories for concurrent check and update", async () => {
     const nextCommit = await commitPlugin(repo, "1.1.0");
@@ -757,7 +772,7 @@ describe("plugin update service and routes", () => {
       gitResolvedCommit: nextCommit,
       version: "1.1.0",
     });
-  });
+  }, GIT_TEST_TIMEOUT_MS);
 
   it("refuses a pinned git tag unless the source is changed explicitly", async () => {
     await service.remove("updater");
@@ -773,7 +788,7 @@ describe("plugin update service and routes", () => {
       error:
         'plugin "updater" is pinned by its source intent; remove and reinstall it with an npm range or git branch to track updates',
     });
-  });
+  }, GIT_TEST_TIMEOUT_MS);
 
   it("loads a legacy-layout plugin unchanged, then migrates lazily on update", async () => {
     await service.remove("updater");
@@ -826,5 +841,5 @@ describe("plugin update service and routes", () => {
       gitResolvedCommit: nextCommit,
     });
     await stat(join(legacyRoot, "package.json"));
-  });
+  }, GIT_TEST_TIMEOUT_MS);
 });

@@ -799,14 +799,19 @@ export interface PluginBrowserPageState {
  * would otherwise pay for a decode and a re-encode, and one that wants the bytes
  * spends a single `Buffer.from(base64, "base64")`.
  *
- * `width`/`height` are the captured pixels, which on a retina display are larger
- * than the CSS viewport.
+ * `width`/`height` are the captured pixels. For a viewport capture those are
+ * device pixels, larger than the CSS viewport on a retina display; for a
+ * full-page capture they are CSS pixels, because that capture is rendered at
+ * 1:1. `fullPage` says which, and `truncated` says the document was longer than
+ * one capture can hold and this is its top.
  */
 export interface PluginBrowserScreenshot extends PluginBrowserPageState {
   mimeType: "image/png" | "image/jpeg";
   base64: string;
   width: number;
   height: number;
+  fullPage: boolean;
+  truncated: boolean;
 }
 
 export interface PluginBrowserPdf extends PluginBrowserPageState {
@@ -860,7 +865,7 @@ export interface PluginBrowserPage {
    * fails while DevTools is open on it (`debugger_unavailable`).
    */
   snapshot(
-    args?: { tabId?: string; maxDepth?: number },
+    args?: { tabId?: string; maxDepth?: number; selector?: string },
     options?: PluginBrowserCallOptions,
   ): Promise<PluginBrowserPageSnapshot>;
   /**
@@ -899,9 +904,17 @@ export interface PluginBrowserPage {
   /**
    * Capture what the tab is showing.
    *
-   * **The visible viewport only** — Electron captures the composited view, so
-   * there is no full-page mode here. Defaults to JPEG at quality 80, which is
-   * the right trade for looking at a page; ask for PNG when exact pixels matter.
+   * The visible viewport by default, or the whole scrollable document with
+   * `fullPage`. Defaults to JPEG at quality 80, which is the right trade for
+   * looking at a page; ask for PNG when exact pixels matter.
+   *
+   * **`fullPage` is not free.** A composited capture is a viewport by
+   * construction, so the whole document has to come from the browser debugger —
+   * which fails while the user has DevTools open on that tab
+   * (`debugger_unavailable`), and which the viewport capture never touches. It
+   * stops short of taking the tab's dialogs over, so a page that alerts still
+   * shows the user Chromium's own modal. A document past ~16k CSS pixels comes
+   * back as its top, with `truncated` set.
    */
   screenshot(
     args?: {
@@ -909,6 +922,8 @@ export interface PluginBrowserPage {
       format?: "png" | "jpeg";
       /** 1–100, JPEG only. */
       quality?: number;
+      /** The whole document instead of the viewport. Defaults to false. */
+      fullPage?: boolean;
     },
     options?: PluginBrowserCallOptions,
   ): Promise<PluginBrowserScreenshot>;
@@ -1203,6 +1218,71 @@ export interface PluginBrowserControl {
   ): Promise<PluginBrowserPageState>;
 }
 
+/** One command a trace remembers. `error` is the failure's code, or null. */
+export interface PluginBrowserTraceStep {
+  seq: number;
+  /** Milliseconds since the trace started. */
+  at: number;
+  command: string;
+  detail: string;
+  ok: boolean;
+  error: string | null;
+  /** Base64 JPEG of the visible tab, when the trace was asked for pictures. */
+  image: string | null;
+}
+
+export interface PluginBrowserTrace {
+  steps: PluginBrowserTraceStep[];
+  /** Steps and pictures the recording did not keep, so a gap is never silent. */
+  droppedSteps: number;
+  droppedImages: number;
+  durationMs: number;
+}
+
+export interface PluginBrowserVideo extends PluginBrowserPageState {
+  /** Base64 JPEGs in order, each stamped with where it belongs in time. */
+  frames: { at: number; base64: string }[];
+  chapters: { at: number; title: string }[];
+  droppedFrames: number;
+  durationMs: number;
+}
+
+/**
+ * Recording a session, in two halves that record different things.
+ *
+ * The **trace** is bb's own log of the browser commands this app ran — what was
+ * asked for, what came back, optionally a picture after each step. It is not
+ * Playwright's trace format and no Playwright viewer will open it; it is a JSON
+ * log meant to be read.
+ *
+ * The **video** is frames of one tab, taken by the browser itself. It comes back
+ * as JPEGs and timings rather than a playable file: bb ships no video encoder,
+ * so turning the frames into one is a job for `ffmpeg` and the caller.
+ */
+export interface PluginBrowserRecording {
+  /** Begins the log. One at a time; starting a second one fails. */
+  traceStart(
+    args?: { screenshots?: boolean },
+    options?: PluginBrowserCallOptions,
+  ): Promise<void>;
+  /** Ends it and hands it over — the only way to read a trace. */
+  traceStop(options?: PluginBrowserCallOptions): Promise<PluginBrowserTrace>;
+  /** Films a tab. Frames per second defaults to 5; the tab must be visible. */
+  videoStart(
+    args?: { fps?: number; tabId?: string },
+    options?: PluginBrowserCallOptions,
+  ): Promise<void>;
+  /** Marks a moment in the film, for whoever reads it later. */
+  videoChapter(
+    args: { title: string; tabId?: string },
+    options?: PluginBrowserCallOptions,
+  ): Promise<void>;
+  videoStop(
+    args?: { tabId?: string },
+    options?: PluginBrowserCallOptions,
+  ): Promise<PluginBrowserVideo>;
+}
+
 export interface PluginBrowserNavigation {
   /**
    * Open `url` (http/https only) in a tab. On a tab with no live view the URL is
@@ -1248,11 +1328,15 @@ export type PluginBrowserErrorCode =
   | "debugger_unavailable"
   | "stale_refs"
   | "unknown_ref"
+  | "invalid_selector"
+  | "no_match"
   | "not_actionable"
   | "unsupported_key"
   | "result_too_large"
   | "evaluation_failed"
   | "too_many_routes"
+  | "already_recording"
+  | "not_recording"
   | "invalid_command";
 
 export interface PluginBrowserStatus {
@@ -1283,6 +1367,7 @@ export interface PluginBrowser {
   readonly navigation: PluginBrowserNavigation;
   readonly storage: PluginBrowserStorage;
   readonly control: PluginBrowserControl;
+  readonly recording: PluginBrowserRecording;
   /** Synchronous, so it is safe to read from `bb.agents.configure()`. */
   getStatus(): PluginBrowserStatus;
 }

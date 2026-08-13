@@ -5,6 +5,7 @@ import { browserSurfaceTabsAtom } from "../browser-surface-tabs";
 import { destroyPersistedBrowserView } from "@/components/secondary-panel/browserViewVisibilityCoordinator";
 import { wsManager } from "../ws";
 import { executeBrowserCommand } from "./execute";
+import { BrowserTraceRecorder } from "./trace";
 import {
   getBrowserLiveState,
   subscribeBrowserLiveState,
@@ -32,6 +33,10 @@ export function useBrowserAgentBridge(): void {
   useEffect(() => {
     const browserHostId = createBrowserHostId();
     const desktopBrowser = getDesktopBrowserApi();
+    // One trace per window, living as long as the bridge does. A reload ends
+    // it, which is the honest behaviour: the log is held in memory here, and a
+    // window that went away recorded nothing anyone can still read.
+    const trace = new BrowserTraceRecorder();
 
     // One subscription for the whole window. This is what makes the tools work
     // off-route: the shell pushes navigation state for every view, while
@@ -48,6 +53,7 @@ export function useBrowserAgentBridge(): void {
         getLiveState: getBrowserLiveState,
         waitForSettled: (tabId) => waitForBrowserTabSettled(tabId),
         destroyView: destroyPersistedBrowserView,
+        trace,
       })
         .then((outcome) => {
           wsManager.sendBrowserCommandResponse({

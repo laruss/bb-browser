@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildBrowserSnapshot,
+  findBrowserSnapshotRoot,
   type AxNode,
 } from "../src/desktop-browser-snapshot.js";
 
@@ -239,5 +240,79 @@ describe("buildBrowserSnapshot", () => {
     });
 
     expect(snapshot.text).toBe(["- main:", "  - list"].join("\n"));
+  });
+});
+
+describe("scoping a snapshot to one element", () => {
+  const nodes = [
+    node("1", { role: role("RootWebArea"), childIds: ["2", "5"] }),
+    node("2", {
+      role: role("form"),
+      name: name("Checkout"),
+      backendDOMNodeId: 42,
+      childIds: ["3", "4"],
+    }),
+    node("3", {
+      role: role("textbox"),
+      name: name("Card"),
+      backendDOMNodeId: 43,
+    }),
+    node("4", {
+      role: role("button"),
+      name: name("Pay"),
+      backendDOMNodeId: 44,
+    }),
+    node("5", {
+      role: role("button"),
+      name: name("Help"),
+      backendDOMNodeId: 45,
+    }),
+  ];
+
+  it("renders the matched element's subtree and nothing beside it", () => {
+    const root = findBrowserSnapshotRoot(nodes, 42);
+    expect(root).not.toBeNull();
+
+    const snapshot = buildBrowserSnapshot({
+      nodes,
+      ...(root === null ? {} : { root }),
+    });
+
+    // Indentation restarts at the scope, and the sibling button outside it is
+    // gone — which is the whole point on a page too big to snapshot whole.
+    expect(snapshot.text).toBe(
+      [
+        '- form "Checkout":',
+        '  - textbox "Card" [ref=e1]',
+        '  - button "Pay" [ref=e2]',
+      ].join("\n"),
+    );
+    expect(snapshot.refs).toEqual([
+      { ref: "e1", backendNodeId: 43 },
+      { ref: "e2", backendNodeId: 44 },
+    ]);
+  });
+
+  it("renders the contents of a wrapper the tree calls generic", () => {
+    // `#app` is the selector people write, and it usually names exactly this.
+    const wrapper = [
+      node("1", { role: role("RootWebArea"), childIds: ["2"] }),
+      node("2", { role: role("generic"), backendDOMNodeId: 7, childIds: ["3"] }),
+      node("3", { role: role("button"), name: name("Go"), backendDOMNodeId: 8 }),
+    ];
+    const root = findBrowserSnapshotRoot(wrapper, 7);
+
+    const snapshot = buildBrowserSnapshot({
+      nodes: wrapper,
+      ...(root === null ? {} : { root }),
+    });
+
+    expect(snapshot.text).toBe('- button "Go" [ref=e1]');
+  });
+
+  it("answers null for an element the tree does not describe", () => {
+    // A `display: none` subtree is not in the accessibility tree at all, and
+    // saying so beats handing back the whole page.
+    expect(findBrowserSnapshotRoot(nodes, 999)).toBeNull();
   });
 });

@@ -166,7 +166,12 @@ export async function waitForRuntimeConditionUnsafe(
   config?: RuntimeWaitConditionConfig,
 ): Promise<void> {
   const options = normalizeWaitConditionConfig(config);
-  const timeoutMs = options.timeoutMs ?? 1_000;
+  // A second is what these waits cost on an idle machine, not what they are
+  // allowed to cost: several of them wait on a spawned provider process, whose
+  // cold start alone can exceed it when the rest of the suite has the CPU. The
+  // deadline is a hang detector, and vitest's own per-test budget is what
+  // actually bounds a stuck test.
+  const timeoutMs = options.timeoutMs ?? 10_000;
   const intervalMs = options.intervalMs ?? 10;
   const label = options.label ?? "condition";
   const deadline = Date.now() + timeoutMs;

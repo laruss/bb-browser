@@ -1,4 +1,7 @@
-import { defineWorkspaceTestConfig } from "../../vitest.shared.js";
+import {
+  SUBPROCESS_HEAVY_MAX_WORKERS,
+  defineWorkspaceTestConfig,
+} from "../../vitest.shared.js";
 
 export default defineWorkspaceTestConfig({
   test: {
@@ -12,5 +15,8 @@ export default defineWorkspaceTestConfig({
       BB_HOST_DAEMON_PORT: "49162",
     },
     testTimeout: 15_000,
+    // Builds real git repositories a process at a time, and starts a real
+    // local API server. See SUBPROCESS_HEAVY_MAX_WORKERS.
+    maxWorkers: SUBPROCESS_HEAVY_MAX_WORKERS,
   },
 });

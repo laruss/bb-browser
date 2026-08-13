@@ -1,4 +1,7 @@
-import { defineWorkspaceTestConfig } from "../../vitest.shared.js";
+import {
+  SUBPROCESS_HEAVY_MAX_WORKERS,
+  defineWorkspaceTestConfig,
+} from "../../vitest.shared.js";
 
 const parsedTimeoutScale = Number(process.env.BB_TEST_TIMEOUT_SCALE ?? 1);
 const timeoutScale =
@@ -11,6 +14,10 @@ export default defineWorkspaceTestConfig({
     // Fake integration suites isolate temp roots, ports, and in-memory state,
     // so we can safely parallelize across files for a large runtime win.
     fileParallelism: true,
+    // Bounded, though: every file here runs a real server and waits for real
+    // threads to reach idle, and a full `turbo run test` timed out 30 of the
+    // 55 tests. See SUBPROCESS_HEAVY_MAX_WORKERS.
+    maxWorkers: SUBPROCESS_HEAVY_MAX_WORKERS,
     // No file here mocks modules or stubs globals/env (vitest.shared.ts's
     // findIsolationRequiringTests would flag it), so workers can reuse their
     // context across files instead of re-importing the server graph per file.

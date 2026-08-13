@@ -1,10 +1,13 @@
 import type { WebContentsView } from "electron";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   BB_DESKTOP_BROWSER_MAX_DIALOG_MESSAGE_LENGTH,
+  BB_DESKTOP_BROWSER_MAX_FULL_PAGE_DIMENSION,
+  BB_DESKTOP_BROWSER_MAX_SCREENSHOT_BASE64_LENGTH,
   BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH,
   type BbDesktopBrowserViewBounds,
 } from "@bb/desktop-contract";
+import { BB_DESKTOP_BROWSER_CONTENT_SIZE_SCRIPT } from "../src/desktop-browser-capture.js";
 import { BB_DESKTOP_BROWSER_FAVICON_CHANNEL } from "../src/desktop-browser-ipc.js";
 import {
   BB_DESKTOP_BROWSER_PAGE_READ_SCRIPT,
@@ -4182,5 +4185,599 @@ describe("DesktopBrowserViewManager control", () => {
         },
       }),
     ).resolves.toMatchObject({ ok: false, reason: "no-view" });
+  });
+});
+
+describe("DesktopBrowserViewManager recording", () => {
+  interface RecordHarness {
+    hostWindow: FakeHostWindow;
+    manager: DesktopBrowserViewManager;
+    webContents: ReturnType<typeof requireFakeView>["webContents"];
+  }
+
+  function attachTabForRecording(url = "https://example.com/"): RecordHarness {
+    const manager = createDesktopBrowserViewManager({
+      partition: "persist:test",
+    });
+    const hostWindow = new FakeHostWindow({
+      contentBounds: { width: 700, height: 450 },
+      webContentsId: 95,
+    });
+    attachBrowserTab({ manager, hostWindow, tabId: "browser:a", url });
+    return { hostWindow, manager, webContents: requireFakeView(0).webContents };
+  }
+
+  function commandsNamed(
+    webContents: RecordHarness["webContents"],
+    method: string,
+  ): Array<{ method: string; params?: Record<string, unknown> }> {
+    return webContents.debugger.commands.filter(
+      (command) => command.method === method,
+    );
+  }
+
+  function sendFrame(
+    webContents: RecordHarness["webContents"],
+    data: string,
+    at: number,
+  ): void {
+    vi.setSystemTime(at);
+    webContents.debugger.emitMessage("Page.screencastFrame", {
+      data,
+      sessionId: 7,
+      metadata: { timestamp: at / 1000 },
+    });
+  }
+
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(0);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("films a tab and hands the frames back in order", async () => {
+    const { hostWindow, manager, webContents } = attachTabForRecording();
+
+    await expect(
+      manager.record({
+        hostWindow,
+        request: { tabId: "browser:a", operation: { kind: "video-start", fps: 5 } },
+      }),
+    ).resolves.toMatchObject({ ok: true, kind: "recording", active: true });
+    expect(commandsNamed(webContents, "Page.startScreencast")[0]?.params)
+      .toMatchObject({ format: "jpeg", everyNthFrame: 1 });
+
+    sendFrame(webContents, "one", 0);
+    sendFrame(webContents, "two", 400);
+    vi.setSystemTime(600);
+    const stopped = await manager.record({
+      hostWindow,
+      request: { tabId: "browser:a", operation: { kind: "video-stop" } },
+    });
+
+    expect(commandsNamed(webContents, "Page.stopScreencast")).toHaveLength(1);
+    expect(stopped).toMatchObject({
+      ok: true,
+      kind: "video",
+      frames: [
+        { at: 0, base64: "one" },
+        { at: 400, base64: "two" },
+      ],
+      durationMs: 600,
+    });
+  });
+
+  it("acknowledges every frame, including the ones it does not keep", async () => {
+    const { hostWindow, manager, webContents } = attachTabForRecording();
+    await manager.record({
+      hostWindow,
+      request: { tabId: "browser:a", operation: { kind: "video-start", fps: 1 } },
+    });
+
+    sendFrame(webContents, "one", 0);
+    sendFrame(webContents, "two", 10);
+    sendFrame(webContents, "three", 20);
+
+    // The rule that decides whether a recording is a film or a single frame:
+    // Chromium sends the next frame only once the last is acknowledged, so a
+    // frame dropped for pacing must still be answered.
+    expect(commandsNamed(webContents, "Page.screencastFrameAck")).toHaveLength(3);
+    await expect(
+      manager.record({
+        hostWindow,
+        request: { tabId: "browser:a", operation: { kind: "video-stop" } },
+      }),
+    ).resolves.toMatchObject({ ok: true, droppedFrames: 2 });
+  });
+
+  it("marks a chapter where it happened", async () => {
+    const { hostWindow, manager } = attachTabForRecording();
+    await manager.record({
+      hostWindow,
+      request: { tabId: "browser:a", operation: { kind: "video-start", fps: 5 } },
+    });
+
+    vi.setSystemTime(2_000);
+    await expect(
+      manager.record({
+        hostWindow,
+        request: {
+          tabId: "browser:a",
+          operation: { kind: "video-chapter", title: "signed in" },
+        },
+      }),
+    ).resolves.toMatchObject({ ok: true, kind: "recording", active: true });
+
+    await expect(
+      manager.record({
+        hostWindow,
+        request: { tabId: "browser:a", operation: { kind: "video-stop" } },
+      }),
+    ).resolves.toMatchObject({
+      ok: true,
+      chapters: [{ at: 2_000, title: "signed in" }],
+    });
+  });
+
+  it("refuses a second film of the same tab, and a stop with nothing to stop", async () => {
+    const { hostWindow, manager } = attachTabForRecording();
+
+    await expect(
+      manager.record({
+        hostWindow,
+        request: { tabId: "browser:a", operation: { kind: "video-stop" } },
+      }),
+    ).resolves.toMatchObject({ ok: false, reason: "not-recording" });
+
+    await manager.record({
+      hostWindow,
+      request: { tabId: "browser:a", operation: { kind: "video-start", fps: 5 } },
+    });
+
+    await expect(
+      manager.record({
+        hostWindow,
+        request: { tabId: "browser:a", operation: { kind: "video-start", fps: 5 } },
+      }),
+    ).resolves.toMatchObject({ ok: false, reason: "already-recording" });
+  });
+
+  it("wires the frame listener once, however many films it takes", async () => {
+    const { hostWindow, manager, webContents } = attachTabForRecording();
+
+    for (const at of [0, 1_000]) {
+      vi.setSystemTime(at);
+      await manager.record({
+        hostWindow,
+        request: {
+          tabId: "browser:a",
+          operation: { kind: "video-start", fps: 5 },
+        },
+      });
+      await manager.record({
+        hostWindow,
+        request: { tabId: "browser:a", operation: { kind: "video-stop" } },
+      });
+    }
+    sendFrame(webContents, "one", 2_000);
+
+    // Two listeners would answer the same frame twice, and the second answer
+    // fails against a frame the first already acknowledged.
+    expect(commandsNamed(webContents, "Page.screencastFrameAck")).toHaveLength(1);
+  });
+
+  it("hands the frames back even when the stop command fails", async () => {
+    const { hostWindow, manager, webContents } = attachTabForRecording();
+    await manager.record({
+      hostWindow,
+      request: { tabId: "browser:a", operation: { kind: "video-start", fps: 5 } },
+    });
+    sendFrame(webContents, "one", 0);
+    webContents.debugger.failures.set(
+      "Page.stopScreencast",
+      new Error("target closed"),
+    );
+
+    // Losing a recording because the stop call failed is the worse trade.
+    await expect(
+      manager.record({
+        hostWindow,
+        request: { tabId: "browser:a", operation: { kind: "video-stop" } },
+      }),
+    ).resolves.toMatchObject({
+      ok: true,
+      kind: "video",
+      frames: [{ at: 0, base64: "one" }],
+    });
+  });
+
+  it("forgets the film when the debugger goes away", async () => {
+    const { hostWindow, manager, webContents } = attachTabForRecording();
+    await manager.record({
+      hostWindow,
+      request: { tabId: "browser:a", operation: { kind: "video-start", fps: 5 } },
+    });
+
+    webContents.debugger.attached = false;
+    for (const listener of webContents.debugger.detachListeners) {
+      listener({}, "target closed");
+    }
+
+    // Chromium stopped the screencast with its client, so a recording that
+    // survived would answer with a film that stopped growing minutes ago.
+    await expect(
+      manager.record({
+        hostWindow,
+        request: { tabId: "browser:a", operation: { kind: "video-stop" } },
+      }),
+    ).resolves.toMatchObject({ ok: false, reason: "not-recording" });
+  });
+
+  it("refuses to film a tab with no page, and answers for a tab with no view", async () => {
+    const { hostWindow, manager } = attachTabForRecording("");
+
+    await expect(
+      manager.record({
+        hostWindow,
+        request: { tabId: "browser:a", operation: { kind: "video-start", fps: 5 } },
+      }),
+    ).resolves.toMatchObject({ ok: false, reason: "no-page" });
+    await expect(
+      manager.record({
+        hostWindow,
+        request: { tabId: "browser:gone", operation: { kind: "video-stop" } },
+      }),
+    ).resolves.toMatchObject({ ok: false, reason: "no-view" });
+  });
+});
+
+describe("DesktopBrowserViewManager scoped snapshots", () => {
+  function attachTabForScope(url = "https://example.com/") {
+    const manager = createDesktopBrowserViewManager({
+      partition: "persist:test",
+    });
+    const hostWindow = new FakeHostWindow({
+      contentBounds: { width: 700, height: 450 },
+      webContentsId: 96,
+    });
+    attachBrowserTab({ manager, hostWindow, tabId: "browser:a", url });
+    const { webContents } = requireFakeView(0);
+    webContents.debugger.results.set("Accessibility.getFullAXTree", {
+      nodes: [
+        { nodeId: "1", role: { value: "main" }, childIds: ["2", "4"] },
+        {
+          nodeId: "2",
+          role: { value: "form" },
+          name: { value: "Checkout" },
+          backendDOMNodeId: 42,
+          childIds: ["3"],
+        },
+        {
+          nodeId: "3",
+          role: { value: "button" },
+          name: { value: "Pay" },
+          backendDOMNodeId: 43,
+        },
+        {
+          nodeId: "4",
+          role: { value: "button" },
+          name: { value: "Help" },
+          backendDOMNodeId: 44,
+        },
+      ],
+    });
+    webContents.debugger.results.set("DOM.getDocument", {
+      root: { nodeId: 1 },
+    });
+    webContents.debugger.results.set("DOM.querySelector", { nodeId: 9 });
+    webContents.debugger.results.set("DOM.describeNode", {
+      node: { backendNodeId: 42 },
+    });
+    return { hostWindow, manager, webContents };
+  }
+
+  it("snapshots what the selector matched and hands out refs for it alone", async () => {
+    const { hostWindow, manager, webContents } = attachTabForScope();
+
+    const result = await manager.snapshotIn({
+      hostWindow,
+      request: { tabId: "browser:a", selector: "form.checkout" },
+    });
+
+    expect(webContents.debugger.commands).toContainEqual({
+      method: "DOM.querySelector",
+      params: { nodeId: 1, selector: "form.checkout" },
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      // The sibling button outside the scope is the assertion: a scoped
+      // snapshot that still carried the rest of the page would be pointless.
+      expect(result.snapshot).toContain('button "Pay"');
+      expect(result.snapshot).not.toContain("Help");
+      expect(result.refCount).toBe(1);
+    }
+  });
+
+  it("acts on the element the scoped refs name, not the one they used to", async () => {
+    const { hostWindow, manager } = attachTabForScope();
+
+    const whole = await manager.snapshot({
+      hostWindow,
+      request: { tabId: "browser:a" },
+    });
+    const scoped = await manager.snapshotIn({
+      hostWindow,
+      request: { tabId: "browser:a", selector: "form" },
+    });
+
+    // Both snapshots call something `e1`, so the second has to invalidate the
+    // first — a stale `e1` resolving silently is the failure this prevents.
+    expect(whole.ok && scoped.ok).toBe(true);
+    if (whole.ok && scoped.ok) {
+      expect(scoped.generation).toBeGreaterThan(whole.generation);
+    }
+  });
+
+  it("says the selector is the problem when the browser will not parse it", async () => {
+    const { hostWindow, manager, webContents } = attachTabForScope();
+    webContents.debugger.failures.set(
+      "DOM.querySelector",
+      new Error("DOM Error while querying"),
+    );
+
+    await expect(
+      manager.snapshotIn({
+        hostWindow,
+        request: { tabId: "browser:a", selector: "form.." },
+      }),
+    ).resolves.toMatchObject({ ok: false, reason: "invalid-selector" });
+  });
+
+  it("tells a selector that matched nothing apart from one it cannot parse", async () => {
+    const { hostWindow, manager, webContents } = attachTabForScope();
+    // Zero is how the protocol spells "matched nothing"; it does not fail.
+    webContents.debugger.results.set("DOM.querySelector", { nodeId: 0 });
+
+    await expect(
+      manager.snapshotIn({
+        hostWindow,
+        request: { tabId: "browser:a", selector: "#missing" },
+      }),
+    ).resolves.toMatchObject({ ok: false, reason: "no-match" });
+  });
+
+  it("refuses an element the accessibility tree does not describe", async () => {
+    const { hostWindow, manager, webContents } = attachTabForScope();
+    webContents.debugger.results.set("DOM.describeNode", {
+      node: { backendNodeId: 4242 },
+    });
+
+    // A hidden element is in the DOM and not in the tree. Falling back to the
+    // whole page here would answer a question nobody asked.
+    await expect(
+      manager.snapshotIn({
+        hostWindow,
+        request: { tabId: "browser:a", selector: "#hidden" },
+      }),
+    ).resolves.toMatchObject({ ok: false, reason: "no-match" });
+  });
+
+  it("answers for a blank tab and a tab with no view the way the unscoped one does", async () => {
+    const blank = attachTabForScope("");
+    await expect(
+      blank.manager.snapshotIn({
+        hostWindow: blank.hostWindow,
+        request: { tabId: "browser:a", selector: "#main" },
+      }),
+    ).resolves.toMatchObject({ ok: false, reason: "no-page" });
+
+    const live = attachTabForScope();
+    await expect(
+      live.manager.snapshotIn({
+        hostWindow: live.hostWindow,
+        request: { tabId: "browser:gone", selector: "#main" },
+      }),
+    ).resolves.toMatchObject({ ok: false, reason: "no-view" });
+  });
+});
+
+describe("DesktopBrowserViewManager full-page captures", () => {
+  function attachTabForFullPage(url = "https://example.com/") {
+    const manager = createDesktopBrowserViewManager({
+      partition: "persist:test",
+    });
+    const hostWindow = new FakeHostWindow({
+      contentBounds: { width: 700, height: 450 },
+      webContentsId: 97,
+    });
+    attachBrowserTab({ manager, hostWindow, tabId: "browser:a", url });
+    const { webContents } = requireFakeView(0);
+    webContents.isolatedWorldResult = { width: 1280, height: 4200 };
+    webContents.debugger.results.set("Page.captureScreenshot", {
+      data: Buffer.from("full-page-bytes").toString("base64"),
+    });
+    return { hostWindow, manager, webContents };
+  }
+
+  it("captures the measured document, at 1:1 and beyond the viewport", async () => {
+    const { hostWindow, manager, webContents } = attachTabForFullPage();
+    webContents.setTitle("Example");
+
+    const result = await manager.captureFullPage({
+      hostWindow,
+      request: { tabId: "browser:a", format: "jpeg", quality: 70 },
+    });
+
+    // The size is measured in the page-read isolated world, not through
+    // `Page.getLayoutMetrics`: that would want the `Page` domain, and enabling
+    // it is what moves a tab's dialogs off Chromium's native modal.
+    expect(webContents.isolatedWorldCalls.at(-1)?.scripts).toEqual([
+      { code: BB_DESKTOP_BROWSER_CONTENT_SIZE_SCRIPT },
+    ]);
+    expect(webContents.debugger.commands).toContainEqual({
+      method: "Page.captureScreenshot",
+      params: {
+        format: "jpeg",
+        quality: 70,
+        clip: { x: 0, y: 0, width: 1280, height: 4200, scale: 1 },
+        captureBeyondViewport: true,
+      },
+    });
+    expect(result).toEqual({
+      ok: true,
+      tabId: "browser:a",
+      url: "https://example.com/",
+      title: "Example",
+      mimeType: "image/jpeg",
+      base64: Buffer.from("full-page-bytes").toString("base64"),
+      width: 1280,
+      height: 4200,
+      truncated: false,
+    });
+  });
+
+  it("attaches the debugger without taking the tab's dialogs over", async () => {
+    const { hostWindow, manager, webContents } = attachTabForFullPage();
+
+    await manager.captureFullPage({
+      hostWindow,
+      request: { tabId: "browser:a", format: "jpeg", quality: 70 },
+    });
+
+    // The trade this capture makes, pinned in both directions: it does need a
+    // session, and it must not enable `Page` — a picture should not cost the
+    // user Chromium's own alert() modal for the rest of the session.
+    expect(webContents.debugger.attachCalls).toEqual(["1.3"]);
+    expect(
+      webContents.debugger.commands.map((command) => command.method),
+    ).not.toContain("Page.enable");
+  });
+
+  it("omits quality for PNG, which has no such knob", async () => {
+    const { hostWindow, manager, webContents } = attachTabForFullPage();
+
+    await manager.captureFullPage({
+      hostWindow,
+      request: { tabId: "browser:a", format: "png", quality: 70 },
+    });
+
+    expect(
+      webContents.debugger.commands.find(
+        (command) => command.method === "Page.captureScreenshot",
+      )?.params,
+    ).toEqual({
+      format: "png",
+      clip: { x: 0, y: 0, width: 1280, height: 4200, scale: 1 },
+      captureBeyondViewport: true,
+    });
+  });
+
+  it("clips a document past the texture limit and says it did", async () => {
+    const { hostWindow, manager, webContents } = attachTabForFullPage();
+    webContents.isolatedWorldResult = {
+      width: 1280,
+      height: BB_DESKTOP_BROWSER_MAX_FULL_PAGE_DIMENSION * 3,
+    };
+
+    const result = await manager.captureFullPage({
+      hostWindow,
+      request: { tabId: "browser:a", format: "jpeg", quality: 70 },
+    });
+
+    expect(result).toMatchObject({
+      ok: true,
+      height: BB_DESKTOP_BROWSER_MAX_FULL_PAGE_DIMENSION,
+      truncated: true,
+    });
+  });
+
+  it("refuses a picture past what the bridge carries rather than cutting it", async () => {
+    const { hostWindow, manager, webContents } = attachTabForFullPage();
+    webContents.debugger.results.set("Page.captureScreenshot", {
+      data: "a".repeat(BB_DESKTOP_BROWSER_MAX_SCREENSHOT_BASE64_LENGTH + 1),
+    });
+
+    await expect(
+      manager.captureFullPage({
+        hostWindow,
+        request: { tabId: "browser:a", format: "jpeg", quality: 70 },
+      }),
+    ).resolves.toMatchObject({ ok: false, reason: "too-large" });
+  });
+
+  it("reports a page that will not say how large it is", async () => {
+    const { hostWindow, manager, webContents } = attachTabForFullPage();
+    webContents.isolatedWorldResult = "pending";
+
+    await expect(
+      manager.captureFullPage({
+        hostWindow,
+        request: { tabId: "browser:a", format: "jpeg", quality: 70 },
+      }),
+    ).resolves.toMatchObject({
+      ok: false,
+      reason: "failed",
+      message: "The page did not answer how large it is in time.",
+    });
+    // Nothing was asked of Chromium: a clip built from a size nobody measured
+    // is a capture of the wrong region.
+    expect(
+      webContents.debugger.commands.map((command) => command.method),
+    ).not.toContain("Page.captureScreenshot");
+  });
+
+  it("says when DevTools has the tab, instead of quietly capturing the viewport", async () => {
+    const { hostWindow, manager, webContents } = attachTabForFullPage();
+    webContents.debugger.attachFailure = new Error("Another debugger is attached");
+
+    await expect(
+      manager.captureFullPage({
+        hostWindow,
+        request: { tabId: "browser:a", format: "jpeg", quality: 70 },
+      }),
+    ).resolves.toMatchObject({
+      ok: false,
+      reason: "debugger-unavailable",
+      message: "Could not attach the browser debugger: Another debugger is attached",
+    });
+  });
+
+  it("distinguishes a tab with no view from one that has loaded nothing", async () => {
+    const { hostWindow, manager } = attachTabForFullPage("");
+
+    await expect(
+      manager.captureFullPage({
+        hostWindow,
+        request: { tabId: "browser:missing", format: "jpeg", quality: 70 },
+      }),
+    ).resolves.toMatchObject({ ok: false, reason: "no-view" });
+    await expect(
+      manager.captureFullPage({
+        hostWindow,
+        request: { tabId: "browser:a", format: "jpeg", quality: 70 },
+      }),
+    ).resolves.toMatchObject({ ok: false, reason: "no-page" });
+  });
+
+  it("reports a rejected capture as a refusal rather than rejecting", async () => {
+    const { hostWindow, manager, webContents } = attachTabForFullPage();
+    webContents.debugger.failures.set(
+      "Page.captureScreenshot",
+      new Error("capture failed"),
+    );
+
+    await expect(
+      manager.captureFullPage({
+        hostWindow,
+        request: { tabId: "browser:a", format: "jpeg", quality: 70 },
+      }),
+    ).resolves.toEqual({
+      ok: false,
+      reason: "failed",
+      message: "capture failed",
+    });
   });
 });

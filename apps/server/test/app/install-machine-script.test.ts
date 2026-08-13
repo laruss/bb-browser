@@ -1,6 +1,7 @@
 import { spawn, spawnSync } from "node:child_process";
 import {
   chmodSync,
+  readdirSync,
   mkdtempSync,
   mkdirSync,
   readFileSync,
@@ -18,6 +19,26 @@ const SCRIPT_PATH = new URL(
   "../../src/assets/install-machine.sh",
   import.meta.url,
 );
+
+/**
+ * Every test that runs the script end to end costs seconds, and no default
+ * timeout was ever going to be right for it.
+ *
+ * The script starts a daemon and then waits for it to answer `/status`,
+ * spawning a fresh `node` for each poll and sleeping a whole second between
+ * them. The fake daemon here is itself a Node HTTP server, so it is never up
+ * in time for the first poll and always costs one of those sleeps — twice,
+ * since the script waits again after installing the service. On an idle
+ * machine that puts these tests between 1.2 and 3.4 seconds each; with the
+ * rest of this suite running in parallel it puts two of them past the
+ * 5-second default, which is why they failed intermittently and only under
+ * load.
+ *
+ * 30 seconds is roughly ten times the idle worst case and still well under the
+ * script's own 60-second wait, so a daemon that genuinely never comes up fails
+ * the test instead of parking a worker for a minute.
+ */
+const SCRIPT_RUN_TIMEOUT_MS = 30_000;
 const createdDirectories: string[] = [];
 
 function createFixture(): { binDir: string; dataDir: string; homeDir: string } {
@@ -227,14 +248,38 @@ printf '%s' '${artifactStatus}'
   );
 }
 
+/**
+ * Stop whatever the script left running under a fixture.
+ *
+ * Found by walking rather than by naming the two pid files, because one of
+ * these tests deliberately lets the script choose its own data directory under
+ * `$HOME`, and a cleanup that only knows about `data/` is a cleanup that misses
+ * exactly the case the test exists for.
+ */
+function killFixtureDaemons(root: string): void {
+  let entries: string[];
+  try {
+    entries = readdirSync(root, { recursive: true }) as string[];
+  } catch {
+    return;
+  }
+  for (const entry of entries) {
+    if (!entry.endsWith("-daemon.pid")) {
+      continue;
+    }
+    try {
+      process.kill(Number(readFileSync(join(root, entry), "utf8")), "SIGTERM");
+    } catch {}
+  }
+}
+
 afterEach(() => {
   for (const directory of createdDirectories.splice(0)) {
-    try {
-      const servicePid = Number(
-        readFileSync(join(directory, "data/service-daemon.pid"), "utf8"),
-      );
-      process.kill(servicePid, "SIGTERM");
-    } catch {}
+    // Cleanup belongs here rather than at the end of each test body, which is
+    // the one place a failing or timed-out test never reaches — so exactly the
+    // runs that went wrong were the runs that leaked a node process still
+    // holding its port.
+    killFixtureDaemons(directory);
     rmSync(directory, { force: true, recursive: true });
   }
 });
@@ -290,11 +335,7 @@ describe("machine install script", () => {
       "--server-url",
       "https://machine.getbb.app",
     ]);
-    const daemonPid = Number(
-      readFileSync(join(fixture.dataDir, "install-daemon.pid"), "utf8"),
-    );
-    process.kill(daemonPid, "SIGTERM");
-  });
+  }, SCRIPT_RUN_TIMEOUT_MS);
 
   it("accepts the daemon's normalized loopback server URL", () => {
     const fixture = createFixture();
@@ -320,11 +361,7 @@ describe("machine install script", () => {
     );
 
     expect(result.status, result.stderr).toBe(0);
-    const daemonPid = Number(
-      readFileSync(join(fixture.dataDir, "install-daemon.pid"), "utf8"),
-    );
-    process.kill(daemonPid, "SIGTERM");
-  });
+  }, SCRIPT_RUN_TIMEOUT_MS);
 
   it("installs the server tarball even when a same-version bb-app is on PATH", () => {
     const fixture = createFixture();
@@ -341,11 +378,7 @@ describe("machine install script", () => {
       "utf8",
     );
     expect(npmInvocation).toMatch(/^install -g \/.*bb-app\..*\.tgz$/mu);
-    const daemonPid = Number(
-      readFileSync(join(fixture.dataDir, "install-daemon.pid"), "utf8"),
-    );
-    process.kill(daemonPid, "SIGTERM");
-  });
+  }, SCRIPT_RUN_TIMEOUT_MS);
 
   it("prefers the server-matched tarball when bb-app is absent", () => {
     const fixture = createFixture();
@@ -361,11 +394,7 @@ describe("machine install script", () => {
     );
     expect(npmInvocation).toMatch(/^install -g \/.*bb-app\..*\.tgz$/mu);
     expect(npmInvocation).not.toContain("bb-app\n");
-    const daemonPid = Number(
-      readFileSync(join(fixture.dataDir, "install-daemon.pid"), "utf8"),
-    );
-    process.kill(daemonPid, "SIGTERM");
-  });
+  }, SCRIPT_RUN_TIMEOUT_MS);
 
   it("falls back to npm only when the server artifact returns 404", () => {
     const fixture = createFixture();
@@ -378,11 +407,7 @@ describe("machine install script", () => {
     expect(readFileSync(join(fixture.dataDir, "npm.log"), "utf8")).toBe(
       "install -g bb-app\n",
     );
-    const daemonPid = Number(
-      readFileSync(join(fixture.dataDir, "install-daemon.pid"), "utf8"),
-    );
-    process.kill(daemonPid, "SIGTERM");
-  });
+  }, SCRIPT_RUN_TIMEOUT_MS);
 
   it("defaults the data dir to a per-server directory under ~/.bb-machines", () => {
     const fixture = createFixture();
@@ -400,11 +425,7 @@ describe("machine install script", () => {
     expect(
       JSON.parse(readFileSync(join(defaultDataDir, "auth.json"), "utf8")),
     ).toMatchObject({ hostId: "host-test" });
-    const daemonPid = Number(
-      readFileSync(join(defaultDataDir, "install-daemon.pid"), "utf8"),
-    );
-    process.kill(daemonPid, "SIGTERM");
-  });
+  }, SCRIPT_RUN_TIMEOUT_MS);
 
   it("refuses a data dir enrolled for a different host instead of faking success", () => {
     const fixture = createFixture();
@@ -418,7 +439,7 @@ describe("machine install script", () => {
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("credentials for a different host");
     expect(result.stdout).not.toContain("Joined successfully");
-  });
+  }, SCRIPT_RUN_TIMEOUT_MS);
 
   it("assigns a different port when the first enrolled-daemon port is occupied", async () => {
     const occupied = createNetServer();
@@ -459,10 +480,6 @@ describe("machine install script", () => {
       expect(readFileSync(invocationPath, "utf8")).toContain(
         `--host-daemon-port\n${selectedPort}\n`,
       );
-      const daemonPid = Number(
-        readFileSync(join(fixture.dataDir, "install-daemon.pid"), "utf8"),
-      );
-      process.kill(daemonPid, "SIGTERM");
     } finally {
       if (occupiedByTest) {
         await new Promise<void>((resolve, reject) => {
@@ -470,7 +487,7 @@ describe("machine install script", () => {
         });
       }
     }
-  });
+  }, SCRIPT_RUN_TIMEOUT_MS);
 
   it("atomically reserves different ports for concurrent custom data directories", async () => {
     const fixture = createFixture();
@@ -512,7 +529,7 @@ describe("machine install script", () => {
     ).toEqual(
       new Set([realpathSync(firstDataDir), realpathSync(secondDataDir)]),
     );
-  });
+  }, SCRIPT_RUN_TIMEOUT_MS);
 
   it("redeems and persists a connect machine code before joining through the tunnel", () => {
     const fixture = createFixture();
@@ -546,11 +563,7 @@ describe("machine install script", () => {
       machineCredential: "bbcm_durable",
       serverUrl: "https://sawyer.getbb.app",
     });
-    const daemonPid = Number(
-      readFileSync(join(fixture.dataDir, "install-daemon.pid"), "utf8"),
-    );
-    process.kill(daemonPid, "SIGTERM");
-  });
+  }, SCRIPT_RUN_TIMEOUT_MS);
 
   it("installs an idempotent macOS launch agent for joined state", () => {
     const fixture = createFixture();
@@ -607,7 +620,7 @@ fi
     expect(
       readFileSync(join(fixture.dataDir, "launchctl.log"), "utf8"),
     ).toContain("bootstrap");
-  });
+  }, SCRIPT_RUN_TIMEOUT_MS);
 
   it("restarts an active Linux systemd user unit after replacing it", () => {
     const fixture = createFixture();
@@ -658,5 +671,5 @@ fi
     expect(readFileSync(join(fixture.dataDir, "systemctl.log"), "utf8")).toBe(
       "--user daemon-reload\n--user enable bb-host-daemon-machine-getbb-app.service\n--user restart bb-host-daemon-machine-getbb-app.service\n",
     );
-  });
+  }, SCRIPT_RUN_TIMEOUT_MS);
 });

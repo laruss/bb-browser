@@ -19,9 +19,14 @@ import {
   BB_DESKTOP_BROWSER_MAX_PDF_BASE64_LENGTH,
   BB_DESKTOP_BROWSER_MAX_ROUTES,
   BB_DESKTOP_BROWSER_MAX_SCREENSHOT_BASE64_LENGTH,
+  type BbDesktopBrowserCaptureFullPageRequest,
+  type BbDesktopBrowserCaptureFullPageResult,
   type BbDesktopBrowserConsoleEntry,
   type BbDesktopBrowserControlRequest,
   type BbDesktopBrowserControlResult,
+  type BbDesktopBrowserRecordRequest,
+  type BbDesktopBrowserSnapshotInRequest,
+  type BbDesktopBrowserRecordResult,
   type BbDesktopBrowserRouteState,
   type BbDesktopBrowserInteraction,
   type BbDesktopBrowserInteractRequest,
@@ -61,6 +66,7 @@ import {
 } from "./desktop-browser-cdp.js";
 import {
   buildBrowserSnapshot,
+  findBrowserSnapshotRoot,
   type AxNode,
 } from "./desktop-browser-snapshot.js";
 import {
@@ -85,6 +91,10 @@ import {
   type BrowserKeyEvent,
 } from "./desktop-browser-keyboard.js";
 import {
+  BB_DESKTOP_BROWSER_CONTENT_SIZE_SCRIPT,
+  parseBrowserCaptureRegion,
+} from "./desktop-browser-capture.js";
+import {
   BB_BROWSER_OBSERVATION_BUFFER_SIZE,
   BrowserObservationLog,
   toBrowserConsoleEntry,
@@ -103,6 +113,12 @@ import {
   matchBrowserRoute,
   toBrowserFulfillHeaders,
 } from "./desktop-browser-control.js";
+import {
+  BB_BROWSER_SCREENCAST_MAX_HEIGHT,
+  BB_BROWSER_SCREENCAST_MAX_WIDTH,
+  BB_BROWSER_SCREENCAST_QUALITY,
+  BrowserVideoRecording,
+} from "./desktop-browser-video.js";
 import {
   buildBrowserStorageScript,
   parseBrowserStorageCounts,
@@ -222,6 +238,15 @@ interface BrowserViewEntry {
   routesEnabled: boolean;
   offline: boolean;
   /**
+   * The film being taken of this tab, or null when nothing is filming. Dies
+   * with the CDP session for the same reason the routes do — Chromium stops the
+   * screencast when its client detaches, so a recording left here would grow no
+   * further and say nothing about it.
+   */
+  video: BrowserVideoRecording | null;
+  /** Guards one-time `Page.screencastFrame` wiring per CDP session. */
+  videoWired: boolean;
+  /**
    * Where the vision-mode pointer is. Chromium wants a point on every mouse
    * event, while `mousedown`/`mouseup`/`mousewheel` name none — so the last
    * `mouse-move` is the point they act at, as it is in a real browser.
@@ -330,6 +355,10 @@ export interface DesktopBrowserViewManager {
   snapshot(
     args: HostScopedRequestArgs<BbDesktopBrowserSnapshotRequest>,
   ): Promise<BbDesktopBrowserSnapshotResult>;
+  /** The same snapshot, of what a CSS selector matches. Never rejects. */
+  snapshotIn(
+    args: HostScopedRequestArgs<BbDesktopBrowserSnapshotInRequest>,
+  ): Promise<BbDesktopBrowserSnapshotResult>;
   /**
    * Answer the JavaScript dialog a tab is blocked on. False when there is none —
    * including when a human answered it first.
@@ -352,6 +381,13 @@ export interface DesktopBrowserViewManager {
     args: HostScopedRequestArgs<BbDesktopBrowserObserveRequest>,
   ): Promise<BbDesktopBrowserObserveResult>;
   /**
+   * Capture the whole document, however far it scrolls. The one capture that
+   * does attach the debugger — see {@link captureFullPage}. Never rejects.
+   */
+  captureFullPage(
+    args: HostScopedRequestArgs<BbDesktopBrowserCaptureFullPageRequest>,
+  ): Promise<BbDesktopBrowserCaptureFullPageResult>;
+  /**
    * Read or write a tab's cookies and web storage. Attaches no debugger either,
    * and never rejects.
    */
@@ -365,6 +401,12 @@ export interface DesktopBrowserViewManager {
   control(
     args: HostScopedRequestArgs<BbDesktopBrowserControlRequest>,
   ): Promise<BbDesktopBrowserControlResult>;
+  /**
+   * Film a tab and hand the frames back when it stops. Never rejects.
+   */
+  record(
+    args: HostScopedRequestArgs<BbDesktopBrowserRecordRequest>,
+  ): Promise<BbDesktopBrowserRecordResult>;
   setBounds(
     args: HostScopedRequestArgs<BbDesktopBrowserSetBoundsRequest>,
   ): void;
@@ -1370,6 +1412,159 @@ async function performControl(
   }
 }
 
+/** The two ways a scoped snapshot refuses, thrown out of the selector lookup. */
+class SnapshotRefusal extends Error {
+  readonly reason: "invalid-selector" | "no-match";
+
+  constructor(reason: "invalid-selector" | "no-match", message: string) {
+    super(message);
+    this.name = "SnapshotRefusal";
+    this.reason = reason;
+  }
+}
+
+/**
+ * The backend node id of the element a CSS selector matches.
+ *
+ * Backend ids rather than the DOM agent's own: those are what the accessibility
+ * tree carries, and matching them is how a selector reaches a snapshot at all.
+ */
+async function resolveSelectorNode(
+  session: CdpSession,
+  selector: string,
+): Promise<number> {
+  await session.enableDomain("DOM");
+  // The DOM agent only knows nodes it has handed out, so the document has to be
+  // fetched before anything can be queried against it. Depth 0: the only node
+  // needed is the one the query starts from.
+  const document = await session.send<{ root?: { nodeId?: number } }>(
+    "DOM.getDocument",
+    { depth: 0 },
+  );
+  const rootNodeId = document.root?.nodeId;
+  if (typeof rootNodeId !== "number") {
+    throw new Error("The tab would not describe its own document.");
+  }
+
+  const found = await session
+    .send<{ nodeId?: number }>("DOM.querySelector", {
+      nodeId: rootNodeId,
+      selector,
+    })
+    .catch((error: unknown) => {
+      // Only the browser can judge a selector, so its complaint is the answer —
+      // and it is the caller's to fix rather than anything about the page.
+      throw new SnapshotRefusal(
+        "invalid-selector",
+        error instanceof Error ? error.message : String(error),
+      );
+    });
+  // Zero is how the protocol spells "matched nothing"; it is not a failure.
+  if (typeof found.nodeId !== "number" || found.nodeId === 0) {
+    throw new SnapshotRefusal(
+      "no-match",
+      `Nothing on the page matches ${JSON.stringify(selector)}.`,
+    );
+  }
+
+  const described = await session.send<{
+    node?: { backendNodeId?: number };
+  }>("DOM.describeNode", { nodeId: found.nodeId });
+  if (typeof described.node?.backendNodeId !== "number") {
+    throw new Error("The tab would not describe that element.");
+  }
+  return described.node.backendNodeId;
+}
+
+/**
+ * Take the frames Chromium sends while a tab is filmed.
+ *
+ * Every frame is acknowledged, whether or not it is kept, and that is the whole
+ * subtlety of the screencast: Chromium sends the next frame only once the last
+ * one has been answered, so a frame dropped for pacing that is also left
+ * unacknowledged does not cost one frame — it ends the recording. Wired at most
+ * once per session, like the request interception, so no frame is answered
+ * twice.
+ */
+function wireScreencast(session: CdpSession, entry: BrowserViewEntry): void {
+  session.on("Page.screencastFrame", (params) => {
+    const frame = params as { data?: string; sessionId?: number };
+    if (typeof frame.sessionId === "number") {
+      void session
+        .send("Page.screencastFrameAck", { sessionId: frame.sessionId })
+        .catch(() => {
+          // The screencast is already over; there is nothing to keep alive.
+        });
+    }
+    if (entry.video === null || typeof frame.data !== "string") {
+      return;
+    }
+    entry.video.offerFrame(frame.data, Date.now());
+  });
+}
+
+/** Start, mark or end the film of a tab whose session is attached. */
+async function performRecord(
+  session: CdpSession,
+  entry: BrowserViewEntry,
+  tabId: string,
+  operation: BbDesktopBrowserRecordRequest["operation"],
+): Promise<BbDesktopBrowserRecordResult> {
+  const page = { tabId, ...entryPageIdentity(entry) };
+
+  if (operation.kind === "video-start") {
+    if (entry.video !== null) {
+      return {
+        ok: false,
+        reason: "already-recording",
+        message: "That tab is already being filmed. Stop it first.",
+      };
+    }
+    if (!entry.videoWired) {
+      entry.videoWired = true;
+      wireScreencast(session, entry);
+    }
+    entry.video = new BrowserVideoRecording(Date.now(), operation.fps);
+    try {
+      await session.enableDomain("Page");
+      await session.send("Page.startScreencast", {
+        format: "jpeg",
+        quality: BB_BROWSER_SCREENCAST_QUALITY,
+        maxWidth: BB_BROWSER_SCREENCAST_MAX_WIDTH,
+        maxHeight: BB_BROWSER_SCREENCAST_MAX_HEIGHT,
+        everyNthFrame: 1,
+      });
+    } catch (error) {
+      // A recording nothing is filling would answer `video-stop` with an empty
+      // film and no explanation.
+      entry.video = null;
+      throw error;
+    }
+    return { ok: true, kind: "recording", ...page, active: true };
+  }
+
+  if (entry.video === null) {
+    return {
+      ok: false,
+      reason: "not-recording",
+      message: "That tab is not being filmed. Start with video-start.",
+    };
+  }
+
+  if (operation.kind === "video-chapter") {
+    entry.video.chapter(operation.title, Date.now());
+    return { ok: true, kind: "recording", ...page, active: true };
+  }
+
+  const recording = entry.video;
+  entry.video = null;
+  await session.send("Page.stopScreencast").catch(() => {
+    // Whatever went wrong, the frames already taken are still the answer —
+    // losing a recording because the stop call failed is the worse trade.
+  });
+  return { ok: true, kind: "video", ...page, ...recording.finish(Date.now()) };
+}
+
 /**
  * What a tab is showing, resolved exactly as `buildBrowserState` does so a read,
  * a snapshot, an interaction and the tab strip can never disagree.
@@ -1473,6 +1668,92 @@ async function captureObservation(
     base64,
     width: size.width,
     height: size.height,
+  };
+}
+
+/**
+ * Capture the whole document of a tab that is known to exist and to have loaded.
+ *
+ * The one capture that pays for the debugger, and it pays for exactly as much
+ * of it as it needs: a session is attached, but the `Page` domain is never
+ * enabled, so this tab's `alert()` still opens Chromium's own modal afterwards.
+ * That distinction is the difference between a picture and taking a tab over.
+ *
+ * Two round trips rather than one, because the clip has to be measured first —
+ * `captureBeyondViewport` on its own renders the viewport-sized surface and
+ * would answer with the same picture `capturePage` already gives.
+ */
+async function captureFullPageImage(
+  entry: BrowserViewEntry,
+  session: CdpSession,
+  request: BbDesktopBrowserCaptureFullPageRequest,
+): Promise<BbDesktopBrowserCaptureFullPageResult> {
+  const page = { tabId: request.tabId, ...entryPageIdentity(entry) };
+
+  const measured = await runIsolatedScript(
+    entry.view.webContents,
+    BB_DESKTOP_BROWSER_CONTENT_SIZE_SCRIPT,
+  );
+  if (measured.kind === "timeout") {
+    return {
+      ok: false,
+      reason: "failed",
+      message: "The page did not answer how large it is in time.",
+    };
+  }
+  const region =
+    measured.kind === "value" ? parseBrowserCaptureRegion(measured.value) : null;
+  if (region === null) {
+    return {
+      ok: false,
+      reason: "failed",
+      message: "The page reported no size to capture — it may not have laid out yet.",
+    };
+  }
+  // The page can go while its own script is in flight, and a capture against a
+  // dead target rejects rather than answering.
+  if (entry.view.webContents.isDestroyed()) {
+    return { ok: false, reason: "no-view" };
+  }
+
+  const captured = await session.send<{ data?: string }>(
+    "Page.captureScreenshot",
+    {
+      format: request.format,
+      // Chromium ignores quality for PNG; sending it anyway would only make the
+      // request read as though lossless compression had a knob.
+      ...(request.format === "jpeg" ? { quality: request.quality } : {}),
+      // `scale: 1` is what makes the result CSS pixels rather than the display's
+      // device pixels — on a retina screen the difference is four times the
+      // bytes for a picture nobody asked to be that sharp.
+      clip: { x: 0, y: 0, width: region.width, height: region.height, scale: 1 },
+      captureBeyondViewport: true,
+    },
+  );
+  const base64 = captured.data ?? "";
+  if (base64.length === 0) {
+    return {
+      ok: false,
+      reason: "failed",
+      message: "The browser captured nothing.",
+    };
+  }
+  if (base64.length > BB_DESKTOP_BROWSER_MAX_SCREENSHOT_BASE64_LENGTH) {
+    return {
+      ok: false,
+      reason: "too-large",
+      message:
+        "That page is too long to return as one picture. Ask for JPEG, or a lower quality, or print it to a PDF.",
+    };
+  }
+  return {
+    ok: true,
+    ...page,
+    mimeType: request.format === "png" ? "image/png" : "image/jpeg",
+    base64,
+    width: region.width,
+    height: region.height,
+    truncated: region.truncated,
   };
 }
 
@@ -2149,6 +2430,8 @@ export function createDesktopBrowserViewManager(
       routesWired: false,
       routesEnabled: false,
       offline: false,
+      video: null,
+      videoWired: false,
       mousePoint: { x: 0, y: 0 },
       snapshotRefs: new Map(),
       snapshotGeneration: 0,
@@ -2218,16 +2501,19 @@ export function createDesktopBrowserViewManager(
   }
 
   /**
-   * Chromium drops request interception and network emulation when its protocol
-   * client goes, so the tab is routed and online again whether we like it or
-   * not. Forgetting them here is what stops `route-list` describing a tab that
-   * is no longer mocked.
+   * Chromium drops request interception, network emulation and the screencast
+   * when its protocol client goes, so the tab is routed, online and unfilmed
+   * again whether we like it or not. Forgetting them here is what stops
+   * `route-list` describing a tab that is no longer mocked, and `video-stop`
+   * answering with a recording that stopped growing when the debugger did.
    */
   function forgetEntryInterception(entry: BrowserViewEntry): void {
     entry.routes = [];
     entry.routesWired = false;
     entry.routesEnabled = false;
     entry.offline = false;
+    entry.video = null;
+    entry.videoWired = false;
   }
 
   function releaseCdpSession(entry: BrowserViewEntry): void {
@@ -2355,6 +2641,110 @@ export function createDesktopBrowserViewManager(
     fn(entry);
   }
 
+  /**
+   * Snapshot a tab, optionally narrowed to what a selector matches.
+   *
+   * One function behind both methods, because the scoped and unscoped forms
+   * differ by which node the render starts at and by nothing else — they take
+   * the same locks, hand out refs the same way, and invalidate the same table.
+   */
+  async function captureTabSnapshot(args: {
+    hostWindow: DesktopBrowserHostWindow;
+    request: BbDesktopBrowserSnapshotRequest | BbDesktopBrowserSnapshotInRequest;
+  }): Promise<BbDesktopBrowserSnapshotResult> {
+    const { hostWindow, request } = args;
+    const entry = entries.get(browserViewKey(hostWindow, request.tabId));
+    if (!entry || entry.view.webContents.isDestroyed()) {
+      return { ok: false, reason: "no-view" };
+    }
+    if (entry.view.webContents.getURL().length === 0) {
+      return { ok: false, reason: "no-page" };
+    }
+
+    let session: CdpSession;
+    try {
+      session = ensureCdpSession(entry);
+    } catch (error) {
+      // DevTools holding the tab is the realistic cause, and it is worth
+      // saying so rather than reporting a generic failure.
+      return {
+        ok: false,
+        reason: "debugger-unavailable",
+        message: error instanceof Error ? error.message : String(error),
+      };
+    }
+
+    try {
+      // Any automation on this tab means the shell owns its dialogs from now
+      // on — otherwise the first `confirm()` would block the page with nothing
+      // able to answer it.
+      await ensureDialogInterception(hostWindow, request.tabId, entry, session);
+      const selector = "selector" in request ? request.selector : null;
+      // Resolved before the tree is fetched, so a selector that matches nothing
+      // costs a page-sized response nobody reads.
+      const backendNodeId =
+        selector === null ? null : await resolveSelectorNode(session, selector);
+
+      await session.enableDomain("Accessibility");
+      const response = await session.send<{ nodes?: AxNode[] }>(
+        "Accessibility.getFullAXTree",
+      );
+      const nodes = response.nodes ?? [];
+
+      // Scoping narrows what is rendered, not what Chromium sends: the tree
+      // arrives whole either way, because `Accessibility.getPartialAXTree`
+      // answers with one level of children and rebuilding a subtree from it
+      // would be a round trip per level. What it saves is the caller's context,
+      // which is the scarce thing here.
+      let root: AxNode | undefined;
+      if (backendNodeId !== null) {
+        const found = findBrowserSnapshotRoot(nodes, backendNodeId);
+        if (found === null) {
+          throw new SnapshotRefusal(
+            "no-match",
+            `${JSON.stringify(selector)} matched an element the accessibility tree does not describe — it is probably hidden.`,
+          );
+        }
+        root = found;
+      }
+
+      const built = buildBrowserSnapshot({
+        nodes,
+        ...(root === undefined ? {} : { root }),
+        maxDepth: request.maxDepth,
+        maxLength: BB_DESKTOP_BROWSER_MAX_SNAPSHOT_LENGTH,
+      });
+
+      // Replacing the table is itself an invalidation: refs from the previous
+      // snapshot must not stay resolvable behind the new ones. A scoped
+      // snapshot is no exception — it hands out `e1` again, for a different
+      // element than the last one called `e1`.
+      invalidateSnapshotRefs(entry);
+      for (const { ref, backendNodeId: refNodeId } of built.refs) {
+        entry.snapshotRefs.set(ref, refNodeId);
+      }
+
+      return {
+        ok: true,
+        tabId: request.tabId,
+        ...entryPageIdentity(entry),
+        snapshot: built.text,
+        generation: entry.snapshotGeneration,
+        refCount: built.refs.length,
+        truncated: built.truncated,
+      };
+    } catch (error) {
+      if (error instanceof SnapshotRefusal) {
+        return { ok: false, reason: error.reason, message: error.message };
+      }
+      return {
+        ok: false,
+        reason: "failed",
+        message: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
   return {
     attach({ hostWindow, request }) {
       const key = browserViewKey(hostWindow, request.tabId);
@@ -2456,66 +2846,11 @@ export function createDesktopBrowserViewManager(
         ...content,
       };
     },
-    async snapshot({ hostWindow, request }) {
-      const entry = entries.get(browserViewKey(hostWindow, request.tabId));
-      if (!entry || entry.view.webContents.isDestroyed()) {
-        return { ok: false, reason: "no-view" };
-      }
-      if (entry.view.webContents.getURL().length === 0) {
-        return { ok: false, reason: "no-page" };
-      }
-
-      let session: CdpSession;
-      try {
-        session = ensureCdpSession(entry);
-      } catch (error) {
-        // DevTools holding the tab is the realistic cause, and it is worth
-        // saying so rather than reporting a generic failure.
-        return {
-          ok: false,
-          reason: "debugger-unavailable",
-          message: error instanceof Error ? error.message : String(error),
-        };
-      }
-
-      try {
-        // Any automation on this tab means the shell owns its dialogs from now
-        // on — otherwise the first `confirm()` would block the page with nothing
-        // able to answer it.
-        await ensureDialogInterception(hostWindow, request.tabId, entry, session);
-        await session.enableDomain("Accessibility");
-        const response = await session.send<{ nodes?: AxNode[] }>(
-          "Accessibility.getFullAXTree",
-        );
-        const built = buildBrowserSnapshot({
-          nodes: response.nodes ?? [],
-          maxDepth: request.maxDepth,
-          maxLength: BB_DESKTOP_BROWSER_MAX_SNAPSHOT_LENGTH,
-        });
-
-        // Replacing the table is itself an invalidation: refs from the previous
-        // snapshot must not stay resolvable behind the new ones.
-        invalidateSnapshotRefs(entry);
-        for (const { ref, backendNodeId } of built.refs) {
-          entry.snapshotRefs.set(ref, backendNodeId);
-        }
-
-        return {
-          ok: true,
-          tabId: request.tabId,
-          ...entryPageIdentity(entry),
-          snapshot: built.text,
-          generation: entry.snapshotGeneration,
-          refCount: built.refs.length,
-          truncated: built.truncated,
-        };
-      } catch (error) {
-        return {
-          ok: false,
-          reason: "failed",
-          message: error instanceof Error ? error.message : String(error),
-        };
-      }
+    snapshot({ hostWindow, request }) {
+      return captureTabSnapshot({ hostWindow, request });
+    },
+    snapshotIn({ hostWindow, request }) {
+      return captureTabSnapshot({ hostWindow, request });
     },
     async respondToDialog({ hostWindow, request }) {
       const entry = entries.get(browserViewKey(hostWindow, request.tabId));
@@ -2617,6 +2952,41 @@ export function createDesktopBrowserViewManager(
         };
       }
     },
+    async captureFullPage({ hostWindow, request }) {
+      const entry = entries.get(browserViewKey(hostWindow, request.tabId));
+      if (!entry || entry.view.webContents.isDestroyed()) {
+        return { ok: false, reason: "no-view" };
+      }
+      if (entry.view.webContents.getURL().length === 0) {
+        return { ok: false, reason: "no-page" };
+      }
+
+      let session: CdpSession;
+      try {
+        session = ensureCdpSession(entry);
+      } catch (error) {
+        return {
+          ok: false,
+          reason: "debugger-unavailable",
+          message: error instanceof Error ? error.message : String(error),
+        };
+      }
+
+      // No `ensureDialogInterception` here, unlike every other command that
+      // attaches a session: this one does not drive the page, so it cannot
+      // provoke a dialog, and taking a tab's dialogs over is a visible change
+      // to how the browser behaves for the human using it. A picture should not
+      // cost that.
+      try {
+        return await captureFullPageImage(entry, session, request);
+      } catch (error) {
+        return {
+          ok: false,
+          reason: "failed",
+          message: error instanceof Error ? error.message : String(error),
+        };
+      }
+    },
     async storage({ hostWindow, request }) {
       const entry = entries.get(browserViewKey(hostWindow, request.tabId));
       if (!entry || entry.view.webContents.isDestroyed()) {
@@ -2682,6 +3052,51 @@ export function createDesktopBrowserViewManager(
             message: error.message,
           };
         }
+        return {
+          ok: false,
+          reason: "failed",
+          message: error instanceof Error ? error.message : String(error),
+        };
+      }
+    },
+    async record({ hostWindow, request }) {
+      const entry = entries.get(browserViewKey(hostWindow, request.tabId));
+      if (!entry || entry.view.webContents.isDestroyed()) {
+        return { ok: false, reason: "no-view" };
+      }
+      // Only starting needs a page: a film of a blank tab is a blank film,
+      // while stopping one has frames to hand back whatever the tab shows now.
+      if (
+        entry.view.webContents.getURL().length === 0 &&
+        request.operation.kind === "video-start"
+      ) {
+        return { ok: false, reason: "no-page" };
+      }
+
+      let session: CdpSession;
+      try {
+        session = ensureCdpSession(entry);
+      } catch (error) {
+        return {
+          ok: false,
+          reason: "debugger-unavailable",
+          message: error instanceof Error ? error.message : String(error),
+        };
+      }
+
+      try {
+        // Filming needs the `Page` domain, and enabling it is what moves this
+        // tab's dialogs onto the protocol. So the same rule as everywhere else
+        // applies, and for a sharper reason: a page that opens a dialog
+        // mid-recording would otherwise sit there with nobody able to answer it.
+        await ensureDialogInterception(hostWindow, request.tabId, entry, session);
+        return await performRecord(
+          session,
+          entry,
+          request.tabId,
+          request.operation,
+        );
+      } catch (error) {
         return {
           ok: false,
           reason: "failed",

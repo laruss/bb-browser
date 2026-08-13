@@ -380,6 +380,8 @@ export interface FakeBrowserDrivers {
        * expression it meant to send is the one that was sent.
        */
       evaluated?: string;
+      /** What `bb.browser.recording.videoStop` hands back, since a fake films nothing. */
+      frames?: readonly { at: number; base64: string }[];
     },
   ): void;
   /** Pretend no app window is connected, so every call fails like production. */
@@ -1775,6 +1777,7 @@ function createFakePluginHostInternal(
     evaluated: string;
     routes: readonly PluginBrowserRouteState[];
     offline: boolean;
+    frames: readonly { at: number; base64: string }[];
   }
   const EMPTY_BROWSER_PAGE_CONTENT: FakeBrowserPageContent = {
     text: "",
@@ -1788,9 +1791,14 @@ function createFakePluginHostInternal(
     evaluated: "undefined",
     routes: [],
     offline: false,
+    frames: [],
   };
   const browserPageContent = new Map<string, FakeBrowserPageContent>();
   let browserSnapshotGeneration = 0;
+  /** Where the running trace started in `browserCalls`; null when none is. */
+  let browserTraceFrom: number | null = null;
+  /** Chapters marked so far, per tab being filmed. */
+  const browserVideos = new Map<string, { at: number; title: string }[]>();
   let browserPendingDialog = false;
   let browserTabs: PluginBrowserTab[] = [];
   let browserConnected = true;
@@ -2012,6 +2020,9 @@ function createFakePluginHostInternal(
       snapshot(args) {
         beginBrowserCall("page.snapshot", { ...args });
         const tab = requireLiveBrowserTab(args?.tabId);
+        // A fake has no DOM to query, so a selector is recorded and not
+        // resolved — what a plugin test can check is that the selector it meant
+        // to send is the one that was sent.
         browserSnapshotGeneration += 1;
         const text = browserPageContent.get(tab.tabId)?.snapshot ?? "";
         return Promise.resolve({
@@ -2060,6 +2071,7 @@ function createFakePluginHostInternal(
       screenshot(args) {
         beginBrowserCall("page.screenshot", { ...args });
         const tab = requireLiveBrowserTab(args?.tabId);
+        const fullPage = args?.fullPage === true;
         return Promise.resolve({
           tabId: tab.tabId,
           url: tab.url,
@@ -2067,7 +2079,12 @@ function createFakePluginHostInternal(
           mimeType: args?.format === "png" ? "image/png" : "image/jpeg",
           base64: FAKE_BROWSER_SCREENSHOT_BASE64,
           width: 2,
-          height: 1,
+          // A full-page capture answers with the document, so the fake makes it
+          // taller than the viewport one — a test that cannot tell the two
+          // apart is not testing that the flag arrived anywhere.
+          height: fullPage ? 4 : 1,
+          fullPage,
+          truncated: false,
         });
       },
       pdf(args) {
@@ -2324,6 +2341,89 @@ function createFakePluginHostInternal(
         return Promise.resolve(browserPageStateOf(tab.tabId));
       },
     },
+    recording: {
+      traceStart(args) {
+        beginBrowserCall("recording.traceStart", { ...args });
+        if (browserTraceFrom !== null) {
+          throw browserError("already_recording", "A trace is already running");
+        }
+        // Where the log begins, in the calls this harness already records: a
+        // plugin's trace then contains exactly the browser work it did next.
+        browserTraceFrom = browserCalls.length;
+        return Promise.resolve();
+      },
+      traceStop() {
+        beginBrowserCall("recording.traceStop");
+        const from = browserTraceFrom;
+        if (from === null) {
+          throw browserError("not_recording", "No trace is running");
+        }
+        browserTraceFrom = null;
+        return Promise.resolve({
+          steps: browserCalls
+            .slice(from, browserCalls.length - 1)
+            .filter((call) => !call.type.startsWith("recording."))
+            .map((call, index) => ({
+              seq: index + 1,
+              at: 0,
+              command: call.type,
+              detail: JSON.stringify(call.args),
+              ok: true,
+              error: null,
+              image: null,
+            })),
+          droppedSteps: 0,
+          droppedImages: 0,
+          durationMs: 0,
+        });
+      },
+      videoStart(args) {
+        beginBrowserCall("recording.videoStart", { ...args });
+        const tab = requireLiveBrowserTab(args?.tabId);
+        if (browserVideos.has(tab.tabId)) {
+          throw browserError(
+            "already_recording",
+            `Browser tab ${tab.tabId} is already being filmed`,
+          );
+        }
+        browserVideos.set(tab.tabId, []);
+        return Promise.resolve();
+      },
+      videoChapter(args) {
+        beginBrowserCall("recording.videoChapter", { ...args });
+        const tab = requireLiveBrowserTab(args?.tabId);
+        const chapters = browserVideos.get(tab.tabId);
+        if (chapters === undefined) {
+          throw browserError(
+            "not_recording",
+            `Browser tab ${tab.tabId} is not being filmed`,
+          );
+        }
+        chapters.push({ at: 0, title: args.title });
+        return Promise.resolve();
+      },
+      videoStop(args) {
+        beginBrowserCall("recording.videoStop", { ...args });
+        const tab = requireLiveBrowserTab(args?.tabId);
+        const chapters = browserVideos.get(tab.tabId);
+        if (chapters === undefined) {
+          throw browserError(
+            "not_recording",
+            `Browser tab ${tab.tabId} is not being filmed`,
+          );
+        }
+        browserVideos.delete(tab.tabId);
+        return Promise.resolve({
+          ...browserPageStateOf(tab.tabId),
+          frames: readBrowserPageContent(tab.tabId).frames.map((frame) => ({
+            ...frame,
+          })),
+          chapters,
+          droppedFrames: 0,
+          durationMs: 0,
+        });
+      },
+    },
     getStatus() {
       return {
         connected: browserConnected,
@@ -2359,6 +2459,7 @@ function createFakePluginHostInternal(
         evaluated: content.evaluated ?? existing.evaluated,
         routes: existing.routes,
         offline: existing.offline,
+        frames: content.frames ?? existing.frames,
       });
     },
     setConnected(connected) {

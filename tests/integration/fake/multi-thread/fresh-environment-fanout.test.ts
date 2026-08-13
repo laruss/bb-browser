@@ -188,6 +188,12 @@ describe.sequential(
             ).toBe(true);
           }
         },
-      ));
+      ),
+      // Its own budget, larger than the wait it contains. This test starts
+      // five fresh managed worktrees per provider at once — the heaviest
+      // fixture in the suite — and the internal wait alone may spend 45s of
+      // the package's 60s default before the assertions even begin.
+      FRESH_FANOUT_TIMEOUT_MS * 3,
+    );
   },
 );

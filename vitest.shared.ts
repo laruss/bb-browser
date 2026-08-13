@@ -25,6 +25,32 @@ import { mergeConfig, type ViteUserConfig } from "vitest/config";
 const ISOLATION_REQUIRING_API =
   /\bvi\.(mock|doMock|unmock|doUnmock|resetModules|stubGlobal|stubEnv)\(/;
 
+/**
+ * Worker cap for packages whose tests drive real subsystems — git, filesystem
+ * watchers, spawned daemons — rather than only CPU.
+ *
+ * Vitest defaults to roughly one worker per core, and `turbo run test` runs
+ * several packages at once, so the untuned total is a multiple of the machine.
+ * A worker that is only computing degrades gracefully under that; a worker
+ * waiting on `git commit`, an FSEvents callback or a daemon's first HTTP
+ * response does not — it waits out its deadline and fails. Measured on a
+ * 12-core machine: a full `turbo run test` failed 30 tests in
+ * `@bb/integration-tests`, 15 in `@bb/host-workspace`, 2 in `@bb/server` and 1
+ * in `@bb/host-daemon`, every one of them a timeout; the same suites pass
+ * whole at this cap.
+ *
+ * Raising deadlines instead was tried first and did not hold —
+ * `packages/host-workspace/vitest.config.ts` carries a `testTimeout: 15_000`
+ * put there for exactly this, and those tests still timed out. Past some
+ * oversubscription no deadline is both large enough to survive and small
+ * enough to mean anything.
+ *
+ * The cost is bounded and worth naming: these packages are already dominated
+ * by their subprocesses, so capping them is close to free (`host-workspace`
+ * 157s → 166s), while the whole suite stops being a lottery.
+ */
+export const SUBPROCESS_HEAVY_MAX_WORKERS = 2;
+
 const TEST_FILE = /\.test\.tsx?$/;
 const SKIP_DIRS = new Set(["node_modules", "dist"]);
 
@@ -68,6 +94,33 @@ export function findIsolationRequiringTests(
   return matches.sort();
 }
 
+/**
+ * Every package's share of the machine, so that the parallelism actually adds
+ * up to one machine.
+ *
+ * Vitest defaults each package to all available parallelism, and the root
+ * `test` script runs two packages at a time — so the untuned total is twice
+ * the machine before any test spawns a single `git`. Capping only the packages
+ * that wait on subsystems does not fix that: they are still starved by
+ * whichever large CPU-bound package happens to be running beside them.
+ * Measured, that left seven timeouts across four packages even with those caps
+ * in place.
+ *
+ * The share is deliberately under half rather than exactly half. Half each,
+ * two at a time, would be one machine only if a worker were the whole cost of
+ * itself — and here it is not: a worker running these suites spends most of
+ * its time waiting on a `git`, a `node` or a daemon it spawned, and those
+ * children need cores of their own. Sizing the pools to fill the machine
+ * therefore leaves nothing for the processes the tests exist to drive, which
+ * is how a run at exactly half each still timed out five tests spread over
+ * three packages. The headroom is the point.
+ *
+ * Packages that need even less say so with
+ * {@link SUBPROCESS_HEAVY_MAX_WORKERS}; a package that overrides this wins,
+ * since its own config merges over these defaults.
+ */
+export const PACKAGE_MAX_WORKERS = "35%";
+
 export function defineWorkspaceTestConfig(
   config: ViteUserConfig,
 ): ViteUserConfig {
@@ -81,6 +134,9 @@ export function defineWorkspaceTestConfig(
           conditions: ["source"],
           externalConditions: ["source"],
         },
+      },
+      test: {
+        maxWorkers: PACKAGE_MAX_WORKERS,
       },
     },
     config,

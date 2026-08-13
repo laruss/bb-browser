@@ -194,6 +194,15 @@ describe("npm update candidate selection", () => {
   });
 });
 
+/**
+ * Real `git init`/`commit`/`tag`, a process apiece. That is fast alone and not
+ * fast at all when the rest of the suite is competing for the machine, so the
+ * budget has to be about what the work costs rather than what the default
+ * assumes — the same reason `test/app/install-machine-script.test.ts` carries
+ * its own.
+ */
+const GIT_TEST_TIMEOUT_MS = 30_000;
+
 describe("git update resolution", () => {
   it("classifies tags and branches, detects a moved branch, and reports current", async () => {
     const repo = await mkdtemp(join(tmpdir(), "bb-update-resolver-git-"));
@@ -268,5 +277,5 @@ describe("git update resolution", () => {
         currentCommit: first,
       }),
     ).toMatchObject({ outcome: "pinned" });
-  });
+  }, GIT_TEST_TIMEOUT_MS);
 });

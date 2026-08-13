@@ -147,9 +147,14 @@ export default function plugin(bb: BbPluginApi) {
     execute: (input, ctx) =>
       run(async () => {
         const shot = await bb.browser.page.screenshot(
-          { tabId: input.tabId },
+          { tabId: input.tabId, fullPage: input.fullPage ?? false },
           { signal: ctx.signal },
         );
+        const region = shot.fullPage
+          ? shot.truncated
+            ? "Top of the page"
+            : "Whole page"
+          : "Viewport";
         // The image itself, not a path to it: a model that asked to see the page
         // should see it in the same turn. `bb browser screenshot` is the path
         // that writes a file, for when the picture is for a human.
@@ -157,7 +162,7 @@ export default function plugin(bb: BbPluginApi) {
           content: [
             {
               type: "text",
-              text: `Viewport of ${shot.url === "" ? "(no page)" : shot.url} at ${shot.width}x${shot.height}.`,
+              text: `${region} of ${shot.url === "" ? "(no page)" : shot.url} at ${shot.width}x${shot.height}.`,
             },
             { type: "image", data: shot.base64, mimeType: shot.mimeType },
           ],

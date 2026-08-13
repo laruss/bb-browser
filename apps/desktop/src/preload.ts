@@ -1,9 +1,11 @@
 import { contextBridge, ipcRenderer, webFrame } from "electron";
 import { appCommandIdSchema } from "@bb/domain";
 import {
+  bbDesktopBrowserCaptureFullPageResultSchema,
   bbDesktopBrowserFaviconSchema,
   bbDesktopBrowserInteractResultSchema,
   bbDesktopBrowserControlResultSchema,
+  bbDesktopBrowserRecordResultSchema,
   bbDesktopBrowserObserveResultSchema,
   bbDesktopBrowserOpenTabRequestSchema,
   bbDesktopBrowserPageReadResultSchema,
@@ -19,8 +21,10 @@ import {
   type BbDesktopAppCommandHandler,
   type BbDesktopBrowserApi,
   type BbDesktopBrowserFaviconHandler,
+  type BbDesktopBrowserCaptureFullPageResult,
   type BbDesktopBrowserInteractResult,
   type BbDesktopBrowserControlResult,
+  type BbDesktopBrowserRecordResult,
   type BbDesktopBrowserObserveResult,
   type BbDesktopBrowserOpenTabHandler,
   type BbDesktopBrowserPageReadResult,
@@ -51,12 +55,15 @@ import {
 } from "./desktop-update-ipc.js";
 import {
   BB_DESKTOP_BROWSER_ATTACH_CHANNEL,
+  BB_DESKTOP_BROWSER_CAPTURE_FULL_PAGE_CHANNEL,
   BB_DESKTOP_BROWSER_DETACH_CHANNEL,
   BB_DESKTOP_BROWSER_FAVICON_CHANNEL,
   BB_DESKTOP_BROWSER_GO_BACK_CHANNEL,
   BB_DESKTOP_BROWSER_GO_FORWARD_CHANNEL,
   BB_DESKTOP_BROWSER_NAVIGATE_CHANNEL,
   BB_DESKTOP_BROWSER_CONTROL_CHANNEL,
+  BB_DESKTOP_BROWSER_RECORD_CHANNEL,
+  BB_DESKTOP_BROWSER_SNAPSHOT_IN_CHANNEL,
   BB_DESKTOP_BROWSER_OBSERVE_CHANNEL,
   BB_DESKTOP_BROWSER_OPEN_TAB_CHANNEL,
   BB_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
@@ -343,6 +350,18 @@ const bbBrowserApi: BbDesktopBrowserApi = {
       return { ok: false, reason: "failed" };
     }
   },
+  async snapshotIn(request): Promise<BbDesktopBrowserSnapshotResult> {
+    try {
+      const payload: unknown = await ipcRenderer.invoke(
+        BB_DESKTOP_BROWSER_SNAPSHOT_IN_CHANNEL,
+        request,
+      );
+      const parsed = bbDesktopBrowserSnapshotResultSchema.safeParse(payload);
+      return parsed.success ? parsed.data : { ok: false, reason: "failed" };
+    } catch {
+      return { ok: false, reason: "failed" };
+    }
+  },
   async interact(request): Promise<BbDesktopBrowserInteractResult> {
     try {
       const payload: unknown = await ipcRenderer.invoke(
@@ -367,6 +386,21 @@ const bbBrowserApi: BbDesktopBrowserApi = {
       return { ok: false, reason: "failed" };
     }
   },
+  async captureFullPage(
+    request,
+  ): Promise<BbDesktopBrowserCaptureFullPageResult> {
+    try {
+      const payload: unknown = await ipcRenderer.invoke(
+        BB_DESKTOP_BROWSER_CAPTURE_FULL_PAGE_CHANNEL,
+        request,
+      );
+      const parsed =
+        bbDesktopBrowserCaptureFullPageResultSchema.safeParse(payload);
+      return parsed.success ? parsed.data : { ok: false, reason: "failed" };
+    } catch {
+      return { ok: false, reason: "failed" };
+    }
+  },
   async storage(request): Promise<BbDesktopBrowserStorageResult> {
     try {
       const payload: unknown = await ipcRenderer.invoke(
@@ -386,6 +420,18 @@ const bbBrowserApi: BbDesktopBrowserApi = {
         request,
       );
       const parsed = bbDesktopBrowserControlResultSchema.safeParse(payload);
+      return parsed.success ? parsed.data : { ok: false, reason: "failed" };
+    } catch {
+      return { ok: false, reason: "failed" };
+    }
+  },
+  async record(request): Promise<BbDesktopBrowserRecordResult> {
+    try {
+      const payload: unknown = await ipcRenderer.invoke(
+        BB_DESKTOP_BROWSER_RECORD_CHANNEL,
+        request,
+      );
+      const parsed = bbDesktopBrowserRecordResultSchema.safeParse(payload);
       return parsed.success ? parsed.data : { ok: false, reason: "failed" };
     } catch {
       return { ok: false, reason: "failed" };

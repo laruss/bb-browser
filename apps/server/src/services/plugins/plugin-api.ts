@@ -16,12 +16,15 @@ import {
   BROWSER_COMMAND_MAX_URL_LENGTH,
   PLUGIN_INTERACTION_MAX_TITLE_LENGTH,
   browserControlOperationSchema,
+  browserRecordOperationSchema,
+  BROWSER_COMMAND_MAX_SELECTOR_LENGTH,
   browserCookieSchema,
   browserInteractionSchema,
   browserStorageItemSchema,
   type BrowserCommand,
   type BrowserCommandValue,
   type BrowserControlOperation,
+  type BrowserRecordOperation,
   type BrowserCookie,
   type BrowserInteraction,
   type BrowserStorageItem,
@@ -50,6 +53,7 @@ import type {
   PluginBrowser,
   PluginBrowserCallOptions,
   PluginBrowserRoutes,
+  PluginBrowserVideo,
   PluginMentionItem,
   PluginMentionSearchContext,
   PluginMentionTrigger,
@@ -1294,6 +1298,24 @@ export function createPluginApi(options: {
     return maxDepth;
   }
 
+  function normalizeSnapshotSelector(selector: unknown): string | null {
+    if (selector === undefined || selector === null) {
+      return null;
+    }
+    // Whether it is a *valid* selector only the browser can say, and it does:
+    // what is checked here is that it is a string of a sane size.
+    if (
+      typeof selector !== "string" ||
+      selector.length === 0 ||
+      selector.length > BROWSER_COMMAND_MAX_SELECTOR_LENGTH
+    ) {
+      throw new Error(
+        `browser.page.snapshot selector must be a CSS selector of up to ${BROWSER_COMMAND_MAX_SELECTOR_LENGTH} characters`,
+      );
+    }
+    return selector;
+  }
+
   function normalizePageTextMaxLength(maxLength: unknown): number {
     if (maxLength === undefined) {
       return BROWSER_COMMAND_MAX_PAGE_TEXT_LENGTH;
@@ -1400,6 +1422,16 @@ export function createPluginApi(options: {
       throw new Error('browser.page.screenshot format must be "png" or "jpeg"');
     }
     return format;
+  }
+
+  function normalizeFullPage(fullPage: unknown): boolean {
+    if (fullPage === undefined) {
+      return false;
+    }
+    if (typeof fullPage !== "boolean") {
+      throw new Error("browser.page.screenshot fullPage must be a boolean");
+    }
+    return fullPage;
   }
 
   /**
@@ -1512,6 +1544,24 @@ export function createPluginApi(options: {
     method: string,
   ): BrowserControlOperation {
     const parsed = browserControlOperationSchema.safeParse(candidate);
+    if (!parsed.success) {
+      const issue = parsed.error.issues[0];
+      const path = issue?.path.join(".") ?? "";
+      throw new Error(
+        `${method} received invalid arguments${
+          path === "" ? "" : ` (${path})`
+        }: ${issue?.message ?? "unrecognized"}`,
+      );
+    }
+    return parsed.data;
+  }
+
+  /** Recording operations, checked here for the same reason control's are. */
+  function normalizeRecordOperation(
+    candidate: unknown,
+    method: string,
+  ): BrowserRecordOperation {
+    const parsed = browserRecordOperationSchema.safeParse(candidate);
     if (!parsed.success) {
       const issue = parsed.error.issues[0];
       const path = issue?.path.join(".") ?? "";
@@ -1670,6 +1720,7 @@ export function createPluginApi(options: {
             type: "page.snapshot",
             tabId: optionalTabId(args?.tabId),
             maxDepth: normalizeSnapshotMaxDepth(args?.maxDepth),
+            selector: normalizeSnapshotSelector(args?.selector),
           },
           options,
           "snapshot",
@@ -1706,6 +1757,7 @@ export function createPluginApi(options: {
               kind: "screenshot",
               format: normalizeScreenshotFormat(args?.format),
               quality: normalizeScreenshotQuality(args?.quality),
+              fullPage: normalizeFullPage(args?.fullPage),
             },
           },
           options,
@@ -1719,6 +1771,8 @@ export function createPluginApi(options: {
           base64: value.base64,
           width: value.width,
           height: value.height,
+          fullPage: value.fullPage,
+          truncated: value.truncated,
         };
       },
       async pdf(args, options) {
@@ -2123,6 +2177,88 @@ export function createPluginApi(options: {
           "interacted",
         );
         return { tabId: value.tabId, url: value.url, title: value.title };
+      },
+    },
+    recording: {
+      async traceStart(args, options) {
+        await callBrowser(
+          {
+            type: "page.record",
+            // The trace spans tabs, so it names none.
+            tabId: null,
+            operation: normalizeRecordOperation(
+              { kind: "trace-start", screenshots: args?.screenshots ?? false },
+              "browser.recording.traceStart",
+            ),
+          },
+          options,
+          "recording",
+        );
+      },
+      async traceStop(options) {
+        const value = await callBrowser(
+          {
+            type: "page.record",
+            tabId: null,
+            operation: { kind: "trace-stop" },
+          },
+          options,
+          "trace",
+        );
+        return {
+          steps: value.steps,
+          droppedSteps: value.droppedSteps,
+          droppedImages: value.droppedImages,
+          durationMs: value.durationMs,
+        };
+      },
+      async videoStart(args, options) {
+        await callBrowser(
+          {
+            type: "page.record",
+            tabId: optionalTabId(args?.tabId),
+            operation: normalizeRecordOperation(
+              { kind: "video-start", fps: args?.fps ?? 5 },
+              "browser.recording.videoStart",
+            ),
+          },
+          options,
+          "recording",
+        );
+      },
+      async videoChapter(args, options) {
+        await callBrowser(
+          {
+            type: "page.record",
+            tabId: optionalTabId(args?.tabId),
+            operation: normalizeRecordOperation(
+              { kind: "video-chapter", title: args?.title },
+              "browser.recording.videoChapter",
+            ),
+          },
+          options,
+          "recording",
+        );
+      },
+      async videoStop(args, options): Promise<PluginBrowserVideo> {
+        const value = await callBrowser(
+          {
+            type: "page.record",
+            tabId: optionalTabId(args?.tabId),
+            operation: { kind: "video-stop" },
+          },
+          options,
+          "video",
+        );
+        return {
+          tabId: value.tabId,
+          url: value.url,
+          title: value.title,
+          frames: value.frames,
+          chapters: value.chapters,
+          droppedFrames: value.droppedFrames,
+          durationMs: value.durationMs,
+        };
       },
     },
     getStatus() {

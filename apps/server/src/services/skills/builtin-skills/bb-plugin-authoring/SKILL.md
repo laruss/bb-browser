@@ -836,9 +836,14 @@ const ended = await bb.browser.page.act({ action: { action: "click", ref: "e1" }
 // ended: { tabId, url, title } — where the tab landed, since clicks navigate.
 
 // Looking without touching: none of these attaches the browser debugger, so
-// they work on a tab the user is merely browsing.
+// they work on a tab the user is merely browsing — except a full-page capture,
+// which is the one that must (it still leaves the tab's dialogs alone).
 const shot = await bb.browser.page.screenshot(); // visible viewport, JPEG by default
-// shot: { tabId, url, title, mimeType, base64, width, height }
+// shot: { tabId, url, title, mimeType, base64, width, height, fullPage, truncated }
+const whole = await bb.browser.page.screenshot({ fullPage: true }); // the document
+// width/height are device pixels for a viewport capture and CSS pixels for a
+// full-page one; truncated means the document was past ~16k pixels and this is
+// its top. fullPage fails with debugger_unavailable while DevTools has the tab.
 const doc = await bb.browser.page.pdf({}, { timeoutMs: 60_000 }); // whole document
 const log = await bb.browser.page.console({ limit: 50 });
 const requests = await bb.browser.page.network({ limit: 50 });
@@ -893,7 +898,12 @@ gesture, because a native dropdown opens an OS popup no synthetic click reaches
 and "click the checkbox" is a toggle.
 
 Refs stop being valid when the page navigates. Snapshot again after any action
-that could have changed the page rather than reusing the ones you have.
+that could have changed the page rather than reusing the ones you have — and a
+scoped snapshot counts, since `snapshot({ selector })` hands out `e1` again for
+a different element. Pass a selector on a page too large to read whole; the
+refusals tell you which of the two things went wrong (`invalid_selector` is the
+selector's syntax, `no_match` is the page — including an element that is there
+but hidden, which the accessibility tree does not describe).
 
 The console and network logs are recorded from the moment a tab is created, not
 from your first call, so they answer for a tab nobody has driven. They are
@@ -929,14 +939,27 @@ Two more rules worth building around:
   for these where the safer calls genuinely cannot go, and say so plainly in
   anything you build on them. Routes and `setOffline` last only as long as the
   tab's debugger session, so do not treat them as configuration.
+- **`bb.browser.recording` produces artifacts, and it is two different things.**
+  `traceStart`/`traceStop` log the browser commands *bb* runs while the trace is
+  open — one at a time, and stopping it is the only way to read it. It is bb's
+  own JSON, not a Playwright trace, and no Playwright viewer opens it.
+  `videoStart`/`videoStop` film one tab through the browser's screencast, which
+  only paints while that tab is visible, and hand back JPEG frames with their
+  timings rather than a playable file: bb bundles no video encoder, so making a
+  video out of them is `ffmpeg`'s job — `bb browser video-stop <dir> --encode`
+  runs the system's, and `bb browser install-ffmpeg` installs one. Both are capped and both report what they
+  dropped — read `droppedSteps`/`droppedFrames` before telling anyone a session
+  was quiet.
 
 Failures throw errors matched by `name` — `"BrowserHostUnavailableError"` when no
 window is connected, `"BrowserCommandTimeoutError"`, `"BrowserCommandAbortedError"`,
 and `"BrowserCommandError"` carrying a `code` (`no_active_tab`, `unknown_tab`,
 `tab_not_live`, `desktop_unavailable`, `unsupported_command`, `blocked_url`,
 `page_read_timeout`, `page_read_failed`, `debugger_unavailable`, `stale_refs`,
-`unknown_ref`, `not_actionable`, `unsupported_key`, `result_too_large`,
-`evaluation_failed`, `too_many_routes`). The bundled `browser-tools`
+`unknown_ref`, `invalid_selector`, `no_match`, `not_actionable`,
+`unsupported_key`, `result_too_large`,
+`evaluation_failed`, `too_many_routes`, `already_recording`, `not_recording`).
+The bundled `browser-tools`
 plugin is the worked example.
 
 Rows land in the same ranked list as the browser's address, search, open-tab

@@ -1,5 +1,5 @@
-import { readFile, writeFile } from "node:fs/promises";
-import { isAbsolute, resolve } from "node:path";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { isAbsolute, join, resolve } from "node:path";
 import type {
   BbPluginApi,
   PluginBrowserConsoleEntry,
@@ -13,9 +13,19 @@ import type {
   PluginBrowserStorageArea,
   PluginBrowserStorageItem,
   PluginBrowserTab,
+  PluginBrowserTrace,
+  PluginBrowserVideo,
   PluginCliResult,
 } from "@bb/plugin-sdk";
 import { DEFAULT_PAGE_TEXT_MAX_LENGTH, explainBrowserError } from "./tools.js";
+import {
+  NO_FFMPEG_MESSAGE,
+  encodeBrowserVideo,
+  ffmpegEncodeArgs,
+  installFfmpegWithBrew,
+  resolveBrew,
+  resolveFfmpeg,
+} from "./ffmpeg.js";
 
 /**
  * `bb browser …` — the same `bb.browser` API the agent tools use, from a
@@ -45,6 +55,11 @@ interface ParsedArgs {
   body: string | undefined;
   contentType: string | undefined;
   headers: { name: string; value: string }[];
+  selector: string | undefined;
+  screenshots: boolean;
+  fullPage: boolean;
+  encode: boolean;
+  fps: number | undefined;
 }
 
 const MODIFIERS = new Set(["Alt", "Control", "Meta", "Shift"]);
@@ -63,6 +78,11 @@ function parseArgs(argv: string[]): ParsedArgs | { error: string } {
   let body: string | undefined;
   let contentType: string | undefined;
   const headers: { name: string; value: string }[] = [];
+  let selector: string | undefined;
+  let screenshots = false;
+  let fullPage = false;
+  let encode = false;
+  let fps: number | undefined;
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index] ?? "";
@@ -72,6 +92,20 @@ function parseArgs(argv: string[]): ParsedArgs | { error: string } {
       newTab = true;
     } else if (arg === "--double") {
       double = true;
+    } else if (arg === "--screenshots") {
+      screenshots = true;
+    } else if (arg === "--full-page") {
+      fullPage = true;
+    } else if (arg === "--encode") {
+      encode = true;
+    } else if (arg === "--fps") {
+      index += 1;
+      const raw = argv[index];
+      const value = Number(raw);
+      if (raw === undefined || !Number.isInteger(value) || value < 1 || value > 30) {
+        return { error: "--fps needs 1 to 30" };
+      }
+      fps = value;
     } else if (arg === "--tab") {
       index += 1;
       tabId = argv[index];
@@ -93,6 +127,12 @@ function parseArgs(argv: string[]): ParsedArgs | { error: string } {
         return { error: "--status needs an HTTP status code" };
       }
       status = value;
+    } else if (arg === "--selector") {
+      index += 1;
+      selector = argv[index];
+      if (selector === undefined || selector.length === 0) {
+        return { error: "--selector needs a CSS selector" };
+      }
     } else if (arg === "--body" || arg === "--content-type") {
       index += 1;
       const raw = argv[index];
@@ -161,6 +201,11 @@ function parseArgs(argv: string[]): ParsedArgs | { error: string } {
     body,
     contentType,
     headers,
+    selector,
+    screenshots,
+    fullPage,
+    encode,
+    fps,
   };
 }
 
@@ -308,6 +353,104 @@ function renderRoutes(
   };
 }
 
+function numbered(value: number, width: number): string {
+  return String(value).padStart(width, "0");
+}
+
+function seconds(ms: number): string {
+  return `${(ms / 1000).toFixed(1)}s`;
+}
+
+/**
+ * A trace as a directory: the log, and one JPEG per step that had one. The
+ * images leave the JSON and become file names, because a trace with a megabyte
+ * of base64 inside it is not a file anyone opens twice.
+ */
+async function writeTrace(
+  directory: string,
+  trace: PluginBrowserTrace,
+): Promise<string> {
+  await mkdir(directory, { recursive: true });
+  let images = 0;
+  const steps = [];
+  for (const step of trace.steps) {
+    let image: string | null = null;
+    if (step.image !== null) {
+      images += 1;
+      image = `step-${numbered(step.seq, 3)}.jpg`;
+      await writeFile(join(directory, image), Buffer.from(step.image, "base64"));
+    }
+    steps.push({ ...step, image });
+  }
+  await writeFile(
+    join(directory, "trace.json"),
+    `${JSON.stringify(
+      {
+        durationMs: trace.durationMs,
+        droppedSteps: trace.droppedSteps,
+        droppedImages: trace.droppedImages,
+        steps,
+      },
+      null,
+      2,
+    )}\n`,
+    "utf8",
+  );
+  return `${directory}\t${trace.steps.length} steps, ${images} images, ${seconds(
+    trace.durationMs,
+  )}\n`;
+}
+
+/**
+ * A film as a directory: the frames, a manifest, and an ffconcat playlist that
+ * carries the timings.
+ *
+ * The playlist is the useful half. Frames arrive when the page repaints, so they
+ * are not evenly spaced, and feeding them to an encoder as a numbered sequence
+ * would play back at the wrong speed — `frames.txt` is what makes one `ffmpeg`
+ * command produce a video that runs at the speed the session did.
+ */
+async function writeVideo(
+  directory: string,
+  video: PluginBrowserVideo,
+): Promise<string> {
+  await mkdir(directory, { recursive: true });
+  const playlist = ["ffconcat version 1.0"];
+  const frames: { at: number; file: string }[] = [];
+  for (const [index, frame] of video.frames.entries()) {
+    const file = `frame-${numbered(index + 1, 5)}.jpg`;
+    await writeFile(join(directory, file), Buffer.from(frame.base64, "base64"));
+    const until = video.frames[index + 1]?.at ?? video.durationMs;
+    playlist.push(
+      `file ${file}`,
+      `duration ${Math.max(0.001, (until - frame.at) / 1000).toFixed(3)}`,
+    );
+    frames.push({ at: frame.at, file });
+  }
+  // The concat demuxer ignores the last entry's duration unless the file is
+  // named once more, which is how the final frame gets to be on screen at all.
+  const last = frames[frames.length - 1];
+  if (last !== undefined) {
+    playlist.push(`file ${last.file}`);
+  }
+  await writeFile(join(directory, "frames.txt"), `${playlist.join("\n")}\n`, "utf8");
+  await writeFile(
+    join(directory, "video.json"),
+    `${JSON.stringify(
+      {
+        durationMs: video.durationMs,
+        droppedFrames: video.droppedFrames,
+        chapters: video.chapters,
+        frames,
+      },
+      null,
+      2,
+    )}\n`,
+    "utf8",
+  );
+  return `${directory}\t${frames.length} frames, ${seconds(video.durationMs)}\n`;
+}
+
 /** The origin a saved state is keyed by, or null when the URL is not one. */
 function originOf(url: string): string | null {
   try {
@@ -366,12 +509,15 @@ const USAGE = `Usage: bb browser <command> [options]
 
 Reading
   status                     Whether an app window can serve browser commands
-  snapshot [--max <depth>]   Accessibility tree with [ref=eN] on interactive elements
+  snapshot [--max <depth>] [--selector <css>]
+                             Accessibility tree with [ref=eN] on interactive elements;
+                             --selector snapshots one region of a large page
   tabs                       List open tabs
   url | title                Read a tab's address or title
   text [--max <n>]           Read the page's visible text
   selection                  Read the page's selected text
-  screenshot <file>          Write a PNG/JPEG of the visible viewport
+  screenshot <file> [--full-page]
+                             Write a PNG/JPEG of the viewport, or of the whole page
   pdf <file>                 Print the whole page to a PDF
   console [--max <n>]        What the page logged, since the tab opened
   network [--max <n>]        What the tab requested, since it opened
@@ -411,6 +557,17 @@ Direct control — these skip what makes the commands above safe
   unroute [pattern]          Remove one route, or all of them
   network-state-set <offline|online>
 
+Recording — what was done, and what it looked like
+  tracing-start [--screenshots]
+                             Log every command bb runs from here on
+  tracing-stop [dir]         End it; with a dir, write trace.json and its images
+  video-start [--fps n]      Film the tab (default 5/s; it must stay visible)
+  video-chapter <title>      Mark a moment in the film
+  video-stop <dir> [--encode]
+                             End it; write the frames, a manifest and frames.txt.
+                             --encode also runs the system ffmpeg over them
+  install-ffmpeg             Install the encoder with Homebrew, if it is missing
+
 Navigating
   open <url> [--new-tab]     Open a URL (http/https)
   close <tab-id>             Close a tab
@@ -422,6 +579,8 @@ Options:
   --tab <tab-id>       Act on this tab instead of the active one
   --generation <n>     Refuse refs unless they came from this snapshot
   --max <n>            Characters of page text, tree depth, or log entries
+  --selector <css>     Snapshot only what this CSS selector matches
+  --encode             Encode a stopped film to video.mp4 (needs ffmpeg)
   --button <b>         left (default), middle, right
   --double             Double click
   --modifier <M>       Alt, Control, Meta or Shift; repeatable
@@ -429,6 +588,9 @@ Options:
   --body <text>        Body a route answers with
   --content-type <t>   Its content type (guessed from the body otherwise)
   --header "N: v"      An extra response header; repeatable
+  --screenshots        Capture the tab after each traced step
+  --full-page          Screenshot the whole document, not the visible viewport
+  --fps <n>            Frames a second to keep while filming (1-30)
   --json               Machine-readable output
 `;
 
@@ -445,7 +607,8 @@ export function registerBrowserToolsCli(bb: BbPluginApi): void {
       {
         name: "snapshot",
         summary: "Accessibility tree of a page, with refs on interactive elements",
-        usage: "bb browser snapshot [--tab <tab-id>] [--max <depth>] [--json]",
+        usage:
+          "bb browser snapshot [--tab <tab-id>] [--max <depth>] [--selector <css>] [--json]",
       },
       {
         name: "click",
@@ -550,8 +713,8 @@ export function registerBrowserToolsCli(bb: BbPluginApi): void {
       },
       {
         name: "screenshot",
-        summary: "Write a picture of a tab's visible viewport to a file",
-        usage: "bb browser screenshot <file> [--tab <tab-id>]",
+        summary: "Write a picture of a tab's page to a file",
+        usage: "bb browser screenshot <file> [--full-page] [--tab <tab-id>]",
       },
       {
         name: "pdf",
@@ -701,6 +864,36 @@ export function registerBrowserToolsCli(bb: BbPluginApi): void {
         usage: "bb browser network-state-set <offline|online> [--tab <tab-id>]",
       },
       {
+        name: "tracing-start",
+        summary: "Start logging the browser commands bb runs",
+        usage: "bb browser tracing-start [--screenshots]",
+      },
+      {
+        name: "tracing-stop",
+        summary: "Stop the log and write it out",
+        usage: "bb browser tracing-stop [<dir>]",
+      },
+      {
+        name: "video-start",
+        summary: "Start filming a tab",
+        usage: "bb browser video-start [--fps <n>] [--tab <tab-id>]",
+      },
+      {
+        name: "video-chapter",
+        summary: "Mark a moment in the film",
+        usage: "bb browser video-chapter <title> [--tab <tab-id>]",
+      },
+      {
+        name: "video-stop",
+        summary: "Stop filming and write the frames to a directory",
+        usage: "bb browser video-stop <dir> [--encode] [--tab <tab-id>]",
+      },
+      {
+        name: "install-ffmpeg",
+        summary: "Install the video encoder with Homebrew (bb ships none)",
+        usage: "bb browser install-ffmpeg",
+      },
+      {
         name: "back",
         summary: "Go back in a browser tab's history",
         usage: "bb browser back [--tab <tab-id>] [--json]",
@@ -760,7 +953,11 @@ export function registerBrowserToolsCli(bb: BbPluginApi): void {
 
           case "snapshot": {
             const result = await bb.browser.page.snapshot(
-              { tabId: parsed.tabId, maxDepth: parsed.max },
+              {
+                tabId: parsed.tabId,
+                maxDepth: parsed.max,
+                selector: parsed.selector,
+              },
               options,
             );
             if (parsed.json) {
@@ -1019,6 +1216,7 @@ export function registerBrowserToolsCli(bb: BbPluginApi): void {
                     {
                       tabId: parsed.tabId,
                       format: target.endsWith(".png") ? "png" : "jpeg",
+                      fullPage: parsed.fullPage,
                     },
                     { ...options, timeoutMs: 30_000 },
                   );
@@ -1027,6 +1225,14 @@ export function registerBrowserToolsCli(bb: BbPluginApi): void {
             return {
               exitCode: 0,
               stdout: `${path}\t${bytes.byteLength} bytes\n`,
+              // A picture that stops short of the page is still worth having,
+              // but only if whoever opens it knows that is what it is.
+              ...("truncated" in capture && capture.truncated
+                ? {
+                    stderr:
+                      "That page is longer than one capture can hold; this is its top.\n",
+                  }
+                : {}),
             };
           }
 
@@ -1449,6 +1655,196 @@ export function registerBrowserToolsCli(bb: BbPluginApi): void {
                 ? renderPageState(page, true)
                 : `That tab is now ${state}.\n`,
             };
+          }
+
+          case "tracing-start": {
+            await bb.browser.recording.traceStart(
+              { screenshots: parsed.screenshots },
+              options,
+            );
+            return {
+              exitCode: 0,
+              stdout: `Tracing. Everything bb drives from here is recorded${
+                parsed.screenshots ? ", with a picture after each step" : ""
+              }; tracing-stop is how you read it.\n`,
+            };
+          }
+
+          case "tracing-stop": {
+            const trace = await bb.browser.recording.traceStop(options);
+            const missing =
+              trace.droppedSteps + trace.droppedImages === 0
+                ? undefined
+                : `Dropped ${trace.droppedSteps} steps and ${trace.droppedImages} images past the recording's caps.\n`;
+            const target = rest[0];
+            if (target === undefined || target.length === 0) {
+              // Without somewhere to put the images, they are left out rather
+              // than printed: nobody reads base64 in a terminal.
+              return {
+                exitCode: 0,
+                stdout: `${JSON.stringify(
+                  {
+                    ...trace,
+                    steps: trace.steps.map((step) => ({
+                      ...step,
+                      image: step.image === null ? null : "(omitted)",
+                    })),
+                  },
+                  null,
+                  2,
+                )}\n`,
+                stderr: missing,
+              };
+            }
+            return {
+              exitCode: 0,
+              stdout: await writeTrace(
+                isAbsolute(target)
+                  ? target
+                  : resolve(context.cwd ?? process.cwd(), target),
+                trace,
+              ),
+              stderr: missing,
+            };
+          }
+
+          case "video-start": {
+            await bb.browser.recording.videoStart(
+              { fps: parsed.fps, tabId: parsed.tabId },
+              options,
+            );
+            return {
+              exitCode: 0,
+              stdout:
+                "Filming. The tab has to stay visible — a hidden view paints nothing to record.\n",
+            };
+          }
+
+          case "video-chapter": {
+            const title = rest.join(" ");
+            if (title.length === 0) {
+              return {
+                exitCode: 2,
+                stderr: "Usage: bb browser video-chapter <title>\n",
+              };
+            }
+            await bb.browser.recording.videoChapter(
+              { title, tabId: parsed.tabId },
+              options,
+            );
+            return { exitCode: 0, stdout: `Marked "${title}".\n` };
+          }
+
+          case "video-stop": {
+            const target = rest[0];
+            if (target === undefined || target.length === 0) {
+              return {
+                exitCode: 2,
+                stderr: "A directory is required: bb browser video-stop <dir>\n",
+              };
+            }
+            const video = await bb.browser.recording.videoStop(
+              { tabId: parsed.tabId },
+              // Handing over every frame takes longer than any other command
+              // here, and the wait is proportional to how long it filmed.
+              { ...options, timeoutMs: 60_000 },
+            );
+            const directory = isAbsolute(target)
+              ? target
+              : resolve(context.cwd ?? process.cwd(), target);
+            const written = await writeVideo(directory, video);
+            const playlist = join(directory, "frames.txt");
+            const dropped =
+              video.droppedFrames === 0
+                ? ""
+                : `${video.droppedFrames} frames were dropped by the pacing and the caps.\n`;
+
+            if (!parsed.encode) {
+              return {
+                exitCode: 0,
+                stdout: written,
+                // The frames are frames. Saying how to make them a video
+                // belongs here rather than in a doc nobody has open at this
+                // moment.
+                stderr: `${dropped}Encode with --encode, or yourself: ffmpeg ${ffmpegEncodeArgs(playlist, join(directory, "video.mp4")).join(" ")}\n`,
+              };
+            }
+
+            // bb ships no encoder and downloads none; see ffmpeg.ts. The frames
+            // are already on disk either way, so a missing ffmpeg costs the
+            // convenience and not the recording.
+            const ffmpeg = await resolveFfmpeg(process.env);
+            if (ffmpeg === null) {
+              return {
+                exitCode: 1,
+                stdout: written,
+                stderr: `${dropped}${NO_FFMPEG_MESSAGE}\n`,
+              };
+            }
+            const output = join(directory, "video.mp4");
+            const encoded = await encodeBrowserVideo({
+              ffmpeg,
+              playlist,
+              output,
+              ...(context.signal === undefined
+                ? {}
+                : { signal: context.signal }),
+            });
+            if (!encoded.ok) {
+              // The frames survive a failed encode, and saying so is what stops
+              // someone re-recording a session they still have.
+              return {
+                exitCode: 1,
+                stdout: written,
+                stderr: `${dropped}The frames are written, but ffmpeg would not encode them: ${encoded.message}\n`,
+              };
+            }
+            return {
+              exitCode: 0,
+              stdout: `${written}${output}\t${encoded.byteLength} bytes\n`,
+              stderr: dropped,
+            };
+          }
+
+          case "install-ffmpeg": {
+            const existing = await resolveFfmpeg(process.env);
+            if (existing !== null) {
+              return {
+                exitCode: 0,
+                stdout: `ffmpeg is already here: ${existing}\n`,
+              };
+            }
+            const brew = await resolveBrew(process.env);
+            if (brew === null) {
+              return {
+                exitCode: 1,
+                stderr:
+                  "No Homebrew here to install it with. Install ffmpeg however this machine installs things, then point BB_FFMPEG at it if it is somewhere unusual.\n",
+              };
+            }
+            // On the server's machine, which on a remote server is not the one
+            // the terminal is on. Worth saying before minutes pass.
+            const installed = await installFfmpegWithBrew({
+              brew,
+              ...(context.signal === undefined
+                ? {}
+                : { signal: context.signal }),
+            });
+            if (!installed.ok) {
+              return {
+                exitCode: 1,
+                stderr: `${brew} install ffmpeg failed: ${installed.message}\n`,
+              };
+            }
+            const found = await resolveFfmpeg(process.env);
+            return found === null
+              ? {
+                  exitCode: 1,
+                  stdout: `${installed.output}\n`,
+                  stderr:
+                    "Homebrew finished, but no working ffmpeg turned up. Point BB_FFMPEG at one.\n",
+                }
+              : { exitCode: 0, stdout: `ffmpeg is ready: ${found}\n` };
           }
 
           case "back":

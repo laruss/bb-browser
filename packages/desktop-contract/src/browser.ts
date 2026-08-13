@@ -339,6 +339,29 @@ export type BbDesktopBrowserSnapshotRequest = z.infer<
   typeof bbDesktopBrowserSnapshotRequestSchema
 >;
 
+export const BB_DESKTOP_BROWSER_MAX_SELECTOR_LENGTH = 1024;
+
+/**
+ * The same snapshot, narrowed to what a CSS selector matches.
+ *
+ * A separate request on a separate channel rather than a `selector` field on the
+ * one above, because that one is `.strict()` and wire-frozen: an older shell
+ * would refuse the whole payload, and the caller would be told its tab has no
+ * view when the tab is fine. Feature-detecting
+ * {@link BbDesktopBrowserApi.snapshotIn} is the negotiation, as it is for every
+ * other capability added since the shell froze.
+ */
+export const bbDesktopBrowserSnapshotInRequestSchema = z
+  .object({
+    tabId: z.string().min(1),
+    selector: z.string().min(1).max(BB_DESKTOP_BROWSER_MAX_SELECTOR_LENGTH),
+    maxDepth: z.number().int().positive().max(100).optional(),
+  })
+  .strict();
+export type BbDesktopBrowserSnapshotInRequest = z.infer<
+  typeof bbDesktopBrowserSnapshotInRequestSchema
+>;
+
 /**
  * The accessibility snapshot of one tab, and the refs it handed out.
  *
@@ -364,10 +387,20 @@ export const bbDesktopBrowserSnapshotResultSchema = z.union([
     /**
      * `no-view` / `no-page` as for page reads. `debugger-unavailable` — the
      * browser debugger could not be attached, DevTools holding the tab being
-     * the realistic cause. `failed` — anything else.
+     * the realistic cause. `invalid-selector` and `no-match` can only come from
+     * a scoped snapshot, and are separate because they call for different
+     * fixes: one is the selector's syntax, the other is the page. `failed` —
+     * anything else.
      */
     reason: z
-      .enum(["no-view", "no-page", "debugger-unavailable", "failed"])
+      .enum([
+        "no-view",
+        "no-page",
+        "debugger-unavailable",
+        "invalid-selector",
+        "no-match",
+        "failed",
+      ])
       .catch("failed"),
     message: z.string().max(1024).optional(),
   }),
@@ -785,6 +818,83 @@ export type BbDesktopBrowserObserveResult = z.infer<
 >;
 
 /**
+ * The tallest and widest capture that is worth asking Chromium for.
+ *
+ * A composited capture is a GPU texture, and past the driver's maximum texture
+ * size the answer is a blank image or an error rather than a bigger picture.
+ * 16384 CSS pixels is the conservative floor across the GPUs Chromium runs on;
+ * a document longer than that is captured down to this height and says so.
+ */
+export const BB_DESKTOP_BROWSER_MAX_FULL_PAGE_DIMENSION = 16_384;
+
+/**
+ * Capture the whole document rather than the visible viewport.
+ *
+ * Its own channel rather than a fifth observation, for two reasons that point
+ * the same way. The wire one is the usual: {@link bbDesktopBrowserObservationSchema}
+ * is frozen, and a `fullPage` flag added to its screenshot member would be
+ * *silently dropped* by every older shell — a caller would get a viewport
+ * picture reported as a success and have no way to tell. The other is that this
+ * is not an observation in the sense the rest of that union is: it attaches the
+ * browser debugger, and the whole point of that channel is that nothing on it
+ * does.
+ */
+export const bbDesktopBrowserCaptureFullPageRequestSchema = z
+  .object({
+    tabId: z.string().min(1),
+    format: z.enum(["png", "jpeg"]),
+    quality: z.number().int().min(1).max(100),
+  })
+  .strict();
+export type BbDesktopBrowserCaptureFullPageRequest = z.infer<
+  typeof bbDesktopBrowserCaptureFullPageRequestSchema
+>;
+
+/**
+ * A picture of the whole document.
+ *
+ * `width`/`height` are **CSS pixels**, unlike the viewport capture's, which are
+ * the composited device pixels a retina display renders. That difference is the
+ * capture path, not a choice: this one names the region it wants and Chromium
+ * renders it at 1:1, and a caller comparing the two sizes needs to know they are
+ * measured in different units.
+ *
+ * `truncated` means the document was longer than
+ * {@link BB_DESKTOP_BROWSER_MAX_FULL_PAGE_DIMENSION} and this is its top. A
+ * clipped picture is still a useful picture — which is why this truncates where
+ * an over-large PDF refuses — but only if it admits it.
+ */
+export const bbDesktopBrowserCaptureFullPageResultSchema = z.union([
+  z.object({
+    ok: z.literal(true),
+    tabId: z.string().min(1),
+    url: z.string().max(BB_DESKTOP_BROWSER_MAX_URL_LENGTH),
+    title: z.string().max(BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH).nullable(),
+    mimeType: z.enum(["image/png", "image/jpeg"]),
+    base64: z.string().max(BB_DESKTOP_BROWSER_MAX_SCREENSHOT_BASE64_LENGTH),
+    width: z.number().int().nonnegative(),
+    height: z.number().int().nonnegative(),
+    truncated: z.boolean(),
+  }),
+  z.object({
+    ok: z.literal(false),
+    /**
+     * `debugger-unavailable` is the one this has and the viewport capture does
+     * not: DevTools open on the tab holds Chromium's only protocol client, and
+     * the honest answer is to say so rather than to quietly hand back a
+     * viewport picture instead.
+     */
+    reason: z
+      .enum(["no-view", "no-page", "debugger-unavailable", "too-large", "failed"])
+      .catch("failed"),
+    message: z.string().max(1024).optional(),
+  }),
+]);
+export type BbDesktopBrowserCaptureFullPageResult = z.infer<
+  typeof bbDesktopBrowserCaptureFullPageResultSchema
+>;
+
+/**
  * Caps on stored state.
  *
  * Cookie values are bounded by the cookie spec itself (~4KB); web storage is
@@ -1189,6 +1299,130 @@ export type BbDesktopBrowserControlResult = z.infer<
   typeof bbDesktopBrowserControlResultSchema
 >;
 
+/**
+ * Caps on a recording. `MAX_VIDEO_BASE64_LENGTH` is the one doing the work: it
+ * is what the shell stops filming at, and the frame count and per-frame cap are
+ * only there so no single number can be missed.
+ */
+export const BB_DESKTOP_BROWSER_MAX_VIDEO_FRAMES = 300;
+export const BB_DESKTOP_BROWSER_MAX_VIDEO_FRAME_BASE64_LENGTH = 262_144;
+export const BB_DESKTOP_BROWSER_MAX_VIDEO_BASE64_LENGTH = 16_777_216;
+export const BB_DESKTOP_BROWSER_MAX_VIDEO_CHAPTERS = 50;
+export const BB_DESKTOP_BROWSER_MAX_CHAPTER_TITLE_LENGTH = 200;
+export const BB_DESKTOP_BROWSER_MAX_VIDEO_FPS = 30;
+
+/**
+ * Filming a tab.
+ *
+ * The one automation union with no exact twin on the agent wire: that one also
+ * carries `trace-start` / `trace-stop`, which the app answers itself. A trace is
+ * the app's log of the commands *it* executed, and the shell could not produce
+ * it if it wanted to — a `navigate` arriving here looks the same whether an
+ * agent or the user's omnibox sent it.
+ */
+export const bbDesktopBrowserRecordOperationSchema = z.discriminatedUnion(
+  "kind",
+  [
+    z.object({
+      kind: z.literal("video-start"),
+      /**
+       * Frames kept per second. Chromium sends one per paint; the rest are
+       * acknowledged and dropped, because an unacknowledged frame stops the
+       * screencast dead.
+       */
+      fps: z.number().int().min(1).max(BB_DESKTOP_BROWSER_MAX_VIDEO_FPS),
+    }),
+    z.object({
+      kind: z.literal("video-chapter"),
+      title: z.string().min(1).max(BB_DESKTOP_BROWSER_MAX_CHAPTER_TITLE_LENGTH),
+    }),
+    z.object({ kind: z.literal("video-stop") }),
+  ],
+);
+export type BbDesktopBrowserRecordOperation = z.infer<
+  typeof bbDesktopBrowserRecordOperationSchema
+>;
+
+export const bbDesktopBrowserRecordRequestSchema = z
+  .object({
+    tabId: z.string().min(1),
+    operation: bbDesktopBrowserRecordOperationSchema,
+  })
+  .strict();
+export type BbDesktopBrowserRecordRequest = z.infer<
+  typeof bbDesktopBrowserRecordRequestSchema
+>;
+
+const bbDesktopBrowserVideoFrameSchema = z.object({
+  /** Milliseconds since the recording started. */
+  at: z.number().int().nonnegative(),
+  base64: z.string().max(BB_DESKTOP_BROWSER_MAX_VIDEO_FRAME_BASE64_LENGTH),
+});
+export type BbDesktopBrowserVideoFrame = z.infer<
+  typeof bbDesktopBrowserVideoFrameSchema
+>;
+
+/**
+ * What filming answers with. The frames are JPEG, in order, each stamped with
+ * where it belongs in time — everything an encoder needs and nothing that
+ * pretends to be a video file. Not `.strict()`, like the results above.
+ */
+export const bbDesktopBrowserRecordResultSchema = z.union([
+  z.discriminatedUnion("kind", [
+    z.object({
+      ok: z.literal(true),
+      kind: z.literal("recording"),
+      ...bbDesktopBrowserObservedPageSchema,
+      active: z.boolean(),
+    }),
+    z.object({
+      ok: z.literal(true),
+      kind: z.literal("video"),
+      ...bbDesktopBrowserObservedPageSchema,
+      frames: z
+        .array(bbDesktopBrowserVideoFrameSchema)
+        .max(BB_DESKTOP_BROWSER_MAX_VIDEO_FRAMES),
+      chapters: z
+        .array(
+          z.object({
+            at: z.number().int().nonnegative(),
+            title: z.string().max(BB_DESKTOP_BROWSER_MAX_CHAPTER_TITLE_LENGTH),
+          }),
+        )
+        .max(BB_DESKTOP_BROWSER_MAX_VIDEO_CHAPTERS),
+      /**
+       * Frames Chromium sent that this did not keep — the pacing threw most of
+       * them away, and the caps may have ended the recording early. Without the
+       * number a short film reads as a still page.
+       */
+      droppedFrames: z.number().int().nonnegative(),
+      durationMs: z.number().int().nonnegative(),
+    }),
+  ]),
+  z.object({
+    ok: z.literal(false),
+    /**
+     * `no-view` / `no-page` / `debugger-unavailable` as elsewhere.
+     * `already-recording` — one film per tab; stop it before starting another.
+     * `not-recording` — nothing to stop, or to mark a chapter in.
+     */
+    reason: z
+      .enum([
+        "no-view",
+        "no-page",
+        "debugger-unavailable",
+        "already-recording",
+        "not-recording",
+        "failed",
+      ])
+      .catch("failed"),
+    message: z.string().max(1024).optional(),
+  }),
+]);
+export type BbDesktopBrowserRecordResult = z.infer<
+  typeof bbDesktopBrowserRecordResultSchema
+>;
+
 export type BbDesktopBrowserStateHandler = (
   state: BbDesktopBrowserState,
 ) => void;
@@ -1284,6 +1518,18 @@ export interface BbDesktopBrowserApi {
     request: BbDesktopBrowserSnapshotRequest,
   ): Promise<BbDesktopBrowserSnapshotResult>;
   /**
+   * The same snapshot, of the element a CSS selector matches and its subtree.
+   *
+   * Its own method for the reason given on
+   * {@link bbDesktopBrowserSnapshotInRequestSchema}: the unscoped request is
+   * frozen and strict, so the selector could not be added to it. Answers with
+   * the same result — including replacing the tab's ref table, since a snapshot
+   * of part of a page hands out refs exactly as one of the whole page does.
+   */
+  snapshotIn?(
+    request: BbDesktopBrowserSnapshotInRequest,
+  ): Promise<BbDesktopBrowserSnapshotResult>;
+  /**
    * Subscribe to JavaScript dialogs the shell has taken over, and to their
    * closing (`dialog: null`). Optional for version skew, like the pushes above.
    *
@@ -1325,6 +1571,22 @@ export interface BbDesktopBrowserApi {
     request: BbDesktopBrowserObserveRequest,
   ): Promise<BbDesktopBrowserObserveResult>;
   /**
+   * Capture the whole document, however far it scrolls.
+   *
+   * The exception to everything said about `observe` above: this is the one
+   * capture that attaches the browser debugger, because Electron's own
+   * `capturePage` gives back the composited view and a composited view is the
+   * viewport. It stops there, though — it never enables the `Page` domain, so a
+   * tab filmed this way keeps its dialogs on Chromium's native path.
+   *
+   * Its own method for the reason given on
+   * {@link bbDesktopBrowserCaptureFullPageRequestSchema}. Optional for the same
+   * version skew as the methods above.
+   */
+  captureFullPage?(
+    request: BbDesktopBrowserCaptureFullPageRequest,
+  ): Promise<BbDesktopBrowserCaptureFullPageResult>;
+  /**
    * Read or write what a tab has stored — its cookies, its `localStorage` and
    * its `sessionStorage`.
    *
@@ -1348,4 +1610,15 @@ export interface BbDesktopBrowserApi {
   control?(
     request: BbDesktopBrowserControlRequest,
   ): Promise<BbDesktopBrowserControlResult>;
+  /**
+   * Film a tab — start a screencast, mark a chapter in it, stop and collect the
+   * frames.
+   *
+   * The frames come back at the end rather than streaming, which is what keeps
+   * the caps meaningful: the shell holds a bounded buffer and hands over what it
+   * held. Optional for the same version skew as the methods above.
+   */
+  record?(
+    request: BbDesktopBrowserRecordRequest,
+  ): Promise<BbDesktopBrowserRecordResult>;
 }
