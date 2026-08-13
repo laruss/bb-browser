@@ -3,6 +3,8 @@ import { appCommandIdSchema } from "@bb/domain";
 import {
   bbDesktopBrowserFaviconSchema,
   bbDesktopBrowserInteractResultSchema,
+  bbDesktopBrowserControlResultSchema,
+  bbDesktopBrowserObserveResultSchema,
   bbDesktopBrowserOpenTabRequestSchema,
   bbDesktopBrowserPageReadResultSchema,
   bbDesktopBrowserScopedOpenTabRequestSchema,
@@ -10,6 +12,7 @@ import {
   bbDesktopBrowserSnapshotResultSchema,
   bbDesktopBrowserSnapshotSchema,
   bbDesktopBrowserStateSchema,
+  bbDesktopBrowserStorageResultSchema,
   bbDesktopInfoSchema,
   bbDesktopWindowStateSchema,
   type BbDesktopApi,
@@ -17,6 +20,8 @@ import {
   type BbDesktopBrowserApi,
   type BbDesktopBrowserFaviconHandler,
   type BbDesktopBrowserInteractResult,
+  type BbDesktopBrowserControlResult,
+  type BbDesktopBrowserObserveResult,
   type BbDesktopBrowserOpenTabHandler,
   type BbDesktopBrowserPageReadResult,
   type BbDesktopBrowserScopedOpenTabHandler,
@@ -24,6 +29,7 @@ import {
   type BbDesktopBrowserSnapshotResult,
   type BbDesktopBrowserSnapshotHandler,
   type BbDesktopBrowserStateHandler,
+  type BbDesktopBrowserStorageResult,
   type BbDesktopBrowserUnsubscribe,
   type BbDesktopBrowserViewBounds,
   type BbDesktopCloseWindowRequestHandler,
@@ -50,10 +56,13 @@ import {
   BB_DESKTOP_BROWSER_GO_BACK_CHANNEL,
   BB_DESKTOP_BROWSER_GO_FORWARD_CHANNEL,
   BB_DESKTOP_BROWSER_NAVIGATE_CHANNEL,
+  BB_DESKTOP_BROWSER_CONTROL_CHANNEL,
+  BB_DESKTOP_BROWSER_OBSERVE_CHANNEL,
   BB_DESKTOP_BROWSER_OPEN_TAB_CHANNEL,
   BB_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
   BB_DESKTOP_BROWSER_RELOAD_CHANNEL,
   BB_DESKTOP_BROWSER_SCOPED_OPEN_TAB_CHANNEL,
+  BB_DESKTOP_BROWSER_STORAGE_CHANNEL,
   BB_DESKTOP_BROWSER_DIALOG_CHANNEL,
   BB_DESKTOP_BROWSER_DIALOG_RESPOND_CHANNEL,
   BB_DESKTOP_BROWSER_INTERACT_CHANNEL,
@@ -341,6 +350,42 @@ const bbBrowserApi: BbDesktopBrowserApi = {
         request,
       );
       const parsed = bbDesktopBrowserInteractResultSchema.safeParse(payload);
+      return parsed.success ? parsed.data : { ok: false, reason: "failed" };
+    } catch {
+      return { ok: false, reason: "failed" };
+    }
+  },
+  async observe(request): Promise<BbDesktopBrowserObserveResult> {
+    try {
+      const payload: unknown = await ipcRenderer.invoke(
+        BB_DESKTOP_BROWSER_OBSERVE_CHANNEL,
+        request,
+      );
+      const parsed = bbDesktopBrowserObserveResultSchema.safeParse(payload);
+      return parsed.success ? parsed.data : { ok: false, reason: "failed" };
+    } catch {
+      return { ok: false, reason: "failed" };
+    }
+  },
+  async storage(request): Promise<BbDesktopBrowserStorageResult> {
+    try {
+      const payload: unknown = await ipcRenderer.invoke(
+        BB_DESKTOP_BROWSER_STORAGE_CHANNEL,
+        request,
+      );
+      const parsed = bbDesktopBrowserStorageResultSchema.safeParse(payload);
+      return parsed.success ? parsed.data : { ok: false, reason: "failed" };
+    } catch {
+      return { ok: false, reason: "failed" };
+    }
+  },
+  async control(request): Promise<BbDesktopBrowserControlResult> {
+    try {
+      const payload: unknown = await ipcRenderer.invoke(
+        BB_DESKTOP_BROWSER_CONTROL_CHANNEL,
+        request,
+      );
+      const parsed = bbDesktopBrowserControlResultSchema.safeParse(payload);
       return parsed.success ? parsed.data : { ok: false, reason: "failed" };
     } catch {
       return { ok: false, reason: "failed" };

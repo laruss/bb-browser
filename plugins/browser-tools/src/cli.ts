@@ -1,8 +1,17 @@
+import { readFile, writeFile } from "node:fs/promises";
+import { isAbsolute, resolve } from "node:path";
 import type {
   BbPluginApi,
+  PluginBrowserConsoleEntry,
+  PluginBrowserCookie,
+  PluginBrowserNetworkEntry,
   PluginBrowserAction,
   PluginBrowserKeyModifier,
   PluginBrowserPageState,
+  PluginBrowserRouteState,
+  PluginBrowserRoutes,
+  PluginBrowserStorageArea,
+  PluginBrowserStorageItem,
   PluginBrowserTab,
   PluginCliResult,
 } from "@bb/plugin-sdk";
@@ -32,6 +41,10 @@ interface ParsedArgs {
   button: "left" | "middle" | "right";
   double: boolean;
   modifiers: PluginBrowserKeyModifier[];
+  status: number | undefined;
+  body: string | undefined;
+  contentType: string | undefined;
+  headers: { name: string; value: string }[];
 }
 
 const MODIFIERS = new Set(["Alt", "Control", "Meta", "Shift"]);
@@ -46,6 +59,10 @@ function parseArgs(argv: string[]): ParsedArgs | { error: string } {
   let button: "left" | "middle" | "right" = "left";
   let double = false;
   const modifiers: PluginBrowserKeyModifier[] = [];
+  let status: number | undefined;
+  let body: string | undefined;
+  let contentType: string | undefined;
+  const headers: { name: string; value: string }[] = [];
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index] ?? "";
@@ -68,6 +85,36 @@ function parseArgs(argv: string[]): ParsedArgs | { error: string } {
         return { error: "--button needs left, middle or right" };
       }
       button = raw;
+    } else if (arg === "--status") {
+      index += 1;
+      const raw = argv[index];
+      const value = Number(raw);
+      if (raw === undefined || !Number.isInteger(value) || value < 100 || value > 599) {
+        return { error: "--status needs an HTTP status code" };
+      }
+      status = value;
+    } else if (arg === "--body" || arg === "--content-type") {
+      index += 1;
+      const raw = argv[index];
+      if (raw === undefined) {
+        return { error: `${arg} needs a value` };
+      }
+      if (arg === "--body") {
+        body = raw;
+      } else {
+        contentType = raw;
+      }
+    } else if (arg === "--header") {
+      index += 1;
+      const raw = argv[index] ?? "";
+      const separator = raw.indexOf(":");
+      if (separator <= 0) {
+        return { error: '--header needs "Name: value"' };
+      }
+      headers.push({
+        name: raw.slice(0, separator).trim(),
+        value: raw.slice(separator + 1).trim(),
+      });
     } else if (arg === "--modifier") {
       index += 1;
       const raw = argv[index];
@@ -110,6 +157,10 @@ function parseArgs(argv: string[]): ParsedArgs | { error: string } {
     button,
     double,
     modifiers,
+    status,
+    body,
+    contentType,
+    headers,
   };
 }
 
@@ -150,6 +201,167 @@ function renderPageState(
   return `${state.url}\t${state.title ?? ""}\n`;
 }
 
+function consoleLine(entry: PluginBrowserConsoleEntry): string {
+  const where = entry.source === "" ? "" : `\t${entry.source}:${entry.line}`;
+  return `${entry.level}\t${entry.text}${where}`;
+}
+
+function networkLine(entry: PluginBrowserNetworkEntry): string {
+  // The status column carries the error when there is no status, because
+  // "which requests went wrong" is the question this listing exists for.
+  const outcome = entry.error ?? (entry.status === null ? "-" : String(entry.status));
+  return `${outcome}\t${entry.method}\t${entry.resourceType}${
+    entry.fromCache ? " (cache)" : ""
+  }\t${entry.url}`;
+}
+
+/**
+ * A log slice, plus what it is not showing. The dropped count goes to stderr so
+ * stdout stays a clean list of lines to grep, while a human still learns that
+ * the buffer had more.
+ */
+function renderLog<TEntry>(
+  log: { entries: TEntry[]; droppedCount: number },
+  line: (entry: TEntry) => string,
+  json: boolean,
+  empty: string,
+): PluginCliResult {
+  if (json) {
+    return { exitCode: 0, stdout: `${JSON.stringify(log, null, 2)}\n` };
+  }
+  return {
+    exitCode: 0,
+    stdout:
+      log.entries.length === 0
+        ? `${empty}\n`
+        : `${log.entries.map(line).join("\n")}\n`,
+    stderr:
+      log.droppedCount > 0
+        ? `${log.droppedCount} earlier entr${log.droppedCount === 1 ? "y" : "ies"} not shown\n`
+        : undefined,
+  };
+}
+
+function cookieLine(cookie: PluginBrowserCookie): string {
+  const flags = [
+    cookie.secure ? "secure" : "",
+    cookie.httpOnly ? "httpOnly" : "",
+    `SameSite=${cookie.sameSite}`,
+  ]
+    .filter((flag) => flag.length > 0)
+    .join(" ");
+  const expiry =
+    cookie.expires < 0
+      ? "session"
+      : new Date(cookie.expires * 1000).toISOString();
+  return `${cookie.name}\t${cookie.value}\t${cookie.domain}${cookie.path}\t${expiry}\t${flags}`;
+}
+
+function itemLine(item: PluginBrowserStorageItem): string {
+  return `${item.name}\t${item.value}`;
+}
+
+/**
+ * A list, or JSON when asked. Kept apart from `renderLog` because storage has no
+ * dropped count: what it does have is a truncation flag, which is reported by
+ * the callers that can produce one.
+ */
+function renderList<TEntry>(
+  entries: readonly TEntry[],
+  line: (entry: TEntry) => string,
+  json: boolean,
+  empty: string,
+): PluginCliResult {
+  if (json) {
+    return { exitCode: 0, stdout: `${JSON.stringify(entries, null, 2)}\n` };
+  }
+  return {
+    exitCode: 0,
+    stdout:
+      entries.length === 0 ? `${empty}\n` : `${entries.map(line).join("\n")}\n`,
+  };
+}
+
+function routeLine(route: PluginBrowserRouteState): string {
+  // The hit count is first because it is the question: a mock that never fired
+  // is the usual reason a page still shows the real data.
+  return `${route.matched}\t${route.status}\t${route.contentType}\t${route.pattern}`;
+}
+
+/**
+ * The routes a tab holds. Offline goes to stderr rather than into the list: it
+ * is not a route, but a caller looking at an empty list wants to know.
+ */
+function renderRoutes(
+  result: PluginBrowserRoutes,
+  json: boolean,
+): PluginCliResult {
+  const listed = renderList(
+    result.routes,
+    routeLine,
+    json,
+    "That tab mocks nothing.",
+  );
+  return {
+    ...listed,
+    stderr: result.offline ? "This tab is offline.\n" : undefined,
+  };
+}
+
+/** The origin a saved state is keyed by, or null when the URL is not one. */
+function originOf(url: string): string | null {
+  try {
+    return new URL(url).origin;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Playwright's `storageState` file, which is the format we read and write so a
+ * session saved here loads there and back.
+ *
+ * `sessionStorage` is deliberately absent: it is not part of that format, and
+ * inventing a field would break the interop this exists for.
+ */
+interface BrowserStorageStateFile {
+  cookies: PluginBrowserCookie[];
+  origins: Array<{
+    origin: string;
+    localStorage: PluginBrowserStorageItem[];
+  }>;
+}
+
+function parseStorageStateFile(raw: string): BrowserStorageStateFile | null {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  if (typeof parsed !== "object" || parsed === null) {
+    return null;
+  }
+  const record = parsed as { cookies?: unknown; origins?: unknown };
+  const cookies = record.cookies ?? [];
+  const origins = record.origins ?? [];
+  if (!Array.isArray(cookies) || !Array.isArray(origins)) {
+    return null;
+  }
+  // Only the shape is checked here. Each cookie is validated where every other
+  // browser argument is — in the host's API — so one file's bad cookie reports
+  // itself the same way a plugin's bad cookie would.
+  return {
+    cookies: cookies as PluginBrowserCookie[],
+    origins: origins.filter(
+      (entry): entry is BrowserStorageStateFile["origins"][number] =>
+        typeof entry === "object" &&
+        entry !== null &&
+        typeof (entry as { origin?: unknown }).origin === "string",
+    ),
+  };
+}
+
 const USAGE = `Usage: bb browser <command> [options]
 
 Reading
@@ -159,6 +371,10 @@ Reading
   url | title                Read a tab's address or title
   text [--max <n>]           Read the page's visible text
   selection                  Read the page's selected text
+  screenshot <file>          Write a PNG/JPEG of the visible viewport
+  pdf <file>                 Print the whole page to a PDF
+  console [--max <n>]        What the page logged, since the tab opened
+  network [--max <n>]        What the tab requested, since it opened
 
 Acting (refs come from snapshot)
   click <ref> [--button b] [--double] [--modifier M]
@@ -172,6 +388,29 @@ Acting (refs come from snapshot)
   upload <ref> <path>...     Hand a file input local files
   resize <width> <height>    Emulated viewport; "resize reset" restores it
 
+Storage — cookies and web storage are the user's live logins, not settings
+  cookie-list                Cookies the tab's URL carries, values included
+  cookie-get <name>          One of them
+  cookie-set <name> <value>  Set one on the tab's URL
+  cookie-delete <name>       Remove one
+  cookie-clear               Remove all of them
+  localstorage-list | localstorage-get <key>
+  localstorage-set <key> <value> | localstorage-delete <key> | localstorage-clear
+  sessionstorage-...         The same five, for sessionStorage
+  state-save [file]          Cookies + localStorage in Playwright's format
+  state-load <file>          Write a saved state back into this tab
+
+Direct control — these skip what makes the commands above safe
+  eval <function> [ref]      Run JS in the page: 'eval "() => document.title"'
+  mousemove <x> <y>          Move the pointer to viewport pixels
+  mousedown | mouseup [b]    Press/release at the last mousemove point
+  mousewheel <dx> <dy>       Scroll there
+  route <pattern> [--status n] [--body text] [--content-type t] [--header "N: v"]
+                             Answer matching requests yourself; ** crosses /, * does not
+  route-list                 What this tab mocks, and how often each fired
+  unroute [pattern]          Remove one route, or all of them
+  network-state-set <offline|online>
+
 Navigating
   open <url> [--new-tab]     Open a URL (http/https)
   close <tab-id>             Close a tab
@@ -182,10 +421,14 @@ Navigating
 Options:
   --tab <tab-id>       Act on this tab instead of the active one
   --generation <n>     Refuse refs unless they came from this snapshot
-  --max <n>            Characters of page text to return, or tree depth
+  --max <n>            Characters of page text, tree depth, or log entries
   --button <b>         left (default), middle, right
   --double             Double click
   --modifier <M>       Alt, Control, Meta or Shift; repeatable
+  --status <n>         Status code a route answers with (default 200)
+  --body <text>        Body a route answers with
+  --content-type <t>   Its content type (guessed from the body otherwise)
+  --header "N: v"      An extra response header; repeatable
   --json               Machine-readable output
 `;
 
@@ -304,6 +547,158 @@ export function registerBrowserToolsCli(bb: BbPluginApi): void {
         name: "selection",
         summary: "Read the text selected in a browser tab",
         usage: "bb browser selection [--tab <tab-id>]",
+      },
+      {
+        name: "screenshot",
+        summary: "Write a picture of a tab's visible viewport to a file",
+        usage: "bb browser screenshot <file> [--tab <tab-id>]",
+      },
+      {
+        name: "pdf",
+        summary: "Print a tab's page to a PDF file",
+        usage: "bb browser pdf <file> [--tab <tab-id>]",
+      },
+      {
+        name: "console",
+        summary: "Show what the page has logged to its console",
+        usage: "bb browser console [--tab <tab-id>] [--max <n>] [--json]",
+      },
+      {
+        name: "network",
+        summary: "Show what the tab has requested",
+        usage: "bb browser network [--tab <tab-id>] [--max <n>] [--json]",
+      },
+      {
+        name: "cookie-list",
+        summary: "List the cookies a tab's URL carries, with their values",
+        usage: "bb browser cookie-list [--tab <tab-id>] [--json]",
+      },
+      {
+        name: "cookie-get",
+        summary: "Show one cookie of a tab's URL",
+        usage: "bb browser cookie-get <name> [--tab <tab-id>] [--json]",
+      },
+      {
+        name: "cookie-set",
+        summary: "Set a cookie on a tab's URL",
+        usage: "bb browser cookie-set <name> <value> [--tab <tab-id>]",
+      },
+      {
+        name: "cookie-delete",
+        summary: "Remove one cookie from a tab's URL",
+        usage: "bb browser cookie-delete <name> [--tab <tab-id>]",
+      },
+      {
+        name: "cookie-clear",
+        summary: "Remove every cookie a tab's URL carries",
+        usage: "bb browser cookie-clear [--tab <tab-id>]",
+      },
+      {
+        name: "localstorage-list",
+        summary: "List a page's localStorage",
+        usage: "bb browser localstorage-list [--tab <tab-id>] [--json]",
+      },
+      {
+        name: "localstorage-get",
+        summary: "Read one localStorage key",
+        usage: "bb browser localstorage-get <key> [--tab <tab-id>]",
+      },
+      {
+        name: "localstorage-set",
+        summary: "Write one localStorage key",
+        usage: "bb browser localstorage-set <key> <value> [--tab <tab-id>]",
+      },
+      {
+        name: "localstorage-delete",
+        summary: "Remove one localStorage key",
+        usage: "bb browser localstorage-delete <key> [--tab <tab-id>]",
+      },
+      {
+        name: "localstorage-clear",
+        summary: "Empty a page's localStorage",
+        usage: "bb browser localstorage-clear [--tab <tab-id>]",
+      },
+      {
+        name: "sessionstorage-list",
+        summary: "List a page's sessionStorage",
+        usage: "bb browser sessionstorage-list [--tab <tab-id>] [--json]",
+      },
+      {
+        name: "sessionstorage-get",
+        summary: "Read one sessionStorage key",
+        usage: "bb browser sessionstorage-get <key> [--tab <tab-id>]",
+      },
+      {
+        name: "sessionstorage-set",
+        summary: "Write one sessionStorage key",
+        usage: "bb browser sessionstorage-set <key> <value> [--tab <tab-id>]",
+      },
+      {
+        name: "sessionstorage-delete",
+        summary: "Remove one sessionStorage key",
+        usage: "bb browser sessionstorage-delete <key> [--tab <tab-id>]",
+      },
+      {
+        name: "sessionstorage-clear",
+        summary: "Empty a page's sessionStorage",
+        usage: "bb browser sessionstorage-clear [--tab <tab-id>]",
+      },
+      {
+        name: "state-save",
+        summary: "Save a tab's cookies and localStorage as a signed-in session",
+        usage: "bb browser state-save [file] [--tab <tab-id>]",
+      },
+      {
+        name: "state-load",
+        summary: "Write a saved session back into a tab",
+        usage: "bb browser state-load <file> [--tab <tab-id>]",
+      },
+      {
+        name: "eval",
+        summary: "Run a JavaScript function in the page and print what it returned",
+        usage:
+          'bb browser eval "<function>" [<ref>] [--tab <tab-id>] [--generation <n>]',
+      },
+      {
+        name: "mousemove",
+        summary: "Move the pointer to viewport coordinates",
+        usage: "bb browser mousemove <x> <y> [--tab <tab-id>]",
+      },
+      {
+        name: "mousedown",
+        summary: "Press a mouse button where the pointer is",
+        usage: "bb browser mousedown [left|middle|right] [--tab <tab-id>]",
+      },
+      {
+        name: "mouseup",
+        summary: "Release a mouse button where the pointer is",
+        usage: "bb browser mouseup [left|middle|right] [--tab <tab-id>]",
+      },
+      {
+        name: "mousewheel",
+        summary: "Scroll by a delta where the pointer is",
+        usage: "bb browser mousewheel <dx> <dy> [--tab <tab-id>]",
+      },
+      {
+        name: "route",
+        summary: "Answer requests matching a URL pattern instead of fetching them",
+        usage:
+          'bb browser route <pattern> [--status <n>] [--body <text>] [--content-type <t>] [--header "N: v"] [--tab <tab-id>]',
+      },
+      {
+        name: "route-list",
+        summary: "Show what a tab is mocking and how often each route fired",
+        usage: "bb browser route-list [--tab <tab-id>] [--json]",
+      },
+      {
+        name: "unroute",
+        summary: "Remove one route, or every route on a tab",
+        usage: "bb browser unroute [<pattern>] [--tab <tab-id>]",
+      },
+      {
+        name: "network-state-set",
+        summary: "Take a tab offline, or put it back online",
+        usage: "bb browser network-state-set <offline|online> [--tab <tab-id>]",
       },
       {
         name: "back",
@@ -599,6 +994,461 @@ export function registerBrowserToolsCli(bb: BbPluginApi): void {
               options,
             );
             return { exitCode: 0, stdout: `${result.text}\n` };
+          }
+
+          case "screenshot":
+          case "pdf": {
+            const target = rest[0];
+            if (target === undefined || target.length === 0) {
+              return { exitCode: 2, stderr: "A file path is required.\n" };
+            }
+            // Relative to the shell that ran `bb`, not to the server process
+            // this handler happens to live in.
+            const path = isAbsolute(target)
+              ? target
+              : resolve(context.cwd ?? process.cwd(), target);
+            // Both are slower than a command that only reads state — rendering a
+            // long page to PDF especially — so neither rides the default wait.
+            const capture =
+              command === "pdf"
+                ? await bb.browser.page.pdf(
+                    { tabId: parsed.tabId },
+                    { ...options, timeoutMs: 60_000 },
+                  )
+                : await bb.browser.page.screenshot(
+                    {
+                      tabId: parsed.tabId,
+                      format: target.endsWith(".png") ? "png" : "jpeg",
+                    },
+                    { ...options, timeoutMs: 30_000 },
+                  );
+            const bytes = Buffer.from(capture.base64, "base64");
+            await writeFile(path, bytes);
+            return {
+              exitCode: 0,
+              stdout: `${path}\t${bytes.byteLength} bytes\n`,
+            };
+          }
+
+          case "console": {
+            return renderLog(
+              await bb.browser.page.console(
+                { tabId: parsed.tabId, limit: parsed.max },
+                options,
+              ),
+              consoleLine,
+              parsed.json,
+              "That page has logged nothing.",
+            );
+          }
+
+          case "network": {
+            return renderLog(
+              await bb.browser.page.network(
+                { tabId: parsed.tabId, limit: parsed.max },
+                options,
+              ),
+              networkLine,
+              parsed.json,
+              "That tab has requested nothing.",
+            );
+          }
+
+          case "cookie-list":
+          case "cookie-get": {
+            const name = rest[0];
+            if (command === "cookie-get" && name === undefined) {
+              return { exitCode: 2, stderr: "A cookie name is required.\n" };
+            }
+            const { cookies } = await bb.browser.storage.cookies(
+              { tabId: parsed.tabId },
+              options,
+            );
+            return renderList(
+              name === undefined
+                ? cookies
+                : cookies.filter((cookie) => cookie.name === name),
+              cookieLine,
+              parsed.json,
+              "No cookies for that URL.",
+            );
+          }
+
+          case "cookie-set": {
+            const name = rest[0];
+            if (name === undefined || name.length === 0) {
+              return {
+                exitCode: 2,
+                stderr: "A cookie name and value are required.\n",
+              };
+            }
+            // Everything after the name, so an unquoted value with spaces in it
+            // still arrives whole — the same rule `fill` follows.
+            const written = await bb.browser.storage.setCookies(
+              {
+                cookies: [{ name, value: rest.slice(1).join(" ") }],
+                tabId: parsed.tabId,
+              },
+              options,
+            );
+            return {
+              exitCode: written.applied === 1 ? 0 : 1,
+              stdout:
+                written.applied === 1
+                  ? `Set ${name}.\n`
+                  : `The browser refused ${name}.\n`,
+            };
+          }
+
+          case "cookie-delete":
+          case "cookie-clear": {
+            const name = rest[0];
+            if (command === "cookie-delete" && name === undefined) {
+              return { exitCode: 2, stderr: "A cookie name is required.\n" };
+            }
+            const { removed } = await bb.browser.storage.clearCookies(
+              {
+                ...(command === "cookie-delete" ? { name } : {}),
+                tabId: parsed.tabId,
+              },
+              options,
+            );
+            return {
+              exitCode: 0,
+              stdout: `Removed ${removed} cookie${removed === 1 ? "" : "s"}.\n`,
+            };
+          }
+
+          case "localstorage-list":
+          case "sessionstorage-list":
+          case "localstorage-get":
+          case "sessionstorage-get": {
+            const area: PluginBrowserStorageArea = command.startsWith("local")
+              ? "local"
+              : "session";
+            const key = rest[0];
+            if (command.endsWith("-get") && key === undefined) {
+              return { exitCode: 2, stderr: "A key is required.\n" };
+            }
+            const result = await bb.browser.storage.items(
+              { area, tabId: parsed.tabId },
+              options,
+            );
+            const shown =
+              key === undefined
+                ? result.items
+                : result.items.filter((item) => item.name === key);
+            const listed = renderList(
+              shown,
+              itemLine,
+              parsed.json,
+              "That page has stored nothing there.",
+            );
+            return {
+              ...listed,
+              // The same honesty the log commands owe: a caller that saw only
+              // part of an origin's storage must be told so.
+              stderr: result.truncated
+                ? "(this page holds more than the bridge will carry)\n"
+                : undefined,
+            };
+          }
+
+          case "localstorage-set":
+          case "sessionstorage-set": {
+            const area: PluginBrowserStorageArea = command.startsWith("local")
+              ? "local"
+              : "session";
+            const key = rest[0];
+            if (key === undefined || key.length === 0) {
+              return { exitCode: 2, stderr: "A key and a value are required.\n" };
+            }
+            const written = await bb.browser.storage.setItems(
+              {
+                area,
+                items: [{ name: key, value: rest.slice(1).join(" ") }],
+                tabId: parsed.tabId,
+              },
+              options,
+            );
+            return {
+              exitCode: written.applied === 1 ? 0 : 1,
+              stdout:
+                written.applied === 1
+                  ? `Set ${key}.\n`
+                  : `The page refused ${key} — it may be out of storage quota.\n`,
+            };
+          }
+
+          case "localstorage-delete":
+          case "sessionstorage-delete":
+          case "localstorage-clear":
+          case "sessionstorage-clear": {
+            const area: PluginBrowserStorageArea = command.startsWith("local")
+              ? "local"
+              : "session";
+            const key = rest[0];
+            if (command.endsWith("-delete") && key === undefined) {
+              return { exitCode: 2, stderr: "A key is required.\n" };
+            }
+            const { removed } = await bb.browser.storage.clearItems(
+              {
+                area,
+                ...(command.endsWith("-delete") ? { name: key } : {}),
+                tabId: parsed.tabId,
+              },
+              options,
+            );
+            return {
+              exitCode: 0,
+              stdout: `Removed ${removed} item${removed === 1 ? "" : "s"}.\n`,
+            };
+          }
+
+          case "state-save": {
+            const cookies = await bb.browser.storage.cookies(
+              { tabId: parsed.tabId },
+              options,
+            );
+            const stored = await bb.browser.storage.items(
+              { area: "local", tabId: parsed.tabId },
+              options,
+            );
+            const origin = originOf(cookies.url);
+            const state: BrowserStorageStateFile = {
+              cookies: cookies.cookies,
+              origins:
+                origin === null
+                  ? []
+                  : [{ origin, localStorage: stored.items }],
+            };
+            const json = `${JSON.stringify(state, null, 2)}\n`;
+            // A state file is the session it came from. Saying so on stderr
+            // keeps stdout usable while making sure nobody learns it later.
+            const warning = `${
+              stored.truncated
+                ? "Incomplete: this origin holds more localStorage than the bridge will carry.\n"
+                : ""
+            }This is a signed-in session, not a settings dump — treat the output as a credential.\n`;
+            const target = rest[0];
+            if (target === undefined || target.length === 0) {
+              return { exitCode: 0, stdout: json, stderr: warning };
+            }
+            const path = isAbsolute(target)
+              ? target
+              : resolve(context.cwd ?? process.cwd(), target);
+            await writeFile(path, json, "utf8");
+            return {
+              exitCode: 0,
+              stdout: `${path}\t${state.cookies.length} cookies, ${stored.items.length} localStorage items\n`,
+              stderr: warning,
+            };
+          }
+
+          case "state-load": {
+            const target = rest[0];
+            if (target === undefined || target.length === 0) {
+              return { exitCode: 2, stderr: "A file path is required.\n" };
+            }
+            const path = isAbsolute(target)
+              ? target
+              : resolve(context.cwd ?? process.cwd(), target);
+            const state = parseStorageStateFile(
+              await readFile(path, "utf8"),
+            );
+            if (state === null) {
+              return {
+                exitCode: 2,
+                stderr: `${path} is not a storage state file.\n`,
+              };
+            }
+            const cookies =
+              state.cookies.length === 0
+                ? { applied: 0, rejected: 0 }
+                : await bb.browser.storage.setCookies(
+                    { cookies: state.cookies, tabId: parsed.tabId },
+                    options,
+                  );
+            // localStorage belongs to an origin, and this tab is on one origin.
+            // Loading the rest would mean navigating the user's browser around
+            // their saved sites, so the other origins are reported instead.
+            const url = await bb.browser.page.getUrl(
+              { tabId: parsed.tabId },
+              options,
+            );
+            const origin = originOf(url);
+            const match = state.origins.find(
+              (entry) => entry.origin === origin,
+            );
+            const items = match?.localStorage ?? [];
+            const written =
+              items.length === 0
+                ? { applied: 0, rejected: 0 }
+                : await bb.browser.storage.setItems(
+                    { area: "local", items, tabId: parsed.tabId },
+                    options,
+                  );
+            const skipped = state.origins.filter(
+              (entry) => entry.origin !== origin,
+            ).length;
+            return {
+              exitCode: 0,
+              stdout: `${cookies.applied} cookies applied, ${cookies.rejected} rejected.\n${written.applied} localStorage items applied for ${origin ?? "this tab"}.\n`,
+              stderr:
+                skipped === 0
+                  ? undefined
+                  : `${skipped} other origin${skipped === 1 ? "" : "s"} in that file were skipped — open a tab there and load it again.\n`,
+            };
+          }
+
+          case "eval": {
+            const expression = rest[0];
+            if (expression === undefined || expression.length === 0) {
+              return {
+                exitCode: 2,
+                stderr:
+                  'A function is required, e.g. bb browser eval "() => document.title"\n',
+              };
+            }
+            const result = await bb.browser.control.evaluate(
+              {
+                expression,
+                ref: rest[1],
+                tabId: parsed.tabId,
+                generation: parsed.generation,
+              },
+              options,
+            );
+            if (parsed.json) {
+              return { exitCode: 0, stdout: `${JSON.stringify(result, null, 2)}\n` };
+            }
+            return {
+              exitCode: 0,
+              stdout: `${result.value}\n`,
+              stderr: result.truncated ? "(truncated)\n" : undefined,
+            };
+          }
+
+          case "mousemove": {
+            const x = Number(rest[0]);
+            const y = Number(rest[1]);
+            if (!Number.isInteger(x) || !Number.isInteger(y)) {
+              return {
+                exitCode: 2,
+                stderr: "An x and a y in viewport pixels are required.\n",
+              };
+            }
+            const state = await bb.browser.control.mouseMove(
+              { x, y, tabId: parsed.tabId },
+              options,
+            );
+            return { exitCode: 0, stdout: renderPageState(state, parsed.json) };
+          }
+
+          case "mousedown":
+          case "mouseup": {
+            const named = rest[0];
+            if (
+              named !== undefined &&
+              named !== "left" &&
+              named !== "middle" &&
+              named !== "right"
+            ) {
+              return {
+                exitCode: 2,
+                stderr: "A button is left, middle or right.\n",
+              };
+            }
+            const state = await bb.browser.control.mouseButton(
+              {
+                down: command === "mousedown",
+                button: named ?? parsed.button,
+                tabId: parsed.tabId,
+              },
+              options,
+            );
+            return { exitCode: 0, stdout: renderPageState(state, parsed.json) };
+          }
+
+          case "mousewheel": {
+            const deltaX = Number(rest[0]);
+            const deltaY = Number(rest[1]);
+            if (!Number.isInteger(deltaX) || !Number.isInteger(deltaY)) {
+              return {
+                exitCode: 2,
+                stderr: "A horizontal and a vertical delta are required.\n",
+              };
+            }
+            const state = await bb.browser.control.mouseWheel(
+              { deltaX, deltaY, tabId: parsed.tabId },
+              options,
+            );
+            return { exitCode: 0, stdout: renderPageState(state, parsed.json) };
+          }
+
+          case "route": {
+            const pattern = rest[0];
+            if (pattern === undefined || pattern.length === 0) {
+              return {
+                exitCode: 2,
+                stderr:
+                  'A URL pattern is required, e.g. bb browser route "**/api/me" --body "{}"\n',
+              };
+            }
+            return renderRoutes(
+              await bb.browser.control.route(
+                {
+                  pattern,
+                  status: parsed.status,
+                  body: parsed.body,
+                  contentType: parsed.contentType,
+                  headers: parsed.headers,
+                  tabId: parsed.tabId,
+                },
+                options,
+              ),
+              parsed.json,
+            );
+          }
+
+          case "route-list": {
+            return renderRoutes(
+              await bb.browser.control.routes(
+                { tabId: parsed.tabId },
+                options,
+              ),
+              parsed.json,
+            );
+          }
+
+          case "unroute": {
+            return renderRoutes(
+              await bb.browser.control.unroute(
+                { pattern: rest[0], tabId: parsed.tabId },
+                options,
+              ),
+              parsed.json,
+            );
+          }
+
+          case "network-state-set": {
+            const state = rest[0];
+            if (state !== "offline" && state !== "online") {
+              return {
+                exitCode: 2,
+                stderr: "Usage: bb browser network-state-set <offline|online>\n",
+              };
+            }
+            const page = await bb.browser.control.setOffline(
+              { offline: state === "offline", tabId: parsed.tabId },
+              options,
+            );
+            return {
+              exitCode: 0,
+              stdout: parsed.json
+                ? renderPageState(page, true)
+                : `That tab is now ${state}.\n`,
+            };
           }
 
           case "back":

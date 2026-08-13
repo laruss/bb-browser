@@ -138,7 +138,17 @@ interface FakeWebContentsEventMap {
   "page-favicon-updated": FakePageFaviconUpdatedListener;
   "did-fail-load": FakeDidFailLoadListener;
   "context-menu": FakeContextMenuListener;
+  "console-message": FakeConsoleMessageListener;
 }
+
+interface FakeConsoleMessageDetails {
+  level: "debug" | "info" | "warning" | "error";
+  message: string;
+  lineNumber: number;
+  sourceId: string;
+}
+
+type FakeConsoleMessageListener = (details: FakeConsoleMessageDetails) => void;
 
 type FakeResourceType =
   | "mainFrame"
@@ -180,6 +190,31 @@ type FakeOnBeforeRequestListener = (
   callback: FakeOnBeforeRequestCallback,
 ) => void;
 
+interface FakeNetworkRequestDetails {
+  url: string;
+  method?: string;
+  resourceType?: FakeResourceType;
+  webContentsId?: number;
+  statusCode?: number;
+  fromCache?: boolean;
+  error?: string;
+  timestamp?: number;
+}
+
+type FakeNetworkRequestListener = (details: FakeNetworkRequestDetails) => void;
+
+interface FakeCookie {
+  name: string;
+  value: string;
+  domain?: string;
+  path?: string;
+  secure?: boolean;
+  httpOnly?: boolean;
+  session?: boolean;
+  expirationDate?: number;
+  sameSite?: string;
+}
+
 interface FakeSessionEvent {
   preventDefault(): void;
 }
@@ -213,6 +248,8 @@ const electronMock = vi.hoisted(() => {
   interface FakeNativeImage {
     isEmpty(): boolean;
     toJPEG(quality: number): Buffer;
+    toPNG(): Buffer;
+    getSize(): { width: number; height: number };
   }
 
   interface FakeDidFailLoadArgs {
@@ -266,6 +303,8 @@ const electronMock = vi.hoisted(() => {
   const fakeCapturedImage: FakeNativeImage = {
     isEmpty: () => false,
     toJPEG: () => Buffer.from("jpeg-bytes"),
+    toPNG: () => Buffer.from("png-bytes"),
+    getSize: () => ({ width: 800, height: 600 }),
   };
 
   class FakeWebContents {
@@ -303,6 +342,7 @@ const electronMock = vi.hoisted(() => {
       "page-favicon-updated": [],
       "did-fail-load": [],
       "context-menu": [],
+      "console-message": [],
     };
     private title = "";
     private url = "";
@@ -326,10 +366,18 @@ const electronMock = vi.hoisted(() => {
       },
     };
 
+    public pdfResult: Buffer | Error = Buffer.from("%PDF-1.4\n");
+
     capturePage(): Promise<FakeNativeImage> {
       return new Promise((resolve) => {
         this.pendingCaptureResolvers.push(resolve);
       });
+    }
+
+    printToPDF(): Promise<Buffer> {
+      return this.pdfResult instanceof Error
+        ? Promise.reject(this.pdfResult)
+        : Promise.resolve(this.pdfResult);
     }
 
     executeJavaScriptInIsolatedWorld(
@@ -511,6 +559,18 @@ const electronMock = vi.hoisted(() => {
       return event.defaultPrevented;
     }
 
+    emitConsoleMessage(details: Partial<FakeConsoleMessageDetails>): void {
+      for (const listener of this.listeners["console-message"]) {
+        listener({
+          level: "info",
+          message: "",
+          lineNumber: 0,
+          sourceId: "",
+          ...details,
+        });
+      }
+    }
+
     emitDidStopLoading(): void {
       for (const listener of this.listeners["did-stop-loading"]) {
         listener();
@@ -610,13 +670,44 @@ const electronMock = vi.hoisted(() => {
   }
 
   class FakeSession {
+    /** The partition's cookie jar, as much of it as the manager touches. */
+    public storedCookies: FakeCookie[] = [];
+    public readonly cookieSetCalls: unknown[] = [];
+    public readonly cookieRemoveCalls: Array<{ url: string; name: string }> = [];
+    public cookieSetFailure: Error | null = null;
+    public readonly cookies = {
+      get: (filter: { url?: string; name?: string }): Promise<FakeCookie[]> =>
+        Promise.resolve(
+          this.storedCookies.filter(
+            (cookie) => filter.name === undefined || cookie.name === filter.name,
+          ),
+        ),
+      set: (details: unknown): Promise<void> => {
+        this.cookieSetCalls.push(details);
+        return this.cookieSetFailure === null
+          ? Promise.resolve()
+          : Promise.reject(this.cookieSetFailure);
+      },
+      remove: (url: string, name: string): Promise<void> => {
+        this.cookieRemoveCalls.push({ url, name });
+        return Promise.resolve();
+      },
+    };
     public readonly willDownloadListeners: FakeSessionListener[] = [];
     public beforeRequestListener: FakeOnBeforeRequestListener | null = null;
     public permissionCheckHandler: FakePermissionCheckHandler | null = null;
     public permissionRequestHandler: FakePermissionRequestHandler | null = null;
+    public completedListener: FakeNetworkRequestListener | null = null;
+    public errorListener: FakeNetworkRequestListener | null = null;
     public readonly webRequest = {
       onBeforeRequest: (listener: FakeOnBeforeRequestListener | null): void => {
         this.beforeRequestListener = listener;
+      },
+      onCompleted: (listener: FakeNetworkRequestListener | null): void => {
+        this.completedListener = listener;
+      },
+      onErrorOccurred: (listener: FakeNetworkRequestListener | null): void => {
+        this.errorListener = listener;
       },
     };
 
@@ -3135,6 +3226,959 @@ describe("DesktopBrowserViewManager interactions", () => {
         request: {
           tabId: "browser:missing",
           interaction: { action: "hover", ref: "e1" },
+        },
+      }),
+    ).resolves.toMatchObject({ ok: false, reason: "no-view" });
+  });
+});
+
+describe("DesktopBrowserViewManager observations", () => {
+  interface ObservationHarness {
+    hostWindow: FakeHostWindow;
+    manager: DesktopBrowserViewManager;
+    view: ReturnType<typeof requireFakeView>;
+    webContents: ReturnType<typeof requireFakeView>["webContents"];
+  }
+
+  function attachTabForObservations(url = "https://example.com/"): ObservationHarness {
+    const manager = createDesktopBrowserViewManager({
+      partition: "persist:test",
+    });
+    const hostWindow = new FakeHostWindow({
+      contentBounds: { width: 700, height: 450 },
+      webContentsId: 93,
+    });
+    attachBrowserTab({ manager, hostWindow, tabId: "browser:a", url });
+    const view = requireFakeView(0);
+    return { hostWindow, manager, view, webContents: view.webContents };
+  }
+
+  function requireNetworkListener(
+    kind: "completed" | "error",
+  ): FakeNetworkRequestListener {
+    const fakeSession = electronMock.fakeSessions.at(-1);
+    if (fakeSession === undefined) {
+      throw new Error("Expected a browser session to be created.");
+    }
+    const listener =
+      kind === "completed"
+        ? fakeSession.completedListener
+        : fakeSession.errorListener;
+    if (listener === null) {
+      throw new Error(`Expected an ${kind} listener to be registered.`);
+    }
+    return listener;
+  }
+
+  beforeEach(() => {
+    electronMock.fakeSessions.length = 0;
+    electronMock.fakeViews.length = 0;
+  });
+
+  it("captures the viewport without attaching a debugger to the tab", async () => {
+    const { hostWindow, manager, webContents } = attachTabForObservations();
+    webContents.setTitle("Example");
+
+    const pending = manager.observe({
+      hostWindow,
+      request: {
+        tabId: "browser:a",
+        observation: { kind: "screenshot", format: "jpeg", quality: 70 },
+      },
+    });
+    await settlePendingCaptures(requireFakeView(0));
+
+    expect(await pending).toEqual({
+      ok: true,
+      kind: "screenshot",
+      tabId: "browser:a",
+      url: "https://example.com/",
+      title: "Example",
+      mimeType: "image/jpeg",
+      base64: Buffer.from("jpeg-bytes").toString("base64"),
+      width: 800,
+      height: 600,
+    });
+    // The whole point of the observation channel: a tab a human is browsing
+    // keeps its dialogs on Chromium's native path, because nothing here
+    // attaches the debugger or enables the Page domain.
+    expect(webContents.debugger.attachCalls).toEqual([]);
+  });
+
+  it("encodes PNG when asked, so exact pixels survive", async () => {
+    const { hostWindow, manager } = attachTabForObservations();
+
+    const pending = manager.observe({
+      hostWindow,
+      request: {
+        tabId: "browser:a",
+        observation: { kind: "screenshot", format: "png", quality: 80 },
+      },
+    });
+    await settlePendingCaptures(requireFakeView(0));
+    const result = await pending;
+
+    expect(result).toMatchObject({
+      ok: true,
+      mimeType: "image/png",
+      base64: Buffer.from("png-bytes").toString("base64"),
+    });
+  });
+
+  it("prints the page to a PDF", async () => {
+    const { hostWindow, manager } = attachTabForObservations();
+
+    await expect(
+      manager.observe({
+        hostWindow,
+        request: { tabId: "browser:a", observation: { kind: "pdf" } },
+      }),
+    ).resolves.toMatchObject({
+      ok: true,
+      kind: "pdf",
+      base64: Buffer.from("%PDF-1.4\n").toString("base64"),
+      byteLength: 9,
+    });
+  });
+
+  it("refuses a capture of a tab that has loaded nothing", async () => {
+    const { hostWindow, manager } = attachTabForObservations("");
+
+    await expect(
+      manager.observe({
+        hostWindow,
+        request: {
+          tabId: "browser:a",
+          observation: { kind: "screenshot", format: "jpeg", quality: 70 },
+        },
+      }),
+    ).resolves.toMatchObject({ ok: false, reason: "no-page" });
+  });
+
+  it("reports a failed print as a refusal rather than rejecting", async () => {
+    const { hostWindow, manager, webContents } = attachTabForObservations();
+    webContents.pdfResult = new Error("printing failed");
+
+    await expect(
+      manager.observe({
+        hostWindow,
+        request: { tabId: "browser:a", observation: { kind: "pdf" } },
+      }),
+    ).resolves.toEqual({
+      ok: false,
+      reason: "failed",
+      message: "printing failed",
+    });
+  });
+
+  it("records console messages from the moment the tab exists", async () => {
+    const { hostWindow, manager, webContents } = attachTabForObservations();
+    webContents.emitConsoleMessage({
+      level: "error",
+      message: "boom",
+      lineNumber: 12,
+      sourceId: "https://example.com/app.js",
+    });
+    webContents.emitConsoleMessage({ level: "info", message: "hello" });
+
+    const result = await manager.observe({
+      hostWindow,
+      request: { tabId: "browser:a", observation: { kind: "console", limit: 10 } },
+    });
+
+    expect(result).toMatchObject({ ok: true, kind: "console", droppedCount: 0 });
+    expect(result.ok && result.kind === "console" ? result.entries : []).toEqual([
+      expect.objectContaining({ level: "error", text: "boom", line: 12 }),
+      expect.objectContaining({ level: "info", text: "hello" }),
+    ]);
+  });
+
+  it("keeps the console log across a navigation, because the tab is the subject", async () => {
+    const { hostWindow, manager, webContents } = attachTabForObservations();
+    webContents.emitConsoleMessage({ message: "before" });
+    webContents.emitDidNavigate("https://example.com/next");
+    webContents.emitConsoleMessage({ message: "after" });
+
+    const result = await manager.observe({
+      hostWindow,
+      request: { tabId: "browser:a", observation: { kind: "console", limit: 10 } },
+    });
+
+    expect(
+      result.ok && result.kind === "console"
+        ? result.entries.map((entry) => entry.text)
+        : [],
+    ).toEqual(["before", "after"]);
+  });
+
+  it("records finished requests against the tab that made them", async () => {
+    const { hostWindow, manager, webContents } = attachTabForObservations();
+    const completed = requireNetworkListener("completed");
+    const failed = requireNetworkListener("error");
+
+    completed({
+      url: "https://example.com/app.js",
+      method: "GET",
+      resourceType: "script",
+      statusCode: 200,
+      fromCache: true,
+      webContentsId: webContents.id,
+      timestamp: 1_700_000_000_000,
+    });
+    failed({
+      url: "http://127.0.0.1:9/",
+      method: "GET",
+      resourceType: "xhr",
+      error: "net::ERR_BLOCKED_BY_CLIENT",
+      webContentsId: webContents.id,
+      timestamp: 1_700_000_000_001,
+    });
+    // A request from some other view must not land in this tab's log.
+    completed({
+      url: "https://elsewhere.test/",
+      method: "GET",
+      resourceType: "xhr",
+      statusCode: 200,
+      webContentsId: webContents.id + 1_000,
+    });
+
+    const result = await manager.observe({
+      hostWindow,
+      request: { tabId: "browser:a", observation: { kind: "network", limit: 50 } },
+    });
+
+    expect(
+      result.ok && result.kind === "network" ? result.entries : [],
+    ).toEqual([
+      {
+        method: "GET",
+        url: "https://example.com/app.js",
+        resourceType: "script",
+        status: 200,
+        fromCache: true,
+        error: null,
+        timestamp: 1_700_000_000_000,
+      },
+      {
+        method: "GET",
+        url: "http://127.0.0.1:9/",
+        resourceType: "xhr",
+        status: null,
+        fromCache: false,
+        error: "net::ERR_BLOCKED_BY_CLIENT",
+        timestamp: 1_700_000_000_001,
+      },
+    ]);
+  });
+
+  it("says how many log entries the limit left behind", async () => {
+    const { hostWindow, manager, webContents } = attachTabForObservations();
+    for (const index of [1, 2, 3]) {
+      webContents.emitConsoleMessage({ message: `line ${index}` });
+    }
+
+    const result = await manager.observe({
+      hostWindow,
+      request: { tabId: "browser:a", observation: { kind: "console", limit: 1 } },
+    });
+
+    expect(result).toMatchObject({ droppedCount: 2 });
+    expect(
+      result.ok && result.kind === "console"
+        ? result.entries.map((entry) => entry.text)
+        : [],
+    ).toEqual(["line 3"]);
+  });
+
+  it("answers the console log for a tab with no page rather than refusing", async () => {
+    // A new tab has nothing to capture, but "what has this tab logged" is still
+    // a question with an answer, and the answer is "nothing".
+    const { hostWindow, manager } = attachTabForObservations("");
+
+    await expect(
+      manager.observe({
+        hostWindow,
+        request: {
+          tabId: "browser:a",
+          observation: { kind: "console", limit: 10 },
+        },
+      }),
+    ).resolves.toMatchObject({ ok: true, kind: "console", entries: [] });
+  });
+
+  it("reports a tab with no live view", async () => {
+    const { hostWindow, manager } = attachTabForObservations();
+
+    await expect(
+      manager.observe({
+        hostWindow,
+        request: {
+          tabId: "browser:missing",
+          observation: { kind: "network", limit: 10 },
+        },
+      }),
+    ).resolves.toMatchObject({ ok: false, reason: "no-view" });
+  });
+});
+
+describe("DesktopBrowserViewManager storage", () => {
+  type FakeSessionRecord = (typeof electronMock.fakeSessions)[number];
+
+  interface StorageHarness {
+    hostWindow: FakeHostWindow;
+    manager: DesktopBrowserViewManager;
+    session: FakeSessionRecord;
+    webContents: ReturnType<typeof requireFakeView>["webContents"];
+  }
+
+  function attachTabForStorage(url = "https://example.com/app"): StorageHarness {
+    const manager = createDesktopBrowserViewManager({
+      partition: "persist:test",
+    });
+    const hostWindow = new FakeHostWindow({
+      contentBounds: { width: 700, height: 450 },
+      webContentsId: 94,
+    });
+    attachBrowserTab({ manager, hostWindow, tabId: "browser:a", url });
+    const session = electronMock.fakeSessions.at(-1);
+    if (session === undefined) {
+      throw new Error("Expected a browser session to be created.");
+    }
+    return {
+      hostWindow,
+      manager,
+      session,
+      webContents: requireFakeView(0).webContents,
+    };
+  }
+
+  beforeEach(() => {
+    electronMock.fakeSessions.length = 0;
+    electronMock.fakeViews.length = 0;
+  });
+
+  it("reads the tab's cookies without attaching a debugger", async () => {
+    const { hostWindow, manager, session, webContents } = attachTabForStorage();
+    session.storedCookies = [
+      {
+        name: "session",
+        value: "abc",
+        domain: ".example.com",
+        path: "/",
+        secure: true,
+        httpOnly: true,
+        sameSite: "lax",
+      },
+    ];
+
+    const result = await manager.storage({
+      hostWindow,
+      request: { tabId: "browser:a", operation: { kind: "cookies-get" } },
+    });
+
+    expect(result).toEqual({
+      ok: true,
+      kind: "cookies",
+      tabId: "browser:a",
+      url: "https://example.com/app",
+      title: null,
+      cookies: [
+        {
+          name: "session",
+          value: "abc",
+          domain: ".example.com",
+          path: "/",
+          expires: -1,
+          httpOnly: true,
+          secure: true,
+          sameSite: "Lax",
+        },
+      ],
+    });
+    // Storage is an observation: reading it must not move this tab's dialogs
+    // off Chromium's native path.
+    expect(webContents.debugger.attachCalls).toEqual([]);
+  });
+
+  it("counts the cookies a saved state could not write instead of abandoning it", async () => {
+    const { hostWindow, manager, session } = attachTabForStorage();
+    session.cookieSetFailure = new Error("Failed to set cookie");
+
+    await expect(
+      manager.storage({
+        hostWindow,
+        request: {
+          tabId: "browser:a",
+          operation: {
+            kind: "cookies-set",
+            cookies: [
+              {
+                name: "a",
+                value: "1",
+                domain: "",
+                path: "/",
+                expires: -1,
+                httpOnly: false,
+                secure: false,
+                sameSite: "Lax",
+              },
+              {
+                name: "b",
+                value: "2",
+                domain: "",
+                path: "/",
+                expires: -1,
+                httpOnly: false,
+                secure: false,
+                sameSite: "Lax",
+              },
+            ],
+          },
+        },
+      }),
+    ).resolves.toEqual({ ok: true, kind: "written", applied: 0, rejected: 2 });
+    // Both were attempted: one refusal is not a reason to stop.
+    expect(session.cookieSetCalls).toHaveLength(2);
+  });
+
+  it("clears the cookies the tab's url carries", async () => {
+    const { hostWindow, manager, session } = attachTabForStorage();
+    session.storedCookies = [
+      { name: "a", value: "1" },
+      { name: "b", value: "2" },
+    ];
+
+    await expect(
+      manager.storage({
+        hostWindow,
+        request: {
+          tabId: "browser:a",
+          operation: { kind: "cookies-clear", name: null },
+        },
+      }),
+    ).resolves.toEqual({ ok: true, kind: "removed", removed: 2 });
+    expect(session.cookieRemoveCalls).toEqual([
+      { url: "https://example.com/app", name: "a" },
+      { url: "https://example.com/app", name: "b" },
+    ]);
+  });
+
+  it("reads web storage out of the page's isolated world", async () => {
+    const { hostWindow, manager, webContents } = attachTabForStorage();
+    webContents.isolatedWorldResult = {
+      items: [{ name: "token", value: "abc" }],
+      truncated: false,
+    };
+
+    await expect(
+      manager.storage({
+        hostWindow,
+        request: {
+          tabId: "browser:a",
+          operation: { kind: "items-get", area: "local" },
+        },
+      }),
+    ).resolves.toEqual({
+      ok: true,
+      kind: "items",
+      tabId: "browser:a",
+      url: "https://example.com/app",
+      title: null,
+      area: "local",
+      items: [{ name: "token", value: "abc" }],
+      truncated: false,
+    });
+    // Same privileged world the page read uses, so a page cannot shadow
+    // `localStorage` to forge what it holds.
+    expect(webContents.isolatedWorldCalls.at(-1)?.worldId).toBe(1729);
+    expect(webContents.debugger.attachCalls).toEqual([]);
+  });
+
+  it("passes a page's own refusal back rather than reporting a generic failure", async () => {
+    const { hostWindow, manager, webContents } = attachTabForStorage();
+    webContents.isolatedWorldResult = {
+      error: "This page's storage is not accessible.",
+    };
+
+    await expect(
+      manager.storage({
+        hostWindow,
+        request: {
+          tabId: "browser:a",
+          operation: { kind: "items-get", area: "session" },
+        },
+      }),
+    ).resolves.toEqual({
+      ok: false,
+      reason: "failed",
+      message: "This page's storage is not accessible.",
+    });
+  });
+
+  it("gives up on a page that never runs the script", async () => {
+    vi.useFakeTimers();
+    try {
+      const { hostWindow, manager, webContents } = attachTabForStorage();
+      webContents.isolatedWorldResult = "pending";
+
+      const pending = manager.storage({
+        hostWindow,
+        request: {
+          tabId: "browser:a",
+          operation: { kind: "items-clear", area: "local", name: null },
+        },
+      });
+      await vi.advanceTimersByTimeAsync(2_000);
+
+      await expect(pending).resolves.toEqual({ ok: false, reason: "timeout" });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("refuses every operation on a tab that has loaded nothing", async () => {
+    // Storage is per-origin, and a tab showing nothing has no origin — unlike
+    // the console log, which is the tab's own and answers regardless.
+    const { hostWindow, manager } = attachTabForStorage("");
+
+    await expect(
+      manager.storage({
+        hostWindow,
+        request: { tabId: "browser:a", operation: { kind: "cookies-get" } },
+      }),
+    ).resolves.toMatchObject({ ok: false, reason: "no-page" });
+  });
+
+  it("reports a tab with no live view", async () => {
+    const { hostWindow, manager } = attachTabForStorage();
+
+    await expect(
+      manager.storage({
+        hostWindow,
+        request: {
+          tabId: "browser:missing",
+          operation: { kind: "cookies-get" },
+        },
+      }),
+    ).resolves.toMatchObject({ ok: false, reason: "no-view" });
+  });
+});
+
+// Stage E is the group that hands over what the rest of this API withholds, so
+// what these pin down is where each command stops: which world an expression
+// runs in, that the interception answers every paused request, and that a route
+// does not outlive the session that installed it.
+describe("DesktopBrowserViewManager control", () => {
+  interface ControlHarness {
+    hostWindow: FakeHostWindow;
+    manager: DesktopBrowserViewManager;
+    webContents: ReturnType<typeof requireFakeView>["webContents"];
+    generation: number;
+  }
+
+  async function attachTabForControl(
+    url = "https://example.com/",
+  ): Promise<ControlHarness> {
+    const manager = createDesktopBrowserViewManager({
+      partition: "persist:test",
+    });
+    const hostWindow = new FakeHostWindow({
+      contentBounds: { width: 700, height: 450 },
+      webContentsId: 94,
+    });
+    attachBrowserTab({ manager, hostWindow, tabId: "browser:a", url });
+    const { webContents } = requireFakeView(0);
+
+    webContents.debugger.results.set("Accessibility.getFullAXTree", {
+      nodes: [
+        { nodeId: "1", role: { value: "main" }, childIds: ["2"] },
+        {
+          nodeId: "2",
+          role: { value: "button" },
+          name: { value: "Save" },
+          backendDOMNodeId: 77,
+        },
+      ],
+    });
+    webContents.debugger.results.set("Runtime.evaluate", {
+      result: { objectId: "global-1" },
+    });
+    webContents.debugger.results.set("DOM.resolveNode", {
+      object: { objectId: "element-1" },
+    });
+    webContents.debugger.results.set("Runtime.callFunctionOn", {
+      result: { value: { title: "Example" } },
+    });
+
+    let generation = -1;
+    if (url.length > 0) {
+      const snapshot = await manager.snapshot({
+        hostWindow,
+        request: { tabId: "browser:a" },
+      });
+      generation = snapshot.ok ? snapshot.generation : -1;
+    }
+    return { hostWindow, manager, webContents, generation };
+  }
+
+  function commandsOf(
+    webContents: ControlHarness["webContents"],
+    prefix: string,
+  ): Array<{ method: string; params?: Record<string, unknown> }> {
+    return webContents.debugger.commands.filter((command) =>
+      command.method.startsWith(prefix),
+    );
+  }
+
+  it("evaluates in the page's own world, not the isolated one", async () => {
+    const { hostWindow, manager, webContents } = await attachTabForControl();
+
+    const result = await manager.control({
+      hostWindow,
+      request: {
+        tabId: "browser:a",
+        operation: {
+          kind: "evaluate",
+          expression: "() => ({ title: document.title })",
+          ref: null,
+        },
+      },
+    });
+
+    // The handle comes from a plain `Runtime.evaluate`, which lands in the
+    // page's default context — an isolated world would not see the page's own
+    // globals, which is the entire reason to run an expression at all.
+    expect(webContents.debugger.commands).toContainEqual({
+      method: "Runtime.evaluate",
+      params: { expression: "globalThis" },
+    });
+    expect(
+      commandsOf(webContents, "Page.createIsolatedWorld"),
+    ).toHaveLength(0);
+    expect(result).toMatchObject({
+      ok: true,
+      kind: "evaluated",
+      value: '{"title":"Example"}',
+      truncated: false,
+    });
+  });
+
+  it("passes the element a ref names as the expression's argument", async () => {
+    const { generation, hostWindow, manager, webContents } =
+      await attachTabForControl();
+
+    await manager.control({
+      hostWindow,
+      request: {
+        tabId: "browser:a",
+        generation,
+        operation: {
+          kind: "evaluate",
+          expression: "(el) => el.textContent",
+          ref: "e1",
+        },
+      },
+    });
+
+    // Resolved with no execution context, so the element arrives in the page's
+    // world too — the same world the expression runs in.
+    expect(commandsOf(webContents, "DOM.resolveNode")).toContainEqual({
+      method: "DOM.resolveNode",
+      params: { backendNodeId: 77 },
+    });
+    const call = commandsOf(webContents, "Runtime.callFunctionOn").at(-1);
+    expect(call?.params).toMatchObject({
+      objectId: "element-1",
+      functionDeclaration: "(el) => el.textContent",
+      arguments: [{ objectId: "element-1" }],
+      awaitPromise: true,
+    });
+  });
+
+  it("refuses a ref from a snapshot the page has moved past", async () => {
+    const { generation, hostWindow, manager } = await attachTabForControl();
+
+    await expect(
+      manager.control({
+        hostWindow,
+        request: {
+          tabId: "browser:a",
+          generation: generation + 1,
+          operation: {
+            kind: "evaluate",
+            expression: "(el) => el.textContent",
+            ref: "e1",
+          },
+        },
+      }),
+    ).resolves.toMatchObject({ ok: false, reason: "stale-refs" });
+  });
+
+  it("hands back the page's own error when the expression throws", async () => {
+    const { hostWindow, manager, webContents } = await attachTabForControl();
+    webContents.debugger.results.set("Runtime.callFunctionOn", {
+      exceptionDetails: {
+        text: "Uncaught",
+        exception: { description: "TypeError: x is not a function" },
+      },
+    });
+
+    // A thrown expression is the caller's to fix, and the page's own words are
+    // the only thing that says what to change.
+    await expect(
+      manager.control({
+        hostWindow,
+        request: {
+          tabId: "browser:a",
+          operation: { kind: "evaluate", expression: "() => x()", ref: null },
+        },
+      }),
+    ).resolves.toEqual({
+      ok: false,
+      reason: "evaluation-failed",
+      message: "TypeError: x is not a function",
+    });
+  });
+
+  it("acts at the last point the pointer was moved to", async () => {
+    const { hostWindow, manager, webContents } = await attachTabForControl();
+
+    for (const operation of [
+      { kind: "mouse-move", x: 120, y: 64 },
+      { kind: "mouse-button", button: "left", down: true },
+      { kind: "mouse-button", button: "left", down: false },
+      { kind: "mouse-wheel", deltaX: 0, deltaY: -240 },
+    ] as const) {
+      await manager.control({
+        hostWindow,
+        request: { tabId: "browser:a", operation },
+      });
+    }
+
+    // Chromium wants a point on every mouse event while `mousedown` names none,
+    // so the tracked point is what makes move → down → up a click.
+    expect(
+      commandsOf(webContents, "Input.").map((command) => [
+        command.method,
+        command.params?.type,
+        command.params?.x,
+        command.params?.y,
+      ]),
+    ).toEqual([
+      ["Input.dispatchMouseEvent", "mouseMoved", 120, 64],
+      ["Input.dispatchMouseEvent", "mousePressed", 120, 64],
+      ["Input.dispatchMouseEvent", "mouseReleased", 120, 64],
+      ["Input.dispatchMouseEvent", "mouseWheel", 120, 64],
+    ]);
+  });
+
+  it("fulfills a paused request that matches and continues one that does not", async () => {
+    const { hostWindow, manager, webContents } = await attachTabForControl();
+
+    await manager.control({
+      hostWindow,
+      request: {
+        tabId: "browser:a",
+        operation: {
+          kind: "route-set",
+          route: {
+            pattern: "**/api/me",
+            status: 201,
+            contentType: "application/json",
+            body: '{"ok":true}',
+            headers: [{ name: "x-mock", value: "1" }],
+          },
+        },
+      },
+    });
+
+    expect(commandsOf(webContents, "Fetch.enable")).toHaveLength(1);
+
+    webContents.debugger.emitMessage("Fetch.requestPaused", {
+      requestId: "req-1",
+      request: { url: "https://example.com/api/me" },
+    });
+    webContents.debugger.emitMessage("Fetch.requestPaused", {
+      requestId: "req-2",
+      request: { url: "https://example.com/other" },
+    });
+    await Promise.resolve();
+
+    expect(commandsOf(webContents, "Fetch.fulfillRequest")[0]?.params).toEqual({
+      requestId: "req-1",
+      responseCode: 201,
+      responseHeaders: [
+        { name: "content-type", value: "application/json" },
+        { name: "x-mock", value: "1" },
+      ],
+      body: Buffer.from('{"ok":true}', "utf8").toString("base64"),
+    });
+    // Every paused request has to be answered: an unanswered one is a page that
+    // never finishes loading.
+    expect(commandsOf(webContents, "Fetch.continueRequest")[0]?.params).toEqual({
+      requestId: "req-2",
+    });
+
+    const listed = await manager.control({
+      hostWindow,
+      request: { tabId: "browser:a", operation: { kind: "route-list" } },
+    });
+    expect(listed).toMatchObject({
+      ok: true,
+      kind: "routes",
+      routes: [{ pattern: "**/api/me", matched: 1 }],
+      offline: false,
+    });
+  });
+
+  it("stops intercepting when the last route is removed", async () => {
+    const { hostWindow, manager, webContents } = await attachTabForControl();
+    const route = {
+      pattern: "**/api/**",
+      status: 200,
+      contentType: "text/plain",
+      body: "",
+      headers: [],
+    };
+
+    await manager.control({
+      hostWindow,
+      request: { tabId: "browser:a", operation: { kind: "route-set", route } },
+    });
+    await manager.control({
+      hostWindow,
+      request: {
+        tabId: "browser:a",
+        operation: { kind: "route-clear", pattern: null },
+      },
+    });
+
+    // An enabled Fetch domain pauses everything until something answers it, so
+    // leaving it on with no routes behind it would stall the tab.
+    expect(commandsOf(webContents, "Fetch.disable")).toHaveLength(1);
+
+    await manager.control({
+      hostWindow,
+      request: { tabId: "browser:a", operation: { kind: "route-set", route } },
+    });
+    webContents.debugger.emitMessage("Fetch.requestPaused", {
+      requestId: "req-1",
+      request: { url: "https://example.com/api/me" },
+    });
+    await Promise.resolve();
+
+    // Turning it back on must not leave two handlers behind: the second would
+    // answer a request the first already finished.
+    expect(commandsOf(webContents, "Fetch.enable")).toHaveLength(2);
+    expect(commandsOf(webContents, "Fetch.fulfillRequest")).toHaveLength(1);
+  });
+
+  it("forgets its routes when the debugger goes away", async () => {
+    const { hostWindow, manager, webContents } = await attachTabForControl();
+
+    await manager.control({
+      hostWindow,
+      request: {
+        tabId: "browser:a",
+        operation: {
+          kind: "route-set",
+          route: {
+            pattern: "**",
+            status: 200,
+            contentType: "text/plain",
+            body: "",
+            headers: [],
+          },
+        },
+      },
+    });
+    // A detach is the target letting go, so the handle is gone too.
+    webContents.debugger.attached = false;
+    for (const listener of webContents.debugger.detachListeners) {
+      listener({}, "target closed");
+    }
+
+    // Chromium drops the interception with its client, so a route table that
+    // survived would describe a tab that is no longer mocked.
+    await expect(
+      manager.control({
+        hostWindow,
+        request: { tabId: "browser:a", operation: { kind: "route-list" } },
+      }),
+    ).resolves.toMatchObject({ ok: true, routes: [], offline: false });
+  });
+
+  it("takes one tab offline without touching the session", async () => {
+    const { hostWindow, manager, webContents } = await attachTabForControl();
+
+    await manager.control({
+      hostWindow,
+      request: {
+        tabId: "browser:a",
+        operation: { kind: "offline", offline: true },
+      },
+    });
+
+    expect(
+      commandsOf(webContents, "Network.emulateNetworkConditions")[0]?.params,
+    ).toMatchObject({ offline: true });
+    await expect(
+      manager.control({
+        hostWindow,
+        request: { tabId: "browser:a", operation: { kind: "route-list" } },
+      }),
+    ).resolves.toMatchObject({ offline: true });
+  });
+
+  it("answers a route question on a blank tab but refuses to drive one", async () => {
+    const { hostWindow, manager } = await attachTabForControl("");
+
+    // Routes are set up before a page loads as often as after, so a question
+    // about the tab's own state is answerable; anything that needs a page is not.
+    await expect(
+      manager.control({
+        hostWindow,
+        request: { tabId: "browser:a", operation: { kind: "route-list" } },
+      }),
+    ).resolves.toMatchObject({ ok: true, routes: [] });
+    await expect(
+      manager.control({
+        hostWindow,
+        request: { tabId: "browser:a", operation: { kind: "mouse-move", x: 1, y: 1 } },
+      }),
+    ).resolves.toMatchObject({ ok: false, reason: "no-page" });
+  });
+
+  it("says when another debugger already holds the tab", async () => {
+    const { hostWindow, manager, webContents } = await attachTabForControl();
+    webContents.debugger.attached = false;
+    webContents.debugger.attachFailure = new Error("already attached");
+
+    // Force a fresh attach: the snapshot in the harness left one open.
+    for (const listener of webContents.debugger.detachListeners) {
+      listener({}, "devtools");
+    }
+
+    await expect(
+      manager.control({
+        hostWindow,
+        request: {
+          tabId: "browser:a",
+          operation: { kind: "evaluate", expression: "() => 1", ref: null },
+        },
+      }),
+    ).resolves.toMatchObject({ ok: false, reason: "debugger-unavailable" });
+  });
+
+  it("reports a tab with no live view", async () => {
+    const { hostWindow, manager } = await attachTabForControl();
+
+    await expect(
+      manager.control({
+        hostWindow,
+        request: {
+          tabId: "browser:missing",
+          operation: { kind: "route-list" },
         },
       }),
     ).resolves.toMatchObject({ ok: false, reason: "no-view" });

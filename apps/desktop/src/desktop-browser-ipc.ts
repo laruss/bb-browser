@@ -48,3 +48,20 @@ export const BB_DESKTOP_BROWSER_DIALOG_RESPOND_CHANNEL =
 // to be actionable) and a channel per verb would freeze nine copies of it.
 export const BB_DESKTOP_BROWSER_INTERACT_CHANNEL =
   "bb-desktop:browser:interact";
+// Looking at the page without touching it: screenshot, PDF, console log,
+// network log. One channel for the same reason `interact` is one, and the only
+// automation channel that never attaches the browser debugger.
+export const BB_DESKTOP_BROWSER_OBSERVE_CHANNEL =
+  "bb-desktop:browser:observe";
+// Cookies and web storage, read and written. Kept off the observe channel even
+// though it attaches no debugger either: what crosses this one is the user's
+// logins rather than what a page rendered, and that is worth being able to see
+// in a stack trace and in a log without decoding a payload first.
+export const BB_DESKTOP_BROWSER_STORAGE_CHANNEL =
+  "bb-desktop:browser:storage";
+// Driving a tab past the paths that make the rest of this safe: the caller's own
+// JavaScript in the page, input at raw coordinates, a mocked network. Its own
+// channel because what these have in common is how much they hand over, which is
+// also the line per-plugin permissions would one day be drawn along.
+export const BB_DESKTOP_BROWSER_CONTROL_CHANNEL =
+  "bb-desktop:browser:control";

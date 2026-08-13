@@ -20,6 +20,7 @@ export const BROWSER_TOOL_NAMES = [
   "browser_click",
   "browser_fill",
   "browser_press",
+  "browser_screenshot",
   "browser_handle_dialog",
   "browser_tabs_list",
   "browser_tabs_open",
@@ -104,6 +105,7 @@ export const toolParameters = {
     tabId: tabIdParam,
     generation: generationParam,
   }),
+  browser_screenshot: z.object({ tabId: tabIdParam }),
   browser_handle_dialog: z.object({
     tabId: tabIdParam,
     accept: z
@@ -168,6 +170,8 @@ export const toolDescriptions: Record<BrowserToolName, string> = {
     "Replace the value of a text field found in a snapshot, naming it by its [ref=eN] marker. Sets the value in one step; for a field that reacts to individual keystrokes (an autocomplete), run `bb browser type` instead.",
   browser_press:
     'Press a key — "Enter" to submit, "Escape" to dismiss, "Tab" to move on, or a chord like "Control+a". Give a ref to focus that element first, or omit it to press the key wherever the page has focus.',
+  browser_screenshot:
+    "Take a picture of what a browser tab is showing, so you can see the page rather than only read it. Captures the visible viewport, not the whole document. Use this when layout or a visual detail matters; a snapshot is cheaper and more precise for finding elements to act on.",
   browser_handle_dialog:
     "Answer a JavaScript dialog (alert, confirm, prompt) that has blocked a page. A blocked page responds to nothing else until the dialog is answered.",
   browser_tabs_list:
@@ -204,7 +208,11 @@ export const BROWSER_TOOLS_INSTRUCTIONS = `The browser tools drive the BB deskto
 - Snapshotting attaches the browser debugger to that tab, which fails while the user has DevTools open on it.
 - Acting on an element waits for it to be visible, settled and not covered first, so never sleep before clicking. If you are told an element could not be acted on, the message says why — something on top of it, disabled, still animating — and that is what to fix.
 - Snapshot again after any action that could have changed the page. Clicking a link or submitting a form is reported with the URL it ended on, but a page that rewrites itself afterwards is not.
-- The remaining browser commands live in the \`bb browser\` CLI, which drives exactly the same browser: hover, drag, type, select, check, uncheck, upload and resize. Run \`bb browser help\` for the list.
+- A screenshot shows the visible viewport only, and shows what the page looks like — the snapshot tool is the one that says what the page *is*, and it is what refs come from. Reach for a screenshot when layout, rendering or a visual detail is the question. It captures what is on screen, so activate the tab first if it is not the one showing.
+- The remaining browser commands live in the \`bb browser\` CLI, which drives exactly the same browser: hover, drag, type, select, check, uncheck, upload, resize, and the observation commands \`console\`, \`network\`, \`screenshot\` (to a file) and \`pdf\`. Run \`bb browser help\` for the list.
+- Cookies and web storage are \`bb browser cookie-list\`/\`cookie-set\`/\`cookie-delete\`/\`cookie-clear\`, the matching \`localstorage-*\` and \`sessionstorage-*\` commands, and \`bb browser state-save\`/\`state-load\` for a whole signed-in session. **These are the user's real logins, not settings.** What they return for a signed-in site is that session, and a saved state file is a copy of it: do not print cookie values or state files back to the user, do not save one anywhere the user did not ask for, and say plainly when you are about to write one.
+- \`bb browser eval "() => …"\` runs your JavaScript in the page; \`mousemove\`/\`mousedown\`/\`mouseup\`/\`mousewheel\` act at raw screenshot coordinates; \`route\`/\`unroute\`/\`network-state-set\` change what the page gets from the network. These skip what makes the rest safe — no ref, no actionability check, live logins in the page — so use them where a snapshot has nothing (canvas, maps) or mocking is the point, and say what you are doing.
+- When a page misbehaves, \`bb browser console\` and \`bb browser network\` say why — script errors and failed requests. Both are recorded from the moment the tab was opened and need no setup, but they are fixed-size logs, so check the dropped count before concluding a page was quiet.
 - A page that opens alert()/confirm()/prompt() blocks until the dialog is answered. If a tab stops responding right after a navigation or a click, answer its dialog.`;
 
 function describeTab(tab: PluginBrowserTab): Record<string, unknown> {
@@ -299,6 +307,12 @@ export function explainBrowserError(error: unknown): string {
           ? error.message
           : "That element could not be acted on."
       } Snapshot the page to see what changed.`;
+    case "result_too_large":
+      return `${
+        error instanceof Error
+          ? error.message
+          : "That result was too large to return."
+      } Nothing partial was returned.`;
     case "unsupported_key":
       return 'That key name is not one the browser can press. Use a name like "Enter", "Escape", "Tab", "ArrowDown", a single character, or a chord like "Control+a".';
     default:

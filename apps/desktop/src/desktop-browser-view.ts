@@ -14,13 +14,29 @@ import {
   BB_DESKTOP_BROWSER_MAX_DIALOG_MESSAGE_LENGTH,
   type BbDesktopBrowserDialog,
   type BbDesktopBrowserDialogRespondRequest,
+  BB_DESKTOP_BROWSER_MAX_COOKIES,
+  BB_DESKTOP_BROWSER_MAX_EVAL_RESULT_LENGTH,
+  BB_DESKTOP_BROWSER_MAX_PDF_BASE64_LENGTH,
+  BB_DESKTOP_BROWSER_MAX_ROUTES,
+  BB_DESKTOP_BROWSER_MAX_SCREENSHOT_BASE64_LENGTH,
+  type BbDesktopBrowserConsoleEntry,
+  type BbDesktopBrowserControlRequest,
+  type BbDesktopBrowserControlResult,
+  type BbDesktopBrowserRouteState,
   type BbDesktopBrowserInteraction,
   type BbDesktopBrowserInteractRequest,
   type BbDesktopBrowserInteractResult,
+  type BbDesktopBrowserNetworkEntry,
+  type BbDesktopBrowserObservation,
+  type BbDesktopBrowserObserveRequest,
+  type BbDesktopBrowserObserveResult,
   type BbDesktopBrowserPageReadResult,
   type BbDesktopBrowserSnapshot,
   type BbDesktopBrowserSnapshotRequest,
   type BbDesktopBrowserSnapshotResult,
+  type BbDesktopBrowserStorageOperation,
+  type BbDesktopBrowserStorageRequest,
+  type BbDesktopBrowserStorageResult,
   type BbDesktopBrowserState,
   type BbDesktopBrowserViewportBounds,
   type BbDesktopBrowserViewBounds,
@@ -69,11 +85,32 @@ import {
   type BrowserKeyEvent,
 } from "./desktop-browser-keyboard.js";
 import {
+  BB_BROWSER_OBSERVATION_BUFFER_SIZE,
+  BrowserObservationLog,
+  toBrowserConsoleEntry,
+  toBrowserNetworkEntry,
+  type BrowserConsoleMessageDetails,
+  type BrowserNetworkRequestDetails,
+} from "./desktop-browser-observe.js";
+import {
   BB_DESKTOP_BROWSER_PAGE_READ_SCRIPT,
   BB_DESKTOP_BROWSER_PAGE_READ_TIMEOUT_MS,
   BB_DESKTOP_BROWSER_PAGE_READ_WORLD_ID,
   parseBrowserPageReadContent,
 } from "./desktop-browser-page-read.js";
+import {
+  formatBrowserEvalValue,
+  matchBrowserRoute,
+  toBrowserFulfillHeaders,
+} from "./desktop-browser-control.js";
+import {
+  buildBrowserStorageScript,
+  parseBrowserStorageCounts,
+  parseBrowserStorageItems,
+  readBrowserStorageScriptError,
+  toBrowserCookie,
+  toBrowserSessionCookieDetails,
+} from "./desktop-browser-storage.js";
 import {
   evaluatePopupRate,
   isAllowedBrowserUrl,
@@ -162,6 +199,34 @@ interface BrowserViewEntry {
    * swap destroys the world, and reusing its id would address nothing.
    */
   automationWorldId: number | null;
+  /**
+   * What the tab has logged and requested since it was created. Filled from
+   * ordinary `webContents` and `webRequest` events rather than from CDP, so a
+   * tab nobody has automated still has an answer — see
+   * `desktop-browser-observe.ts` for why that decides the mechanism.
+   */
+  consoleLog: BrowserObservationLog<BbDesktopBrowserConsoleEntry>;
+  networkLog: BrowserObservationLog<BbDesktopBrowserNetworkEntry>;
+  /**
+   * Requests this tab answers itself instead of fetching, newest first, and
+   * whether it is pretending to be offline.
+   *
+   * Both live only as long as the CDP session does — Chromium drops the
+   * interception and the emulation when the client detaches — so both are
+   * cleared with it rather than left describing a tab that is no longer routed.
+   */
+  routes: BbDesktopBrowserRouteState[];
+  /** Guards one-time `Fetch.requestPaused` wiring per CDP session. */
+  routesWired: boolean;
+  /** Whether the `Fetch` domain is currently on for this tab. */
+  routesEnabled: boolean;
+  offline: boolean;
+  /**
+   * Where the vision-mode pointer is. Chromium wants a point on every mouse
+   * event, while `mousedown`/`mouseup`/`mousewheel` name none — so the last
+   * `mouse-move` is the point they act at, as it is in a real browser.
+   */
+  mousePoint: MousePoint;
   /** `ref` → backend DOM node id from the most recent snapshot of this tab. */
   snapshotRefs: Map<string, number>;
   /**
@@ -279,6 +344,27 @@ export interface DesktopBrowserViewManager {
   interact(
     args: HostScopedRequestArgs<BbDesktopBrowserInteractRequest>,
   ): Promise<BbDesktopBrowserInteractResult>;
+  /**
+   * Look at a tab — screenshot, PDF, console log, network log — without
+   * attaching the browser debugger to it. Never rejects.
+   */
+  observe(
+    args: HostScopedRequestArgs<BbDesktopBrowserObserveRequest>,
+  ): Promise<BbDesktopBrowserObserveResult>;
+  /**
+   * Read or write a tab's cookies and web storage. Attaches no debugger either,
+   * and never rejects.
+   */
+  storage(
+    args: HostScopedRequestArgs<BbDesktopBrowserStorageRequest>,
+  ): Promise<BbDesktopBrowserStorageResult>;
+  /**
+   * Drive a tab directly — evaluate the caller's JavaScript in it, act at raw
+   * coordinates, mock its network, take it offline. Never rejects.
+   */
+  control(
+    args: HostScopedRequestArgs<BbDesktopBrowserControlRequest>,
+  ): Promise<BbDesktopBrowserControlResult>;
   setBounds(
     args: HostScopedRequestArgs<BbDesktopBrowserSetBoundsRequest>,
   ): void;
@@ -483,18 +569,17 @@ interface InteractionTarget {
 }
 
 /**
- * Turn a `[ref=eN]` back into something CDP can address.
+ * Turn a `[ref=eN]` back into the node the snapshot recorded.
  *
  * The generation check happens here rather than per action, because every
- * ref-carrying action needs it and forgetting it in one branch would be a
+ * ref-carrying command needs it and forgetting it in one branch would be a
  * silently-wrong click rather than a visible failure.
  */
-async function resolveInteractionTarget(
-  session: CdpSession,
+function lookupSnapshotNode(
   entry: BrowserViewEntry,
   ref: string,
   generation: number | undefined,
-): Promise<InteractionTarget> {
+): number {
   if (generation !== undefined && generation !== entry.snapshotGeneration) {
     throw new InteractionRefusal(
       "stale-refs",
@@ -508,6 +593,17 @@ async function resolveInteractionTarget(
       `No element ${ref} in the current snapshot of this tab.`,
     );
   }
+  return backendNodeId;
+}
+
+/** Resolve a ref into an object the interaction scripts can be called on. */
+async function resolveInteractionTarget(
+  session: CdpSession,
+  entry: BrowserViewEntry,
+  ref: string,
+  generation: number | undefined,
+): Promise<InteractionTarget> {
+  const backendNodeId = lookupSnapshotNode(entry, ref, generation);
   const worldId = await ensureAutomationWorld(session, entry);
   const resolved = await session
     .send<{ object?: { objectId?: string } }>("DOM.resolveNode", {
@@ -951,6 +1047,329 @@ async function performInteraction(
   }
 }
 
+type ControlRefusalReason = Extract<
+  BbDesktopBrowserControlResult,
+  { ok: false }
+>["reason"];
+
+const CONTROL_REFUSAL_REASONS = new Set<string>([
+  "no-view",
+  "no-page",
+  "debugger-unavailable",
+  "stale-refs",
+  "unknown-ref",
+  "evaluation-failed",
+  "too-many-routes",
+  "failed",
+]);
+
+/**
+ * The interaction and control refusal vocabularies overlap but are not the
+ * same — control cannot report `not-actionable`, having skipped the check that
+ * produces it, and interaction has nothing to say about routes. So the shared
+ * steps (resolving a ref) keep throwing {@link InteractionRefusal} and this
+ * maps it, while the control-only refusals get their own class.
+ */
+function controlRefusalReason(reason: string): ControlRefusalReason {
+  return (
+    CONTROL_REFUSAL_REASONS.has(reason) ? reason : "failed"
+  ) as ControlRefusalReason;
+}
+
+class ControlRefusal extends Error {
+  readonly reason: ControlRefusalReason;
+
+  constructor(reason: ControlRefusalReason, message: string) {
+    super(message);
+    this.name = "ControlRefusal";
+    this.reason = reason;
+  }
+}
+
+/**
+ * Take over this tab's requests.
+ *
+ * `Fetch` is enabled only while the tab holds a route and disabled the moment
+ * it holds none, because an enabled `Fetch` domain pauses **every** request
+ * until something answers it: an interception left on with nothing driving it
+ * is a page that never loads. For the same reason the handler answers on every
+ * path, including its own failure — a request that is neither fulfilled nor
+ * continued hangs until the page gives up.
+ */
+async function applyRouteInterception(
+  session: CdpSession,
+  entry: BrowserViewEntry,
+): Promise<void> {
+  const wanted = entry.routes.length > 0;
+  // The listener is attached at most once per session and left in place, while
+  // the domain goes on and off with the route table. Re-subscribing on every
+  // pass would mean two handlers answering the same paused request, and the
+  // second answer failing against a request the first already finished.
+  if (wanted && !entry.routesWired) {
+    entry.routesWired = true;
+    wireRouteInterception(session, entry);
+  }
+  if (wanted === entry.routesEnabled) {
+    return;
+  }
+  await session.send(wanted ? "Fetch.enable" : "Fetch.disable");
+  entry.routesEnabled = wanted;
+}
+
+function wireRouteInterception(
+  session: CdpSession,
+  entry: BrowserViewEntry,
+): void {
+  session.on("Fetch.requestPaused", (params) => {
+    const paused = params as { requestId?: string; request?: { url?: string } };
+    const requestId = paused.requestId;
+    if (typeof requestId !== "string") {
+      return;
+    }
+    const url = paused.request?.url ?? "";
+    const route = matchBrowserRoute(entry.routes, url);
+    const answer =
+      route === null
+        ? session.send("Fetch.continueRequest", { requestId })
+        : session.send("Fetch.fulfillRequest", {
+            requestId,
+            responseCode: route.status,
+            responseHeaders: toBrowserFulfillHeaders(route),
+            body: Buffer.from(route.body, "utf8").toString("base64"),
+          });
+    if (route !== null) {
+      route.matched += 1;
+    }
+    void answer.catch(() => {
+      // The request may already be gone (the page navigated away from under
+      // it), in which case continuing fails too and there is nothing left to
+      // rescue.
+      void session.send("Fetch.continueRequest", { requestId }).catch(() => {
+        // Nothing to answer any more.
+      });
+    });
+  });
+}
+
+/** The routes a tab holds, as the wire reports them. */
+function entryRoutes(
+  entry: BrowserViewEntry,
+  tabId: string,
+): Extract<BbDesktopBrowserControlResult, { kind: "routes" }> {
+  return {
+    ok: true,
+    kind: "routes",
+    tabId,
+    ...entryPageIdentity(entry),
+    routes: entry.routes.map((route) => ({ ...route })),
+    offline: entry.offline,
+  };
+}
+
+/**
+ * Evaluate the caller's own JavaScript in the page.
+ *
+ * **In the page's world, not the isolated one** every other script here runs
+ * in — which is the deliberate difference and the whole reason `eval` is worth
+ * having: `window.__NEXT_DATA__`, a framework's state, a function the page
+ * defined are all invisible from an isolated world, and reading them is what
+ * people reach for `eval` to do. The isolated world protects our own fixed
+ * scripts from a page that shadows globals; it cannot protect an expression
+ * whose entire job is to touch the page.
+ *
+ * The expression is never spliced into a string. It crosses as CDP's
+ * `functionDeclaration`, so the protocol parses it as one function and a page
+ * cannot be reached through the way we sent it.
+ */
+async function evaluateInPage(
+  session: CdpSession,
+  entry: BrowserViewEntry,
+  expression: string,
+  ref: string | null,
+  generation: number | undefined,
+): Promise<{ value: string; truncated: boolean }> {
+  let objectId: string;
+  let callArguments: { objectId: string }[] = [];
+  if (ref === null) {
+    // `Runtime.evaluate` with no context id lands in the page's main world, so
+    // its global object is the handle to call the caller's function on.
+    const global = await session.send<{ result?: { objectId?: string } }>(
+      "Runtime.evaluate",
+      { expression: "globalThis" },
+    );
+    if (typeof global.result?.objectId !== "string") {
+      throw new InteractionRefusal("failed", "The tab has no page to evaluate in.");
+    }
+    objectId = global.result.objectId;
+  } else {
+    const backendNodeId = lookupSnapshotNode(entry, ref, generation);
+    // No `executionContextId`, so this resolves in the main world too — the
+    // same element, addressed where the caller's code can see the page.
+    const resolved = await session
+      .send<{ object?: { objectId?: string } }>("DOM.resolveNode", {
+        backendNodeId,
+      })
+      .catch(() => null);
+    if (typeof resolved?.object?.objectId !== "string") {
+      throw new InteractionRefusal(
+        "unknown-ref",
+        `Element ${ref} is no longer on the page. Snapshot it again.`,
+      );
+    }
+    objectId = resolved.object.objectId;
+    // Passed as the first argument, so `(el) => el.value` reads as it does in
+    // Playwright; `this` is the element as well, for `function () { … }` form.
+    callArguments = [{ objectId }];
+  }
+
+  const response = await session.send<{
+    result?: { value?: unknown };
+    exceptionDetails?: { text?: string; exception?: { description?: string } };
+  }>("Runtime.callFunctionOn", {
+    objectId,
+    functionDeclaration: expression,
+    arguments: callArguments,
+    returnByValue: true,
+    awaitPromise: true,
+  });
+  if (response.exceptionDetails !== undefined) {
+    // The page ran it and it threw. That is the caller's to fix, and its own
+    // message is the only useful thing to say about it.
+    throw new ControlRefusal(
+      "evaluation-failed",
+      response.exceptionDetails.exception?.description ??
+        response.exceptionDetails.text ??
+        "The expression threw.",
+    );
+  }
+  return formatBrowserEvalValue(
+    response.result?.value,
+    BB_DESKTOP_BROWSER_MAX_EVAL_RESULT_LENGTH,
+  );
+}
+
+/**
+ * Perform one direct-control operation on a tab whose session is attached.
+ *
+ * The mouse commands are the interaction module's dispatch with the ref lookup
+ * and the actionability wait taken out — which is exactly what makes them vision
+ * mode: they land on whatever is at the coordinate, and nothing here checks that
+ * anything is.
+ */
+async function performControl(
+  session: CdpSession,
+  entry: BrowserViewEntry,
+  tabId: string,
+  request: BbDesktopBrowserControlRequest,
+): Promise<BbDesktopBrowserControlResult> {
+  const operation = request.operation;
+  const acted = (): BbDesktopBrowserControlResult => ({
+    ok: true,
+    kind: "acted",
+    tabId,
+    ...entryPageIdentity(entry),
+  });
+
+  switch (operation.kind) {
+    case "mouse-move": {
+      entry.mousePoint = { x: operation.x, y: operation.y };
+      await dispatchMouse(session, "mouseMoved", entry.mousePoint, {
+        button: "none",
+      });
+      return acted();
+    }
+
+    case "mouse-button": {
+      await dispatchMouse(
+        session,
+        operation.down ? "mousePressed" : "mouseReleased",
+        entry.mousePoint,
+        {
+          button: operation.button,
+          buttons: operation.down
+            ? (MOUSE_BUTTON_MASK[operation.button] ?? 1)
+            : 0,
+          clickCount: 1,
+        },
+      );
+      return acted();
+    }
+
+    case "mouse-wheel": {
+      await dispatchMouse(session, "mouseWheel", entry.mousePoint, {
+        button: "none",
+        deltaX: operation.deltaX,
+        deltaY: operation.deltaY,
+      });
+      return acted();
+    }
+
+    case "evaluate": {
+      if (operation.ref !== null) {
+        await session.enableDomain("DOM");
+      }
+      const evaluated = await evaluateInPage(
+        session,
+        entry,
+        operation.expression,
+        operation.ref,
+        request.generation,
+      );
+      return {
+        ok: true,
+        kind: "evaluated",
+        tabId,
+        ...entryPageIdentity(entry),
+        ...evaluated,
+      };
+    }
+
+    case "route-set": {
+      const existing = entry.routes.filter(
+        (route) => route.pattern !== operation.route.pattern,
+      );
+      if (existing.length >= BB_DESKTOP_BROWSER_MAX_ROUTES) {
+        throw new ControlRefusal(
+          "too-many-routes",
+          `This tab already holds ${BB_DESKTOP_BROWSER_MAX_ROUTES} routes. Remove one first.`,
+        );
+      }
+      // Newest first, so the route just added is the one that answers — the
+      // rule Playwright follows and the one a person debugging a mock expects.
+      entry.routes = [{ ...operation.route, matched: 0 }, ...existing];
+      await applyRouteInterception(session, entry);
+      return entryRoutes(entry, tabId);
+    }
+
+    case "route-clear": {
+      entry.routes =
+        operation.pattern === null
+          ? []
+          : entry.routes.filter((route) => route.pattern !== operation.pattern);
+      await applyRouteInterception(session, entry);
+      return entryRoutes(entry, tabId);
+    }
+
+    case "route-list":
+      return entryRoutes(entry, tabId);
+
+    default: {
+      // Per tab rather than per session: `Network.emulateNetworkConditions` is
+      // scoped to the target, so one tab can be offline while the user keeps
+      // browsing in the next one.
+      await session.enableDomain("Network");
+      await session.send("Network.emulateNetworkConditions", {
+        offline: operation.offline,
+        latency: 0,
+        downloadThroughput: -1,
+        uploadThroughput: -1,
+      });
+      entry.offline = operation.offline;
+      return acted();
+    }
+  }
+}
+
 /**
  * What a tab is showing, resolved exactly as `buildBrowserState` does so a read,
  * a snapshot, an interaction and the tab strip can never disagree.
@@ -969,6 +1388,265 @@ function entryPageIdentity(entry: BrowserViewEntry): {
         ? null
         : truncate(title, BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH),
   };
+}
+
+/**
+ * Answer one observation about a tab that is known to exist.
+ *
+ * Nothing here attaches the browser debugger — `capturePage` and `printToPDF`
+ * are Electron's own, and the two logs were filled by events the shell was
+ * already receiving. That is what makes this the one automation command safe to
+ * run against a tab the user is merely browsing.
+ */
+async function captureObservation(
+  entry: BrowserViewEntry,
+  tabId: string,
+  observation: BbDesktopBrowserObservation,
+): Promise<BbDesktopBrowserObserveResult> {
+  const page = { tabId, ...entryPageIdentity(entry) };
+
+  // The two logs answer without touching the page at all: whatever the tab has
+  // logged and requested is already recorded.
+  if (observation.kind === "console") {
+    return {
+      ok: true,
+      kind: "console",
+      ...page,
+      ...entry.consoleLog.read(observation.limit),
+    };
+  }
+  if (observation.kind === "network") {
+    return {
+      ok: true,
+      kind: "network",
+      ...page,
+      ...entry.networkLog.read(observation.limit),
+    };
+  }
+
+  // A tab that has loaded nothing has nothing to render, and an empty capture
+  // reported as a success is a blank image a caller would have to diagnose.
+  if (entry.view.webContents.getURL().length === 0) {
+    return { ok: false, reason: "no-page" };
+  }
+
+  if (observation.kind === "pdf") {
+    const buffer = await entry.view.webContents.printToPDF({});
+    const base64 = buffer.toString("base64");
+    if (base64.length > BB_DESKTOP_BROWSER_MAX_PDF_BASE64_LENGTH) {
+      return {
+        ok: false,
+        reason: "too-large",
+        message: `That page's PDF is ${Math.round(buffer.byteLength / 1_048_576)}MB, past what the browser bridge will carry. Print a page range instead.`,
+      };
+    }
+    return { ok: true, kind: "pdf", ...page, base64, byteLength: buffer.byteLength };
+  }
+
+  const image = await entry.view.webContents.capturePage();
+  if (image.isEmpty()) {
+    return {
+      ok: false,
+      reason: "failed",
+      message: "The browser captured nothing — the tab may be hidden.",
+    };
+  }
+  const buffer =
+    observation.format === "png"
+      ? image.toPNG()
+      : image.toJPEG(observation.quality);
+  const base64 = buffer.toString("base64");
+  if (base64.length > BB_DESKTOP_BROWSER_MAX_SCREENSHOT_BASE64_LENGTH) {
+    return {
+      ok: false,
+      reason: "too-large",
+      message:
+        "That screenshot is past what the browser bridge will carry. Ask for JPEG, or a lower quality.",
+    };
+  }
+  const size = image.getSize();
+  return {
+    ok: true,
+    kind: "screenshot",
+    ...page,
+    mimeType: observation.format === "png" ? "image/png" : "image/jpeg",
+    base64,
+    width: size.width,
+    height: size.height,
+  };
+}
+
+type IsolatedScriptOutcome =
+  | { kind: "value"; value: unknown }
+  | { kind: "timeout" }
+  | { kind: "failed" };
+
+/**
+ * Run one of our own scripts in the page-read isolated world, under a deadline.
+ *
+ * The deadline is mandatory rather than defensive: script execution is
+ * suspended while a page loads, so a wedged subresource or a busy-looping main
+ * thread reaches us as "no answer yet" and would otherwise hold a tool call
+ * open forever. Whichever of the two loses the race is dropped — a late script
+ * result must not resolve a call already reported as timed out, the same
+ * discipline `startResizeSnapshot` applies to a late capture.
+ */
+async function runIsolatedScript(
+  webContents: WebContentsView["webContents"],
+  code: string,
+): Promise<IsolatedScriptOutcome> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  return await Promise.race<IsolatedScriptOutcome>([
+    webContents
+      .executeJavaScriptInIsolatedWorld(BB_DESKTOP_BROWSER_PAGE_READ_WORLD_ID, [
+        { code },
+      ])
+      .then((value: unknown) => ({ kind: "value" as const, value }))
+      .catch(() => ({ kind: "failed" as const })),
+    new Promise<{ kind: "timeout" }>((resolve) => {
+      timer = setTimeout(
+        () => resolve({ kind: "timeout" }),
+        BB_DESKTOP_BROWSER_PAGE_READ_TIMEOUT_MS,
+      );
+    }),
+  ]).finally(() => {
+    clearTimeout(timer);
+  });
+}
+
+/**
+ * Read or write one tab's stored state.
+ *
+ * Scoped to the tab throughout: cookies to the URL it is on, web storage to its
+ * main frame. That is both the useful scope — the cookies a site actually sees —
+ * and the bounded one, since the alternative hands over every site the user is
+ * signed in to in a single call.
+ *
+ * Writes are the exception, and deliberately so: a cookie carrying its own
+ * domain is written to that domain, because a `storageState` file whose cookies
+ * were silently re-homed onto the current tab would restore a session that does
+ * not work. What a caller can do with that is not narrowed here; the gate is
+ * the plugin toggle, as it is for the rest of these tools.
+ *
+ * Like an observation and unlike an interaction, nothing here attaches the
+ * browser debugger.
+ */
+async function captureStorage(args: {
+  entry: BrowserViewEntry;
+  tabId: string;
+  operation: BbDesktopBrowserStorageOperation;
+  cookies: Session["cookies"];
+}): Promise<BbDesktopBrowserStorageResult> {
+  const { cookies, entry, operation, tabId } = args;
+  const webContents = entry.view.webContents;
+  const url = webContents.getURL();
+  // A tab showing nothing has no origin, so there is nothing for any of these
+  // to be scoped to.
+  if (url.length === 0) {
+    return { ok: false, reason: "no-page" };
+  }
+  const page = { tabId, ...entryPageIdentity(entry) };
+
+  if (operation.kind === "cookies-get") {
+    const found = await cookies.get({ url });
+    return {
+      ok: true,
+      kind: "cookies",
+      ...page,
+      cookies: found
+        .slice(0, BB_DESKTOP_BROWSER_MAX_COOKIES)
+        .map((cookie) => toBrowserCookie(cookie)),
+    };
+  }
+
+  if (operation.kind === "cookies-set") {
+    let applied = 0;
+    let rejected = 0;
+    for (const cookie of operation.cookies) {
+      try {
+        await cookies.set(toBrowserSessionCookieDetails(cookie, url));
+        applied += 1;
+      } catch {
+        // Chromium refuses a cookie whose domain, scheme or flags disagree with
+        // each other. One such cookie in a saved state must not abandon the
+        // rest of it, so the count is the report rather than an exception.
+        rejected += 1;
+      }
+    }
+    return { ok: true, kind: "written", applied, rejected };
+  }
+
+  if (operation.kind === "cookies-clear") {
+    const found = await cookies.get(
+      operation.name === null ? { url } : { url, name: operation.name },
+    );
+    let removed = 0;
+    for (const cookie of found) {
+      try {
+        await cookies.remove(url, cookie.name);
+        removed += 1;
+      } catch {
+        // Same reasoning as a rejected write: keep going and report the count
+        // rather than abandoning the cookies after this one.
+      }
+    }
+    return { ok: true, kind: "removed", removed };
+  }
+
+  const outcome = await runIsolatedScript(
+    webContents,
+    buildBrowserStorageScript(operation),
+  );
+  if (outcome.kind === "timeout") {
+    return { ok: false, reason: "timeout" };
+  }
+  if (outcome.kind === "failed") {
+    return {
+      ok: false,
+      reason: "failed",
+      message: "That page would not run the storage script.",
+    };
+  }
+  // The page can be torn down while its own script is in flight.
+  if (webContents.isDestroyed()) {
+    return { ok: false, reason: "no-view" };
+  }
+  // An origin that blocks storage answers rather than throwing, and its reason
+  // is worth passing on: "not accessible" and "we sent something broken" call
+  // for different next moves.
+  const refused = readBrowserStorageScriptError(outcome.value);
+  if (refused !== null) {
+    return { ok: false, reason: "failed", message: refused };
+  }
+
+  if (operation.kind === "items-get") {
+    const parsed = parseBrowserStorageItems(outcome.value);
+    if (parsed === null) {
+      return {
+        ok: false,
+        reason: "failed",
+        message: "That page's storage could not be read.",
+      };
+    }
+    return { ok: true, kind: "items", ...page, area: operation.area, ...parsed };
+  }
+
+  const counts = parseBrowserStorageCounts(outcome.value);
+  if (counts === null) {
+    return {
+      ok: false,
+      reason: "failed",
+      message: "That page's storage could not be written.",
+    };
+  }
+  return operation.kind === "items-set"
+    ? {
+        ok: true,
+        kind: "written",
+        applied: counts.applied,
+        rejected: counts.rejected,
+      }
+    : { ok: true, kind: "removed", removed: counts.removed };
 }
 
 function buildBrowserState(
@@ -1130,8 +1808,33 @@ export function createDesktopBrowserViewManager(
         }),
       });
     });
+    // Observation rides the same session-wide events and the same
+    // `webContentsId` attribution the firewall above uses. Both ends of a
+    // request are recorded because they answer different questions: `onCompleted`
+    // carries the status, `onErrorOccurred` carries the reason there was none —
+    // including `net::ERR_BLOCKED_BY_CLIENT` for a request the firewall refused,
+    // which is exactly the case a caller would otherwise spend a long time
+    // failing to explain.
+    browserSession.webRequest.onCompleted((details) => {
+      recordNetworkRequest(details);
+    });
+    browserSession.webRequest.onErrorOccurred((details) => {
+      recordNetworkRequest(details);
+    });
     hardenedSession = browserSession;
     return browserSession;
+  }
+
+  function recordNetworkRequest(details: BrowserNetworkRequestDetails): void {
+    const webContentsId = (details as { webContentsId?: unknown }).webContentsId;
+    if (typeof webContentsId !== "number") {
+      return;
+    }
+    const entry = entriesByWebContentsId.get(webContentsId);
+    if (!entry || entry.view.webContents.isDestroyed()) {
+      return;
+    }
+    entry.networkLog.record(toBrowserNetworkEntry(details, Date.now()));
   }
 
   function pushFavicon(
@@ -1353,6 +2056,14 @@ export function createDesktopBrowserViewManager(
       menu.popup();
     });
 
+    // Recorded from the moment the tab exists, and never cleared on navigation:
+    // the log answers "what has this tab logged", which spans the redirect that
+    // got it here. Clearing on `did-navigate` would also drop the main-frame
+    // request's own status — the single most useful entry in a network log.
+    webContents.on("console-message", (details: BrowserConsoleMessageDetails) => {
+      entry.consoleLog.record(toBrowserConsoleEntry(details, Date.now()));
+    });
+
     const refresh = () => pushState(hostWindow, tabId);
     webContents.on("did-start-loading", refresh);
     webContents.on("did-stop-loading", () => {
@@ -1432,6 +2143,13 @@ export function createDesktopBrowserViewManager(
       pendingDialog: null,
       dialogsWired: false,
       automationWorldId: null,
+      consoleLog: new BrowserObservationLog(BB_BROWSER_OBSERVATION_BUFFER_SIZE),
+      networkLog: new BrowserObservationLog(BB_BROWSER_OBSERVATION_BUFFER_SIZE),
+      routes: [],
+      routesWired: false,
+      routesEnabled: false,
+      offline: false,
+      mousePoint: { x: 0, y: 0 },
       snapshotRefs: new Map(),
       snapshotGeneration: 0,
     };
@@ -1492,10 +2210,24 @@ export function createDesktopBrowserViewManager(
         // Refs were resolved against a session that no longer exists.
         entry.cdp = null;
         invalidateSnapshotRefs(entry);
+        forgetEntryInterception(entry);
       },
     });
     entry.cdp = session;
     return session;
+  }
+
+  /**
+   * Chromium drops request interception and network emulation when its protocol
+   * client goes, so the tab is routed and online again whether we like it or
+   * not. Forgetting them here is what stops `route-list` describing a tab that
+   * is no longer mocked.
+   */
+  function forgetEntryInterception(entry: BrowserViewEntry): void {
+    entry.routes = [];
+    entry.routesWired = false;
+    entry.routesEnabled = false;
+    entry.offline = false;
   }
 
   function releaseCdpSession(entry: BrowserViewEntry): void {
@@ -1503,6 +2235,7 @@ export function createDesktopBrowserViewManager(
     entry.cdp = null;
     entry.dialogsWired = false;
     entry.pendingDialog = null;
+    forgetEntryInterception(entry);
   }
 
   /**
@@ -1695,27 +2428,10 @@ export function createDesktopBrowserViewManager(
         return { ok: false, reason: "no-page" };
       }
 
-      // Race the read against the timeout, then drop whichever loses. A late
-      // script result must not resolve a call already reported as timed out —
-      // the same discipline `startResizeSnapshot` applies to a late capture.
-      let timer: ReturnType<typeof setTimeout> | undefined;
-      const raw = await Promise.race([
-        webContents
-          .executeJavaScriptInIsolatedWorld(
-            BB_DESKTOP_BROWSER_PAGE_READ_WORLD_ID,
-            [{ code: BB_DESKTOP_BROWSER_PAGE_READ_SCRIPT }],
-          )
-          .then((value: unknown) => ({ kind: "value" as const, value }))
-          .catch(() => ({ kind: "failed" as const })),
-        new Promise<{ kind: "timeout" }>((resolve) => {
-          timer = setTimeout(
-            () => resolve({ kind: "timeout" }),
-            BB_DESKTOP_BROWSER_PAGE_READ_TIMEOUT_MS,
-          );
-        }),
-      ]).finally(() => {
-        clearTimeout(timer);
-      });
+      const raw = await runIsolatedScript(
+        webContents,
+        BB_DESKTOP_BROWSER_PAGE_READ_SCRIPT,
+      );
 
       if (raw.kind === "timeout") {
         return { ok: false, reason: "timeout" };
@@ -1881,6 +2597,97 @@ export function createDesktopBrowserViewManager(
         tabId: request.tabId,
         ...entryPageIdentity(entry),
       };
+    },
+    async observe({ hostWindow, request }) {
+      const entry = entries.get(browserViewKey(hostWindow, request.tabId));
+      if (!entry || entry.view.webContents.isDestroyed()) {
+        return { ok: false, reason: "no-view" };
+      }
+      try {
+        return await captureObservation(
+          entry,
+          request.tabId,
+          request.observation,
+        );
+      } catch (error) {
+        return {
+          ok: false,
+          reason: "failed",
+          message: error instanceof Error ? error.message : String(error),
+        };
+      }
+    },
+    async storage({ hostWindow, request }) {
+      const entry = entries.get(browserViewKey(hostWindow, request.tabId));
+      if (!entry || entry.view.webContents.isDestroyed()) {
+        return { ok: false, reason: "no-view" };
+      }
+      try {
+        return await captureStorage({
+          entry,
+          tabId: request.tabId,
+          operation: request.operation,
+          // The browsed partition's jar, which is the only one these views ever
+          // write to — nothing here can reach the app's own session.
+          cookies: ensureHardenedSession().cookies,
+        });
+      } catch (error) {
+        return {
+          ok: false,
+          reason: "failed",
+          message: error instanceof Error ? error.message : String(error),
+        };
+      }
+    },
+    async control({ hostWindow, request }) {
+      const entry = entries.get(browserViewKey(hostWindow, request.tabId));
+      if (!entry || entry.view.webContents.isDestroyed()) {
+        return { ok: false, reason: "no-view" };
+      }
+      // `route-list` is the exception worth allowing on a blank tab: routes are
+      // set up before a page is loaded as often as after, and answering "no
+      // page" to a question about the tab's own state would be wrong.
+      if (
+        entry.view.webContents.getURL().length === 0 &&
+        request.operation.kind !== "route-list"
+      ) {
+        return { ok: false, reason: "no-page" };
+      }
+
+      let session: CdpSession;
+      try {
+        session = ensureCdpSession(entry);
+      } catch (error) {
+        return {
+          ok: false,
+          reason: "debugger-unavailable",
+          message: error instanceof Error ? error.message : String(error),
+        };
+      }
+
+      try {
+        // Same reason as in `snapshot` and `interact`: once we drive this tab,
+        // its dialogs are ours to answer, and an evaluated `confirm()` would
+        // otherwise block the page with nothing able to respond.
+        await ensureDialogInterception(hostWindow, request.tabId, entry, session);
+        return await performControl(session, entry, request.tabId, request);
+      } catch (error) {
+        if (error instanceof ControlRefusal) {
+          return { ok: false, reason: error.reason, message: error.message };
+        }
+        if (error instanceof InteractionRefusal) {
+          return {
+            ok: false,
+            reason: controlRefusalReason(error.reason),
+            message: error.message,
+          };
+        }
+        return {
+          ok: false,
+          reason: "failed",
+          message: error instanceof Error ? error.message : String(error),
+        };
+      }
     },
     setBounds({ hostWindow, request }) {
       withEntry({ hostWindow, tabId: request.tabId }, (entry) => {

@@ -419,3 +419,44 @@ describe("browser-tools interaction", () => {
     expect(textOf(result)).toContain("Enter");
   });
 });
+
+describe("browser-tools observation", () => {
+  it("hands the screenshot back as an image the model can look at", async () => {
+    const host = createHost();
+
+    const result = await host.harness.behavior.callAgentTool(
+      "browser_screenshot",
+      { tabId: "tab-1" },
+    );
+
+    expect(isError(result)).toBe(false);
+    // The image itself rather than a path to it: a model that asked to see the
+    // page has to see it in the same turn, and it cannot open a file.
+    const parts = typeof result === "string" ? [] : result.content;
+    expect(parts.map((part) => part.type)).toEqual(["text", "image"]);
+    const image = parts.find((part) => part.type === "image");
+    expect(image).toMatchObject({ mimeType: "image/jpeg" });
+    expect(textOf(result)).toContain("https://example.com/");
+    expect(host.harness.inspection.browserCalls.at(-1)).toEqual({
+      type: "page.screenshot",
+      args: { tabId: "tab-1" },
+    });
+  });
+
+  it("explains a capture that was too large without pretending it returned one", async () => {
+    const host = createHost();
+    host.harness.behavior.browser.failNextCall(
+      "result_too_large",
+      "That page's PDF is 40MB, past what the browser bridge will carry.",
+    );
+
+    const result = await host.harness.behavior.callAgentTool(
+      "browser_screenshot",
+      { tabId: "tab-1" },
+    );
+
+    expect(isError(result)).toBe(true);
+    expect(textOf(result)).toContain("40MB");
+    expect(textOf(result)).toContain("Nothing partial");
+  });
+});

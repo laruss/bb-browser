@@ -5,7 +5,7 @@
 // Confused by the API, or need a symbol that isn't here? Clone the BB repo
 // and read the real source: https://github.com/get-bb/bb
 
-import { BbPluginApi, PluginSettingValue, PluginSharedPortTunnelIdentity, PluginAgentToolExperimentalStatusLabels, PluginAgentToolContext, PluginAgentToolResult, PluginCliCommandInfo, PluginCliContext, PluginCliResult, PluginHttpAuthMode, PluginHttpHandler, PluginMentionTrigger, PluginMentionSearchContext, PluginMentionItem, PluginBrowserErrorCode, JsonValue, PluginCliExecutionResult, PluginThreadEventName, PluginThreadEventPayloads, PluginAgentConfigurationContext, PluginSettingDescriptors, PluginAgentConfiguration, PluginOmniboxSuggestContext, PluginOmniboxSuggestion, PluginOmniboxRunContext, PluginOmniboxRunResult, PluginInteractionRequest } from '@bb/plugin-sdk';
+import { BbPluginApi, PluginSettingValue, PluginSharedPortTunnelIdentity, PluginAgentToolExperimentalStatusLabels, PluginAgentToolContext, PluginAgentToolResult, PluginCliCommandInfo, PluginCliContext, PluginCliResult, PluginHttpAuthMode, PluginHttpHandler, PluginMentionTrigger, PluginMentionSearchContext, PluginMentionItem, PluginBrowserConsoleEntry, PluginBrowserNetworkEntry, PluginBrowserCookie, PluginBrowserStorageItem, PluginBrowserErrorCode, JsonValue, PluginCliExecutionResult, PluginThreadEventName, PluginThreadEventPayloads, PluginAgentConfigurationContext, PluginSettingDescriptors, PluginAgentConfiguration, PluginOmniboxSuggestContext, PluginOmniboxSuggestion, PluginOmniboxRunContext, PluginOmniboxRunResult, PluginInteractionRequest } from '@bb/plugin-sdk';
 
 type BbSdk = BbPluginApi["sdk"];
 /**
@@ -148,11 +148,26 @@ interface FakeOmniboxProviderRecord {
 interface FakeBrowserDrivers {
     /** Replace the tab model. The first tab is active unless one sets `active`. */
     setTabs(tabs: readonly FakeBrowserTabInput[]): void;
-    /** What `page.getText`/`getSelection` answer for a live tab. */
+    /**
+     * What the page reads answer for a live tab. `console` and `network` are the
+     * tab's logs, which `page.console`/`page.network` slice from the end.
+     */
     setPageContent(tabId: string, content: {
         text?: string;
         selection?: string;
         snapshot?: string;
+        console?: readonly PluginBrowserConsoleEntry[];
+        network?: readonly PluginBrowserNetworkEntry[];
+        /** What `bb.browser.storage` reads, and what its writes then change. */
+        cookies?: readonly PluginBrowserCookie[];
+        localStorage?: readonly PluginBrowserStorageItem[];
+        sessionStorage?: readonly PluginBrowserStorageItem[];
+        /**
+         * What `bb.browser.control.evaluate` answers with, whatever it was asked.
+         * A fake cannot run the expression; what a test can check is that the
+         * expression it meant to send is the one that was sent.
+         */
+        evaluated?: string;
     }): void;
     /** Pretend no app window is connected, so every call fails like production. */
     setConnected(connected: boolean): void;

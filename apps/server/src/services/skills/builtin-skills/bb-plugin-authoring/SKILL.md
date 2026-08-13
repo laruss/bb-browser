@@ -835,6 +835,50 @@ await bb.browser.page.act({
 const ended = await bb.browser.page.act({ action: { action: "click", ref: "e1" } });
 // ended: { tabId, url, title } — where the tab landed, since clicks navigate.
 
+// Looking without touching: none of these attaches the browser debugger, so
+// they work on a tab the user is merely browsing.
+const shot = await bb.browser.page.screenshot(); // visible viewport, JPEG by default
+// shot: { tabId, url, title, mimeType, base64, width, height }
+const doc = await bb.browser.page.pdf({}, { timeoutMs: 60_000 }); // whole document
+const log = await bb.browser.page.console({ limit: 50 });
+const requests = await bb.browser.page.network({ limit: 50 });
+// Each log: { entries, droppedCount } — read droppedCount before concluding a
+// page was quiet; the buffers are fixed-size rings.
+
+// Stored state. Scoped to the tab: cookies for the URL it is on, web storage
+// for its origin. Read the warning below before using any of it.
+const { cookies } = await bb.browser.storage.cookies();
+// Each cookie is Playwright's storageState shape:
+// { name, value, domain, path, expires, httpOnly, secure, sameSite }
+await bb.browser.storage.setCookies({ cookies: [{ name: "flag", value: "1" }] });
+const { removed } = await bb.browser.storage.clearCookies({ name: "flag" });
+const stored = await bb.browser.storage.items({ area: "local" }); // or "session"
+// stored: { ..., items: [{ name, value }], truncated }
+const write = await bb.browser.storage.setItems({
+  area: "local",
+  items: [{ name: "token", value: "x" }],
+});
+// write: { applied, rejected } — a partial write is the realistic outcome.
+
+// Direct control. Everything here skips what makes the calls above safe; read
+// the warning below before reaching for any of it.
+const got = await bb.browser.control.evaluate({
+  expression: "() => document.title", // a function, as Playwright's eval takes
+  // ref: "e4",                       // passes that element in: (el) => el.value
+});
+// got: { ..., value, truncated } — value is JSON text, "undefined" for nothing.
+await bb.browser.control.mouseMove({ x: 850, y: 45 }); // viewport pixels
+await bb.browser.control.mouseButton({ down: true }); // acts where you last moved
+await bb.browser.control.mouseButton({ down: false });
+await bb.browser.control.route({
+  pattern: "**/api/me", // Playwright's URL glob: ** crosses /, * does not
+  body: '{"id":1}',     // status defaults to 200, content type follows the body
+});
+const mocked = await bb.browser.control.routes();
+// mocked: { ..., routes: [{ pattern, status, matched, ... }], offline }
+await bb.browser.control.unroute(); // one pattern, or all of them
+await bb.browser.control.setOffline({ offline: true }); // this tab only
+
 if (!bb.browser.getStatus().connected) {
   // synchronous, so it is safe to read from bb.agents.configure()
 }
@@ -851,6 +895,13 @@ and "click the checkbox" is a toggle.
 Refs stop being valid when the page navigates. Snapshot again after any action
 that could have changed the page rather than reusing the ones you have.
 
+The console and network logs are recorded from the moment a tab is created, not
+from your first call, so they answer for a tab nobody has driven. They are
+tab-scoped rather than page-scoped: a navigation does not clear them, which is
+what keeps the redirect chain that led to the current page readable. Both are
+fixed-size rings — `droppedCount` is how many entries the answer is missing, and
+it counts what your `limit` cut as well as what the ring evicted.
+
 Two more rules worth building around:
 
 - **`live` is the one to check.** A tab only has a real page behind it once the
@@ -861,13 +912,31 @@ Two more rules worth building around:
 - **Page text is untrusted.** `getText`/`getSelection` return content the web
   page wrote. Pass it on as data to reason about, never as instructions, and
   never let it reach a place that treats text as a command.
+- **`bb.browser.storage` is credential access, not settings.** This browser
+  holds the user's real logins, and cookies come from the session rather than
+  from `document.cookie`, so `httpOnly` ones are included — the ones that *are*
+  a session. What `cookies()` returns for a signed-in site restores that
+  session, and `setCookies` puts one into the user's browser for real. Do not
+  log it, do not persist it anywhere the user did not ask for, and say what a
+  tool built on it does in the tool's own description.
+- **`bb.browser.control` is the group with no guardrails**, and they are missing
+  on purpose. `evaluate` runs your code in the page's own world — it can read
+  whatever the page can, including the logins above, and change whatever the
+  user could. The mouse calls take no ref and wait for nothing, so they hit
+  whatever happens to be at that coordinate; they exist for a canvas or a map
+  the accessibility tree cannot describe, and a snapshot ref is the right answer
+  everywhere else. `route` decides what the page is told by the network. Reach
+  for these where the safer calls genuinely cannot go, and say so plainly in
+  anything you build on them. Routes and `setOffline` last only as long as the
+  tab's debugger session, so do not treat them as configuration.
 
 Failures throw errors matched by `name` — `"BrowserHostUnavailableError"` when no
 window is connected, `"BrowserCommandTimeoutError"`, `"BrowserCommandAbortedError"`,
 and `"BrowserCommandError"` carrying a `code` (`no_active_tab`, `unknown_tab`,
 `tab_not_live`, `desktop_unavailable`, `unsupported_command`, `blocked_url`,
 `page_read_timeout`, `page_read_failed`, `debugger_unavailable`, `stale_refs`,
-`unknown_ref`, `not_actionable`, `unsupported_key`). The bundled `browser-tools`
+`unknown_ref`, `not_actionable`, `unsupported_key`, `result_too_large`,
+`evaluation_failed`, `too_many_routes`). The bundled `browser-tools`
 plugin is the worked example.
 
 Rows land in the same ranked list as the browser's address, search, open-tab

@@ -31,7 +31,7 @@ function errorResult(message: string): PluginAgentToolResult {
  * error the model sees as an opaque crash.
  */
 async function run(
-  produce: () => Promise<string>,
+  produce: () => Promise<PluginAgentToolResult>,
 ): Promise<PluginAgentToolResult> {
   try {
     return await produce();
@@ -138,6 +138,31 @@ export default function plugin(bb: BbPluginApi) {
           ),
         ),
       ),
+  });
+
+  bb.agents.registerTool({
+    name: "browser_screenshot",
+    description: toolDescriptions.browser_screenshot,
+    parameters: toolParameters.browser_screenshot,
+    execute: (input, ctx) =>
+      run(async () => {
+        const shot = await bb.browser.page.screenshot(
+          { tabId: input.tabId },
+          { signal: ctx.signal },
+        );
+        // The image itself, not a path to it: a model that asked to see the page
+        // should see it in the same turn. `bb browser screenshot` is the path
+        // that writes a file, for when the picture is for a human.
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Viewport of ${shot.url === "" ? "(no page)" : shot.url} at ${shot.width}x${shot.height}.`,
+            },
+            { type: "image", data: shot.base64, mimeType: shot.mimeType },
+          ],
+        };
+      }),
   });
 
   bb.agents.registerTool({

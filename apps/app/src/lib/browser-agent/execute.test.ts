@@ -2,9 +2,12 @@ import { describe, expect, it, vi } from "vitest";
 import type {
   BbDesktopBrowserApi,
   BbDesktopBrowserInteractResult,
+  BbDesktopBrowserObserveResult,
   BbDesktopBrowserPageReadResult,
   BbDesktopBrowserSnapshotResult,
   BbDesktopBrowserState,
+  BbDesktopBrowserControlResult,
+  BbDesktopBrowserStorageResult,
 } from "@bb/desktop-contract";
 import type { BrowserCommandOutcome } from "@bb/domain";
 import { createBrowserFixedPanelTab } from "../fixed-panel-tabs-state";
@@ -49,6 +52,12 @@ interface HarnessArgs {
   omitSnapshot?: boolean;
   interact?: BbDesktopBrowserInteractResult;
   omitInteract?: boolean;
+  observe?: BbDesktopBrowserObserveResult;
+  omitObserve?: boolean;
+  storage?: BbDesktopBrowserStorageResult;
+  omitStorage?: boolean;
+  control?: BbDesktopBrowserControlResult;
+  omitControl?: boolean;
   noDesktop?: boolean;
 }
 
@@ -63,6 +72,9 @@ function createHarness(args: HarnessArgs = {}) {
     destroyed: [] as string[],
     settled: [] as string[],
     interactions: [] as unknown[],
+    observations: [] as unknown[],
+    storage: [] as unknown[],
+    control: [] as unknown[],
   };
   let nextTabId = 0;
 
@@ -108,6 +120,54 @@ function createHarness(args: HarnessArgs = {}) {
                 tabId: "t",
                 url: "https://example.com/next",
                 title: "Next",
+              },
+            );
+          },
+        }),
+    ...(args.omitObserve === true
+      ? {}
+      : {
+          observe: (request: unknown) => {
+            calls.observations.push(request);
+            return Promise.resolve(
+              args.observe ?? {
+                ok: true as const,
+                kind: "console" as const,
+                tabId: "t",
+                url: "https://example.com/",
+                title: "Example",
+                entries: [],
+                droppedCount: 0,
+              },
+            );
+          },
+        }),
+    ...(args.omitStorage === true
+      ? {}
+      : {
+          storage: (request: unknown) => {
+            calls.storage.push(request);
+            return Promise.resolve(
+              args.storage ?? {
+                ok: true as const,
+                kind: "removed" as const,
+                removed: 0,
+              },
+            );
+          },
+        }),
+    ...(args.omitControl === true
+      ? {}
+      : {
+          control: (request: unknown) => {
+            calls.control.push(request);
+            return Promise.resolve(
+              args.control ?? {
+                ok: true as const,
+                kind: "acted" as const,
+                tabId: "t",
+                url: "https://example.com/",
+                title: "Example",
               },
             );
           },
@@ -881,5 +941,476 @@ describe("executeBrowserCommand — interaction", () => {
       "invalid_command",
     );
     expect(harness.calls.interactions).toEqual([]);
+  });
+});
+
+describe("executeBrowserCommand — observation", () => {
+  it("renames the shell's capture into the agent's image result", async () => {
+    const harness = createHarness({
+      state: { tabs: [tab("t")], activeTabId: "t" },
+      live: { t: liveState("t") },
+      observe: {
+        ok: true,
+        kind: "screenshot",
+        tabId: "t",
+        url: "https://example.com/",
+        title: "Example",
+        mimeType: "image/jpeg",
+        base64: "AAA=",
+        width: 1440,
+        height: 900,
+      },
+    });
+
+    const outcome = await executeBrowserCommand(
+      {
+        type: "page.observe",
+        tabId: null,
+        observation: { kind: "screenshot", format: "jpeg", quality: 80 },
+      },
+      harness.deps,
+    );
+
+    expect(harness.calls.observations).toEqual([
+      {
+        tabId: "t",
+        observation: { kind: "screenshot", format: "jpeg", quality: 80 },
+      },
+    ]);
+    expect(outcome).toEqual({
+      ok: true,
+      value: {
+        type: "image",
+        tabId: "t",
+        url: "https://example.com/",
+        title: "Example",
+        mimeType: "image/jpeg",
+        base64: "AAA=",
+        width: 1440,
+        height: 900,
+      },
+    });
+  });
+
+  it("carries a log through with the count of what it is not showing", async () => {
+    const entry = {
+      level: "error" as const,
+      text: "boom",
+      source: "https://example.com/app.js",
+      line: 3,
+      timestamp: 1_700_000_000_000,
+    };
+    const harness = createHarness({
+      state: { tabs: [tab("t")], activeTabId: "t" },
+      live: { t: liveState("t") },
+      observe: {
+        ok: true,
+        kind: "console",
+        tabId: "t",
+        url: "https://example.com/",
+        title: "Example",
+        entries: [entry],
+        droppedCount: 12,
+      },
+    });
+
+    const outcome = await executeBrowserCommand(
+      {
+        type: "page.observe",
+        tabId: null,
+        observation: { kind: "console", limit: 50 },
+      },
+      harness.deps,
+    );
+
+    expect(outcome).toMatchObject({
+      ok: true,
+      value: { type: "console", entries: [entry], droppedCount: 12 },
+    });
+  });
+
+  it("does not wait for a load, because looking at a page changes nothing", async () => {
+    const harness = createHarness({
+      state: { tabs: [tab("t")], activeTabId: "t" },
+      live: { t: liveState("t", { isLoading: true }) },
+    });
+
+    await executeBrowserCommand(
+      {
+        type: "page.observe",
+        tabId: null,
+        observation: { kind: "network", limit: 50 },
+      },
+      harness.deps,
+    );
+
+    expect(harness.calls.settled).toEqual([]);
+  });
+
+  it("gives each shell refusal its own code", async () => {
+    for (const [reason, code] of [
+      ["too-large", "result_too_large"],
+      ["no-view", "tab_not_live"],
+      ["no-page", "tab_not_live"],
+      ["failed", "page_read_failed"],
+    ] as const) {
+      const harness = createHarness({
+        state: { tabs: [tab("t")], activeTabId: "t" },
+        live: { t: liveState("t") },
+        observe: { ok: false, reason, message: "because" },
+      });
+
+      await expect(
+        executeBrowserCommand(
+          {
+            type: "page.observe",
+            tabId: null,
+            observation: { kind: "pdf" },
+          },
+          harness.deps,
+        ),
+      ).resolves.toMatchObject({ ok: false, code });
+    }
+  });
+
+  it("reports an older shell that has no observation channel", async () => {
+    const harness = createHarness({
+      state: { tabs: [tab("t")], activeTabId: "t" },
+      live: { t: liveState("t") },
+      omitObserve: true,
+    });
+
+    await expect(
+      executeBrowserCommand(
+        {
+          type: "page.observe",
+          tabId: null,
+          observation: { kind: "pdf" },
+        },
+        harness.deps,
+      ),
+    ).resolves.toMatchObject({ ok: false, code: "unsupported_command" });
+  });
+});
+
+describe("executeBrowserCommand — storage", () => {
+  const COOKIE = {
+    name: "session",
+    value: "abc",
+    domain: ".example.com",
+    path: "/",
+    expires: -1,
+    httpOnly: true,
+    secure: true,
+    sameSite: "Lax" as const,
+  };
+
+  it("carries a tab's cookies back with their values", async () => {
+    const harness = createHarness({
+      state: { tabs: [tab("t")], activeTabId: "t" },
+      live: { t: liveState("t") },
+      storage: {
+        ok: true,
+        kind: "cookies",
+        tabId: "t",
+        url: "https://example.com/",
+        title: "Example",
+        cookies: [COOKIE],
+      },
+    });
+
+    const outcome = await executeBrowserCommand(
+      { type: "page.storage", tabId: null, operation: { kind: "cookies-get" } },
+      harness.deps,
+    );
+
+    expect(harness.calls.storage).toEqual([
+      { tabId: "t", operation: { kind: "cookies-get" } },
+    ]);
+    expect(outcome).toEqual({
+      ok: true,
+      value: {
+        type: "cookies",
+        tabId: "t",
+        url: "https://example.com/",
+        title: "Example",
+        cookies: [COOKIE],
+      },
+    });
+  });
+
+  it("keeps the truncation flag on a web-storage read", async () => {
+    // An origin that held more than the caps allow produces a state file that
+    // restores a session only partly, so this flag has to survive the trip.
+    const harness = createHarness({
+      state: { tabs: [tab("t")], activeTabId: "t" },
+      live: { t: liveState("t") },
+      storage: {
+        ok: true,
+        kind: "items",
+        tabId: "t",
+        url: "https://example.com/",
+        title: "Example",
+        area: "local",
+        items: [{ name: "token", value: "abc" }],
+        truncated: true,
+      },
+    });
+
+    await expect(
+      executeBrowserCommand(
+        {
+          type: "page.storage",
+          tabId: null,
+          operation: { kind: "items-get", area: "local" },
+        },
+        harness.deps,
+      ),
+    ).resolves.toMatchObject({
+      ok: true,
+      value: { type: "storage", area: "local", truncated: true },
+    });
+  });
+
+  it("reports what a write landed and what the browser refused", async () => {
+    const harness = createHarness({
+      state: { tabs: [tab("t")], activeTabId: "t" },
+      live: { t: liveState("t") },
+      storage: { ok: true, kind: "written", applied: 3, rejected: 1 },
+    });
+
+    await expect(
+      executeBrowserCommand(
+        {
+          type: "page.storage",
+          tabId: null,
+          operation: { kind: "cookies-set", cookies: [COOKIE] },
+        },
+        harness.deps,
+      ),
+    ).resolves.toEqual({
+      ok: true,
+      value: { type: "written", applied: 3, rejected: 1 },
+    });
+  });
+
+  it("gives each shell refusal its own code", async () => {
+    for (const [reason, code] of [
+      ["no-view", "tab_not_live"],
+      ["no-page", "tab_not_live"],
+      ["timeout", "page_read_timeout"],
+      ["failed", "page_read_failed"],
+    ] as const) {
+      const harness = createHarness({
+        state: { tabs: [tab("t")], activeTabId: "t" },
+        live: { t: liveState("t") },
+        storage: { ok: false, reason, message: "because" },
+      });
+
+      await expect(
+        executeBrowserCommand(
+          {
+            type: "page.storage",
+            tabId: null,
+            operation: { kind: "items-get", area: "session" },
+          },
+          harness.deps,
+        ),
+      ).resolves.toMatchObject({ ok: false, code });
+    }
+  });
+
+  it("reports an older shell that has no storage channel", async () => {
+    const harness = createHarness({
+      state: { tabs: [tab("t")], activeTabId: "t" },
+      live: { t: liveState("t") },
+      omitStorage: true,
+    });
+
+    await expect(
+      executeBrowserCommand(
+        { type: "page.storage", tabId: null, operation: { kind: "cookies-get" } },
+        harness.deps,
+      ),
+    ).resolves.toMatchObject({ ok: false, code: "unsupported_command" });
+  });
+});
+
+describe("executeBrowserCommand direct control", () => {
+  it("forwards an expression and the snapshot it came from", async () => {
+    const harness = createHarness({
+      state: { tabs: [tab("t")], activeTabId: "t" },
+      live: { t: liveState("t") },
+      control: {
+        ok: true,
+        kind: "evaluated",
+        tabId: "t",
+        url: "https://example.com/",
+        title: "Example",
+        value: '{"count":3}',
+        truncated: false,
+      },
+    });
+
+    const outcome = await executeBrowserCommand(
+      {
+        type: "page.control",
+        tabId: null,
+        generation: 4,
+        operation: {
+          kind: "evaluate",
+          expression: "(el) => el.children.length",
+          ref: "e2",
+        },
+      },
+      harness.deps,
+    );
+
+    expect(harness.calls.control).toEqual([
+      {
+        tabId: "t",
+        generation: 4,
+        operation: {
+          kind: "evaluate",
+          expression: "(el) => el.children.length",
+          ref: "e2",
+        },
+      },
+    ]);
+    expect(outcome).toEqual({
+      ok: true,
+      value: {
+        type: "evaluated",
+        tabId: "t",
+        url: "https://example.com/",
+        title: "Example",
+        value: '{"count":3}',
+        truncated: false,
+      },
+    });
+  });
+
+  it("carries the route table and whether the tab is offline", async () => {
+    const harness = createHarness({
+      state: { tabs: [tab("t")], activeTabId: "t" },
+      live: { t: liveState("t") },
+      control: {
+        ok: true,
+        kind: "routes",
+        tabId: "t",
+        url: "https://example.com/",
+        title: "Example",
+        routes: [
+          {
+            pattern: "**/api/me",
+            status: 200,
+            contentType: "application/json",
+            body: "{}",
+            headers: [],
+            matched: 2,
+          },
+        ],
+        offline: true,
+      },
+    });
+
+    await expect(
+      executeBrowserCommand(
+        {
+          type: "page.control",
+          tabId: null,
+          generation: null,
+          operation: { kind: "route-list" },
+        },
+        harness.deps,
+      ),
+    ).resolves.toMatchObject({
+      ok: true,
+      value: {
+        type: "routes",
+        routes: [{ pattern: "**/api/me", matched: 2 }],
+        offline: true,
+      },
+    });
+  });
+
+  it("answers a coordinate click with where the tab ended up", async () => {
+    // A click at a coordinate navigates exactly as a click on a ref does, so it
+    // reports the same thing rather than nothing.
+    const harness = createHarness({
+      state: { tabs: [tab("t")], activeTabId: "t" },
+      live: { t: liveState("t") },
+    });
+
+    await expect(
+      executeBrowserCommand(
+        {
+          type: "page.control",
+          tabId: null,
+          generation: null,
+          operation: { kind: "mouse-button", button: "left", down: true },
+        },
+        harness.deps,
+      ),
+    ).resolves.toEqual({
+      ok: true,
+      value: {
+        type: "interacted",
+        tabId: "t",
+        url: "https://example.com/",
+        title: "Example",
+      },
+    });
+  });
+
+  it("gives each shell refusal its own code", async () => {
+    for (const [reason, code] of [
+      ["no-view", "tab_not_live"],
+      ["no-page", "tab_not_live"],
+      ["debugger-unavailable", "debugger_unavailable"],
+      ["stale-refs", "stale_refs"],
+      ["unknown-ref", "unknown_ref"],
+      ["evaluation-failed", "evaluation_failed"],
+      ["too-many-routes", "too_many_routes"],
+      ["failed", "page_read_failed"],
+    ] as const) {
+      const harness = createHarness({
+        state: { tabs: [tab("t")], activeTabId: "t" },
+        live: { t: liveState("t") },
+        control: { ok: false, reason, message: "because" },
+      });
+
+      await expect(
+        executeBrowserCommand(
+          {
+            type: "page.control",
+            tabId: null,
+            generation: null,
+            operation: { kind: "evaluate", expression: "() => 1", ref: null },
+          },
+          harness.deps,
+        ),
+      ).resolves.toMatchObject({ ok: false, code });
+    }
+  });
+
+  it("reports an older shell that has no control channel", async () => {
+    const harness = createHarness({
+      state: { tabs: [tab("t")], activeTabId: "t" },
+      live: { t: liveState("t") },
+      omitControl: true,
+    });
+
+    await expect(
+      executeBrowserCommand(
+        {
+          type: "page.control",
+          tabId: null,
+          generation: null,
+          operation: { kind: "route-list" },
+        },
+        harness.deps,
+      ),
+    ).resolves.toMatchObject({ ok: false, code: "unsupported_command" });
   });
 });

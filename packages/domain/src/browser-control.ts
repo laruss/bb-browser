@@ -140,6 +140,227 @@ export const browserInteractionSchema = z.discriminatedUnion("action", [
 ]);
 export type BrowserInteraction = z.infer<typeof browserInteractionSchema>;
 
+/**
+ * Caps on observations. These mirror the desktop contract's
+ * (`BB_DESKTOP_BROWSER_MAX_SCREENSHOT_BASE64_LENGTH` and its neighbours) and
+ * must not drift, for the same reason the interaction caps must not: the app
+ * forwards a value parsed here straight into the schema parsed there.
+ */
+export const BROWSER_COMMAND_MAX_SCREENSHOT_BASE64_LENGTH = 8_388_608;
+export const BROWSER_COMMAND_MAX_PDF_BASE64_LENGTH = 16_777_216;
+export const BROWSER_COMMAND_MAX_OBSERVATION_ENTRIES = 500;
+export const BROWSER_COMMAND_MAX_CONSOLE_TEXT_LENGTH = 4096;
+
+/**
+ * What to look at, without touching the page.
+ *
+ * Structurally identical to the desktop contract's observation union, for the
+ * same reason the interaction union is: the app forwards it rather than
+ * rebuilding it.
+ */
+export const browserObservationSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("screenshot"),
+    format: z.enum(["png", "jpeg"]),
+    quality: z.number().int().min(1).max(100),
+  }),
+  z.object({ kind: z.literal("pdf") }),
+  z.object({
+    kind: z.literal("console"),
+    limit: z.number().int().min(1).max(BROWSER_COMMAND_MAX_OBSERVATION_ENTRIES),
+  }),
+  z.object({
+    kind: z.literal("network"),
+    limit: z.number().int().min(1).max(BROWSER_COMMAND_MAX_OBSERVATION_ENTRIES),
+  }),
+]);
+export type BrowserObservation = z.infer<typeof browserObservationSchema>;
+
+const browserConsoleEntrySchema = z.object({
+  level: z.enum(["debug", "info", "warning", "error"]),
+  text: z.string().max(BROWSER_COMMAND_MAX_CONSOLE_TEXT_LENGTH),
+  source: z.string().max(BROWSER_COMMAND_MAX_URL_LENGTH),
+  line: z.number().int().nonnegative(),
+  timestamp: z.number().int().nonnegative(),
+});
+export type BrowserConsoleEntry = z.infer<typeof browserConsoleEntrySchema>;
+
+const browserNetworkEntrySchema = z.object({
+  method: z.string().max(16),
+  url: z.string().max(BROWSER_COMMAND_MAX_URL_LENGTH),
+  resourceType: z.string().max(32),
+  status: z.number().int().nullable(),
+  fromCache: z.boolean(),
+  error: z.string().max(BROWSER_COMMAND_MAX_TITLE_LENGTH).nullable(),
+  timestamp: z.number().int().nonnegative(),
+});
+export type BrowserNetworkEntry = z.infer<typeof browserNetworkEntrySchema>;
+
+/**
+ * Caps on stored state, mirroring the desktop contract's for the same reason
+ * the observation caps do.
+ */
+export const BROWSER_COMMAND_MAX_COOKIES = 200;
+export const BROWSER_COMMAND_MAX_COOKIE_NAME_LENGTH = 256;
+export const BROWSER_COMMAND_MAX_COOKIE_VALUE_LENGTH = 4096;
+export const BROWSER_COMMAND_MAX_STORAGE_ITEMS = 500;
+export const BROWSER_COMMAND_MAX_STORAGE_VALUE_LENGTH = 65_536;
+
+/** Playwright's `storageState` cookie, which is the format we read and write. */
+export const browserCookieSchema = z.object({
+  name: z.string().max(BROWSER_COMMAND_MAX_COOKIE_NAME_LENGTH),
+  value: z.string().max(BROWSER_COMMAND_MAX_COOKIE_VALUE_LENGTH),
+  domain: z.string().max(BROWSER_COMMAND_MAX_COOKIE_NAME_LENGTH),
+  path: z.string().max(BROWSER_COMMAND_MAX_COOKIE_NAME_LENGTH),
+  expires: z.number(),
+  httpOnly: z.boolean(),
+  secure: z.boolean(),
+  sameSite: z.enum(["Strict", "Lax", "None"]),
+});
+export type BrowserCookie = z.infer<typeof browserCookieSchema>;
+
+export const browserStorageItemSchema = z.object({
+  name: z.string().max(BROWSER_COMMAND_MAX_COOKIE_NAME_LENGTH),
+  value: z.string().max(BROWSER_COMMAND_MAX_STORAGE_VALUE_LENGTH),
+});
+export type BrowserStorageItem = z.infer<typeof browserStorageItemSchema>;
+
+export const browserStorageAreaSchema = z.enum(["local", "session"]);
+export type BrowserStorageArea = z.infer<typeof browserStorageAreaSchema>;
+
+/**
+ * What to do to a tab's stored state. Structurally identical to the desktop
+ * contract's storage union, for the reason the other two unions are.
+ *
+ * Reading this is reading credentials: cookie values come back in the clear
+ * because a session cookie without its value restores nothing.
+ */
+export const browserStorageOperationSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("cookies-get") }),
+  z.object({
+    kind: z.literal("cookies-set"),
+    cookies: z
+      .array(browserCookieSchema)
+      .min(1)
+      .max(BROWSER_COMMAND_MAX_COOKIES),
+  }),
+  z.object({
+    kind: z.literal("cookies-clear"),
+    name: z
+      .string()
+      .min(1)
+      .max(BROWSER_COMMAND_MAX_COOKIE_NAME_LENGTH)
+      .nullable(),
+  }),
+  z.object({ kind: z.literal("items-get"), area: browserStorageAreaSchema }),
+  z.object({
+    kind: z.literal("items-set"),
+    area: browserStorageAreaSchema,
+    items: z
+      .array(browserStorageItemSchema)
+      .min(1)
+      .max(BROWSER_COMMAND_MAX_STORAGE_ITEMS),
+  }),
+  z.object({
+    kind: z.literal("items-clear"),
+    area: browserStorageAreaSchema,
+    name: z
+      .string()
+      .min(1)
+      .max(BROWSER_COMMAND_MAX_COOKIE_NAME_LENGTH)
+      .nullable(),
+  }),
+]);
+export type BrowserStorageOperation = z.infer<
+  typeof browserStorageOperationSchema
+>;
+
+/**
+ * Caps on direct control, mirroring the desktop contract's for the reason the
+ * others do.
+ */
+export const BROWSER_COMMAND_MAX_ROUTES = 20;
+export const BROWSER_COMMAND_MAX_ROUTE_PATTERN_LENGTH = 1024;
+export const BROWSER_COMMAND_MAX_ROUTE_BODY_LENGTH = 262_144;
+export const BROWSER_COMMAND_MAX_ROUTE_HEADERS = 20;
+export const BROWSER_COMMAND_MAX_EVAL_EXPRESSION_LENGTH = 8_192;
+export const BROWSER_COMMAND_MAX_EVAL_RESULT_LENGTH = 65_536;
+export const BROWSER_COMMAND_MAX_WHEEL_DELTA = 100_000;
+
+/** A response a tab should be given instead of the one the network would. */
+export const browserRouteSchema = z.object({
+  pattern: z.string().min(1).max(BROWSER_COMMAND_MAX_ROUTE_PATTERN_LENGTH),
+  status: z.number().int().min(100).max(599),
+  contentType: z.string().max(256),
+  body: z.string().max(BROWSER_COMMAND_MAX_ROUTE_BODY_LENGTH),
+  headers: z
+    .array(
+      z.object({
+        name: z.string().min(1).max(256),
+        value: z.string().max(4096),
+      }),
+    )
+    .max(BROWSER_COMMAND_MAX_ROUTE_HEADERS),
+});
+export type BrowserRoute = z.infer<typeof browserRouteSchema>;
+
+const browserRouteStateSchema = browserRouteSchema.extend({
+  matched: z.number().int().nonnegative(),
+});
+export type BrowserRouteState = z.infer<typeof browserRouteStateSchema>;
+
+/**
+ * Driving a tab past the paths that make the other commands safe: the caller's
+ * own JavaScript in a page that may hold live logins, input at raw coordinates
+ * that skips every actionability check, and control of what the page receives
+ * from the network. Structurally identical to the desktop contract's control
+ * union, for the reason the other three unions are.
+ */
+export const browserControlOperationSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("mouse-move"),
+    x: z.number().int().nonnegative().max(BROWSER_COMMAND_MAX_VIEWPORT_SIZE),
+    y: z.number().int().nonnegative().max(BROWSER_COMMAND_MAX_VIEWPORT_SIZE),
+  }),
+  z.object({
+    kind: z.literal("mouse-button"),
+    button: z.enum(["left", "middle", "right"]),
+    down: z.boolean(),
+  }),
+  z.object({
+    kind: z.literal("mouse-wheel"),
+    deltaX: z
+      .number()
+      .int()
+      .min(-BROWSER_COMMAND_MAX_WHEEL_DELTA)
+      .max(BROWSER_COMMAND_MAX_WHEEL_DELTA),
+    deltaY: z
+      .number()
+      .int()
+      .min(-BROWSER_COMMAND_MAX_WHEEL_DELTA)
+      .max(BROWSER_COMMAND_MAX_WHEEL_DELTA),
+  }),
+  z.object({
+    kind: z.literal("evaluate"),
+    expression: z.string().min(1).max(BROWSER_COMMAND_MAX_EVAL_EXPRESSION_LENGTH),
+    ref: browserRefSchema.nullable(),
+  }),
+  z.object({ kind: z.literal("route-set"), route: browserRouteSchema }),
+  z.object({ kind: z.literal("route-list") }),
+  z.object({
+    kind: z.literal("route-clear"),
+    pattern: z
+      .string()
+      .min(1)
+      .max(BROWSER_COMMAND_MAX_ROUTE_PATTERN_LENGTH)
+      .nullable(),
+  }),
+  z.object({ kind: z.literal("offline"), offline: z.boolean() }),
+]);
+export type BrowserControlOperation = z.infer<
+  typeof browserControlOperationSchema
+>;
+
 export const browserCommandSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("tabs.list") }),
   z.object({
@@ -185,6 +406,38 @@ export const browserCommandSchema = z.discriminatedUnion("type", [
      */
     generation: z.number().int().nonnegative().nullable(),
     interaction: browserInteractionSchema,
+  }),
+  z.object({
+    /**
+     * Reading a tab without acting on it. Unlike every other page command this
+     * one never attaches the browser debugger, so it works on a tab a human is
+     * simply browsing and leaves that tab's dialogs where they were.
+     */
+    type: z.literal("page.observe"),
+    tabId: optionalTabIdSchema,
+    observation: browserObservationSchema,
+  }),
+  z.object({
+    /**
+     * Reading and writing what a tab has stored. Attaches no debugger either,
+     * and is the one command whose results are the user's logins rather than
+     * what a page rendered.
+     */
+    type: z.literal("page.storage"),
+    tabId: optionalTabIdSchema,
+    operation: browserStorageOperationSchema,
+  }),
+  z.object({
+    /**
+     * Direct control of a tab. The one command group whose members are grouped
+     * by how much they hand over rather than by what they do — arbitrary
+     * JavaScript in the page, coordinate input, a mocked network.
+     */
+    type: z.literal("page.control"),
+    tabId: optionalTabIdSchema,
+    /** Only `evaluate` with a ref uses it; null skips the staleness check. */
+    generation: z.number().int().nonnegative().nullable(),
+    operation: browserControlOperationSchema,
   }),
   z.object({
     type: z.literal("navigation.open"),
@@ -241,6 +494,104 @@ export const browserCommandValueSchema = z.discriminatedUnion("type", [
     title: z.string().max(BROWSER_COMMAND_MAX_TITLE_LENGTH).nullable(),
   }),
   z.object({
+    type: z.literal("image"),
+    tabId: z.string().min(1),
+    url: z.string().max(BROWSER_COMMAND_MAX_URL_LENGTH),
+    title: z.string().max(BROWSER_COMMAND_MAX_TITLE_LENGTH).nullable(),
+    mimeType: z.enum(["image/png", "image/jpeg"]),
+    base64: z.string().max(BROWSER_COMMAND_MAX_SCREENSHOT_BASE64_LENGTH),
+    width: z.number().int().nonnegative(),
+    height: z.number().int().nonnegative(),
+  }),
+  z.object({
+    type: z.literal("pdf"),
+    tabId: z.string().min(1),
+    url: z.string().max(BROWSER_COMMAND_MAX_URL_LENGTH),
+    title: z.string().max(BROWSER_COMMAND_MAX_TITLE_LENGTH).nullable(),
+    base64: z.string().max(BROWSER_COMMAND_MAX_PDF_BASE64_LENGTH),
+    byteLength: z.number().int().nonnegative(),
+  }),
+  z.object({
+    type: z.literal("console"),
+    tabId: z.string().min(1),
+    url: z.string().max(BROWSER_COMMAND_MAX_URL_LENGTH),
+    title: z.string().max(BROWSER_COMMAND_MAX_TITLE_LENGTH).nullable(),
+    entries: z
+      .array(browserConsoleEntrySchema)
+      .max(BROWSER_COMMAND_MAX_OBSERVATION_ENTRIES),
+    /**
+     * Entries the caller is not seeing, because the tab's ring buffer evicted
+     * them or the requested limit cut them. A log without this number reads as
+     * complete when it is not.
+     */
+    droppedCount: z.number().int().nonnegative(),
+  }),
+  z.object({
+    type: z.literal("network"),
+    tabId: z.string().min(1),
+    url: z.string().max(BROWSER_COMMAND_MAX_URL_LENGTH),
+    title: z.string().max(BROWSER_COMMAND_MAX_TITLE_LENGTH).nullable(),
+    entries: z
+      .array(browserNetworkEntrySchema)
+      .max(BROWSER_COMMAND_MAX_OBSERVATION_ENTRIES),
+    droppedCount: z.number().int().nonnegative(),
+  }),
+  z.object({
+    type: z.literal("cookies"),
+    tabId: z.string().min(1),
+    url: z.string().max(BROWSER_COMMAND_MAX_URL_LENGTH),
+    title: z.string().max(BROWSER_COMMAND_MAX_TITLE_LENGTH).nullable(),
+    cookies: z.array(browserCookieSchema).max(BROWSER_COMMAND_MAX_COOKIES),
+  }),
+  z.object({
+    type: z.literal("storage"),
+    tabId: z.string().min(1),
+    url: z.string().max(BROWSER_COMMAND_MAX_URL_LENGTH),
+    title: z.string().max(BROWSER_COMMAND_MAX_TITLE_LENGTH).nullable(),
+    area: browserStorageAreaSchema,
+    items: z
+      .array(browserStorageItemSchema)
+      .max(BROWSER_COMMAND_MAX_STORAGE_ITEMS),
+    /** The origin held more than the caps allow, so this is not all of it. */
+    truncated: z.boolean(),
+  }),
+  z.object({
+    /**
+     * What a write landed and what the browser refused. A partial write is the
+     * realistic outcome — Chromium rejects a cookie whose domain and scheme
+     * disagree — and a silent one costs an hour of wondering why a restored
+     * session does not work.
+     */
+    type: z.literal("written"),
+    applied: z.number().int().nonnegative(),
+    rejected: z.number().int().nonnegative(),
+  }),
+  z.object({
+    type: z.literal("removed"),
+    removed: z.number().int().nonnegative(),
+  }),
+  z.object({
+    /**
+     * What an expression returned, as JSON text. Text rather than a value
+     * because what a page returns is page-shaped: a schema describing it would
+     * either reject something legitimate or accept anything at all.
+     */
+    type: z.literal("evaluated"),
+    tabId: z.string().min(1),
+    url: z.string().max(BROWSER_COMMAND_MAX_URL_LENGTH),
+    title: z.string().max(BROWSER_COMMAND_MAX_TITLE_LENGTH).nullable(),
+    value: z.string().max(BROWSER_COMMAND_MAX_EVAL_RESULT_LENGTH),
+    truncated: z.boolean(),
+  }),
+  z.object({
+    type: z.literal("routes"),
+    tabId: z.string().min(1),
+    url: z.string().max(BROWSER_COMMAND_MAX_URL_LENGTH),
+    title: z.string().max(BROWSER_COMMAND_MAX_TITLE_LENGTH).nullable(),
+    routes: z.array(browserRouteStateSchema).max(BROWSER_COMMAND_MAX_ROUTES),
+    offline: z.boolean(),
+  }),
+  z.object({
     type: z.literal("snapshot"),
     tabId: z.string().min(1),
     url: z.string().max(BROWSER_COMMAND_MAX_URL_LENGTH),
@@ -291,6 +642,15 @@ export const browserCommandErrorCodeSchema = z.enum([
   "not_actionable",
   /** The key named is not one the browser can press. */
   "unsupported_key",
+  /**
+   * The screenshot or PDF was past what the bridge will carry. Nothing partial
+   * is ever returned, so this is a refusal rather than a truncation.
+   */
+  "result_too_large",
+  /** The page ran the expression and it threw — the caller's to fix. */
+  "evaluation_failed",
+  /** The tab already holds as many route mocks as it will. */
+  "too_many_routes",
   /** The command or its parameters did not parse. */
   "invalid_command",
 ]);

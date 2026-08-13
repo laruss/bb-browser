@@ -612,6 +612,583 @@ export type BbDesktopBrowserInteractResult = z.infer<
   typeof bbDesktopBrowserInteractResultSchema
 >;
 
+/**
+ * Caps on what an observation carries back.
+ *
+ * The two base64 bounds are sized for what they hold rather than symmetrically:
+ * a viewport screenshot is a single frame, while a PDF is the whole document and
+ * routinely several times larger. Exceeding either is a typed refusal
+ * (`too-large`) and never a truncation — half a PNG is not a smaller PNG.
+ *
+ * The buffers are bounded by count as well as by string length because their
+ * contents are page-authored: a page in a `console.log` loop must cost a fixed
+ * amount of shell memory, not a growing one.
+ */
+export const BB_DESKTOP_BROWSER_MAX_SCREENSHOT_BASE64_LENGTH = 8_388_608;
+export const BB_DESKTOP_BROWSER_MAX_PDF_BASE64_LENGTH = 16_777_216;
+export const BB_DESKTOP_BROWSER_MAX_OBSERVATION_ENTRIES = 500;
+export const BB_DESKTOP_BROWSER_MAX_CONSOLE_TEXT_LENGTH = 4096;
+
+/**
+ * What to observe about a tab.
+ *
+ * One union on one channel, for the reason the interaction union gives: these
+ * share the preamble (resolve the tab, decide whether it needs a loaded page)
+ * and a channel apiece would freeze four copies of it.
+ *
+ * Unlike an interaction, **none of these attaches the browser debugger.**
+ * Screenshots and PDFs are Electron's own `capturePage`/`printToPDF`, and the
+ * console and network logs are recorded from ordinary `webContents` and
+ * `webRequest` events, from the moment the tab is created. That is what lets an
+ * agent look at a tab the user is merely browsing without moving its dialogs off
+ * Chromium's native path.
+ */
+export const bbDesktopBrowserObservationSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("screenshot"),
+    /** JPEG for looking at a page, PNG when exact pixels matter. */
+    format: z.enum(["png", "jpeg"]),
+    /** JPEG quality; ignored for PNG, which is lossless. */
+    quality: z.number().int().min(1).max(100),
+  }),
+  z.object({ kind: z.literal("pdf") }),
+  z.object({
+    kind: z.literal("console"),
+    /** Newest entries first cut from the tail, so a limit keeps what is recent. */
+    limit: z.number().int().min(1).max(BB_DESKTOP_BROWSER_MAX_OBSERVATION_ENTRIES),
+  }),
+  z.object({
+    kind: z.literal("network"),
+    limit: z.number().int().min(1).max(BB_DESKTOP_BROWSER_MAX_OBSERVATION_ENTRIES),
+  }),
+]);
+export type BbDesktopBrowserObservation = z.infer<
+  typeof bbDesktopBrowserObservationSchema
+>;
+
+export const bbDesktopBrowserObserveRequestSchema = z
+  .object({
+    tabId: z.string().min(1),
+    observation: bbDesktopBrowserObservationSchema,
+  })
+  .strict();
+export type BbDesktopBrowserObserveRequest = z.infer<
+  typeof bbDesktopBrowserObserveRequestSchema
+>;
+
+/**
+ * One console message the page produced. `text` is whatever the page passed to
+ * `console.*`, already flattened to a string by Chromium, and `source` is the
+ * script URL it came from — both page-authored and neither trustworthy.
+ */
+const bbDesktopBrowserConsoleEntrySchema = z.object({
+  level: z.enum(["debug", "info", "warning", "error"]).catch("info"),
+  text: z.string().max(BB_DESKTOP_BROWSER_MAX_CONSOLE_TEXT_LENGTH),
+  source: z.string().max(BB_DESKTOP_BROWSER_MAX_URL_LENGTH),
+  line: z.number().int().nonnegative(),
+  timestamp: z.number().int().nonnegative(),
+});
+export type BbDesktopBrowserConsoleEntry = z.infer<
+  typeof bbDesktopBrowserConsoleEntrySchema
+>;
+
+/**
+ * One request the tab finished. `status` is null when it never got a response —
+ * `error` says why, and a request the session firewall refused shows up here
+ * rather than vanishing.
+ *
+ * `resourceType` stays a free string rather than an enum: Chromium adds to that
+ * list, and a new value must not fail the whole parse.
+ */
+const bbDesktopBrowserNetworkEntrySchema = z.object({
+  method: z.string().max(16),
+  url: z.string().max(BB_DESKTOP_BROWSER_MAX_URL_LENGTH),
+  resourceType: z.string().max(32),
+  status: z.number().int().nullable(),
+  fromCache: z.boolean(),
+  error: z.string().max(BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH).nullable(),
+  timestamp: z.number().int().nonnegative(),
+});
+export type BbDesktopBrowserNetworkEntry = z.infer<
+  typeof bbDesktopBrowserNetworkEntrySchema
+>;
+
+const bbDesktopBrowserObservedPageSchema = {
+  tabId: z.string().min(1),
+  url: z.string().max(BB_DESKTOP_BROWSER_MAX_URL_LENGTH),
+  title: z.string().max(BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH).nullable(),
+};
+
+/**
+ * What an observation answers with.
+ *
+ * `droppedCount` is the load-bearing field on the two logs: the buffers are
+ * fixed-size rings, so a busy page silently loses its oldest entries. A caller
+ * reading a log needs to know it is looking at a window rather than at
+ * everything, and that number is the only way to tell.
+ *
+ * Not `.strict()`, for the same reason the page-read result is not: this is
+ * parsed by the SPA, which routinely runs against a newer shell.
+ */
+export const bbDesktopBrowserObserveResultSchema = z.union([
+  z.discriminatedUnion("kind", [
+    z.object({
+      ok: z.literal(true),
+      kind: z.literal("screenshot"),
+      ...bbDesktopBrowserObservedPageSchema,
+      mimeType: z.enum(["image/png", "image/jpeg"]),
+      base64: z.string().max(BB_DESKTOP_BROWSER_MAX_SCREENSHOT_BASE64_LENGTH),
+      width: z.number().int().nonnegative(),
+      height: z.number().int().nonnegative(),
+    }),
+    z.object({
+      ok: z.literal(true),
+      kind: z.literal("pdf"),
+      ...bbDesktopBrowserObservedPageSchema,
+      base64: z.string().max(BB_DESKTOP_BROWSER_MAX_PDF_BASE64_LENGTH),
+      byteLength: z.number().int().nonnegative(),
+    }),
+    z.object({
+      ok: z.literal(true),
+      kind: z.literal("console"),
+      ...bbDesktopBrowserObservedPageSchema,
+      entries: z
+        .array(bbDesktopBrowserConsoleEntrySchema)
+        .max(BB_DESKTOP_BROWSER_MAX_OBSERVATION_ENTRIES),
+      droppedCount: z.number().int().nonnegative(),
+    }),
+    z.object({
+      ok: z.literal(true),
+      kind: z.literal("network"),
+      ...bbDesktopBrowserObservedPageSchema,
+      entries: z
+        .array(bbDesktopBrowserNetworkEntrySchema)
+        .max(BB_DESKTOP_BROWSER_MAX_OBSERVATION_ENTRIES),
+      droppedCount: z.number().int().nonnegative(),
+    }),
+  ]),
+  z.object({
+    ok: z.literal(false),
+    /**
+     * `no-view` / `no-page` as elsewhere. `too-large` — the image or document
+     * exceeded the cap above and was not sent; nothing partial is ever returned.
+     * `failed` — anything else, including a page that could not be captured.
+     */
+    reason: z
+      .enum(["no-view", "no-page", "too-large", "failed"])
+      .catch("failed"),
+    message: z.string().max(1024).optional(),
+  }),
+]);
+export type BbDesktopBrowserObserveResult = z.infer<
+  typeof bbDesktopBrowserObserveResultSchema
+>;
+
+/**
+ * Caps on stored state.
+ *
+ * Cookie values are bounded by the cookie spec itself (~4KB); web storage is
+ * not, so it gets a per-value cap, a count cap **and** a total budget. A single
+ * origin may legitimately hold megabytes of serialized application state, and
+ * all three of those must not become the size of one IPC message.
+ */
+export const BB_DESKTOP_BROWSER_MAX_COOKIES = 200;
+export const BB_DESKTOP_BROWSER_MAX_COOKIE_NAME_LENGTH = 256;
+export const BB_DESKTOP_BROWSER_MAX_COOKIE_VALUE_LENGTH = 4096;
+export const BB_DESKTOP_BROWSER_MAX_STORAGE_ITEMS = 500;
+export const BB_DESKTOP_BROWSER_MAX_STORAGE_VALUE_LENGTH = 65_536;
+export const BB_DESKTOP_BROWSER_MAX_STORAGE_TOTAL_LENGTH = 1_048_576;
+
+/**
+ * One cookie, in **Playwright's `storageState` shape** rather than Electron's.
+ *
+ * That is the interop decision of this group: a state file written here loads
+ * into Playwright and one written by Playwright loads here, which is the only
+ * reason a saved session is worth more than an opaque blob. The shell maps
+ * Electron's vocabulary onto this one (`no_restriction` → `None`, a missing
+ * `expirationDate` → `expires: -1`) so nothing downstream has to know both.
+ *
+ * `value` is the session itself for a logged-in site. It is carried in the
+ * clear, because a redacted cookie is not a cookie — see the note on
+ * {@link bbDesktopBrowserStorageOperationSchema}.
+ */
+const bbDesktopBrowserCookieSchema = z.object({
+  name: z.string().max(BB_DESKTOP_BROWSER_MAX_COOKIE_NAME_LENGTH),
+  value: z.string().max(BB_DESKTOP_BROWSER_MAX_COOKIE_VALUE_LENGTH),
+  /** A leading dot means a domain cookie; without one it is host-only. */
+  domain: z.string().max(BB_DESKTOP_BROWSER_MAX_COOKIE_NAME_LENGTH),
+  path: z.string().max(BB_DESKTOP_BROWSER_MAX_COOKIE_NAME_LENGTH),
+  /** Seconds since the epoch, or -1 for a cookie that dies with the session. */
+  expires: z.number(),
+  httpOnly: z.boolean(),
+  secure: z.boolean(),
+  sameSite: z.enum(["Strict", "Lax", "None"]),
+});
+export type BbDesktopBrowserCookie = z.infer<typeof bbDesktopBrowserCookieSchema>;
+
+const bbDesktopBrowserStorageItemSchema = z.object({
+  name: z.string().max(BB_DESKTOP_BROWSER_MAX_COOKIE_NAME_LENGTH),
+  value: z.string().max(BB_DESKTOP_BROWSER_MAX_STORAGE_VALUE_LENGTH),
+});
+export type BbDesktopBrowserStorageItem = z.infer<
+  typeof bbDesktopBrowserStorageItemSchema
+>;
+
+/** `sessionStorage` is per-tab; `localStorage` is per-origin and outlives it. */
+export const bbDesktopBrowserStorageAreaSchema = z.enum(["local", "session"]);
+export type BbDesktopBrowserStorageArea = z.infer<
+  typeof bbDesktopBrowserStorageAreaSchema
+>;
+
+/**
+ * What to do to a tab's stored state.
+ *
+ * One union on one channel, as with interactions and observations. **This one
+ * is credential access**, and the shape says so rather than hiding it: cookies
+ * come back with their values, because a session cookie without its value is
+ * not a session and `state-save` would produce a file that restores nothing.
+ * In a browser holding the user's live logins that is what this group is for
+ * and what it costs.
+ *
+ * Everything is scoped to one tab: cookies to the URL that tab is on, web
+ * storage to that tab's main frame. The tab is the unit of this browser, and a
+ * whole-jar read would hand over every site the user is signed in to at once.
+ *
+ * Like observations, and unlike interactions, **none of this attaches the
+ * browser debugger.** Cookies are Electron's `session.cookies`; web storage is
+ * a fixed script in the same privileged isolated world the page read uses.
+ */
+export const bbDesktopBrowserStorageOperationSchema = z.discriminatedUnion(
+  "kind",
+  [
+    z.object({ kind: z.literal("cookies-get") }),
+    z.object({
+      kind: z.literal("cookies-set"),
+      cookies: z
+        .array(bbDesktopBrowserCookieSchema)
+        .min(1)
+        .max(BB_DESKTOP_BROWSER_MAX_COOKIES),
+    }),
+    /** A null name clears every cookie the tab's URL carries. */
+    z.object({
+      kind: z.literal("cookies-clear"),
+      name: z
+        .string()
+        .min(1)
+        .max(BB_DESKTOP_BROWSER_MAX_COOKIE_NAME_LENGTH)
+        .nullable(),
+    }),
+    z.object({
+      kind: z.literal("items-get"),
+      area: bbDesktopBrowserStorageAreaSchema,
+    }),
+    z.object({
+      kind: z.literal("items-set"),
+      area: bbDesktopBrowserStorageAreaSchema,
+      items: z
+        .array(bbDesktopBrowserStorageItemSchema)
+        .min(1)
+        .max(BB_DESKTOP_BROWSER_MAX_STORAGE_ITEMS),
+    }),
+    z.object({
+      kind: z.literal("items-clear"),
+      area: bbDesktopBrowserStorageAreaSchema,
+      name: z
+        .string()
+        .min(1)
+        .max(BB_DESKTOP_BROWSER_MAX_COOKIE_NAME_LENGTH)
+        .nullable(),
+    }),
+  ],
+);
+export type BbDesktopBrowserStorageOperation = z.infer<
+  typeof bbDesktopBrowserStorageOperationSchema
+>;
+
+export const bbDesktopBrowserStorageRequestSchema = z
+  .object({
+    tabId: z.string().min(1),
+    operation: bbDesktopBrowserStorageOperationSchema,
+  })
+  .strict();
+export type BbDesktopBrowserStorageRequest = z.infer<
+  typeof bbDesktopBrowserStorageRequestSchema
+>;
+
+/**
+ * What a storage operation answers with.
+ *
+ * The two writes answer with counts because a partial write is the realistic
+ * outcome and a silent one is the expensive one: Chromium refuses a cookie
+ * whose domain does not match, and web storage refuses anything past its quota.
+ * `state-load` reporting "12 applied, 2 rejected" is the difference between a
+ * session that half works and an hour spent asking why.
+ *
+ * Not `.strict()`, like the results above: the SPA parses this against a shell
+ * that may be newer than it is.
+ */
+export const bbDesktopBrowserStorageResultSchema = z.union([
+  z.discriminatedUnion("kind", [
+    z.object({
+      ok: z.literal(true),
+      kind: z.literal("cookies"),
+      ...bbDesktopBrowserObservedPageSchema,
+      cookies: z
+        .array(bbDesktopBrowserCookieSchema)
+        .max(BB_DESKTOP_BROWSER_MAX_COOKIES),
+    }),
+    z.object({
+      ok: z.literal(true),
+      kind: z.literal("items"),
+      ...bbDesktopBrowserObservedPageSchema,
+      area: bbDesktopBrowserStorageAreaSchema,
+      items: z
+        .array(bbDesktopBrowserStorageItemSchema)
+        .max(BB_DESKTOP_BROWSER_MAX_STORAGE_ITEMS),
+      /** The origin held more than the caps allow, so this is not all of it. */
+      truncated: z.boolean(),
+    }),
+    z.object({
+      ok: z.literal(true),
+      kind: z.literal("written"),
+      applied: z.number().int().nonnegative(),
+      rejected: z.number().int().nonnegative(),
+    }),
+    z.object({
+      ok: z.literal(true),
+      kind: z.literal("removed"),
+      removed: z.number().int().nonnegative(),
+    }),
+  ]),
+  z.object({
+    ok: z.literal(false),
+    /**
+     * `no-view` / `no-page` as elsewhere. `timeout` — the page never ran the
+     * script, which is the same hazard the page read has. `failed` — anything
+     * else, including an origin whose storage the browser refuses to open.
+     */
+    reason: z
+      .enum(["no-view", "no-page", "timeout", "failed"])
+      .catch("failed"),
+    message: z.string().max(1024).optional(),
+  }),
+]);
+export type BbDesktopBrowserStorageResult = z.infer<
+  typeof bbDesktopBrowserStorageResultSchema
+>;
+
+/**
+ * Caps on direct control of a tab.
+ *
+ * A mocked body is bounded well below a screenshot's: it is held in the shell
+ * for as long as the route exists, once per route, whereas a capture crosses
+ * once and is gone. An evaluated result is bounded like a snapshot rather than
+ * like a PDF — it is text, so a caller can still use the part that arrived, and
+ * the flag says there was more.
+ */
+export const BB_DESKTOP_BROWSER_MAX_ROUTES = 20;
+export const BB_DESKTOP_BROWSER_MAX_ROUTE_PATTERN_LENGTH = 1024;
+export const BB_DESKTOP_BROWSER_MAX_ROUTE_BODY_LENGTH = 262_144;
+export const BB_DESKTOP_BROWSER_MAX_ROUTE_HEADERS = 20;
+export const BB_DESKTOP_BROWSER_MAX_EVAL_EXPRESSION_LENGTH = 8_192;
+export const BB_DESKTOP_BROWSER_MAX_EVAL_RESULT_LENGTH = 65_536;
+export const BB_DESKTOP_BROWSER_MAX_WHEEL_DELTA = 100_000;
+
+/**
+ * A request the tab should be answered with instead of the network's answer.
+ *
+ * `pattern` is a Playwright-style URL glob — `*` stops at a path separator,
+ * `**` does not — matched against the whole URL. Deliberately the same dialect,
+ * because a route written from Playwright's documentation should mean here what
+ * it means there.
+ */
+export const bbDesktopBrowserRouteSchema = z.object({
+  pattern: z.string().min(1).max(BB_DESKTOP_BROWSER_MAX_ROUTE_PATTERN_LENGTH),
+  status: z.number().int().min(100).max(599),
+  contentType: z.string().max(256),
+  body: z.string().max(BB_DESKTOP_BROWSER_MAX_ROUTE_BODY_LENGTH),
+  headers: z
+    .array(
+      z.object({
+        name: z.string().min(1).max(256),
+        value: z.string().max(4096),
+      }),
+    )
+    .max(BB_DESKTOP_BROWSER_MAX_ROUTE_HEADERS),
+});
+export type BbDesktopBrowserRoute = z.infer<typeof bbDesktopBrowserRouteSchema>;
+
+/** A route as it stands, with how many requests it has answered. */
+export const bbDesktopBrowserRouteStateSchema =
+  bbDesktopBrowserRouteSchema.extend({
+    matched: z.number().int().nonnegative(),
+  });
+export type BbDesktopBrowserRouteState = z.infer<
+  typeof bbDesktopBrowserRouteStateSchema
+>;
+
+/**
+ * Driving a tab directly, past the paths that make the other commands safe.
+ *
+ * These belong together because of what they share rather than what they do:
+ * each one hands a caller something the rest of this API deliberately withholds.
+ * `evaluate` runs the caller's own JavaScript in a page that may hold live
+ * logins. The mouse commands act at raw viewport coordinates, so they skip the
+ * ref lookup and the actionability check entirely and land on whatever is at
+ * that point. A route rewrites what the page receives from the network, and
+ * `offline` cuts it off. See docs/architecture/browser-automation.md, Stage E.
+ *
+ * All of them attach the browser debugger; none of them is reachable without
+ * the plugin being enabled.
+ */
+export const bbDesktopBrowserControlOperationSchema = z.discriminatedUnion(
+  "kind",
+  [
+    z.object({
+      kind: z.literal("mouse-move"),
+      /** CSS pixels from the viewport's top-left, as a screenshot shows them. */
+      x: z.number().int().nonnegative().max(BB_DESKTOP_BROWSER_MAX_VIEWPORT_SIZE),
+      y: z.number().int().nonnegative().max(BB_DESKTOP_BROWSER_MAX_VIEWPORT_SIZE),
+    }),
+    z.object({
+      kind: z.literal("mouse-button"),
+      button: z.enum(["left", "middle", "right"]),
+      /** Press or release, at wherever the last `mouse-move` left the pointer. */
+      down: z.boolean(),
+    }),
+    z.object({
+      kind: z.literal("mouse-wheel"),
+      deltaX: z
+        .number()
+        .int()
+        .min(-BB_DESKTOP_BROWSER_MAX_WHEEL_DELTA)
+        .max(BB_DESKTOP_BROWSER_MAX_WHEEL_DELTA),
+      deltaY: z
+        .number()
+        .int()
+        .min(-BB_DESKTOP_BROWSER_MAX_WHEEL_DELTA)
+        .max(BB_DESKTOP_BROWSER_MAX_WHEEL_DELTA),
+    }),
+    z.object({
+      kind: z.literal("evaluate"),
+      /**
+       * A JavaScript *function*, as Playwright's `eval` takes: `() =>
+       * document.title`, or `(el) => el.value` when a ref names an element.
+       * It runs in the page's own world, not the isolated one the shell's own
+       * scripts use — which is what makes a page's globals reachable and is
+       * also why nothing here is protected from the page.
+       */
+      expression: z
+        .string()
+        .min(1)
+        .max(BB_DESKTOP_BROWSER_MAX_EVAL_EXPRESSION_LENGTH),
+      /** The element to pass in, or null to evaluate against the page. */
+      ref: bbDesktopBrowserRefSchema.nullable(),
+    }),
+    z.object({
+      kind: z.literal("route-set"),
+      route: bbDesktopBrowserRouteSchema,
+    }),
+    z.object({ kind: z.literal("route-list") }),
+    z.object({
+      kind: z.literal("route-clear"),
+      /** Null removes every route on the tab. */
+      pattern: z
+        .string()
+        .min(1)
+        .max(BB_DESKTOP_BROWSER_MAX_ROUTE_PATTERN_LENGTH)
+        .nullable(),
+    }),
+    z.object({ kind: z.literal("offline"), offline: z.boolean() }),
+  ],
+);
+export type BbDesktopBrowserControlOperation = z.infer<
+  typeof bbDesktopBrowserControlOperationSchema
+>;
+
+/**
+ * `generation` carries the same optional staleness check an interaction does,
+ * and matters for the same narrow case: an `evaluate` naming a ref that a newer
+ * snapshot has since reassigned.
+ */
+export const bbDesktopBrowserControlRequestSchema = z
+  .object({
+    tabId: z.string().min(1),
+    generation: z.number().int().nonnegative().optional(),
+    operation: bbDesktopBrowserControlOperationSchema,
+  })
+  .strict();
+export type BbDesktopBrowserControlRequest = z.infer<
+  typeof bbDesktopBrowserControlRequestSchema
+>;
+
+/**
+ * What direct control answers with.
+ *
+ * An evaluated value crosses as JSON **text** rather than as a value: what a
+ * page returns is page-shaped, and a schema that tried to describe it would
+ * either reject something legitimate or accept everything. Text with a length
+ * cap and a truncation flag says exactly as much as is true.
+ *
+ * Not `.strict()`, like the results above.
+ */
+export const bbDesktopBrowserControlResultSchema = z.union([
+  z.discriminatedUnion("kind", [
+    z.object({
+      ok: z.literal(true),
+      kind: z.literal("acted"),
+      ...bbDesktopBrowserObservedPageSchema,
+    }),
+    z.object({
+      ok: z.literal(true),
+      kind: z.literal("evaluated"),
+      ...bbDesktopBrowserObservedPageSchema,
+      /** `JSON.stringify` of what the expression returned, or `undefined`. */
+      value: z.string().max(BB_DESKTOP_BROWSER_MAX_EVAL_RESULT_LENGTH),
+      truncated: z.boolean(),
+    }),
+    z.object({
+      ok: z.literal(true),
+      kind: z.literal("routes"),
+      ...bbDesktopBrowserObservedPageSchema,
+      routes: z
+        .array(bbDesktopBrowserRouteStateSchema)
+        .max(BB_DESKTOP_BROWSER_MAX_ROUTES),
+      /**
+       * Reported alongside the routes because it answers the same question a
+       * caller is usually asking by then: why is this page not loading.
+       */
+      offline: z.boolean(),
+    }),
+  ]),
+  z.object({
+    ok: z.literal(false),
+    /**
+     * `no-view` / `no-page` / `debugger-unavailable` / `stale-refs` /
+     * `unknown-ref` as elsewhere.
+     * `evaluation-failed` — the page ran the expression and it threw, which is
+     * the caller's to fix rather than the browser's.
+     * `too-many-routes` — the tab already holds as many as it will.
+     */
+    reason: z
+      .enum([
+        "no-view",
+        "no-page",
+        "debugger-unavailable",
+        "stale-refs",
+        "unknown-ref",
+        "evaluation-failed",
+        "too-many-routes",
+        "failed",
+      ])
+      .catch("failed"),
+    message: z.string().max(1024).optional(),
+  }),
+]);
+export type BbDesktopBrowserControlResult = z.infer<
+  typeof bbDesktopBrowserControlResultSchema
+>;
+
 export type BbDesktopBrowserStateHandler = (
   state: BbDesktopBrowserState,
 ) => void;
@@ -735,4 +1312,40 @@ export interface BbDesktopBrowserApi {
   interact?(
     request: BbDesktopBrowserInteractRequest,
   ): Promise<BbDesktopBrowserInteractResult>;
+  /**
+   * Look at a tab without touching it — screenshot, PDF, console log, network
+   * log.
+   *
+   * The one automation method that never attaches the browser debugger, which
+   * is why it works on a tab the user is simply browsing and leaves that tab's
+   * dialogs on Chromium's native path. Optional for the same version skew as
+   * the methods above.
+   */
+  observe?(
+    request: BbDesktopBrowserObserveRequest,
+  ): Promise<BbDesktopBrowserObserveResult>;
+  /**
+   * Read or write what a tab has stored — its cookies, its `localStorage` and
+   * its `sessionStorage`.
+   *
+   * Attaches no debugger either, for the same reason `observe` does not. It is
+   * the one method whose *results* are credentials rather than page content;
+   * see {@link bbDesktopBrowserStorageOperationSchema}. Optional for the same
+   * version skew as the methods above.
+   */
+  storage?(
+    request: BbDesktopBrowserStorageRequest,
+  ): Promise<BbDesktopBrowserStorageResult>;
+  /**
+   * Drive a tab directly — evaluate JavaScript in it, move and click by
+   * coordinate, mock what it receives from the network, take it offline.
+   *
+   * The one method on this API whose members are grouped by how much they hand
+   * over rather than by what they do; see
+   * {@link bbDesktopBrowserControlOperationSchema}. Optional for the same
+   * version skew as the methods above.
+   */
+  control?(
+    request: BbDesktopBrowserControlRequest,
+  ): Promise<BbDesktopBrowserControlResult>;
 }

@@ -5,12 +5,18 @@ import {
   bbDesktopBrowserSetBoundsRequestSchema,
   bbDesktopBrowserSetVisibleRequestSchema,
   bbDesktopBrowserDialogRespondRequestSchema,
+  bbDesktopBrowserControlRequestSchema,
   bbDesktopBrowserInteractRequestSchema,
+  bbDesktopBrowserObserveRequestSchema,
   bbDesktopBrowserSnapshotRequestSchema,
+  bbDesktopBrowserStorageRequestSchema,
   bbDesktopBrowserTabRefSchema,
+  type BbDesktopBrowserControlResult,
   type BbDesktopBrowserInteractResult,
+  type BbDesktopBrowserObserveResult,
   type BbDesktopBrowserPageReadResult,
   type BbDesktopBrowserSnapshotResult,
+  type BbDesktopBrowserStorageResult,
 } from "@bb/desktop-contract";
 import {
   BB_DESKTOP_BROWSER_ATTACH_CHANNEL,
@@ -20,8 +26,11 @@ import {
   BB_DESKTOP_BROWSER_NAVIGATE_CHANNEL,
   BB_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
   BB_DESKTOP_BROWSER_DIALOG_RESPOND_CHANNEL,
+  BB_DESKTOP_BROWSER_CONTROL_CHANNEL,
   BB_DESKTOP_BROWSER_INTERACT_CHANNEL,
+  BB_DESKTOP_BROWSER_OBSERVE_CHANNEL,
   BB_DESKTOP_BROWSER_SNAPSHOT_TREE_CHANNEL,
+  BB_DESKTOP_BROWSER_STORAGE_CHANNEL,
   BB_DESKTOP_BROWSER_RELOAD_CHANNEL,
   BB_DESKTOP_BROWSER_SET_BOUNDS_CHANNEL,
   BB_DESKTOP_BROWSER_SET_VISIBLE_CHANNEL,
@@ -217,6 +226,82 @@ export function registerDesktopBrowserIpc(
       }
       try {
         return await manager.interact({ hostWindow, request: parsed.data });
+      } catch {
+        return { ok: false, reason: "failed" };
+      }
+    },
+  );
+
+  // Looking at a page. Same discipline as the interact channel: a malformed
+  // payload is the request's fault, not the tab's.
+  ipcMain.handle(
+    BB_DESKTOP_BROWSER_OBSERVE_CHANNEL,
+    async (event, payload: unknown): Promise<BbDesktopBrowserObserveResult> => {
+      const hostWindow = BrowserWindow.fromWebContents(event.sender);
+      if (hostWindow === null) {
+        return { ok: false, reason: "no-view" };
+      }
+      const parsed = bbDesktopBrowserObserveRequestSchema.safeParse(payload);
+      if (!parsed.success) {
+        return {
+          ok: false,
+          reason: "failed",
+          message: "That is not an observation this browser understands.",
+        };
+      }
+      try {
+        return await manager.observe({ hostWindow, request: parsed.data });
+      } catch {
+        return { ok: false, reason: "failed" };
+      }
+    },
+  );
+
+  // Cookies and web storage. Same discipline again, and the same reason a
+  // malformed payload is not `no-view`.
+  ipcMain.handle(
+    BB_DESKTOP_BROWSER_STORAGE_CHANNEL,
+    async (event, payload: unknown): Promise<BbDesktopBrowserStorageResult> => {
+      const hostWindow = BrowserWindow.fromWebContents(event.sender);
+      if (hostWindow === null) {
+        return { ok: false, reason: "no-view" };
+      }
+      const parsed = bbDesktopBrowserStorageRequestSchema.safeParse(payload);
+      if (!parsed.success) {
+        return {
+          ok: false,
+          reason: "failed",
+          message: "That is not a storage request this browser understands.",
+        };
+      }
+      try {
+        return await manager.storage({ hostWindow, request: parsed.data });
+      } catch {
+        return { ok: false, reason: "failed" };
+      }
+    },
+  );
+
+  // Direct control of a tab. Same discipline once more; the refusals this one
+  // can carry are wider, but a request that did not parse is still the
+  // request's fault.
+  ipcMain.handle(
+    BB_DESKTOP_BROWSER_CONTROL_CHANNEL,
+    async (event, payload: unknown): Promise<BbDesktopBrowserControlResult> => {
+      const hostWindow = BrowserWindow.fromWebContents(event.sender);
+      if (hostWindow === null) {
+        return { ok: false, reason: "no-view" };
+      }
+      const parsed = bbDesktopBrowserControlRequestSchema.safeParse(payload);
+      if (!parsed.success) {
+        return {
+          ok: false,
+          reason: "failed",
+          message: "That is not a control request this browser understands.",
+        };
+      }
+      try {
+        return await manager.control({ hostWindow, request: parsed.data });
       } catch {
         return { ok: false, reason: "failed" };
       }

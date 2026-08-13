@@ -2,8 +2,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   BB_DESKTOP_BROWSER_MAX_URL_LENGTH,
   type BbDesktopBrowserInteractResult,
+  type BbDesktopBrowserObserveResult,
   type BbDesktopBrowserPageReadResult,
   type BbDesktopBrowserSnapshotResult,
+  type BbDesktopBrowserControlResult,
+  type BbDesktopBrowserStorageResult,
   type BbDesktopBrowserAttachRequest,
   type BbDesktopBrowserNavigateRequest,
   type BbDesktopBrowserSetBoundsRequest,
@@ -15,11 +18,14 @@ import {
   BB_DESKTOP_BROWSER_GO_BACK_CHANNEL,
   BB_DESKTOP_BROWSER_GO_FORWARD_CHANNEL,
   BB_DESKTOP_BROWSER_NAVIGATE_CHANNEL,
+  BB_DESKTOP_BROWSER_OBSERVE_CHANNEL,
   BB_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
   BB_DESKTOP_BROWSER_RELOAD_CHANNEL,
   BB_DESKTOP_BROWSER_SET_BOUNDS_CHANNEL,
   BB_DESKTOP_BROWSER_SET_VISIBLE_CHANNEL,
   BB_DESKTOP_BROWSER_STOP_CHANNEL,
+  BB_DESKTOP_BROWSER_CONTROL_CHANNEL,
+  BB_DESKTOP_BROWSER_STORAGE_CHANNEL,
 } from "../src/desktop-browser-ipc.js";
 import { registerDesktopBrowserIpc } from "../src/desktop-browser-main-ipc.js";
 import type { DesktopBrowserViewManager } from "../src/desktop-browser-view.js";
@@ -84,6 +90,9 @@ type DialogRespondCall = Parameters<
   DesktopBrowserViewManager["respondToDialog"]
 >[0];
 type InteractCall = Parameters<DesktopBrowserViewManager["interact"]>[0];
+type ObserveCall = Parameters<DesktopBrowserViewManager["observe"]>[0];
+type StorageCall = Parameters<DesktopBrowserViewManager["storage"]>[0];
+type ControlCall = Parameters<DesktopBrowserViewManager["control"]>[0];
 type WindowResizeCall = Parameters<
   DesktopBrowserViewManager["beginWindowResize"]
 >[0];
@@ -138,6 +147,24 @@ class RecordingDesktopBrowserViewManager implements DesktopBrowserViewManager {
   public readonly interactCalls: InteractCall[] = [];
   public interactFailure: Error | null = null;
   public interactResult: BbDesktopBrowserInteractResult = {
+    ok: false,
+    reason: "no-view",
+  };
+  public readonly observeCalls: ObserveCall[] = [];
+  public observeFailure: Error | null = null;
+  public observeResult: BbDesktopBrowserObserveResult = {
+    ok: false,
+    reason: "no-view",
+  };
+  public readonly storageCalls: StorageCall[] = [];
+  public storageFailure: Error | null = null;
+  public storageResult: BbDesktopBrowserStorageResult = {
+    ok: false,
+    reason: "no-view",
+  };
+  public readonly controlCalls: ControlCall[] = [];
+  public controlFailure: Error | null = null;
+  public controlResult: BbDesktopBrowserControlResult = {
     ok: false,
     reason: "no-view",
   };
@@ -221,6 +248,30 @@ class RecordingDesktopBrowserViewManager implements DesktopBrowserViewManager {
       return Promise.reject(this.interactFailure);
     }
     return Promise.resolve(this.interactResult);
+  }
+
+  observe(args: ObserveCall): Promise<BbDesktopBrowserObserveResult> {
+    this.observeCalls.push(args);
+    if (this.observeFailure !== null) {
+      return Promise.reject(this.observeFailure);
+    }
+    return Promise.resolve(this.observeResult);
+  }
+
+  control(args: ControlCall): Promise<BbDesktopBrowserControlResult> {
+    this.controlCalls.push(args);
+    if (this.controlFailure !== null) {
+      return Promise.reject(this.controlFailure);
+    }
+    return Promise.resolve(this.controlResult);
+  }
+
+  storage(args: StorageCall): Promise<BbDesktopBrowserStorageResult> {
+    this.storageCalls.push(args);
+    if (this.storageFailure !== null) {
+      return Promise.reject(this.storageFailure);
+    }
+    return Promise.resolve(this.storageResult);
   }
 }
 
@@ -500,6 +551,121 @@ describe("registerDesktopBrowserIpc", () => {
       }),
     ).resolves.toEqual({ ok: false, reason: "no-view" });
     expect(manager.readPageCalls).toHaveLength(1);
+  });
+
+  it("routes observations and refuses a payload it cannot understand", async () => {
+    const manager = new RecordingDesktopBrowserViewManager();
+    manager.observeResult = {
+      ok: true,
+      kind: "console",
+      tabId: "browser:a",
+      url: "https://example.com/",
+      title: null,
+      entries: [],
+      droppedCount: 0,
+    };
+    registerDesktopBrowserIpc(manager);
+    const renderer = createTrustedRenderer("main-window");
+    const request = {
+      tabId: "browser:a",
+      observation: { kind: "console", limit: 25 },
+    };
+
+    await expect(
+      invokeBrowserIpc({
+        channel: BB_DESKTOP_BROWSER_OBSERVE_CHANNEL,
+        payload: request,
+        sender: renderer.sender,
+      }),
+    ).resolves.toEqual(manager.observeResult);
+    expect(manager.observeCalls).toEqual([
+      { hostWindow: renderer.hostWindow, request },
+    ]);
+
+    // A malformed observation is the request's fault, not the tab's — telling
+    // the caller to go activate a tab would send it after the wrong fix.
+    await expect(
+      invokeBrowserIpc({
+        channel: BB_DESKTOP_BROWSER_OBSERVE_CHANNEL,
+        payload: { tabId: "browser:a", observation: { kind: "video" } },
+        sender: renderer.sender,
+      }),
+    ).resolves.toMatchObject({ ok: false, reason: "failed" });
+    expect(manager.observeCalls).toHaveLength(1);
+  });
+
+  it("routes storage operations and refuses a payload it cannot understand", async () => {
+    const manager = new RecordingDesktopBrowserViewManager();
+    manager.storageResult = { ok: true, kind: "removed", removed: 3 };
+    registerDesktopBrowserIpc(manager);
+    const renderer = createTrustedRenderer("main-window");
+    const request = {
+      tabId: "browser:a",
+      operation: { kind: "cookies-clear", name: null },
+    };
+
+    await expect(
+      invokeBrowserIpc({
+        channel: BB_DESKTOP_BROWSER_STORAGE_CHANNEL,
+        payload: request,
+        sender: renderer.sender,
+      }),
+    ).resolves.toEqual(manager.storageResult);
+    expect(manager.storageCalls).toEqual([
+      { hostWindow: renderer.hostWindow, request },
+    ]);
+
+    await expect(
+      invokeBrowserIpc({
+        channel: BB_DESKTOP_BROWSER_STORAGE_CHANNEL,
+        payload: { tabId: "browser:a", operation: { kind: "indexeddb-get" } },
+        sender: renderer.sender,
+      }),
+    ).resolves.toMatchObject({ ok: false, reason: "failed" });
+    expect(manager.storageCalls).toHaveLength(1);
+  });
+
+  it("routes control operations and refuses a payload it cannot understand", async () => {
+    const manager = new RecordingDesktopBrowserViewManager();
+    manager.controlResult = {
+      ok: true,
+      kind: "evaluated",
+      tabId: "browser:a",
+      url: "https://example.com/",
+      title: null,
+      value: '"Example"',
+      truncated: false,
+    };
+    registerDesktopBrowserIpc(manager);
+    const renderer = createTrustedRenderer("main-window");
+    const request = {
+      tabId: "browser:a",
+      operation: {
+        kind: "evaluate",
+        expression: "() => document.title",
+        ref: null,
+      },
+    };
+
+    await expect(
+      invokeBrowserIpc({
+        channel: BB_DESKTOP_BROWSER_CONTROL_CHANNEL,
+        payload: request,
+        sender: renderer.sender,
+      }),
+    ).resolves.toEqual(manager.controlResult);
+    expect(manager.controlCalls).toEqual([
+      { hostWindow: renderer.hostWindow, request },
+    ]);
+
+    await expect(
+      invokeBrowserIpc({
+        channel: BB_DESKTOP_BROWSER_CONTROL_CHANNEL,
+        payload: { tabId: "browser:a", operation: { kind: "screencast" } },
+        sender: renderer.sender,
+      }),
+    ).resolves.toMatchObject({ ok: false, reason: "failed" });
+    expect(manager.controlCalls).toHaveLength(1);
   });
 
   it("converts a throwing manager read into a typed refusal", async () => {

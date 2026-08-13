@@ -22,6 +22,7 @@ import {
   BB_DESKTOP_BROWSER_GO_FORWARD_CHANNEL,
   BB_DESKTOP_BROWSER_DIALOG_RESPOND_CHANNEL,
   BB_DESKTOP_BROWSER_INTERACT_CHANNEL,
+  BB_DESKTOP_BROWSER_OBSERVE_CHANNEL,
   BB_DESKTOP_BROWSER_NAVIGATE_CHANNEL,
   BB_DESKTOP_BROWSER_OPEN_TAB_CHANNEL,
   BB_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
@@ -32,6 +33,8 @@ import {
   BB_DESKTOP_BROWSER_SNAPSHOT_CHANNEL,
   BB_DESKTOP_BROWSER_SNAPSHOT_TREE_CHANNEL,
   BB_DESKTOP_BROWSER_STATE_CHANNEL,
+  BB_DESKTOP_BROWSER_CONTROL_CHANNEL,
+  BB_DESKTOP_BROWSER_STORAGE_CHANNEL,
   BB_DESKTOP_BROWSER_STOP_CHANNEL,
 } from "../src/desktop-browser-ipc.js";
 import {
@@ -246,11 +249,13 @@ describe("desktop preload browser API", () => {
 
     expect(Object.keys(api.browser).sort()).toEqual([
       "attach",
+      "control",
       "detach",
       "goBack",
       "goForward",
       "interact",
       "navigate",
+      "observe",
       "onDialog",
       "onFavicon",
       "onOpenTab",
@@ -264,6 +269,7 @@ describe("desktop preload browser API", () => {
       "setVisible",
       "snapshot",
       "stop",
+      "storage",
     ]);
     expect(api.browser).not.toHaveProperty("send");
     expect(api.browser).not.toHaveProperty("invoke");
@@ -383,6 +389,18 @@ describe("desktop preload browser API", () => {
       tabId: "browser:a",
       interaction: { action: "hover", ref: "e1" },
     });
+    await api.browser.observe?.({
+      tabId: "browser:a",
+      observation: { kind: "console", limit: 10 },
+    });
+    await api.browser.storage?.({
+      tabId: "browser:a",
+      operation: { kind: "items-get", area: "local" },
+    });
+    await api.browser.control?.({
+      tabId: "browser:a",
+      operation: { kind: "route-list" },
+    });
 
     // Loading the preload invokes its own startup channels first; only the
     // browser ones are this test's business.
@@ -395,6 +413,9 @@ describe("desktop preload browser API", () => {
       BB_DESKTOP_BROWSER_SNAPSHOT_TREE_CHANNEL,
       BB_DESKTOP_BROWSER_DIALOG_RESPOND_CHANNEL,
       BB_DESKTOP_BROWSER_INTERACT_CHANNEL,
+      BB_DESKTOP_BROWSER_OBSERVE_CHANNEL,
+      BB_DESKTOP_BROWSER_STORAGE_CHANNEL,
+      BB_DESKTOP_BROWSER_CONTROL_CHANNEL,
     ]);
   }, 10_000);
 

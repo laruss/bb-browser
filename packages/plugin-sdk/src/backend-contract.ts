@@ -793,6 +793,66 @@ export interface PluginBrowserPageState {
   title: string | null;
 }
 
+/**
+ * A capture of what a tab is showing. `base64` rather than bytes because that is
+ * what crossed the wire: a caller forwarding it on (into a tool result, say)
+ * would otherwise pay for a decode and a re-encode, and one that wants the bytes
+ * spends a single `Buffer.from(base64, "base64")`.
+ *
+ * `width`/`height` are the captured pixels, which on a retina display are larger
+ * than the CSS viewport.
+ */
+export interface PluginBrowserScreenshot extends PluginBrowserPageState {
+  mimeType: "image/png" | "image/jpeg";
+  base64: string;
+  width: number;
+  height: number;
+}
+
+export interface PluginBrowserPdf extends PluginBrowserPageState {
+  base64: string;
+  byteLength: number;
+}
+
+/** One line the page wrote to its console. Page-authored, like page text. */
+export interface PluginBrowserConsoleEntry {
+  level: "debug" | "info" | "warning" | "error";
+  text: string;
+  /** Script URL the message came from; empty when the page gave none. */
+  source: string;
+  line: number;
+  timestamp: number;
+}
+
+/**
+ * One request the tab finished. `status` is null when there was no response —
+ * `error` then carries Chromium's `net::ERR_*` name, including for a request
+ * BB's own session firewall refused.
+ */
+export interface PluginBrowserNetworkEntry {
+  method: string;
+  url: string;
+  /** Chromium's resource type (`mainFrame`, `xhr`, `script`, …). */
+  resourceType: string;
+  status: number | null;
+  fromCache: boolean;
+  error: string | null;
+  timestamp: number;
+}
+
+/**
+ * A slice of one of a tab's logs.
+ *
+ * `droppedCount` is what makes the slice honest: the buffers are fixed-size
+ * rings filled from the moment the tab was created, so a busy page loses its
+ * oldest entries, and the requested limit cuts more. Read it before concluding a
+ * page logged nothing.
+ */
+export interface PluginBrowserLog<TEntry> extends PluginBrowserPageState {
+  entries: TEntry[];
+  droppedCount: number;
+}
+
 export interface PluginBrowserPage {
   /**
    * Snapshot the page's accessibility tree. Needs a live tab, like the text
@@ -836,6 +896,51 @@ export interface PluginBrowserPage {
    * failure. Only tabs the shell has taken dialogs over for can have one; a tab
    * nobody has automated still shows Chromium's own modal.
    */
+  /**
+   * Capture what the tab is showing.
+   *
+   * **The visible viewport only** — Electron captures the composited view, so
+   * there is no full-page mode here. Defaults to JPEG at quality 80, which is
+   * the right trade for looking at a page; ask for PNG when exact pixels matter.
+   */
+  screenshot(
+    args?: {
+      tabId?: string;
+      format?: "png" | "jpeg";
+      /** 1–100, JPEG only. */
+      quality?: number;
+    },
+    options?: PluginBrowserCallOptions,
+  ): Promise<PluginBrowserScreenshot>;
+  /**
+   * Print the tab to a PDF. Unlike a screenshot this is the whole document, so
+   * it is also the one call that can come back `result_too_large`. Give it a
+   * longer `timeoutMs` than the default: rendering a long page is not fast.
+   */
+  pdf(
+    args?: { tabId?: string },
+    options?: PluginBrowserCallOptions,
+  ): Promise<PluginBrowserPdf>;
+  /**
+   * What the page has written to its console, newest last.
+   *
+   * Recorded from the moment the tab was created rather than from the first
+   * automation call, so this answers for a tab nobody has driven. `limit`
+   * defaults to 100 and counts back from the most recent.
+   */
+  console(
+    args?: { tabId?: string; limit?: number },
+    options?: PluginBrowserCallOptions,
+  ): Promise<PluginBrowserLog<PluginBrowserConsoleEntry>>;
+  /**
+   * What the tab has requested, newest last. Recorded like the console log, and
+   * tab-scoped rather than page-scoped: a navigation does not clear it, so the
+   * redirect chain that led to the current page is still in there.
+   */
+  network(
+    args?: { tabId?: string; limit?: number },
+    options?: PluginBrowserCallOptions,
+  ): Promise<PluginBrowserLog<PluginBrowserNetworkEntry>>;
   handleDialog(
     args: { accept: boolean; tabId?: string; promptText?: string },
     options?: PluginBrowserCallOptions,
@@ -856,6 +961,246 @@ export interface PluginBrowserPage {
     args?: { tabId?: string },
     options?: PluginBrowserCallOptions,
   ): Promise<{ text: string }>;
+}
+
+/**
+ * One cookie, in Playwright's `storageState` shape.
+ *
+ * That is the interop decision of this group: a file assembled from these loads
+ * into Playwright, and one Playwright wrote loads back here. `expires` is
+ * seconds since the epoch, or -1 for a cookie that dies with the session.
+ *
+ * **`value` is the login.** These come from `session.cookies`, not
+ * `document.cookie`, so `httpOnly` ones are included — which is the point, since
+ * those are the ones that hold a session, and also why anything that logs or
+ * forwards this is handling credentials.
+ */
+export interface PluginBrowserCookie {
+  name: string;
+  value: string;
+  /** A leading dot means a domain cookie; without one it is host-only. */
+  domain: string;
+  path: string;
+  expires: number;
+  httpOnly: boolean;
+  secure: boolean;
+  sameSite: "Strict" | "Lax" | "None";
+}
+
+/**
+ * A cookie to write. Only the name and value are required; a cookie with no
+ * domain of its own is written against the tab's URL, and the rest default to a
+ * host-only, non-secure, `Lax` session cookie.
+ */
+export interface PluginBrowserCookieInput {
+  name: string;
+  value: string;
+  domain?: string;
+  path?: string;
+  expires?: number;
+  httpOnly?: boolean;
+  secure?: boolean;
+  sameSite?: "Strict" | "Lax" | "None";
+}
+
+export interface PluginBrowserStorageItem {
+  name: string;
+  value: string;
+}
+
+/** `session` is per-tab and dies with it; `local` is per-origin and does not. */
+export type PluginBrowserStorageArea = "local" | "session";
+
+export interface PluginBrowserCookies extends PluginBrowserPageState {
+  cookies: PluginBrowserCookie[];
+}
+
+export interface PluginBrowserStorageItems extends PluginBrowserPageState {
+  area: PluginBrowserStorageArea;
+  items: PluginBrowserStorageItem[];
+  /**
+   * The origin held more than the bridge will carry, so this is a part of it.
+   * Worth checking before saving state: a partial state restores a session that
+   * only partly works.
+   */
+  truncated: boolean;
+}
+
+/**
+ * What a write landed and what the browser refused — a cookie whose domain and
+ * scheme disagree, or an item past the origin's quota. A partial write is a
+ * realistic outcome and a silent one is expensive, so both numbers come back.
+ */
+export interface PluginBrowserStorageWrite {
+  applied: number;
+  rejected: number;
+}
+
+/**
+ * A tab's stored state: cookies, `localStorage`, `sessionStorage`.
+ *
+ * Everything is scoped to one tab — cookies to the URL that tab is on, web
+ * storage to its origin — so reading state for a site means opening it in a tab
+ * first. `tabId` defaults to the active tab, as everywhere else.
+ *
+ * **This is credential access, not page content.** In a browser holding the
+ * user's real logins, what `cookies()` returns for a signed-in site *is* that
+ * session, and `setCookies` puts one into the user's browser for real. Say so
+ * in any tool built on it rather than describing it as "reading settings".
+ */
+export interface PluginBrowserStorage {
+  cookies(
+    args?: { tabId?: string },
+    options?: PluginBrowserCallOptions,
+  ): Promise<PluginBrowserCookies>;
+  /**
+   * Write cookies. A cookie carrying its own `domain` is written to that
+   * domain rather than to the tab's, which is what makes a saved state restore
+   * the session it came from.
+   */
+  setCookies(
+    args: { cookies: PluginBrowserCookieInput[]; tabId?: string },
+    options?: PluginBrowserCallOptions,
+  ): Promise<PluginBrowserStorageWrite>;
+  /** Omit `name` to clear every cookie the tab's URL carries. */
+  clearCookies(
+    args?: { name?: string; tabId?: string },
+    options?: PluginBrowserCallOptions,
+  ): Promise<{ removed: number }>;
+  /** Needs a live tab: web storage is read out of the page itself. */
+  items(
+    args: { area: PluginBrowserStorageArea; tabId?: string },
+    options?: PluginBrowserCallOptions,
+  ): Promise<PluginBrowserStorageItems>;
+  setItems(
+    args: {
+      area: PluginBrowserStorageArea;
+      items: PluginBrowserStorageItem[];
+      tabId?: string;
+    },
+    options?: PluginBrowserCallOptions,
+  ): Promise<PluginBrowserStorageWrite>;
+  /** Omit `name` to clear the whole area. */
+  clearItems(
+    args: { area: PluginBrowserStorageArea; name?: string; tabId?: string },
+    options?: PluginBrowserCallOptions,
+  ): Promise<{ removed: number }>;
+}
+
+/**
+ * A response the tab should be given instead of the network's.
+ *
+ * `pattern` is Playwright's URL glob — `**` crosses path separators, `*` stops
+ * at one — so a pattern written from Playwright's documentation means here what
+ * it means there.
+ */
+export interface PluginBrowserRoute {
+  pattern: string;
+  /** Defaults to 200. */
+  status?: number;
+  /** Defaults to `application/json` for a body that looks like JSON. */
+  contentType?: string;
+  /** Defaults to empty. */
+  body?: string;
+  headers?: { name: string; value: string }[];
+}
+
+export interface PluginBrowserRouteState {
+  pattern: string;
+  status: number;
+  contentType: string;
+  body: string;
+  headers: { name: string; value: string }[];
+  /** How many requests this route has answered. Zero means it never fired. */
+  matched: number;
+}
+
+export interface PluginBrowserRoutes extends PluginBrowserPageState {
+  routes: PluginBrowserRouteState[];
+  offline: boolean;
+}
+
+/**
+ * What an expression returned, as JSON text — `"42"`, `"\"hello\""`,
+ * `"undefined"`. Text rather than a value because a page can return anything,
+ * and a caller that wants structure knows what it asked for and can `JSON.parse`
+ * it. `truncated` means the answer was longer than the bridge carries.
+ */
+export interface PluginBrowserEvaluated extends PluginBrowserPageState {
+  value: string;
+  truncated: boolean;
+}
+
+/**
+ * Driving a tab past the paths that make the rest of this API safe.
+ *
+ * These are grouped by how much they hand over rather than by what they do.
+ * `evaluate` runs your JavaScript in a page that may hold the user's live
+ * logins, in the page's own world — it can read anything the page can, and
+ * change anything the user could. The mouse calls act at raw viewport
+ * coordinates: no ref, no actionability check, so they land on whatever is at
+ * that point, which is the price of reaching a canvas the accessibility tree
+ * cannot describe. `route` rewrites what the page receives from the network,
+ * and `setOffline` cuts it off.
+ *
+ * Use them where the safer paths genuinely cannot reach, and say plainly in any
+ * tool built on them what they are.
+ */
+export interface PluginBrowserControl {
+  /**
+   * Run a function in the page and return what it returned. The expression is a
+   * function: `() => document.title`, or `(el) => el.value` with a `ref` from a
+   * snapshot naming the element to pass in.
+   */
+  evaluate(
+    args: {
+      expression: string;
+      ref?: string;
+      tabId?: string;
+      generation?: number;
+    },
+    options?: PluginBrowserCallOptions,
+  ): Promise<PluginBrowserEvaluated>;
+  /** Move the pointer. Where it lands is where the next press acts. */
+  mouseMove(
+    args: { x: number; y: number; tabId?: string },
+    options?: PluginBrowserCallOptions,
+  ): Promise<PluginBrowserPageState>;
+  /** Press or release, at the last `mouseMove` point (0,0 until you move). */
+  mouseButton(
+    args: {
+      down: boolean;
+      button?: "left" | "middle" | "right";
+      tabId?: string;
+    },
+    options?: PluginBrowserCallOptions,
+  ): Promise<PluginBrowserPageState>;
+  mouseWheel(
+    args: { deltaX?: number; deltaY?: number; tabId?: string },
+    options?: PluginBrowserCallOptions,
+  ): Promise<PluginBrowserPageState>;
+  /** Add or replace a route. A second route for the same pattern replaces it. */
+  route(
+    args: PluginBrowserRoute & { tabId?: string },
+    options?: PluginBrowserCallOptions,
+  ): Promise<PluginBrowserRoutes>;
+  routes(
+    args?: { tabId?: string },
+    options?: PluginBrowserCallOptions,
+  ): Promise<PluginBrowserRoutes>;
+  /** Omit `pattern` to remove every route on the tab. */
+  unroute(
+    args?: { pattern?: string; tabId?: string },
+    options?: PluginBrowserCallOptions,
+  ): Promise<PluginBrowserRoutes>;
+  /**
+   * Per tab, not per browser: one tab can be offline while the user keeps
+   * browsing in the next one. Lasts as long as the tab's debugger session.
+   */
+  setOffline(
+    args: { offline: boolean; tabId?: string },
+    options?: PluginBrowserCallOptions,
+  ): Promise<PluginBrowserPageState>;
 }
 
 export interface PluginBrowserNavigation {
@@ -905,6 +1250,9 @@ export type PluginBrowserErrorCode =
   | "unknown_ref"
   | "not_actionable"
   | "unsupported_key"
+  | "result_too_large"
+  | "evaluation_failed"
+  | "too_many_routes"
   | "invalid_command";
 
 export interface PluginBrowserStatus {
@@ -933,6 +1281,8 @@ export interface PluginBrowser {
   readonly tabs: PluginBrowserTabs;
   readonly page: PluginBrowserPage;
   readonly navigation: PluginBrowserNavigation;
+  readonly storage: PluginBrowserStorage;
+  readonly control: PluginBrowserControl;
   /** Synchronous, so it is safe to read from `bb.agents.configure()`. */
   getStatus(): PluginBrowserStatus;
 }

@@ -11,13 +11,20 @@ import {
   type DbConnection,
 } from "@bb/db";
 import {
+  BROWSER_COMMAND_MAX_OBSERVATION_ENTRIES,
   BROWSER_COMMAND_MAX_PAGE_TEXT_LENGTH,
   BROWSER_COMMAND_MAX_URL_LENGTH,
   PLUGIN_INTERACTION_MAX_TITLE_LENGTH,
+  browserControlOperationSchema,
+  browserCookieSchema,
   browserInteractionSchema,
+  browserStorageItemSchema,
   type BrowserCommand,
   type BrowserCommandValue,
+  type BrowserControlOperation,
+  type BrowserCookie,
   type BrowserInteraction,
+  type BrowserStorageItem,
   type JsonValue,
 } from "@bb/domain";
 import type {
@@ -42,6 +49,7 @@ import type {
   PluginLogger,
   PluginBrowser,
   PluginBrowserCallOptions,
+  PluginBrowserRoutes,
   PluginMentionItem,
   PluginMentionSearchContext,
   PluginMentionTrigger,
@@ -165,6 +173,15 @@ export function isNeedsConfigurationError(error: unknown): error is Error {
 
 /** JSON values ≤256KB; larger writes are rejected with a clear error. */
 const KV_VALUE_MAX_BYTES = 256 * 1024;
+
+/**
+ * Defaults for the observation calls. A log limit of 100 is a page's worth of
+ * chatter without being a wall of it; JPEG at 80 is the quality where a page
+ * screenshot stops looking compressed, and the format that keeps one from
+ * costing megabytes.
+ */
+const DEFAULT_BROWSER_LOG_LIMIT = 100;
+const DEFAULT_SCREENSHOT_QUALITY = 80;
 
 function isStandardSchema(value: unknown): value is StandardSchemaV1 {
   if (typeof value !== "object" || value === null) return false;
@@ -1336,6 +1353,177 @@ export function createPluginApi(options: {
     return parsed.data;
   }
 
+  /**
+   * How many log entries to hand back. Bounded here rather than left to the
+   * schema alone so a plugin asking for a nonsense limit is told which call was
+   * wrong.
+   */
+  function normalizeObservationLimit(limit: unknown, method: string): number {
+    if (limit === undefined) {
+      return DEFAULT_BROWSER_LOG_LIMIT;
+    }
+    if (
+      typeof limit !== "number" ||
+      !Number.isInteger(limit) ||
+      limit < 1 ||
+      limit > BROWSER_COMMAND_MAX_OBSERVATION_ENTRIES
+    ) {
+      throw new Error(
+        `${method} limit must be an integer between 1 and ${BROWSER_COMMAND_MAX_OBSERVATION_ENTRIES}`,
+      );
+    }
+    return limit;
+  }
+
+  function normalizeScreenshotQuality(quality: unknown): number {
+    if (quality === undefined) {
+      return DEFAULT_SCREENSHOT_QUALITY;
+    }
+    if (
+      typeof quality !== "number" ||
+      !Number.isInteger(quality) ||
+      quality < 1 ||
+      quality > 100
+    ) {
+      throw new Error(
+        "browser.page.screenshot quality must be an integer between 1 and 100",
+      );
+    }
+    return quality;
+  }
+
+  function normalizeScreenshotFormat(format: unknown): "png" | "jpeg" {
+    if (format === undefined) {
+      return "jpeg";
+    }
+    if (format !== "png" && format !== "jpeg") {
+      throw new Error('browser.page.screenshot format must be "png" or "jpeg"');
+    }
+    return format;
+  }
+
+  /**
+   * Storage arguments, normalized here for the reason every other browser
+   * argument is: a plugin's own mistake should read as that plugin's error
+   * rather than as a refusal that travelled to the app and came back.
+   *
+   * The cookie defaults are the ones a browser applies to a cookie that
+   * declares nothing — host-only, path `/`, non-secure, `Lax`, dies with the
+   * session — so `setCookies({ name, value })` behaves like `document.cookie =`
+   * rather than silently writing something broader.
+   */
+  function normalizeStorageArea(area: unknown, method: string): "local" | "session" {
+    if (area !== "local" && area !== "session") {
+      throw new Error(`${method} area must be "local" or "session"`);
+    }
+    return area;
+  }
+
+  function normalizeStorageName(name: unknown, method: string): string | null {
+    if (name === undefined || name === null) {
+      return null;
+    }
+    if (typeof name !== "string" || name.length === 0) {
+      throw new Error(`${method} name must be a non-empty string when provided`);
+    }
+    return name;
+  }
+
+  function normalizeCookies(cookies: unknown): BrowserCookie[] {
+    if (!Array.isArray(cookies) || cookies.length === 0) {
+      throw new Error("browser.storage.setCookies requires at least one cookie");
+    }
+    return cookies.map((cookie, index) => {
+      if (typeof cookie !== "object" || cookie === null) {
+        throw new Error(
+          `browser.storage.setCookies cookie ${index} must be an object`,
+        );
+      }
+      const record = cookie as Record<string, unknown>;
+      const parsed = browserCookieSchema.safeParse({
+        name: record.name,
+        value: record.value,
+        domain: record.domain ?? "",
+        path: record.path ?? "/",
+        expires: record.expires ?? -1,
+        httpOnly: record.httpOnly ?? false,
+        secure: record.secure ?? false,
+        sameSite: record.sameSite ?? "Lax",
+      });
+      if (!parsed.success) {
+        const issue = parsed.error.issues[0];
+        throw new Error(
+          `browser.storage.setCookies cookie ${index} is invalid${
+            issue === undefined ? "" : ` (${issue.path.join(".")}): ${issue.message}`
+          }`,
+        );
+      }
+      return parsed.data;
+    });
+  }
+
+  function normalizeStorageItems(items: unknown): BrowserStorageItem[] {
+    if (!Array.isArray(items) || items.length === 0) {
+      throw new Error("browser.storage.setItems requires at least one item");
+    }
+    return items.map((item, index) => {
+      const parsed = browserStorageItemSchema.safeParse(item);
+      if (!parsed.success) {
+        throw new Error(
+          `browser.storage.setItems item ${index} must be { name, value } strings within the size limits`,
+        );
+      }
+      return parsed.data;
+    });
+  }
+
+  /**
+   * A route, with what an API mock wants without having to say so: 200, an
+   * empty body, and a content type read off the body's first character. A mock
+   * served as the wrong type fails in a way that looks like the mock never
+   * fired, which is an expensive thing to debug.
+   */
+  function routeCandidate(args: unknown): unknown {
+    const record = (
+      typeof args === "object" && args !== null ? args : {}
+    ) as Record<string, unknown>;
+    const body = record.body ?? "";
+    return {
+      pattern: record.pattern,
+      status: record.status ?? 200,
+      contentType:
+        record.contentType ??
+        (typeof body === "string" && /^\s*[[{]/u.test(body)
+          ? "application/json"
+          : "text/plain"),
+      body,
+      headers: record.headers ?? [],
+    };
+  }
+
+  /**
+   * Every direct-control operation is checked here, the way `page.act`'s is:
+   * against the schema the app will parse it with, so a plugin's own mistake
+   * reads as that plugin's error rather than as a refusal that travelled to the
+   * browser and back.
+   */
+  function normalizeControlOperation(
+    candidate: unknown,
+    method: string,
+  ): BrowserControlOperation {
+    const parsed = browserControlOperationSchema.safeParse(candidate);
+    if (!parsed.success) {
+      const issue = parsed.error.issues[0];
+      const path = issue?.path.join(".") ?? "";
+      throw new Error(
+        `${method} received invalid arguments${
+          path === "" ? "" : ` (${path})`
+        }: ${issue?.message ?? "unrecognized"}`,
+      );
+    }
+    return parsed.data;
+  }
+
   function normalizeSnapshotGeneration(generation: unknown): number | null {
     if (generation === undefined || generation === null) {
       return null;
@@ -1374,6 +1562,31 @@ export function createPluginApi(options: {
       );
     }
     return value as Extract<BrowserCommandValue, { type: TType }>;
+  }
+
+  /** The three route calls differ only in the operation they send. */
+  async function controlRoutes(
+    operation: BrowserControlOperation,
+    tabId: string | undefined,
+    options: PluginBrowserCallOptions | undefined,
+  ): Promise<PluginBrowserRoutes> {
+    const value = await callBrowser(
+      {
+        type: "page.control",
+        tabId: optionalTabId(tabId),
+        generation: null,
+        operation,
+      },
+      options,
+      "routes",
+    );
+    return {
+      tabId: value.tabId,
+      url: value.url,
+      title: value.title,
+      routes: value.routes,
+      offline: value.offline,
+    };
   }
 
   const omniboxProviders: PluginOmniboxProviderRecord[] = [];
@@ -1484,6 +1697,96 @@ export function createPluginApi(options: {
         );
         return { tabId: value.tabId, url: value.url, title: value.title };
       },
+      async screenshot(args, options) {
+        const value = await callBrowser(
+          {
+            type: "page.observe",
+            tabId: optionalTabId(args?.tabId),
+            observation: {
+              kind: "screenshot",
+              format: normalizeScreenshotFormat(args?.format),
+              quality: normalizeScreenshotQuality(args?.quality),
+            },
+          },
+          options,
+          "image",
+        );
+        return {
+          tabId: value.tabId,
+          url: value.url,
+          title: value.title,
+          mimeType: value.mimeType,
+          base64: value.base64,
+          width: value.width,
+          height: value.height,
+        };
+      },
+      async pdf(args, options) {
+        const value = await callBrowser(
+          {
+            type: "page.observe",
+            tabId: optionalTabId(args?.tabId),
+            observation: { kind: "pdf" },
+          },
+          options,
+          "pdf",
+        );
+        return {
+          tabId: value.tabId,
+          url: value.url,
+          title: value.title,
+          base64: value.base64,
+          byteLength: value.byteLength,
+        };
+      },
+      async console(args, options) {
+        const value = await callBrowser(
+          {
+            type: "page.observe",
+            tabId: optionalTabId(args?.tabId),
+            observation: {
+              kind: "console",
+              limit: normalizeObservationLimit(
+                args?.limit,
+                "browser.page.console",
+              ),
+            },
+          },
+          options,
+          "console",
+        );
+        return {
+          tabId: value.tabId,
+          url: value.url,
+          title: value.title,
+          entries: value.entries,
+          droppedCount: value.droppedCount,
+        };
+      },
+      async network(args, options) {
+        const value = await callBrowser(
+          {
+            type: "page.observe",
+            tabId: optionalTabId(args?.tabId),
+            observation: {
+              kind: "network",
+              limit: normalizeObservationLimit(
+                args?.limit,
+                "browser.page.network",
+              ),
+            },
+          },
+          options,
+          "network",
+        );
+        return {
+          tabId: value.tabId,
+          url: value.url,
+          title: value.title,
+          entries: value.entries,
+          droppedCount: value.droppedCount,
+        };
+      },
       async handleDialog(args, options) {
         if (typeof args?.accept !== "boolean") {
           throw new Error("browser.page.handleDialog requires accept: boolean");
@@ -1581,6 +1884,245 @@ export function createPluginApi(options: {
             "tab",
           )
         ).tab;
+      },
+    },
+    storage: {
+      async cookies(args, options) {
+        const value = await callBrowser(
+          {
+            type: "page.storage",
+            tabId: optionalTabId(args?.tabId),
+            operation: { kind: "cookies-get" },
+          },
+          options,
+          "cookies",
+        );
+        return {
+          tabId: value.tabId,
+          url: value.url,
+          title: value.title,
+          cookies: value.cookies,
+        };
+      },
+      async setCookies(args, options) {
+        const value = await callBrowser(
+          {
+            type: "page.storage",
+            tabId: optionalTabId(args?.tabId),
+            operation: {
+              kind: "cookies-set",
+              cookies: normalizeCookies(args?.cookies),
+            },
+          },
+          options,
+          "written",
+        );
+        return { applied: value.applied, rejected: value.rejected };
+      },
+      async clearCookies(args, options) {
+        const value = await callBrowser(
+          {
+            type: "page.storage",
+            tabId: optionalTabId(args?.tabId),
+            operation: {
+              kind: "cookies-clear",
+              name: normalizeStorageName(
+                args?.name,
+                "browser.storage.clearCookies",
+              ),
+            },
+          },
+          options,
+          "removed",
+        );
+        return { removed: value.removed };
+      },
+      async items(args, options) {
+        const value = await callBrowser(
+          {
+            type: "page.storage",
+            tabId: optionalTabId(args?.tabId),
+            operation: {
+              kind: "items-get",
+              area: normalizeStorageArea(args?.area, "browser.storage.items"),
+            },
+          },
+          options,
+          "storage",
+        );
+        return {
+          tabId: value.tabId,
+          url: value.url,
+          title: value.title,
+          area: value.area,
+          items: value.items,
+          truncated: value.truncated,
+        };
+      },
+      async setItems(args, options) {
+        const value = await callBrowser(
+          {
+            type: "page.storage",
+            tabId: optionalTabId(args?.tabId),
+            operation: {
+              kind: "items-set",
+              area: normalizeStorageArea(args?.area, "browser.storage.setItems"),
+              items: normalizeStorageItems(args?.items),
+            },
+          },
+          options,
+          "written",
+        );
+        return { applied: value.applied, rejected: value.rejected };
+      },
+      async clearItems(args, options) {
+        const value = await callBrowser(
+          {
+            type: "page.storage",
+            tabId: optionalTabId(args?.tabId),
+            operation: {
+              kind: "items-clear",
+              area: normalizeStorageArea(
+                args?.area,
+                "browser.storage.clearItems",
+              ),
+              name: normalizeStorageName(
+                args?.name,
+                "browser.storage.clearItems",
+              ),
+            },
+          },
+          options,
+          "removed",
+        );
+        return { removed: value.removed };
+      },
+    },
+    control: {
+      async evaluate(args, options) {
+        const value = await callBrowser(
+          {
+            type: "page.control",
+            tabId: optionalTabId(args?.tabId),
+            generation: normalizeSnapshotGeneration(args?.generation),
+            operation: normalizeControlOperation(
+              {
+                kind: "evaluate",
+                expression: args?.expression,
+                ref: args?.ref ?? null,
+              },
+              "browser.control.evaluate",
+            ),
+          },
+          options,
+          "evaluated",
+        );
+        return {
+          tabId: value.tabId,
+          url: value.url,
+          title: value.title,
+          value: value.value,
+          truncated: value.truncated,
+        };
+      },
+      async mouseMove(args, options) {
+        const value = await callBrowser(
+          {
+            type: "page.control",
+            tabId: optionalTabId(args?.tabId),
+            generation: null,
+            operation: normalizeControlOperation(
+              { kind: "mouse-move", x: args?.x, y: args?.y },
+              "browser.control.mouseMove",
+            ),
+          },
+          options,
+          "interacted",
+        );
+        return { tabId: value.tabId, url: value.url, title: value.title };
+      },
+      async mouseButton(args, options) {
+        const value = await callBrowser(
+          {
+            type: "page.control",
+            tabId: optionalTabId(args?.tabId),
+            generation: null,
+            operation: normalizeControlOperation(
+              {
+                kind: "mouse-button",
+                button: args?.button ?? "left",
+                down: args?.down,
+              },
+              "browser.control.mouseButton",
+            ),
+          },
+          options,
+          "interacted",
+        );
+        return { tabId: value.tabId, url: value.url, title: value.title };
+      },
+      async mouseWheel(args, options) {
+        const value = await callBrowser(
+          {
+            type: "page.control",
+            tabId: optionalTabId(args?.tabId),
+            generation: null,
+            operation: normalizeControlOperation(
+              {
+                kind: "mouse-wheel",
+                deltaX: args?.deltaX ?? 0,
+                deltaY: args?.deltaY ?? 0,
+              },
+              "browser.control.mouseWheel",
+            ),
+          },
+          options,
+          "interacted",
+        );
+        return { tabId: value.tabId, url: value.url, title: value.title };
+      },
+      async route(args, options) {
+        return await controlRoutes(
+          normalizeControlOperation(
+            { kind: "route-set", route: routeCandidate(args) },
+            "browser.control.route",
+          ),
+          args?.tabId,
+          options,
+        );
+      },
+      async routes(args, options) {
+        return await controlRoutes(
+          { kind: "route-list" },
+          args?.tabId,
+          options,
+        );
+      },
+      async unroute(args, options) {
+        return await controlRoutes(
+          normalizeControlOperation(
+            { kind: "route-clear", pattern: args?.pattern ?? null },
+            "browser.control.unroute",
+          ),
+          args?.tabId,
+          options,
+        );
+      },
+      async setOffline(args, options) {
+        const value = await callBrowser(
+          {
+            type: "page.control",
+            tabId: optionalTabId(args?.tabId),
+            generation: null,
+            operation: normalizeControlOperation(
+              { kind: "offline", offline: args?.offline },
+              "browser.control.setOffline",
+            ),
+          },
+          options,
+          "interacted",
+        );
+        return { tabId: value.tabId, url: value.url, title: value.title };
       },
     },
     getStatus() {

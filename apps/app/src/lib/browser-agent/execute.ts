@@ -8,10 +8,13 @@ import {
 } from "@bb/domain";
 import type {
   BbDesktopBrowserApi,
+  BbDesktopBrowserControlResult,
   BbDesktopBrowserInteractResult,
+  BbDesktopBrowserObserveResult,
   BbDesktopBrowserPageReadResult,
   BbDesktopBrowserSnapshotResult,
   BbDesktopBrowserState,
+  BbDesktopBrowserStorageResult,
 } from "@bb/desktop-contract";
 import type { BrowserFixedPanelTab } from "../fixed-panel-tabs-state";
 import { normalizeBrowserUrl } from "../browser-url";
@@ -240,6 +243,103 @@ function interactFailure(
       return failure(
         "page_read_failed",
         `The browser could not perform that action.${detail}`,
+      );
+  }
+}
+
+/** Maps the shell's observation refusals onto the codes the agent tools speak. */
+function observeFailure(
+  result: Extract<BbDesktopBrowserObserveResult, { ok: false }>,
+  tabId: string,
+): BrowserCommandOutcome {
+  const detail = result.message === undefined ? "" : ` ${result.message}`;
+  switch (result.reason) {
+    case "no-view":
+      return failure(
+        "tab_not_live",
+        `Browser tab ${tabId} has no live page. ${NOT_LIVE_HINT}`,
+      );
+    case "no-page":
+      return failure(
+        "tab_not_live",
+        `Browser tab ${tabId} has not loaded a page yet.`,
+      );
+    case "too-large":
+      return failure("result_too_large", `That is too large to return.${detail}`);
+    default:
+      return failure(
+        "page_read_failed",
+        `The browser could not look at tab ${tabId}.${detail}`,
+      );
+  }
+}
+
+/** Maps the shell's storage refusals onto the codes the agent tools speak. */
+function storageFailure(
+  result: Extract<BbDesktopBrowserStorageResult, { ok: false }>,
+  tabId: string,
+): BrowserCommandOutcome {
+  const detail = result.message === undefined ? "" : ` ${result.message}`;
+  switch (result.reason) {
+    case "no-view":
+      return failure(
+        "tab_not_live",
+        `Browser tab ${tabId} has no live page. ${NOT_LIVE_HINT}`,
+      );
+    case "no-page":
+      return failure(
+        "tab_not_live",
+        `Browser tab ${tabId} has not loaded a page yet, so it has no cookies or storage of its own.`,
+      );
+    case "timeout":
+      return failure(
+        "page_read_timeout",
+        `The page in browser tab ${tabId} did not respond in time.`,
+      );
+    default:
+      return failure(
+        "page_read_failed",
+        `The browser could not reach that tab's storage.${detail}`,
+      );
+  }
+}
+
+/** Maps the shell's direct-control refusals onto the agent tools' codes. */
+function controlFailure(
+  result: Extract<BbDesktopBrowserControlResult, { ok: false }>,
+  tabId: string,
+): BrowserCommandOutcome {
+  const detail = result.message === undefined ? "" : ` ${result.message}`;
+  switch (result.reason) {
+    case "no-view":
+      return failure(
+        "tab_not_live",
+        `Browser tab ${tabId} has no live page. ${NOT_LIVE_HINT}`,
+      );
+    case "no-page":
+      return failure(
+        "tab_not_live",
+        `Browser tab ${tabId} has not loaded a page yet.`,
+      );
+    case "debugger-unavailable":
+      return failure(
+        "debugger_unavailable",
+        `The browser debugger could not attach to tab ${tabId}${detail}. Close DevTools for that tab and try again.`,
+      );
+    case "stale-refs":
+      return failure("stale_refs", `Those element refs are out of date.${detail}`);
+    case "unknown-ref":
+      return failure("unknown_ref", `No such element.${detail}`);
+    case "evaluation-failed":
+      // The page's own error text, kept whole: it is the only thing that says
+      // what to change about the expression.
+      return failure("evaluation_failed", `The page threw.${detail}`);
+    case "too-many-routes":
+      return failure("too_many_routes", `That tab holds too many routes.${detail}`);
+    default:
+      return failure(
+        "page_read_failed",
+        `The browser could not drive tab ${tabId}.${detail}`,
       );
   }
 }
@@ -505,6 +605,157 @@ export async function executeBrowserCommand(
         url: ended.url,
         title: ended.title,
       });
+    }
+
+    case "page.observe": {
+      const resolution = resolveTab(command.tabId, deps);
+      if (!resolution.ok) {
+        return resolution.outcome;
+      }
+      const { tab } = resolution.resolved;
+      if (desktopBrowser.observe === undefined) {
+        return failure(
+          "unsupported_command",
+          "This version of the BB desktop app cannot capture or inspect pages.",
+        );
+      }
+      const result = await desktopBrowser.observe({
+        tabId: tab.id,
+        observation: command.observation,
+      });
+      if (!result.ok) {
+        return observeFailure(result, tab.id);
+      }
+      // The shell's four success shapes map one-to-one onto four result
+      // variants; the `kind`/`type` rename is the only difference, and doing it
+      // here keeps the agent-facing vocabulary independent of the shell's.
+      const page = { tabId: result.tabId, url: result.url, title: result.title };
+      switch (result.kind) {
+        case "screenshot":
+          return success({
+            type: "image",
+            ...page,
+            mimeType: result.mimeType,
+            base64: result.base64,
+            width: result.width,
+            height: result.height,
+          });
+        case "pdf":
+          return success({
+            type: "pdf",
+            ...page,
+            base64: result.base64,
+            byteLength: result.byteLength,
+          });
+        case "console":
+          return success({
+            type: "console",
+            ...page,
+            entries: result.entries,
+            droppedCount: result.droppedCount,
+          });
+        default:
+          return success({
+            type: "network",
+            ...page,
+            entries: result.entries,
+            droppedCount: result.droppedCount,
+          });
+      }
+    }
+
+    case "page.storage": {
+      const resolution = resolveTab(command.tabId, deps);
+      if (!resolution.ok) {
+        return resolution.outcome;
+      }
+      const { tab } = resolution.resolved;
+      if (desktopBrowser.storage === undefined) {
+        return failure(
+          "unsupported_command",
+          "This version of the BB desktop app cannot read or write browser storage.",
+        );
+      }
+      const result = await desktopBrowser.storage({
+        tabId: tab.id,
+        operation: command.operation,
+      });
+      if (!result.ok) {
+        return storageFailure(result, tab.id);
+      }
+      switch (result.kind) {
+        case "cookies":
+          return success({
+            type: "cookies",
+            tabId: result.tabId,
+            url: result.url,
+            title: result.title,
+            cookies: result.cookies,
+          });
+        case "items":
+          return success({
+            type: "storage",
+            tabId: result.tabId,
+            url: result.url,
+            title: result.title,
+            area: result.area,
+            items: result.items,
+            truncated: result.truncated,
+          });
+        case "written":
+          return success({
+            type: "written",
+            applied: result.applied,
+            rejected: result.rejected,
+          });
+        default:
+          return success({ type: "removed", removed: result.removed });
+      }
+    }
+
+    case "page.control": {
+      const resolution = resolveTab(command.tabId, deps);
+      if (!resolution.ok) {
+        return resolution.outcome;
+      }
+      const { tab } = resolution.resolved;
+      if (desktopBrowser.control === undefined) {
+        return failure(
+          "unsupported_command",
+          "This version of the BB desktop app cannot evaluate scripts, mock requests or act by coordinate.",
+        );
+      }
+      const result = await desktopBrowser.control({
+        tabId: tab.id,
+        ...(command.generation === null
+          ? {}
+          : { generation: command.generation }),
+        operation: command.operation,
+      });
+      if (!result.ok) {
+        return controlFailure(result, tab.id);
+      }
+      const page = { tabId: result.tabId, url: result.url, title: result.title };
+      switch (result.kind) {
+        case "evaluated":
+          return success({
+            type: "evaluated",
+            ...page,
+            value: result.value,
+            truncated: result.truncated,
+          });
+        case "routes":
+          return success({
+            type: "routes",
+            ...page,
+            routes: result.routes,
+            offline: result.offline,
+          });
+        default:
+          // A coordinate click can navigate exactly as a ref click can, so it
+          // answers with where the tab ended up, under the same variant.
+          return success({ type: "interacted", ...page });
+      }
     }
 
     case "page.get_selection": {

@@ -35,7 +35,13 @@ import type {
   PluginMentionSearchContext,
   PluginMentionTrigger,
   PluginBrowser,
+  PluginBrowserConsoleEntry,
+  PluginBrowserCookie,
   PluginBrowserErrorCode,
+  PluginBrowserNetworkEntry,
+  PluginBrowserRouteState,
+  PluginBrowserStorageArea,
+  PluginBrowserStorageItem,
   PluginBrowserTab,
   PluginOmniboxRunContext,
   PluginOmniboxRunResult,
@@ -160,6 +166,28 @@ function enforcePluginCliOutputLimit(
       }
     : { exitCode: 1, stdout: "", stderr: error.message, error };
 }
+/**
+ * Fixed stand-in bytes for the two captures. They are real files (a 2x1 PNG and
+ * a PDF header) so a plugin that decodes and writes them produces something
+ * openable, but they are not an encode of anything: the fake never renders, so
+ * asking it for JPEG still gets these bytes back under a JPEG mime type.
+ */
+const FAKE_BROWSER_SCREENSHOT_BASE64 =
+  "iVBORw0KGgoAAAANSUhEUgAAAAIAAAABCAYAAAD0In+KAAAAEUlEQVR4nGP8z8DwnwEJMCEzAB8FAwGnEwvKAAAAAElFTkSuQmCC";
+const FAKE_BROWSER_PDF_BASE64 = "JVBERi0xLjQK";
+
+/**
+ * The last `limit` entries, and how many the caller is therefore not seeing —
+ * the same contract the shell's ring buffer has.
+ */
+function sliceBrowserLog<TEntry>(
+  entries: readonly TEntry[],
+  limit: number | undefined,
+): { entries: TEntry[]; droppedCount: number } {
+  const kept = entries.slice(Math.max(0, entries.length - (limit ?? 100)));
+  return { entries: [...kept], droppedCount: entries.length - kept.length };
+}
+
 const MENTION_PROVIDER_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
 const OMNIBOX_PROVIDER_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
 const PLUGIN_MENTION_TRIGGER_VALUES = [
@@ -330,10 +358,29 @@ export interface FakeOmniboxProviderRecord {
 export interface FakeBrowserDrivers {
   /** Replace the tab model. The first tab is active unless one sets `active`. */
   setTabs(tabs: readonly FakeBrowserTabInput[]): void;
-  /** What `page.getText`/`getSelection` answer for a live tab. */
+  /**
+   * What the page reads answer for a live tab. `console` and `network` are the
+   * tab's logs, which `page.console`/`page.network` slice from the end.
+   */
   setPageContent(
     tabId: string,
-    content: { text?: string; selection?: string; snapshot?: string },
+    content: {
+      text?: string;
+      selection?: string;
+      snapshot?: string;
+      console?: readonly PluginBrowserConsoleEntry[];
+      network?: readonly PluginBrowserNetworkEntry[];
+      /** What `bb.browser.storage` reads, and what its writes then change. */
+      cookies?: readonly PluginBrowserCookie[];
+      localStorage?: readonly PluginBrowserStorageItem[];
+      sessionStorage?: readonly PluginBrowserStorageItem[];
+      /**
+       * What `bb.browser.control.evaluate` answers with, whatever it was asked.
+       * A fake cannot run the expression; what a test can check is that the
+       * expression it meant to send is the one that was sent.
+       */
+      evaluated?: string;
+    },
   ): void;
   /** Pretend no app window is connected, so every call fails like production. */
   setConnected(connected: boolean): void;
@@ -1716,10 +1763,33 @@ function createFakePluginHostInternal(
 
   // --- browser ---
   const browserCalls: FakeBrowserCall[] = [];
-  const browserPageContent = new Map<
-    string,
-    { text: string; selection: string; snapshot: string }
-  >();
+  interface FakeBrowserPageContent {
+    text: string;
+    selection: string;
+    snapshot: string;
+    console: readonly PluginBrowserConsoleEntry[];
+    network: readonly PluginBrowserNetworkEntry[];
+    cookies: readonly PluginBrowserCookie[];
+    localStorage: readonly PluginBrowserStorageItem[];
+    sessionStorage: readonly PluginBrowserStorageItem[];
+    evaluated: string;
+    routes: readonly PluginBrowserRouteState[];
+    offline: boolean;
+  }
+  const EMPTY_BROWSER_PAGE_CONTENT: FakeBrowserPageContent = {
+    text: "",
+    selection: "",
+    snapshot: "",
+    console: [],
+    network: [],
+    cookies: [],
+    localStorage: [],
+    sessionStorage: [],
+    evaluated: "undefined",
+    routes: [],
+    offline: false,
+  };
+  const browserPageContent = new Map<string, FakeBrowserPageContent>();
   let browserSnapshotGeneration = 0;
   let browserPendingDialog = false;
   let browserTabs: PluginBrowserTab[] = [];
@@ -1783,6 +1853,69 @@ function createFakePluginHostInternal(
       );
     }
     return tab;
+  }
+
+  function readBrowserPageContent(tabId: string): FakeBrowserPageContent {
+    return browserPageContent.get(tabId) ?? EMPTY_BROWSER_PAGE_CONTENT;
+  }
+
+  /**
+   * Writes land back in the same store the reads come from, so a plugin test
+   * can save state, clear it and load it again the way a real one would.
+   */
+  function writeBrowserPageContent(
+    tabId: string,
+    patch: Partial<FakeBrowserPageContent>,
+  ): void {
+    browserPageContent.set(tabId, {
+      ...readBrowserPageContent(tabId),
+      ...patch,
+    });
+  }
+
+  function readBrowserStorageArea(
+    tabId: string,
+    area: PluginBrowserStorageArea,
+  ): readonly PluginBrowserStorageItem[] {
+    const content = readBrowserPageContent(tabId);
+    return area === "local" ? content.localStorage : content.sessionStorage;
+  }
+
+  function writeBrowserStorageArea(
+    tabId: string,
+    area: PluginBrowserStorageArea,
+    items: readonly PluginBrowserStorageItem[],
+  ): void {
+    writeBrowserPageContent(
+      tabId,
+      area === "local" ? { localStorage: items } : { sessionStorage: items },
+    );
+  }
+
+  function browserPageStateOf(tabId: string | undefined): {
+    tabId: string;
+    url: string;
+    title: string | null;
+  } {
+    const tab = requireLiveBrowserTab(tabId);
+    return { tabId: tab.tabId, url: tab.url, title: tab.title };
+  }
+
+  function browserRoutesOf(tab: PluginBrowserTab): {
+    tabId: string;
+    url: string;
+    title: string | null;
+    routes: PluginBrowserRouteState[];
+    offline: boolean;
+  } {
+    const content = readBrowserPageContent(tab.tabId);
+    return {
+      tabId: tab.tabId,
+      url: tab.url,
+      title: tab.title,
+      routes: content.routes.map((route) => ({ ...route })),
+      offline: content.offline,
+    };
   }
 
   function activateBrowserTab(tabId: string): PluginBrowserTab {
@@ -1924,6 +2057,52 @@ function createFakePluginHostInternal(
           title: tab.title,
         });
       },
+      screenshot(args) {
+        beginBrowserCall("page.screenshot", { ...args });
+        const tab = requireLiveBrowserTab(args?.tabId);
+        return Promise.resolve({
+          tabId: tab.tabId,
+          url: tab.url,
+          title: tab.title,
+          mimeType: args?.format === "png" ? "image/png" : "image/jpeg",
+          base64: FAKE_BROWSER_SCREENSHOT_BASE64,
+          width: 2,
+          height: 1,
+        });
+      },
+      pdf(args) {
+        beginBrowserCall("page.pdf", { ...args });
+        const tab = requireLiveBrowserTab(args?.tabId);
+        return Promise.resolve({
+          tabId: tab.tabId,
+          url: tab.url,
+          title: tab.title,
+          base64: FAKE_BROWSER_PDF_BASE64,
+          byteLength: 9,
+        });
+      },
+      console(args) {
+        beginBrowserCall("page.console", { ...args });
+        const tab = requireLiveBrowserTab(args?.tabId);
+        const all = browserPageContent.get(tab.tabId)?.console ?? [];
+        return Promise.resolve({
+          tabId: tab.tabId,
+          url: tab.url,
+          title: tab.title,
+          ...sliceBrowserLog(all, args?.limit),
+        });
+      },
+      network(args) {
+        beginBrowserCall("page.network", { ...args });
+        const tab = requireLiveBrowserTab(args?.tabId);
+        const all = browserPageContent.get(tab.tabId)?.network ?? [];
+        return Promise.resolve({
+          tabId: tab.tabId,
+          url: tab.url,
+          title: tab.title,
+          ...sliceBrowserLog(all, args?.limit),
+        });
+      },
       handleDialog(args) {
         beginBrowserCall("page.handle_dialog", { ...args });
         resolveBrowserTab(args?.tabId);
@@ -1987,6 +2166,164 @@ function createFakePluginHostInternal(
         return Promise.resolve({ ...requireLiveBrowserTab(args?.tabId) });
       },
     },
+    storage: {
+      cookies(args) {
+        beginBrowserCall("storage.cookies", { ...args });
+        const tab = requireLiveBrowserTab(args?.tabId);
+        return Promise.resolve({
+          tabId: tab.tabId,
+          url: tab.url,
+          title: tab.title,
+          cookies: [...readBrowserPageContent(tab.tabId).cookies],
+        });
+      },
+      setCookies(args) {
+        beginBrowserCall("storage.setCookies", { ...args });
+        const tab = requireLiveBrowserTab(args?.tabId);
+        const existing = readBrowserPageContent(tab.tabId).cookies;
+        const written = args.cookies.map((cookie) => ({
+          domain: "",
+          path: "/",
+          expires: -1,
+          httpOnly: false,
+          secure: false,
+          sameSite: "Lax" as const,
+          ...cookie,
+        }));
+        writeBrowserPageContent(tab.tabId, {
+          cookies: [
+            ...existing.filter(
+              (cookie) =>
+                !written.some((update) => update.name === cookie.name),
+            ),
+            ...written,
+          ],
+        });
+        return Promise.resolve({ applied: written.length, rejected: 0 });
+      },
+      clearCookies(args) {
+        beginBrowserCall("storage.clearCookies", { ...args });
+        const tab = requireLiveBrowserTab(args?.tabId);
+        const existing = readBrowserPageContent(tab.tabId).cookies;
+        const kept =
+          args?.name === undefined
+            ? []
+            : existing.filter((cookie) => cookie.name !== args.name);
+        writeBrowserPageContent(tab.tabId, { cookies: kept });
+        return Promise.resolve({ removed: existing.length - kept.length });
+      },
+      items(args) {
+        beginBrowserCall("storage.items", { ...args });
+        const tab = requireLiveBrowserTab(args?.tabId);
+        return Promise.resolve({
+          tabId: tab.tabId,
+          url: tab.url,
+          title: tab.title,
+          area: args.area,
+          items: [...readBrowserStorageArea(tab.tabId, args.area)],
+          truncated: false,
+        });
+      },
+      setItems(args) {
+        beginBrowserCall("storage.setItems", { ...args });
+        const tab = requireLiveBrowserTab(args?.tabId);
+        const existing = readBrowserStorageArea(tab.tabId, args.area);
+        writeBrowserStorageArea(tab.tabId, args.area, [
+          ...existing.filter(
+            (item) => !args.items.some((update) => update.name === item.name),
+          ),
+          ...args.items,
+        ]);
+        return Promise.resolve({ applied: args.items.length, rejected: 0 });
+      },
+      clearItems(args) {
+        beginBrowserCall("storage.clearItems", { ...args });
+        const tab = requireLiveBrowserTab(args?.tabId);
+        const existing = readBrowserStorageArea(tab.tabId, args.area);
+        const kept =
+          args.name === undefined
+            ? []
+            : existing.filter((item) => item.name !== args.name);
+        writeBrowserStorageArea(tab.tabId, args.area, kept);
+        return Promise.resolve({ removed: existing.length - kept.length });
+      },
+    },
+    control: {
+      evaluate(args) {
+        beginBrowserCall("control.evaluate", { ...args });
+        const tab = requireLiveBrowserTab(args?.tabId);
+        return Promise.resolve({
+          tabId: tab.tabId,
+          url: tab.url,
+          title: tab.title,
+          value: readBrowserPageContent(tab.tabId).evaluated,
+          truncated: false,
+        });
+      },
+      mouseMove(args) {
+        beginBrowserCall("control.mouseMove", { ...args });
+        return Promise.resolve(browserPageStateOf(args?.tabId));
+      },
+      mouseButton(args) {
+        beginBrowserCall("control.mouseButton", { ...args });
+        return Promise.resolve(browserPageStateOf(args?.tabId));
+      },
+      mouseWheel(args) {
+        beginBrowserCall("control.mouseWheel", { ...args });
+        return Promise.resolve(browserPageStateOf(args?.tabId));
+      },
+      route(args) {
+        beginBrowserCall("control.route", { ...args });
+        const tab = requireLiveBrowserTab(args?.tabId);
+        const body = args?.body ?? "";
+        // Newest first and one route per pattern, as the shell keeps them, so a
+        // test can tell which of two overlapping mocks would answer.
+        writeBrowserPageContent(tab.tabId, {
+          routes: [
+            {
+              pattern: args.pattern,
+              status: args.status ?? 200,
+              contentType:
+                args.contentType ??
+                (/^\s*[[{]/u.test(body) ? "application/json" : "text/plain"),
+              body,
+              headers: args.headers ?? [],
+              matched: 0,
+            },
+            ...readBrowserPageContent(tab.tabId).routes.filter(
+              (route) => route.pattern !== args.pattern,
+            ),
+          ],
+        });
+        return Promise.resolve(browserRoutesOf(tab));
+      },
+      routes(args) {
+        beginBrowserCall("control.routes", { ...args });
+        return Promise.resolve(
+          browserRoutesOf(requireLiveBrowserTab(args?.tabId)),
+        );
+      },
+      unroute(args) {
+        beginBrowserCall("control.unroute", { ...args });
+        const tab = requireLiveBrowserTab(args?.tabId);
+        const pattern = args?.pattern;
+        writeBrowserPageContent(tab.tabId, {
+          routes:
+            pattern === undefined
+              ? []
+              : readBrowserPageContent(tab.tabId).routes.filter(
+                  (route) => route.pattern !== pattern,
+                ),
+        });
+        return Promise.resolve(browserRoutesOf(tab));
+      },
+      setOffline(args) {
+        beginBrowserCall("control.setOffline", { ...args });
+        const tab = requireLiveBrowserTab(args?.tabId);
+        writeBrowserPageContent(tab.tabId, { offline: args.offline });
+        return Promise.resolve(browserPageStateOf(tab.tabId));
+      },
+    },
     getStatus() {
       return {
         connected: browserConnected,
@@ -2009,15 +2346,19 @@ function createFakePluginHostInternal(
       }));
     },
     setPageContent(tabId, content) {
-      const existing = browserPageContent.get(tabId) ?? {
-        text: "",
-        selection: "",
-        snapshot: "",
-      };
+      const existing = browserPageContent.get(tabId) ?? EMPTY_BROWSER_PAGE_CONTENT;
       browserPageContent.set(tabId, {
         text: content.text ?? existing.text,
         selection: content.selection ?? existing.selection,
         snapshot: content.snapshot ?? existing.snapshot,
+        console: content.console ?? existing.console,
+        network: content.network ?? existing.network,
+        cookies: content.cookies ?? existing.cookies,
+        localStorage: content.localStorage ?? existing.localStorage,
+        sessionStorage: content.sessionStorage ?? existing.sessionStorage,
+        evaluated: content.evaluated ?? existing.evaluated,
+        routes: existing.routes,
+        offline: existing.offline,
       });
     },
     setConnected(connected) {

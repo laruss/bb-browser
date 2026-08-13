@@ -1,3 +1,6 @@
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { createFakePluginHost } from "@bb/plugin-sdk/testing";
 import plugin from "./server.js";
@@ -160,9 +163,9 @@ describe("bb browser CLI", () => {
   it("rejects unknown commands and options rather than doing something else", async () => {
     const host = createHost();
 
-    const unknownCommand = await host.harness.runCli(["eval"]);
+    const unknownCommand = await host.harness.runCli(["levitate"]);
     expect(unknownCommand.exitCode).toBe(2);
-    expect(unknownCommand.stderr).toContain('Unknown command "eval"');
+    expect(unknownCommand.stderr).toContain('Unknown command "levitate"');
 
     const unknownOption = await host.harness.runCli(["tabs", "--all"]);
     expect(unknownOption.exitCode).toBe(2);
@@ -355,5 +358,549 @@ describe("bb browser CLI interaction", () => {
 
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toContain("fresh snapshot");
+  });
+});
+
+describe("bb browser observation commands", () => {
+  function observationHost() {
+    const host = createHost();
+    host.harness.behavior.browser.setPageContent("tab-1", {
+      console: [
+        {
+          level: "error",
+          text: "Uncaught TypeError",
+          source: "https://example.com/app.js",
+          line: 12,
+          timestamp: 1,
+        },
+        { level: "info", text: "ready", source: "", line: 0, timestamp: 2 },
+      ],
+      network: [
+        {
+          method: "GET",
+          url: "https://example.com/app.js",
+          resourceType: "script",
+          status: 200,
+          fromCache: true,
+          error: null,
+          timestamp: 1,
+        },
+        {
+          method: "GET",
+          url: "http://127.0.0.1:9/",
+          resourceType: "xhr",
+          status: null,
+          fromCache: false,
+          error: "net::ERR_BLOCKED_BY_CLIENT",
+          timestamp: 2,
+        },
+      ],
+    });
+    return host;
+  }
+
+  it("writes a screenshot to the path it was given, relative to the caller's cwd", async () => {
+    const host = observationHost();
+    const directory = await mkdtemp(join(tmpdir(), "bb-browser-cli-"));
+
+    const result = await host.harness.runCli(
+      ["screenshot", "shot.png", "--tab", "tab-1"],
+      { cwd: directory },
+    );
+
+    expect(result.exitCode).toBe(0);
+    // Resolved against the shell that ran `bb`, not the server process this
+    // handler happens to execute in.
+    const written = await readFile(join(directory, "shot.png"));
+    expect(written.subarray(0, 4).toString("hex")).toBe("89504e47");
+    expect(result.stdout).toContain(join(directory, "shot.png"));
+    await rm(directory, { recursive: true, force: true });
+  });
+
+  it("asks for PNG when the file name says so, and JPEG otherwise", async () => {
+    const host = observationHost();
+    const directory = await mkdtemp(join(tmpdir(), "bb-browser-cli-"));
+
+    await host.harness.runCli(["screenshot", "a.png"], { cwd: directory });
+    await host.harness.runCli(["screenshot", "b.jpg"], { cwd: directory });
+
+    expect(
+      host.harness.inspection.browserCalls
+        .filter((call) => call.type === "page.screenshot")
+        .map((call) => call.args.format),
+    ).toEqual(["png", "jpeg"]);
+    await rm(directory, { recursive: true, force: true });
+  });
+
+  it("writes a PDF and refuses to guess a path", async () => {
+    const host = observationHost();
+    const directory = await mkdtemp(join(tmpdir(), "bb-browser-cli-"));
+
+    const missing = await host.harness.runCli(["pdf"], { cwd: directory });
+    expect(missing.exitCode).toBe(2);
+    expect(missing.stderr).toContain("file path");
+
+    const result = await host.harness.runCli(["pdf", "page.pdf"], {
+      cwd: directory,
+    });
+    expect(result.exitCode).toBe(0);
+    expect((await readFile(join(directory, "page.pdf"))).toString()).toContain(
+      "%PDF",
+    );
+    await rm(directory, { recursive: true, force: true });
+  });
+
+  it("shows console errors with where they came from", async () => {
+    const host = observationHost();
+
+    const result = await host.harness.runCli(["console", "--tab", "tab-1"]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("error\tUncaught TypeError");
+    expect(result.stdout).toContain("https://example.com/app.js:12");
+  });
+
+  it("puts a network failure where the status would be", async () => {
+    const host = observationHost();
+
+    const result = await host.harness.runCli(["network", "--tab", "tab-1"]);
+
+    // "Which requests went wrong" is the question this listing exists for, so
+    // the error has to be in the column the eye already scans.
+    expect(result.stdout).toContain("200\tGET\tscript (cache)");
+    expect(result.stdout).toContain("net::ERR_BLOCKED_BY_CLIENT\tGET\txhr");
+  });
+
+  it("says on stderr how many log entries it is not showing", async () => {
+    const host = observationHost();
+
+    const result = await host.harness.runCli([
+      "console",
+      "--tab",
+      "tab-1",
+      "--max",
+      "1",
+    ]);
+
+    // stdout stays a clean list to grep; the caveat rides alongside it.
+    expect(result.stdout.trim().split("\n")).toHaveLength(1);
+    expect(result.stderr).toContain("1 earlier entry not shown");
+  });
+
+  it("says plainly when a page logged nothing", async () => {
+    const host = createHost();
+
+    const result = await host.harness.runCli(["console", "--tab", "tab-1"]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("logged nothing");
+  });
+});
+
+describe("bb browser storage commands", () => {
+  const COOKIE = {
+    name: "session",
+    value: "abc123",
+    domain: ".example.com",
+    path: "/",
+    expires: -1,
+    httpOnly: true,
+    secure: true,
+    sameSite: "Lax" as const,
+  };
+
+  function storageHost() {
+    const host = createHost();
+    host.harness.behavior.browser.setPageContent("tab-1", {
+      cookies: [COOKIE],
+      localStorage: [{ name: "token", value: "xyz" }],
+      sessionStorage: [{ name: "draft", value: "hello" }],
+    });
+    return host;
+  }
+
+  it("lists cookies with their values, because a value-less cookie is nothing", async () => {
+    const host = storageHost();
+
+    const result = await host.harness.runCli(["cookie-list", "--tab", "tab-1"]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("session");
+    expect(result.stdout).toContain("abc123");
+    expect(result.stdout).toContain("httpOnly");
+  });
+
+  it("filters to one cookie, and refuses to guess which", async () => {
+    const host = storageHost();
+
+    await expect(host.harness.runCli(["cookie-get"])).resolves.toMatchObject({
+      exitCode: 2,
+    });
+    const found = await host.harness.runCli([
+      "cookie-get",
+      "session",
+      "--tab",
+      "tab-1",
+    ]);
+    expect(found.stdout).toContain("abc123");
+    const missing = await host.harness.runCli([
+      "cookie-get",
+      "absent",
+      "--tab",
+      "tab-1",
+    ]);
+    expect(missing.stdout).toContain("No cookies");
+  });
+
+  it("sets a cookie, taking the rest of the line as its value", async () => {
+    const host = storageHost();
+
+    const result = await host.harness.runCli([
+      "cookie-set",
+      "note",
+      "two",
+      "words",
+      "--tab",
+      "tab-1",
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    expect(
+      host.harness.inspection.browserCalls.filter(
+        (call) => call.type === "storage.setCookies",
+      ),
+    ).toHaveLength(1);
+    const listed = await host.harness.runCli(["cookie-list", "--tab", "tab-1"]);
+    expect(listed.stdout).toContain("two words");
+  });
+
+  it("deletes one cookie and clears the rest", async () => {
+    const host = storageHost();
+
+    const deleted = await host.harness.runCli([
+      "cookie-delete",
+      "session",
+      "--tab",
+      "tab-1",
+    ]);
+    expect(deleted.stdout).toContain("Removed 1 cookie");
+    const cleared = await host.harness.runCli(["cookie-clear", "--tab", "tab-1"]);
+    expect(cleared.stdout).toContain("Removed 0 cookies");
+  });
+
+  it("keeps localStorage and sessionStorage apart", async () => {
+    const host = storageHost();
+
+    const local = await host.harness.runCli([
+      "localstorage-list",
+      "--tab",
+      "tab-1",
+    ]);
+    const session = await host.harness.runCli([
+      "sessionstorage-list",
+      "--tab",
+      "tab-1",
+    ]);
+
+    expect(local.stdout).toContain("token\txyz");
+    expect(local.stdout).not.toContain("draft");
+    expect(session.stdout).toContain("draft\thello");
+    expect(
+      host.harness.inspection.browserCalls
+        .filter((call) => call.type === "storage.items")
+        .map((call) => call.args.area),
+    ).toEqual(["local", "session"]);
+  });
+
+  it("writes and removes one key at a time", async () => {
+    const host = storageHost();
+
+    await host.harness.runCli([
+      "sessionstorage-set",
+      "draft",
+      "a longer note",
+      "--tab",
+      "tab-1",
+    ]);
+    const listed = await host.harness.runCli([
+      "sessionstorage-get",
+      "draft",
+      "--tab",
+      "tab-1",
+    ]);
+    expect(listed.stdout).toContain("a longer note");
+
+    const removed = await host.harness.runCli([
+      "sessionstorage-delete",
+      "draft",
+      "--tab",
+      "tab-1",
+    ]);
+    expect(removed.stdout).toContain("Removed 1 item");
+  });
+
+  it("saves a session in Playwright's format, to a file or to stdout", async () => {
+    const host = storageHost();
+    const directory = await mkdtemp(join(tmpdir(), "bb-browser-cli-"));
+
+    const printed = await host.harness.runCli(["state-save", "--tab", "tab-1"], {
+      cwd: directory,
+    });
+    expect(JSON.parse(printed.stdout)).toEqual({
+      cookies: [COOKIE],
+      origins: [
+        {
+          origin: "https://example.com",
+          localStorage: [{ name: "token", value: "xyz" }],
+        },
+      ],
+    });
+    // Whoever runs this has to learn what the file is, and stderr is where a
+    // caveat can go without breaking a pipe.
+    expect(printed.stderr).toContain("credential");
+
+    const saved = await host.harness.runCli(
+      ["state-save", "state.json", "--tab", "tab-1"],
+      { cwd: directory },
+    );
+    expect(saved.exitCode).toBe(0);
+    expect(
+      JSON.parse(await readFile(join(directory, "state.json"), "utf8")).cookies,
+    ).toEqual([COOKIE]);
+    await rm(directory, { recursive: true, force: true });
+  });
+
+  it("loads a saved session and says what it could not place", async () => {
+    const host = storageHost();
+    const directory = await mkdtemp(join(tmpdir(), "bb-browser-cli-"));
+    await writeFile(
+      join(directory, "state.json"),
+      JSON.stringify({
+        cookies: [{ ...COOKIE, name: "restored" }],
+        origins: [
+          {
+            origin: "https://example.com",
+            localStorage: [{ name: "token", value: "restored" }],
+          },
+          {
+            origin: "https://sso.test",
+            localStorage: [{ name: "token", value: "elsewhere" }],
+          },
+        ],
+      }),
+      "utf8",
+    );
+
+    const result = await host.harness.runCli(
+      ["state-load", "state.json", "--tab", "tab-1"],
+      { cwd: directory },
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("1 cookies applied");
+    expect(result.stdout).toContain("1 localStorage items applied");
+    // The other origin's storage cannot be written without navigating the
+    // user's browser to it, so it is reported rather than silently dropped.
+    expect(result.stderr).toContain("1 other origin");
+    const listed = await host.harness.runCli([
+      "localstorage-get",
+      "token",
+      "--tab",
+      "tab-1",
+    ]);
+    expect(listed.stdout).toContain("restored");
+    await rm(directory, { recursive: true, force: true });
+  });
+
+  it("refuses a file that is not a saved session", async () => {
+    const host = storageHost();
+    const directory = await mkdtemp(join(tmpdir(), "bb-browser-cli-"));
+    await writeFile(join(directory, "notes.json"), "not json at all", "utf8");
+
+    const result = await host.harness.runCli(
+      ["state-load", "notes.json", "--tab", "tab-1"],
+      { cwd: directory },
+    );
+
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("not a storage state file");
+    await rm(directory, { recursive: true, force: true });
+  });
+});
+
+describe("bb browser direct control commands", () => {
+  it("sends the function as given and prints what came back", async () => {
+    const host = createHost();
+    host.harness.behavior.browser.setPageContent("tab-1", {
+      evaluated: '{"count":3}',
+    });
+
+    const result = await host.harness.runCli([
+      "eval",
+      "() => ({ count: document.links.length })",
+      "--tab",
+      "tab-1",
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toBe('{"count":3}\n');
+    expect(host.harness.inspection.browserCalls).toContainEqual({
+      type: "control.evaluate",
+      args: {
+        expression: "() => ({ count: document.links.length })",
+        ref: undefined,
+        tabId: "tab-1",
+        generation: undefined,
+      },
+    });
+  });
+
+  it("takes a ref as the second positional, the way Playwright's eval does", async () => {
+    const host = createHost();
+
+    await host.harness.runCli([
+      "eval",
+      "(el) => el.value",
+      "e4",
+      "--tab",
+      "tab-1",
+    ]);
+
+    expect(host.harness.inspection.browserCalls.at(-1)).toMatchObject({
+      type: "control.evaluate",
+      args: { expression: "(el) => el.value", ref: "e4" },
+    });
+  });
+
+  it("refuses to evaluate nothing", async () => {
+    const host = createHost();
+
+    await expect(host.harness.runCli(["eval"])).resolves.toMatchObject({
+      exitCode: 2,
+    });
+  });
+
+  it("moves, presses and scrolls at coordinates", async () => {
+    const host = createHost();
+
+    for (const argv of [
+      ["mousemove", "120", "64"],
+      ["mousedown", "right"],
+      ["mouseup"],
+      ["mousewheel", "0", "-240"],
+    ]) {
+      await expect(
+        host.harness.runCli([...argv, "--tab", "tab-1"]),
+      ).resolves.toMatchObject({ exitCode: 0 });
+    }
+
+    expect(
+      host.harness.inspection.browserCalls
+        .filter((call) => call.type.startsWith("control.mouse"))
+        .map((call) => [call.type, call.args]),
+    ).toEqual([
+      ["control.mouseMove", { x: 120, y: 64, tabId: "tab-1" }],
+      ["control.mouseButton", { down: true, button: "right", tabId: "tab-1" }],
+      ["control.mouseButton", { down: false, button: "left", tabId: "tab-1" }],
+      ["control.mouseWheel", { deltaX: 0, deltaY: -240, tabId: "tab-1" }],
+    ]);
+  });
+
+  it("refuses a coordinate command with nothing to act on", async () => {
+    const host = createHost();
+
+    await expect(host.harness.runCli(["mousemove", "120"])).resolves.toMatchObject({
+      exitCode: 2,
+    });
+    await expect(
+      host.harness.runCli(["mousedown", "sideways"]),
+    ).resolves.toMatchObject({ exitCode: 2 });
+  });
+
+  it("mocks a response, lists it with its hit count, and removes it", async () => {
+    const host = createHost();
+
+    const added = await host.harness.runCli([
+      "route",
+      "**/api/me",
+      "--status",
+      "201",
+      "--body",
+      '{"ok":true}',
+      "--header",
+      "x-mock: 1",
+      "--tab",
+      "tab-1",
+    ]);
+
+    expect(added.exitCode).toBe(0);
+    expect(added.stdout).toContain("**/api/me");
+    // The hit count is the column that answers "did my mock fire".
+    expect(added.stdout).toContain("0\t201");
+    expect(host.harness.inspection.browserCalls.at(-1)).toMatchObject({
+      type: "control.route",
+      args: {
+        pattern: "**/api/me",
+        status: 201,
+        body: '{"ok":true}',
+        headers: [{ name: "x-mock", value: "1" }],
+      },
+    });
+
+    const listed = await host.harness.runCli(["route-list", "--tab", "tab-1"]);
+    expect(listed.stdout).toContain("**/api/me");
+
+    const removed = await host.harness.runCli(["unroute", "--tab", "tab-1"]);
+    expect(removed.stdout).toContain("That tab mocks nothing.");
+  });
+
+  it("refuses a route with no pattern and a header with no value", async () => {
+    const host = createHost();
+
+    await expect(host.harness.runCli(["route"])).resolves.toMatchObject({
+      exitCode: 2,
+    });
+    await expect(
+      host.harness.runCli(["route", "**", "--header", "x-mock"]),
+    ).resolves.toMatchObject({ exitCode: 2 });
+    await expect(
+      host.harness.runCli(["route", "**", "--status", "twelve"]),
+    ).resolves.toMatchObject({ exitCode: 2 });
+  });
+
+  it("takes a tab offline and says so where the routes are listed", async () => {
+    const host = createHost();
+
+    const offline = await host.harness.runCli([
+      "network-state-set",
+      "offline",
+      "--tab",
+      "tab-1",
+    ]);
+
+    expect(offline.exitCode).toBe(0);
+    expect(offline.stdout).toContain("offline");
+    const listed = await host.harness.runCli(["route-list", "--tab", "tab-1"]);
+    // Not a route, but the answer to the question someone reading an empty
+    // route table is usually asking.
+    expect(listed.stderr).toContain("This tab is offline.");
+  });
+
+  it("refuses a network state that is neither", async () => {
+    const host = createHost();
+
+    await expect(
+      host.harness.runCli(["network-state-set", "flaky"]),
+    ).resolves.toMatchObject({ exitCode: 2 });
+  });
+
+  it("lists the direct-control commands in help, with what they cost", async () => {
+    const host = createHost();
+
+    const result = await host.harness.runCli(["help"]);
+
+    expect(result.stdout).toContain("Direct control");
+    expect(result.stdout).toContain("skip what makes the commands above safe");
+    expect(result.stdout).toContain("network-state-set");
   });
 });
