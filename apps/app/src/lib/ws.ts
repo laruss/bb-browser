@@ -1,5 +1,6 @@
 import ReconnectingWebSocket from "partysocket/ws";
 import {
+  browserCommandRequestSignalLenientSchema,
   changedMessageLenientSchema,
   pluginSignalLenientSchema,
   realtimeSubscriptionTargetKey,
@@ -7,6 +8,7 @@ import {
   threadPaneActionSignalLenientSchema,
 } from "@bb/server-contract";
 import type {
+  BrowserCommandRequestSignal,
   ClientMessage,
   ChangedMessage,
   PluginSignal,
@@ -15,12 +17,14 @@ import type {
   ThreadOpenSignal,
   ThreadPaneActionSignal,
 } from "@bb/server-contract";
+import type { BrowserCommandResponseMessage } from "@bb/domain";
 import { buildDevWebSocketUrl } from "./dev-websocket-url";
 
 type ChangeCallback = (message: ChangedMessage) => void;
 type ThreadOpenCallback = (signal: ThreadOpenSignal) => void;
 type ThreadPaneActionCallback = (signal: ThreadPaneActionSignal) => void;
 type PluginSignalCallback = (signal: PluginSignal) => void;
+type BrowserCommandCallback = (signal: BrowserCommandRequestSignal) => void;
 type ConnectedCallback = (event: { reconnected: boolean }) => void;
 type ConnectionStateCallback = () => void;
 export type WebSocketConnectionState =
@@ -40,6 +44,10 @@ export class WebSocketManager {
   private threadOpenCallbacks = new Set<ThreadOpenCallback>();
   private threadPaneActionCallbacks = new Set<ThreadPaneActionCallback>();
   private pluginSignalCallbacks = new Set<PluginSignalCallback>();
+  private browserCommandCallbacks = new Set<BrowserCommandCallback>();
+  // Re-announced on every reconnect, so a server restart does not leave agents
+  // believing no browser is open.
+  private browserHostId: string | null = null;
   // Ephemeral "open this file in the secondary panel" intents, keyed by thread.
   // Held in memory only (cleared on reload) so a thread that is not currently
   // viewed opens the file when it is next viewed. Last write wins per thread.
@@ -74,6 +82,14 @@ export class WebSocketManager {
       // Re-subscribe to all active subscriptions
       for (const subscription of this.subscriptions.values()) {
         this.sendMessage({ type: "subscribe", target: subscription.target });
+      }
+      // Registration is per-connection server-side, so a reconnect has to say
+      // again that this window can drive the browser.
+      if (this.browserHostId !== null) {
+        this.sendMessage({
+          type: "browser-host.register",
+          browserHostId: this.browserHostId,
+        });
       }
       for (const callback of this.connectedCallbacks) {
         callback({ reconnected });
@@ -127,6 +143,17 @@ export class WebSocketManager {
     if (threadPaneAction.success) {
       for (const cb of this.threadPaneActionCallbacks) {
         cb(threadPaneAction.data);
+      }
+      return;
+    }
+
+    // An agent browser command, addressed to this client because it registered
+    // as the browser host. Exactly one subscriber answers it.
+    const browserCommand =
+      browserCommandRequestSignalLenientSchema.safeParse(parsed);
+    if (browserCommand.success) {
+      for (const cb of this.browserCommandCallbacks) {
+        cb(browserCommand.data);
       }
       return;
     }
@@ -219,6 +246,34 @@ export class WebSocketManager {
     return () => {
       this.pluginSignalCallbacks.delete(callback);
     };
+  }
+
+  onBrowserCommand(callback: BrowserCommandCallback): () => void {
+    this.browserCommandCallbacks.add(callback);
+    return () => {
+      this.browserCommandCallbacks.delete(callback);
+    };
+  }
+
+  /**
+   * Announce that this client can drive a browser surface. The server addresses
+   * the most recent registration, so re-registering is how a window claims the
+   * agent's browser commands.
+   */
+  registerBrowserHost(browserHostId: string): void {
+    this.browserHostId = browserHostId;
+    this.sendMessage({ type: "browser-host.register", browserHostId });
+  }
+
+  unregisterBrowserHost(browserHostId: string): void {
+    if (this.browserHostId === browserHostId) {
+      this.browserHostId = null;
+    }
+    this.sendMessage({ type: "browser-host.unregister", browserHostId });
+  }
+
+  sendBrowserCommandResponse(message: BrowserCommandResponseMessage): void {
+    this.sendMessage(message);
   }
 
   /**

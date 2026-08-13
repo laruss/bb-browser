@@ -255,6 +255,363 @@ export type BbDesktopBrowserFavicon = z.infer<
   typeof bbDesktopBrowserFaviconSchema
 >;
 
+/**
+ * Caps on the page content a read returns. Unlike the other caps here these
+ * bound what reaches an *agent's* context rather than what reaches the tab
+ * strip, so they are sized for a page's readable text and for a deliberate
+ * selection rather than for a title. Three layers must agree: the in-page
+ * extraction slices to these lengths so a huge document never crosses the
+ * process boundary, the main process re-truncates before answering, and the
+ * schema below rejects anything longer. A caller wanting less is expected to
+ * trim further for its own budget.
+ */
+export const BB_DESKTOP_BROWSER_MAX_PAGE_TEXT_LENGTH = 65_536;
+export const BB_DESKTOP_BROWSER_MAX_PAGE_SELECTION_LENGTH = 16_384;
+
+/**
+ * What a page read answers with.
+ *
+ * Failures are a typed variant rather than a rejection: this crosses `invoke`,
+ * where a thrown error arrives as a mangled `Error invoking remote method …`
+ * string carrying no structure a caller could branch on.
+ *
+ * Deliberately **not** `.strict()`, unlike the push payloads above. Those are
+ * parsed by the shell's own preload; this one is parsed by the SPA, which
+ * routinely runs against a *newer* shell (invariant 2 in
+ * docs/architecture/bb-migration.md). Zod's default strip lets a later shell add
+ * a field without needing yet another channel, and `.catch` on `reason` keeps an
+ * unknown future reason from failing the whole parse.
+ *
+ * On success, `text` and `selection` are page-controlled content — the document
+ * chooses both. The caps and the two truncation flags are the whole defence;
+ * nothing sanitizes this and no consumer may treat it as trusted. The flags are
+ * separate because a caller that asked for a selection should not have to guess
+ * which of the two was cut.
+ */
+export const bbDesktopBrowserPageReadResultSchema = z.union([
+  z.object({
+    ok: z.literal(true),
+    tabId: z.string().min(1),
+    url: z.string().max(BB_DESKTOP_BROWSER_MAX_URL_LENGTH),
+    title: z.string().max(BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH).nullable(),
+    isLoading: z.boolean(),
+    text: z.string().max(BB_DESKTOP_BROWSER_MAX_PAGE_TEXT_LENGTH),
+    textTruncated: z.boolean(),
+    selection: z.string().max(BB_DESKTOP_BROWSER_MAX_PAGE_SELECTION_LENGTH),
+    selectionTruncated: z.boolean(),
+  }),
+  z.object({
+    ok: z.literal(false),
+    /**
+     * `no-view` — the tab has no live `WebContentsView` (never attached this
+     * session, or destroyed). `no-page` — attached but nothing loaded yet.
+     * `timeout` — the page never answered. `unreadable` — anything else.
+     */
+    reason: z
+      .enum(["no-view", "no-page", "timeout", "unreadable"])
+      .catch("unreadable"),
+  }),
+]);
+export type BbDesktopBrowserPageReadResult = z.infer<
+  typeof bbDesktopBrowserPageReadResultSchema
+>;
+
+/**
+ * Cap on a rendered accessibility snapshot. Larger than the page-text cap
+ * because a snapshot is what an agent acts from — losing the element it needs
+ * costs it a round trip — but still bounded: this is attacker-shaped content
+ * (roles and labels a page chooses) on its way into a model's context.
+ */
+export const BB_DESKTOP_BROWSER_MAX_SNAPSHOT_LENGTH = 65_536;
+
+/**
+ * Ask for a snapshot. `maxDepth` trades completeness for size on deep pages;
+ * both bounds stay the shell's own constants otherwise, so nothing a caller
+ * supplies reaches the page.
+ */
+export const bbDesktopBrowserSnapshotRequestSchema = z
+  .object({
+    tabId: z.string().min(1),
+    maxDepth: z.number().int().positive().max(100).optional(),
+  })
+  .strict();
+export type BbDesktopBrowserSnapshotRequest = z.infer<
+  typeof bbDesktopBrowserSnapshotRequestSchema
+>;
+
+/**
+ * The accessibility snapshot of one tab, and the refs it handed out.
+ *
+ * `generation` is the load-bearing field. Refs name nodes in the document that
+ * produced them, so a navigation invalidates all of them; a caller that acts on
+ * a ref must pass back the generation it was given, and the shell refuses the
+ * command if it has moved on. Resolving a stale ref against whatever holds that
+ * node id now would click the wrong thing silently, which is worse than failing.
+ */
+export const bbDesktopBrowserSnapshotResultSchema = z.union([
+  z.object({
+    ok: z.literal(true),
+    tabId: z.string().min(1),
+    url: z.string().max(BB_DESKTOP_BROWSER_MAX_URL_LENGTH),
+    title: z.string().max(BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH).nullable(),
+    snapshot: z.string().max(BB_DESKTOP_BROWSER_MAX_SNAPSHOT_LENGTH),
+    generation: z.number().int().nonnegative(),
+    refCount: z.number().int().nonnegative(),
+    truncated: z.boolean(),
+  }),
+  z.object({
+    ok: z.literal(false),
+    /**
+     * `no-view` / `no-page` as for page reads. `debugger-unavailable` — the
+     * browser debugger could not be attached, DevTools holding the tab being
+     * the realistic cause. `failed` — anything else.
+     */
+    reason: z
+      .enum(["no-view", "no-page", "debugger-unavailable", "failed"])
+      .catch("failed"),
+    message: z.string().max(1024).optional(),
+  }),
+]);
+export type BbDesktopBrowserSnapshotResult = z.infer<
+  typeof bbDesktopBrowserSnapshotResultSchema
+>;
+
+/** A page's `alert()` message is page-controlled text; bound it like a title. */
+export const BB_DESKTOP_BROWSER_MAX_DIALOG_MESSAGE_LENGTH = 4096;
+
+/**
+ * A JavaScript dialog the page has opened and is now blocked on.
+ *
+ * Once the shell takes dialogs over (it does, per tab, from the moment the
+ * browser debugger attaches) Chromium stops drawing its own native modal, so
+ * this is what the app must render instead. `dialog: null` means the tab has
+ * none open — the same channel reports both, so a listener cannot miss the
+ * close.
+ *
+ * `message` and `defaultPrompt` are written by the page. They are shown to a
+ * human and handed to agents; nothing about them is trustworthy.
+ */
+export const bbDesktopBrowserDialogSchema = z
+  .object({
+    tabId: z.string().min(1),
+    dialog: z
+      .object({
+        type: z.enum(["alert", "confirm", "prompt", "beforeunload"]),
+        message: z
+          .string()
+          .max(BB_DESKTOP_BROWSER_MAX_DIALOG_MESSAGE_LENGTH),
+        defaultPrompt: z
+          .string()
+          .max(BB_DESKTOP_BROWSER_MAX_DIALOG_MESSAGE_LENGTH),
+      })
+      .nullable(),
+  })
+  .strict();
+export type BbDesktopBrowserDialog = z.infer<
+  typeof bbDesktopBrowserDialogSchema
+>;
+
+/**
+ * Answer the dialog a tab is blocked on. `promptText` is only meaningful for a
+ * `prompt`, and only when accepting.
+ */
+export const bbDesktopBrowserDialogRespondRequestSchema = z
+  .object({
+    tabId: z.string().min(1),
+    accept: z.boolean(),
+    promptText: z
+      .string()
+      .max(BB_DESKTOP_BROWSER_MAX_DIALOG_MESSAGE_LENGTH)
+      .optional(),
+  })
+  .strict();
+export type BbDesktopBrowserDialogRespondRequest = z.infer<
+  typeof bbDesktopBrowserDialogRespondRequestSchema
+>;
+
+export type BbDesktopBrowserDialogHandler = (
+  dialog: BbDesktopBrowserDialog,
+) => void;
+
+/**
+ * Caps on what an interaction may carry into a page.
+ *
+ * `fill` replaces a field's value in one shot, so it can afford a large bound.
+ * `type` sends one key event per character, so its bound is what keeps a single
+ * command from spending minutes in the main process. Uploads and select values
+ * are counted rather than sized: the interesting limit there is how many, not
+ * how long.
+ */
+export const BB_DESKTOP_BROWSER_MAX_FILL_TEXT_LENGTH = 8_192;
+export const BB_DESKTOP_BROWSER_MAX_TYPE_TEXT_LENGTH = 1_024;
+export const BB_DESKTOP_BROWSER_MAX_UPLOAD_FILES = 10;
+export const BB_DESKTOP_BROWSER_MAX_SELECT_VALUES = 20;
+/** Widest viewport an emulated resize may ask for; beyond this is not a page. */
+export const BB_DESKTOP_BROWSER_MAX_VIEWPORT_SIZE = 10_000;
+
+/**
+ * A `[ref=eN]` handed out by a snapshot. Shaped, not free-form, so a ref that
+ * was never a ref is refused here rather than looked up.
+ */
+const bbDesktopBrowserRefSchema = z.string().regex(/^e[1-9][0-9]{0,5}$/u);
+
+const bbDesktopBrowserKeyModifierSchema = z.enum([
+  "Alt",
+  "Control",
+  "Meta",
+  "Shift",
+]);
+
+/**
+ * What to do to a page.
+ *
+ * One union rather than a channel per verb: every one of these needs the same
+ * preamble (resolve the ref, check the snapshot generation, wait for the element
+ * to be actionable), and splitting them would duplicate that preamble nine
+ * times across a wire-frozen boundary.
+ *
+ * `check` and `select` are semantic rather than positional because they cannot
+ * be positional: a native `<select>` opens an OS popup no synthetic mouse event
+ * reaches, and "click the checkbox" is a toggle, which is the wrong primitive
+ * for an agent that wants a known end state.
+ */
+export const bbDesktopBrowserInteractionSchema = z.discriminatedUnion("action", [
+  z.object({
+    action: z.literal("click"),
+    ref: bbDesktopBrowserRefSchema,
+    button: z.enum(["left", "middle", "right"]),
+    /** 2 is a double click; Chromium wants the count on the event itself. */
+    clickCount: z.union([z.literal(1), z.literal(2)]),
+    modifiers: z.array(bbDesktopBrowserKeyModifierSchema).max(4),
+  }),
+  z.object({ action: z.literal("hover"), ref: bbDesktopBrowserRefSchema }),
+  z.object({
+    action: z.literal("drag"),
+    ref: bbDesktopBrowserRefSchema,
+    targetRef: bbDesktopBrowserRefSchema,
+  }),
+  z.object({
+    action: z.literal("fill"),
+    ref: bbDesktopBrowserRefSchema,
+    text: z.string().max(BB_DESKTOP_BROWSER_MAX_FILL_TEXT_LENGTH),
+  }),
+  z.object({
+    action: z.literal("type"),
+    ref: bbDesktopBrowserRefSchema,
+    text: z.string().max(BB_DESKTOP_BROWSER_MAX_TYPE_TEXT_LENGTH),
+  }),
+  z.object({
+    action: z.literal("press"),
+    /** Null presses the key at whatever the page has focused. */
+    ref: bbDesktopBrowserRefSchema.nullable(),
+    key: z.string().min(1).max(64),
+  }),
+  z.object({
+    action: z.literal("select"),
+    ref: bbDesktopBrowserRefSchema,
+    values: z
+      .array(z.string().max(BB_DESKTOP_BROWSER_MAX_TYPE_TEXT_LENGTH))
+      .min(1)
+      .max(BB_DESKTOP_BROWSER_MAX_SELECT_VALUES),
+  }),
+  z.object({
+    action: z.literal("check"),
+    ref: bbDesktopBrowserRefSchema,
+    /** The end state, not a toggle, so repeating the command is harmless. */
+    checked: z.boolean(),
+  }),
+  z.object({
+    action: z.literal("upload"),
+    ref: bbDesktopBrowserRefSchema,
+    /**
+     * Absolute paths on the machine running the shell. This hands a web page
+     * the contents of local files; see docs/architecture/browser-automation.md
+     * for what that does and does not add to bb's threat model.
+     */
+    paths: z
+      .array(z.string().min(1).max(1024))
+      .min(1)
+      .max(BB_DESKTOP_BROWSER_MAX_UPLOAD_FILES),
+  }),
+  z.object({
+    action: z.literal("resize"),
+    /** Both zero restores the tab to the panel's own size. */
+    width: z.number().int().nonnegative().max(BB_DESKTOP_BROWSER_MAX_VIEWPORT_SIZE),
+    height: z
+      .number()
+      .int()
+      .nonnegative()
+      .max(BB_DESKTOP_BROWSER_MAX_VIEWPORT_SIZE),
+  }),
+]);
+export type BbDesktopBrowserInteraction = z.infer<
+  typeof bbDesktopBrowserInteractionSchema
+>;
+
+/**
+ * Perform one interaction on a tab.
+ *
+ * `generation` is the snapshot the refs came from. It is **optional**, and the
+ * tradeoff is worth stating: navigation already drops every ref, so the
+ * dangerous case — acting on an element that no longer exists — is closed
+ * either way. What the generation adds is protection against a *newer* snapshot
+ * having reassigned `e5` to a different element between the caller reading it
+ * and acting on it. A caller that passes it gets that check; one that omits it
+ * accepts the race in exchange for not having to thread the value through.
+ */
+export const bbDesktopBrowserInteractRequestSchema = z
+  .object({
+    tabId: z.string().min(1),
+    generation: z.number().int().nonnegative().optional(),
+    interaction: bbDesktopBrowserInteractionSchema,
+  })
+  .strict();
+export type BbDesktopBrowserInteractRequest = z.infer<
+  typeof bbDesktopBrowserInteractRequestSchema
+>;
+
+/**
+ * What an interaction answers with. Success carries where the tab ended up,
+ * because the most common interaction — clicking a link or submitting a form —
+ * changes it, and a caller that had to ask separately would race the next
+ * navigation.
+ */
+export const bbDesktopBrowserInteractResultSchema = z.union([
+  z.object({
+    ok: z.literal(true),
+    tabId: z.string().min(1),
+    url: z.string().max(BB_DESKTOP_BROWSER_MAX_URL_LENGTH),
+    title: z.string().max(BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH).nullable(),
+  }),
+  z.object({
+    ok: z.literal(false),
+    /**
+     * `no-view` / `no-page` / `debugger-unavailable` as elsewhere.
+     * `stale-refs` — the snapshot those refs came from is no longer current.
+     * `unknown-ref` — no such ref in the current snapshot; snapshot again.
+     * `not-actionable` — the element never became clickable; `message` says why
+     * (covered, disabled, still animating).
+     * `unsupported-key` — the key name is not one the shell can emit.
+     */
+    reason: z
+      .enum([
+        "no-view",
+        "no-page",
+        "debugger-unavailable",
+        "stale-refs",
+        "unknown-ref",
+        "not-actionable",
+        "unsupported-key",
+        "failed",
+      ])
+      .catch("failed"),
+    message: z.string().max(1024).optional(),
+  }),
+]);
+export type BbDesktopBrowserInteractResult = z.infer<
+  typeof bbDesktopBrowserInteractResultSchema
+>;
+
 export type BbDesktopBrowserStateHandler = (
   state: BbDesktopBrowserState,
 ) => void;
@@ -317,4 +674,65 @@ export interface BbDesktopBrowserApi {
   onFavicon?(
     listener: BbDesktopBrowserFaviconHandler,
   ): BbDesktopBrowserUnsubscribe;
+  /**
+   * Read what a tab is currently showing — url, title, rendered text and the
+   * user's selection.
+   *
+   * The only request/response method on this API; every other command is
+   * fire-and-forget because nothing needed an answer until agents did. It never
+   * rejects: transport, parse and page failures all come back as `ok: false`.
+   *
+   * The request is `tabId` and nothing else, deliberately. Any per-call knob
+   * (a length, a selector, a format) would have to reach the script injected
+   * into an untrusted page, which is a script-injection surface inside our own
+   * privileged snippet. Limits are compile-time constants; a caller wanting less
+   * trims what it gets back.
+   *
+   * Optional for the same version skew as {@link BbDesktopBrowserApi.onSnapshot}
+   * and {@link BbDesktopBrowserApi.onFavicon}: an older shell's preload has no
+   * read-page channel, and feature-detecting this method is the negotiation that
+   * lets page reads ride a new channel instead of widening a wire-frozen request.
+   * This is that pattern's first request/response instance.
+   */
+  readPage?(tabId: string): Promise<BbDesktopBrowserPageReadResult>;
+  /**
+   * Accessibility snapshot of the tab, with a ref on every interactive element,
+   * for agents that need to act on the page rather than only read it.
+   *
+   * Optional for the same version skew as {@link BbDesktopBrowserApi.readPage}:
+   * a shell that predates the browser debugger has no such channel, and callers
+   * feature-detect rather than assume.
+   */
+  snapshot?(
+    request: BbDesktopBrowserSnapshotRequest,
+  ): Promise<BbDesktopBrowserSnapshotResult>;
+  /**
+   * Subscribe to JavaScript dialogs the shell has taken over, and to their
+   * closing (`dialog: null`). Optional for version skew, like the pushes above.
+   *
+   * A tab whose debugger is not attached never emits these — its dialogs are
+   * still Chromium's own native modals, which is what keeps ordinary browsing
+   * unchanged until an agent touches the tab.
+   */
+  onDialog?(
+    listener: BbDesktopBrowserDialogHandler,
+  ): BbDesktopBrowserUnsubscribe;
+  /**
+   * Answer the dialog a tab is blocked on. Resolves false when the tab has no
+   * dialog open — including when another answer won the race.
+   */
+  respondToDialog?(
+    request: BbDesktopBrowserDialogRespondRequest,
+  ): Promise<boolean>;
+  /**
+   * Act on the page — click, fill, press, and the rest — addressing elements by
+   * the refs a {@link BbDesktopBrowserApi.snapshot} handed out.
+   *
+   * Waits for the element to be actionable before acting, so a caller does not
+   * have to poll or sleep; the wait is what turns an action from a race into a
+   * command. Optional for the same version skew as the methods above.
+   */
+  interact?(
+    request: BbDesktopBrowserInteractRequest,
+  ): Promise<BbDesktopBrowserInteractResult>;
 }

@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   BB_DESKTOP_BROWSER_MAX_URL_LENGTH,
+  type BbDesktopBrowserInteractResult,
+  type BbDesktopBrowserPageReadResult,
+  type BbDesktopBrowserSnapshotResult,
   type BbDesktopBrowserAttachRequest,
   type BbDesktopBrowserNavigateRequest,
   type BbDesktopBrowserSetBoundsRequest,
@@ -12,6 +15,7 @@ import {
   BB_DESKTOP_BROWSER_GO_BACK_CHANNEL,
   BB_DESKTOP_BROWSER_GO_FORWARD_CHANNEL,
   BB_DESKTOP_BROWSER_NAVIGATE_CHANNEL,
+  BB_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
   BB_DESKTOP_BROWSER_RELOAD_CHANNEL,
   BB_DESKTOP_BROWSER_SET_BOUNDS_CHANNEL,
   BB_DESKTOP_BROWSER_SET_VISIBLE_CHANNEL,
@@ -34,11 +38,17 @@ const electronMock = vi.hoisted(() => {
   }
 
   type FakeIpcListener = (event: FakeIpcEvent, payload: unknown) => void;
+  type FakeIpcHandler = (
+    event: FakeIpcEvent,
+    payload: unknown,
+  ) => Promise<unknown>;
 
   const listeners = new Map<string, FakeIpcListener>();
+  const handlers = new Map<string, FakeIpcHandler>();
   const windowsBySender = new Map<FakeWebContents, FakeBrowserWindow>();
 
   return {
+    handlers,
     listeners,
     windowsBySender,
     BrowserWindow: {
@@ -47,6 +57,9 @@ const electronMock = vi.hoisted(() => {
       },
     },
     ipcMain: {
+      handle(channel: string, handler: FakeIpcHandler): void {
+        handlers.set(channel, handler);
+      },
       on(channel: string, listener: FakeIpcListener): void {
         listeners.set(channel, listener);
       },
@@ -65,6 +78,12 @@ type NavigateCall = Parameters<DesktopBrowserViewManager["navigate"]>[0];
 type SetBoundsCall = Parameters<DesktopBrowserViewManager["setBounds"]>[0];
 type SetVisibleCall = Parameters<DesktopBrowserViewManager["setVisible"]>[0];
 type TabCommandCall = Parameters<DesktopBrowserViewManager["reload"]>[0];
+type ReadPageCall = Parameters<DesktopBrowserViewManager["readPage"]>[0];
+type SnapshotCall = Parameters<DesktopBrowserViewManager["snapshot"]>[0];
+type DialogRespondCall = Parameters<
+  DesktopBrowserViewManager["respondToDialog"]
+>[0];
+type InteractCall = Parameters<DesktopBrowserViewManager["interact"]>[0];
 type WindowResizeCall = Parameters<
   DesktopBrowserViewManager["beginWindowResize"]
 >[0];
@@ -102,6 +121,26 @@ class RecordingDesktopBrowserViewManager implements DesktopBrowserViewManager {
   public readonly setBoundsCalls: SetBoundsCall[] = [];
   public readonly setVisibleCalls: SetVisibleCall[] = [];
   public readonly stopCalls: TabCommandCall[] = [];
+  public readonly readPageCalls: ReadPageCall[] = [];
+  public readPageFailure: Error | null = null;
+  public readPageResult: BbDesktopBrowserPageReadResult = {
+    ok: false,
+    reason: "no-view",
+  };
+  public readonly dialogRespondCalls: DialogRespondCall[] = [];
+  public dialogRespondResult = true;
+  public readonly snapshotCalls: SnapshotCall[] = [];
+  public snapshotFailure: Error | null = null;
+  public snapshotResult: BbDesktopBrowserSnapshotResult = {
+    ok: false,
+    reason: "no-view",
+  };
+  public readonly interactCalls: InteractCall[] = [];
+  public interactFailure: Error | null = null;
+  public interactResult: BbDesktopBrowserInteractResult = {
+    ok: false,
+    reason: "no-view",
+  };
 
   attach(args: AttachCall): void {
     this.attachCalls.push(args);
@@ -154,11 +193,41 @@ class RecordingDesktopBrowserViewManager implements DesktopBrowserViewManager {
   stop(args: TabCommandCall): void {
     this.stopCalls.push(args);
   }
+
+  readPage(args: ReadPageCall): Promise<BbDesktopBrowserPageReadResult> {
+    this.readPageCalls.push(args);
+    if (this.readPageFailure !== null) {
+      return Promise.reject(this.readPageFailure);
+    }
+    return Promise.resolve(this.readPageResult);
+  }
+
+  respondToDialog(args: DialogRespondCall): Promise<boolean> {
+    this.dialogRespondCalls.push(args);
+    return Promise.resolve(this.dialogRespondResult);
+  }
+
+  snapshot(args: SnapshotCall): Promise<BbDesktopBrowserSnapshotResult> {
+    this.snapshotCalls.push(args);
+    if (this.snapshotFailure !== null) {
+      return Promise.reject(this.snapshotFailure);
+    }
+    return Promise.resolve(this.snapshotResult);
+  }
+
+  interact(args: InteractCall): Promise<BbDesktopBrowserInteractResult> {
+    this.interactCalls.push(args);
+    if (this.interactFailure !== null) {
+      return Promise.reject(this.interactFailure);
+    }
+    return Promise.resolve(this.interactResult);
+  }
 }
 
 let nextWebContentsId = 1;
 
 beforeEach(() => {
+  electronMock.handlers.clear();
   electronMock.listeners.clear();
   electronMock.windowsBySender.clear();
   nextWebContentsId = 1;
@@ -185,6 +254,20 @@ function sendBrowserIpc(args: SendBrowserIpcArgs): void {
     throw new Error(`Expected listener for ${args.channel}.`);
   }
   listener({ sender: args.sender }, args.payload);
+}
+
+async function invokeBrowserIpc(
+  args: SendBrowserIpcArgs,
+): Promise<BbDesktopBrowserPageReadResult> {
+  const handler = electronMock.handlers.get(args.channel);
+  expect(handler).toBeDefined();
+  if (handler === undefined) {
+    throw new Error(`Expected handler for ${args.channel}.`);
+  }
+  return (await handler(
+    { sender: args.sender },
+    args.payload,
+  )) as BbDesktopBrowserPageReadResult;
 }
 
 function oversizedBrowserUrl(): string {
@@ -370,5 +453,67 @@ describe("registerDesktopBrowserIpc", () => {
     expect(manager.stopCalls).toEqual([
       { hostWindow: renderer.hostWindow, tabId: "browser:a" },
     ]);
+  });
+
+  it("answers page reads for owned senders and never throws for anyone else", async () => {
+    const manager = new RecordingDesktopBrowserViewManager();
+    manager.readPageResult = {
+      ok: true,
+      tabId: "browser:a",
+      url: "https://example.com/",
+      title: "Example",
+      isLoading: false,
+      text: "hello",
+      textTruncated: false,
+      selection: "",
+      selectionTruncated: false,
+    };
+    registerDesktopBrowserIpc(manager);
+    const renderer = createTrustedRenderer("main-window");
+
+    await expect(
+      invokeBrowserIpc({
+        channel: BB_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
+        payload: { tabId: "browser:a" },
+        sender: renderer.sender,
+      }),
+    ).resolves.toEqual(manager.readPageResult);
+    expect(manager.readPageCalls).toEqual([
+      { hostWindow: renderer.hostWindow, tabId: "browser:a" },
+    ]);
+
+    // A sender with no BrowserWindow and a malformed payload both resolve to a
+    // typed refusal rather than rejecting: an `invoke` rejection reaches the
+    // renderer as an opaque string it could not branch on.
+    await expect(
+      invokeBrowserIpc({
+        channel: BB_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
+        payload: { tabId: "browser:a" },
+        sender: createUntrustedSender(),
+      }),
+    ).resolves.toEqual({ ok: false, reason: "no-view" });
+    await expect(
+      invokeBrowserIpc({
+        channel: BB_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
+        payload: { tabId: "" },
+        sender: renderer.sender,
+      }),
+    ).resolves.toEqual({ ok: false, reason: "no-view" });
+    expect(manager.readPageCalls).toHaveLength(1);
+  });
+
+  it("converts a throwing manager read into a typed refusal", async () => {
+    const manager = new RecordingDesktopBrowserViewManager();
+    manager.readPageFailure = new Error("boom");
+    registerDesktopBrowserIpc(manager);
+    const renderer = createTrustedRenderer("main-window");
+
+    await expect(
+      invokeBrowserIpc({
+        channel: BB_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
+        payload: { tabId: "browser:a" },
+        sender: renderer.sender,
+      }),
+    ).resolves.toEqual({ ok: false, reason: "unreadable" });
   });
 });

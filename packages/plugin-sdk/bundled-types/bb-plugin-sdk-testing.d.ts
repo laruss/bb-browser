@@ -5,7 +5,7 @@
 // Confused by the API, or need a symbol that isn't here? Clone the BB repo
 // and read the real source: https://github.com/get-bb/bb
 
-import { BbPluginApi, PluginSettingValue, PluginSharedPortTunnelIdentity, PluginAgentToolExperimentalStatusLabels, PluginAgentToolContext, PluginAgentToolResult, PluginCliCommandInfo, PluginCliContext, PluginCliResult, PluginHttpAuthMode, PluginHttpHandler, PluginMentionTrigger, PluginMentionSearchContext, PluginMentionItem, JsonValue, PluginCliExecutionResult, PluginThreadEventName, PluginThreadEventPayloads, PluginAgentConfigurationContext, PluginSettingDescriptors, PluginAgentConfiguration, PluginOmniboxSuggestContext, PluginOmniboxSuggestion, PluginOmniboxRunContext, PluginOmniboxRunResult, PluginInteractionRequest } from '@bb/plugin-sdk';
+import { BbPluginApi, PluginSettingValue, PluginSharedPortTunnelIdentity, PluginAgentToolExperimentalStatusLabels, PluginAgentToolContext, PluginAgentToolResult, PluginCliCommandInfo, PluginCliContext, PluginCliResult, PluginHttpAuthMode, PluginHttpHandler, PluginMentionTrigger, PluginMentionSearchContext, PluginMentionItem, PluginBrowserErrorCode, JsonValue, PluginCliExecutionResult, PluginThreadEventName, PluginThreadEventPayloads, PluginAgentConfigurationContext, PluginSettingDescriptors, PluginAgentConfiguration, PluginOmniboxSuggestContext, PluginOmniboxSuggestion, PluginOmniboxRunContext, PluginOmniboxRunResult, PluginInteractionRequest } from '@bb/plugin-sdk';
 
 type BbSdk = BbPluginApi["sdk"];
 /**
@@ -138,6 +138,48 @@ interface FakeOmniboxProviderRecord {
     suggest: (ctx: PluginOmniboxSuggestContext) => PluginOmniboxSuggestion[] | Promise<PluginOmniboxSuggestion[]>;
     run: ((itemId: string, ctx: PluginOmniboxRunContext) => PluginOmniboxRunResult | void | Promise<PluginOmniboxRunResult | void>) | null;
 }
+/**
+ * A stand-in browser surface for plugins that call `bb.browser.tabs`/`page`/
+ * `navigation`. It models the two properties those calls actually hinge on —
+ * which tab is active, and which tabs are **live** (have a real page behind
+ * them) — so a plugin's error handling can be exercised without an Electron
+ * window anywhere in sight.
+ */
+interface FakeBrowserDrivers {
+    /** Replace the tab model. The first tab is active unless one sets `active`. */
+    setTabs(tabs: readonly FakeBrowserTabInput[]): void;
+    /** What `page.getText`/`getSelection` answer for a live tab. */
+    setPageContent(tabId: string, content: {
+        text?: string;
+        selection?: string;
+        snapshot?: string;
+    }): void;
+    /** Pretend no app window is connected, so every call fails like production. */
+    setConnected(connected: boolean): void;
+    /** Whether a tab has a JavaScript dialog waiting to be answered. */
+    setPendingDialog(pending: boolean): void;
+    /**
+     * Make the next browser call fail with this code, the way the host reports a
+     * refusal from the app: an Error named "BrowserCommandError" carrying `code`.
+     */
+    failNextCall(code: PluginBrowserErrorCode, message?: string): void;
+}
+interface FakeBrowserTabInput {
+    tabId: string;
+    url?: string;
+    title?: string | null;
+    active?: boolean;
+    /** Defaults to true; set false to model a tab that was never opened on screen. */
+    live?: boolean;
+    loading?: boolean;
+    canGoBack?: boolean;
+    canGoForward?: boolean;
+}
+/** One recorded `bb.browser.*` call, for assertions. */
+interface FakeBrowserCall {
+    type: string;
+    args: Record<string, unknown>;
+}
 interface FakeRealtimeSignal {
     channel: string;
     /** JSON-round-tripped, like the WS broadcast; `undefined` → `null`. */
@@ -182,9 +224,13 @@ interface FakePluginInspectionState {
     readonly pendingInteractions: readonly (PluginInteractionRequest & {
         id: string;
     })[];
+    /** Every `bb.browser.*` call, in order. */
+    readonly browserCalls: readonly FakeBrowserCall[];
 }
 /** Deterministic inputs that stand in for behavior normally driven by BB. */
 interface FakePluginBehaviorDrivers {
+    /** Drive the stand-in browser surface behind `bb.browser.*`. */
+    browser: FakeBrowserDrivers;
     submitInteraction(id: string, value: JsonValue): void;
     cancelInteraction(id: string): void;
     /**

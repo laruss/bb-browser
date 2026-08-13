@@ -262,3 +262,81 @@ describe("WebSocketManager thread-open signals", () => {
     expect(threadOpen).not.toHaveBeenCalled();
   });
 });
+
+describe("WebSocketManager browser commands", () => {
+  const originalWebSocket = globalThis.WebSocket;
+
+  beforeEach(() => {
+    fakeSocketState.instances.length = 0;
+    installOpenWebSocketConstructor();
+  });
+
+  afterEach(() => {
+    Object.defineProperty(globalThis, "WebSocket", {
+      configurable: true,
+      value: originalWebSocket,
+    });
+  });
+
+  function dispatchRaw(payload: unknown): void {
+    const instance = fakeSocketState.instances[0];
+    if (!instance) {
+      throw new Error("Expected websocket instance");
+    }
+    instance.onmessage?.({ data: JSON.stringify(payload) } as MessageEvent);
+  }
+
+  it("routes an agent browser command to its own subscribers only", () => {
+    const { manager } = createConnectedManager();
+    const browserCommand = vi.fn();
+    const changed = vi.fn();
+    const pluginSignal = vi.fn();
+    manager.onBrowserCommand(browserCommand);
+    manager.onChanged(changed);
+    manager.onPluginSignal(pluginSignal);
+
+    const signal = {
+      type: "browser-command-request",
+      requestId: "req_1",
+      command: { type: "tabs.list" },
+    } as const;
+    dispatchRaw(signal);
+
+    expect(browserCommand).toHaveBeenCalledWith(signal);
+    expect(changed).not.toHaveBeenCalled();
+    expect(pluginSignal).not.toHaveBeenCalled();
+  });
+
+  it("re-announces the browser host after a reconnect", () => {
+    const { manager, socket } = createConnectedManager();
+    manager.registerBrowserHost("window-a");
+
+    expect(socket.sentMessages.map((raw) => JSON.parse(raw) as { type: string })).toEqual([
+      { type: "browser-host.register", browserHostId: "window-a" },
+    ]);
+
+    // Registration is per-connection server-side, so a reconnect that did not
+    // re-announce would silently leave agents with no browser to drive.
+    socket.sentMessages.length = 0;
+    socket.open();
+    expect(socket.sentMessages.map((raw) => JSON.parse(raw) as { type: string })).toEqual([
+      { type: "browser-host.register", browserHostId: "window-a" },
+    ]);
+  });
+
+  it("sends a response the server can correlate", () => {
+    const { manager, socket } = createConnectedManager();
+
+    manager.sendBrowserCommandResponse({
+      type: "browser-command.response",
+      requestId: "req_1",
+      outcome: { ok: true, value: { type: "tabs", tabs: [] } },
+    });
+
+    expect(JSON.parse(socket.sentMessages[0] ?? "null")).toEqual({
+      type: "browser-command.response",
+      requestId: "req_1",
+      outcome: { ok: true, value: { type: "tabs", tabs: [] } },
+    });
+  });
+});

@@ -189,7 +189,13 @@ const browserSurfaceTabsStorage =
     serialize: (value) => JSON.stringify(value),
   });
 
-const browserSurfaceTabsAtom = atomWithStorage<BrowserSurfaceTabsState>(
+/**
+ * Exported so the agent browser bridge can read and write tabs through the
+ * jotai store from outside React's render cycle — it has to see its own writes
+ * within one turn, which a render snapshot cannot promise. UI code should keep
+ * using {@link useBrowserSurfaceTabs}.
+ */
+export const browserSurfaceTabsAtom = atomWithStorage<BrowserSurfaceTabsState>(
   getBrowserSurfaceTabsStorageKey(),
   EMPTY_BROWSER_SURFACE_TABS_STATE,
   browserSurfaceTabsStorage,

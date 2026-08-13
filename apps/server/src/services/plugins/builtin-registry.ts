@@ -55,6 +55,15 @@ export const BUILTIN_PLUGINS = [
     category: "Workflow management",
   },
   {
+    // Ships disabled: an agent using these acts inside the user's real
+    // logged-in browsing session, and BB has no plugin permission model yet, so
+    // enabling it is the user's call.
+    name: "browser-tools",
+    pluginId: "browser-tools",
+    defaultEnabled: false,
+    category: "Agent interaction",
+  },
+  {
     name: "connect",
     pluginId: "connect",
     defaultEnabled: true,

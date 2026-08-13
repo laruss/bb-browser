@@ -9,6 +9,7 @@ import {
   type RefObject,
 } from "react";
 import type {
+  BbDesktopBrowserDialog,
   BbDesktopBrowserApi,
   BbDesktopBrowserState,
   BbDesktopBrowserViewportBounds,
@@ -32,6 +33,7 @@ import { useBrowserHistory } from "@/lib/browser-history";
 import { BROWSER_VIEW_BOUNDS_SYNC_EVENT } from "@/lib/browser-view-bounds-sync";
 import { useIsBrowserDimmingModalOpen } from "@/hooks/useBrowserDimmingModal";
 import { usePointerCoarse } from "@bb/shared-ui/hooks/use-pointer-coarse";
+import { BrowserPageDialog } from "@/components/browser-surface/BrowserPageDialog";
 import { BrowserNewTabScreen } from "./BrowserNewTabScreen";
 import {
   registerBrowserView,
@@ -498,6 +500,9 @@ export function BrowserTabContent({
   const [isEditing, setIsEditing] = useState(false);
   // Bitmap stand-in pushed by the desktop main process while the native view
   // is hidden during a native window resize; null outside resize bursts.
+  const [pageDialog, setPageDialog] = useState<
+    BbDesktopBrowserDialog["dialog"]
+  >(null);
   const [resizeSnapshotUrl, setResizeSnapshotUrl] = useState<string | null>(
     null,
   );
@@ -654,6 +659,16 @@ export function BrowserTabContent({
       setResizeSnapshotUrl(snapshot.dataUrl);
     });
 
+    // Dialogs the shell has taken over. Optional for version skew like the rest;
+    // a tab whose debugger never attached still gets Chromium's native modal and
+    // pushes nothing here.
+    const unsubscribeDialog = desktopBrowser.onDialog?.((event) => {
+      if (event.tabId !== tabId) {
+        return;
+      }
+      setPageDialog(event.dialog);
+    });
+
     // Also optional for version skew (an older shell pushes no icons), and this
     // component keeps none of it: the icon belongs to the tab, which outlives
     // this mount, so it goes straight to whoever owns the tab list.
@@ -666,6 +681,7 @@ export function BrowserTabContent({
 
     return () => {
       unsubscribe();
+      unsubscribeDialog?.();
       unsubscribeSnapshot?.();
       unsubscribeFavicon?.();
       // Nothing observes this tab's loading state once its content unmounts, so
@@ -899,15 +915,34 @@ export function BrowserTabContent({
           />
         )}
         {hasPage && resizeSnapshotUrl !== null ? (
-          // Stand-in for the hidden native view during a window resize. It
-          // stretches with the panel — part of the chrome's surface, so it
-          // stays glued to the panel however far the chrome paint lags the
-          // drag. The live view overlays it again before it is cleared.
+          // Stand-in for the hidden native view during a window resize, and for
+          // the frozen page behind a dialog. It stretches with the panel — part
+          // of the chrome's surface, so it stays glued to the panel however far
+          // the chrome paint lags the drag. The live view overlays it again
+          // before it is cleared.
           <img
             src={resizeSnapshotUrl}
             alt=""
             draggable={false}
             className="absolute inset-0 size-full"
+          />
+        ) : null}
+        {/* After the placeholder, so it draws over the frozen page rather than
+            under it — both are absolutely positioned siblings. */}
+        {pageDialog !== null ? (
+          <BrowserPageDialog
+            dialog={pageDialog}
+            onRespond={({ accept, promptText }) => {
+              // Clear optimistically: the shell reveals the page again as soon
+              // as it answers, and a modal lingering over a live view would be
+              // invisible anyway but would still swallow clicks.
+              setPageDialog(null);
+              void desktopBrowser?.respondToDialog?.({
+                tabId,
+                accept,
+                ...(promptText === undefined ? {} : { promptText }),
+              });
+            }}
           />
         ) : null}
       </div>

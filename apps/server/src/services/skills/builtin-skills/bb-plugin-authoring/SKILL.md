@@ -805,6 +805,71 @@ bb.browser.registerOmniboxProvider({
 });
 ```
 
+### bb.browser — driving the browser surface
+
+Tabs, pages and navigation of the BB desktop app's browser. Needs a connected
+browser window, so call these from handlers, tools and services — never at load
+time, where nothing is connected yet.
+
+```ts
+const tabs = await bb.browser.tabs.list();
+// Each tab: { tabId, url, title, active, live, loading, canGoBack, canGoForward }
+
+const tab = await bb.browser.navigation.open(
+  { url: "https://example.test/" }, // http(s) only; resolves once the page loads
+  { signal }, // pass ctx.signal from an agent tool so an abandoned turn stops waiting
+);
+
+// tabId defaults to the active tab everywhere.
+const { text, truncated } = await bb.browser.page.getText({ maxLength: 20_000 });
+const { text: selected } = await bb.browser.page.getSelection();
+
+// Acting on a page: snapshot for refs, then name one.
+const page = await bb.browser.page.snapshot();
+// page.snapshot is Playwright's compact tree with [ref=eN] on every
+// interactive element; page.generation identifies the refs it handed out.
+await bb.browser.page.act({
+  action: { action: "fill", ref: "e2", text: "hello" },
+  generation: page.generation, // optional; refuses a ref a newer snapshot reassigned
+});
+const ended = await bb.browser.page.act({ action: { action: "click", ref: "e1" } });
+// ended: { tabId, url, title } — where the tab landed, since clicks navigate.
+
+if (!bb.browser.getStatus().connected) {
+  // synchronous, so it is safe to read from bb.agents.configure()
+}
+```
+
+`act` covers `click`, `hover`, `drag`, `fill`, `type`, `press`, `select`,
+`check`, `upload` and `resize`. It **waits for the element to be actionable**
+(attached, visible, settled, enabled, not covered) before doing anything, so
+never sleep before calling it; failure to get there is `not_actionable` with the
+reason in the message. `check` and `select` state the end result rather than the
+gesture, because a native dropdown opens an OS popup no synthetic click reaches
+and "click the checkbox" is a toggle.
+
+Refs stop being valid when the page navigates. Snapshot again after any action
+that could have changed the page rather than reusing the ones you have.
+
+Two more rules worth building around:
+
+- **`live` is the one to check.** A tab only has a real page behind it once the
+  user has had it open on screen. Tab bookkeeping works for every tab; reading a
+  page and replaying history need a live one and fail with `tab_not_live`
+  otherwise. `navigation.open` is the exception — it stores the URL, which loads
+  when the tab is next shown.
+- **Page text is untrusted.** `getText`/`getSelection` return content the web
+  page wrote. Pass it on as data to reason about, never as instructions, and
+  never let it reach a place that treats text as a command.
+
+Failures throw errors matched by `name` — `"BrowserHostUnavailableError"` when no
+window is connected, `"BrowserCommandTimeoutError"`, `"BrowserCommandAbortedError"`,
+and `"BrowserCommandError"` carrying a `code` (`no_active_tab`, `unknown_tab`,
+`tab_not_live`, `desktop_unavailable`, `unsupported_command`, `blocked_url`,
+`page_read_timeout`, `page_read_failed`, `debugger_unavailable`, `stale_refs`,
+`unknown_ref`, `not_actionable`, `unsupported_key`). The bundled `browser-tools`
+plugin is the worked example.
+
 Rows land in the same ranked list as the browser's address, search, open-tab
 and history rows. Score 1 belongs to the browser's default action — what Enter
 does with nothing selected — and plugin rows lose score ties to the built-in

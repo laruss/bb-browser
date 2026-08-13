@@ -35,6 +35,8 @@ import type {
   PluginMentionSearchContext,
   PluginMentionTrigger,
   PluginBrowser,
+  PluginBrowserErrorCode,
+  PluginBrowserTab,
   PluginOmniboxRunContext,
   PluginOmniboxRunResult,
   PluginOmniboxSuggestContext,
@@ -318,6 +320,50 @@ export interface FakeOmniboxProviderRecord {
     | null;
 }
 
+/**
+ * A stand-in browser surface for plugins that call `bb.browser.tabs`/`page`/
+ * `navigation`. It models the two properties those calls actually hinge on —
+ * which tab is active, and which tabs are **live** (have a real page behind
+ * them) — so a plugin's error handling can be exercised without an Electron
+ * window anywhere in sight.
+ */
+export interface FakeBrowserDrivers {
+  /** Replace the tab model. The first tab is active unless one sets `active`. */
+  setTabs(tabs: readonly FakeBrowserTabInput[]): void;
+  /** What `page.getText`/`getSelection` answer for a live tab. */
+  setPageContent(
+    tabId: string,
+    content: { text?: string; selection?: string; snapshot?: string },
+  ): void;
+  /** Pretend no app window is connected, so every call fails like production. */
+  setConnected(connected: boolean): void;
+  /** Whether a tab has a JavaScript dialog waiting to be answered. */
+  setPendingDialog(pending: boolean): void;
+  /**
+   * Make the next browser call fail with this code, the way the host reports a
+   * refusal from the app: an Error named "BrowserCommandError" carrying `code`.
+   */
+  failNextCall(code: PluginBrowserErrorCode, message?: string): void;
+}
+
+export interface FakeBrowserTabInput {
+  tabId: string;
+  url?: string;
+  title?: string | null;
+  active?: boolean;
+  /** Defaults to true; set false to model a tab that was never opened on screen. */
+  live?: boolean;
+  loading?: boolean;
+  canGoBack?: boolean;
+  canGoForward?: boolean;
+}
+
+/** One recorded `bb.browser.*` call, for assertions. */
+export interface FakeBrowserCall {
+  type: string;
+  args: Record<string, unknown>;
+}
+
 export interface FakeRealtimeSignal {
   channel: string;
   /** JSON-round-tripped, like the WS broadcast; `undefined` → `null`. */
@@ -365,10 +411,14 @@ export interface FakePluginInspectionState {
   readonly pendingInteractions: readonly (PluginInteractionRequest & {
     id: string;
   })[];
+  /** Every `bb.browser.*` call, in order. */
+  readonly browserCalls: readonly FakeBrowserCall[];
 }
 
 /** Deterministic inputs that stand in for behavior normally driven by BB. */
 export interface FakePluginBehaviorDrivers {
+  /** Drive the stand-in browser surface behind `bb.browser.*`. */
+  browser: FakeBrowserDrivers;
   submitInteraction(id: string, value: JsonValue): void;
   cancelInteraction(id: string): void;
   /**
@@ -1665,6 +1715,84 @@ function createFakePluginHostInternal(
   };
 
   // --- browser ---
+  const browserCalls: FakeBrowserCall[] = [];
+  const browserPageContent = new Map<
+    string,
+    { text: string; selection: string; snapshot: string }
+  >();
+  let browserSnapshotGeneration = 0;
+  let browserPendingDialog = false;
+  let browserTabs: PluginBrowserTab[] = [];
+  let browserConnected = true;
+  let browserNextFailure: {
+    code: PluginBrowserErrorCode;
+    message: string;
+  } | null = null;
+
+  /** The host reports refusals by name, not by class — mirror that here. */
+  function browserError(
+    code: PluginBrowserErrorCode,
+    message: string,
+  ): Error {
+    const error = Object.assign(new Error(message), {
+      name: "BrowserCommandError",
+      code,
+    });
+    return error;
+  }
+
+  function beginBrowserCall(
+    type: string,
+    args: Record<string, unknown> = {},
+  ): void {
+    assertLive();
+    browserCalls.push({ type, args });
+    if (!browserConnected) {
+      throw Object.assign(new Error("No browser window is connected"), {
+        name: "BrowserHostUnavailableError",
+      });
+    }
+    if (browserNextFailure !== null) {
+      const failure = browserNextFailure;
+      browserNextFailure = null;
+      throw browserError(failure.code, failure.message);
+    }
+  }
+
+  function resolveBrowserTab(tabId: string | undefined): PluginBrowserTab {
+    if (tabId === undefined) {
+      const active = browserTabs.find((tab) => tab.active);
+      if (active === undefined) {
+        throw browserError("no_active_tab", "No browser tab is active");
+      }
+      return active;
+    }
+    const tab = browserTabs.find((candidate) => candidate.tabId === tabId);
+    if (tab === undefined) {
+      throw browserError("unknown_tab", `No browser tab ${tabId}`);
+    }
+    return tab;
+  }
+
+  function requireLiveBrowserTab(tabId: string | undefined): PluginBrowserTab {
+    const tab = resolveBrowserTab(tabId);
+    if (!tab.live) {
+      throw browserError(
+        "tab_not_live",
+        `Browser tab ${tab.tabId} has no live page`,
+      );
+    }
+    return tab;
+  }
+
+  function activateBrowserTab(tabId: string): PluginBrowserTab {
+    browserTabs = browserTabs.map((tab) => ({
+      ...tab,
+      active: tab.tabId === tabId,
+    }));
+    return resolveBrowserTab(tabId);
+  }
+
   const omniboxProviders: FakeOmniboxProviderRecord[] = [];
   const browser: PluginBrowser = {
     registerOmniboxProvider(provider) {
@@ -1700,6 +1828,209 @@ function createFakePluginHostInternal(
         suggest: provider.suggest.bind(provider),
         run: provider.run === undefined ? null : provider.run.bind(provider),
       });
+    },
+    tabs: {
+      list() {
+        beginBrowserCall("tabs.list");
+        return Promise.resolve(browserTabs.map((tab) => ({ ...tab })));
+      },
+      open(args) {
+        beginBrowserCall("tabs.open", { ...args });
+        const tabId = `fake-tab-${browserTabs.length + 1}`;
+        const activate = args?.activate ?? true;
+        const tab: PluginBrowserTab = {
+          tabId,
+          url: args?.url ?? "",
+          title: null,
+          active: activate,
+          // A freshly opened tab has no page behind it until it is shown.
+          live: false,
+          loading: false,
+          canGoBack: false,
+          canGoForward: false,
+        };
+        browserTabs = activate
+          ? [...browserTabs.map((each) => ({ ...each, active: false })), tab]
+          : [...browserTabs, tab];
+        return Promise.resolve({ ...tab });
+      },
+      close(args) {
+        beginBrowserCall("tabs.close", { ...args });
+        const tab = resolveBrowserTab(args.tabId);
+        browserTabs = browserTabs.filter((each) => each.tabId !== tab.tabId);
+        if (tab.active && browserTabs.length > 0) {
+          browserTabs = browserTabs.map((each, index) => ({
+            ...each,
+            active: index === browserTabs.length - 1,
+          }));
+        }
+        return Promise.resolve({
+          closedTabId: tab.tabId,
+          tabs: browserTabs.map((each) => ({ ...each })),
+        });
+      },
+      activate(args) {
+        beginBrowserCall("tabs.activate", { ...args });
+        resolveBrowserTab(args.tabId);
+        return Promise.resolve({ ...activateBrowserTab(args.tabId) });
+      },
+    },
+    page: {
+      snapshot(args) {
+        beginBrowserCall("page.snapshot", { ...args });
+        const tab = requireLiveBrowserTab(args?.tabId);
+        browserSnapshotGeneration += 1;
+        const text = browserPageContent.get(tab.tabId)?.snapshot ?? "";
+        return Promise.resolve({
+          tabId: tab.tabId,
+          url: tab.url,
+          title: tab.title,
+          snapshot: text,
+          generation: browserSnapshotGeneration,
+          refCount: (text.match(/\[ref=e\d+\]/gu) ?? []).length,
+          truncated: false,
+        });
+      },
+      act(args) {
+        beginBrowserCall("page.act", { ...args });
+        const tab = requireLiveBrowserTab(args?.tabId);
+        if (
+          args?.generation !== undefined &&
+          args.generation !== browserSnapshotGeneration
+        ) {
+          throw browserError(
+            "stale_refs",
+            "The page has changed since that snapshot",
+          );
+        }
+        // Only when a snapshot was configured: a test that never set one is
+        // exercising something else, and refusing every ref would only get in
+        // its way.
+        const snapshot = browserPageContent.get(tab.tabId)?.snapshot ?? "";
+        const ref =
+          args !== undefined && "ref" in args.action
+            ? args.action.ref
+            : undefined;
+        if (
+          typeof ref === "string" &&
+          snapshot.length > 0 &&
+          !snapshot.includes(`[ref=${ref}]`)
+        ) {
+          throw browserError("unknown_ref", `No element ${ref} on that page`);
+        }
+        return Promise.resolve({
+          tabId: tab.tabId,
+          url: tab.url,
+          title: tab.title,
+        });
+      },
+      handleDialog(args) {
+        beginBrowserCall("page.handle_dialog", { ...args });
+        resolveBrowserTab(args?.tabId);
+        const answered = browserPendingDialog;
+        browserPendingDialog = false;
+        return Promise.resolve(answered);
+      },
+      getUrl(args) {
+        beginBrowserCall("page.get_url", { ...args });
+        return Promise.resolve(resolveBrowserTab(args?.tabId).url);
+      },
+      getTitle(args) {
+        beginBrowserCall("page.get_title", { ...args });
+        return Promise.resolve(resolveBrowserTab(args?.tabId).title);
+      },
+      getText(args) {
+        beginBrowserCall("page.get_text", { ...args });
+        const tab = requireLiveBrowserTab(args?.tabId);
+        const text = browserPageContent.get(tab.tabId)?.text ?? "";
+        const maxLength = args?.maxLength;
+        if (maxLength !== undefined && text.length > maxLength) {
+          return Promise.resolve({
+            text: text.slice(0, maxLength),
+            truncated: true,
+          });
+        }
+        return Promise.resolve({ text, truncated: false });
+      },
+      getSelection(args) {
+        beginBrowserCall("page.get_selection", { ...args });
+        const tab = requireLiveBrowserTab(args?.tabId);
+        return Promise.resolve({
+          text: browserPageContent.get(tab.tabId)?.selection ?? "",
+        });
+      },
+    },
+    navigation: {
+      open(args) {
+        beginBrowserCall("navigation.open", { ...args });
+        if (args.newTab === true) {
+          return browser.tabs.open({ url: args.url, activate: true });
+        }
+        const tab = resolveBrowserTab(args.tabId);
+        browserTabs = browserTabs.map((each) =>
+          each.tabId === tab.tabId
+            ? { ...each, url: args.url, title: null }
+            : each,
+        );
+        return Promise.resolve(resolveBrowserTab(tab.tabId));
+      },
+      back(args) {
+        beginBrowserCall("navigation.back", { ...args });
+        return Promise.resolve({ ...requireLiveBrowserTab(args?.tabId) });
+      },
+      forward(args) {
+        beginBrowserCall("navigation.forward", { ...args });
+        return Promise.resolve({ ...requireLiveBrowserTab(args?.tabId) });
+      },
+      reload(args) {
+        beginBrowserCall("navigation.reload", { ...args });
+        return Promise.resolve({ ...requireLiveBrowserTab(args?.tabId) });
+      },
+    },
+    getStatus() {
+      return {
+        connected: browserConnected,
+        windowCount: browserConnected ? 1 : 0,
+      };
+    },
+  };
+
+  const browserDrivers: FakeBrowserDrivers = {
+    setTabs(tabs) {
+      browserTabs = tabs.map((tab, index) => ({
+        tabId: tab.tabId,
+        url: tab.url ?? "",
+        title: tab.title ?? null,
+        active: tab.active ?? index === 0,
+        live: tab.live ?? true,
+        loading: tab.loading ?? false,
+        canGoBack: tab.canGoBack ?? false,
+        canGoForward: tab.canGoForward ?? false,
+      }));
+    },
+    setPageContent(tabId, content) {
+      const existing = browserPageContent.get(tabId) ?? {
+        text: "",
+        selection: "",
+        snapshot: "",
+      };
+      browserPageContent.set(tabId, {
+        text: content.text ?? existing.text,
+        selection: content.selection ?? existing.selection,
+        snapshot: content.snapshot ?? existing.snapshot,
+      });
+    },
+    setConnected(connected) {
+      browserConnected = connected;
+    },
+    setPendingDialog(pending) {
+      browserPendingDialog = pending;
+    },
+    failNextCall(code, message) {
+      browserNextFailure = {
+        code,
+        message: message ?? `browser command failed: ${code}`,
+      };
     },
   };
 
@@ -2006,6 +2337,10 @@ function createFakePluginHostInternal(
         ...pending.request,
       }));
     },
+    get browserCalls() {
+      return [...browserCalls];
+    },
+    browser: browserDrivers,
     submitInteraction(id, value) {
       const pending = pendingInteractions.get(id);
       if (!pending) throw new Error(`no pending interaction "${id}"`);

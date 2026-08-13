@@ -4,7 +4,13 @@ import {
   bbDesktopBrowserNavigateRequestSchema,
   bbDesktopBrowserSetBoundsRequestSchema,
   bbDesktopBrowserSetVisibleRequestSchema,
+  bbDesktopBrowserDialogRespondRequestSchema,
+  bbDesktopBrowserInteractRequestSchema,
+  bbDesktopBrowserSnapshotRequestSchema,
   bbDesktopBrowserTabRefSchema,
+  type BbDesktopBrowserInteractResult,
+  type BbDesktopBrowserPageReadResult,
+  type BbDesktopBrowserSnapshotResult,
 } from "@bb/desktop-contract";
 import {
   BB_DESKTOP_BROWSER_ATTACH_CHANNEL,
@@ -12,6 +18,10 @@ import {
   BB_DESKTOP_BROWSER_GO_BACK_CHANNEL,
   BB_DESKTOP_BROWSER_GO_FORWARD_CHANNEL,
   BB_DESKTOP_BROWSER_NAVIGATE_CHANNEL,
+  BB_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
+  BB_DESKTOP_BROWSER_DIALOG_RESPOND_CHANNEL,
+  BB_DESKTOP_BROWSER_INTERACT_CHANNEL,
+  BB_DESKTOP_BROWSER_SNAPSHOT_TREE_CHANNEL,
   BB_DESKTOP_BROWSER_RELOAD_CHANNEL,
   BB_DESKTOP_BROWSER_SET_BOUNDS_CHANNEL,
   BB_DESKTOP_BROWSER_SET_VISIBLE_CHANNEL,
@@ -132,4 +142,109 @@ export function registerDesktopBrowserIpc(
     channel: BB_DESKTOP_BROWSER_STOP_CHANNEL,
     run: (args) => manager.stop(args),
   });
+
+  // The browser channels that answer use `handle` rather than `on`, and must
+  // never throw: a rejection crosses `invoke` as a mangled "Error invoking
+  // remote method …" string carrying nothing the caller could branch on, so
+  // every failure — including an unresolvable window and a malformed payload —
+  // comes back as a typed `ok: false` instead.
+  ipcMain.handle(
+    BB_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
+    async (
+      event,
+      payload: unknown,
+    ): Promise<BbDesktopBrowserPageReadResult> => {
+      const hostWindow = BrowserWindow.fromWebContents(event.sender);
+      if (hostWindow === null) {
+        return { ok: false, reason: "no-view" };
+      }
+      const parsed = bbDesktopBrowserTabRefSchema.safeParse(payload);
+      if (!parsed.success) {
+        return { ok: false, reason: "no-view" };
+      }
+      try {
+        return await manager.readPage({
+          hostWindow,
+          tabId: parsed.data.tabId,
+        });
+      } catch {
+        return { ok: false, reason: "unreadable" };
+      }
+    },
+  );
+
+  // Same request/response discipline as the page read: a typed refusal, never a
+  // rejection, so the renderer can tell "no view" from "DevTools has this tab".
+  ipcMain.handle(
+    BB_DESKTOP_BROWSER_SNAPSHOT_TREE_CHANNEL,
+    async (
+      event,
+      payload: unknown,
+    ): Promise<BbDesktopBrowserSnapshotResult> => {
+      const hostWindow = BrowserWindow.fromWebContents(event.sender);
+      if (hostWindow === null) {
+        return { ok: false, reason: "no-view" };
+      }
+      const parsed = bbDesktopBrowserSnapshotRequestSchema.safeParse(payload);
+      if (!parsed.success) {
+        return { ok: false, reason: "no-view" };
+      }
+      try {
+        return await manager.snapshot({ hostWindow, request: parsed.data });
+      } catch {
+        return { ok: false, reason: "failed" };
+      }
+    },
+  );
+
+  // Acting on a page. A malformed payload answers `failed` rather than
+  // `no-view`: the tab is not the problem, the request is, and telling the
+  // caller to go activate a tab would send it after the wrong fix.
+  ipcMain.handle(
+    BB_DESKTOP_BROWSER_INTERACT_CHANNEL,
+    async (event, payload: unknown): Promise<BbDesktopBrowserInteractResult> => {
+      const hostWindow = BrowserWindow.fromWebContents(event.sender);
+      if (hostWindow === null) {
+        return { ok: false, reason: "no-view" };
+      }
+      const parsed = bbDesktopBrowserInteractRequestSchema.safeParse(payload);
+      if (!parsed.success) {
+        return {
+          ok: false,
+          reason: "failed",
+          message: "That is not an interaction this browser understands.",
+        };
+      }
+      try {
+        return await manager.interact({ hostWindow, request: parsed.data });
+      } catch {
+        return { ok: false, reason: "failed" };
+      }
+    },
+  );
+
+  // Answering a dialog reports whether there was one to answer, so a caller can
+  // tell "dismissed it" from "a human got there first".
+  ipcMain.handle(
+    BB_DESKTOP_BROWSER_DIALOG_RESPOND_CHANNEL,
+    async (event, payload: unknown): Promise<boolean> => {
+      const hostWindow = BrowserWindow.fromWebContents(event.sender);
+      if (hostWindow === null) {
+        return false;
+      }
+      const parsed =
+        bbDesktopBrowserDialogRespondRequestSchema.safeParse(payload);
+      if (!parsed.success) {
+        return false;
+      }
+      try {
+        return await manager.respondToDialog({
+          hostWindow,
+          request: parsed.data,
+        });
+      } catch {
+        return false;
+      }
+    },
+  );
 }

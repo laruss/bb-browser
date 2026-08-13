@@ -1,7 +1,21 @@
 import type { WebContentsView } from "electron";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { BbDesktopBrowserViewBounds } from "@bb/desktop-contract";
+import {
+  BB_DESKTOP_BROWSER_MAX_DIALOG_MESSAGE_LENGTH,
+  BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH,
+  type BbDesktopBrowserViewBounds,
+} from "@bb/desktop-contract";
 import { BB_DESKTOP_BROWSER_FAVICON_CHANNEL } from "../src/desktop-browser-ipc.js";
+import {
+  BB_DESKTOP_BROWSER_PAGE_READ_SCRIPT,
+  BB_DESKTOP_BROWSER_PAGE_READ_TIMEOUT_MS,
+  BB_DESKTOP_BROWSER_PAGE_READ_WORLD_ID,
+} from "../src/desktop-browser-page-read.js";
+import {
+  BB_BROWSER_ACTIONABILITY_SCRIPT,
+  BB_BROWSER_PREPARE_FILL_SCRIPT,
+  BB_BROWSER_READ_CHECKED_SCRIPT,
+} from "../src/desktop-browser-actions.js";
 import {
   createDesktopBrowserViewManager as createProductionDesktopBrowserViewManager,
   isAllowedBrowserPermission,
@@ -268,6 +282,13 @@ const electronMock = vi.hoisted(() => {
     public readonly pendingCaptureResolvers: Array<
       (image: FakeNativeImage) => void
     > = [];
+    public readonly isolatedWorldCalls: Array<{
+      worldId: number;
+      scripts: Array<{ code: string }>;
+    }> = [];
+    public mainWorldCalls = 0;
+    /** `"pending"` never settles, `"reject"` throws, anything else resolves. */
+    public isolatedWorldResult: unknown = "pending";
     private readonly listeners: FakeWebContentsListeners = {
       "before-input-event": [],
       "will-frame-navigate": [],
@@ -309,6 +330,108 @@ const electronMock = vi.hoisted(() => {
       return new Promise((resolve) => {
         this.pendingCaptureResolvers.push(resolve);
       });
+    }
+
+    executeJavaScriptInIsolatedWorld(
+      worldId: number,
+      scripts: Array<{ code: string }>,
+    ): Promise<unknown> {
+      this.isolatedWorldCalls.push({ worldId, scripts });
+      if (this.isolatedWorldResult === "pending") {
+        return new Promise(() => {
+          // Never settles: the read-timeout path.
+        });
+      }
+      if (this.isolatedWorldResult === "reject") {
+        return Promise.reject(new Error("script failed"));
+      }
+      return Promise.resolve(this.isolatedWorldResult);
+    }
+
+    executeJavaScript(): Promise<unknown> {
+      this.mainWorldCalls += 1;
+      return Promise.resolve(null);
+    }
+
+    public readonly debugger = {
+      attached: false,
+      attachCalls: [] as string[],
+      detachCalls: 0,
+      commands: [] as Array<{
+        method: string;
+        params?: Record<string, unknown>;
+      }>,
+      results: new Map<string, unknown>(),
+      failures: new Map<string, Error>(),
+      detachListeners: [] as Array<(event: unknown, reason: string) => void>,
+      attachFailure: null as Error | null,
+      isAttached(): boolean {
+        return this.attached;
+      },
+      attach(protocolVersion?: string): void {
+        if (this.attachFailure !== null) {
+          throw this.attachFailure;
+        }
+        this.attachCalls.push(protocolVersion ?? "");
+        this.attached = true;
+      },
+      detach(): void {
+        this.detachCalls += 1;
+        this.attached = false;
+      },
+      sendCommand(
+        method: string,
+        params?: Record<string, unknown>,
+      ): Promise<unknown> {
+        this.commands.push({ method, params });
+        const failure = this.failures.get(method);
+        if (failure) {
+          return Promise.reject(failure);
+        }
+        const result = this.results.get(method);
+        // A function stands in for a command whose answer depends on its
+        // params — `Runtime.callFunctionOn` carries a different script each
+        // time, and a single canned reply could not tell them apart.
+        return Promise.resolve(
+          typeof result === "function"
+            ? (result as (params?: Record<string, unknown>) => unknown)(params)
+            : (result ?? {}),
+        );
+      },
+      on(event: string, listener: never): unknown {
+        if (event === "detach") {
+          this.detachListeners.push(listener);
+        } else {
+          this.messageListeners.push(listener);
+        }
+        return this;
+      },
+      emitMessage(method: string, params: unknown): void {
+        for (const listener of this.messageListeners) {
+          listener({}, method, params, "session-1");
+        }
+      },
+      messageListeners: [] as Array<
+        (
+          event: unknown,
+          method: string,
+          params: unknown,
+          sessionId: string,
+        ) => void
+      >,
+      emitDetach(reason: string): void {
+        for (const listener of this.detachListeners) {
+          listener({}, reason);
+        }
+      },
+    };
+
+    setTitle(title: string): void {
+      this.title = title;
+    }
+
+    setUrl(url: string): void {
+      this.url = url;
     }
 
     close(): void {
@@ -2135,5 +2258,885 @@ describe("DesktopBrowserViewManager", () => {
       requestGrants.push(granted);
     });
     expect(requestGrants).toEqual([true, false, false]);
+  });
+});
+
+// Reading page content is the one browser command that answers, and the one
+// that hands page-controlled bytes to an agent — so every refusal is typed and
+// the read never runs in the page's own JS world.
+describe("DesktopBrowserViewManager page reads", () => {
+  function attachTabForReads(url = "https://example.com/"): {
+    hostWindow: FakeHostWindow;
+    manager: DesktopBrowserViewManager;
+    webContents: ReturnType<typeof requireFakeView>["webContents"];
+  } {
+    const manager = createDesktopBrowserViewManager({
+      partition: "persist:test",
+    });
+    const hostWindow = new FakeHostWindow({
+      contentBounds: { width: 700, height: 450 },
+      webContentsId: 80,
+    });
+    attachBrowserTab({ manager, hostWindow, tabId: "browser:a", url });
+    return { hostWindow, manager, webContents: requireFakeView(0).webContents };
+  }
+
+  it("reads text and selection in an isolated world, never the page's own", async () => {
+    const { hostWindow, manager, webContents } = attachTabForReads();
+    webContents.setTitle("Example Domain");
+    webContents.isolatedWorldResult = {
+      text: "hello world",
+      textTruncated: false,
+      selection: "world",
+      selectionTruncated: false,
+    };
+
+    await expect(
+      manager.readPage({ hostWindow, tabId: "browser:a" }),
+    ).resolves.toEqual({
+      ok: true,
+      tabId: "browser:a",
+      url: "https://example.com/",
+      title: "Example Domain",
+      isLoading: false,
+      text: "hello world",
+      textTruncated: false,
+      selection: "world",
+      selectionTruncated: false,
+    });
+    // The world matters: in the page's own world a hostile document could
+    // redefine innerText to forge this, and could detect the read happening.
+    expect(webContents.mainWorldCalls).toBe(0);
+    expect(webContents.isolatedWorldCalls).toHaveLength(1);
+    expect(webContents.isolatedWorldCalls[0]?.worldId).toBe(
+      BB_DESKTOP_BROWSER_PAGE_READ_WORLD_ID,
+    );
+    expect(webContents.isolatedWorldCalls[0]?.scripts).toEqual([
+      { code: BB_DESKTOP_BROWSER_PAGE_READ_SCRIPT },
+    ]);
+  });
+
+  it("distinguishes a missing view from a destroyed one and from an empty tab", async () => {
+    const { hostWindow, manager, webContents } = attachTabForReads();
+
+    await expect(
+      manager.readPage({ hostWindow, tabId: "browser:missing" }),
+    ).resolves.toEqual({ ok: false, reason: "no-view" });
+
+    // The empty-URL new-tab convention: a live view showing nothing.
+    webContents.setUrl("");
+    await expect(
+      manager.readPage({ hostWindow, tabId: "browser:a" }),
+    ).resolves.toEqual({ ok: false, reason: "no-page" });
+    expect(webContents.isolatedWorldCalls).toHaveLength(0);
+
+    webContents.setUrl("https://example.com/");
+    webContents.destroyed = true;
+    await expect(
+      manager.readPage({ hostWindow, tabId: "browser:a" }),
+    ).resolves.toEqual({ ok: false, reason: "no-view" });
+  });
+
+  it("times out a page that never answers, and ignores its late reply", async () => {
+    vi.useFakeTimers();
+    try {
+      const { hostWindow, manager, webContents } = attachTabForReads();
+      webContents.isolatedWorldResult = "pending";
+
+      const pending = manager.readPage({ hostWindow, tabId: "browser:a" });
+      await vi.advanceTimersByTimeAsync(
+        BB_DESKTOP_BROWSER_PAGE_READ_TIMEOUT_MS + 1,
+      );
+
+      await expect(pending).resolves.toEqual({ ok: false, reason: "timeout" });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("reports a throwing or malformed script as unreadable", async () => {
+    const { hostWindow, manager, webContents } = attachTabForReads();
+
+    webContents.isolatedWorldResult = "reject";
+    await expect(
+      manager.readPage({ hostWindow, tabId: "browser:a" }),
+    ).resolves.toEqual({ ok: false, reason: "unreadable" });
+
+    webContents.isolatedWorldResult = { text: "only text" };
+    await expect(
+      manager.readPage({ hostWindow, tabId: "browser:a" }),
+    ).resolves.toEqual({ ok: false, reason: "unreadable" });
+  });
+
+  it("truncates a page-supplied title to the contract cap", async () => {
+    const { hostWindow, manager, webContents } = attachTabForReads();
+    webContents.setTitle("t".repeat(BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH + 50));
+    webContents.isolatedWorldResult = {
+      text: "",
+      textTruncated: false,
+      selection: "",
+      selectionTruncated: false,
+    };
+
+    const result = await manager.readPage({ hostWindow, tabId: "browser:a" });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.title).toHaveLength(BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH);
+    }
+  });
+});
+
+// The snapshot is what makes elements addressable, so these cover the seam the
+// pure builder cannot: when the debugger attaches, and when the refs it handed
+// out stop being trustworthy.
+describe("DesktopBrowserViewManager snapshots", () => {
+  function attachTabForSnapshots(url = "https://example.com/"): {
+    hostWindow: FakeHostWindow;
+    manager: DesktopBrowserViewManager;
+    webContents: ReturnType<typeof requireFakeView>["webContents"];
+  } {
+    const manager = createDesktopBrowserViewManager({
+      partition: "persist:test",
+    });
+    const hostWindow = new FakeHostWindow({
+      contentBounds: { width: 700, height: 450 },
+      webContentsId: 90,
+    });
+    attachBrowserTab({ manager, hostWindow, tabId: "browser:a", url });
+    return { hostWindow, manager, webContents: requireFakeView(0).webContents };
+  }
+
+  function axTree(): { nodes: unknown[] } {
+    return {
+      nodes: [
+        { nodeId: "1", role: { value: "main" }, childIds: ["2"] },
+        {
+          nodeId: "2",
+          role: { value: "button" },
+          name: { value: "Save" },
+          backendDOMNodeId: 77,
+        },
+      ],
+    };
+  }
+
+  it("attaches the debugger on first use, not when the tab is created", async () => {
+    const { hostWindow, manager, webContents } = attachTabForSnapshots();
+    webContents.debugger.results.set("Accessibility.getFullAXTree", axTree());
+
+    // A debugger on every tab from creation is overhead and exposure, and it
+    // would move this tab's dialogs off Chromium's native path.
+    expect(webContents.debugger.attachCalls).toHaveLength(0);
+
+    const result = await manager.snapshot({
+      hostWindow,
+      request: { tabId: "browser:a" },
+    });
+
+    expect(webContents.debugger.attachCalls).toEqual(["1.3"]);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.snapshot).toContain('- button "Save" [ref=e1]');
+      expect(result.refCount).toBe(1);
+      expect(result.url).toBe("https://example.com/");
+    }
+  });
+
+  it("reuses one session and enables the domain once across snapshots", async () => {
+    const { hostWindow, manager, webContents } = attachTabForSnapshots();
+    webContents.debugger.results.set("Accessibility.getFullAXTree", axTree());
+
+    await manager.snapshot({ hostWindow, request: { tabId: "browser:a" } });
+    await manager.snapshot({ hostWindow, request: { tabId: "browser:a" } });
+
+    expect(webContents.debugger.attachCalls).toHaveLength(1);
+    expect(
+      webContents.debugger.commands.filter(
+        (command) => command.method === "Accessibility.enable",
+      ),
+    ).toHaveLength(1);
+  });
+
+  it("moves the generation on when a navigation invalidates its refs", async () => {
+    const { hostWindow, manager, webContents } = attachTabForSnapshots();
+    webContents.debugger.results.set("Accessibility.getFullAXTree", axTree());
+
+    const first = await manager.snapshot({
+      hostWindow,
+      request: { tabId: "browser:a" },
+    });
+    webContents.emitDidNavigate("https://example.com/next");
+    const second = await manager.snapshot({
+      hostWindow,
+      request: { tabId: "browser:a" },
+    });
+
+    // Refs name nodes in the document that produced them. A caller holding an
+    // old generation must be refused rather than resolved against whatever owns
+    // that node id now.
+    expect(first.ok && second.ok).toBe(true);
+    if (first.ok && second.ok) {
+      expect(second.generation).toBeGreaterThan(first.generation);
+    }
+  });
+
+  it("says so when another debugger already holds the tab", async () => {
+    const { hostWindow, manager, webContents } = attachTabForSnapshots();
+    webContents.debugger.attached = true;
+
+    const result = await manager.snapshot({
+      hostWindow,
+      request: { tabId: "browser:a" },
+    });
+
+    // DevTools on the view is the realistic cause, and it is worth naming.
+    expect(result).toMatchObject({ ok: false, reason: "debugger-unavailable" });
+  });
+
+  it("reports a protocol failure without throwing", async () => {
+    const { hostWindow, manager, webContents } = attachTabForSnapshots();
+    webContents.debugger.failures.set(
+      "Accessibility.getFullAXTree",
+      new Error("Not allowed"),
+    );
+
+    await expect(
+      manager.snapshot({ hostWindow, request: { tabId: "browser:a" } }),
+    ).resolves.toMatchObject({ ok: false, reason: "failed" });
+  });
+
+  it("separates a missing view from a tab showing nothing", async () => {
+    const { hostWindow, manager, webContents } = attachTabForSnapshots();
+
+    await expect(
+      manager.snapshot({ hostWindow, request: { tabId: "browser:missing" } }),
+    ).resolves.toEqual({ ok: false, reason: "no-view" });
+
+    webContents.setUrl("");
+    await expect(
+      manager.snapshot({ hostWindow, request: { tabId: "browser:a" } }),
+    ).resolves.toEqual({ ok: false, reason: "no-page" });
+  });
+
+  it("releases the debugger when the tab is closed", async () => {
+    const { hostWindow, manager, webContents } = attachTabForSnapshots();
+    webContents.debugger.results.set("Accessibility.getFullAXTree", axTree());
+    await manager.snapshot({ hostWindow, request: { tabId: "browser:a" } });
+
+    manager.detach({ hostWindow, tabId: "browser:a" });
+
+    expect(webContents.debugger.detachCalls).toBe(1);
+  });
+
+  it("recovers by reattaching after the session is lost", async () => {
+    const { hostWindow, manager, webContents } = attachTabForSnapshots();
+    webContents.debugger.results.set("Accessibility.getFullAXTree", axTree());
+    await manager.snapshot({ hostWindow, request: { tabId: "browser:a" } });
+
+    // DevTools opening, or a renderer crash, takes the session away.
+    webContents.debugger.emitDetach("canceled by user");
+    webContents.debugger.attached = false;
+
+    const result = await manager.snapshot({
+      hostWindow,
+      request: { tabId: "browser:a" },
+    });
+
+    expect(result.ok).toBe(true);
+    expect(webContents.debugger.attachCalls).toHaveLength(2);
+  });
+});
+
+// Once the shell owns a tab's dialogs, Chromium stops drawing its native modal —
+// so the app has to draw one, and the native view has to get out of the way. A
+// dialog left half-handled is a wedged tab, which is the bug this replaces.
+describe("DesktopBrowserViewManager dialogs", () => {
+  async function attachTabWithDialogs(): Promise<{
+    hostWindow: FakeHostWindow;
+    manager: DesktopBrowserViewManager;
+    webContents: ReturnType<typeof requireFakeView>["webContents"];
+    view: ReturnType<typeof requireFakeView>;
+  }> {
+    const manager = createDesktopBrowserViewManager({
+      partition: "persist:test",
+    });
+    const hostWindow = new FakeHostWindow({
+      contentBounds: { width: 700, height: 450 },
+      webContentsId: 95,
+    });
+    attachBrowserTab({
+      manager,
+      hostWindow,
+      tabId: "browser:a",
+      url: "https://example.com/",
+    });
+    const view = requireFakeView(0);
+    view.webContents.debugger.results.set("Accessibility.getFullAXTree", {
+      nodes: [{ nodeId: "1", role: { value: "main" } }],
+    });
+    // Dialog interception rides the same lazy attach automation pays for.
+    await manager.snapshot({ hostWindow, request: { tabId: "browser:a" } });
+    return { hostWindow, manager, view, webContents: view.webContents };
+  }
+
+  function dialogPushesOf(hostWindow: FakeHostWindow): unknown[] {
+    const pushes: unknown[] = [];
+    for (const message of hostWindow.webContents.sentMessages) {
+      if (message.channel === "bb-desktop:browser:dialog") {
+        pushes.push(message.payload);
+      }
+    }
+    return pushes;
+  }
+
+  function openDialog(
+    webContents: ReturnType<typeof requireFakeView>["webContents"],
+    params: Record<string, unknown>,
+  ): void {
+    webContents.debugger.emitMessage("Page.javascriptDialogOpening", params);
+  }
+
+  it("enables the Page domain so dialogs reach us at all", async () => {
+    const { webContents } = await attachTabWithDialogs();
+
+    expect(
+      webContents.debugger.commands.filter(
+        (command) => command.method === "Page.enable",
+      ),
+    ).toHaveLength(1);
+  });
+
+  it("hides the page and reports the dialog when one opens", async () => {
+    const { hostWindow, view, webContents } = await attachTabWithDialogs();
+    expect(view.visible).toBe(true);
+
+    openDialog(webContents, {
+      type: "confirm",
+      message: "Delete everything?",
+      defaultPrompt: "",
+    });
+
+    // A WebContentsView composites above the DOM, so the only way the app can
+    // draw a modal over the page is for the page to stop being there.
+    expect(view.visible).toBe(false);
+    expect(dialogPushesOf(hostWindow)).toEqual([
+      {
+        tabId: "browser:a",
+        dialog: {
+          type: "confirm",
+          message: "Delete everything?",
+          defaultPrompt: "",
+        },
+      },
+    ]);
+  });
+
+  it("answers the page and brings the view back", async () => {
+    const { hostWindow, manager, view, webContents } =
+      await attachTabWithDialogs();
+    openDialog(webContents, {
+      type: "confirm",
+      message: "Sure?",
+      defaultPrompt: "",
+    });
+
+    await expect(
+      manager.respondToDialog({
+        hostWindow,
+        request: { tabId: "browser:a", accept: true },
+      }),
+    ).resolves.toBe(true);
+
+    expect(
+      webContents.debugger.commands.filter(
+        (command) => command.method === "Page.handleJavaScriptDialog",
+      ),
+    ).toEqual([
+      { method: "Page.handleJavaScriptDialog", params: { accept: true } },
+    ]);
+    expect(view.visible).toBe(true);
+    expect(dialogPushesOf(hostWindow).at(-1)).toEqual({
+      tabId: "browser:a",
+      dialog: null,
+    });
+  });
+
+  it("sends prompt text only for a prompt being accepted", async () => {
+    const { hostWindow, manager, webContents } = await attachTabWithDialogs();
+
+    openDialog(webContents, {
+      type: "prompt",
+      message: "Name?",
+      defaultPrompt: "anon",
+    });
+    await manager.respondToDialog({
+      hostWindow,
+      request: { tabId: "browser:a", accept: true, promptText: "Konstantin" },
+    });
+
+    openDialog(webContents, {
+      type: "alert",
+      message: "Done",
+      defaultPrompt: "",
+    });
+    await manager.respondToDialog({
+      hostWindow,
+      // Chromium rejects promptText on a dialog that has no prompt.
+      request: { tabId: "browser:a", accept: true, promptText: "ignored" },
+    });
+
+    expect(
+      webContents.debugger.commands
+        .filter((command) => command.method === "Page.handleJavaScriptDialog")
+        .map((command) => command.params),
+    ).toEqual([
+      { accept: true, promptText: "Konstantin" },
+      { accept: true },
+    ]);
+  });
+
+  it("refuses to answer a tab that has no dialog open", async () => {
+    const { hostWindow, manager } = await attachTabWithDialogs();
+
+    await expect(
+      manager.respondToDialog({
+        hostWindow,
+        request: { tabId: "browser:a", accept: true },
+      }),
+    ).resolves.toBe(false);
+    await expect(
+      manager.respondToDialog({
+        hostWindow,
+        request: { tabId: "browser:missing", accept: true },
+      }),
+    ).resolves.toBe(false);
+  });
+
+  it("restores the view when the page closes the dialog itself", async () => {
+    const { view, webContents } = await attachTabWithDialogs();
+    openDialog(webContents, {
+      type: "alert",
+      message: "Hi",
+      defaultPrompt: "",
+    });
+    expect(view.visible).toBe(false);
+
+    webContents.debugger.emitMessage("Page.javascriptDialogClosed", {
+      result: true,
+    });
+
+    expect(view.visible).toBe(true);
+  });
+
+  it("does not leave the view hidden when answering throws", async () => {
+    const { hostWindow, manager, view, webContents } =
+      await attachTabWithDialogs();
+    openDialog(webContents, {
+      type: "alert",
+      message: "Hi",
+      defaultPrompt: "",
+    });
+    webContents.debugger.failures.set(
+      "Page.handleJavaScriptDialog",
+      new Error("target gone"),
+    );
+
+    await expect(
+      manager.respondToDialog({
+        hostWindow,
+        request: { tabId: "browser:a", accept: true },
+      }),
+    ).resolves.toBe(false);
+
+    // Losing the page mid-answer must not cost the user their browser view.
+    expect(view.visible).toBe(true);
+  });
+
+  it("truncates a page-supplied dialog message", async () => {
+    const { hostWindow, webContents } = await attachTabWithDialogs();
+
+    openDialog(webContents, {
+      type: "alert",
+      message: "m".repeat(BB_DESKTOP_BROWSER_MAX_DIALOG_MESSAGE_LENGTH + 100),
+      defaultPrompt: "",
+    });
+
+    const push = dialogPushesOf(hostWindow).at(-1) as {
+      dialog: { message: string };
+    };
+    expect(push.dialog.message).toHaveLength(
+      BB_DESKTOP_BROWSER_MAX_DIALOG_MESSAGE_LENGTH,
+    );
+  });
+});
+
+// Interactions are where a mistake is a side effect on a real page rather than
+// a wrong answer, so these cover the two things that stop that: the ref has to
+// resolve to the element the caller meant, and the element has to be ready
+// before anything is dispatched at it.
+describe("DesktopBrowserViewManager interactions", () => {
+  const READY_POINT = { x: 40, y: 25 };
+
+  interface InteractionHarness {
+    hostWindow: FakeHostWindow;
+    manager: DesktopBrowserViewManager;
+    webContents: ReturnType<typeof requireFakeView>["webContents"];
+    /** Answers keyed by the script being run, so each call can differ. */
+    scriptResults: Map<string, unknown>;
+    generation: number;
+  }
+
+  async function attachTabForInteractions(): Promise<InteractionHarness> {
+    const manager = createDesktopBrowserViewManager({
+      partition: "persist:test",
+    });
+    const hostWindow = new FakeHostWindow({
+      contentBounds: { width: 700, height: 450 },
+      webContentsId: 91,
+    });
+    attachBrowserTab({
+      manager,
+      hostWindow,
+      tabId: "browser:a",
+      url: "https://example.com/",
+    });
+    const { webContents } = requireFakeView(0);
+
+    webContents.debugger.results.set("Accessibility.getFullAXTree", {
+      nodes: [
+        { nodeId: "1", role: { value: "main" }, childIds: ["2"] },
+        {
+          nodeId: "2",
+          role: { value: "button" },
+          name: { value: "Save" },
+          backendDOMNodeId: 77,
+        },
+      ],
+    });
+    webContents.debugger.results.set("Page.getFrameTree", {
+      frameTree: { frame: { id: "frame-1" } },
+    });
+    webContents.debugger.results.set("Page.createIsolatedWorld", {
+      executionContextId: 7,
+    });
+    webContents.debugger.results.set("DOM.resolveNode", {
+      object: { objectId: "object-1" },
+    });
+
+    const scriptResults = new Map<string, unknown>([
+      [BB_BROWSER_ACTIONABILITY_SCRIPT, { ready: true, ...READY_POINT }],
+    ]);
+    webContents.debugger.results.set(
+      "Runtime.callFunctionOn",
+      (params?: Record<string, unknown>) => ({
+        result: {
+          value: scriptResults.get(String(params?.functionDeclaration)) ?? {
+            ok: true,
+          },
+        },
+      }),
+    );
+
+    // Refs only exist once a snapshot has handed them out.
+    const snapshot = await manager.snapshot({
+      hostWindow,
+      request: { tabId: "browser:a" },
+    });
+    const generation = snapshot.ok ? snapshot.generation : -1;
+    return { hostWindow, manager, webContents, scriptResults, generation };
+  }
+
+  function inputEvents(
+    webContents: InteractionHarness["webContents"],
+  ): Array<{ method: string; params?: Record<string, unknown> }> {
+    return webContents.debugger.commands.filter((command) =>
+      command.method.startsWith("Input."),
+    );
+  }
+
+  beforeEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("clicks at the point the page reported, having waited for it", async () => {
+    const { hostWindow, manager, webContents, generation } =
+      await attachTabForInteractions();
+
+    const result = await manager.interact({
+      hostWindow,
+      request: {
+        tabId: "browser:a",
+        generation,
+        interaction: {
+          action: "click",
+          ref: "e1",
+          button: "left",
+          clickCount: 1,
+          modifiers: [],
+        },
+      },
+    });
+
+    expect(result).toMatchObject({ ok: true, url: "https://example.com/" });
+    // The ref has to travel to CDP as the backend node id the snapshot recorded,
+    // not as the string the caller passed.
+    expect(
+      webContents.debugger.commands.find(
+        (command) => command.method === "DOM.resolveNode",
+      )?.params,
+    ).toMatchObject({ backendNodeId: 77, executionContextId: 7 });
+    expect(
+      inputEvents(webContents).map((event) => [
+        event.params?.type,
+        event.params?.x,
+        event.params?.y,
+      ]),
+    ).toEqual([
+      ["mouseMoved", 40, 25],
+      ["mousePressed", 40, 25],
+      ["mouseReleased", 40, 25],
+    ]);
+  });
+
+  it("sends a double click as two rising click counts", async () => {
+    const { hostWindow, manager, webContents, generation } =
+      await attachTabForInteractions();
+
+    await manager.interact({
+      hostWindow,
+      request: {
+        tabId: "browser:a",
+        generation,
+        interaction: {
+          action: "click",
+          ref: "e1",
+          button: "left",
+          clickCount: 2,
+          modifiers: [],
+        },
+      },
+    });
+
+    // One event claiming clickCount 2 is not a double click to Chromium.
+    expect(
+      inputEvents(webContents)
+        .filter((event) => event.params?.type === "mousePressed")
+        .map((event) => event.params?.clickCount),
+    ).toEqual([1, 2]);
+  });
+
+  it("refuses a ref from a snapshot the page has moved past", async () => {
+    const { hostWindow, manager, webContents, generation } =
+      await attachTabForInteractions();
+
+    const result = await manager.interact({
+      hostWindow,
+      request: {
+        tabId: "browser:a",
+        generation: generation + 1,
+        interaction: { action: "hover", ref: "e1" },
+      },
+    });
+
+    expect(result).toMatchObject({ ok: false, reason: "stale-refs" });
+    // Nothing may reach the page: a click resolved against a stale ref is worse
+    // than a refusal, because it silently hits the wrong element.
+    expect(inputEvents(webContents)).toHaveLength(0);
+  });
+
+  it("refuses a ref the current snapshot never handed out", async () => {
+    const { hostWindow, manager, webContents, generation } =
+      await attachTabForInteractions();
+
+    const result = await manager.interact({
+      hostWindow,
+      request: {
+        tabId: "browser:a",
+        generation,
+        interaction: { action: "hover", ref: "e99" },
+      },
+    });
+
+    expect(result).toMatchObject({ ok: false, reason: "unknown-ref" });
+    expect(inputEvents(webContents)).toHaveLength(0);
+  });
+
+  it("gives up with the reason when the element never becomes actionable", async () => {
+    const { hostWindow, manager, webContents, scriptResults, generation } =
+      await attachTabForInteractions();
+    scriptResults.set(BB_BROWSER_ACTIONABILITY_SCRIPT, {
+      ready: false,
+      reason: "covered",
+    });
+
+    const result = await manager.interact({
+      hostWindow,
+      request: {
+        tabId: "browser:a",
+        generation,
+        interaction: { action: "hover", ref: "e1" },
+      },
+    });
+
+    expect(result).toMatchObject({ ok: false, reason: "not-actionable" });
+    // The message is the whole value of the check: "something is on top of it"
+    // tells an agent to dismiss the overlay, where a bare failure would not.
+    expect((result as { message?: string }).message).toContain("on top of");
+    expect(inputEvents(webContents)).toHaveLength(0);
+  }, 15_000);
+
+  it("fills by selecting the old value and inserting the new one", async () => {
+    const { hostWindow, manager, webContents, generation } =
+      await attachTabForInteractions();
+
+    await manager.interact({
+      hostWindow,
+      request: {
+        tabId: "browser:a",
+        generation,
+        interaction: { action: "fill", ref: "e1", text: "hello" },
+      },
+    });
+
+    const scripts = webContents.debugger.commands
+      .filter((command) => command.method === "Runtime.callFunctionOn")
+      .map((command) => command.params?.functionDeclaration);
+    expect(scripts).toContain(BB_BROWSER_PREPARE_FILL_SCRIPT);
+    expect(
+      webContents.debugger.commands.find(
+        (command) => command.method === "Input.insertText",
+      )?.params,
+    ).toEqual({ text: "hello" });
+  });
+
+  it("clears a field with a keystroke, because inserting nothing does nothing", async () => {
+    const { hostWindow, manager, webContents, generation } =
+      await attachTabForInteractions();
+
+    await manager.interact({
+      hostWindow,
+      request: {
+        tabId: "browser:a",
+        generation,
+        interaction: { action: "fill", ref: "e1", text: "" },
+      },
+    });
+
+    expect(
+      webContents.debugger.commands.some(
+        (command) => command.method === "Input.insertText",
+      ),
+    ).toBe(false);
+    expect(
+      inputEvents(webContents).map((event) => [
+        event.method,
+        event.params?.key,
+      ]),
+    ).toEqual([
+      ["Input.dispatchKeyEvent", "Delete"],
+      ["Input.dispatchKeyEvent", "Delete"],
+    ]);
+  });
+
+  it("types one key event per character", async () => {
+    const { hostWindow, manager, webContents, generation } =
+      await attachTabForInteractions();
+
+    await manager.interact({
+      hostWindow,
+      request: {
+        tabId: "browser:a",
+        generation,
+        interaction: { action: "type", ref: "e1", text: "ab" },
+      },
+    });
+
+    // Down and up for each of two characters: what an autocomplete listens for
+    // and what a one-shot fill would not produce.
+    expect(
+      inputEvents(webContents).map((event) => [
+        event.params?.type,
+        event.params?.key,
+      ]),
+    ).toEqual([
+      ["keyDown", "a"],
+      ["keyUp", "a"],
+      ["keyDown", "b"],
+      ["keyUp", "b"],
+    ]);
+  });
+
+  it("refuses an unknown key before touching the page", async () => {
+    const { hostWindow, manager, webContents, generation } =
+      await attachTabForInteractions();
+
+    const result = await manager.interact({
+      hostWindow,
+      request: {
+        tabId: "browser:a",
+        generation,
+        interaction: { action: "press", ref: null, key: "Frobnicate" },
+      },
+    });
+
+    expect(result).toMatchObject({ ok: false, reason: "unsupported-key" });
+    expect(inputEvents(webContents)).toHaveLength(0);
+  });
+
+  it("leaves an already-checked control alone", async () => {
+    const { hostWindow, manager, webContents, scriptResults, generation } =
+      await attachTabForInteractions();
+    scriptResults.set(BB_BROWSER_READ_CHECKED_SCRIPT, {
+      ok: true,
+      checked: true,
+    });
+
+    const result = await manager.interact({
+      hostWindow,
+      request: {
+        tabId: "browser:a",
+        generation,
+        interaction: { action: "check", ref: "e1", checked: true },
+      },
+    });
+
+    // "make it checked" is not "toggle it", so repeating the command is a no-op
+    // rather than an unchecked box.
+    expect(result).toMatchObject({ ok: true });
+    expect(inputEvents(webContents)).toHaveLength(0);
+  });
+
+  it("restores the viewport when a resize asks for nothing", async () => {
+    const { hostWindow, manager, webContents } =
+      await attachTabForInteractions();
+
+    await manager.interact({
+      hostWindow,
+      request: {
+        tabId: "browser:a",
+        interaction: { action: "resize", width: 0, height: 0 },
+      },
+    });
+
+    expect(
+      webContents.debugger.commands.some(
+        (command) => command.method === "Emulation.clearDeviceMetricsOverride",
+      ),
+    ).toBe(true);
+  });
+
+  it("reports a tab with no live view rather than attaching a debugger to nothing", async () => {
+    const { hostWindow, manager } = await attachTabForInteractions();
+
+    await expect(
+      manager.interact({
+        hostWindow,
+        request: {
+          tabId: "browser:missing",
+          interaction: { action: "hover", ref: "e1" },
+        },
+      }),
+    ).resolves.toMatchObject({ ok: false, reason: "no-view" });
   });
 });

@@ -198,6 +198,7 @@ describe("builtin plugin reconciliation", () => {
     const expectedIcons = new Map([
       ["ask-user-question", "MessageQuestion"],
       ["automations", "Clock"],
+      ["browser-tools", "Globe02"],
       ["connect", "Smartphone"],
       ["custom-instructions", "EditFile"],
       ["inline-vis", "AppWindow"],

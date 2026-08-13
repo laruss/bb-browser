@@ -232,8 +232,12 @@ abort signal, so the shared request is cancelled exactly when the run is.
 
 ## Next
 
-The omnibox is the first browser contribution point; `browser.omnibox.actions`,
-`browser.tabs.*` and the rest of plan §7 follow the same shape. The plan's §13
+`browser.tabs.*`, `browser.page.*` and `browser.navigation.*` landed next, as
+plugin-facing control rather than a contribution point — see
+[agent-browser-tools.md](agent-browser-tools.md), which is also plan §18 Phase 5.
+
+The omnibox remains the first browser contribution point; `browser.omnibox.actions`
+and the rest of plan §7 follow the same shape. The plan's §13
 target layout (a dedicated browser window rather than a route inside the agent
 app) and drawing the suggestion list over the page both need main-process work,
 which is where the next browser-shell step goes.

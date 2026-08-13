@@ -27,3 +27,24 @@ export const BB_DESKTOP_BROWSER_SNAPSHOT_CHANNEL =
 // payload, so an older SPA's strict parser never sees a shape it would reject
 // (invariant 2 in docs/architecture/bb-migration.md).
 export const BB_DESKTOP_BROWSER_FAVICON_CHANNEL = "bb-desktop:browser:favicon";
+// The browser channels that answer. Reads are request/response, so these are
+// `invoke`/`handle` pairs rather than `send`; each is a new channel behind an
+// optional preload method for the same reason favicons were (invariant 2 in
+// docs/architecture/bb-migration.md).
+export const BB_DESKTOP_BROWSER_READ_PAGE_CHANNEL =
+  "bb-desktop:browser:read-page";
+// Named `snapshot-tree` because `BB_DESKTOP_BROWSER_SNAPSHOT_CHANNEL` above is
+// already taken by the resize bitmap — different sense of the word, and the two
+// must not be confused at a call site.
+export const BB_DESKTOP_BROWSER_SNAPSHOT_TREE_CHANNEL =
+  "bb-desktop:browser:snapshot-tree";
+// Dialogs, once the shell owns them: a main -> renderer push carrying the open
+// dialog (or null when it closes), and an invoke channel to answer it.
+export const BB_DESKTOP_BROWSER_DIALOG_CHANNEL = "bb-desktop:browser:dialog";
+export const BB_DESKTOP_BROWSER_DIALOG_RESPOND_CHANNEL =
+  "bb-desktop:browser:dialog-respond";
+// Acting on the page. One channel for every verb, because they share the whole
+// preamble (resolve a ref, check the snapshot generation, wait for the element
+// to be actionable) and a channel per verb would freeze nine copies of it.
+export const BB_DESKTOP_BROWSER_INTERACT_CHANNEL =
+  "bb-desktop:browser:interact";

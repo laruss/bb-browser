@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   BRANCH_LIST_QUERY_MAX_LENGTH,
+  browserCommandSchema,
   changedMessageLenientSchema,
   changedMessageSchema,
   gitBranchNameSchema,
@@ -202,6 +203,39 @@ export const pluginSignalLenientSchema = z.object({
   pluginId: z.string().min(1),
   channel: z.string().min(1),
   payload: z.unknown(),
+});
+
+/**
+ * Ephemeral server→client request asking the app to perform one browser command
+ * on behalf of an agent, and to answer with a `browser-command.response` client
+ * message carrying the same `requestId`.
+ *
+ * Unlike the three signals above this is **not** a broadcast: it goes to the one
+ * socket registered as the browser host, because a command must be performed
+ * once and answered once. Strict schema guards the server's outgoing boundary,
+ * mirroring the thread-open signal.
+ */
+export const browserCommandRequestSignalSchema = z
+  .object({
+    type: z.literal("browser-command-request"),
+    requestId: z.string().min(1).max(128),
+    command: browserCommandSchema,
+  })
+  .strict();
+export type BrowserCommandRequestSignal = z.infer<
+  typeof browserCommandRequestSignalSchema
+>;
+
+/**
+ * Lenient counterpart for INBOUND parsing on clients, mirroring
+ * {@link pluginSignalLenientSchema}. Only the envelope is restated — the command
+ * union itself is shared from `@bb/domain` rather than duplicated, because a
+ * twelve-member union written twice would drift on the first addition.
+ */
+export const browserCommandRequestSignalLenientSchema = z.object({
+  type: z.literal("browser-command-request"),
+  requestId: z.string().min(1).max(128),
+  command: browserCommandSchema,
 });
 
 export const workspaceFileSchema = z.object({

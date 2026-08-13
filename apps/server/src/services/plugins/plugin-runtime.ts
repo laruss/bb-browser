@@ -1082,6 +1082,21 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
       reportAgentToolProblem: (message) => {
         reportAgentToolProblem(row.id, message);
       },
+      requestBrowserCommand: (args) => {
+        if (!deps.browserBridge) {
+          throw new Error("Browser control is unavailable in this host");
+        }
+        if (disposingPluginIds.has(row.id)) {
+          throw new Error(`plugin "${row.id}" is disposing`);
+        }
+        return deps.browserBridge.call(args);
+      },
+      getBrowserHostStatus: () =>
+        deps.browserBridge?.status() ?? {
+          connected: false,
+          browserHostId: null,
+          hostCount: 0,
+        },
       requestInteraction: (args) => {
         if (!deps.pendingInteractions) {
           throw new Error("Plugin interactions are unavailable in this host");

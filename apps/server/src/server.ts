@@ -28,6 +28,7 @@ import {
   createPluginService,
   type PluginService,
 } from "./services/plugins/plugin-service.js";
+import { createBrowserBridge } from "./services/browser/browser-bridge.js";
 import { setPluginAgentContributions } from "./services/plugins/plugin-agent-contributions.js";
 import { setPluginThreadEventEmitter } from "./services/plugins/plugin-thread-events.js";
 import { registerInternalEventRoutes } from "./internal/events.js";
@@ -391,6 +392,7 @@ export function createApp(
     hub: deps.hub,
     logger: deps.logger,
     pendingInteractions: deps.pendingInteractions,
+    browserBridge: createBrowserBridge({ hub: deps.hub }),
     dataDir: deps.config.dataDir,
     appVersion: deps.config.appVersion,
     sharedPorts: deps.sharedPorts,

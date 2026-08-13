@@ -1,0 +1,627 @@
+import {
+  browserCommandSchema,
+  type BrowserCommand,
+  type BrowserCommandErrorCode,
+  type BrowserCommandOutcome,
+  type BrowserCommandValue,
+  type BrowserTabSnapshot,
+} from "@bb/domain";
+import type {
+  BbDesktopBrowserApi,
+  BbDesktopBrowserInteractResult,
+  BbDesktopBrowserPageReadResult,
+  BbDesktopBrowserSnapshotResult,
+  BbDesktopBrowserState,
+} from "@bb/desktop-contract";
+import type { BrowserFixedPanelTab } from "../fixed-panel-tabs-state";
+import { normalizeBrowserUrl } from "../browser-url";
+import {
+  BROWSER_SURFACE_NEW_TAB_URL,
+  activateBrowserSurfaceTab,
+  addBrowserSurfaceTab,
+  closeBrowserSurfaceTab,
+  createBrowserSurfaceTab,
+  getActiveBrowserSurfaceTab,
+  updateBrowserSurfaceTab,
+  type BrowserSurfaceTabsState,
+} from "../browser-surface-tabs";
+
+/**
+ * Performing one agent browser command against the browser surface.
+ *
+ * Everything here is a plain function over its dependencies — no React, no
+ * module singletons — for the same reason the tab reducers are: the rules worth
+ * getting right (which tab, is it live, what does a failure tell the caller to
+ * do next) are worth testing without a rendered component.
+ *
+ * The tab reducers are reused rather than re-implemented, so an agent closing
+ * the focused tab hands focus onwards exactly as a user's click does.
+ */
+
+export interface BrowserCommandDeps {
+  /**
+   * A fresh read, not a render snapshot: an agent issuing `tabs.open` then
+   * `tabs.activate` in one turn must see its own first write.
+   */
+  getState: () => BrowserSurfaceTabsState;
+  applyState: (
+    update: (current: BrowserSurfaceTabsState) => BrowserSurfaceTabsState,
+  ) => void;
+  /** Null on the web build, where there is no browser at all. */
+  desktopBrowser: BbDesktopBrowserApi | null;
+  getLiveState: (tabId: string) => BbDesktopBrowserState | null;
+  waitForSettled: (tabId: string) => Promise<{ timedOut: boolean }>;
+  /** Seam so tests get predictable tab ids. */
+  createTab?: (url: string) => BrowserFixedPanelTab;
+  /** Called when a tab is closed, so its native view is torn down too. */
+  destroyView?: (args: {
+    desktopBrowser: BbDesktopBrowserApi;
+    tabId: string;
+  }) => void;
+}
+
+function failure(
+  code: BrowserCommandErrorCode,
+  message: string,
+): BrowserCommandOutcome {
+  return { ok: false, code, message };
+}
+
+function success(value: BrowserCommandValue): BrowserCommandOutcome {
+  return { ok: true, value };
+}
+
+function toSnapshot(
+  tab: BrowserFixedPanelTab,
+  state: BrowserSurfaceTabsState,
+  live: BbDesktopBrowserState | null,
+): BrowserTabSnapshot {
+  return {
+    tabId: tab.id,
+    // Live state is the truth while it exists — the persisted tab lags a
+    // redirect until the shell's push lands.
+    url: live?.url ?? tab.url,
+    title: live?.title ?? tab.title,
+    active: state.activeTabId === tab.id,
+    live: live !== null,
+    loading: live?.isLoading ?? false,
+    canGoBack: live?.canGoBack ?? false,
+    canGoForward: live?.canGoForward ?? false,
+  };
+}
+
+function snapshotAll(
+  state: BrowserSurfaceTabsState,
+  deps: BrowserCommandDeps,
+): BrowserTabSnapshot[] {
+  return state.tabs.map((tab) =>
+    toSnapshot(tab, state, deps.getLiveState(tab.id)),
+  );
+}
+
+interface ResolvedTab {
+  tab: BrowserFixedPanelTab;
+  state: BrowserSurfaceTabsState;
+}
+
+type Resolution =
+  | { ok: true; resolved: ResolvedTab }
+  | { ok: false; outcome: BrowserCommandOutcome };
+
+/** A null tabId means the active tab, everywhere it appears. */
+function resolveTab(
+  tabId: string | null,
+  deps: BrowserCommandDeps,
+): Resolution {
+  const state = deps.getState();
+  if (tabId === null) {
+    const active = getActiveBrowserSurfaceTab(state);
+    if (active === null) {
+      return {
+        ok: false,
+        outcome: failure(
+          "no_active_tab",
+          "No browser tab is open. Open one with browser_tabs_open first.",
+        ),
+      };
+    }
+    return { ok: true, resolved: { tab: active, state } };
+  }
+  const tab = state.tabs.find((candidate) => candidate.id === tabId);
+  if (tab === undefined) {
+    return {
+      ok: false,
+      outcome: failure(
+        "unknown_tab",
+        `No browser tab with id ${JSON.stringify(tabId)} is open. Call browser_tabs_list to see the open tabs.`,
+      ),
+    };
+  }
+  return { ok: true, resolved: { tab, state } };
+}
+
+const NOT_LIVE_HINT =
+  "Open the Browser surface in the BB desktop app and select that tab, then try again.";
+
+/** Maps the shell's typed refusals onto the codes the agent tools speak. */
+function pageReadFailure(
+  result: Extract<BbDesktopBrowserPageReadResult, { ok: false }>,
+  tabId: string,
+): BrowserCommandOutcome {
+  switch (result.reason) {
+    case "no-view":
+      return failure(
+        "tab_not_live",
+        `Browser tab ${tabId} has no live page. ${NOT_LIVE_HINT}`,
+      );
+    case "no-page":
+      return failure(
+        "tab_not_live",
+        `Browser tab ${tabId} has not loaded a page yet.`,
+      );
+    case "timeout":
+      return failure(
+        "page_read_timeout",
+        `The page in browser tab ${tabId} did not respond in time.`,
+      );
+    default:
+      return failure(
+        "page_read_failed",
+        `The page in browser tab ${tabId} could not be read.`,
+      );
+  }
+}
+
+/** Maps the shell's snapshot refusals onto the codes the agent tools speak. */
+function snapshotFailure(
+  result: Extract<BbDesktopBrowserSnapshotResult, { ok: false }>,
+  tabId: string,
+): BrowserCommandOutcome {
+  switch (result.reason) {
+    case "no-view":
+      return failure(
+        "tab_not_live",
+        `Browser tab ${tabId} has no live page. ${NOT_LIVE_HINT}`,
+      );
+    case "no-page":
+      return failure(
+        "tab_not_live",
+        `Browser tab ${tabId} has not loaded a page yet.`,
+      );
+    case "debugger-unavailable":
+      return failure(
+        "debugger_unavailable",
+        `The browser debugger could not attach to tab ${tabId}${
+          result.message === undefined ? "" : ` (${result.message})`
+        }. Close DevTools for that tab and try again.`,
+      );
+    default:
+      return failure(
+        "page_read_failed",
+        `The page in browser tab ${tabId} could not be inspected.`,
+      );
+  }
+}
+
+/** Maps the shell's interaction refusals onto the codes the agent tools speak. */
+function interactFailure(
+  result: Extract<BbDesktopBrowserInteractResult, { ok: false }>,
+  tabId: string,
+): BrowserCommandOutcome {
+  const detail = result.message === undefined ? "" : ` ${result.message}`;
+  switch (result.reason) {
+    case "no-view":
+      return failure(
+        "tab_not_live",
+        `Browser tab ${tabId} has no live page. ${NOT_LIVE_HINT}`,
+      );
+    case "no-page":
+      return failure(
+        "tab_not_live",
+        `Browser tab ${tabId} has not loaded a page yet.`,
+      );
+    case "debugger-unavailable":
+      return failure(
+        "debugger_unavailable",
+        `The browser debugger could not attach to tab ${tabId}${detail}. Close DevTools for that tab and try again.`,
+      );
+    case "stale-refs":
+      return failure(
+        "stale_refs",
+        `Those element refs are out of date.${detail}`,
+      );
+    case "unknown-ref":
+      return failure("unknown_ref", `No such element.${detail}`);
+    case "not-actionable":
+      return failure("not_actionable", `The element could not be acted on.${detail}`);
+    case "unsupported-key":
+      return failure("unsupported_key", `That key cannot be pressed.${detail}`);
+    default:
+      return failure(
+        "page_read_failed",
+        `The browser could not perform that action.${detail}`,
+      );
+  }
+}
+
+async function readPage(
+  tabId: string,
+  desktopBrowser: BbDesktopBrowserApi,
+): Promise<
+  | { ok: true; content: Extract<BbDesktopBrowserPageReadResult, { ok: true }> }
+  | { ok: false; outcome: BrowserCommandOutcome }
+> {
+  // Feature-detected: an older desktop shell has no read-page channel at all.
+  if (desktopBrowser.readPage === undefined) {
+    return {
+      ok: false,
+      outcome: failure(
+        "unsupported_command",
+        "This version of the BB desktop app cannot read page content.",
+      ),
+    };
+  }
+  // Let the shell answer rather than pre-checking liveness here: it is the only
+  // side that authoritatively knows which views exist.
+  const result = await desktopBrowser.readPage(tabId);
+  if (!result.ok) {
+    return { ok: false, outcome: pageReadFailure(result, tabId) };
+  }
+  return { ok: true, content: result };
+}
+
+export async function executeBrowserCommand(
+  rawCommand: unknown,
+  deps: BrowserCommandDeps,
+): Promise<BrowserCommandOutcome> {
+  // The command originated from a language model, so it is parsed like any
+  // other untrusted payload rather than trusted for having come from bb.
+  const parsed = browserCommandSchema.safeParse(rawCommand);
+  if (!parsed.success) {
+    return failure(
+      "invalid_command",
+      `Unrecognized browser command: ${parsed.error.issues[0]?.message ?? "invalid"}`,
+    );
+  }
+  const command: BrowserCommand = parsed.data;
+
+  // Tab bookkeeping is renderer state and answers anywhere, including the web
+  // build. Everything below the second switch touches a real page and needs the
+  // desktop shell, which is why the guard sits between them rather than being
+  // repeated in each branch.
+  switch (command.type) {
+    case "tabs.list": {
+      const state = deps.getState();
+      return success({ type: "tabs", tabs: snapshotAll(state, deps) });
+    }
+
+    case "page.get_url": {
+      const resolution = resolveTab(command.tabId, deps);
+      if (!resolution.ok) {
+        return resolution.outcome;
+      }
+      const { tab } = resolution.resolved;
+      return success({
+        type: "url",
+        url: deps.getLiveState(tab.id)?.url ?? tab.url,
+      });
+    }
+
+    case "page.get_title": {
+      const resolution = resolveTab(command.tabId, deps);
+      if (!resolution.ok) {
+        return resolution.outcome;
+      }
+      const { tab } = resolution.resolved;
+      const live = deps.getLiveState(tab.id);
+      return success({ type: "title", title: live?.title ?? tab.title });
+    }
+  }
+
+  const desktopBrowser = deps.desktopBrowser;
+  if (desktopBrowser === null) {
+    return failure(
+      "desktop_unavailable",
+      "Browser control needs the BB desktop app; this session is running in a web browser.",
+    );
+  }
+
+  switch (command.type) {
+    case "tabs.open": {
+      let url = BROWSER_SURFACE_NEW_TAB_URL;
+      if (command.url !== null && command.url.length > 0) {
+        const normalized = normalizeBrowserUrl(command.url);
+        if (normalized === null) {
+          return failure(
+            "blocked_url",
+            `${JSON.stringify(command.url)} is not an http(s) address the browser can open.`,
+          );
+        }
+        url = normalized;
+      }
+      const tab = (deps.createTab ?? createBrowserSurfaceTab)(url);
+      deps.applyState((current) => {
+        const opened = addBrowserSurfaceTab(current, tab);
+        // addBrowserSurfaceTab always focuses the new tab; put focus back when
+        // the caller asked for a background tab.
+        return command.activate
+          ? opened
+          : { ...opened, activeTabId: current.activeTabId ?? tab.id };
+      });
+      const state = deps.getState();
+      return success({
+        type: "tab",
+        tab: toSnapshot(tab, state, deps.getLiveState(tab.id)),
+      });
+    }
+
+    case "tabs.close": {
+      const resolution = resolveTab(command.tabId, deps);
+      if (!resolution.ok) {
+        return resolution.outcome;
+      }
+      const { tab } = resolution.resolved;
+      // Deletion owns detach. Dropping the tab from the store alone would leak
+      // a live WebContentsView, because the deck only reaps vanished tabs while
+      // it is mounted — and an agent can close a tab from any route.
+      deps.destroyView?.({ desktopBrowser, tabId: tab.id });
+      deps.applyState((current) => closeBrowserSurfaceTab(current, tab.id));
+      const state = deps.getState();
+      return success({
+        type: "closed",
+        closedTabId: tab.id,
+        tabs: snapshotAll(state, deps),
+      });
+    }
+
+    case "tabs.activate": {
+      const resolution = resolveTab(command.tabId, deps);
+      if (!resolution.ok) {
+        return resolution.outcome;
+      }
+      const { tab } = resolution.resolved;
+      deps.applyState((current) => activateBrowserSurfaceTab(current, tab.id));
+      const state = deps.getState();
+      return success({
+        type: "tab",
+        tab: toSnapshot(tab, state, deps.getLiveState(tab.id)),
+      });
+    }
+
+    case "page.get_text": {
+      const resolution = resolveTab(command.tabId, deps);
+      if (!resolution.ok) {
+        return resolution.outcome;
+      }
+      const { tab } = resolution.resolved;
+      const read = await readPage(tab.id, desktopBrowser);
+      if (!read.ok) {
+        return read.outcome;
+      }
+      const full = read.content.text;
+      const text = full.slice(0, command.maxLength);
+      return success({
+        type: "text",
+        text,
+        truncated: read.content.textTruncated || text.length < full.length,
+      });
+    }
+
+    case "page.handle_dialog": {
+      const resolution = resolveTab(command.tabId, deps);
+      if (!resolution.ok) {
+        return resolution.outcome;
+      }
+      const { tab } = resolution.resolved;
+      if (desktopBrowser.respondToDialog === undefined) {
+        return failure(
+          "unsupported_command",
+          "This version of the BB desktop app cannot answer page dialogs.",
+        );
+      }
+      const answered = await desktopBrowser.respondToDialog({
+        tabId: tab.id,
+        accept: command.accept,
+        ...(command.promptText === null
+          ? {}
+          : { promptText: command.promptText }),
+      });
+      // False is not an error: the user may simply have answered it first.
+      return success({ type: "answered", answered });
+    }
+
+    case "page.snapshot": {
+      const resolution = resolveTab(command.tabId, deps);
+      if (!resolution.ok) {
+        return resolution.outcome;
+      }
+      const { tab } = resolution.resolved;
+      // Feature-detected like readPage: a shell predating the browser debugger
+      // has no such channel at all.
+      if (desktopBrowser.snapshot === undefined) {
+        return failure(
+          "unsupported_command",
+          "This version of the BB desktop app cannot snapshot pages.",
+        );
+      }
+      const result = await desktopBrowser.snapshot({
+        tabId: tab.id,
+        ...(command.maxDepth === null ? {} : { maxDepth: command.maxDepth }),
+      });
+      if (!result.ok) {
+        return snapshotFailure(result, tab.id);
+      }
+      return success({
+        type: "snapshot",
+        tabId: result.tabId,
+        url: result.url,
+        title: result.title,
+        snapshot: result.snapshot,
+        generation: result.generation,
+        refCount: result.refCount,
+        truncated: result.truncated,
+      });
+    }
+
+    case "page.interact": {
+      const resolution = resolveTab(command.tabId, deps);
+      if (!resolution.ok) {
+        return resolution.outcome;
+      }
+      const { tab } = resolution.resolved;
+      if (desktopBrowser.interact === undefined) {
+        return failure(
+          "unsupported_command",
+          "This version of the BB desktop app cannot act on pages.",
+        );
+      }
+      const result = await desktopBrowser.interact({
+        tabId: tab.id,
+        ...(command.generation === null
+          ? {}
+          : { generation: command.generation }),
+        interaction: command.interaction,
+      });
+      if (!result.ok) {
+        return interactFailure(result, tab.id);
+      }
+      // A click that navigated has already produced a load-started push by the
+      // time the shell answers — both travel the same main → renderer pipe, so
+      // the push is queued ahead of the reply. A navigation the page starts
+      // *later* (a timer, a fetch that then redirects) is not covered, which is
+      // why the tool instructions tell the model to re-snapshot after acting.
+      //
+      // The shell read the URL at the moment the action finished, so that is
+      // the answer unless we then waited out a load — in which case the state
+      // the tab settled on is the newer of the two.
+      let ended: { url: string; title: string | null } = result;
+      if (deps.getLiveState(tab.id)?.isLoading === true) {
+        await deps.waitForSettled(tab.id);
+        ended = deps.getLiveState(tab.id) ?? result;
+      }
+      return success({
+        type: "interacted",
+        tabId: result.tabId,
+        url: ended.url,
+        title: ended.title,
+      });
+    }
+
+    case "page.get_selection": {
+      const resolution = resolveTab(command.tabId, deps);
+      if (!resolution.ok) {
+        return resolution.outcome;
+      }
+      const { tab } = resolution.resolved;
+      const read = await readPage(tab.id, desktopBrowser);
+      if (!read.ok) {
+        return read.outcome;
+      }
+      return success({
+        type: "text",
+        text: read.content.selection,
+        truncated: read.content.selectionTruncated,
+      });
+    }
+
+    case "navigation.open": {
+      // Deliberately not resolveBrowserAddressInput: the omnibox's silent
+      // fall-through to a web search is right for a human typing and wrong for
+      // an agent that passed a malformed URL and should be told so.
+      const url = normalizeBrowserUrl(command.url);
+      if (url === null) {
+        return failure(
+          "blocked_url",
+          `${JSON.stringify(command.url)} is not an http(s) address the browser can open.`,
+        );
+      }
+      if (command.newTab) {
+        return executeBrowserCommand(
+          { type: "tabs.open", url, activate: true },
+          deps,
+        );
+      }
+      const resolution = resolveTab(command.tabId, deps);
+      if (!resolution.ok) {
+        return resolution.outcome;
+      }
+      const { tab } = resolution.resolved;
+      const live = deps.getLiveState(tab.id);
+      // Write through to the tab first: a tab with no view yet loads this URL
+      // when it is next opened, which makes this the one navigation command
+      // that still does something useful off-screen.
+      deps.applyState((current) =>
+        updateBrowserSurfaceTab(current, {
+          tabId: tab.id,
+          url,
+          title: null,
+        }),
+      );
+      if (live !== null) {
+        desktopBrowser.navigate({ tabId: tab.id, url });
+        await deps.waitForSettled(tab.id);
+      }
+      const state = deps.getState();
+      const updated =
+        state.tabs.find((candidate) => candidate.id === tab.id) ?? tab;
+      return success({
+        type: "tab",
+        tab: toSnapshot(updated, state, deps.getLiveState(tab.id)),
+      });
+    }
+
+    case "navigation.back":
+    case "navigation.forward":
+    case "navigation.reload": {
+      const resolution = resolveTab(command.tabId, deps);
+      if (!resolution.ok) {
+        return resolution.outcome;
+      }
+      const { tab } = resolution.resolved;
+      const live = deps.getLiveState(tab.id);
+      // History lives in the webContents; with no live view there is nothing to
+      // replay and no way to learn whether there would have been.
+      if (live === null) {
+        return failure(
+          "tab_not_live",
+          `Browser tab ${tab.id} has no live page. ${NOT_LIVE_HINT}`,
+        );
+      }
+      if (command.type === "navigation.back") {
+        if (!live.canGoBack) {
+          return failure(
+            "tab_not_live",
+            `Browser tab ${tab.id} has nothing to go back to.`,
+          );
+        }
+        desktopBrowser.goBack(tab.id);
+      } else if (command.type === "navigation.forward") {
+        if (!live.canGoForward) {
+          return failure(
+            "tab_not_live",
+            `Browser tab ${tab.id} has nothing to go forward to.`,
+          );
+        }
+        desktopBrowser.goForward(tab.id);
+      } else {
+        desktopBrowser.reload(tab.id);
+      }
+      await deps.waitForSettled(tab.id);
+      const state = deps.getState();
+      const updated =
+        state.tabs.find((candidate) => candidate.id === tab.id) ?? tab;
+      return success({
+        type: "tab",
+        tab: toSnapshot(updated, state, deps.getLiveState(tab.id)),
+      });
+    }
+
+    default: {
+      const exhaustive: never = command;
+      return failure(
+        "invalid_command",
+        `Unhandled browser command ${JSON.stringify(exhaustive)}`,
+      );
+    }
+  }
+}

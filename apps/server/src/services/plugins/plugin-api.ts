@@ -11,7 +11,13 @@ import {
   type DbConnection,
 } from "@bb/db";
 import {
+  BROWSER_COMMAND_MAX_PAGE_TEXT_LENGTH,
+  BROWSER_COMMAND_MAX_URL_LENGTH,
   PLUGIN_INTERACTION_MAX_TITLE_LENGTH,
+  browserInteractionSchema,
+  type BrowserCommand,
+  type BrowserCommandValue,
+  type BrowserInteraction,
   type JsonValue,
 } from "@bb/domain";
 import type {
@@ -35,6 +41,7 @@ import type {
   PluginKvStorage,
   PluginLogger,
   PluginBrowser,
+  PluginBrowserCallOptions,
   PluginMentionItem,
   PluginMentionSearchContext,
   PluginMentionTrigger,
@@ -564,6 +571,14 @@ export function createPluginApi(options: {
     timeoutMs: number;
     signal?: AbortSignal;
   }) => Promise<PluginInteractionResult>;
+  /** Performs one `bb.browser.*` command in the connected app window. */
+  requestBrowserCommand: (args: {
+    command: BrowserCommand;
+    timeoutMs?: number;
+    signal?: AbortSignal;
+  }) => Promise<BrowserCommandValue>;
+  /** Whether any app window can serve browser commands right now. */
+  getBrowserHostStatus: () => { connected: boolean; hostCount: number };
   ensureSharedPortTunnel: PluginHosts["ensureSharedPortTunnel"];
   validateSharedPortDeclaration: (
     hostId: string,
@@ -589,6 +604,8 @@ export function createPluginApi(options: {
     isAgentToolNameTaken,
     reportAgentToolProblem,
     requestInteraction,
+    requestBrowserCommand,
+    getBrowserHostStatus,
     ensureSharedPortTunnel,
     validateSharedPortDeclaration,
     declareSharedPorts,
@@ -1193,6 +1210,172 @@ export function createPluginApi(options: {
     },
   };
 
+  // Argument validation for bb.browser.*. It happens here rather than on the
+  // wire so a plugin's own mistake surfaces as that plugin's error instead of
+  // travelling to the app and coming back as a refusal, the same way
+  // `requestInput` validates its request before reaching the interaction store.
+  function requireTabId(tabId: unknown, method: string): string {
+    if (typeof tabId !== "string" || tabId.length === 0) {
+      throw new Error(`browser.${method} requires a non-empty tabId`);
+    }
+    return tabId;
+  }
+
+  function optionalTabId(tabId: unknown): string | null {
+    if (tabId === undefined || tabId === null) {
+      return null;
+    }
+    if (typeof tabId !== "string" || tabId.length === 0) {
+      throw new Error("browser tabId must be a non-empty string when provided");
+    }
+    return tabId;
+  }
+
+  function assertBrowserUrlLength(url: string, method: string): string {
+    if (url.length > BROWSER_COMMAND_MAX_URL_LENGTH) {
+      throw new Error(
+        `browser.${method} url exceeds ${BROWSER_COMMAND_MAX_URL_LENGTH} characters`,
+      );
+    }
+    return url;
+  }
+
+  function normalizeBrowserUrlArg(
+    url: unknown,
+    method: string,
+  ): string | null {
+    if (url === undefined || url === null || url === "") {
+      return null;
+    }
+    if (typeof url !== "string") {
+      throw new Error(`browser.${method} url must be a string when provided`);
+    }
+    return assertBrowserUrlLength(url, method);
+  }
+
+  function requireNavigationUrl(url: unknown): string {
+    if (typeof url !== "string" || url.length === 0) {
+      throw new Error("browser.navigation.open requires a non-empty url");
+    }
+    return assertBrowserUrlLength(url, "navigation.open");
+  }
+
+  function normalizeSnapshotMaxDepth(maxDepth: unknown): number | null {
+    if (maxDepth === undefined || maxDepth === null) {
+      return null;
+    }
+    if (
+      typeof maxDepth !== "number" ||
+      !Number.isInteger(maxDepth) ||
+      maxDepth < 1 ||
+      maxDepth > 100
+    ) {
+      throw new Error(
+        "browser.page.snapshot maxDepth must be an integer between 1 and 100",
+      );
+    }
+    return maxDepth;
+  }
+
+  function normalizePageTextMaxLength(maxLength: unknown): number {
+    if (maxLength === undefined) {
+      return BROWSER_COMMAND_MAX_PAGE_TEXT_LENGTH;
+    }
+    if (
+      typeof maxLength !== "number" ||
+      !Number.isInteger(maxLength) ||
+      maxLength < 1 ||
+      maxLength > BROWSER_COMMAND_MAX_PAGE_TEXT_LENGTH
+    ) {
+      throw new Error(
+        `browser.page.getText maxLength must be an integer between 1 and ${BROWSER_COMMAND_MAX_PAGE_TEXT_LENGTH}`,
+      );
+    }
+    return maxLength;
+  }
+
+  /**
+   * Apply the SDK's defaults, then validate against the wire schema itself.
+   *
+   * Re-parsing here rather than hand-checking each field keeps the two from
+   * drifting: the app parses the same schema, so anything this accepts is
+   * something the app will accept, and a plugin's mistake surfaces as that
+   * plugin's error instead of as a refusal that travelled to the app and back.
+   */
+  function normalizeBrowserAction(action: unknown): BrowserInteraction {
+    if (typeof action !== "object" || action === null) {
+      throw new Error("browser.page.act requires an action object");
+    }
+    const record = action as Record<string, unknown>;
+    let candidate: unknown = action;
+    if (record.action === "click") {
+      candidate = {
+        action: "click",
+        ref: record.ref,
+        button: record.button ?? "left",
+        clickCount: record.clickCount ?? 1,
+        modifiers: record.modifiers ?? [],
+      };
+    } else if (record.action === "press") {
+      candidate = {
+        action: "press",
+        key: record.key,
+        ref: record.ref ?? null,
+      };
+    }
+    const parsed = browserInteractionSchema.safeParse(candidate);
+    if (!parsed.success) {
+      const issue = parsed.error.issues[0];
+      const path = issue?.path.join(".") ?? "";
+      throw new Error(
+        `browser.page.act received an invalid action${
+          path === "" ? "" : ` (${path})`
+        }: ${issue?.message ?? "unrecognized"}`,
+      );
+    }
+    return parsed.data;
+  }
+
+  function normalizeSnapshotGeneration(generation: unknown): number | null {
+    if (generation === undefined || generation === null) {
+      return null;
+    }
+    if (
+      typeof generation !== "number" ||
+      !Number.isInteger(generation) ||
+      generation < 0
+    ) {
+      throw new Error(
+        "browser.page.act generation must be a non-negative integer when provided",
+      );
+    }
+    return generation;
+  }
+
+  /**
+   * Run one command and narrow its result to the variant that command answers
+   * with. A mismatch means the app and this contract disagree, which is a bug
+   * here rather than something a plugin could have caused.
+   */
+  async function callBrowser<TType extends BrowserCommandValue["type"]>(
+    command: BrowserCommand,
+    options: PluginBrowserCallOptions | undefined,
+    expected: TType,
+  ): Promise<Extract<BrowserCommandValue, { type: TType }>> {
+    assertLive();
+    const value = await requestBrowserCommand({
+      command,
+      signal: options?.signal,
+      timeoutMs: options?.timeoutMs,
+    });
+    if (value.type !== expected) {
+      throw new Error(
+        `browser command ${command.type} answered with an unexpected ${value.type} result`,
+      );
+    }
+    return value as Extract<BrowserCommandValue, { type: TType }>;
+  }
+
   const omniboxProviders: PluginOmniboxProviderRecord[] = [];
   const browser: PluginBrowser = {
     registerOmniboxProvider(provider) {
@@ -1228,6 +1411,184 @@ export function createPluginApi(options: {
         suggest: provider.suggest.bind(provider),
         run: provider.run === undefined ? null : provider.run.bind(provider),
       });
+    },
+    tabs: {
+      async list(options) {
+        return (await callBrowser({ type: "tabs.list" }, options, "tabs")).tabs;
+      },
+      async open(args, options) {
+        return (
+          await callBrowser(
+            {
+              type: "tabs.open",
+              url: normalizeBrowserUrlArg(args?.url, "tabs.open"),
+              activate: args?.activate ?? true,
+            },
+            options,
+            "tab",
+          )
+        ).tab;
+      },
+      async close(args, options) {
+        const value = await callBrowser(
+          { type: "tabs.close", tabId: requireTabId(args?.tabId, "tabs.close") },
+          options,
+          "closed",
+        );
+        return { closedTabId: value.closedTabId, tabs: value.tabs };
+      },
+      async activate(args, options) {
+        return (
+          await callBrowser(
+            {
+              type: "tabs.activate",
+              tabId: requireTabId(args?.tabId, "tabs.activate"),
+            },
+            options,
+            "tab",
+          )
+        ).tab;
+      },
+    },
+    page: {
+      async snapshot(args, options) {
+        const value = await callBrowser(
+          {
+            type: "page.snapshot",
+            tabId: optionalTabId(args?.tabId),
+            maxDepth: normalizeSnapshotMaxDepth(args?.maxDepth),
+          },
+          options,
+          "snapshot",
+        );
+        return {
+          tabId: value.tabId,
+          url: value.url,
+          title: value.title,
+          snapshot: value.snapshot,
+          generation: value.generation,
+          refCount: value.refCount,
+          truncated: value.truncated,
+        };
+      },
+      async act(args, options) {
+        const value = await callBrowser(
+          {
+            type: "page.interact",
+            tabId: optionalTabId(args?.tabId),
+            generation: normalizeSnapshotGeneration(args?.generation),
+            interaction: normalizeBrowserAction(args?.action),
+          },
+          options,
+          "interacted",
+        );
+        return { tabId: value.tabId, url: value.url, title: value.title };
+      },
+      async handleDialog(args, options) {
+        if (typeof args?.accept !== "boolean") {
+          throw new Error("browser.page.handleDialog requires accept: boolean");
+        }
+        const value = await callBrowser(
+          {
+            type: "page.handle_dialog",
+            tabId: optionalTabId(args.tabId),
+            accept: args.accept,
+            promptText:
+              args.promptText === undefined ? null : String(args.promptText),
+          },
+          options,
+          "answered",
+        );
+        return value.answered;
+      },
+      async getUrl(args, options) {
+        return (
+          await callBrowser(
+            { type: "page.get_url", tabId: optionalTabId(args?.tabId) },
+            options,
+            "url",
+          )
+        ).url;
+      },
+      async getTitle(args, options) {
+        return (
+          await callBrowser(
+            { type: "page.get_title", tabId: optionalTabId(args?.tabId) },
+            options,
+            "title",
+          )
+        ).title;
+      },
+      async getText(args, options) {
+        const value = await callBrowser(
+          {
+            type: "page.get_text",
+            tabId: optionalTabId(args?.tabId),
+            maxLength: normalizePageTextMaxLength(args?.maxLength),
+          },
+          options,
+          "text",
+        );
+        return { text: value.text, truncated: value.truncated };
+      },
+      async getSelection(args, options) {
+        const value = await callBrowser(
+          { type: "page.get_selection", tabId: optionalTabId(args?.tabId) },
+          options,
+          "text",
+        );
+        return { text: value.text };
+      },
+    },
+    navigation: {
+      async open(args, options) {
+        return (
+          await callBrowser(
+            {
+              type: "navigation.open",
+              tabId: optionalTabId(args?.tabId),
+              url: requireNavigationUrl(args?.url),
+              newTab: args?.newTab ?? false,
+            },
+            options,
+            "tab",
+          )
+        ).tab;
+      },
+      async back(args, options) {
+        return (
+          await callBrowser(
+            { type: "navigation.back", tabId: optionalTabId(args?.tabId) },
+            options,
+            "tab",
+          )
+        ).tab;
+      },
+      async forward(args, options) {
+        return (
+          await callBrowser(
+            { type: "navigation.forward", tabId: optionalTabId(args?.tabId) },
+            options,
+            "tab",
+          )
+        ).tab;
+      },
+      async reload(args, options) {
+        return (
+          await callBrowser(
+            { type: "navigation.reload", tabId: optionalTabId(args?.tabId) },
+            options,
+            "tab",
+          )
+        ).tab;
+      },
+    },
+    getStatus() {
+      const snapshot = getBrowserHostStatus();
+      return {
+        connected: snapshot.connected,
+        windowCount: snapshot.hostCount,
+      };
     },
   };
 

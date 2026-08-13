@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { browserCommandOutcomeSchema } from "./browser-control.js";
 import {
   threadEventTypeSchema,
   threadEventTypeValues,
@@ -131,9 +132,43 @@ export const unsubscribeMessageSchema = z.object({
 });
 export type UnsubscribeMessage = z.infer<typeof unsubscribeMessageSchema>;
 
+/**
+ * The app announcing that it can drive a browser surface, so the server knows
+ * where to send agent browser commands. Sent on connect and re-sent on
+ * reconnect; the most recent registration is the one the server addresses.
+ */
+export const browserHostRegisterMessageSchema = z.object({
+  type: z.literal("browser-host.register"),
+  browserHostId: z.string().min(1).max(128),
+});
+export type BrowserHostRegisterMessage = z.infer<
+  typeof browserHostRegisterMessageSchema
+>;
+
+export const browserHostUnregisterMessageSchema = z.object({
+  type: z.literal("browser-host.unregister"),
+  browserHostId: z.string().min(1).max(128),
+});
+export type BrowserHostUnregisterMessage = z.infer<
+  typeof browserHostUnregisterMessageSchema
+>;
+
+/** The app answering one `browser-command-request` signal. */
+export const browserCommandResponseMessageSchema = z.object({
+  type: z.literal("browser-command.response"),
+  requestId: z.string().min(1).max(128),
+  outcome: browserCommandOutcomeSchema,
+});
+export type BrowserCommandResponseMessage = z.infer<
+  typeof browserCommandResponseMessageSchema
+>;
+
 export const clientMessageSchema = z.discriminatedUnion("type", [
   subscribeMessageSchema,
   unsubscribeMessageSchema,
+  browserHostRegisterMessageSchema,
+  browserHostUnregisterMessageSchema,
+  browserCommandResponseMessageSchema,
 ]);
 export type ClientMessage = z.infer<typeof clientMessageSchema>;
 

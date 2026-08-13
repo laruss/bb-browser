@@ -50,6 +50,21 @@ export function onClientSocketMessage(
       deps.hub.unsubscribe(socket, parsed.target);
       deps.watchInterests.unsubscribe(socket, parsed.target);
       break;
+    case "browser-host.register":
+      deps.hub.registerBrowserHost(socket, {
+        browserHostId: parsed.browserHostId,
+      });
+      break;
+    case "browser-host.unregister":
+      deps.hub.unregisterBrowserHost(socket);
+      break;
+    case "browser-command.response":
+      // A stale response (its request already timed out) or one from a socket
+      // that is no longer the addressed host is dropped, not an error: the
+      // waiter's own identity check is what enforces that, so correctness never
+      // depends on a client behaving.
+      deps.hub.recordBrowserCommandResponse({ socket, message: parsed });
+      break;
     default: {
       const _exhaustive: never = parsed;
       throw new Error(`Unhandled client message: ${_exhaustive}`);

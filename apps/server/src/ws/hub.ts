@@ -7,6 +7,7 @@ import {
   type HostChangeKind,
   type ProjectChangeKind,
   type SystemChangeKind,
+  type BrowserCommandResponseMessage,
   type ThreadChangeKind,
   type ThreadChangeMetadata,
 } from "@bb/domain";
@@ -19,11 +20,13 @@ import type {
   HostDaemonSessionCloseReason,
 } from "@bb/host-daemon-contract";
 import {
+  browserCommandRequestSignalSchema,
   pluginSignalSchema,
   serverMessageSchema,
   terminalServerMessageSchema,
   threadOpenSignalSchema,
   threadPaneActionSignalSchema,
+  type BrowserCommandRequestSignal,
   type ThreadPaneAction,
   type ThreadOpenFile,
   type ThreadOpenSplit,
@@ -140,6 +143,50 @@ export class HostOnlineRpcUnavailableError extends Error {
   }
 }
 
+interface BrowserHostRegistration {
+  browserHostId: string;
+  socket: HubSocket;
+}
+
+interface BrowserCommandWaiter {
+  reject: (reason?: Error) => void;
+  resolve: (message: BrowserCommandResponseMessage) => void;
+  /** The socket the request went to — the analogue of the RPC waiter's session. */
+  socket: HubSocket;
+  timeout: ReturnType<typeof setTimeout>;
+}
+
+export interface RecordBrowserCommandResponseArgs {
+  message: BrowserCommandResponseMessage;
+  socket: HubSocket;
+}
+
+export type BrowserCommandResponseDisposition =
+  | { handled: true }
+  | { handled: false; reason: "stale" }
+  | { handled: false; reason: "host_mismatch" };
+
+export interface BrowserHostSnapshot {
+  connected: boolean;
+  browserHostId: string | null;
+  /** How many app windows could serve browser commands right now. */
+  hostCount: number;
+}
+
+export class BrowserCommandTimeoutError extends Error {
+  constructor() {
+    super("Timed out waiting for the browser to answer");
+    this.name = "BrowserCommandTimeoutError";
+  }
+}
+
+export class BrowserHostUnavailableError extends Error {
+  constructor() {
+    super("No browser window is connected");
+    this.name = "BrowserHostUnavailableError";
+  }
+}
+
 export class NotificationHub implements DbNotifier {
   private readonly clientKeysBySocket = new Map<HubSocket, Set<string>>();
   private readonly clientSocketsByKey = new Map<string, Set<HubSocket>>();
@@ -160,6 +207,18 @@ export class NotificationHub implements DbNotifier {
   private readonly hostOnlineRpcWaiters = new Map<
     string,
     HostOnlineRpcWaiter
+  >();
+  /**
+   * App sockets that can drive a browser surface. Insertion-ordered, and a
+   * re-registration deletes before it sets, so **the last entry is the primary
+   * host** — the window the user most recently connected (or refocused) is the
+   * one an agent drives. Same "latest client wins" rule terminal resize
+   * ownership already uses.
+   */
+  private readonly browserHosts = new Map<HubSocket, BrowserHostRegistration>();
+  private readonly browserCommandWaiters = new Map<
+    string,
+    BrowserCommandWaiter
   >();
   private readonly hostProtocolUpdateRetryRequests = new Set<string>();
   private readonly changedMessageListeners = new Set<ChangedMessageListener>();
@@ -197,6 +256,10 @@ export class NotificationHub implements DbNotifier {
 
   unregisterClient(socket: HubSocket): void {
     this.unregisterTerminalClientSocket(socket);
+    // Before the early return below: a socket that never subscribed to anything
+    // can still be the browser host, and its in-flight commands must be failed
+    // rather than left to time out.
+    this.unregisterBrowserHost(socket);
     const keys = this.clientKeysBySocket.get(socket);
     if (!keys) {
       return;
@@ -686,6 +749,92 @@ export class NotificationHub implements DbNotifier {
     return { handled: true };
   }
 
+  /**
+   * Record that an app socket can drive a browser surface. Re-registering the
+   * same socket moves it to the back of the map, which is what makes it the
+   * primary host.
+   */
+  registerBrowserHost(
+    socket: HubSocket,
+    args: { browserHostId: string },
+  ): void {
+    this.browserHosts.delete(socket);
+    this.browserHosts.set(socket, {
+      browserHostId: args.browserHostId,
+      socket,
+    });
+  }
+
+  unregisterBrowserHost(socket: HubSocket): void {
+    if (!this.browserHosts.delete(socket)) {
+      return;
+    }
+    this.rejectBrowserCommandWaitersForSocket(socket);
+  }
+
+  getBrowserHostSnapshot(): BrowserHostSnapshot {
+    const primary = this.primaryBrowserHost();
+    return {
+      connected: primary !== undefined,
+      browserHostId: primary?.browserHostId ?? null,
+      hostCount: this.browserHosts.size,
+    };
+  }
+
+  /**
+   * Ask the primary browser host to perform one command and wait for its answer.
+   *
+   * Deliberately no grace period when nothing is connected: a daemon is expected
+   * to reconnect, but a missing browser window is a user action, and stalling
+   * every tool call on the chance one appears is worse than saying so at once.
+   */
+  requestBrowserCommand(args: {
+    message: BrowserCommandRequestSignal;
+    timeoutMs: number;
+  }): Promise<BrowserCommandResponseMessage> {
+    const host = this.primaryBrowserHost();
+    if (!host) {
+      return Promise.reject(new BrowserHostUnavailableError());
+    }
+
+    return new Promise<BrowserCommandResponseMessage>((resolve, reject) => {
+      const waiter: BrowserCommandWaiter = {
+        reject,
+        resolve,
+        socket: host.socket,
+        timeout: setTimeout(() => {
+          this.deleteBrowserCommandWaiter(args.message.requestId, waiter);
+          reject(new BrowserCommandTimeoutError());
+        }, args.timeoutMs),
+      };
+      this.browserCommandWaiters.set(args.message.requestId, waiter);
+      try {
+        host.socket.send(
+          JSON.stringify(browserCommandRequestSignalSchema.parse(args.message)),
+        );
+      } catch (error) {
+        this.deleteBrowserCommandWaiter(args.message.requestId, waiter);
+        reject(error instanceof Error ? error : new Error(String(error)));
+      }
+    });
+  }
+
+  recordBrowserCommandResponse(
+    args: RecordBrowserCommandResponseArgs,
+  ): BrowserCommandResponseDisposition {
+    const waiter = this.browserCommandWaiters.get(args.message.requestId);
+    if (!waiter) {
+      // A response to a request that already timed out or was abandoned.
+      return { handled: false, reason: "stale" };
+    }
+    if (waiter.socket !== args.socket) {
+      return { handled: false, reason: "host_mismatch" };
+    }
+    this.deleteBrowserCommandWaiter(args.message.requestId, waiter);
+    waiter.resolve(args.message);
+    return { handled: true };
+  }
+
   registerThreadEventWaiter(
     threadId: string,
     timeoutMs: number,
@@ -892,6 +1041,35 @@ export class NotificationHub implements DbNotifier {
     waiters.delete(waiter);
     if (waiters.size === 0) {
       this.hostEventWaiters.delete(hostId);
+    }
+  }
+
+  /** The most recently registered host; `Map` preserves insertion order. */
+  private primaryBrowserHost(): BrowserHostRegistration | undefined {
+    let latest: BrowserHostRegistration | undefined;
+    for (const registration of this.browserHosts.values()) {
+      latest = registration;
+    }
+    return latest;
+  }
+
+  private deleteBrowserCommandWaiter(
+    requestId: string,
+    waiter: BrowserCommandWaiter,
+  ): void {
+    if (this.browserCommandWaiters.get(requestId) === waiter) {
+      this.browserCommandWaiters.delete(requestId);
+    }
+    clearTimeout(waiter.timeout);
+  }
+
+  private rejectBrowserCommandWaitersForSocket(socket: HubSocket): void {
+    for (const [requestId, waiter] of this.browserCommandWaiters) {
+      if (waiter.socket !== socket) {
+        continue;
+      }
+      this.deleteBrowserCommandWaiter(requestId, waiter);
+      waiter.reject(new BrowserHostUnavailableError());
     }
   }
 

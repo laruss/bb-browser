@@ -1197,6 +1197,20 @@
         "vitest": "^4.1.1",
       },
     },
+    "plugins/browser-tools": {
+      "name": "bb-plugin-browser-tools",
+      "version": "0.1.0",
+      "dependencies": {
+        "zod": "^4.3.6",
+      },
+      "devDependencies": {
+        "@bb/plugin-sdk": "workspace:*",
+        "@types/node": "^22.0.0",
+        "typescript": "^6.0.2",
+        "typescript-7": "npm:typescript@^7.0.2",
+        "vitest": "^4.1.1",
+      },
+    },
     "plugins/connect": {
       "name": "bb-plugin-connect",
       "version": "0.1.0",
@@ -2957,6 +2971,8 @@
     "bb-plugin-ask-user-question": ["bb-plugin-ask-user-question@workspace:plugins/ask-user-question"],
 
     "bb-plugin-automations": ["bb-plugin-automations@workspace:plugins/automations"],
+
+    "bb-plugin-browser-tools": ["bb-plugin-browser-tools@workspace:plugins/browser-tools"],
 
     "bb-plugin-cascade": ["bb-plugin-cascade@workspace:examples/plugins/cascade"],
 

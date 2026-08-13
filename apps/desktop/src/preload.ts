@@ -2,8 +2,12 @@ import { contextBridge, ipcRenderer, webFrame } from "electron";
 import { appCommandIdSchema } from "@bb/domain";
 import {
   bbDesktopBrowserFaviconSchema,
+  bbDesktopBrowserInteractResultSchema,
   bbDesktopBrowserOpenTabRequestSchema,
+  bbDesktopBrowserPageReadResultSchema,
   bbDesktopBrowserScopedOpenTabRequestSchema,
+  bbDesktopBrowserDialogSchema,
+  bbDesktopBrowserSnapshotResultSchema,
   bbDesktopBrowserSnapshotSchema,
   bbDesktopBrowserStateSchema,
   bbDesktopInfoSchema,
@@ -12,8 +16,12 @@ import {
   type BbDesktopAppCommandHandler,
   type BbDesktopBrowserApi,
   type BbDesktopBrowserFaviconHandler,
+  type BbDesktopBrowserInteractResult,
   type BbDesktopBrowserOpenTabHandler,
+  type BbDesktopBrowserPageReadResult,
   type BbDesktopBrowserScopedOpenTabHandler,
+  type BbDesktopBrowserDialogHandler,
+  type BbDesktopBrowserSnapshotResult,
   type BbDesktopBrowserSnapshotHandler,
   type BbDesktopBrowserStateHandler,
   type BbDesktopBrowserUnsubscribe,
@@ -43,8 +51,13 @@ import {
   BB_DESKTOP_BROWSER_GO_FORWARD_CHANNEL,
   BB_DESKTOP_BROWSER_NAVIGATE_CHANNEL,
   BB_DESKTOP_BROWSER_OPEN_TAB_CHANNEL,
+  BB_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
   BB_DESKTOP_BROWSER_RELOAD_CHANNEL,
   BB_DESKTOP_BROWSER_SCOPED_OPEN_TAB_CHANNEL,
+  BB_DESKTOP_BROWSER_DIALOG_CHANNEL,
+  BB_DESKTOP_BROWSER_DIALOG_RESPOND_CHANNEL,
+  BB_DESKTOP_BROWSER_INTERACT_CHANNEL,
+  BB_DESKTOP_BROWSER_SNAPSHOT_TREE_CHANNEL,
   BB_DESKTOP_BROWSER_SET_BOUNDS_CHANNEL,
   BB_DESKTOP_BROWSER_SET_VISIBLE_CHANNEL,
   BB_DESKTOP_BROWSER_SNAPSHOT_CHANNEL,
@@ -164,6 +177,7 @@ const browserScopedOpenTabListeners =
   new Set<BbDesktopBrowserScopedOpenTabHandler>();
 const browserSnapshotListeners = new Set<BbDesktopBrowserSnapshotHandler>();
 const browserFaviconListeners = new Set<BbDesktopBrowserFaviconHandler>();
+const browserDialogListeners = new Set<BbDesktopBrowserDialogHandler>();
 const closeWindowRequestListeners =
   new Set<BbDesktopCloseWindowRequestHandler>();
 const openNewTabListeners = new Set<BbDesktopOpenNewTabHandler>();
@@ -276,6 +290,61 @@ const bbBrowserApi: BbDesktopBrowserApi = {
     return () => {
       browserFaviconListeners.delete(listener);
     };
+  },
+  async readPage(tabId): Promise<BbDesktopBrowserPageReadResult> {
+    // Parse here and swallow rejections, the same way `invokeDesktopInfo` does:
+    // the SPA gets a value it can branch on, never a transport error.
+    try {
+      const payload: unknown = await ipcRenderer.invoke(
+        BB_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
+        { tabId },
+      );
+      const parsed = bbDesktopBrowserPageReadResultSchema.safeParse(payload);
+      return parsed.success ? parsed.data : { ok: false, reason: "unreadable" };
+    } catch {
+      return { ok: false, reason: "unreadable" };
+    }
+  },
+  onDialog(listener): BbDesktopBrowserUnsubscribe {
+    browserDialogListeners.add(listener);
+    return () => {
+      browserDialogListeners.delete(listener);
+    };
+  },
+  async respondToDialog(request): Promise<boolean> {
+    try {
+      const answered: unknown = await ipcRenderer.invoke(
+        BB_DESKTOP_BROWSER_DIALOG_RESPOND_CHANNEL,
+        request,
+      );
+      return answered === true;
+    } catch {
+      return false;
+    }
+  },
+  async snapshot(request): Promise<BbDesktopBrowserSnapshotResult> {
+    try {
+      const payload: unknown = await ipcRenderer.invoke(
+        BB_DESKTOP_BROWSER_SNAPSHOT_TREE_CHANNEL,
+        request,
+      );
+      const parsed = bbDesktopBrowserSnapshotResultSchema.safeParse(payload);
+      return parsed.success ? parsed.data : { ok: false, reason: "failed" };
+    } catch {
+      return { ok: false, reason: "failed" };
+    }
+  },
+  async interact(request): Promise<BbDesktopBrowserInteractResult> {
+    try {
+      const payload: unknown = await ipcRenderer.invoke(
+        BB_DESKTOP_BROWSER_INTERACT_CHANNEL,
+        request,
+      );
+      const parsed = bbDesktopBrowserInteractResultSchema.safeParse(payload);
+      return parsed.success ? parsed.data : { ok: false, reason: "failed" };
+    } catch {
+      return { ok: false, reason: "failed" };
+    }
   },
 };
 
@@ -443,6 +512,19 @@ ipcRenderer.on(
       return;
     }
     for (const listener of browserFaviconListeners) {
+      listener(parsed.data);
+    }
+  },
+);
+
+ipcRenderer.on(
+  BB_DESKTOP_BROWSER_DIALOG_CHANNEL,
+  (_event, payload: unknown) => {
+    const parsed = bbDesktopBrowserDialogSchema.safeParse(payload);
+    if (!parsed.success) {
+      return;
+    }
+    for (const listener of browserDialogListeners) {
       listener(parsed.data);
     }
   },

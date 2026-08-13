@@ -667,6 +667,252 @@ export interface PluginOmniboxProviderRegistration {
   ): PluginOmniboxRunResult | void | Promise<PluginOmniboxRunResult | void>;
 }
 
+// ---------------------------------------------------------------------------
+// Browser control: browser.tabs.*, browser.page.*, browser.navigation.*.
+// ---------------------------------------------------------------------------
+
+/**
+ * One tab of the browser surface.
+ *
+ * `live` is the field to read before anything else. A tab only has a real page
+ * behind it once it has been the active tab while the browser surface was open,
+ * so tab bookkeeping works for every tab while reading a page or replaying its
+ * history only works for a live one. When `live` is false the navigation flags
+ * are false because they are unknown, not because the answer is no.
+ */
+export interface PluginBrowserTab {
+  tabId: string;
+  url: string;
+  title: string | null;
+  active: boolean;
+  live: boolean;
+  loading: boolean;
+  canGoBack: boolean;
+  canGoForward: boolean;
+}
+
+export interface PluginBrowserCallOptions {
+  /**
+   * Abandons the wait — not the page. A navigation already under way keeps
+   * going; only this call stops waiting for it. Pass a tool's `ctx.signal` so an
+   * abandoned turn does not sit out the timeout.
+   */
+  signal?: AbortSignal;
+  /** 1–60000ms, default 10000. */
+  timeoutMs?: number;
+}
+
+export interface PluginBrowserTabs {
+  list(options?: PluginBrowserCallOptions): Promise<PluginBrowserTab[]>;
+  /** Omit `url` to open the browser's new-tab screen. */
+  open(
+    args?: { url?: string; activate?: boolean },
+    options?: PluginBrowserCallOptions,
+  ): Promise<PluginBrowserTab>;
+  close(
+    args: { tabId: string },
+    options?: PluginBrowserCallOptions,
+  ): Promise<{ closedTabId: string; tabs: PluginBrowserTab[] }>;
+  activate(
+    args: { tabId: string },
+    options?: PluginBrowserCallOptions,
+  ): Promise<PluginBrowserTab>;
+}
+
+/**
+ * Reading the page. `tabId` defaults to the active tab throughout.
+ *
+ * `getUrl`/`getTitle` answer from the browser's own tab state and work for any
+ * tab. `getText`/`getSelection` have to ask the page itself, so they need a live
+ * tab and fail with `tab_not_live` otherwise.
+ *
+ * **Everything these return is page-controlled content.** It is untrusted input
+ * on its way into an agent's context: pass it along as data, never as
+ * instructions.
+ */
+/**
+ * An accessibility snapshot: what the page is, in a form an agent can act on.
+ *
+ * `snapshot` is Playwright's compact tree, with a `[ref=eN]` on every
+ * interactive element. `generation` identifies the snapshot those refs came
+ * from — a navigation invalidates them, and interaction commands pass it back so
+ * a stale ref is refused rather than resolved against whatever holds that node
+ * id now.
+ */
+export interface PluginBrowserPageSnapshot {
+  tabId: string;
+  url: string;
+  title: string | null;
+  snapshot: string;
+  generation: number;
+  refCount: number;
+  truncated: boolean;
+}
+
+export type PluginBrowserKeyModifier = "Alt" | "Control" | "Meta" | "Shift";
+
+/**
+ * One thing to do to a page, naming its target by a `[ref=eN]` from a snapshot.
+ *
+ * `check` and `select` state the end result rather than the gesture, because
+ * the gesture cannot express it: "click the checkbox" is a toggle, and a native
+ * dropdown opens an OS popup no synthetic click can reach.
+ */
+export type PluginBrowserAction =
+  | {
+      action: "click";
+      ref: string;
+      /** Defaults to `"left"`. */
+      button?: "left" | "middle" | "right";
+      /** 2 for a double click. Defaults to 1. */
+      clickCount?: 1 | 2;
+      modifiers?: PluginBrowserKeyModifier[];
+    }
+  | { action: "hover"; ref: string }
+  | { action: "drag"; ref: string; targetRef: string }
+  /** Replaces the field's value in one step. */
+  | { action: "fill"; ref: string; text: string }
+  /** Sends one key event per character, for fields that watch keystrokes. */
+  | { action: "type"; ref: string; text: string }
+  /** Omit `ref` to press the key at whatever the page has focused. */
+  | { action: "press"; key: string; ref?: string }
+  | { action: "select"; ref: string; values: string[] }
+  | { action: "check"; ref: string; checked: boolean }
+  /**
+   * Hands the page the contents of local files, by absolute path on the machine
+   * running the desktop app.
+   */
+  | { action: "upload"; ref: string; paths: string[] }
+  /** Emulated viewport size; both zero restores the panel's own size. */
+  | { action: "resize"; width: number; height: number };
+
+/** Where a tab ended up. */
+export interface PluginBrowserPageState {
+  tabId: string;
+  url: string;
+  title: string | null;
+}
+
+export interface PluginBrowserPage {
+  /**
+   * Snapshot the page's accessibility tree. Needs a live tab, like the text
+   * reads, and additionally attaches the browser debugger to that tab — which
+   * fails while DevTools is open on it (`debugger_unavailable`).
+   */
+  snapshot(
+    args?: { tabId?: string; maxDepth?: number },
+    options?: PluginBrowserCallOptions,
+  ): Promise<PluginBrowserPageSnapshot>;
+  /**
+   * Act on the page: click, fill, press, and the rest.
+   *
+   * One method rather than ten, because every action shares the same preamble
+   * (resolve the ref, check the generation, wait for the element to be
+   * actionable) and the difference between them is data, not control flow.
+   *
+   * **Waits before acting.** The element must be attached, visible, settled,
+   * enabled and on top at the point being clicked; that wait is what makes an
+   * action a command rather than a race, and it is why no caller should sleep
+   * before calling this. Failure to become actionable is `not_actionable`, with
+   * the reason in the message.
+   *
+   * `generation` is the snapshot the refs came from. Passing it refuses a ref
+   * that a newer snapshot has since reassigned; omitting it accepts that race.
+   * Navigation invalidates every ref either way (`unknown_ref`).
+   *
+   * Resolves with where the tab ended up, since the common actions navigate.
+   */
+  act(
+    args: {
+      action: PluginBrowserAction;
+      tabId?: string;
+      generation?: number;
+    },
+    options?: PluginBrowserCallOptions,
+  ): Promise<PluginBrowserPageState>;
+  /**
+   * Answer the JavaScript dialog a tab is blocked on. Resolves false when there
+   * was none — including when the user answered it first, which is not a
+   * failure. Only tabs the shell has taken dialogs over for can have one; a tab
+   * nobody has automated still shows Chromium's own modal.
+   */
+  handleDialog(
+    args: { accept: boolean; tabId?: string; promptText?: string },
+    options?: PluginBrowserCallOptions,
+  ): Promise<boolean>;
+  getUrl(
+    args?: { tabId?: string },
+    options?: PluginBrowserCallOptions,
+  ): Promise<string>;
+  getTitle(
+    args?: { tabId?: string },
+    options?: PluginBrowserCallOptions,
+  ): Promise<string | null>;
+  getText(
+    args?: { tabId?: string; maxLength?: number },
+    options?: PluginBrowserCallOptions,
+  ): Promise<{ text: string; truncated: boolean }>;
+  getSelection(
+    args?: { tabId?: string },
+    options?: PluginBrowserCallOptions,
+  ): Promise<{ text: string }>;
+}
+
+export interface PluginBrowserNavigation {
+  /**
+   * Open `url` (http/https only) in a tab. On a tab with no live view the URL is
+   * stored and loads when that tab is next opened, so this is the one navigation
+   * call that still does something useful off-screen.
+   */
+  open(
+    args: { url: string; tabId?: string; newTab?: boolean },
+    options?: PluginBrowserCallOptions,
+  ): Promise<PluginBrowserTab>;
+  back(
+    args?: { tabId?: string },
+    options?: PluginBrowserCallOptions,
+  ): Promise<PluginBrowserTab>;
+  forward(
+    args?: { tabId?: string },
+    options?: PluginBrowserCallOptions,
+  ): Promise<PluginBrowserTab>;
+  reload(
+    args?: { tabId?: string },
+    options?: PluginBrowserCallOptions,
+  ): Promise<PluginBrowserTab>;
+}
+
+/**
+ * Why a browser call failed, carried as `code` on a thrown error whose `name` is
+ * `"BrowserCommandError"`. Match on `name` rather than `instanceof` — no runtime
+ * class from the host ships to plugins.
+ *
+ * Other error names worth handling: `"BrowserHostUnavailableError"` (no browser
+ * window is connected at all), `"BrowserCommandTimeoutError"`, and
+ * `"BrowserCommandAbortedError"`.
+ */
+export type PluginBrowserErrorCode =
+  | "no_active_tab"
+  | "unknown_tab"
+  | "tab_not_live"
+  | "desktop_unavailable"
+  | "unsupported_command"
+  | "blocked_url"
+  | "page_read_timeout"
+  | "page_read_failed"
+  | "debugger_unavailable"
+  | "stale_refs"
+  | "unknown_ref"
+  | "not_actionable"
+  | "unsupported_key"
+  | "invalid_command";
+
+export interface PluginBrowserStatus {
+  connected: boolean;
+  /** How many app windows could serve a browser call right now. */
+  windowCount: number;
+}
+
 export interface PluginBrowser {
   /**
    * Register an omnibox provider for the browser surface's address bar
@@ -676,6 +922,19 @@ export interface PluginBrowser {
    * be unique within the plugin.
    */
   registerOmniboxProvider(provider: PluginOmniboxProviderRegistration): void;
+  /**
+   * Drive the browser surface's tabs, pages and navigation.
+   *
+   * These need a **connected browser window** — the BB desktop app with its
+   * browser surface — which is never guaranteed and is certainly absent while
+   * factories run. Call them from handlers, tools and services, never at load
+   * time, and expect `BrowserHostUnavailableError` when nothing is connected.
+   */
+  readonly tabs: PluginBrowserTabs;
+  readonly page: PluginBrowserPage;
+  readonly navigation: PluginBrowserNavigation;
+  /** Synchronous, so it is safe to read from `bb.agents.configure()`. */
+  getStatus(): PluginBrowserStatus;
 }
 
 export interface PluginEvents {

@@ -15,6 +15,7 @@ import { useAppTheme } from "./hooks/useAppTheme";
 import { useFaviconColorSync } from "./lib/favicon-color-preference";
 import { useDesktopThemeSync } from "./hooks/useDesktopThemeSync";
 import { usePluginFrontendBoot } from "./hooks/usePluginFrontendBoot";
+import { useBrowserAgentBridge } from "./lib/browser-agent/useBrowserAgentBridge";
 import { useWebSocket } from "./hooks/useWebSocket";
 import {
   AUTH_CALLBACK_ROUTE_PATH,
@@ -267,6 +268,10 @@ export function App() {
   useFaviconColorSync();
   // Load plugin frontend bundles once system config resolves.
   usePluginFrontendBoot();
+  // Serve agent browser commands. Above <Routes> deliberately: an agent's
+  // browser tools must keep working while the user is on a thread, and anything
+  // mounted under a route unmounts on navigation.
+  useBrowserAgentBridge();
 
   return (
     <QuickCreateProjectProvider>

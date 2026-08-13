@@ -20,13 +20,17 @@ import {
   BB_DESKTOP_BROWSER_DETACH_CHANNEL,
   BB_DESKTOP_BROWSER_GO_BACK_CHANNEL,
   BB_DESKTOP_BROWSER_GO_FORWARD_CHANNEL,
+  BB_DESKTOP_BROWSER_DIALOG_RESPOND_CHANNEL,
+  BB_DESKTOP_BROWSER_INTERACT_CHANNEL,
   BB_DESKTOP_BROWSER_NAVIGATE_CHANNEL,
   BB_DESKTOP_BROWSER_OPEN_TAB_CHANNEL,
+  BB_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
   BB_DESKTOP_BROWSER_RELOAD_CHANNEL,
   BB_DESKTOP_BROWSER_SCOPED_OPEN_TAB_CHANNEL,
   BB_DESKTOP_BROWSER_SET_BOUNDS_CHANNEL,
   BB_DESKTOP_BROWSER_SET_VISIBLE_CHANNEL,
   BB_DESKTOP_BROWSER_SNAPSHOT_CHANNEL,
+  BB_DESKTOP_BROWSER_SNAPSHOT_TREE_CHANNEL,
   BB_DESKTOP_BROWSER_STATE_CHANNEL,
   BB_DESKTOP_BROWSER_STOP_CHANNEL,
 } from "../src/desktop-browser-ipc.js";
@@ -66,6 +70,10 @@ const electronMock = vi.hoisted(() => {
     isFullScreen: false,
   };
   const invokeCalls: string[] = [];
+  const invokePayloads: unknown[] = [];
+  // What the read-page channel answers with; tests swap it to drive the
+  // malformed-reply and rejected-invoke paths.
+  let readPageReply: (() => Promise<unknown>) | null = null;
   const listeners = new Map<string, IpcRendererListener>();
   const sendCalls: SendCall[] = [];
   const exposedNames: string[] = [];
@@ -88,9 +96,15 @@ const electronMock = vi.hoisted(() => {
       return exposedSpellcheckApi;
     },
     invokeCalls,
+    invokePayloads,
     listeners,
     sendCalls,
+    setReadPageReply(reply: (() => Promise<unknown>) | null): void {
+      readPageReply = reply;
+    },
     reset(): void {
+      invokePayloads.length = 0;
+      readPageReply = null;
       exposedApi = null;
       exposedName = null;
       exposedSpellcheckApi = null;
@@ -119,8 +133,14 @@ const electronMock = vi.hoisted(() => {
       },
     },
     ipcRenderer: {
-      invoke(channel: string): Promise<BbDesktopInfo | BbDesktopWindowState> {
+      invoke(channel: string, payload?: unknown): Promise<unknown> {
         invokeCalls.push(channel);
+        invokePayloads.push(payload);
+        if (channel === "bb-desktop:browser:read-page") {
+          return readPageReply === null
+            ? Promise.resolve(null)
+            : readPageReply();
+        }
         if (channel === "bb-desktop:get-window-state") {
           return Promise.resolve(desktopWindowState);
         }
@@ -229,15 +249,20 @@ describe("desktop preload browser API", () => {
       "detach",
       "goBack",
       "goForward",
+      "interact",
       "navigate",
+      "onDialog",
       "onFavicon",
       "onOpenTab",
       "onScopedOpenTab",
       "onSnapshot",
       "onState",
+      "readPage",
       "reload",
+      "respondToDialog",
       "setBounds",
       "setVisible",
+      "snapshot",
       "stop",
     ]);
     expect(api.browser).not.toHaveProperty("send");
@@ -305,6 +330,72 @@ describe("desktop preload browser API", () => {
     expect(electronMock.invokeCalls).toContain(
       BB_DESKTOP_INSTALL_UPDATE_CHANNEL,
     );
+  }, 10_000);
+
+  it("parses page reads and turns every failure into a typed refusal", async () => {
+    const api = await loadPreload();
+    const content = {
+      ok: true,
+      tabId: "browser:a",
+      url: "https://example.com/",
+      title: "Example",
+      isLoading: false,
+      text: "hello",
+      textTruncated: false,
+      selection: "",
+      selectionTruncated: false,
+    };
+    electronMock.setReadPageReply(() => Promise.resolve(content));
+
+    await expect(api.browser.readPage?.("browser:a")).resolves.toEqual(content);
+    expect(electronMock.invokeCalls).toContain(
+      BB_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
+    );
+    expect(electronMock.invokePayloads).toContainEqual({ tabId: "browser:a" });
+
+    // A shell that answers with something this build cannot read, and one whose
+    // handler rejects outright, must both reach the SPA as a value it can
+    // branch on rather than as a thrown transport error.
+    electronMock.setReadPageReply(() => Promise.resolve({ ok: true }));
+    await expect(api.browser.readPage?.("browser:a")).resolves.toEqual({
+      ok: false,
+      reason: "unreadable",
+    });
+
+    electronMock.setReadPageReply(() => Promise.reject(new Error("no handler")));
+    await expect(api.browser.readPage?.("browser:a")).resolves.toEqual({
+      ok: false,
+      reason: "unreadable",
+    });
+  }, 10_000);
+
+  it("sends each answering command down its own channel", async () => {
+    const api = await loadPreload();
+
+    // Every one of these is `invoke(channel, request)` with an identical
+    // signature, so a copy-pasted call reaching the wrong channel type-checks
+    // and then silently does the wrong thing at runtime. This is the only
+    // place that pins the pairing.
+    await api.browser.readPage?.("browser:a");
+    await api.browser.snapshot?.({ tabId: "browser:a" });
+    await api.browser.respondToDialog?.({ tabId: "browser:a", accept: true });
+    await api.browser.interact?.({
+      tabId: "browser:a",
+      interaction: { action: "hover", ref: "e1" },
+    });
+
+    // Loading the preload invokes its own startup channels first; only the
+    // browser ones are this test's business.
+    expect(
+      electronMock.invokeCalls.filter((channel) =>
+        channel.startsWith("bb-desktop:browser:"),
+      ),
+    ).toEqual([
+      BB_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
+      BB_DESKTOP_BROWSER_SNAPSHOT_TREE_CHANNEL,
+      BB_DESKTOP_BROWSER_DIALOG_RESPOND_CHANNEL,
+      BB_DESKTOP_BROWSER_INTERACT_CHANNEL,
+    ]);
   }, 10_000);
 
   it("converts zoomed renderer bounds to native window coordinates", async () => {
