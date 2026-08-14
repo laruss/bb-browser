@@ -12,6 +12,9 @@ import { BB_DESKTOP_BROWSER_CONTENT_SIZE_SCRIPT } from "../src/desktop-browser-c
 import {
   BB_DESKTOP_BROWSER_DOWNLOAD_CHANNEL,
   BB_DESKTOP_BROWSER_FAVICON_CHANNEL,
+  BB_DESKTOP_BROWSER_FIND_RESULT_CHANNEL,
+  BB_DESKTOP_BROWSER_PAGE_PROMPT_CHANNEL,
+  BB_DESKTOP_BROWSER_POPUP_CHANNEL,
   BB_DESKTOP_BROWSER_SNAPSHOT_CHANNEL,
 } from "../src/desktop-browser-ipc.js";
 import {
@@ -48,6 +51,7 @@ function createDesktopBrowserViewManager(
     downloadPathExists: () => false,
     focusHostWebContents: () => undefined,
     openDownloadPath: async () => "",
+    openExternalUrl: () => undefined,
     revealDownloadPath: () => undefined,
     resolveDownloadDirectory: () => TEST_DOWNLOAD_DIRECTORY,
     resolveAppCommand: () => null,
@@ -140,8 +144,81 @@ type FakeBeforeInputListener = (
   input: FakeInput,
 ) => void;
 
+interface FakeFoundInPageResult {
+  requestId: number;
+  activeMatchOrdinal: number;
+  matches: number;
+  finalUpdate: boolean;
+}
+
+type FakeFoundInPageListener = (
+  event: FakeWebContentsEvent,
+  result: FakeFoundInPageResult,
+) => void;
+
+interface FakeFindInPageOptions {
+  findNext?: boolean;
+  forward?: boolean;
+}
+
+interface FakeAuthInfo {
+  isProxy: boolean;
+  scheme: string;
+  host: string;
+  port: number;
+  realm: string;
+}
+
+type FakeAuthCallback = (username?: string, password?: string) => void;
+
+type FakeLoginListener = (
+  event: FakePreventableEvent,
+  details: { url: string; isRequestForNavigation?: boolean },
+  authInfo: FakeAuthInfo,
+  callback: FakeAuthCallback,
+) => void;
+
+interface FakeCertificate {
+  fingerprint: string;
+  issuerName: string;
+  subjectName: string;
+  validExpiry: number;
+  validStart: number;
+}
+
+type FakeCertificateErrorListener = (
+  event: FakePreventableEvent,
+  url: string,
+  error: string,
+  certificate: FakeCertificate,
+  callback: (isTrusted: boolean) => void,
+  isMainFrame: boolean,
+) => void;
+
+type FakeSelectClientCertificateListener = (
+  event: FakePreventableEvent,
+  url: string,
+  certificateList: FakeCertificate[],
+  callback: (certificate?: FakeCertificate) => void,
+) => void;
+
+type FakeRenderProcessGoneListener = (
+  event: FakeWebContentsEvent,
+  details: { reason: string },
+) => void;
+
 interface FakeWebContentsEventMap {
   "before-input-event": FakeBeforeInputListener;
+  "found-in-page": FakeFoundInPageListener;
+  login: FakeLoginListener;
+  "certificate-error": FakeCertificateErrorListener;
+  "select-client-certificate": FakeSelectClientCertificateListener;
+  "enter-html-full-screen": FakeVoidWebContentsListener;
+  "leave-html-full-screen": FakeVoidWebContentsListener;
+  "render-process-gone": FakeRenderProcessGoneListener;
+  unresponsive: FakeVoidWebContentsListener;
+  responsive: FakeVoidWebContentsListener;
+  destroyed: FakeVoidWebContentsListener;
   "will-frame-navigate": FakeWillFrameNavigateListener;
   "will-navigate": FakeWillNavigateListener;
   "will-redirect": FakeWillRedirectListener;
@@ -303,7 +380,19 @@ interface FakeWindowOpenDetails {
 }
 
 interface FakeWindowOpenDecision {
-  action: "deny";
+  action: "deny" | "allow";
+  outlivesOpener?: boolean;
+  /** Present on "allow": the shell builds the popup's view here. */
+  createWindow?: (options: FakeWindowOpenOptions) => unknown;
+}
+
+interface FakeWindowOpenOptions {
+  webPreferences?: Record<string, unknown>;
+  /**
+   * The `webContents` Chromium already made for the popup, carrying the opener
+   * link. Electron passes it through so the constructed view adopts it.
+   */
+  webContents?: unknown;
 }
 
 type FakeWindowOpenHandler = (
@@ -398,6 +487,16 @@ const electronMock = vi.hoisted(() => {
     public isolatedWorldResult: unknown = "pending";
     private readonly listeners: FakeWebContentsListeners = {
       "before-input-event": [],
+      "found-in-page": [],
+      login: [],
+      "certificate-error": [],
+      "select-client-certificate": [],
+      "enter-html-full-screen": [],
+      "leave-html-full-screen": [],
+      "render-process-gone": [],
+      unresponsive: [],
+      responsive: [],
+      destroyed: [],
       "will-frame-navigate": [],
       "will-navigate": [],
       "will-redirect": [],
@@ -432,9 +531,172 @@ const electronMock = vi.hoisted(() => {
       goForward: (): void => {
         this.goForwardCalls.push("goForward");
       },
+      getAllEntries: (): Array<{
+        title: string;
+        url: string;
+        pageState?: string;
+      }> => this.historyEntries,
+      restore: (options: {
+        entries: Array<{ title: string; url: string; pageState?: string }>;
+        index?: number;
+      }): Promise<void> => {
+        this.restoreCalls.push(options);
+        return this.restoreFailure === null
+          ? Promise.resolve()
+          : Promise.reject(this.restoreFailure);
+      },
     };
 
+    public readonly restoreCalls: Array<{
+      entries: Array<{ title: string; url: string; pageState?: string }>;
+      index?: number;
+    }> = [];
+    public restoreFailure: Error | null = null;
+
     public pdfResult: Buffer | Error = Buffer.from("%PDF-1.4\n");
+
+    /** Chromium hands back a new id per request; the manager keys results on it. */
+    public nextFindRequestId = 1;
+    public readonly findInPageCalls: Array<{
+      text: string;
+      options: FakeFindInPageOptions | undefined;
+    }> = [];
+    public readonly stopFindInPageCalls: string[] = [];
+
+    findInPage(text: string, options?: FakeFindInPageOptions): number {
+      this.findInPageCalls.push({ text, options });
+      const requestId = this.nextFindRequestId;
+      this.nextFindRequestId += 1;
+      return requestId;
+    }
+
+    stopFindInPage(action: string): void {
+      this.stopFindInPageCalls.push(action);
+    }
+
+    emitFoundInPage(result: FakeFoundInPageResult): void {
+      for (const listener of this.listeners["found-in-page"]) {
+        listener(fakeWebContentsEvent, result);
+      }
+    }
+
+    /**
+     * The live record of what the manager passed the auth callback. Live rather
+     * than a snapshot: the answer arrives long after the event, when a human
+     * has answered the prompt this raised.
+     */
+    emitLogin(args: {
+      authInfo?: Partial<FakeAuthInfo>;
+      isRequestForNavigation?: boolean;
+      url?: string;
+    }): { called: boolean; credentials: [string?, string?] | null } {
+      const state: { credentials: [string?, string?] | null; called: boolean } =
+        { credentials: null, called: false };
+      const details = {
+        url: args.url ?? "https://example.com/private",
+        ...(args.isRequestForNavigation === undefined
+          ? {}
+          : { isRequestForNavigation: args.isRequestForNavigation }),
+      };
+      const authInfo: FakeAuthInfo = {
+        isProxy: false,
+        scheme: "basic",
+        host: "example.com",
+        port: 443,
+        realm: "restricted",
+        ...args.authInfo,
+      };
+      for (const listener of this.listeners.login) {
+        listener(
+          new FakePreventableEventImpl(),
+          details,
+          authInfo,
+          (username?: string, password?: string) => {
+            state.called = true;
+            state.credentials =
+              username === undefined ? null : [username, password];
+          },
+        );
+      }
+      return state;
+    }
+
+    /** Answers with what the manager passed `callback(isTrusted)`, or null. */
+    emitCertificateError(args: {
+      certificate?: Partial<FakeCertificate>;
+      error?: string;
+      isMainFrame?: boolean;
+      url?: string;
+    }): { trusted: boolean | null } {
+      const state: { trusted: boolean | null } = { trusted: null };
+      const certificate: FakeCertificate = {
+        fingerprint: "sha256/AAAA",
+        issuerName: "Test CA",
+        subjectName: "example.com",
+        validExpiry: 1_800_000_000,
+        validStart: 1_700_000_000,
+        ...args.certificate,
+      };
+      for (const listener of this.listeners["certificate-error"]) {
+        listener(
+          new FakePreventableEventImpl(),
+          args.url ?? "https://example.com/",
+          args.error ?? "net::ERR_CERT_AUTHORITY_INVALID",
+          certificate,
+          (isTrusted: boolean) => {
+            state.trusted = isTrusted;
+          },
+          args.isMainFrame ?? true,
+        );
+      }
+      return state;
+    }
+
+    /** Answers with the certificate the manager chose, or undefined. */
+    emitSelectClientCertificate(certificateList: FakeCertificate[]): {
+      chosen: FakeCertificate | undefined;
+      called: boolean;
+    } {
+      const state: {
+        chosen: FakeCertificate | undefined;
+        called: boolean;
+      } = { chosen: undefined, called: false };
+      for (const listener of this.listeners["select-client-certificate"]) {
+        listener(
+          new FakePreventableEventImpl(),
+          "https://example.com/",
+          certificateList,
+          (certificate?: FakeCertificate) => {
+            state.called = true;
+            state.chosen = certificate;
+          },
+        );
+      }
+      return state;
+    }
+
+    emitHtmlFullScreen(entered: boolean): void {
+      const eventName = entered
+        ? "enter-html-full-screen"
+        : "leave-html-full-screen";
+      for (const listener of this.listeners[eventName]) {
+        listener();
+      }
+    }
+
+    emitRenderProcessGone(reason: string): void {
+      for (const listener of this.listeners["render-process-gone"]) {
+        listener(fakeWebContentsEvent, { reason });
+      }
+    }
+
+    emitResponsiveness(responsive: boolean): void {
+      for (const listener of this.listeners[
+        responsive ? "responsive" : "unresponsive"
+      ]) {
+        listener();
+      }
+    }
 
     capturePage(): Promise<FakeNativeImage> {
       return new Promise((resolve, reject) => {
@@ -709,6 +971,14 @@ const electronMock = vi.hoisted(() => {
       }
       return this.windowOpenHandler({ url });
     }
+
+    /** The page closing itself, as `window.close()` does. */
+    emitDestroyed(): void {
+      this.destroyed = true;
+      for (const listener of this.listeners.destroyed) {
+        listener();
+      }
+    }
   }
 
   let nextWebContentsId = 1;
@@ -716,11 +986,25 @@ const electronMock = vi.hoisted(() => {
   class FakeWebContentsView {
     public readonly boundsCalls: BbDesktopBrowserViewBounds[] = [];
     public readonly webContents: FakeWebContents;
+    /** What the manager asked for when it created this view. */
+    public readonly options: {
+      webPreferences?: Record<string, unknown>;
+      webContents?: FakeWebContents;
+    };
     public visible = false;
 
-    constructor() {
-      this.webContents = new FakeWebContents(nextWebContentsId);
-      nextWebContentsId += 1;
+    constructor(options?: {
+      webPreferences?: Record<string, unknown>;
+      webContents?: FakeWebContents;
+    }) {
+      this.options = options ?? {};
+      // Electron adopts a passed `webContents` instead of making one; the popup
+      // path depends on that, so the fake honours it.
+      this.webContents =
+        options?.webContents ?? new FakeWebContents(nextWebContentsId);
+      if (options?.webContents === undefined) {
+        nextWebContentsId += 1;
+      }
     }
 
     setBounds(bounds: BbDesktopBrowserViewBounds): void {
@@ -742,13 +1026,15 @@ const electronMock = vi.hoisted(() => {
     /** The partition's cookie jar, as much of it as the manager touches. */
     public storedCookies: FakeCookie[] = [];
     public readonly cookieSetCalls: unknown[] = [];
-    public readonly cookieRemoveCalls: Array<{ url: string; name: string }> = [];
+    public readonly cookieRemoveCalls: Array<{ url: string; name: string }> =
+      [];
     public cookieSetFailure: Error | null = null;
     public readonly cookies = {
       get: (filter: { url?: string; name?: string }): Promise<FakeCookie[]> =>
         Promise.resolve(
           this.storedCookies.filter(
-            (cookie) => filter.name === undefined || cookie.name === filter.name,
+            (cookie) =>
+              filter.name === undefined || cookie.name === filter.name,
           ),
         ),
       set: (details: unknown): Promise<void> => {
@@ -807,15 +1093,36 @@ const electronMock = vi.hoisted(() => {
 
   const fakeSessions: FakeSession[] = [];
   const fakeViews: FakeWebContentsView[] = [];
+  // Configure a view the manager is about to create, for the cases where the
+  // failure has to be armed before `attach` returns.
+  const setup: { next: ((view: FakeWebContentsView) => void) | null } = {
+    next: null,
+  };
 
   return {
     fakeCapturedImage,
     fakeSessions,
     fakeViews,
+    /** A stand-in for the popup `webContents` Electron hands to `createWindow`. */
+    createFakeWebContents(): FakeWebContents {
+      const contents = new FakeWebContents(nextWebContentsId);
+      nextWebContentsId += 1;
+      return contents;
+    },
+    get nextViewSetup() {
+      return setup.next;
+    },
+    set nextViewSetup(value: ((view: FakeWebContentsView) => void) | null) {
+      setup.next = value;
+    },
     FakeWebContentsView: class extends FakeWebContentsView {
-      constructor() {
-        super();
+      constructor(options?: {
+        webPreferences?: Record<string, unknown>;
+        webContents?: FakeWebContents;
+      }) {
+        super(options);
         fakeViews.push(this);
+        setup.next?.(this);
       }
     },
     session: {
@@ -877,6 +1184,9 @@ class FakeContentView implements DesktopBrowserHostContentView {
 class FakeHostWindow implements DesktopBrowserHostWindow {
   public contentBounds: DesktopBrowserHostContentBounds;
   public destroyed = false;
+  public fullScreen = false;
+  /** Every `setFullScreen` the manager asked for, in order. */
+  public readonly fullScreenCalls: boolean[] = [];
   public readonly contentView = new FakeContentView();
   public readonly webContents: FakeHostWebContents;
 
@@ -891,6 +1201,15 @@ class FakeHostWindow implements DesktopBrowserHostWindow {
 
   isDestroyed(): boolean {
     return this.destroyed;
+  }
+
+  isFullScreen(): boolean {
+    return this.fullScreen;
+  }
+
+  setFullScreen(fullScreen: boolean): void {
+    this.fullScreenCalls.push(fullScreen);
+    this.fullScreen = fullScreen;
   }
 }
 
@@ -1001,7 +1320,9 @@ function downloadPayloads(
   hostWindow: FakeHostWindow,
 ): BbDesktopBrowserDownload[] {
   return hostWindow.webContents.sentMessages
-    .filter((message) => message.channel === BB_DESKTOP_BROWSER_DOWNLOAD_CHANNEL)
+    .filter(
+      (message) => message.channel === BB_DESKTOP_BROWSER_DOWNLOAD_CHANNEL,
+    )
     .map((message) => message.payload as BbDesktopBrowserDownload);
 }
 
@@ -2413,6 +2734,13 @@ describe("DesktopBrowserViewManager", () => {
     // Write-only clipboard lets in-page copy buttons work; read and every
     // device/capability permission stay denied.
     expect(isAllowedBrowserPermission("clipboard-sanitized-write")).toBe(true);
+    // A video's fullscreen button asks for this one. Denying it does not hide
+    // the control, it makes it do nothing.
+    expect(isAllowedBrowserPermission("fullscreen")).toBe(true);
+    // ...and this one stays denied precisely because fullscreen is allowed: it
+    // is what would let a page keep the Escape that gets the user out.
+    expect(isAllowedBrowserPermission("keyboardLock")).toBe(false);
+    expect(isAllowedBrowserPermission("pointerLock")).toBe(false);
     expect(isAllowedBrowserPermission("clipboard-read")).toBe(false);
     expect(isAllowedBrowserPermission("media")).toBe(false);
     expect(isAllowedBrowserPermission("notifications")).toBe(false);
@@ -2893,10 +3221,7 @@ describe("DesktopBrowserViewManager dialogs", () => {
       webContents.debugger.commands
         .filter((command) => command.method === "Page.handleJavaScriptDialog")
         .map((command) => command.params),
-    ).toEqual([
-      { accept: true, promptText: "Konstantin" },
-      { accept: true },
-    ]);
+    ).toEqual([{ accept: true, promptText: "Konstantin" }, { accept: true }]);
   });
 
   it("refuses to answer a tab that has no dialog open", async () => {
@@ -3352,7 +3677,9 @@ describe("DesktopBrowserViewManager observations", () => {
     webContents: ReturnType<typeof requireFakeView>["webContents"];
   }
 
-  function attachTabForObservations(url = "https://example.com/"): ObservationHarness {
+  function attachTabForObservations(
+    url = "https://example.com/",
+  ): ObservationHarness {
     const manager = createDesktopBrowserViewManager({
       partition: "persist:test",
     });
@@ -3495,11 +3822,20 @@ describe("DesktopBrowserViewManager observations", () => {
 
     const result = await manager.observe({
       hostWindow,
-      request: { tabId: "browser:a", observation: { kind: "console", limit: 10 } },
+      request: {
+        tabId: "browser:a",
+        observation: { kind: "console", limit: 10 },
+      },
     });
 
-    expect(result).toMatchObject({ ok: true, kind: "console", droppedCount: 0 });
-    expect(result.ok && result.kind === "console" ? result.entries : []).toEqual([
+    expect(result).toMatchObject({
+      ok: true,
+      kind: "console",
+      droppedCount: 0,
+    });
+    expect(
+      result.ok && result.kind === "console" ? result.entries : [],
+    ).toEqual([
       expect.objectContaining({ level: "error", text: "boom", line: 12 }),
       expect.objectContaining({ level: "info", text: "hello" }),
     ]);
@@ -3513,7 +3849,10 @@ describe("DesktopBrowserViewManager observations", () => {
 
     const result = await manager.observe({
       hostWindow,
-      request: { tabId: "browser:a", observation: { kind: "console", limit: 10 } },
+      request: {
+        tabId: "browser:a",
+        observation: { kind: "console", limit: 10 },
+      },
     });
 
     expect(
@@ -3556,7 +3895,10 @@ describe("DesktopBrowserViewManager observations", () => {
 
     const result = await manager.observe({
       hostWindow,
-      request: { tabId: "browser:a", observation: { kind: "network", limit: 50 } },
+      request: {
+        tabId: "browser:a",
+        observation: { kind: "network", limit: 50 },
+      },
     });
 
     expect(
@@ -3591,7 +3933,10 @@ describe("DesktopBrowserViewManager observations", () => {
 
     const result = await manager.observe({
       hostWindow,
-      request: { tabId: "browser:a", observation: { kind: "console", limit: 1 } },
+      request: {
+        tabId: "browser:a",
+        observation: { kind: "console", limit: 1 },
+      },
     });
 
     expect(result).toMatchObject({ droppedCount: 2 });
@@ -3643,7 +3988,9 @@ describe("DesktopBrowserViewManager storage", () => {
     webContents: ReturnType<typeof requireFakeView>["webContents"];
   }
 
-  function attachTabForStorage(url = "https://example.com/app"): StorageHarness {
+  function attachTabForStorage(
+    url = "https://example.com/app",
+  ): StorageHarness {
     const manager = createDesktopBrowserViewManager({
       partition: "persist:test",
     });
@@ -3964,9 +4311,7 @@ describe("DesktopBrowserViewManager control", () => {
       method: "Runtime.evaluate",
       params: { expression: "globalThis" },
     });
-    expect(
-      commandsOf(webContents, "Page.createIsolatedWorld"),
-    ).toHaveLength(0);
+    expect(commandsOf(webContents, "Page.createIsolatedWorld")).toHaveLength(0);
     expect(result).toMatchObject({
       ok: true,
       kind: "evaluated",
@@ -4127,9 +4472,11 @@ describe("DesktopBrowserViewManager control", () => {
     });
     // Every paused request has to be answered: an unanswered one is a page that
     // never finishes loading.
-    expect(commandsOf(webContents, "Fetch.continueRequest")[0]?.params).toEqual({
-      requestId: "req-2",
-    });
+    expect(commandsOf(webContents, "Fetch.continueRequest")[0]?.params).toEqual(
+      {
+        requestId: "req-2",
+      },
+    );
 
     const listed = await manager.control({
       hostWindow,
@@ -4256,7 +4603,10 @@ describe("DesktopBrowserViewManager control", () => {
     await expect(
       manager.control({
         hostWindow,
-        request: { tabId: "browser:a", operation: { kind: "mouse-move", x: 1, y: 1 } },
+        request: {
+          tabId: "browser:a",
+          operation: { kind: "mouse-move", x: 1, y: 1 },
+        },
       }),
     ).resolves.toMatchObject({ ok: false, reason: "no-page" });
   });
@@ -4353,11 +4703,15 @@ describe("DesktopBrowserViewManager recording", () => {
     await expect(
       manager.record({
         hostWindow,
-        request: { tabId: "browser:a", operation: { kind: "video-start", fps: 5 } },
+        request: {
+          tabId: "browser:a",
+          operation: { kind: "video-start", fps: 5 },
+        },
       }),
     ).resolves.toMatchObject({ ok: true, kind: "recording", active: true });
-    expect(commandsNamed(webContents, "Page.startScreencast")[0]?.params)
-      .toMatchObject({ format: "jpeg", everyNthFrame: 1 });
+    expect(
+      commandsNamed(webContents, "Page.startScreencast")[0]?.params,
+    ).toMatchObject({ format: "jpeg", everyNthFrame: 1 });
 
     sendFrame(webContents, "one", 0);
     sendFrame(webContents, "two", 400);
@@ -4383,7 +4737,10 @@ describe("DesktopBrowserViewManager recording", () => {
     const { hostWindow, manager, webContents } = attachTabForRecording();
     await manager.record({
       hostWindow,
-      request: { tabId: "browser:a", operation: { kind: "video-start", fps: 1 } },
+      request: {
+        tabId: "browser:a",
+        operation: { kind: "video-start", fps: 1 },
+      },
     });
 
     sendFrame(webContents, "one", 0);
@@ -4393,7 +4750,9 @@ describe("DesktopBrowserViewManager recording", () => {
     // The rule that decides whether a recording is a film or a single frame:
     // Chromium sends the next frame only once the last is acknowledged, so a
     // frame dropped for pacing must still be answered.
-    expect(commandsNamed(webContents, "Page.screencastFrameAck")).toHaveLength(3);
+    expect(commandsNamed(webContents, "Page.screencastFrameAck")).toHaveLength(
+      3,
+    );
     await expect(
       manager.record({
         hostWindow,
@@ -4406,7 +4765,10 @@ describe("DesktopBrowserViewManager recording", () => {
     const { hostWindow, manager } = attachTabForRecording();
     await manager.record({
       hostWindow,
-      request: { tabId: "browser:a", operation: { kind: "video-start", fps: 5 } },
+      request: {
+        tabId: "browser:a",
+        operation: { kind: "video-start", fps: 5 },
+      },
     });
 
     vi.setSystemTime(2_000);
@@ -4443,13 +4805,19 @@ describe("DesktopBrowserViewManager recording", () => {
 
     await manager.record({
       hostWindow,
-      request: { tabId: "browser:a", operation: { kind: "video-start", fps: 5 } },
+      request: {
+        tabId: "browser:a",
+        operation: { kind: "video-start", fps: 5 },
+      },
     });
 
     await expect(
       manager.record({
         hostWindow,
-        request: { tabId: "browser:a", operation: { kind: "video-start", fps: 5 } },
+        request: {
+          tabId: "browser:a",
+          operation: { kind: "video-start", fps: 5 },
+        },
       }),
     ).resolves.toMatchObject({ ok: false, reason: "already-recording" });
   });
@@ -4475,14 +4843,19 @@ describe("DesktopBrowserViewManager recording", () => {
 
     // Two listeners would answer the same frame twice, and the second answer
     // fails against a frame the first already acknowledged.
-    expect(commandsNamed(webContents, "Page.screencastFrameAck")).toHaveLength(1);
+    expect(commandsNamed(webContents, "Page.screencastFrameAck")).toHaveLength(
+      1,
+    );
   });
 
   it("hands the frames back even when the stop command fails", async () => {
     const { hostWindow, manager, webContents } = attachTabForRecording();
     await manager.record({
       hostWindow,
-      request: { tabId: "browser:a", operation: { kind: "video-start", fps: 5 } },
+      request: {
+        tabId: "browser:a",
+        operation: { kind: "video-start", fps: 5 },
+      },
     });
     sendFrame(webContents, "one", 0);
     webContents.debugger.failures.set(
@@ -4507,7 +4880,10 @@ describe("DesktopBrowserViewManager recording", () => {
     const { hostWindow, manager, webContents } = attachTabForRecording();
     await manager.record({
       hostWindow,
-      request: { tabId: "browser:a", operation: { kind: "video-start", fps: 5 } },
+      request: {
+        tabId: "browser:a",
+        operation: { kind: "video-start", fps: 5 },
+      },
     });
 
     webContents.debugger.attached = false;
@@ -4531,7 +4907,10 @@ describe("DesktopBrowserViewManager recording", () => {
     await expect(
       manager.record({
         hostWindow,
-        request: { tabId: "browser:a", operation: { kind: "video-start", fps: 5 } },
+        request: {
+          tabId: "browser:a",
+          operation: { kind: "video-start", fps: 5 },
+        },
       }),
     ).resolves.toMatchObject({ ok: false, reason: "no-page" });
     await expect(
@@ -4840,7 +5219,9 @@ describe("DesktopBrowserViewManager full-page captures", () => {
 
   it("says when DevTools has the tab, instead of quietly capturing the viewport", async () => {
     const { hostWindow, manager, webContents } = attachTabForFullPage();
-    webContents.debugger.attachFailure = new Error("Another debugger is attached");
+    webContents.debugger.attachFailure = new Error(
+      "Another debugger is attached",
+    );
 
     await expect(
       manager.captureFullPage({
@@ -4850,7 +5231,8 @@ describe("DesktopBrowserViewManager full-page captures", () => {
     ).resolves.toMatchObject({
       ok: false,
       reason: "debugger-unavailable",
-      message: "Could not attach the browser debugger: Another debugger is attached",
+      message:
+        "Could not attach the browser debugger: Another debugger is attached",
     });
   });
 
@@ -5050,9 +5432,7 @@ describe("browser download actions", () => {
   }
 
   /** A manager that has written exactly one download. */
-  function harnessWithOneDownload(
-    openFailure = "",
-  ): DownloadActionHarness {
+  function harnessWithOneDownload(openFailure = ""): DownloadActionHarness {
     const openCalls: string[] = [];
     const revealCalls: string[] = [];
     const manager = createDesktopBrowserViewManager({
@@ -5240,5 +5620,1202 @@ describe("browser chrome overlay", () => {
     await Promise.resolve();
 
     expect(view.visible).toBe(false);
+  });
+});
+
+describe("find in page", () => {
+  function attachVisibleTab(): {
+    hostWindow: FakeHostWindow;
+    manager: DesktopBrowserViewManager;
+    view: (typeof electronMock.fakeViews)[number];
+  } {
+    const manager = createDesktopBrowserViewManager({
+      partition: "persist:test",
+    });
+    const hostWindow = new FakeHostWindow({
+      contentBounds: { width: 900, height: 600 },
+      webContentsId: 1,
+    });
+    attachBrowserTab({
+      hostWindow,
+      manager,
+      tabId: "browser:a",
+      url: "https://example.com/",
+    });
+    manager.setVisible({
+      hostWindow,
+      request: { tabId: "browser:a", visible: true },
+    });
+    return { hostWindow, manager, view: requireFakeView(0) };
+  }
+
+  function findResults(hostWindow: FakeHostWindow): unknown[] {
+    return hostWindow.webContents.sentMessages
+      .filter(
+        (message) => message.channel === BB_DESKTOP_BROWSER_FIND_RESULT_CHANNEL,
+      )
+      .map((message) => message.payload);
+  }
+
+  it("starts a session for a query and steps through it without restarting", () => {
+    const { hostWindow, manager, view } = attachVisibleTab();
+
+    manager.find({
+      hostWindow,
+      request: { tabId: "browser:a", action: "start", query: "needle" },
+    });
+    manager.find({
+      hostWindow,
+      request: { tabId: "browser:a", action: "next", query: "needle" },
+    });
+    manager.find({
+      hostWindow,
+      request: { tabId: "browser:a", action: "previous", query: "needle" },
+    });
+
+    expect(view.webContents.findInPageCalls).toEqual([
+      { text: "needle", options: { findNext: true, forward: true } },
+      { text: "needle", options: { findNext: false, forward: true } },
+      { text: "needle", options: { findNext: false, forward: false } },
+    ]);
+  });
+
+  // A step with nothing running behind it is a search, not a no-op: the first
+  // Enter after a navigation ended the session has to find something.
+  it("treats a step with no session as a new search", () => {
+    const { hostWindow, manager, view } = attachVisibleTab();
+
+    manager.find({
+      hostWindow,
+      request: { tabId: "browser:a", action: "next", query: "needle" },
+    });
+
+    expect(view.webContents.findInPageCalls).toEqual([
+      { text: "needle", options: { findNext: true, forward: true } },
+    ]);
+  });
+
+  it("pushes the count for the running query", () => {
+    const { hostWindow, manager, view } = attachVisibleTab();
+    manager.find({
+      hostWindow,
+      request: { tabId: "browser:a", action: "start", query: "needle" },
+    });
+
+    view.webContents.emitFoundInPage({
+      requestId: 1,
+      activeMatchOrdinal: 1,
+      matches: 3,
+      finalUpdate: false,
+    });
+    view.webContents.emitFoundInPage({
+      requestId: 1,
+      activeMatchOrdinal: 1,
+      matches: 12,
+      finalUpdate: true,
+    });
+
+    expect(findResults(hostWindow)).toEqual([
+      {
+        tabId: "browser:a",
+        activeMatchOrdinal: 1,
+        matches: 3,
+        finalUpdate: false,
+      },
+      {
+        tabId: "browser:a",
+        activeMatchOrdinal: 1,
+        matches: 12,
+        finalUpdate: true,
+      },
+    ]);
+  });
+
+  // The user typed another character; the old query keeps answering. Its count
+  // must never land on the new one.
+  it("drops results belonging to a superseded query", () => {
+    const { hostWindow, manager, view } = attachVisibleTab();
+    manager.find({
+      hostWindow,
+      request: { tabId: "browser:a", action: "start", query: "need" },
+    });
+    manager.find({
+      hostWindow,
+      request: { tabId: "browser:a", action: "start", query: "needle" },
+    });
+
+    view.webContents.emitFoundInPage({
+      requestId: 1,
+      activeMatchOrdinal: 4,
+      matches: 40,
+      finalUpdate: true,
+    });
+    view.webContents.emitFoundInPage({
+      requestId: 2,
+      activeMatchOrdinal: 1,
+      matches: 2,
+      finalUpdate: true,
+    });
+
+    expect(findResults(hostWindow)).toEqual([
+      {
+        tabId: "browser:a",
+        activeMatchOrdinal: 1,
+        matches: 2,
+        finalUpdate: true,
+      },
+    ]);
+  });
+
+  it("ends the session and hands the keyboard back on stop", () => {
+    const { hostWindow, manager, view } = attachVisibleTab();
+    manager.find({
+      hostWindow,
+      request: { tabId: "browser:a", action: "start", query: "needle" },
+    });
+    const focusCallsBefore = view.webContents.focusCalls;
+
+    manager.find({
+      hostWindow,
+      request: { tabId: "browser:a", action: "stop", query: "" },
+    });
+
+    expect(view.webContents.stopFindInPageCalls).toEqual(["clearSelection"]);
+    expect(view.webContents.focusCalls).toBe(focusCallsBefore + 1);
+  });
+
+  // Clearing the field is "stop searching", not "search for nothing" —
+  // Chromium's own find refuses an empty string.
+  it("reads an empty query as the end of the session", () => {
+    const { hostWindow, manager, view } = attachVisibleTab();
+    manager.find({
+      hostWindow,
+      request: { tabId: "browser:a", action: "start", query: "needle" },
+    });
+
+    manager.find({
+      hostWindow,
+      request: { tabId: "browser:a", action: "start", query: "" },
+    });
+
+    expect(view.webContents.findInPageCalls).toHaveLength(1);
+    expect(view.webContents.stopFindInPageCalls).toEqual(["clearSelection"]);
+  });
+
+  // A new document ends Chromium's session with it, so a straggling result from
+  // the old page must not be pushed as if it described the new one.
+  it("forgets the session when the tab navigates", () => {
+    const { hostWindow, manager, view } = attachVisibleTab();
+    manager.find({
+      hostWindow,
+      request: { tabId: "browser:a", action: "start", query: "needle" },
+    });
+
+    view.webContents.emitDidNavigate("https://example.com/next");
+    view.webContents.emitFoundInPage({
+      requestId: 1,
+      activeMatchOrdinal: 1,
+      matches: 9,
+      finalUpdate: true,
+    });
+
+    expect(findResults(hostWindow)).toEqual([]);
+  });
+});
+
+describe("questions the network asks", () => {
+  function attachVisibleTab(): {
+    hostWindow: FakeHostWindow;
+    manager: DesktopBrowserViewManager;
+    view: (typeof electronMock.fakeViews)[number];
+  } {
+    const manager = createDesktopBrowserViewManager({
+      partition: "persist:test",
+    });
+    const hostWindow = new FakeHostWindow({
+      contentBounds: { width: 900, height: 600 },
+      webContentsId: 1,
+    });
+    attachBrowserTab({
+      hostWindow,
+      manager,
+      tabId: "browser:a",
+      url: "https://example.com/",
+    });
+    manager.setVisible({
+      hostWindow,
+      request: { tabId: "browser:a", visible: true },
+    });
+    return { hostWindow, manager, view: requireFakeView(0) };
+  }
+
+  function promptPushes(hostWindow: FakeHostWindow): unknown[] {
+    return hostWindow.webContents.sentMessages
+      .filter(
+        (message) => message.channel === BB_DESKTOP_BROWSER_PAGE_PROMPT_CHANNEL,
+      )
+      .map((message) => message.payload);
+  }
+
+  function openPrompt(hostWindow: FakeHostWindow): { id: string } | null {
+    const pushed = promptPushes(hostWindow).at(-1) as
+      | { prompt: { id: string } | null }
+      | undefined;
+    return pushed?.prompt ?? null;
+  }
+
+  describe("basic auth", () => {
+    // The dead end this closes: Electron cancels every challenge on its own, so
+    // the page simply failed with nothing said.
+    it("asks, and hands over what the user typed", async () => {
+      const { hostWindow, manager, view } = attachVisibleTab();
+
+      const login = view.webContents.emitLogin({
+        isRequestForNavigation: true,
+      });
+      expect(login.called).toBe(false);
+      expect(promptPushes(hostWindow).at(-1)).toMatchObject({
+        tabId: "browser:a",
+        prompt: { kind: "auth", host: "example.com", insecure: false },
+      });
+
+      const prompt = openPrompt(hostWindow);
+      await manager.respondToPagePrompt({
+        hostWindow,
+        request: {
+          tabId: "browser:a",
+          id: prompt?.id ?? "",
+          answer: { kind: "credentials", username: "ada", password: "hunter2" },
+        },
+      });
+
+      expect(login.credentials).toEqual(["ada", "hunter2"]);
+    });
+
+    it("cancels the request when the user declines", async () => {
+      const { hostWindow, manager, view } = attachVisibleTab();
+      const login = view.webContents.emitLogin({
+        isRequestForNavigation: true,
+      });
+
+      await manager.respondToPagePrompt({
+        hostWindow,
+        request: {
+          tabId: "browser:a",
+          id: openPrompt(hostWindow)?.id ?? "",
+          answer: { kind: "cancel" },
+        },
+      });
+
+      // Electron reads "no username" as a cancel, which is what a declined
+      // prompt has to mean.
+      expect(login.called).toBe(true);
+      expect(login.credentials).toBeNull();
+    });
+
+    // The phishing shape: any page can embed an image from an attacker's server
+    // and have it answer 401, putting a password box over someone else's site.
+    it("refuses a cross-origin subresource without asking", () => {
+      const { hostWindow, view } = attachVisibleTab();
+
+      const login = view.webContents.emitLogin({
+        isRequestForNavigation: false,
+        url: "https://cdn.evil.test/pixel.png",
+        authInfo: { host: "cdn.evil.test" },
+      });
+
+      expect(login.called).toBe(true);
+      expect(login.credentials).toBeNull();
+      expect(promptPushes(hostWindow)).toEqual([]);
+    });
+
+    it("asks for the page's own subresources", () => {
+      const { hostWindow, view } = attachVisibleTab();
+
+      view.webContents.emitLogin({
+        isRequestForNavigation: false,
+        url: "https://example.com/assets/app.css",
+      });
+
+      expect(openPrompt(hostWindow)).toMatchObject({ kind: "auth" });
+    });
+
+    it("refuses a proxy challenge outright", () => {
+      const { hostWindow, view } = attachVisibleTab();
+
+      const login = view.webContents.emitLogin({
+        isRequestForNavigation: true,
+        authInfo: { isProxy: true },
+      });
+
+      expect(login.called).toBe(true);
+      expect(promptPushes(hostWindow)).toEqual([]);
+    });
+
+    // A protected directory challenges once per request; one password answers
+    // the page, its stylesheet and its images together.
+    it("settles every request for the same realm with one answer", async () => {
+      const { hostWindow, manager, view } = attachVisibleTab();
+      const first = view.webContents.emitLogin({
+        isRequestForNavigation: true,
+      });
+      const second = view.webContents.emitLogin({
+        isRequestForNavigation: false,
+        url: "https://example.com/style.css",
+      });
+
+      // Only one question was asked.
+      expect(
+        promptPushes(hostWindow).filter(
+          (push) => (push as { prompt: unknown }).prompt !== null,
+        ),
+      ).toHaveLength(1);
+
+      await manager.respondToPagePrompt({
+        hostWindow,
+        request: {
+          tabId: "browser:a",
+          id: openPrompt(hostWindow)?.id ?? "",
+          answer: { kind: "credentials", username: "ada", password: "hunter2" },
+        },
+      });
+
+      expect(first.credentials).toEqual(["ada", "hunter2"]);
+      expect(second.credentials).toEqual(["ada", "hunter2"]);
+    });
+
+    it("says so when the credentials would go in the clear", () => {
+      const { hostWindow, view } = attachVisibleTab();
+
+      view.webContents.emitLogin({
+        isRequestForNavigation: true,
+        url: "http://example.com/private",
+        authInfo: { port: 80 },
+      });
+
+      expect(openPrompt(hostWindow)).toMatchObject({ insecure: true });
+    });
+  });
+
+  describe("certificate errors", () => {
+    it("asks about the page's own certificate and proceeds when told to", async () => {
+      const { hostWindow, manager, view } = attachVisibleTab();
+
+      const first = view.webContents.emitCertificateError({});
+      expect(first.trusted).toBeNull();
+      expect(openPrompt(hostWindow)).toMatchObject({
+        kind: "certificate",
+        host: "example.com",
+        errorCode: "net::ERR_CERT_AUTHORITY_INVALID",
+        issuerName: "Test CA",
+      });
+
+      await manager.respondToPagePrompt({
+        hostWindow,
+        request: {
+          tabId: "browser:a",
+          id: openPrompt(hostWindow)?.id ?? "",
+          answer: { kind: "proceed" },
+        },
+      });
+
+      expect(first.trusted).toBe(true);
+    });
+
+    // Accepting once is accepting for the session — otherwise every subresource
+    // on a dev box with a self-signed certificate is another dialog.
+    it("remembers an accepted certificate for the same host", async () => {
+      const { hostWindow, manager, view } = attachVisibleTab();
+      view.webContents.emitCertificateError({});
+      await manager.respondToPagePrompt({
+        hostWindow,
+        request: {
+          tabId: "browser:a",
+          id: openPrompt(hostWindow)?.id ?? "",
+          answer: { kind: "proceed" },
+        },
+      });
+
+      const again = view.webContents.emitCertificateError({
+        isMainFrame: false,
+      });
+
+      expect(again.trusted).toBe(true);
+    });
+
+    // A different certificate from the same host is a different decision.
+    it("asks again when the certificate changes", async () => {
+      const { hostWindow, manager, view } = attachVisibleTab();
+      view.webContents.emitCertificateError({});
+      await manager.respondToPagePrompt({
+        hostWindow,
+        request: {
+          tabId: "browser:a",
+          id: openPrompt(hostWindow)?.id ?? "",
+          answer: { kind: "proceed" },
+        },
+      });
+
+      const swapped = view.webContents.emitCertificateError({
+        certificate: { fingerprint: "sha256/BBBB" },
+      });
+
+      expect(swapped.trusted).toBeNull();
+      expect(openPrompt(hostWindow)).toMatchObject({
+        fingerprint: "sha256/BBBB",
+      });
+    });
+
+    // A user cannot judge a subresource they cannot see.
+    it("refuses a subresource's bad certificate without asking", () => {
+      const { hostWindow, view } = attachVisibleTab();
+
+      const result = view.webContents.emitCertificateError({
+        isMainFrame: false,
+      });
+
+      expect(result.trusted).toBe(false);
+      expect(promptPushes(hostWindow)).toEqual([]);
+    });
+  });
+
+  describe("client certificates", () => {
+    // Electron's default hands over the first certificate in the store, which
+    // is a credential chosen for the user by position.
+    it("asks which certificate to present", async () => {
+      const { hostWindow, manager, view } = attachVisibleTab();
+      const list = [
+        {
+          fingerprint: "a",
+          issuerName: "Corp CA",
+          subjectName: "ada@corp",
+          validExpiry: 1_800_000_000,
+          validStart: 1_700_000_000,
+        },
+        {
+          fingerprint: "b",
+          issuerName: "Corp CA",
+          subjectName: "ada@other",
+          validExpiry: 1_800_000_000,
+          validStart: 1_700_000_000,
+        },
+      ];
+
+      const selection = view.webContents.emitSelectClientCertificate(list);
+      expect(selection.called).toBe(false);
+      expect(openPrompt(hostWindow)).toMatchObject({
+        kind: "client-certificate",
+        certificates: [
+          { index: 0, subjectName: "ada@corp" },
+          { index: 1, subjectName: "ada@other" },
+        ],
+      });
+
+      await manager.respondToPagePrompt({
+        hostWindow,
+        request: {
+          tabId: "browser:a",
+          id: openPrompt(hostWindow)?.id ?? "",
+          answer: { kind: "client-certificate", index: 1 },
+        },
+      });
+
+      expect(selection.chosen).toBe(list[1]);
+    });
+  });
+
+  describe("answering", () => {
+    it("hides the page while a question is open and reveals it after", async () => {
+      const { hostWindow, manager, view } = attachVisibleTab();
+      expect(view.visible).toBe(true);
+
+      view.webContents.emitLogin({ isRequestForNavigation: true });
+      expect(view.visible).toBe(false);
+
+      await manager.respondToPagePrompt({
+        hostWindow,
+        request: {
+          tabId: "browser:a",
+          id: openPrompt(hostWindow)?.id ?? "",
+          answer: { kind: "cancel" },
+        },
+      });
+
+      expect(view.visible).toBe(true);
+      expect(promptPushes(hostWindow).at(-1)).toEqual({
+        tabId: "browser:a",
+        prompt: null,
+      });
+    });
+
+    // A human can be typing while the tab moves on; the answer they finish is
+    // for a question that is no longer being asked.
+    it("drops an answer that names a prompt that is gone", async () => {
+      const { hostWindow, manager, view } = attachVisibleTab();
+      view.webContents.emitLogin({ isRequestForNavigation: true });
+
+      await expect(
+        manager.respondToPagePrompt({
+          hostWindow,
+          request: {
+            tabId: "browser:a",
+            id: "page-prompt-999",
+            answer: { kind: "cancel" },
+          },
+        }),
+      ).resolves.toBe(false);
+      expect(view.visible).toBe(false);
+    });
+
+    // The shapes differ because the decisions do: "proceed" is about a
+    // certificate and must never turn into a login.
+    it("treats an answer of the wrong shape as a refusal", async () => {
+      const { hostWindow, manager, view } = attachVisibleTab();
+      const login = view.webContents.emitLogin({
+        isRequestForNavigation: true,
+      });
+
+      await manager.respondToPagePrompt({
+        hostWindow,
+        request: {
+          tabId: "browser:a",
+          id: openPrompt(hostWindow)?.id ?? "",
+          answer: { kind: "proceed" },
+        },
+      });
+
+      expect(login.credentials).toBeNull();
+      expect(login.called).toBe(true);
+    });
+
+    it("refuses a second question while one is open", () => {
+      const { hostWindow, view } = attachVisibleTab();
+      view.webContents.emitLogin({ isRequestForNavigation: true });
+
+      const certificate = view.webContents.emitCertificateError({});
+
+      expect(certificate.trusted).toBe(false);
+      expect(
+        promptPushes(hostWindow).filter(
+          (push) => (push as { prompt: unknown }).prompt !== null,
+        ),
+      ).toHaveLength(1);
+    });
+  });
+});
+
+describe("fullscreen", () => {
+  function attachVisibleTab(): {
+    hostWindow: FakeHostWindow;
+    manager: DesktopBrowserViewManager;
+    view: (typeof electronMock.fakeViews)[number];
+  } {
+    const manager = createDesktopBrowserViewManager({
+      partition: "persist:test",
+    });
+    const hostWindow = new FakeHostWindow({
+      contentBounds: { width: 900, height: 600 },
+      webContentsId: 1,
+    });
+    attachBrowserTab({
+      hostWindow,
+      manager,
+      tabId: "browser:a",
+      url: "https://example.com/",
+    });
+    return { hostWindow, manager, view: requireFakeView(0) };
+  }
+
+  const FULL_WINDOW = { x: 0, y: 0, width: 900, height: 600 };
+  const PANEL = { x: 100, y: 50, width: 500, height: 350 };
+
+  // Electron's default for HTML fullscreen is to put the whole app window into
+  // the OS's fullscreen. The page asked for a big video, not for the user's
+  // window state, so the view expands instead.
+  it("does not let a page resize the window", () => {
+    const { view } = attachVisibleTab();
+
+    expect(view.options.webPreferences).toMatchObject({
+      disableHtmlFullscreenWindowResize: true,
+    });
+  });
+
+  it("gives a page that asked for fullscreen the whole window, and takes it back", () => {
+    const { view } = attachVisibleTab();
+
+    view.webContents.emitHtmlFullScreen(true);
+    expect(view.boundsCalls.at(-1)).toEqual(FULL_WINDOW);
+
+    view.webContents.emitHtmlFullScreen(false);
+    expect(view.boundsCalls.at(-1)).toEqual(PANEL);
+  });
+
+  // What a video's fullscreen button does in Chromium: the window goes to the
+  // OS's full screen too, and comes back when the video leaves it.
+  it("takes the window to the OS's full screen with the page", () => {
+    const { hostWindow, view } = attachVisibleTab();
+
+    view.webContents.emitHtmlFullScreen(true);
+    expect(hostWindow.fullScreenCalls).toEqual([true]);
+
+    view.webContents.emitHtmlFullScreen(false);
+    expect(hostWindow.fullScreenCalls).toEqual([true, false]);
+  });
+
+  // The user put the window there; a video ending is not a reason to drop them
+  // out of it.
+  it("leaves a window the user had already made full screen alone", () => {
+    const { hostWindow, view } = attachVisibleTab();
+    hostWindow.fullScreen = true;
+
+    view.webContents.emitHtmlFullScreen(true);
+    view.webContents.emitHtmlFullScreen(false);
+
+    expect(hostWindow.fullScreenCalls).toEqual([]);
+    expect(hostWindow.fullScreen).toBe(true);
+  });
+
+  it("gives the window back when the tab closes mid-video", () => {
+    const { hostWindow, manager, view } = attachVisibleTab();
+    view.webContents.emitHtmlFullScreen(true);
+
+    manager.detach({ hostWindow, tabId: "browser:a" });
+
+    expect(hostWindow.fullScreenCalls).toEqual([true, false]);
+  });
+
+  // The user's own Cmd+Shift+F is gated on the window already being full
+  // screen, so it has no business moving the window.
+  it("never moves the window for the user's own request", () => {
+    const { hostWindow, manager } = attachVisibleTab();
+    hostWindow.fullScreen = true;
+
+    manager.setFullscreen({
+      hostWindow,
+      request: { tabId: "browser:a", fullscreen: true },
+    });
+    manager.setFullscreen({
+      hostWindow,
+      request: { tabId: "browser:a", fullscreen: false },
+    });
+
+    expect(hostWindow.fullScreenCalls).toEqual([]);
+  });
+
+  // The renderer keeps measuring and pushing its panel rect while a video is
+  // fullscreen; none of it may shrink the view back.
+  it("ignores the renderer's rect while fullscreen", () => {
+    const { hostWindow, manager, view } = attachVisibleTab();
+    view.webContents.emitHtmlFullScreen(true);
+
+    manager.setBounds({
+      hostWindow,
+      request: {
+        tabId: "browser:a",
+        bounds: { x: 10, y: 10, width: 20, height: 20 },
+      },
+    });
+
+    expect(view.boundsCalls.at(-1)).toEqual(FULL_WINDOW);
+    // ...and the rect it pushed is what the page comes back to.
+    view.webContents.emitHtmlFullScreen(false);
+    expect(view.boundsCalls.at(-1)).toEqual({
+      x: 10,
+      y: 10,
+      width: 20,
+      height: 20,
+    });
+  });
+
+  it("expands for the user's own request too", () => {
+    const { hostWindow, manager, view } = attachVisibleTab();
+
+    manager.setFullscreen({
+      hostWindow,
+      request: { tabId: "browser:a", fullscreen: true },
+    });
+    expect(view.boundsCalls.at(-1)).toEqual(FULL_WINDOW);
+
+    manager.setFullscreen({
+      hostWindow,
+      request: { tabId: "browser:a", fullscreen: false },
+    });
+    expect(view.boundsCalls.at(-1)).toEqual(PANEL);
+  });
+
+  // Two different decisions: a video leaving its own fullscreen must not undo
+  // the one the user asked for.
+  it("keeps the user's fullscreen when the page leaves its own", () => {
+    const { hostWindow, manager, view } = attachVisibleTab();
+    manager.setFullscreen({
+      hostWindow,
+      request: { tabId: "browser:a", fullscreen: true },
+    });
+
+    view.webContents.emitHtmlFullScreen(true);
+    view.webContents.emitHtmlFullScreen(false);
+
+    expect(view.boundsCalls.at(-1)).toEqual(FULL_WINDOW);
+  });
+});
+
+describe("real popups", () => {
+  const OPENER = "browser:a";
+
+  function attachOpener(options: { claimsPopups: boolean }): {
+    hostWindow: FakeHostWindow;
+    manager: DesktopBrowserViewManager;
+    view: (typeof electronMock.fakeViews)[number];
+  } {
+    const manager = createDesktopBrowserViewManager({
+      partition: "persist:test",
+    });
+    const hostWindow = new FakeHostWindow({
+      contentBounds: { width: 900, height: 600 },
+      webContentsId: 1,
+    });
+    attachBrowserTab({
+      hostWindow,
+      manager,
+      tabId: OPENER,
+      url: "https://example.com/",
+    });
+    if (options.claimsPopups) {
+      manager.setPopupTabs({ hostWindow, request: { tabIds: [OPENER] } });
+    }
+    return { hostWindow, manager, view: requireFakeView(0) };
+  }
+
+  function popupPushes(hostWindow: FakeHostWindow): unknown[] {
+    return hostWindow.webContents.sentMessages
+      .filter((message) => message.channel === BB_DESKTOP_BROWSER_POPUP_CHANNEL)
+      .map((message) => message.payload);
+  }
+
+  /** Open a popup the way Chromium does: ask, then build the window. */
+  function openPopup(
+    view: (typeof electronMock.fakeViews)[number],
+    url: string,
+    options: { webContents?: unknown } = {},
+  ): { contents: unknown; decision: { action: string } } {
+    const decision = view.webContents.emitWindowOpen(url);
+    const contents = decision.createWindow?.({
+      webPreferences: { sandbox: true },
+      ...options,
+    });
+    return { contents, decision };
+  }
+
+  // The whole point: `window.open()` returns a handle and the popup has a live
+  // opener, which is what an OAuth flow talks to.
+  it("lets a claimed tab open a real window, and names the tab for it", () => {
+    const { hostWindow, view } = attachOpener({ claimsPopups: true });
+
+    const { decision } = openPopup(view, "https://accounts.example.com/oauth");
+
+    expect(decision).toMatchObject({ action: "allow", outlivesOpener: false });
+    expect(popupPushes(hostWindow)).toEqual([
+      {
+        kind: "opened",
+        openerTabId: OPENER,
+        tabId: "browser-popup:1",
+        url: "https://accounts.example.com/oauth",
+      },
+    ]);
+  });
+
+  // The load-bearing line: Chromium already made the popup's webContents, and
+  // building a fresh one instead would produce a window with no opener that
+  // looks exactly the same.
+  it("adopts the webContents Electron passed rather than making one", () => {
+    const { view } = attachOpener({ claimsPopups: true });
+    const guest = electronMock.createFakeWebContents();
+
+    const { contents } = openPopup(view, "https://accounts.example.com/oauth", {
+      webContents: guest,
+    });
+
+    expect(contents).toBe(guest);
+  });
+
+  // The shape half the OAuth SDKs use: open a blank window, then write into it.
+  it("allows about:blank for a claimed tab", () => {
+    const { hostWindow, view } = attachOpener({ claimsPopups: true });
+
+    const { decision } = openPopup(view, "about:blank");
+
+    expect(decision.action).toBe("allow");
+    expect(popupPushes(hostWindow).at(-1)).toMatchObject({
+      url: "about:blank",
+    });
+  });
+
+  it("still refuses what the popup policy always refused", () => {
+    const { hostWindow, view } = attachOpener({ claimsPopups: true });
+
+    for (const url of [
+      "javascript:alert(1)",
+      "file:///etc/passwd",
+      "http://127.0.0.1:38886/",
+    ]) {
+      expect(view.webContents.emitWindowOpen(url).action).toBe("deny");
+    }
+    expect(popupPushes(hostWindow)).toEqual([]);
+  });
+
+  // A surface that has not claimed popups keeps the older behaviour, because a
+  // thread panel may send the link to the system browser instead.
+  it("denies and pushes a plain tab for an unclaimed tab", () => {
+    const { hostWindow, view } = attachOpener({ claimsPopups: false });
+
+    const decision = view.webContents.emitWindowOpen(
+      "https://example.com/docs",
+    );
+
+    expect(decision).toEqual({ action: "deny" });
+    expect(popupPushes(hostWindow)).toEqual([]);
+    expect(hostWindow.webContents.sentPayloads).toContainEqual({
+      tabId: OPENER,
+      url: "https://example.com/docs",
+    });
+  });
+
+  it("stops claiming a tab the renderer dropped", () => {
+    const { hostWindow, manager, view } = attachOpener({ claimsPopups: true });
+
+    manager.setPopupTabs({ hostWindow, request: { tabIds: [] } });
+
+    expect(
+      view.webContents.emitWindowOpen("https://accounts.example.com/oauth")
+        .action,
+    ).toBe("deny");
+  });
+
+  // A page churning popups is a page churning popups, opener or not.
+  it("holds real popups to the same rate limit", () => {
+    const { view } = attachOpener({ claimsPopups: true });
+
+    const actions: string[] = [];
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      actions.push(
+        view.webContents.emitWindowOpen(`https://example.com/${attempt}`)
+          .action,
+      );
+    }
+
+    expect(actions).toContain("allow");
+    expect(actions.at(-1)).toBe("deny");
+  });
+
+  // The popup arrived with its page. Loading the tab's URL into it would
+  // navigate away from the flow it was opened for.
+  it("places an adopted popup without loading into it", () => {
+    const { hostWindow, manager, view } = attachOpener({ claimsPopups: true });
+    openPopup(view, "https://accounts.example.com/oauth");
+    const popupView = requireFakeView(1);
+
+    manager.attach({
+      hostWindow,
+      request: {
+        tabId: "browser-popup:1",
+        url: "https://accounts.example.com/oauth",
+        bounds: { x: 0, y: 0, width: 400, height: 300 },
+        visible: true,
+      },
+    });
+
+    expect(popupView.webContents.loadURLCalls).toEqual([]);
+    expect(popupView.visible).toBe(true);
+    expect(popupView.boundsCalls.at(-1)).toEqual({
+      x: 0,
+      y: 0,
+      width: 400,
+      height: 300,
+    });
+  });
+
+  // How every OAuth flow ends. Only the shell sees it, so only the shell can
+  // say the tab is gone.
+  it("reports a popup that closed itself", () => {
+    const { hostWindow, view } = attachOpener({ claimsPopups: true });
+    openPopup(view, "https://accounts.example.com/oauth");
+
+    requireFakeView(1).webContents.emitDestroyed();
+
+    expect(popupPushes(hostWindow).at(-1)).toEqual({
+      kind: "closed",
+      tabId: "browser-popup:1",
+    });
+  });
+
+  // The renderer closing a tab is not news to the renderer.
+  it("says nothing when the renderer closes the tab itself", () => {
+    const { hostWindow, manager, view } = attachOpener({ claimsPopups: true });
+    openPopup(view, "https://accounts.example.com/oauth");
+
+    manager.detach({ hostWindow, tabId: "browser-popup:1" });
+    requireFakeView(1).webContents.emitDestroyed();
+
+    expect(popupPushes(hostWindow).filter((push) => push !== null)).toEqual([
+      {
+        kind: "opened",
+        openerTabId: OPENER,
+        tabId: "browser-popup:1",
+        url: "https://accounts.example.com/oauth",
+      },
+    ]);
+  });
+});
+
+describe("PDF", () => {
+  // One webPreferences flag decides whether a whole class of link works, and a
+  // later edit could flip it without anything failing loudly: `plugins` is what
+  // loads Chromium's PDF viewer, and without it a PDF link is not a page but a
+  // download — Chromium's fallback for a document it cannot display.
+  it("keeps Chromium's PDF viewer enabled", () => {
+    const manager = createDesktopBrowserViewManager({
+      partition: "persist:test",
+    });
+    attachBrowserTab({
+      hostWindow: new FakeHostWindow({
+        contentBounds: { width: 900, height: 600 },
+        webContentsId: 1,
+      }),
+      manager,
+      tabId: "browser:a",
+      url: "https://example.com/paper.pdf",
+    });
+
+    expect(requireFakeView(0).options.webPreferences).toMatchObject({
+      plugins: true,
+    });
+  });
+});
+
+describe("a page that stops answering", () => {
+  function attachTab(): {
+    hostWindow: FakeHostWindow;
+    view: (typeof electronMock.fakeViews)[number];
+  } {
+    const manager = createDesktopBrowserViewManager({
+      partition: "persist:test",
+    });
+    const hostWindow = new FakeHostWindow({
+      contentBounds: { width: 900, height: 600 },
+      webContentsId: 1,
+    });
+    attachBrowserTab({
+      hostWindow,
+      manager,
+      tabId: "browser:a",
+      url: "https://example.com/",
+    });
+    return { hostWindow, view: requireFakeView(0) };
+  }
+
+  function lastErrorText(hostWindow: FakeHostWindow): string | null {
+    const states = hostWindow.webContents.sentPayloads.filter(
+      (payload): payload is typeof payload & { errorText: string | null } =>
+        "errorText" in payload,
+    );
+    return states.at(-1)?.errorText ?? null;
+  }
+
+  // The dead end: a crashed renderer leaves a blank view with no error screen
+  // and nothing to click.
+  it("reports a crash through the error screen that already exists", () => {
+    const { hostWindow, view } = attachTab();
+
+    view.webContents.emitRenderProcessGone("crashed");
+
+    expect(lastErrorText(hostWindow)).toBe("This page crashed.");
+  });
+
+  it("names running out of memory as itself", () => {
+    const { hostWindow, view } = attachTab();
+
+    view.webContents.emitRenderProcessGone("oom");
+
+    expect(lastErrorText(hostWindow)).toBe("This page ran out of memory.");
+  });
+
+  // A renderer that exited cleanly is a tab being torn down, not a failure.
+  it("says nothing about a clean exit", () => {
+    const { hostWindow, view } = attachTab();
+
+    view.webContents.emitRenderProcessGone("clean-exit");
+
+    expect(lastErrorText(hostWindow)).toBeNull();
+  });
+
+  it("reports a hang, and takes it back when the page recovers", () => {
+    const { hostWindow, view } = attachTab();
+
+    view.webContents.emitResponsiveness(false);
+    expect(lastErrorText(hostWindow)).toBe("This page is not responding.");
+
+    view.webContents.emitResponsiveness(true);
+    expect(lastErrorText(hostWindow)).toBeNull();
+  });
+
+  // Recovering from a hang must not clear a load error the page had underneath.
+  it("leaves a real load error alone", () => {
+    const { hostWindow, view } = attachTab();
+    view.webContents.emitDidFailLoad({
+      errorCode: -105,
+      errorDescription: "ERR_NAME_NOT_RESOLVED",
+      isMainFrame: true,
+      validatedURL: "https://example.com/",
+    });
+
+    view.webContents.emitResponsiveness(true);
+
+    expect(lastErrorText(hostWindow)).toBe("ERR_NAME_NOT_RESOLVED");
+  });
+});
+
+describe("reopening a closed browser tab", () => {
+  const HISTORY = [
+    {
+      title: "Search",
+      url: "https://example.com/search",
+      pageState: "state-0",
+    },
+    {
+      title: "Result",
+      url: "https://example.com/result",
+      pageState: "state-1",
+    },
+  ];
+
+  function attachWithHistory(): {
+    hostWindow: FakeHostWindow;
+    manager: DesktopBrowserViewManager;
+    view: (typeof electronMock.fakeViews)[number];
+  } {
+    const manager = createDesktopBrowserViewManager({
+      partition: "persist:test",
+    });
+    const hostWindow = new FakeHostWindow({
+      contentBounds: { width: 900, height: 600 },
+      webContentsId: 1,
+    });
+    attachBrowserTab({
+      hostWindow,
+      manager,
+      tabId: "browser:a",
+      url: "https://example.com/search",
+    });
+    const view = requireFakeView(0);
+    view.webContents.historyEntries = HISTORY;
+    view.webContents.activeHistoryIndex = 1;
+    return { hostWindow, manager, view };
+  }
+
+  // The point of capturing at all: `pageState` is Chromium's serialized scroll
+  // position and form values, and it exists only until the view is destroyed.
+  it("restores the page's own history and scroll, not just its URL", () => {
+    const { hostWindow, manager } = attachWithHistory();
+
+    manager.detach({ hostWindow, tabId: "browser:a" });
+    attachBrowserTab({
+      hostWindow,
+      manager,
+      tabId: "browser:a",
+      url: "https://example.com/result",
+    });
+
+    const reopened = requireFakeView(1);
+    expect(reopened.webContents.restoreCalls).toEqual([
+      { entries: HISTORY, index: 1 },
+    ]);
+    // Restoring drives its own navigation; loading as well would fetch the page
+    // twice and the user would watch it happen.
+    expect(reopened.webContents.loadURLCalls).toEqual([]);
+  });
+
+  it("loads normally for a tab it has no session for", () => {
+    const { hostWindow, manager } = attachWithHistory();
+
+    manager.detach({ hostWindow, tabId: "browser:a" });
+    attachBrowserTab({
+      hostWindow,
+      manager,
+      tabId: "browser:b",
+      url: "https://example.com/other",
+    });
+
+    const fresh = requireFakeView(1);
+    expect(fresh.webContents.restoreCalls).toEqual([]);
+    expect(fresh.webContents.loadURLCalls).toEqual([
+      "https://example.com/other",
+    ]);
+  });
+
+  // A session is spent when it is used: a later reload or re-attach of the same
+  // tab must behave like any other tab.
+  it("uses a session once", () => {
+    const { hostWindow, manager } = attachWithHistory();
+    manager.detach({ hostWindow, tabId: "browser:a" });
+    attachBrowserTab({
+      hostWindow,
+      manager,
+      tabId: "browser:a",
+      url: "https://example.com/result",
+    });
+
+    manager.detach({ hostWindow, tabId: "browser:a" });
+    // The reopened view never navigated (its history is empty), so there is
+    // nothing to capture the second time.
+    attachBrowserTab({
+      hostWindow,
+      manager,
+      tabId: "browser:a",
+      url: "https://example.com/result",
+    });
+
+    expect(requireFakeView(2).webContents.restoreCalls).toEqual([]);
+  });
+
+  // The renderer is the authority on where a reopened tab should be: if it
+  // reopens at a different URL, stale history must not override it.
+  it("ignores a session that disagrees with the URL asked for", () => {
+    const { hostWindow, manager } = attachWithHistory();
+
+    manager.detach({ hostWindow, tabId: "browser:a" });
+    attachBrowserTab({
+      hostWindow,
+      manager,
+      tabId: "browser:a",
+      url: "https://elsewhere.test/",
+    });
+
+    const reopened = requireFakeView(1);
+    expect(reopened.webContents.restoreCalls).toEqual([]);
+    expect(reopened.webContents.loadURLCalls).toEqual([
+      "https://elsewhere.test/",
+    ]);
+  });
+
+  it("falls back to a plain load when restoring fails", async () => {
+    const { hostWindow, manager } = attachWithHistory();
+    manager.detach({ hostWindow, tabId: "browser:a" });
+
+    electronMock.nextViewSetup = (view) => {
+      view.webContents.restoreFailure = new Error("restore failed");
+    };
+    attachBrowserTab({
+      hostWindow,
+      manager,
+      tabId: "browser:a",
+      url: "https://example.com/result",
+    });
+    electronMock.nextViewSetup = null;
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(requireFakeView(1).webContents.loadURLCalls).toEqual([
+      "https://example.com/result",
+    ]);
   });
 });

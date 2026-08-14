@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  BB_DESKTOP_BROWSER_MAX_FIND_QUERY_LENGTH,
   BB_DESKTOP_BROWSER_MAX_URL_LENGTH,
   type BbDesktopBrowserCaptureFullPageResult,
+  type BbDesktopBrowserFindRequest,
   type BbDesktopBrowserInteractResult,
   type BbDesktopBrowserObserveResult,
   type BbDesktopBrowserDownloadActionResult,
@@ -19,6 +21,7 @@ import {
   BB_DESKTOP_BROWSER_ATTACH_CHANNEL,
   BB_DESKTOP_BROWSER_CAPTURE_FULL_PAGE_CHANNEL,
   BB_DESKTOP_BROWSER_DETACH_CHANNEL,
+  BB_DESKTOP_BROWSER_FIND_CHANNEL,
   BB_DESKTOP_BROWSER_GO_BACK_CHANNEL,
   BB_DESKTOP_BROWSER_GO_FORWARD_CHANNEL,
   BB_DESKTOP_BROWSER_NAVIGATE_CHANNEL,
@@ -95,6 +98,19 @@ type DownloadActionCall = Parameters<
   DesktopBrowserViewManager["downloadAction"]
 >[0];
 type SetOverlayCall = Parameters<DesktopBrowserViewManager["setOverlay"]>[0];
+type FindCall = Parameters<DesktopBrowserViewManager["find"]>[0];
+type PagePromptRespondCall = Parameters<
+  DesktopBrowserViewManager["respondToPagePrompt"]
+>[0];
+type SetFullscreenCall = Parameters<
+  DesktopBrowserViewManager["setFullscreen"]
+>[0];
+type SetPopupTabsCall = Parameters<
+  DesktopBrowserViewManager["setPopupTabs"]
+>[0];
+type SetContextMenuItemsCall = Parameters<
+  DesktopBrowserViewManager["setContextMenuItems"]
+>[0];
 type SnapshotCall = Parameters<DesktopBrowserViewManager["snapshot"]>[0];
 type SnapshotInCall = Parameters<DesktopBrowserViewManager["snapshotIn"]>[0];
 type DialogRespondCall = Parameters<
@@ -148,6 +164,10 @@ class RecordingDesktopBrowserViewManager implements DesktopBrowserViewManager {
   public readonly readPageCalls: ReadPageCall[] = [];
   public readonly downloadActionCalls: DownloadActionCall[] = [];
   public readonly setOverlayCalls: SetOverlayCall[] = [];
+  public readonly findCalls: FindCall[] = [];
+  public readonly setFullscreenCalls: SetFullscreenCall[] = [];
+  public readonly setPopupTabsCalls: SetPopupTabsCall[] = [];
+  public readonly setContextMenuItemsCalls: SetContextMenuItemsCall[] = [];
   public downloadActionFailure: Error | null = null;
   public downloadActionResult: BbDesktopBrowserDownloadActionResult = {
     ok: true,
@@ -159,6 +179,8 @@ class RecordingDesktopBrowserViewManager implements DesktopBrowserViewManager {
   };
   public readonly dialogRespondCalls: DialogRespondCall[] = [];
   public dialogRespondResult = true;
+  public readonly pagePromptRespondCalls: PagePromptRespondCall[] = [];
+  public pagePromptRespondResult = true;
   public readonly snapshotCalls: SnapshotCall[] = [];
   public snapshotFailure: Error | null = null;
   public snapshotResult: BbDesktopBrowserSnapshotResult = {
@@ -257,6 +279,27 @@ class RecordingDesktopBrowserViewManager implements DesktopBrowserViewManager {
 
   setOverlay(args: SetOverlayCall): void {
     this.setOverlayCalls.push(args);
+  }
+
+  find(args: FindCall): void {
+    this.findCalls.push(args);
+  }
+
+  setFullscreen(args: SetFullscreenCall): void {
+    this.setFullscreenCalls.push(args);
+  }
+
+  setPopupTabs(args: SetPopupTabsCall): void {
+    this.setPopupTabsCalls.push(args);
+  }
+
+  respondToPagePrompt(args: PagePromptRespondCall): Promise<boolean> {
+    this.pagePromptRespondCalls.push(args);
+    return Promise.resolve(this.pagePromptRespondResult);
+  }
+
+  setContextMenuItems(args: SetContextMenuItemsCall): void {
+    this.setContextMenuItemsCalls.push(args);
   }
 
   downloadAction(
@@ -577,6 +620,49 @@ describe("registerDesktopBrowserIpc", () => {
     ]);
     expect(manager.stopCalls).toEqual([
       { hostWindow: renderer.hostWindow, tabId: "browser:a" },
+    ]);
+  });
+
+  // The find bar sends one of these per keystroke, so what it may say is worth
+  // pinning: an action outside the set, or a stray field, is not a find.
+  it("routes find commands and drops payloads that are not one", () => {
+    const manager = new RecordingDesktopBrowserViewManager();
+    registerDesktopBrowserIpc(manager);
+    const renderer = createTrustedRenderer("main-window");
+    const request: BbDesktopBrowserFindRequest = {
+      tabId: "browser:a",
+      action: "start",
+      query: "needle",
+    };
+
+    for (const payload of [
+      { ...request, action: "restart" },
+      { ...request, extra: true },
+      { ...request, tabId: "" },
+      {
+        ...request,
+        query: "q".repeat(BB_DESKTOP_BROWSER_MAX_FIND_QUERY_LENGTH + 1),
+      },
+    ]) {
+      sendBrowserIpc({
+        channel: BB_DESKTOP_BROWSER_FIND_CHANNEL,
+        payload,
+        sender: renderer.sender,
+      });
+    }
+    sendBrowserIpc({
+      channel: BB_DESKTOP_BROWSER_FIND_CHANNEL,
+      payload: request,
+      sender: createUntrustedSender(),
+    });
+    sendBrowserIpc({
+      channel: BB_DESKTOP_BROWSER_FIND_CHANNEL,
+      payload: request,
+      sender: renderer.sender,
+    });
+
+    expect(manager.findCalls).toEqual([
+      { hostWindow: renderer.hostWindow, request },
     ]);
   });
 

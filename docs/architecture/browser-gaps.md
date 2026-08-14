@@ -41,24 +41,26 @@ most recent with open and show-in-folder on each. What is still missing is
 progress, persistence across restarts, and pause/resume — deliberate omissions
 rather than oversights, listed in that document's own Next section.
 
-### PDFs are a dead click, as a consequence of two other decisions
+### ~~PDFs are a dead click~~ — closed
 
-The browsed view sets no `plugins` preference
-(`desktop-browser-view.ts:2402`), so it defaults off and Chromium's built-in PDF
-viewer never loads. Chromium's fallback for a document it cannot display is to
-download it.
+The browsed view set no `plugins` preference, so it defaulted off, Chromium's
+built-in viewer never loaded, and Chromium fell back to downloading a document
+it cannot display — which, while downloads were also denied, meant a PDF link
+produced _nothing_.
 
-**This entry is now expected to be half-fixed and is unverified.** It was
-written when the download fallback was cancelled too, which is what made a PDF
-link produce _nothing_; with downloads working, a PDF should now land in the
-downloads folder instead of opening in a viewer. Nothing has confirmed that, and
-it is the first thing to check by hand.
+Both halves are decided now. Downloads work, and `plugins: true` turns the
+viewer on, so a PDF opens as a page. The cost was worth stating rather than
+inheriting, and it is stated in [browser-surface.md](browser-surface.md): the
+viewer admits one more parser of an attacker-supplied format, bounded by
+PDFium's own sandboxed process — where the alternative, an OS reader opening
+every downloaded PDF, has no sandbox at all.
 
-Displaying one inline is still **unbuilt**: `plugins: true` enables the viewer,
-at the cost of admitting Chromium's PDF plugin into an untrusted view. Worth
-deciding explicitly rather than inheriting.
+What is genuinely still missing is **reading** one: `readPage` and the
+accessibility snapshot see the viewer's wrapper frame, not the document's text,
+so an agent handed a PDF tab gets nothing. That is its own job, listed in Tier 2
+rather than here — it is not a dead end for a human.
 
-### `window.open` flows break, and `target="_blank"` no longer does
+### ~~`window.open` flows break~~ — closed
 
 The shell denies every popup and hands the URL to the renderer to open as a tab
 (`desktop-browser-view.ts:2285`). For a plain `target="_blank"` link that is
@@ -77,29 +79,42 @@ What it cannot serve is a page that **uses the handle it got back**:
   into it — are dropped outright, because `isAllowedPublicBrowserPopupUrl`
   requires public `http(s)`.
 
-The practical consequence is that **"Sign in with …" does not work**, on a
-browser whose whole point is to be the user's real logged-in session. Fixing it
-means letting some popups be real child windows with a live opener, which is a
-security decision about untrusted pages rather than a UI one — the popup policy
-and the rate limiter exist for reasons that survive this.
+The practical consequence was that **"Sign in with …" did not work**, on a
+browser whose whole point is to be the user's real logged-in session.
 
-### Absent handlers
+Popups are real now for tabs that claim them — Chromium creates the window, the
+shell hosts it as a tab, and the page gets the handle, the opener and the
+`window.close()` it was always asking for. The security decision was made rather
+than avoided, and it is written down in
+[browser-surface.md](browser-surface.md): the popup policy and the rate limiter
+both survive unchanged, `about:blank` is admitted deliberately and only on this
+path, and the hardening rides along because a popup inherits its opener's web
+preferences.
 
-Each of these is a documented Electron event with no listener anywhere in
-`apps/desktop/src`. All **unbuilt**, none deliberate as far as the tree records.
+Which tabs claim popups is the renderer's declaration, not the shell's guess.
+The thread panel claims none — a link there follows the user's in-app-link
+preference and may leave for the system browser — so it keeps the older
+deny-and-push behaviour, which is also the fallback for anything unclaimed.
 
-| What the user does                           | Event nobody handles                                | Result today                                               |
-| -------------------------------------------- | --------------------------------------------------- | ---------------------------------------------------------- |
-| Loads a page behind HTTP basic auth          | `login`                                             | Electron cancels the auth; the page just fails             |
-| Reaches a self-signed or expired certificate | `certificate-error`                                 | Generic load-error screen, no "Advanced → proceed" path    |
-| Clicks a video's fullscreen button           | `enter-html-full-screen` / `leave-html-full-screen` | The page believes it is fullscreen; the view never resizes |
-| Sits on a page whose renderer dies or hangs  | `render-process-gone` / `unresponsive`              | Blank view, no "Aw, snap", no reload affordance            |
-| Hits a site asking for a client certificate  | `select-client-certificate`                         | No prompt                                                  |
+### ~~Absent handlers~~ — closed
 
-`did-fail-load` **is** handled and drives the error screen
-(`desktop-browser-view.ts:2385`), which is what makes the rest of this table
-look like an oversight rather than a policy: the machinery for telling the user
-something went wrong already exists and these paths do not reach it.
+Each of these was a documented Electron event with no listener anywhere in
+`apps/desktop/src`. All five are handled now; see
+[browser-surface.md](browser-surface.md) for the policies and what they refuse.
+
+| What the user does                           | Event                                               | What happens now                                                               |
+| -------------------------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Loads a page behind HTTP basic auth          | `login`                                             | A prompt naming the host — after any plugin auth provider has been asked first |
+| Reaches a self-signed or expired certificate | `certificate-error`                                 | A prompt with the certificate's details and "proceed" behind them              |
+| Clicks a video's fullscreen button           | `enter-html-full-screen` / `leave-html-full-screen` | The view takes the whole window and gives it back                              |
+| Sits on a page whose renderer dies or hangs  | `render-process-gone` / `unresponsive`              | The error screen that already existed, with its reload button                  |
+| Hits a site asking for a client certificate  | `select-client-certificate`                         | A picker, instead of Electron handing over the first certificate in the store  |
+
+The observation that drove this is worth keeping: `did-fail-load` **was**
+already handled and already drove an error screen, which is what made the rest
+of the table an oversight rather than a policy — the machinery for telling the
+user something went wrong existed and these paths did not reach it. Two of them
+now reach exactly that machinery rather than growing a second one.
 
 ## Tier 2 — unbuilt surfaces
 
@@ -108,47 +123,87 @@ against; it is simply not written.
 
 **Page**
 
-| Feature                           | State                                                                                                                                                                  |
-| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Find in page (`Cmd+F`)            | No `findInPage` call anywhere in the repo                                                                                                                              |
-| Zoom (`Cmd +/-/0`), per-site zoom | `setZoomFactor` exists only for the app window, never for a browsed view                                                                                               |
-| Print (`Cmd+P`)                   | `printToPDF` exists for agents only; no user-facing print                                                                                                              |
-| Page context menu                 | Cut / copy / paste / select-all only (`desktop-browser-view.ts`). No open-link-in-new-tab, copy link address, save image, back/forward/reload, or search-for-selection |
-| View source                       | None                                                                                                                                                                   |
-| Spellcheck corrections            | Underlining is Chromium's default; the browsed view's menu offers no suggestions                                                                                       |
+| Feature                           | State                                                                                                                                 |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Find in page (`Cmd+F`)            | **Done** — a find bar in the chrome, plus a plugin contribution point ([browser-surface.md](browser-surface.md))                      |
+| Zoom (`Cmd +/-/0`), per-site zoom | `setZoomFactor` exists only for the app window, never for a browsed view                                                              |
+| Print (`Cmd+P`)                   | `printToPDF` exists for agents only; no user-facing print                                                                             |
+| Page context menu                 | **Done** — link, image, selection and navigation entries, plus a plugin contribution point ([browser-surface.md](browser-surface.md)) |
+| View source                       | None                                                                                                                                  |
+| Reading a PDF as text             | The viewer renders it, but `readPage` and the snapshot see its wrapper frame, so an agent handed a PDF tab gets nothing               |
+| Spellcheck corrections            | Underlining is Chromium's default; the browsed view's menu offers no suggestions                                                      |
 
-The context menu is the highest-value item in that table and the smallest: the
-menu is already built in the shell, and link and image entries would route
-through the same open-tab path popups now use.
+The context menu is now built (open link in new tab or the default browser,
+copy link address, copy/save image, search for the selection, back/forward/
+reload), and plugins can add entries to it. What is left in that table is find,
+zoom, print and view-source — each blocked on a shell capability rather than on
+menu wiring.
+
+**Developer panel**
+
+There is no way to look at a page as a developer: no console, no network list,
+no source, no element inspection. Wanted, at least at the level of Chromium's
+first three panels — **view source, network, console** — plus an **Inspect**
+entry in the page context menu once there is a panel for it to open.
+
+This entry is worth more detail than the rest of the table, because most of it
+is **already captured and unexposed**, and the one part that is genuinely
+blocked is blocked by a decision rather than by work:
+
+- **Console and network are recorded now**, per tab, from the moment the tab
+  exists — `entry.consoleLog` and `entry.networkLog` in
+  `desktop-browser-view.ts`, read through the `observe` channel, which is on the
+  preload API and therefore reachable from the app rather than only from agents.
+  A panel over these is a UI and a read loop, not a new capability.
+- **Their limits come with them**, and a panel must not pretend otherwise:
+  `console-message` hands over text Chromium has already flattened, so there
+  are no structured arguments and no stack traces, and `webRequest` sees method,
+  type, status and cache but **never bodies**
+  ([browser-automation.md](browser-automation.md), Stage C).
+- **View source is the one piece with nothing behind it.** `page.getText`
+  returns rendered text, not markup. The cheap version is another constant
+  script in the page-read isolated world returning `documentElement.outerHTML`
+  — which is the _live DOM_, not what the server sent; the two differ on any
+  page that scripts itself, and which one "view source" means is a decision to
+  make rather than to discover.
+- **Inspect needs element identity.** The context menu already carries `x`/`y`,
+  which is exactly what `DOM.getNodeForLocation` wants — but that is CDP, which
+  is the contested part below.
+
+Two constraints shape it before any code is written. The panel is **persistent**
+— open while browsing — so it cannot use the freeze-and-overlay trick the
+downloads dropdown and tab switcher use; it has to take layout space, the way
+the omnibox suggestion list does, and let the page shrink around it. And
+anything richer than the buffers above wants CDP, which is where this collides
+with a Tier 3 decision: **DevTools on browsed views is denied**, and the
+automation stack now depends on holding the one protocol client per
+`webContents` that Chromium allows. Opening native DevTools would take that
+slot. A panel built on the existing observation channels does not; a panel that
+grows an Elements tree eventually will, and that trade is the thing to decide
+deliberately rather than discover.
 
 **Tabs**
 
-No tab context menu, no drag reorder, no pin / duplicate / mute, and no
-reopen-closed-tab — `browser-surface-tabs.ts` keeps no closed-tab stack, so the
-information needed for `Cmd+Shift+T` is discarded at close. Tab overflow is
-covered: the strip clips at a width floor rather than scrolling, which is a
+No tab context menu, no drag reorder, no pin / duplicate / mute. Reopening a
+closed tab is done, with its page state
+([browser-surface.md](browser-surface.md)). Tab overflow is covered: the strip
+clips at a width floor rather than scrolling, which is a
 [decided](browser-surface.md) trade rather than a gap.
 
-**Keyboard**
+**Keyboard** — mostly closed
 
-Exactly two browser-scoped bindings exist
-(`apps/server/src/services/system/app-keybindings.ts:225`):
-`browser.focusLocation` (`Cmd+L`) and `browser.reload` (`Cmd+R`). Missing:
-`Cmd+T`, `Cmd+W`, `Cmd+Shift+T`, `Cmd+1..9`, `Ctrl+Tab`, `Cmd+[` / `Cmd+]`,
-`Cmd+F`, `Cmd+P`, and the zoom trio.
+The tab chords are in: `Cmd+T`, `Cmd+W`, `Cmd+Shift+T` (restoring history and
+scroll, not just the URL), `Cmd+1`–`9`, `Cmd+[` / `Cmd+]`, and `Ctrl+Tab` /
+`Ctrl+Shift+Tab` walking **recently used** tabs rather than positions. See
+[browser-surface.md](browser-surface.md) for the ordering rule that decides
+`Cmd+T` between the browser and the thread panel, and for why the MRU cycle ends
+on a timer.
 
-`Cmd+T` and `Cmd+W` are worth naming separately, because they are not absent —
-they are **bound to something else**. Both are panel commands
-(`panel.newTab`, `panel.close`, lines 171–172) scoped to `mainWithoutModal`
-rather than `browserFocus`, so on `/browser` they do not open or close a browser
-tab, and inside a focused page they are not even forwarded.
-
-The forwarding path itself is finished and generic: a key pressed in an
-untrusted page reaches `before-input-event`
-(`desktop-browser-view.ts:2238`), is resolved against the keybinding table by
-`resolveDesktopBrowserAppCommand`, and is dispatched to the renderer as an app
-command. So this whole row is table entries plus handlers — the cheapest large
-improvement available.
+`Cmd+F` is in too, and arrived with the find bar rather than as a binding — see
+[browser-surface.md](browser-surface.md). Still missing, and each blocked on a
+capability rather than on a binding: `Cmd+P` (needs a user-facing print) and the
+zoom trio (needs `setZoomLevel` on a browsed view). Those belong with their
+features, not with the keyboard.
 
 **Data**
 
@@ -190,6 +245,8 @@ reasoning already written down somewhere in this directory or in a code comment:
   (`desktop-browser-view.ts:2043`). A prompt UI is explicitly "a later phase".
 - **DevTools on browsed views**: denied, and CDP's one-client-per-`webContents`
   rule now depends on it ([browser-automation.md](browser-automation.md)).
+  **Contested** — see the developer panel in Tier 2, which wants some of what
+  DevTools would give and mostly does not need DevTools to give it.
 - **Search completions** from a suggest endpoint: a network and privacy
   decision, not an omnibox one ([omnibox.md](omnibox.md)).
 - **Chrome extension compatibility**: plan §10, out of scope for the MVP.
@@ -210,8 +267,12 @@ Three patterns, and each suggests a different kind of fix:
    it. A single "the browser refused this, and why" channel would improve all of
    them before any of the underlying features are built.
 2. **v1 denials that were never revisited.** Downloads and permissions were both
-   deferred with a comment. The comments are still accurate and the decisions
-   have simply not been scheduled since.
+   deferred with a comment. Both turned out to be load-bearing in a way the
+   comments did not say: the download denial made every download link dead, and
+   the blanket permission denial made every fullscreen button dead, because
+   `fullscreen` is a permission and denying it rejects `requestFullscreen()`
+   before any handler can run. Both are now allowed, deliberately and
+   individually — the rest of the list still stands as written.
 3. **The shell is finished where the renderer is not.** Keyboard forwarding, the
    context menu, favicons and page reads all have complete main-process support;
    what is missing is the command table, the menu entries, the UI. That
@@ -222,19 +283,29 @@ Three patterns, and each suggests a different kind of fix:
 
 By value against cost, not by tier:
 
-1. **Keyboard set** — the mechanism is done; this is bindings and handlers.
-2. **Page context menu link/image entries** — the menu exists; the open-tab path
-   exists.
-3. **Find in page** — self-contained: `findInPage` / `stopFindInPage`, a new IPC
-   channel (invariant 2: new channel, optional method), a small chrome overlay.
-4. **The absent Tier 1 handlers** — each is small on its own; certificates and
-   basic auth need a dialog, and [browser-automation.md](browser-automation.md)'s
-   `BrowserPageDialog` is the pattern to copy.
-5. **PDF** — one preference, one security question.
+1. ~~**Keyboard set**~~ — done, minus the two chords that are really other
+   features (`Cmd+P`, zoom).
+2. ~~**Page context menu link/image entries**~~ — done, including the plugin
+   contribution point.
+3. ~~**Find in page**~~ — done: `findInPage` / `stopFindInPage` behind a new
+   channel pair, a find bar that takes layout space (freezing the page would
+   hide the highlights), and a plugin contribution point.
+4. ~~**The absent Tier 1 handlers**~~ — done: all five, on one prompt channel
+   that copies `BrowserPageDialog`'s freeze-and-draw pattern, plus an auth
+   provider plugins can answer from. `Cmd+Shift+F` arrived with the fullscreen
+   handler, since it is the same expansion asked for by hand.
+5. ~~**PDF**~~ — done: the preference is on, the security question is answered
+   in writing. Extracting a PDF's text for an agent is left open, and belongs
+   with page reads rather than with browser features.
 6. ~~**Downloads**~~ — done; the manager UI it deliberately left out is in
    [browser-downloads.md](browser-downloads.md)'s Next section.
-7. **Popups with a live opener** — the most valuable and the most dangerous;
-   it reopens the popup policy deliberately rather than by accident.
+7. ~~**Popups with a live opener**~~ — done: real windows for tabs that claim
+   them, hosted as tabs, with the popup policy and rate limiter intact and
+   `about:blank` admitted on purpose.
+8. **Developer panel** — last by request rather than by cost: its console and
+   network tabs are cheap (the data is already captured), but it is the one
+   item that eventually argues with the CDP decision, and nothing else here
+   waits on it.
 
 History's 24-entry cap sits outside this list: it is cheap to raise and it
 changes what the omnibox can do, so it belongs with whatever omnibox work comes

@@ -6,9 +6,13 @@ import {
   closeBrowserSurfaceTab,
   EMPTY_BROWSER_SURFACE_TABS_STATE,
   getActiveBrowserSurfaceTab,
+  MAX_CLOSED_BROWSER_SURFACE_TABS,
   parseBrowserSurfaceTabsState,
+  pushClosedBrowserSurfaceTab,
+  reopenBrowserSurfaceTab,
   updateBrowserSurfaceTab,
   type BrowserSurfaceTabsState,
+  type ClosedBrowserSurfaceTab,
 } from "./browser-surface-tabs";
 
 function tab(id: string, url = ""): BrowserFixedPanelTab {
@@ -166,5 +170,77 @@ describe("browser surface tab persistence", () => {
     );
 
     expect(parsed.activeTabId).toBe("b");
+  });
+});
+
+describe("closed browser surface tabs", () => {
+  function tabAt(id: string, url: string): BrowserFixedPanelTab {
+    return { environmentId: null, id, kind: "browser", title: null, url };
+  }
+
+  const state: BrowserSurfaceTabsState = {
+    activeTabId: "b",
+    tabs: [tabAt("a", "https://a.test/"), tabAt("b", "https://b.test/")],
+  };
+
+  it("keeps the most recent closes, newest first", () => {
+    let stack = pushClosedBrowserSurfaceTab([], {
+      index: 0,
+      tab: tabAt("a", "https://a.test/"),
+    });
+    stack = pushClosedBrowserSurfaceTab(stack, {
+      index: 1,
+      tab: tabAt("b", "https://b.test/"),
+    });
+
+    expect(stack.map((closed) => closed.tab.id)).toEqual(["b", "a"]);
+  });
+
+  it("bounds the stack", () => {
+    let stack: readonly ClosedBrowserSurfaceTab[] = [];
+    for (let index = 0; index < 14; index += 1) {
+      stack = pushClosedBrowserSurfaceTab(stack, {
+        index,
+        tab: tabAt(`tab-${index}`, "https://a.test/"),
+      });
+    }
+
+    expect(stack).toHaveLength(MAX_CLOSED_BROWSER_SURFACE_TABS);
+    expect(stack[0]?.tab.id).toBe("tab-13");
+  });
+
+  // Chromium puts a reopened tab back where it was, not at the end.
+  it("reopens a tab at its original index and focuses it", () => {
+    const closed = { index: 0, tab: tabAt("gone", "https://gone.test/") };
+
+    const next = reopenBrowserSurfaceTab(state, closed);
+
+    expect(next.tabs.map((tab) => tab.id)).toEqual(["gone", "a", "b"]);
+    expect(next.activeTabId).toBe("gone");
+  });
+
+  // The id is what the shell stored the page's history and scroll under, so a
+  // reopened tab must be the *same* tab, not a copy of it.
+  it("reopens under the id the shell knows", () => {
+    const closed = { index: 1, tab: tabAt("gone", "https://gone.test/") };
+
+    expect(reopenBrowserSurfaceTab(state, closed).tabs[1]?.id).toBe("gone");
+  });
+
+  it("clamps an index past the end rather than dropping the tab", () => {
+    const closed = { index: 9, tab: tabAt("gone", "https://gone.test/") };
+
+    expect(
+      reopenBrowserSurfaceTab(state, closed).tabs.map((tab) => tab.id),
+    ).toEqual(["a", "b", "gone"]);
+  });
+
+  it("only focuses a tab that is somehow already open", () => {
+    const closed = { index: 0, tab: tabAt("a", "https://a.test/") };
+
+    const next = reopenBrowserSurfaceTab(state, closed);
+
+    expect(next.tabs).toHaveLength(2);
+    expect(next.activeTabId).toBe("a");
   });
 });

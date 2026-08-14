@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getAppKeybindingOverrides } from "@bb/db";
 import {
+  BROWSER_SELECT_TAB_APP_COMMAND_IDS,
   PANE_FOCUS_APP_COMMAND_IDS,
   THREAD_JUMP_APP_COMMAND_IDS,
   applyAppKeybindingOverrides,
@@ -333,6 +334,17 @@ describe("app keybindings", () => {
         "terminal.open",
         "browser.focusLocation",
         "browser.reload",
+        "browser.find",
+        "browser.fullscreen.toggle",
+        "browser.newTab",
+        "browser.closeTab",
+        "browser.reopenClosedTab",
+        ...BROWSER_SELECT_TAB_APP_COMMAND_IDS,
+        "browser.selectLastTab",
+        "browser.recentTab.next",
+        "browser.recentTab.previous",
+        "browser.goBack",
+        "browser.goForward",
         "window.new",
       ]);
     });

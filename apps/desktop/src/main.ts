@@ -2171,6 +2171,9 @@ async function runDesktopApp(): Promise<void> {
         browserWindow.webContents.focus();
       }
     },
+    openExternalUrl(url) {
+      void shell.openExternal(url);
+    },
     async openDownloadPath(savePath) {
       return await shell.openPath(savePath);
     },

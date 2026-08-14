@@ -2,7 +2,9 @@ import { describe, expect, it, vi } from "vitest";
 import type { AppCommandId } from "@bb/domain";
 import type {
   BbDesktopApi,
+  BbDesktopBrowserFindResult,
   BbDesktopBrowserOpenTabRequest,
+  BbDesktopBrowserPagePrompt,
   BbDesktopBrowserScopedOpenTabRequest,
   BbDesktopBrowserSnapshot,
   BbDesktopBrowserState,
@@ -19,6 +21,8 @@ import {
   BB_DESKTOP_BROWSER_ATTACH_CHANNEL,
   BB_DESKTOP_BROWSER_CAPTURE_FULL_PAGE_CHANNEL,
   BB_DESKTOP_BROWSER_DETACH_CHANNEL,
+  BB_DESKTOP_BROWSER_FIND_CHANNEL,
+  BB_DESKTOP_BROWSER_FIND_RESULT_CHANNEL,
   BB_DESKTOP_BROWSER_GO_BACK_CHANNEL,
   BB_DESKTOP_BROWSER_GO_FORWARD_CHANNEL,
   BB_DESKTOP_BROWSER_DIALOG_RESPOND_CHANNEL,
@@ -26,10 +30,13 @@ import {
   BB_DESKTOP_BROWSER_OBSERVE_CHANNEL,
   BB_DESKTOP_BROWSER_NAVIGATE_CHANNEL,
   BB_DESKTOP_BROWSER_OPEN_TAB_CHANNEL,
+  BB_DESKTOP_BROWSER_PAGE_PROMPT_CHANNEL,
+  BB_DESKTOP_BROWSER_POPUP_CHANNEL,
   BB_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
   BB_DESKTOP_BROWSER_RELOAD_CHANNEL,
   BB_DESKTOP_BROWSER_SCOPED_OPEN_TAB_CHANNEL,
   BB_DESKTOP_BROWSER_SET_BOUNDS_CHANNEL,
+  BB_DESKTOP_BROWSER_SET_POPUP_TABS_CHANNEL,
   BB_DESKTOP_BROWSER_SET_VISIBLE_CHANNEL,
   BB_DESKTOP_BROWSER_SNAPSHOT_CHANNEL,
   BB_DESKTOP_BROWSER_SNAPSHOT_TREE_CHANNEL,
@@ -256,24 +263,34 @@ describe("desktop preload browser API", () => {
       "control",
       "detach",
       "downloadAction",
+      "find",
       "goBack",
       "goForward",
       "interact",
       "navigate",
       "observe",
+      "onContextMenuInvoke",
       "onDialog",
       "onDownload",
       "onFavicon",
+      "onFindResult",
       "onOpenTab",
+      "onPagePrompt",
+      "onPopup",
       "onScopedOpenTab",
+      "onSearchSelection",
       "onSnapshot",
       "onState",
       "readPage",
       "record",
       "reload",
       "respondToDialog",
+      "respondToPagePrompt",
       "setBounds",
+      "setContextMenuItems",
+      "setFullscreen",
       "setOverlay",
+      "setPopupTabs",
       "setVisible",
       "snapshot",
       "snapshotIn",
@@ -377,7 +394,9 @@ describe("desktop preload browser API", () => {
       reason: "unreadable",
     });
 
-    electronMock.setReadPageReply(() => Promise.reject(new Error("no handler")));
+    electronMock.setReadPageReply(() =>
+      Promise.reject(new Error("no handler")),
+    );
     await expect(api.browser.readPage?.("browser:a")).resolves.toEqual({
       ok: false,
       reason: "unreadable",
@@ -602,6 +621,111 @@ describe("desktop preload browser API", () => {
       channel: BB_DESKTOP_CLOSE_WINDOW_RESPONSE_CHANNEL,
       payload: true,
     });
+  });
+
+  it("validates the network questions before showing them to the app", async () => {
+    const api = await loadPreload();
+    const prompts: Array<BbDesktopBrowserPagePrompt["prompt"]> = [];
+    const prompt = {
+      kind: "auth" as const,
+      id: "page-prompt-1",
+      host: "example.com",
+      insecure: false,
+    };
+
+    api.browser.onPagePrompt?.((event) => {
+      prompts.push(event.prompt);
+    });
+
+    emitIpcPayload({
+      channel: BB_DESKTOP_BROWSER_PAGE_PROMPT_CHANNEL,
+      // A prompt of no known kind is not one this app can answer.
+      payload: { tabId: "browser:a", prompt: { ...prompt, kind: "totp" } },
+    });
+    emitIpcPayload({
+      channel: BB_DESKTOP_BROWSER_PAGE_PROMPT_CHANNEL,
+      payload: { tabId: "browser:a", prompt },
+    });
+    emitIpcPayload({
+      channel: BB_DESKTOP_BROWSER_PAGE_PROMPT_CHANNEL,
+      payload: { tabId: "browser:a", prompt: null },
+    });
+
+    expect(prompts).toEqual([prompt, null]);
+  });
+
+  it("validates popups before handing them to the app", async () => {
+    const api = await loadPreload();
+    const popups: unknown[] = [];
+    const opened = {
+      kind: "opened" as const,
+      openerTabId: "browser:a",
+      tabId: "browser-popup:1",
+      url: "https://accounts.example.com/oauth",
+    };
+
+    api.browser.onPopup?.((popup) => {
+      popups.push(popup);
+    });
+    api.browser.setPopupTabs?.({ tabIds: ["browser:a"] });
+
+    emitIpcPayload({
+      channel: BB_DESKTOP_BROWSER_POPUP_CHANNEL,
+      // No `kind` this app knows: not a popup event it can act on.
+      payload: { kind: "resized", tabId: "browser-popup:1" },
+    });
+    emitIpcPayload({
+      channel: BB_DESKTOP_BROWSER_POPUP_CHANNEL,
+      payload: opened,
+    });
+    emitIpcPayload({
+      channel: BB_DESKTOP_BROWSER_POPUP_CHANNEL,
+      payload: { kind: "closed", tabId: "browser-popup:1" },
+    });
+
+    expect(electronMock.sendCalls).toContainEqual({
+      channel: BB_DESKTOP_BROWSER_SET_POPUP_TABS_CHANNEL,
+      payload: { tabIds: ["browser:a"] },
+    });
+    expect(popups).toEqual([
+      opened,
+      { kind: "closed", tabId: "browser-popup:1" },
+    ]);
+  });
+
+  it("forwards find commands and validates the counts coming back", async () => {
+    const api = await loadPreload();
+    const results: BbDesktopBrowserFindResult[] = [];
+    const result: BbDesktopBrowserFindResult = {
+      tabId: "browser:a",
+      activeMatchOrdinal: 2,
+      matches: 7,
+      finalUpdate: true,
+    };
+
+    api.browser.onFindResult?.((next) => {
+      results.push(next);
+    });
+    api.browser.find?.({
+      tabId: "browser:a",
+      action: "start",
+      query: "needle",
+    });
+
+    emitIpcPayload({
+      channel: BB_DESKTOP_BROWSER_FIND_RESULT_CHANNEL,
+      payload: { ...result, matches: "many" },
+    });
+    emitIpcPayload({
+      channel: BB_DESKTOP_BROWSER_FIND_RESULT_CHANNEL,
+      payload: result,
+    });
+
+    expect(electronMock.sendCalls).toContainEqual({
+      channel: BB_DESKTOP_BROWSER_FIND_CHANNEL,
+      payload: { tabId: "browser:a", action: "start", query: "needle" },
+    });
+    expect(results).toEqual([result]);
   });
 
   it("answers unhandled close-window requests so main closes the window", async () => {

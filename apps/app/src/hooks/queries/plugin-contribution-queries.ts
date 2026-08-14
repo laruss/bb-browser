@@ -26,15 +26,81 @@ export interface PluginOmniboxProviderContribution {
   label: string;
 }
 
+/** One context-menu entry contributed by a plugin (`browser.contextMenu.items`). */
+export interface PluginBrowserContextMenuItemContribution {
+  pluginId: string;
+  itemId: string;
+  title: string;
+  when: { image: boolean; link: boolean; page: boolean; selection: boolean };
+}
+
+/** One find-bar button contributed by a plugin (`browser.find.actions`). */
+export interface PluginBrowserFindActionContribution {
+  pluginId: string;
+  itemId: string;
+  title: string;
+}
+
 export interface PluginContributions {
+  browserContextMenuItems: PluginBrowserContextMenuItemContribution[];
+  browserFindActions: PluginBrowserFindActionContribution[];
   mentionProviders: PluginMentionProviderContribution[];
   omniboxProviders: PluginOmniboxProviderContribution[];
 }
 
 const EMPTY_CONTRIBUTIONS: PluginContributions = {
+  browserContextMenuItems: [],
+  browserFindActions: [],
   mentionProviders: [],
   omniboxProviders: [],
 };
+
+function toContextMenuItemContribution(
+  value: unknown,
+): PluginBrowserContextMenuItemContribution | null {
+  if (typeof value !== "object" || value === null) return null;
+  const item = value as Record<string, unknown>;
+  const when = item.when as Record<string, unknown> | undefined;
+  if (
+    typeof item.pluginId !== "string" ||
+    typeof item.itemId !== "string" ||
+    typeof item.title !== "string" ||
+    typeof when !== "object" ||
+    when === null
+  ) {
+    return null;
+  }
+  return {
+    pluginId: item.pluginId,
+    itemId: item.itemId,
+    title: item.title,
+    when: {
+      image: when.image === true,
+      link: when.link === true,
+      page: when.page === true,
+      selection: when.selection === true,
+    },
+  };
+}
+
+function toFindActionContribution(
+  value: unknown,
+): PluginBrowserFindActionContribution | null {
+  if (typeof value !== "object" || value === null) return null;
+  const action = value as Record<string, unknown>;
+  if (
+    typeof action.pluginId !== "string" ||
+    typeof action.itemId !== "string" ||
+    typeof action.title !== "string"
+  ) {
+    return null;
+  }
+  return {
+    pluginId: action.pluginId,
+    itemId: action.itemId,
+    title: action.title,
+  };
+}
 
 function toOmniboxProviderContribution(
   value: unknown,
@@ -85,10 +151,28 @@ async function fetchPluginContributions(
   // routes) or a disabled experiment both mean "no contributions".
   if (!response.ok) return EMPTY_CONTRIBUTIONS;
   const body = (await response.json()) as {
+    browserContextMenuItems?: unknown;
+    browserFindActions?: unknown;
     mentionProviders?: unknown;
     omniboxProviders?: unknown;
   };
   return {
+    browserContextMenuItems: Array.isArray(body.browserContextMenuItems)
+      ? body.browserContextMenuItems
+          .map(toContextMenuItemContribution)
+          .filter(
+            (item): item is PluginBrowserContextMenuItemContribution =>
+              item !== null,
+          )
+      : [],
+    browserFindActions: Array.isArray(body.browserFindActions)
+      ? body.browserFindActions
+          .map(toFindActionContribution)
+          .filter(
+            (action): action is PluginBrowserFindActionContribution =>
+              action !== null,
+          )
+      : [],
     mentionProviders: Array.isArray(body.mentionProviders)
       ? body.mentionProviders
           .map(toMentionProviderContribution)
@@ -347,6 +431,103 @@ export async function runPluginOmniboxAction(
   return typeof body.navigate === "string" && body.navigate.length > 0
     ? body.navigate
     : null;
+}
+
+export interface RunPluginContextMenuItemArgs {
+  imageUrl: string | null;
+  itemId: string;
+  linkUrl: string | null;
+  pageUrl: string;
+  pluginId: string;
+  selectionText: string | null;
+  tabId: string;
+}
+
+/**
+ * Perform a context-menu entry the user picked. Fire-and-forget: the menu has
+ * already closed, so there is nothing to report back to.
+ */
+export async function runPluginContextMenuItem(
+  args: RunPluginContextMenuItemArgs,
+): Promise<void> {
+  await fetch("/api/v1/plugins/browser/context-menu", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(args),
+  }).catch(() => undefined);
+}
+
+export interface RunPluginFindActionArgs {
+  itemId: string;
+  pageUrl: string;
+  pluginId: string;
+  /** What the find bar had in it when the button was pressed. */
+  query: string;
+  tabId: string;
+}
+
+/**
+ * Press a plugin's find-bar button. Fire-and-forget, like a context-menu entry:
+ * the plugin reports through its own surfaces, and the bar keeps the user's
+ * query where it was.
+ */
+export async function runPluginFindAction(
+  args: RunPluginFindActionArgs,
+): Promise<void> {
+  await fetch("/api/v1/plugins/browser/find-action", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(args),
+  }).catch(() => undefined);
+}
+
+export interface ResolvePluginBrowserAuthArgs {
+  /** `example.com`, or `example.com:8443` — who challenged. */
+  host: string;
+  insecure: boolean;
+  tabId: string;
+}
+
+export interface PluginBrowserAuthCredentials {
+  password: string;
+  username: string;
+}
+
+/**
+ * Ask plugins for the credentials a page was challenged for
+ * (`browser.auth.providers`), before the user is asked.
+ *
+ * Null means nobody answered — which is also what a failed call means, because
+ * the fallback for both is the same and it is the safe one: show the prompt.
+ */
+export async function resolvePluginBrowserAuth(
+  args: ResolvePluginBrowserAuthArgs,
+): Promise<PluginBrowserAuthCredentials | null> {
+  const response = await fetch("/api/v1/plugins/browser/auth", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(args),
+  }).catch(() => null);
+  if (response === null || !response.ok) return null;
+  const body = (await response.json().catch(() => null)) as {
+    credentials?: unknown;
+    ok?: unknown;
+  } | null;
+  const credentials = body?.credentials as
+    | Partial<PluginBrowserAuthCredentials>
+    | null
+    | undefined;
+  if (
+    body?.ok !== true ||
+    typeof credentials?.username !== "string" ||
+    typeof credentials.password !== "string"
+  ) {
+    return null;
+  }
+  return {
+    password: credentials.password,
+    username: credentials.username,
+  };
 }
 
 export interface ReportPluginBrowserDownloadArgs {

@@ -22,12 +22,34 @@ export interface WindowOpenDecision {
 }
 
 /**
- * Decide what to do with a `window.open`/`target=_blank` request. The native OS
- * popup is always denied by the caller; an allowed http(s) URL is surfaced so
- * the renderer can open it as a new in-panel browser tab.
+ * Decide what to do with a `window.open`/`target=_blank` request the shell will
+ * not host itself. The native OS popup is denied; an allowed http(s) URL is
+ * surfaced so the renderer can open it as a new in-panel browser tab — a tab
+ * with no live opener, which is all a surface that does not claim popups can
+ * be given.
  */
 export function resolveWindowOpenAction(url: string): WindowOpenDecision {
   return { openTabUrl: isAllowedPublicBrowserPopupUrl(url) ? url : null };
+}
+
+/**
+ * Whether a URL may become a **real** popup — one Chromium creates, with a live
+ * `window.opener` and a handle `window.open()` can return.
+ *
+ * Everything `resolveWindowOpenAction` allows, plus `about:blank`. That
+ * addition is the whole point rather than a loosening: a page that opens a
+ * blank window and writes into it is the shape half the OAuth SDKs use, and
+ * dropping it is what made "Sign in with …" impossible. A blank popup has no
+ * content of its own — it inherits the opener's origin and whatever the opener
+ * puts in it — so what it can reach is what the opener could already reach.
+ *
+ * Everything else stays refused for the reason it always was: the URL comes
+ * from the page, so `javascript:` would be a click that runs it, `file:` a
+ * reader for the local disk, and a loopback or private host a way to knock on
+ * bb's own services.
+ */
+export function isAllowedBrowserPopupTarget(url: string): boolean {
+  return url === "about:blank" || isAllowedPublicBrowserPopupUrl(url);
 }
 
 // --- Loopback / LAN request firewall ---
@@ -488,4 +510,94 @@ export function evaluatePopupRate({
     return { allowed: false, timestamps: recent };
   }
   return { allowed: true, timestamps: [...recent, now] };
+}
+
+// --- Authentication challenges ---
+
+export interface BrowserAuthChallenge {
+  /** `authInfo.isProxy`: the challenge came from a proxy, not from a site. */
+  isProxy: boolean;
+  /**
+   * `details.isRequestForNavigation` — a page being navigated to rather than a
+   * subresource of the one on screen.
+   *
+   * Null when the runtime did not say: the field is documented for current
+   * Electron but absent from the typings this app is pinned to, so it is read
+   * defensively and the fallback below stands in for it.
+   */
+  isRequestForNavigation: boolean | null;
+  /** Whether the tab is in the middle of a main-frame load. */
+  isLoadingMainFrame: boolean;
+  /** The page the tab is showing right now; empty on a fresh tab. */
+  pageUrl: string;
+  /** URL of the request that was challenged. */
+  requestUrl: string;
+}
+
+/**
+ * Whether an HTTP authentication challenge is worth asking a human about.
+ *
+ * The rule is Chrome's, and it exists because a password box is worth
+ * spoofing. A **navigation** may ask: the user typed the address or clicked the
+ * link, so the site asking is the site they went to. A **subresource** may ask
+ * only when it is the page's own origin — otherwise any page could embed an
+ * image from an attacker's server, have it answer 401, and put a credential
+ * prompt in front of the user with someone else's site in the address bar.
+ *
+ * A proxy challenge is refused outright: this browser has no proxy
+ * configuration to authenticate against, and a prompt attributed to no site at
+ * all is the least answerable of the lot.
+ */
+export function shouldPromptForBrowserAuth(
+  challenge: BrowserAuthChallenge,
+): boolean {
+  if (challenge.isProxy) {
+    return false;
+  }
+  if (challenge.isRequestForNavigation === true) {
+    return true;
+  }
+  const requestOrigin = browserUrlOrigin(challenge.requestUrl);
+  const pageOrigin = browserUrlOrigin(challenge.pageUrl);
+  const isSameOrigin = requestOrigin !== null && requestOrigin === pageOrigin;
+  if (challenge.isRequestForNavigation === false) {
+    return isSameOrigin;
+  }
+  // The runtime did not say which it was. A challenge that arrives while the
+  // main frame is still loading belongs to that load in every case a user would
+  // recognise — they typed an address or followed a link, and the site asked.
+  return isSameOrigin || challenge.isLoadingMainFrame;
+}
+
+/** Origin of a URL, or null when it is not one. */
+export function browserUrlOrigin(url: string): string | null {
+  try {
+    return new URL(url).origin;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The host to show in a prompt: `example.com`, or `example.com:8443` when the
+ * port is not the scheme's own. It is the only part of an authentication
+ * challenge the user can actually judge, so it is the part that is shown.
+ */
+export function formatBrowserAuthHost(authInfo: {
+  host: string;
+  port: number;
+  scheme?: string;
+}): string {
+  const isDefaultPort =
+    authInfo.port === 0 || authInfo.port === 80 || authInfo.port === 443;
+  return isDefaultPort ? authInfo.host : `${authInfo.host}:${authInfo.port}`;
+}
+
+/** Host of a URL, or the URL itself when it will not parse. */
+export function browserUrlHost(url: string): string {
+  try {
+    return new URL(url).host;
+  } catch {
+    return url;
+  }
 }

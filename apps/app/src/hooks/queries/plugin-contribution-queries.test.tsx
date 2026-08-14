@@ -90,6 +90,10 @@ describe("usePluginContributions", () => {
         },
         { pluginId: "broken" }, // malformed: dropped at the boundary
       ],
+      browserFindActions: [
+        { pluginId: "notes", itemId: "save-search", title: "Save this search" },
+        { pluginId: "broken", itemId: "no-title" }, // dropped at the boundary
+      ],
     });
 
     const { wrapper } = createQueryClientTestHarness();
@@ -97,6 +101,14 @@ describe("usePluginContributions", () => {
 
     await waitFor(() => {
       expect(result.current.data).toEqual({
+        browserContextMenuItems: [],
+        browserFindActions: [
+          {
+            pluginId: "notes",
+            itemId: "save-search",
+            title: "Save this search",
+          },
+        ],
         mentionProviders: [
           {
             pluginId: "linear",
@@ -129,6 +141,8 @@ describe("usePluginContributions", () => {
 
     await waitFor(() => {
       expect(result.current.data).toEqual({
+        browserContextMenuItems: [],
+        browserFindActions: [],
         mentionProviders: [],
         omniboxProviders: [],
       });

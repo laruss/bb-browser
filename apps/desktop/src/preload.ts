@@ -3,8 +3,11 @@ import { appCommandIdSchema } from "@bb/domain";
 import {
   bbDesktopBrowserCaptureFullPageResultSchema,
   bbDesktopBrowserDownloadActionResultSchema,
+  bbDesktopBrowserContextMenuInvokeSchema,
+  bbDesktopBrowserSearchSelectionSchema,
   bbDesktopBrowserDownloadSchema,
   bbDesktopBrowserFaviconSchema,
+  bbDesktopBrowserFindResultSchema,
   bbDesktopBrowserInteractResultSchema,
   bbDesktopBrowserControlResultSchema,
   bbDesktopBrowserRecordResultSchema,
@@ -13,6 +16,8 @@ import {
   bbDesktopBrowserPageReadResultSchema,
   bbDesktopBrowserScopedOpenTabRequestSchema,
   bbDesktopBrowserDialogSchema,
+  bbDesktopBrowserPagePromptSchema,
+  bbDesktopBrowserPopupSchema,
   bbDesktopBrowserSnapshotResultSchema,
   bbDesktopBrowserSnapshotSchema,
   bbDesktopBrowserStateSchema,
@@ -24,9 +29,15 @@ import {
   type BbDesktopBrowserApi,
   type BbDesktopBrowserDownloadActionRequest,
   type BbDesktopBrowserSetOverlayRequest,
+  type BbDesktopBrowserSetFullscreenRequest,
   type BbDesktopBrowserDownloadActionResult,
   type BbDesktopBrowserDownloadHandler,
+  type BbDesktopBrowserContextMenuInvokeHandler,
+  type BbDesktopBrowserContextMenuItems,
+  type BbDesktopBrowserSearchSelectionHandler,
   type BbDesktopBrowserFaviconHandler,
+  type BbDesktopBrowserFindRequest,
+  type BbDesktopBrowserFindResultHandler,
   type BbDesktopBrowserCaptureFullPageResult,
   type BbDesktopBrowserInteractResult,
   type BbDesktopBrowserControlResult,
@@ -36,6 +47,9 @@ import {
   type BbDesktopBrowserPageReadResult,
   type BbDesktopBrowserScopedOpenTabHandler,
   type BbDesktopBrowserDialogHandler,
+  type BbDesktopBrowserPagePromptHandler,
+  type BbDesktopBrowserPopupHandler,
+  type BbDesktopBrowserPopupTabs,
   type BbDesktopBrowserSnapshotResult,
   type BbDesktopBrowserSnapshotHandler,
   type BbDesktopBrowserStateHandler,
@@ -64,9 +78,15 @@ import {
   BB_DESKTOP_BROWSER_CAPTURE_FULL_PAGE_CHANNEL,
   BB_DESKTOP_BROWSER_DETACH_CHANNEL,
   BB_DESKTOP_BROWSER_DOWNLOAD_ACTION_CHANNEL,
+  BB_DESKTOP_BROWSER_CONTEXT_MENU_INVOKE_CHANNEL,
+  BB_DESKTOP_BROWSER_SEARCH_SELECTION_CHANNEL,
+  BB_DESKTOP_BROWSER_SET_CONTEXT_MENU_ITEMS_CHANNEL,
   BB_DESKTOP_BROWSER_SET_OVERLAY_CHANNEL,
+  BB_DESKTOP_BROWSER_SET_FULLSCREEN_CHANNEL,
   BB_DESKTOP_BROWSER_DOWNLOAD_CHANNEL,
   BB_DESKTOP_BROWSER_FAVICON_CHANNEL,
+  BB_DESKTOP_BROWSER_FIND_CHANNEL,
+  BB_DESKTOP_BROWSER_FIND_RESULT_CHANNEL,
   BB_DESKTOP_BROWSER_GO_BACK_CHANNEL,
   BB_DESKTOP_BROWSER_GO_FORWARD_CHANNEL,
   BB_DESKTOP_BROWSER_NAVIGATE_CHANNEL,
@@ -81,6 +101,10 @@ import {
   BB_DESKTOP_BROWSER_STORAGE_CHANNEL,
   BB_DESKTOP_BROWSER_DIALOG_CHANNEL,
   BB_DESKTOP_BROWSER_DIALOG_RESPOND_CHANNEL,
+  BB_DESKTOP_BROWSER_PAGE_PROMPT_CHANNEL,
+  BB_DESKTOP_BROWSER_PAGE_PROMPT_RESPOND_CHANNEL,
+  BB_DESKTOP_BROWSER_POPUP_CHANNEL,
+  BB_DESKTOP_BROWSER_SET_POPUP_TABS_CHANNEL,
   BB_DESKTOP_BROWSER_INTERACT_CHANNEL,
   BB_DESKTOP_BROWSER_SNAPSHOT_TREE_CHANNEL,
   BB_DESKTOP_BROWSER_SET_BOUNDS_CHANNEL,
@@ -203,7 +227,14 @@ const browserScopedOpenTabListeners =
 const browserSnapshotListeners = new Set<BbDesktopBrowserSnapshotHandler>();
 const browserFaviconListeners = new Set<BbDesktopBrowserFaviconHandler>();
 const browserDownloadListeners = new Set<BbDesktopBrowserDownloadHandler>();
+const browserFindResultListeners = new Set<BbDesktopBrowserFindResultHandler>();
+const browserSearchSelectionListeners =
+  new Set<BbDesktopBrowserSearchSelectionHandler>();
+const browserContextMenuInvokeListeners =
+  new Set<BbDesktopBrowserContextMenuInvokeHandler>();
 const browserDialogListeners = new Set<BbDesktopBrowserDialogHandler>();
+const browserPagePromptListeners = new Set<BbDesktopBrowserPagePromptHandler>();
+const browserPopupListeners = new Set<BbDesktopBrowserPopupHandler>();
 const closeWindowRequestListeners =
   new Set<BbDesktopCloseWindowRequestHandler>();
 const openNewTabListeners = new Set<BbDesktopOpenNewTabHandler>();
@@ -323,8 +354,38 @@ const bbBrowserApi: BbDesktopBrowserApi = {
       browserDownloadListeners.delete(listener);
     };
   },
+  setContextMenuItems(request: BbDesktopBrowserContextMenuItems): void {
+    ipcRenderer.send(
+      BB_DESKTOP_BROWSER_SET_CONTEXT_MENU_ITEMS_CHANNEL,
+      request,
+    );
+  },
+  onContextMenuInvoke(listener): BbDesktopBrowserUnsubscribe {
+    browserContextMenuInvokeListeners.add(listener);
+    return () => {
+      browserContextMenuInvokeListeners.delete(listener);
+    };
+  },
+  onSearchSelection(listener): BbDesktopBrowserUnsubscribe {
+    browserSearchSelectionListeners.add(listener);
+    return () => {
+      browserSearchSelectionListeners.delete(listener);
+    };
+  },
   setOverlay(request: BbDesktopBrowserSetOverlayRequest): void {
     ipcRenderer.send(BB_DESKTOP_BROWSER_SET_OVERLAY_CHANNEL, request);
+  },
+  setFullscreen(request: BbDesktopBrowserSetFullscreenRequest): void {
+    ipcRenderer.send(BB_DESKTOP_BROWSER_SET_FULLSCREEN_CHANNEL, request);
+  },
+  find(request: BbDesktopBrowserFindRequest): void {
+    ipcRenderer.send(BB_DESKTOP_BROWSER_FIND_CHANNEL, request);
+  },
+  onFindResult(listener): BbDesktopBrowserUnsubscribe {
+    browserFindResultListeners.add(listener);
+    return () => {
+      browserFindResultListeners.delete(listener);
+    };
   },
   async downloadAction(
     request: BbDesktopBrowserDownloadActionRequest,
@@ -367,6 +428,32 @@ const bbBrowserApi: BbDesktopBrowserApi = {
     return () => {
       browserDialogListeners.delete(listener);
     };
+  },
+  setPopupTabs(request: BbDesktopBrowserPopupTabs): void {
+    ipcRenderer.send(BB_DESKTOP_BROWSER_SET_POPUP_TABS_CHANNEL, request);
+  },
+  onPopup(listener): BbDesktopBrowserUnsubscribe {
+    browserPopupListeners.add(listener);
+    return () => {
+      browserPopupListeners.delete(listener);
+    };
+  },
+  onPagePrompt(listener): BbDesktopBrowserUnsubscribe {
+    browserPagePromptListeners.add(listener);
+    return () => {
+      browserPagePromptListeners.delete(listener);
+    };
+  },
+  async respondToPagePrompt(answer): Promise<boolean> {
+    try {
+      const answered: unknown = await ipcRenderer.invoke(
+        BB_DESKTOP_BROWSER_PAGE_PROMPT_RESPOND_CHANNEL,
+        answer,
+      );
+      return answered === true;
+    } catch {
+      return false;
+    }
   },
   async respondToDialog(request): Promise<boolean> {
     try {
@@ -650,6 +737,32 @@ ipcRenderer.on(
 );
 
 ipcRenderer.on(
+  BB_DESKTOP_BROWSER_CONTEXT_MENU_INVOKE_CHANNEL,
+  (_event, payload: unknown) => {
+    const parsed = bbDesktopBrowserContextMenuInvokeSchema.safeParse(payload);
+    if (!parsed.success) {
+      return;
+    }
+    for (const listener of browserContextMenuInvokeListeners) {
+      listener(parsed.data);
+    }
+  },
+);
+
+ipcRenderer.on(
+  BB_DESKTOP_BROWSER_SEARCH_SELECTION_CHANNEL,
+  (_event, payload: unknown) => {
+    const parsed = bbDesktopBrowserSearchSelectionSchema.safeParse(payload);
+    if (!parsed.success) {
+      return;
+    }
+    for (const listener of browserSearchSelectionListeners) {
+      listener(parsed.data);
+    }
+  },
+);
+
+ipcRenderer.on(
   BB_DESKTOP_BROWSER_DOWNLOAD_CHANNEL,
   (_event, payload: unknown) => {
     const parsed = bbDesktopBrowserDownloadSchema.safeParse(payload);
@@ -657,6 +770,42 @@ ipcRenderer.on(
       return;
     }
     for (const listener of browserDownloadListeners) {
+      listener(parsed.data);
+    }
+  },
+);
+
+ipcRenderer.on(BB_DESKTOP_BROWSER_POPUP_CHANNEL, (_event, payload: unknown) => {
+  const parsed = bbDesktopBrowserPopupSchema.safeParse(payload);
+  if (!parsed.success) {
+    return;
+  }
+  for (const listener of browserPopupListeners) {
+    listener(parsed.data);
+  }
+});
+
+ipcRenderer.on(
+  BB_DESKTOP_BROWSER_PAGE_PROMPT_CHANNEL,
+  (_event, payload: unknown) => {
+    const parsed = bbDesktopBrowserPagePromptSchema.safeParse(payload);
+    if (!parsed.success) {
+      return;
+    }
+    for (const listener of browserPagePromptListeners) {
+      listener(parsed.data);
+    }
+  },
+);
+
+ipcRenderer.on(
+  BB_DESKTOP_BROWSER_FIND_RESULT_CHANNEL,
+  (_event, payload: unknown) => {
+    const parsed = bbDesktopBrowserFindResultSchema.safeParse(payload);
+    if (!parsed.success) {
+      return;
+    }
+    for (const listener of browserFindResultListeners) {
       listener(parsed.data);
     }
   },

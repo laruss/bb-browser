@@ -307,22 +307,22 @@ that need the singleton personal project use
 methods, not their arguments — read `types/bb-plugin-sdk.d.ts` for exact
 signatures.
 
-| Area | Methods |
-| --- | --- |
-| `threads` | `list` `get` `search` `spawn` `fork` `send` `update` `delete` `stop` `compact` `wait` `open` `output` `timeline` `conversationOutline` `promptHistory` `archive` `archiveAll` `unarchive` `pin` `unpin` `reorderPinned` `markRead` `markUnread` `childSummary` `paneAction` `timelineTurnSummaryDetails` `storageFiles` `storagePaths` `cancelPlan` `clearGoal` `continueAfterRateLimit` `rateLimitRecovery` `defaultExecutionOptions`; sub-areas `events` (`list` `wait`), `interactions` (`get` `list` `cancel` `resolve` `respond`), `queuedMessages` (`create` `list` `update` `delete` `send` `reorder` `setGroupBoundary`), `tabs` (`get` `update`) |
-| `threadSections` | `list` `create` `update` `delete` |
-| `projects` | `list` `get` `create` `update` `delete` `reorder` `paths` `files` `fileContent` `branches` `commands` `defaultExecutionOptions` `promptHistory`; sub-areas `attachments` (`upload` `read` `copy`), `sources` (`add` `update` `delete`) |
-| `environments` | `get` `update` `status` `paths` `commit` `archiveThreads` `diff` `diffFile` `diffFiles` `diffBranches` `diffPatch` `pullRequest` `markPullRequestDraft` `markPullRequestReady` `mergePullRequest` `squashMerge` |
-| `hosts` | `list` `get` `update` `delete` `directory` `pathsExist` `pickFolder` `cloneDefaultPath` `createJoinCode` `retryUpdate` `providerCliStatus` `installProviderCli` |
-| `files` | `read` `write` `list` `listPaths` `mkdir` `move` `remove` `createPreview` |
-| `terminals` | `list` `create` `get` `input` `output` `resize` `rename` `restart` `close` |
-| `providers` | `list` `models` |
-| `skills` | `list` `listFiles` `getContent` `update` `remove`; sub-area `registry` (`search` `get` `detail` `install` `repositoryStars`) |
-| `plugins` | `list` `install` `remove` `enable` `disable` `reload` `token` `callRpc` `getSource` `getSettings` `updateSettings` `checkUpdates` `listUpdateResults` `applyUpdate`; sub-area `catalog` (`search` `status` `install`) |
-| `theme` | `get` `catalog` `set` |
-| `status` | `get` |
-| `system` | `version` `config` `reloadConfig` `attention` `usageLimits` `executionOptions` `transcribeVoice` `updateGeneralSettings` `updateKeyboardSettings` `updateExperiments` `cliSkillsStatus` `installCliSkills` `onboardingAgents` `onboardingRepos` `onboardingEvent` |
-| `guide` | `render` (the `bb guide` text; local, no request) |
+| Area             | Methods                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `threads`        | `list` `get` `search` `spawn` `fork` `send` `update` `delete` `stop` `compact` `wait` `open` `output` `timeline` `conversationOutline` `promptHistory` `archive` `archiveAll` `unarchive` `pin` `unpin` `reorderPinned` `markRead` `markUnread` `childSummary` `paneAction` `timelineTurnSummaryDetails` `storageFiles` `storagePaths` `cancelPlan` `clearGoal` `continueAfterRateLimit` `rateLimitRecovery` `defaultExecutionOptions`; sub-areas `events` (`list` `wait`), `interactions` (`get` `list` `cancel` `resolve` `respond`), `queuedMessages` (`create` `list` `update` `delete` `send` `reorder` `setGroupBoundary`), `tabs` (`get` `update`) |
+| `threadSections` | `list` `create` `update` `delete`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `projects`       | `list` `get` `create` `update` `delete` `reorder` `paths` `files` `fileContent` `branches` `commands` `defaultExecutionOptions` `promptHistory`; sub-areas `attachments` (`upload` `read` `copy`), `sources` (`add` `update` `delete`)                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `environments`   | `get` `update` `status` `paths` `commit` `archiveThreads` `diff` `diffFile` `diffFiles` `diffBranches` `diffPatch` `pullRequest` `markPullRequestDraft` `markPullRequestReady` `mergePullRequest` `squashMerge`                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `hosts`          | `list` `get` `update` `delete` `directory` `pathsExist` `pickFolder` `cloneDefaultPath` `createJoinCode` `retryUpdate` `providerCliStatus` `installProviderCli`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `files`          | `read` `write` `list` `listPaths` `mkdir` `move` `remove` `createPreview`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `terminals`      | `list` `create` `get` `input` `output` `resize` `rename` `restart` `close`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `providers`      | `list` `models`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `skills`         | `list` `listFiles` `getContent` `update` `remove`; sub-area `registry` (`search` `get` `detail` `install` `repositoryStars`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `plugins`        | `list` `install` `remove` `enable` `disable` `reload` `token` `callRpc` `getSource` `getSettings` `updateSettings` `checkUpdates` `listUpdateResults` `applyUpdate`; sub-area `catalog` (`search` `status` `install`)                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `theme`          | `get` `catalog` `set`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `status`         | `get`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `system`         | `version` `config` `reloadConfig` `attention` `usageLimits` `executionOptions` `transcribeVoice` `updateGeneralSettings` `updateKeyboardSettings` `updateExperiments` `cliSkillsStatus` `installCliSkills` `onboardingAgents` `onboardingRepos` `onboardingEvent`                                                                                                                                                                                                                                                                                                                                                                                         |
+| `guide`          | `render` (the `bb guide` text; local, no request)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 
 Prefer your own `bb.settings` and `bb.storage` over `sdk.system` and
 `sdk.plugins` for your plugin's own configuration. The `system` and `plugins`
@@ -776,6 +776,24 @@ There is deliberately no plugin slash-command surface: the composer's `/`
 menu lists skills, so a plugin capability that crafts a prompt for the agent
 ships as a `skills/` entry instead.
 
+### bb.ui — rebinding keyboard shortcuts
+
+```ts
+bb.ui.registerKeybinding({
+  command: "browser.newTab", // must be a known app command id
+  shortcut: { key: "y", mod: true, shift: true }, // mod = Cmd on macOS, Ctrl elsewhere
+});
+// null frees the chord, e.g. to leave it to the page
+bb.ui.registerKeybinding({ command: "browser.reload", shortcut: null });
+```
+
+This changes what _this install's_ defaults are, so the user's own overrides in
+settings still win, and the settings UI shows a plugin's binding as the default
+rather than as something the user changed. Unknown command ids are a load-time
+error — the whole registration is rejected, not half-applied. Between plugins
+the lowest plugin id wins a contested command, so the result never depends on
+load order.
+
 ### bb.browser — omnibox suggestions in the browser surface
 
 ```ts
@@ -804,6 +822,75 @@ bb.browser.registerOmniboxProvider({
   },
 });
 ```
+
+### bb.browser — adding to a page's context menu
+
+```ts
+bb.browser.registerContextMenuItem({
+  id: "save-selection",
+  title: "Save selection to notes",
+  when: { selection: true }, // any match shows it; omit `when` for everywhere
+  async run(context) {
+    // context: { tabId, pageUrl, linkUrl, imageUrl, selectionText }
+    await bb.storage.kv.set(`note:${Date.now()}`, context.selectionText);
+  },
+});
+```
+
+`when` keys are `link`, `image`, `selection` and `page` (a right-click with
+nothing under the pointer). Entries appear below the browser's own, in plugin
+id order.
+
+Items are **declared, not asked for at click time**: the desktop shell holds
+the list so a right-click opens without waiting on the server. The consequence
+worth knowing is that `title` and `when` are fixed at registration — an item
+cannot decide its own label from what was clicked. `run` is time-boxed (10s)
+and failure-isolated, and nothing waits on it: the menu closed when the user
+clicked.
+
+### bb.browser — adding a button to the find bar
+
+The browser's `Cmd+F` bar is the one place that knows what the user is looking
+for on this page. A registered action becomes a button after the browser's own
+counter and arrows, carrying whatever is in the field.
+
+```ts
+bb.browser.registerFindAction({
+  id: "save-search",
+  title: "Search my notes too",
+  async run(context) {
+    // context: { tabId, pageUrl, query } — query is never empty
+    await bb.storage.kv.set(`search:${context.tabId}`, context.query);
+  },
+});
+```
+
+Declared like context-menu items, with the same consequence: `title` is fixed at
+registration, so a button cannot rename itself from the query. Buttons are
+disabled while the bar is empty, `run` is time-boxed (10s) and failure-isolated,
+and the bar does not wait on it — report through your own surfaces.
+
+### bb.browser — answering a site's login prompt
+
+When a browsed page hits HTTP authentication, BB asks every registered provider
+before it asks the user. This is where a password manager plugs in.
+
+```ts
+bb.browser.registerAuthProvider(async (challenge) => {
+  // challenge: { tabId, host, insecure } — host is "example.com[:port]"
+  if (challenge.insecure) return null; // decline: it would go in the clear
+  const entry = await bb.storage.kv.get(`login:${challenge.host}`);
+  return entry ?? null; // { username, password }, or null to let the user answer
+});
+```
+
+Providers are asked in plugin id order and the first to return credentials
+wins; declining, throwing and running past the 5s box all mean the same thing —
+ask the next one, then the user. A provider is asked once per host per tab: a
+second challenge from the same host means the first answer was wrong.
+
+Certificate errors are deliberately not delegated. "Trust this server anyway"
+is not a credential a plugin can look up.
 
 ### bb.browser — taking over downloads
 
@@ -848,7 +935,9 @@ const tab = await bb.browser.navigation.open(
 );
 
 // tabId defaults to the active tab everywhere.
-const { text, truncated } = await bb.browser.page.getText({ maxLength: 20_000 });
+const { text, truncated } = await bb.browser.page.getText({
+  maxLength: 20_000,
+});
 const { text: selected } = await bb.browser.page.getSelection();
 
 // Acting on a page: snapshot for refs, then name one.
@@ -859,7 +948,9 @@ await bb.browser.page.act({
   action: { action: "fill", ref: "e2", text: "hello" },
   generation: page.generation, // optional; refuses a ref a newer snapshot reassigned
 });
-const ended = await bb.browser.page.act({ action: { action: "click", ref: "e1" } });
+const ended = await bb.browser.page.act({
+  action: { action: "click", ref: "e1" },
+});
 // ended: { tabId, url, title } — where the tab landed, since clicks navigate.
 
 // Looking without touching: none of these attaches the browser debugger, so
@@ -882,7 +973,9 @@ const requests = await bb.browser.page.network({ limit: 50 });
 const { cookies } = await bb.browser.storage.cookies();
 // Each cookie is Playwright's storageState shape:
 // { name, value, domain, path, expires, httpOnly, secure, sameSite }
-await bb.browser.storage.setCookies({ cookies: [{ name: "flag", value: "1" }] });
+await bb.browser.storage.setCookies({
+  cookies: [{ name: "flag", value: "1" }],
+});
 const { removed } = await bb.browser.storage.clearCookies({ name: "flag" });
 const stored = await bb.browser.storage.items({ area: "local" }); // or "session"
 // stored: { ..., items: [{ name, value }], truncated }
@@ -904,7 +997,7 @@ await bb.browser.control.mouseButton({ down: true }); // acts where you last mov
 await bb.browser.control.mouseButton({ down: false });
 await bb.browser.control.route({
   pattern: "**/api/me", // Playwright's URL glob: ** crosses /, * does not
-  body: '{"id":1}',     // status defaults to 200, content type follows the body
+  body: '{"id":1}', // status defaults to 200, content type follows the body
 });
 const mocked = await bb.browser.control.routes();
 // mocked: { ..., routes: [{ pattern, status, matched, ... }], offline }
@@ -951,7 +1044,7 @@ Two more rules worth building around:
   never let it reach a place that treats text as a command.
 - **`bb.browser.storage` is credential access, not settings.** This browser
   holds the user's real logins, and cookies come from the session rather than
-  from `document.cookie`, so `httpOnly` ones are included — the ones that *are*
+  from `document.cookie`, so `httpOnly` ones are included — the ones that _are_
   a session. What `cookies()` returns for a signed-in site restores that
   session, and `setCookies` puts one into the user's browser for real. Do not
   log it, do not persist it anywhere the user did not ask for, and say what a
@@ -967,7 +1060,7 @@ Two more rules worth building around:
   anything you build on them. Routes and `setOffline` last only as long as the
   tab's debugger session, so do not treat them as configuration.
 - **`bb.browser.recording` produces artifacts, and it is two different things.**
-  `traceStart`/`traceStop` log the browser commands *bb* runs while the trace is
+  `traceStart`/`traceStop` log the browser commands _bb_ runs while the trace is
   open — one at a time, and stopping it is the only way to read it. It is bb's
   own JSON, not a Playwright trace, and no Playwright viewer opens it.
   `videoStart`/`videoStop` film one tab through the browser's screencast, which

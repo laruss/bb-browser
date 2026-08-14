@@ -118,6 +118,8 @@ export interface PluginServiceDeps {
   omniboxRunTimeoutMs?: number;
   /** Time box per browser download handler; tests shrink it. */
   browserDownloadTimeoutMs?: number;
+  /** Time box per picked context-menu item; tests shrink it. */
+  contextMenuRunTimeoutMs?: number;
   /** Failed candidates must remain healthy for this long before activation commits. */
   stabilizationWindowMs?: number;
   /** Previous artifacts and activation snapshots remain rollbackable for this long. */
@@ -195,6 +197,21 @@ export interface PluginMentionSearchGroup {
 
 /** One omnibox provider contributed by a running plugin
  * (`browser.omnibox.providers`). */
+/** A plugin context-menu entry, as the app hands it to the desktop shell. */
+export interface PluginContextMenuItemContribution {
+  pluginId: string;
+  itemId: string;
+  title: string;
+  when: { image: boolean; link: boolean; page: boolean; selection: boolean };
+}
+
+/** A plugin button on the browser's find bar (`browser.find.actions`). */
+export interface PluginFindActionContribution {
+  pluginId: string;
+  itemId: string;
+  title: string;
+}
+
 export interface PluginOmniboxProviderContribution {
   pluginId: string;
   id: string;

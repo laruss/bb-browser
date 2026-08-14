@@ -1,4 +1,14 @@
-import { Menu, WebContentsView, session, type Session } from "electron";
+import {
+  Menu,
+  WebContentsView,
+  clipboard,
+  session,
+  type BrowserWindowConstructorOptions,
+  type Certificate,
+  type NavigationEntry,
+  type Session,
+  type WebContents,
+} from "electron";
 import {
   BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH,
   BB_DESKTOP_BROWSER_MAX_MIME_TYPE_LENGTH,
@@ -13,12 +23,26 @@ import {
   type BbDesktopBrowserDownload,
   type BbDesktopBrowserDownloadActionRequest,
   type BbDesktopBrowserDownloadActionResult,
+  type BbDesktopBrowserContextMenuInvoke,
+  type BbDesktopBrowserContextMenuItem,
+  type BbDesktopBrowserContextMenuItems,
+  type BbDesktopBrowserSearchSelection,
   type BbDesktopBrowserSetOverlayRequest,
+  type BbDesktopBrowserSetFullscreenRequest,
   type BbDesktopBrowserFavicon,
+  type BbDesktopBrowserFindRequest,
+  type BbDesktopBrowserFindResult,
   BB_DESKTOP_BROWSER_MAX_SNAPSHOT_LENGTH,
   BB_DESKTOP_BROWSER_MAX_DIALOG_MESSAGE_LENGTH,
   type BbDesktopBrowserDialog,
   type BbDesktopBrowserDialogRespondRequest,
+  BB_DESKTOP_BROWSER_MAX_CLIENT_CERTIFICATES,
+  BB_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH,
+  type BbDesktopBrowserPagePrompt,
+  type BbDesktopBrowserPagePromptAnswer,
+  type BbDesktopBrowserPagePromptDetails,
+  type BbDesktopBrowserPopup,
+  type BbDesktopBrowserPopupTabs,
   BB_DESKTOP_BROWSER_MAX_COOKIES,
   BB_DESKTOP_BROWSER_MAX_EVAL_RESULT_LENGTH,
   BB_DESKTOP_BROWSER_MAX_PDF_BASE64_LENGTH,
@@ -56,8 +80,13 @@ import {
   BB_DESKTOP_BROWSER_DIALOG_CHANNEL,
   BB_DESKTOP_BROWSER_DOWNLOAD_CHANNEL,
   BB_DESKTOP_BROWSER_FAVICON_CHANNEL,
+  BB_DESKTOP_BROWSER_FIND_RESULT_CHANNEL,
+  BB_DESKTOP_BROWSER_PAGE_PROMPT_CHANNEL,
+  BB_DESKTOP_BROWSER_POPUP_CHANNEL,
   BB_DESKTOP_BROWSER_OPEN_TAB_CHANNEL,
   BB_DESKTOP_BROWSER_SCOPED_OPEN_TAB_CHANNEL,
+  BB_DESKTOP_BROWSER_CONTEXT_MENU_INVOKE_CHANNEL,
+  BB_DESKTOP_BROWSER_SEARCH_SELECTION_CHANNEL,
   BB_DESKTOP_BROWSER_SNAPSHOT_CHANNEL,
   BB_DESKTOP_BROWSER_STATE_CHANNEL,
 } from "./desktop-browser-ipc.js";
@@ -66,16 +95,14 @@ import {
   resolveBrowserFaviconPageKey,
   selectBrowserFaviconUrl,
 } from "./desktop-browser-favicon.js";
+import { buildBrowserContextMenuTemplate } from "./desktop-browser-context-menu.js";
 import {
   DOWNLOAD_RATE_MAX_IN_WINDOW,
   DOWNLOAD_RATE_WINDOW_MS,
   resolveUniqueDownloadPath,
   sanitizeDownloadFilename,
 } from "./desktop-browser-download.js";
-import {
-  createCdpSession,
-  type CdpSession,
-} from "./desktop-browser-cdp.js";
+import { createCdpSession, type CdpSession } from "./desktop-browser-cdp.js";
 import {
   buildBrowserSnapshot,
   findBrowserSnapshotRoot,
@@ -140,12 +167,16 @@ import {
   toBrowserSessionCookieDetails,
 } from "./desktop-browser-storage.js";
 import {
+  browserUrlHost,
   evaluatePopupRate,
+  formatBrowserAuthHost,
+  isAllowedBrowserPopupTarget,
   isAllowedBrowserUrl,
   localRequestOriginKey,
   resolveRequestingFrameLocalOriginKey,
   resolveWindowOpenAction,
   shouldBlockBrowserRequest,
+  shouldPromptForBrowserAuth,
 } from "./desktop-browser-policy.js";
 
 // At most this many popup → in-panel tabs may be spawned per view in a sliding
@@ -159,6 +190,81 @@ const POPUP_RATE_MAX_IN_WINDOW = 3;
  * and bounded so a page downloading in a loop cannot grow it without limit.
  */
 const MAX_REMEMBERED_DOWNLOAD_PATHS = 100;
+
+/**
+ * How many closed tabs can be reopened where they left off. Chromium's own
+ * reopen stack is about this deep, and each entry holds a page's serialized
+ * state, so this is not a list to let grow.
+ */
+const MAX_CLOSED_TAB_SESSIONS = 10;
+
+/** See the `before-input-event` handler: these need the app to have focus. */
+const HOST_FOCUSING_APP_COMMANDS: ReadonlySet<AppCommandId> = new Set([
+  "browser.focusLocation",
+  "browser.find",
+  "browser.recentTab.next",
+  "browser.recentTab.previous",
+]);
+
+interface ClosedTabSession {
+  entries: NavigationEntry[];
+  index: number;
+}
+
+/**
+ * How many "I trust this certificate anyway" decisions are remembered, and for
+ * how long: this session only, and never on disk. A decision to ignore a
+ * certificate error is the one setting here that a user would want back if they
+ * made it by mistake, so it dies with the app the way Chrome's does.
+ */
+const MAX_ACCEPTED_CERTIFICATES = 20;
+
+/**
+ * What the error screen says while a page is hung, and the marker that lets
+ * `responsive` clear it again without clearing a real load error underneath.
+ */
+const PAGE_UNRESPONSIVE_ERROR_TEXT = "This page is not responding.";
+
+/** A network question a tab is stopped on, and how to answer it. */
+interface PendingPagePrompt {
+  details: BbDesktopBrowserPagePromptDetails;
+  /** Hands the decision back to Chromium. Called exactly once. */
+  settle: (answer: BbDesktopBrowserPagePromptAnswer["answer"]) => void;
+}
+
+/** Electron's `login` answer: called with credentials, or with nothing to cancel. */
+type BrowserAuthCallback = (username?: string, password?: string) => void;
+
+/**
+ * Say "not this time" to a client-certificate request.
+ *
+ * Declining is the one path Electron does not document: its callback wants a
+ * certificate, and calling it with none is the only way to refuse. Wrapped
+ * because a runtime that refuses that must not take the main process down — the
+ * load then fails, which is what declining meant anyway.
+ */
+function declineClientCertificate(
+  callback: (certificate: Certificate) => void,
+): void {
+  try {
+    (callback as (certificate?: Certificate) => void)();
+  } catch {
+    // Nothing to recover: the request stays unanswered and fails.
+  }
+}
+
+/**
+ * A prompt as its caller writes it — the id is the shell's to assign. Written
+ * out per member rather than as `Omit<Details, "id">`, because `Omit` over a
+ * union keeps only the keys they share and would erase every field that makes
+ * one kind different from the next.
+ */
+type OpenPagePromptDetails =
+  BbDesktopBrowserPagePromptDetails extends infer TDetails
+    ? TDetails extends { kind: string }
+      ? Omit<TDetails, "id">
+      : never
+    : never;
 
 /**
  * At the start of a resize burst the view stays visible until its snapshot
@@ -214,6 +320,13 @@ interface BrowserViewEntry {
    */
   desiredBounds: BbDesktopBrowserViewBounds;
   popupTimestamps: number[];
+  /**
+   * This view is a popup the shell created, and the renderer has not adopted it
+   * yet. It exists because a page called `window.open()`, so it already has its
+   * page — the first `attach` must place it, not load into it, or an OAuth
+   * popup would be navigated away from the flow it was opened for.
+   */
+  shellCreated: boolean;
   /** URL of the icon currently pushed to the renderer, for change detection. */
   faviconUrl: string | null;
   /** Page the icon was resolved for (origin); a mismatch is what makes it stale. */
@@ -231,6 +344,16 @@ interface BrowserViewEntry {
   overlayActive: boolean;
   visible: boolean;
   /**
+   * Chromium's id for the find request this tab is currently showing, or null
+   * when nothing is being searched for.
+   *
+   * Kept because one query answers many times as Chromium scans, and a query
+   * the user has already typed past keeps answering after it: a result whose id
+   * is not this one belongs to a search the find bar has moved on from, and
+   * pushing it would make the counter jump backwards.
+   */
+  findRequestId: number | null;
+  /**
    * CDP session, attached lazily on the first automation command. Null until
    * then, deliberately: a debugger on every tab is overhead and exposure, and
    * enabling the Page domain moves this tab's dialogs off Chromium's native
@@ -244,6 +367,48 @@ interface BrowserViewEntry {
    * UI in front of the page.
    */
   pendingDialog: BbDesktopBrowserDialog["dialog"];
+  /**
+   * The network question this tab is stopped on — an authentication challenge,
+   * an untrusted certificate, a request for a client certificate. Hides the
+   * view exactly as a dialog does, because it is answered the same way: the app
+   * draws over a frozen page.
+   *
+   * Separate from `pendingDialog` because it comes from the network stack
+   * rather than from the page's script, and because only one of the two needs
+   * the debugger attached.
+   */
+  pagePrompt: PendingPagePrompt | null;
+  /**
+   * Requests parked behind an open authentication prompt, all challenging for
+   * the same realm.
+   *
+   * A page behind basic auth challenges **once per request** — a protected
+   * directory with a stylesheet and three images is four challenges — and
+   * prompting four times for one password is not what a browser does. One
+   * answer settles every request parked here.
+   */
+  pendingAuth: { key: string; callbacks: BrowserAuthCallback[] } | null;
+  /**
+   * The page has taken the window through the HTML fullscreen API, so the view
+   * covers the whole content area and the renderer's own rect waits in
+   * `desiredBounds` for it to come back.
+   */
+  htmlFullscreen: boolean;
+  /**
+   * Whether the window was put into the OS's full screen *for* this page, and
+   * therefore has to be taken back out when the page leaves it.
+   *
+   * A page that asked for fullscreen while the window was already there gets
+   * the expansion and nothing else: the user put the window in that state and
+   * only the user takes it out again.
+   */
+  windowFullscreenForPage: boolean;
+  /**
+   * The *user* asked for the page to fill the window. Held apart from
+   * `htmlFullscreen` on purpose: a video leaving its own fullscreen must not
+   * take the user's choice with it, and neither must the reverse.
+   */
+  userFullscreen: boolean;
   /** Guards one-time dialog wiring per CDP session. */
   dialogsWired: boolean;
   /**
@@ -306,7 +471,12 @@ export type DesktopBrowserHostWebContentsPayload =
   | BbDesktopBrowserSnapshot
   | BbDesktopBrowserDialog
   | BbDesktopBrowserDownload
-  | BbDesktopBrowserFavicon;
+  | BbDesktopBrowserFavicon
+  | BbDesktopBrowserFindResult
+  | BbDesktopBrowserPagePrompt
+  | BbDesktopBrowserPopup
+  | BbDesktopBrowserSearchSelection
+  | BbDesktopBrowserContextMenuInvoke;
 
 export interface DesktopBrowserHostContentBounds {
   height: number;
@@ -328,6 +498,14 @@ export interface DesktopBrowserHostWindow {
   contentView: DesktopBrowserHostContentView;
   getContentBounds(): DesktopBrowserHostContentBounds;
   isDestroyed(): boolean;
+  /** Whether the window is in the OS's own full screen right now. */
+  isFullScreen(): boolean;
+  /**
+   * Take the window in or out of the OS's full screen. Driven here rather than
+   * by Electron's own HTML-fullscreen handling, which this view turns off — see
+   * the `enter-html-full-screen` handler.
+   */
+  setFullScreen(fullScreen: boolean): void;
   webContents: DesktopBrowserHostWebContents;
 }
 
@@ -352,6 +530,8 @@ export interface CreateDesktopBrowserViewManagerArgs {
    * on the machine running its tests.
    */
   openDownloadPath: (savePath: string) => Promise<string>;
+  /** Hand a link to the user's real browser. */
+  openExternalUrl: (url: string) => void;
   partition?: string;
   /** Show a downloaded file in the OS file manager. */
   revealDownloadPath: (savePath: string) => void;
@@ -378,6 +558,13 @@ interface CreateEntryArgs {
   desiredBounds: BbDesktopBrowserViewBounds;
   hostWindow: DesktopBrowserHostWindow;
   tabId: string;
+  /**
+   * A view the shell already has, for a popup: Chromium made its `webContents`
+   * when the page called `window.open()`, and it carries the opener link that
+   * is the whole point. Omitted for every ordinary tab, which the renderer asks
+   * for and this creates.
+   */
+  view?: WebContentsView;
 }
 
 interface HostWindowViewportBoundsArgs {
@@ -403,9 +590,30 @@ export interface DesktopBrowserViewManager {
    * here that answers; it never rejects, reporting every failure as a typed
    * `ok: false` so the renderer can tell "no view" from "page would not talk".
    */
-  readPage(
-    args: HostScopedTabArgs,
-  ): Promise<BbDesktopBrowserPageReadResult>;
+  readPage(args: HostScopedTabArgs): Promise<BbDesktopBrowserPageReadResult>;
+  /**
+   * Search the tab's page, step through what was found, or stop. The count
+   * comes back on its own channel rather than from here, because one query
+   * answers many times while Chromium scans.
+   */
+  find(args: HostScopedRequestArgs<BbDesktopBrowserFindRequest>): void;
+  /**
+   * Give the page the whole window, or give the chrome back. Whether that is
+   * something to offer is the renderer's call — see
+   * {@link bbDesktopBrowserSetFullscreenRequestSchema}.
+   */
+  setFullscreen(
+    args: HostScopedRequestArgs<BbDesktopBrowserSetFullscreenRequest>,
+  ): void;
+  /**
+   * Replace the set of tabs whose pages get real popups — see
+   * {@link bbDesktopBrowserPopupTabsSchema}.
+   */
+  setPopupTabs(args: HostScopedRequestArgs<BbDesktopBrowserPopupTabs>): void;
+  /** Replace the plugin entries offered on a browsed page's context menu. */
+  setContextMenuItems(
+    args: HostScopedRequestArgs<BbDesktopBrowserContextMenuItems>,
+  ): void;
   /**
    * Freeze the page to a bitmap and hide the view so the app can draw over it,
    * or reveal it again. The only way React can put anything over a page.
@@ -439,6 +647,14 @@ export interface DesktopBrowserViewManager {
    */
   respondToDialog(
     args: HostScopedRequestArgs<BbDesktopBrowserDialogRespondRequest>,
+  ): Promise<boolean>;
+  /**
+   * Answer the network question a tab is stopped on. False when there was
+   * nothing to answer, or when the answer names a prompt the tab has already
+   * moved past.
+   */
+  respondToPagePrompt(
+    args: HostScopedRequestArgs<BbDesktopBrowserPagePromptAnswer>,
   ): Promise<boolean>;
   /**
    * Act on the page through a ref from the last snapshot, waiting for the
@@ -559,10 +775,25 @@ function applyEntryDesiredBounds(
   entry: BrowserViewEntry,
   hostWindow: DesktopBrowserHostWindow,
 ): void {
+  const viewport = hostWindowViewportBounds({ hostWindow });
+  if (entry.htmlFullscreen || entry.userFullscreen) {
+    // A page in HTML fullscreen gets the whole content area, app chrome
+    // included — that is what fullscreen means, and the renderer's rect is
+    // untouched in `desiredBounds` for when the page leaves it again. The
+    // window itself is not made fullscreen: the app's window state belongs to
+    // the user, not to a video player on a page.
+    entry.view.setBounds({
+      x: 0,
+      y: 0,
+      width: viewport.width,
+      height: viewport.height,
+    });
+    return;
+  }
   entry.view.setBounds(
     clampBbDesktopBrowserViewBounds({
       bounds: entry.desiredBounds,
-      viewport: hostWindowViewportBounds({ hostWindow }),
+      viewport,
     }),
   );
 }
@@ -797,7 +1028,11 @@ async function waitForActionable(
   let blocked: BrowserActionBlockedReason = "detached";
   for (;;) {
     const probe = parseBrowserActionProbe(
-      await callOnElement(session, target.objectId, BB_BROWSER_ACTIONABILITY_SCRIPT),
+      await callOnElement(
+        session,
+        target.objectId,
+        BB_BROWSER_ACTIONABILITY_SCRIPT,
+      ),
     );
     if (probe === null) {
       throw new InteractionRefusal(
@@ -1093,7 +1328,10 @@ async function performInteraction(
 
     case "check": {
       const point = await waitForActionable(session, target);
-      if ((await readCheckedState(session, target.objectId)) === interaction.checked) {
+      if (
+        (await readCheckedState(session, target.objectId)) ===
+        interaction.checked
+      ) {
         return;
       }
       await dispatchMouse(session, "mouseMoved", point, { button: "none" });
@@ -1112,7 +1350,10 @@ async function performInteraction(
       // the worst kind of lie to an agent.
       const deadline = Date.now() + CHECKED_SETTLE_TIMEOUT_MS;
       for (;;) {
-        if ((await readCheckedState(session, target.objectId)) === interaction.checked) {
+        if (
+          (await readCheckedState(session, target.objectId)) ===
+          interaction.checked
+        ) {
           return;
         }
         if (Date.now() >= deadline) {
@@ -1314,7 +1555,10 @@ async function evaluateInPage(
       { expression: "globalThis" },
     );
     if (typeof global.result?.objectId !== "string") {
-      throw new InteractionRefusal("failed", "The tab has no page to evaluate in.");
+      throw new InteractionRefusal(
+        "failed",
+        "The tab has no page to evaluate in.",
+      );
     }
     objectId = global.result.objectId;
   } else {
@@ -1709,7 +1953,13 @@ async function captureObservation(
         message: `That page's PDF is ${Math.round(buffer.byteLength / 1_048_576)}MB, past what the browser bridge will carry. Print a page range instead.`,
       };
     }
-    return { ok: true, kind: "pdf", ...page, base64, byteLength: buffer.byteLength };
+    return {
+      ok: true,
+      kind: "pdf",
+      ...page,
+      base64,
+      byteLength: buffer.byteLength,
+    };
   }
 
   const image = await entry.view.webContents.capturePage();
@@ -1776,12 +2026,15 @@ async function captureFullPageImage(
     };
   }
   const region =
-    measured.kind === "value" ? parseBrowserCaptureRegion(measured.value) : null;
+    measured.kind === "value"
+      ? parseBrowserCaptureRegion(measured.value)
+      : null;
   if (region === null) {
     return {
       ok: false,
       reason: "failed",
-      message: "The page reported no size to capture — it may not have laid out yet.",
+      message:
+        "The page reported no size to capture — it may not have laid out yet.",
     };
   }
   // The page can go while its own script is in flight, and a capture against a
@@ -1800,7 +2053,13 @@ async function captureFullPageImage(
       // `scale: 1` is what makes the result CSS pixels rather than the display's
       // device pixels — on a retina screen the difference is four times the
       // bytes for a picture nobody asked to be that sharp.
-      clip: { x: 0, y: 0, width: region.width, height: region.height, scale: 1 },
+      clip: {
+        x: 0,
+        y: 0,
+        width: region.width,
+        height: region.height,
+        scale: 1,
+      },
       captureBeyondViewport: true,
     },
   );
@@ -1983,7 +2242,13 @@ async function captureStorage(args: {
         message: "That page's storage could not be read.",
       };
     }
-    return { ok: true, kind: "items", ...page, area: operation.area, ...parsed };
+    return {
+      ok: true,
+      kind: "items",
+      ...page,
+      area: operation.area,
+      ...parsed,
+    };
   }
 
   const counts = parseBrowserStorageCounts(outcome.value);
@@ -2032,14 +2297,30 @@ function buildBrowserState(
 }
 
 /**
- * The single browser-session permission we allow. `clipboard-sanitized-write`
- * is write-only: an in-page copy button calling `navigator.clipboard.writeText()`
- * can put sanitized text on the system clipboard, but the page can NOT read the
- * clipboard (`clipboard-read` stays denied). Every other device/capability
- * permission (camera, mic, geolocation, notifications, MIDI, …) stays denied.
+ * The browser-session permissions we allow. Two, and each for its own reason.
+ *
+ * `clipboard-sanitized-write` is write-only: an in-page copy button calling
+ * `navigator.clipboard.writeText()` can put sanitized text on the system
+ * clipboard, but the page can NOT read the clipboard (`clipboard-read` stays
+ * denied).
+ *
+ * `fullscreen` is what a video player's fullscreen button asks for. Denying it
+ * does not merely hide a control — `requestFullscreen()` rejects, so
+ * `enter-html-full-screen` never fires and the button does nothing at all,
+ * which is the shape of every dead end in browser-gaps.md. What it costs is
+ * that a page can fill the window and draw something that looks like our
+ * chrome; the answer is the same as every browser's, that Escape gets out and
+ * the chrome comes back.
+ *
+ * `keyboardLock` deliberately stays denied *because* fullscreen is allowed: it
+ * is the permission that would let a page keep the Escape that gets the user
+ * out. Every other device/capability permission (camera, mic, geolocation,
+ * notifications, MIDI, pointer lock, …) stays denied too.
  */
 export function isAllowedBrowserPermission(permission: string): boolean {
-  return permission === "clipboard-sanitized-write";
+  return (
+    permission === "clipboard-sanitized-write" || permission === "fullscreen"
+  );
 }
 
 export function createDesktopBrowserViewManager(
@@ -2065,6 +2346,112 @@ export function createDesktopBrowserViewManager(
    * for one this has forgotten.
    */
   const writtenDownloadPaths = new Set<string>();
+  /**
+   * Plugin context-menu entries, as the renderer last declared them. Held here
+   * so a right-click composes its menu from data already in hand — asking the
+   * server first would put a round trip in front of every menu.
+   */
+  let contextMenuItems: readonly BbDesktopBrowserContextMenuItem[] = [];
+  /**
+   * `host|fingerprint` pairs a human chose to trust despite a certificate
+   * error. Keyed on the fingerprint as well as the host so trusting one bad
+   * certificate does not trust the next one served from the same name — which
+   * is the difference between "I know this dev box" and "stop asking me".
+   *
+   * Per manager and per session: never written down, gone on restart.
+   */
+  const acceptedCertificates = new Set<string>();
+  /** Distinguishes one prompt from the next, so a late answer is droppable. */
+  let pagePromptSequence = 0;
+  /**
+   * Tabs whose pages get real popups, as the renderer last declared them, held
+   * as `${hostWebContentsId}:${tabId}` keys because a tab id is only unique
+   * within its window.
+   */
+  const popupTabKeys = new Set<string>();
+  /** Names the tabs the shell opens itself; the renderer adopts these ids. */
+  let popupSequence = 0;
+
+  /**
+   * Navigation history of tabs the renderer has closed, keyed by tab id, so
+   * reopening one puts the user back where they were rather than at the top of
+   * the page.
+   *
+   * It lives here rather than in the renderer for two reasons. The entries
+   * carry Chromium's `pageState` — scroll offsets and **form values** — which
+   * has no business crossing a wire or sitting in a React store; and the shell
+   * is the only place that can read it, at the one moment it still exists,
+   * which is just before the view is destroyed.
+   *
+   * Insertion-ordered and bounded: reopening walks back through recent closes,
+   * so old ones are worth nothing.
+   */
+  const closedTabSessions = new Map<string, ClosedTabSession>();
+
+  function rememberClosedTabSession(entry: BrowserViewEntry): void {
+    if (entry.view.webContents.isDestroyed()) {
+      return;
+    }
+    const history = entry.view.webContents.navigationHistory;
+    let entries: NavigationEntry[];
+    try {
+      entries = history.getAllEntries();
+    } catch {
+      return;
+    }
+    if (entries.length === 0) {
+      return;
+    }
+    // Re-inserting moves an id back to the newest position, which matters when
+    // a tab id is reused.
+    closedTabSessions.delete(entry.tabId);
+    closedTabSessions.set(entry.tabId, {
+      entries,
+      index: history.getActiveIndex(),
+    });
+    if (closedTabSessions.size <= MAX_CLOSED_TAB_SESSIONS) {
+      return;
+    }
+    const oldest = closedTabSessions.keys().next();
+    if (!oldest.done) {
+      closedTabSessions.delete(oldest.value);
+    }
+  }
+
+  /**
+   * Reopen a tab where it left off, if this is the same tab id coming back.
+   *
+   * Restoring drives its own navigation, so it replaces the load rather than
+   * following it — a load *and* a restore would fetch the page twice and the
+   * user would watch it happen. Returns whether it took the load over.
+   */
+  function restoreClosedTabSession(
+    entry: BrowserViewEntry,
+    url: string,
+  ): boolean {
+    const session = closedTabSessions.get(entry.tabId);
+    if (session === undefined) {
+      return false;
+    }
+    // One shot: a session restored is a session spent, so a later reload or
+    // re-attach behaves like any other tab.
+    closedTabSessions.delete(entry.tabId);
+    const target = session.entries[session.index];
+    // The renderer reopens with the URL it remembered; if the two disagree the
+    // renderer is the authority on where the tab should be, and the stale
+    // history is dropped rather than overriding it.
+    if (target === undefined || (url.length > 0 && target.url !== url)) {
+      return false;
+    }
+    entry.view.webContents.navigationHistory
+      .restore({ entries: session.entries, index: session.index })
+      .catch(() => {
+        // Restoring is best effort: fall back to a plain load so a reopened tab
+        // still shows its page, just without the history behind it.
+        loadIfNeeded(entry, url);
+      });
+    return true;
+  }
 
   function rememberDownloadPath(savePath: string): void {
     writtenDownloadPaths.add(savePath);
@@ -2103,6 +2490,9 @@ export function createDesktopBrowserViewManager(
         !isHostResizing(hostWindow) &&
         // A dialog means the app is drawing its own modal where the page was.
         entry.pendingDialog === null &&
+        // A network prompt is the same situation, arrived at from the other
+        // side: the load is stopped and the app is drawing the question.
+        entry.pagePrompt === null &&
         // As does an overlay — a dropdown the app draws over the page.
         !entry.overlayActive,
     );
@@ -2151,11 +2541,8 @@ export function createDesktopBrowserViewManager(
     }
     const browserSession = session.fromPartition(partition);
     // Deny every device/capability permission by default in v1 (camera, mic,
-    // geolocation, notifications, MIDI, …). The single exception is
-    // `clipboard-sanitized-write`, allowed so in-page copy buttons (e.g.
-    // GitHub) that call `navigator.clipboard.writeText()` work; this is
-    // write-only, so `clipboard-read` stays denied. A prompt UI is a later
-    // phase.
+    // geolocation, notifications, MIDI, …); see `isAllowedBrowserPermission`
+    // for the two exceptions and why each is one. A prompt UI is a later phase.
     browserSession.setPermissionRequestHandler((_wc, permission, callback) => {
       callback(isAllowedBrowserPermission(permission));
     });
@@ -2291,7 +2678,8 @@ export function createDesktopBrowserViewManager(
   }
 
   function recordNetworkRequest(details: BrowserNetworkRequestDetails): void {
-    const webContentsId = (details as { webContentsId?: unknown }).webContentsId;
+    const webContentsId = (details as { webContentsId?: unknown })
+      .webContentsId;
     if (typeof webContentsId !== "number") {
       return;
     }
@@ -2435,7 +2823,12 @@ export function createDesktopBrowserViewManager(
       // Prevent both the untrusted page and Electron's application menu from
       // also handling a chord that bb resolved as a browser command.
       event.preventDefault();
-      if (command === "browser.focusLocation") {
+      // Commands whose *next* keystroke has to land in the app rather than in
+      // the page. The address bar is the obvious one; the tab switcher is the
+      // subtle one — it is driven by further Ctrl+Tab presses and closed by the
+      // Ctrl release, and a key released inside a browsed page never becomes an
+      // app command.
+      if (HOST_FOCUSING_APP_COMMANDS.has(command)) {
         args.focusHostWebContents(hostWindow.webContents.id);
       }
       args.dispatchAppCommand({
@@ -2466,27 +2859,85 @@ export function createDesktopBrowserViewManager(
       }
     });
 
+    // `window.open` and `target="_blank"`, in two flavours.
+    //
+    // For a tab whose surface claimed popups, Chromium creates the window and
+    // the shell hosts it as a tab: `window.open()` returns a real handle, the
+    // popup has a live `window.opener`, and it can close itself — which is the
+    // difference between an OAuth flow completing and a page deciding it was
+    // popup-blocked. Everywhere else the older behaviour stands: deny, and push
+    // the URL over for the renderer to open as a plain tab.
     webContents.setWindowOpenHandler((details) => {
-      const { openTabUrl } = resolveWindowOpenAction(details.url);
-      if (openTabUrl !== null) {
-        const decision = evaluatePopupRate({
-          timestamps: entry.popupTimestamps,
-          now: Date.now(),
-          windowMs: POPUP_RATE_WINDOW_MS,
-          maxInWindow: POPUP_RATE_MAX_IN_WINDOW,
+      const hostsRealPopup =
+        popupTabKeys.has(browserViewKey(hostWindow, tabId)) &&
+        isAllowedBrowserPopupTarget(details.url);
+      const fallbackUrl = hostsRealPopup
+        ? null
+        : resolveWindowOpenAction(details.url).openTabUrl;
+      if (!hostsRealPopup && fallbackUrl === null) {
+        return { action: "deny" };
+      }
+      // The same sliding window either way: a page churning popups is a page
+      // churning popups whether or not they come with an opener.
+      const decision = evaluatePopupRate({
+        timestamps: entry.popupTimestamps,
+        now: Date.now(),
+        windowMs: POPUP_RATE_WINDOW_MS,
+        maxInWindow: POPUP_RATE_MAX_IN_WINDOW,
+      });
+      entry.popupTimestamps = decision.timestamps;
+      if (!decision.allowed) {
+        return { action: "deny" };
+      }
+      if (hostsRealPopup) {
+        return {
+          action: "allow",
+          // Chromium's own rule, and the one an OAuth flow depends on: a popup
+          // dies with the page that opened it.
+          outlivesOpener: false,
+          createWindow: (options) =>
+            createPopupEntry({
+              hostWindow,
+              openerEntry: entry,
+              openerTabId: tabId,
+              options,
+              url: details.url,
+            }),
+        };
+      }
+      if (fallbackUrl !== null) {
+        send(hostWindow, BB_DESKTOP_BROWSER_OPEN_TAB_CHANNEL, {
+          url: fallbackUrl,
         });
-        entry.popupTimestamps = decision.timestamps;
-        if (decision.allowed) {
-          send(hostWindow, BB_DESKTOP_BROWSER_OPEN_TAB_CHANNEL, {
-            url: openTabUrl,
-          });
-          send(hostWindow, BB_DESKTOP_BROWSER_SCOPED_OPEN_TAB_CHANNEL, {
-            tabId,
-            url: openTabUrl,
-          });
-        }
+        send(hostWindow, BB_DESKTOP_BROWSER_SCOPED_OPEN_TAB_CHANNEL, {
+          tabId,
+          url: fallbackUrl,
+        });
       }
       return { action: "deny" };
+    });
+
+    // A popup closing itself (`window.close()`, which is how an OAuth flow
+    // ends) destroys its `webContents` without anyone asking the renderer. Only
+    // the shell sees it, so only the shell can say the tab is gone.
+    //
+    // `destroyEntry` removes the entry from the map *before* closing, so this
+    // fires for a page's own close and not for the renderer's.
+    const entryWebContentsId = webContents.id;
+    webContents.on("destroyed", () => {
+      const key = browserViewKey(hostWindow, tabId);
+      if (entries.get(key) !== entry) {
+        return;
+      }
+      entries.delete(key);
+      entriesByWebContentsId.delete(entryWebContentsId);
+      if (!hostWindow.isDestroyed()) {
+        hostWindow.contentView.removeChildView(entry.view);
+      }
+      send(hostWindow, BB_DESKTOP_BROWSER_POPUP_CHANNEL, {
+        kind: "closed",
+        tabId,
+      });
     });
 
     // Right-click menu for the untrusted browser view. Built from this view's
@@ -2498,35 +2949,363 @@ export function createDesktopBrowserViewManager(
       if (webContents.isDestroyed()) {
         return;
       }
-      const { editFlags } = params;
-      const menu = Menu.buildFromTemplate([
-        {
-          role: "cut",
-          enabled: editFlags.canCut,
+      const template = buildBrowserContextMenuTemplate({
+        target: {
+          canGoBack: webContents.navigationHistory.canGoBack(),
+          canGoForward: webContents.navigationHistory.canGoForward(),
+          editFlags: params.editFlags,
+          isEditable: params.isEditable,
+          linkURL: params.linkURL,
+          mediaType: params.mediaType,
+          selectionText: params.selectionText,
+          srcURL: params.srcURL,
         },
-        {
-          role: "copy",
-          enabled: editFlags.canCopy && params.selectionText.length > 0,
+        pluginItems: contextMenuItems,
+        actions: {
+          invokePluginItem: (item) => {
+            send(hostWindow, BB_DESKTOP_BROWSER_CONTEXT_MENU_INVOKE_CHANNEL, {
+              pluginId: item.pluginId,
+              itemId: item.itemId,
+              tabId,
+              pageUrl: truncate(
+                webContents.getURL(),
+                BB_DESKTOP_BROWSER_MAX_URL_LENGTH,
+              ),
+              linkUrl:
+                params.linkURL.length > 0
+                  ? truncate(params.linkURL, BB_DESKTOP_BROWSER_MAX_URL_LENGTH)
+                  : null,
+              imageUrl:
+                params.mediaType === "image" && params.srcURL.length > 0
+                  ? truncate(params.srcURL, BB_DESKTOP_BROWSER_MAX_URL_LENGTH)
+                  : null,
+              selectionText:
+                params.selectionText.length > 0
+                  ? truncate(
+                      params.selectionText,
+                      BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH,
+                    )
+                  : null,
+            });
+          },
+          copyImage: () => {
+            webContents.copyImageAt(params.x, params.y);
+          },
+          copyText: (text) => {
+            clipboard.writeText(text);
+          },
+          goBack: () => {
+            webContents.navigationHistory.goBack();
+          },
+          goForward: () => {
+            webContents.navigationHistory.goForward();
+          },
+          openExternally: (url) => {
+            args.openExternalUrl(url);
+          },
+          openInNewTab: (url) => {
+            // The path popups already take: the renderer owns where a tab goes,
+            // and the surface only opens one for a tab it owns.
+            send(hostWindow, BB_DESKTOP_BROWSER_SCOPED_OPEN_TAB_CHANNEL, {
+              tabId,
+              url,
+            });
+          },
+          reload: () => {
+            webContents.reload();
+          },
+          saveImage: (url) => {
+            // Goes through `will-download` like any other download, so it is
+            // named, rate-limited and reported by the same code.
+            webContents.downloadURL(url);
+          },
+          searchFor: (query) => {
+            send(hostWindow, BB_DESKTOP_BROWSER_SEARCH_SELECTION_CHANNEL, {
+              tabId,
+              query: truncate(query, BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH),
+            });
+          },
         },
-        {
-          role: "paste",
-          enabled: editFlags.canPaste,
-        },
-        { type: "separator" },
-        {
-          role: "selectAll",
-          enabled: editFlags.canSelectAll,
-        },
-      ]);
-      menu.popup();
+      });
+      Menu.buildFromTemplate(template).popup();
     });
 
     // Recorded from the moment the tab exists, and never cleared on navigation:
     // the log answers "what has this tab logged", which spans the redirect that
     // got it here. Clearing on `did-navigate` would also drop the main-frame
     // request's own status — the single most useful entry in a network log.
-    webContents.on("console-message", (details: BrowserConsoleMessageDetails) => {
-      entry.consoleLog.record(toBrowserConsoleEntry(details, Date.now()));
+    webContents.on(
+      "console-message",
+      (details: BrowserConsoleMessageDetails) => {
+        entry.consoleLog.record(toBrowserConsoleEntry(details, Date.now()));
+      },
+    );
+
+    // The three questions the network asks that only a human can answer. Each
+    // one is a documented Electron event whose *default* is to refuse silently,
+    // which is what made them dead ends: the page simply failed with no way to
+    // tell whether bb had decided something or nothing had happened at all.
+
+    webContents.on("login", (event, details, authInfo, callback) => {
+      // Electron's default cancels every challenge. Taking it over means this
+      // code now owns both answers — including the refusals below, which are
+      // deliberate rather than absent.
+      event.preventDefault();
+      const realmKey = `${authInfo.host}:${authInfo.port}|${authInfo.realm}`;
+      if (entry.pendingAuth?.key === realmKey) {
+        // Another request for the same realm while the prompt is open: park it
+        // and let one answer settle them all.
+        entry.pendingAuth.callbacks.push(callback);
+        return;
+      }
+      // Read rather than typed: `isRequestForNavigation` is documented for
+      // current Electron and missing from the typings this app is pinned to, so
+      // the policy takes null for "the runtime did not say".
+      const isRequestForNavigation = (
+        details as { isRequestForNavigation?: boolean }
+      ).isRequestForNavigation;
+      if (
+        !shouldPromptForBrowserAuth({
+          isProxy: authInfo.isProxy,
+          isRequestForNavigation:
+            typeof isRequestForNavigation === "boolean"
+              ? isRequestForNavigation
+              : null,
+          isLoadingMainFrame: webContents.isLoadingMainFrame(),
+          pageUrl: webContents.getURL(),
+          requestUrl: details.url,
+        })
+      ) {
+        callback();
+        return;
+      }
+      // Held locally and published only once the prompt is up: a challenge that
+      // cannot be asked about (the tab already has a prompt open) must not take
+      // another realm's parked callbacks down with it — they would never be
+      // settled, and their requests would hang for the life of the tab.
+      const pendingAuth = { key: realmKey, callbacks: [callback] };
+      const opened = openPagePrompt({
+        details: {
+          kind: "auth",
+          host: truncate(
+            formatBrowserAuthHost(authInfo),
+            BB_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH,
+          ),
+          // Basic auth over http puts the password on the wire in the clear.
+          insecure: !details.url.startsWith("https:"),
+        },
+        entry,
+        hostWindow,
+        settle: (answer) => {
+          if (entry.pendingAuth === pendingAuth) {
+            entry.pendingAuth = null;
+          }
+          for (const waiting of pendingAuth.callbacks) {
+            if (answer.kind === "credentials") {
+              waiting(answer.username, answer.password);
+            } else {
+              waiting();
+            }
+          }
+        },
+        tabId,
+      });
+      if (!opened) {
+        callback();
+        return;
+      }
+      entry.pendingAuth = pendingAuth;
+    });
+
+    webContents.on(
+      "certificate-error",
+      (event, url, error, certificate, callback, isMainFrame) => {
+        event.preventDefault();
+        const host = browserUrlHost(url);
+        const key = `${host}|${certificate.fingerprint}`;
+        if (acceptedCertificates.has(key)) {
+          callback(true);
+          return;
+        }
+        // Only the page itself may be trusted by hand. A subresource riding on
+        // a bad certificate is not something a user can judge — they cannot see
+        // what it is — so it is refused unless the same certificate was already
+        // accepted for the page.
+        if (!isMainFrame) {
+          callback(false);
+          return;
+        }
+        const opened = openPagePrompt({
+          details: {
+            kind: "certificate",
+            host: truncate(host, BB_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH),
+            errorCode: truncate(
+              error,
+              BB_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH,
+            ),
+            subjectName: truncate(
+              certificate.subjectName,
+              BB_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH,
+            ),
+            issuerName: truncate(
+              certificate.issuerName,
+              BB_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH,
+            ),
+            validFrom: certificate.validStart,
+            validTo: certificate.validExpiry,
+            fingerprint: truncate(
+              certificate.fingerprint,
+              BB_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH,
+            ),
+          },
+          entry,
+          hostWindow,
+          settle: (answer) => {
+            if (answer.kind !== "proceed") {
+              callback(false);
+              return;
+            }
+            rememberAcceptedCertificate(key);
+            callback(true);
+          },
+          tabId,
+        });
+        if (!opened) {
+          callback(false);
+        }
+      },
+    );
+
+    webContents.on(
+      "select-client-certificate",
+      (event, url, certificateList, callback) => {
+        // Without this, Electron hands over the first certificate in the store
+        // — a client credential chosen for the user, by position.
+        event.preventDefault();
+        const offered = certificateList.slice(
+          0,
+          BB_DESKTOP_BROWSER_MAX_CLIENT_CERTIFICATES,
+        );
+        if (offered.length === 0) {
+          // Nothing to choose from, and the default is already prevented — so
+          // decline explicitly. Returning here would leave the request waiting
+          // on a callback nobody is going to call.
+          declineClientCertificate(callback);
+          return;
+        }
+        const opened = openPagePrompt({
+          details: {
+            kind: "client-certificate",
+            host: truncate(
+              browserUrlHost(url),
+              BB_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH,
+            ),
+            certificates: offered.map((certificate, index) => ({
+              index,
+              subjectName: truncate(
+                certificate.subjectName,
+                BB_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH,
+              ),
+              issuerName: truncate(
+                certificate.issuerName,
+                BB_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH,
+              ),
+              validTo: certificate.validExpiry,
+            })),
+          },
+          entry,
+          hostWindow,
+          settle: (answer) => {
+            const chosen =
+              answer.kind === "client-certificate"
+                ? offered[answer.index]
+                : undefined;
+            if (chosen !== undefined) {
+              callback(chosen);
+              return;
+            }
+            declineClientCertificate(callback);
+          },
+          tabId,
+        });
+        if (!opened) {
+          declineClientCertificate(callback);
+        }
+      },
+    );
+
+    // A page that asked for fullscreen and got it — a video player's button.
+    // Two things have to happen for this to be the fullscreen Chromium gives:
+    // the window goes to the OS's full screen, and the view takes the whole
+    // content area of it (app chrome included), with the renderer's own rect
+    // waiting in `desiredBounds` for the way back.
+    //
+    // The window half is driven here rather than by Electron, whose own
+    // handling is turned off for this view (`disableHtmlFullscreenWindowResize`
+    // — see `createEntry`): its version cannot tell a window the *user* had
+    // already put in full screen from one it expanded itself, and would drop
+    // the user out of theirs when a video ended.
+    webContents.on("enter-html-full-screen", () => {
+      entry.htmlFullscreen = true;
+      if (!hostWindow.isDestroyed() && !hostWindow.isFullScreen()) {
+        entry.windowFullscreenForPage = true;
+        hostWindow.setFullScreen(true);
+      }
+      // The OS animates its way there and the content bounds grow behind it, so
+      // this is the pre-animation size; the window's own resize burst re-applies
+      // these bounds when it settles (`endWindowResize`).
+      applyEntryDesiredBounds(entry, hostWindow);
+    });
+    webContents.on("leave-html-full-screen", () => {
+      entry.htmlFullscreen = false;
+      restoreWindowFromPageFullscreen(entry, hostWindow);
+      applyEntryDesiredBounds(entry, hostWindow);
+    });
+
+    // A dead renderer leaves a blank view forever. Routing it through the same
+    // error text `did-fail-load` uses is what gives it the screen that already
+    // exists, with the reload button on it.
+    webContents.on("render-process-gone", (_event, details) => {
+      if (details.reason === "clean-exit") {
+        return;
+      }
+      entry.lastErrorText =
+        details.reason === "oom"
+          ? "This page ran out of memory."
+          : "This page crashed.";
+      pushState(hostWindow, tabId);
+    });
+
+    // Chromium's hang monitor waits tens of seconds before this fires, so it is
+    // not a slow script — the page is stuck. Reported rather than killed: the
+    // user gets the reload button, and a page that comes back on its own takes
+    // its own message away.
+    webContents.on("unresponsive", () => {
+      entry.lastErrorText = PAGE_UNRESPONSIVE_ERROR_TEXT;
+      pushState(hostWindow, tabId);
+    });
+    webContents.on("responsive", () => {
+      if (entry.lastErrorText !== PAGE_UNRESPONSIVE_ERROR_TEXT) {
+        return;
+      }
+      entry.lastErrorText = null;
+      pushState(hostWindow, tabId);
+    });
+
+    // How the find bar learns what it found. Chromium counts while it scans, so
+    // several of these arrive for one query and the count climbs; the id check
+    // is what keeps a superseded query's late answer from landing on a newer
+    // one — see `findRequestId`.
+    webContents.on("found-in-page", (_event, result) => {
+      if (entry.findRequestId !== result.requestId) {
+        return;
+      }
+      send(hostWindow, BB_DESKTOP_BROWSER_FIND_RESULT_CHANNEL, {
+        tabId,
+        activeMatchOrdinal: result.activeMatchOrdinal,
+        matches: result.matches,
+        finalUpdate: result.finalUpdate,
+      });
     });
 
     const refresh = () => pushState(hostWindow, tabId);
@@ -2542,6 +3321,10 @@ export function createDesktopBrowserViewManager(
       // document means every ref is now either dangling or, worse, pointing at
       // whatever inherited that node id. Same contract Playwright has.
       invalidateSnapshotRefs(entry);
+      // A new document ends Chromium's find session with it. Forgetting the id
+      // here is what stops a straggling result from the old page being pushed
+      // as if it described the new one.
+      entry.findRequestId = null;
       refresh();
     });
     webContents.on("did-navigate-in-page", (_event, url, isMainFrame) => {
@@ -2580,20 +3363,87 @@ export function createDesktopBrowserViewManager(
     );
   }
 
+  /**
+   * Host a popup Chromium is creating, and tell the renderer to adopt it.
+   *
+   * Runs inside `createWindow`, synchronously, while `window.open()` is still
+   * on the page's stack — which is why the tab id is the shell's to choose:
+   * the page has its handle before the renderer has heard of the tab.
+   *
+   * The view is built from the options Electron passed rather than from our own
+   * preferences, and that is the load-bearing part. Those options carry the
+   * `webContents` Chromium already made for the popup, with its opener link
+   * intact; building a fresh one instead would produce a window that looks the
+   * same and has no opener, which is the bug this whole path exists to fix.
+   * They also carry the opener's own web preferences — sandboxed, isolated, no
+   * node, no preload, our partition — because a popup inherits them, so passing
+   * them through is what keeps the hardening rather than what loses it.
+   */
+  function createPopupEntry(args: {
+    hostWindow: DesktopBrowserHostWindow;
+    openerEntry: BrowserViewEntry;
+    openerTabId: string;
+    options: BrowserWindowConstructorOptions;
+    url: string;
+  }): WebContents {
+    popupSequence += 1;
+    const tabId = `browser-popup:${popupSequence}`;
+    const adopted = (args.options as { webContents?: WebContents }).webContents;
+    const view = new WebContentsView(
+      adopted === undefined
+        ? { webPreferences: args.options.webPreferences }
+        : { webContents: adopted },
+    );
+    createEntry({
+      // Where the opener sits, so the popup lands in the panel rather than at
+      // the window's corner for the frame before the renderer measures it.
+      desiredBounds: args.openerEntry.desiredBounds,
+      hostWindow: args.hostWindow,
+      tabId,
+      view,
+    });
+    send(args.hostWindow, BB_DESKTOP_BROWSER_POPUP_CHANNEL, {
+      kind: "opened",
+      openerTabId: args.openerTabId,
+      tabId,
+      url: truncate(args.url, BB_DESKTOP_BROWSER_MAX_URL_LENGTH),
+    });
+    return view.webContents;
+  }
+
   function createEntry(args: CreateEntryArgs): BrowserViewEntry {
     ensureHardenedSession();
-    const view = new WebContentsView({
-      webPreferences: {
-        partition,
-        sandbox: true,
-        contextIsolation: true,
-        nodeIntegration: false,
-        webSecurity: true,
-        allowRunningInsecureContent: false,
-        // Intentionally NO preload: browsed pages are untrusted and must never
-        // receive a bb bridge.
-      },
-    });
+    const view =
+      args.view ??
+      new WebContentsView({
+        webPreferences: {
+          partition,
+          sandbox: true,
+          contextIsolation: true,
+          nodeIntegration: false,
+          webSecurity: true,
+          allowRunningInsecureContent: false,
+          // Chromium's built-in PDF viewer, which is what this preference gates
+          // now that NPAPI and PPAPI are gone — "plugins" is a name from an era
+          // that ended, and the only one left is PDFium.
+          //
+          // Without it a PDF link is not a page, it is a download: Chromium's
+          // fallback for a document it cannot display. That is a browser failing
+          // at something a user does weekly, so the viewer is on. What it admits
+          // is one more parser of a complex format next to untrusted content —
+          // bounded by PDFium running in its own sandboxed process, which is the
+          // same bargain every Chromium-based browser makes.
+          plugins: true,
+          // A page entering HTML fullscreen must not drag the whole app window
+          // into the OS's fullscreen, which is Electron's default. The view takes
+          // the window's content area instead (`applyEntryDesiredBounds`), so the
+          // page gets the fullscreen it asked for while the window state stays
+          // the user's.
+          disableHtmlFullscreenWindowResize: true,
+          // Intentionally NO preload: browsed pages are untrusted and must never
+          // receive a bb bridge.
+        },
+      });
     const entry: BrowserViewEntry = {
       view,
       tabId: args.tabId,
@@ -2602,14 +3452,21 @@ export function createDesktopBrowserViewManager(
       currentMainFrameLocalOriginKey: null,
       desiredBounds: args.desiredBounds,
       popupTimestamps: [],
+      shellCreated: args.view !== undefined,
       faviconUrl: null,
       faviconPageKey: null,
       faviconFetchTimestamps: [],
       downloadTimestamps: [],
       overlayActive: false,
       visible: false,
+      findRequestId: null,
       cdp: null,
       pendingDialog: null,
+      pagePrompt: null,
+      pendingAuth: null,
+      htmlFullscreen: false,
+      windowFullscreenForPage: false,
+      userFullscreen: false,
       dialogsWired: false,
       automationWorldId: null,
       consoleLog: new BrowserObservationLog(BB_BROWSER_OBSERVATION_BUFFER_SIZE),
@@ -2655,6 +3512,16 @@ export function createDesktopBrowserViewManager(
     if (!entry) {
       return;
     }
+    // A question nobody will answer now: cancel it, so the request it is
+    // holding fails instead of hanging on a callback that is about to be
+    // unreachable.
+    closePagePrompt(hostWindow, entry.tabId, entry, { kind: "cancel" });
+    // Closing a tab mid-video must not leave the window in the full screen that
+    // tab's page asked for.
+    restoreWindowFromPageFullscreen(entry, hostWindow);
+    // Before anything is torn down: this is the last moment the page's own
+    // history and scroll still exist.
+    rememberClosedTabSession(entry);
     entries.delete(key);
     entriesByWebContentsId.delete(entry.view.webContents.id);
     releaseCdpSession(entry);
@@ -2741,9 +3608,7 @@ export function createDesktopBrowserViewManager(
       const type = opening.type ?? "alert";
       entry.pendingDialog = {
         type:
-          type === "confirm" ||
-          type === "prompt" ||
-          type === "beforeunload"
+          type === "confirm" || type === "prompt" || type === "beforeunload"
             ? type
             : "alert",
         message: truncate(
@@ -2818,6 +3683,140 @@ export function createDesktopBrowserViewManager(
     });
   }
 
+  /**
+   * Give the window back the state it had before a page took it fullscreen.
+   * Does nothing when the window was already there — that was the user's doing,
+   * and a video ending is not a reason to drop them out of it.
+   */
+  function restoreWindowFromPageFullscreen(
+    entry: BrowserViewEntry,
+    hostWindow: DesktopBrowserHostWindow,
+  ): void {
+    if (!entry.windowFullscreenForPage) {
+      return;
+    }
+    entry.windowFullscreenForPage = false;
+    if (!hostWindow.isDestroyed()) {
+      hostWindow.setFullScreen(false);
+    }
+  }
+
+  function rememberAcceptedCertificate(key: string): void {
+    acceptedCertificates.add(key);
+    if (acceptedCertificates.size <= MAX_ACCEPTED_CERTIFICATES) {
+      return;
+    }
+    const oldest = acceptedCertificates.values().next();
+    if (!oldest.done) {
+      acceptedCertificates.delete(oldest.value);
+    }
+  }
+
+  /**
+   * Put a network question in front of the user, and stop the page for it.
+   *
+   * Answers false when the tab already has one open, which is the whole
+   * anti-nuisance policy: a page that can trigger challenges cannot stack
+   * prompts, because the second one never opens. The caller decides what
+   * refusing means for its own event — for every one of them it is "cancel",
+   * which is what Chromium would have done unasked.
+   */
+  function openPagePrompt(args: {
+    details: OpenPagePromptDetails;
+    entry: BrowserViewEntry;
+    hostWindow: DesktopBrowserHostWindow;
+    settle: PendingPagePrompt["settle"];
+    tabId: string;
+  }): boolean {
+    if (args.entry.pagePrompt !== null) {
+      return false;
+    }
+    pagePromptSequence += 1;
+    const details = {
+      ...args.details,
+      id: `page-prompt-${pagePromptSequence}`,
+    } as BbDesktopBrowserPagePromptDetails;
+    args.entry.pagePrompt = { details, settle: args.settle };
+    // Stand a bitmap of the stopped page in behind the question, the way the
+    // dialog path does — a prompt over an empty panel says less about what is
+    // being asked.
+    capturePagePromptPlaceholder(args.hostWindow, args.tabId, args.entry);
+    applyEntryVisibility(args.entry, args.hostWindow);
+    send(args.hostWindow, BB_DESKTOP_BROWSER_PAGE_PROMPT_CHANNEL, {
+      tabId: args.tabId,
+      prompt: details,
+    });
+    return true;
+  }
+
+  function capturePagePromptPlaceholder(
+    hostWindow: DesktopBrowserHostWindow,
+    tabId: string,
+    entry: BrowserViewEntry,
+  ): void {
+    entry.view.webContents
+      .capturePage()
+      .then((image) => {
+        if (entry.pagePrompt === null || image.isEmpty()) {
+          return;
+        }
+        send(hostWindow, BB_DESKTOP_BROWSER_SNAPSHOT_CHANNEL, {
+          tabId,
+          dataUrl: `data:image/jpeg;base64,${image
+            .toJPEG(RESIZE_SNAPSHOT_JPEG_QUALITY)
+            .toString("base64")}`,
+        });
+      })
+      .catch(() => {
+        // No placeholder; the panel's own background shows behind the prompt.
+      });
+  }
+
+  /**
+   * Answer the open prompt and let the page continue. Reveal, then drop the
+   * placeholder, then tell the renderer, then settle — the same ordering
+   * `clearPendingDialog` uses, with the network answer last because it is what
+   * resumes the load.
+   */
+  function closePagePrompt(
+    hostWindow: DesktopBrowserHostWindow,
+    tabId: string,
+    entry: BrowserViewEntry,
+    answer: BbDesktopBrowserPagePromptAnswer["answer"],
+  ): void {
+    const pending = entry.pagePrompt;
+    if (pending === null) {
+      return;
+    }
+    entry.pagePrompt = null;
+    applyEntryVisibility(entry, hostWindow);
+    send(hostWindow, BB_DESKTOP_BROWSER_SNAPSHOT_CHANNEL, {
+      tabId,
+      dataUrl: null,
+    });
+    send(hostWindow, BB_DESKTOP_BROWSER_PAGE_PROMPT_CHANNEL, {
+      tabId,
+      prompt: null,
+    });
+    pending.settle(answer);
+  }
+
+  /**
+   * Whether an answer belongs to the question that was asked. A mismatch is
+   * treated as a cancel rather than guessed at: the shapes differ because the
+   * decisions differ, and "proceed" meant for a certificate must never become
+   * a certificate handed to a server.
+   */
+  function pagePromptAnswerFits(
+    details: BbDesktopBrowserPagePromptDetails,
+    answer: BbDesktopBrowserPagePromptAnswer["answer"],
+  ): boolean {
+    if (answer.kind === "cancel") return true;
+    if (details.kind === "auth") return answer.kind === "credentials";
+    if (details.kind === "certificate") return answer.kind === "proceed";
+    return answer.kind === "client-certificate";
+  }
+
   function withEntry(
     args: HostScopedTabArgs,
     fn: (entry: BrowserViewEntry) => void,
@@ -2838,7 +3837,9 @@ export function createDesktopBrowserViewManager(
    */
   async function captureTabSnapshot(args: {
     hostWindow: DesktopBrowserHostWindow;
-    request: BbDesktopBrowserSnapshotRequest | BbDesktopBrowserSnapshotInRequest;
+    request:
+      | BbDesktopBrowserSnapshotRequest
+      | BbDesktopBrowserSnapshotInRequest;
   }): Promise<BbDesktopBrowserSnapshotResult> {
     const { hostWindow, request } = args;
     const entry = entries.get(browserViewKey(hostWindow, request.tabId));
@@ -2959,7 +3960,14 @@ export function createDesktopBrowserViewManager(
       ) {
         entry.view.webContents.focus();
       }
-      loadIfNeeded(entry, request.url);
+      if (entry.shellCreated) {
+        // A popup the renderer is adopting: it arrived with its page, and
+        // loading into it would navigate away from the flow it was opened for.
+        // From here it is an ordinary tab.
+        entry.shellCreated = false;
+      } else if (!restoreClosedTabSession(entry, request.url)) {
+        loadIfNeeded(entry, request.url);
+      }
       pushState(hostWindow, request.tabId);
     },
     detach({ hostWindow, tabId }) {
@@ -3041,6 +4049,57 @@ export function createDesktopBrowserViewManager(
           }
         });
     },
+    setFullscreen({ hostWindow, request }) {
+      withEntry({ hostWindow, tabId: request.tabId }, (entry) => {
+        if (entry.userFullscreen === request.fullscreen) {
+          return;
+        }
+        entry.userFullscreen = request.fullscreen;
+        applyEntryDesiredBounds(entry, hostWindow);
+      });
+    },
+    find({ hostWindow, request }) {
+      withEntry({ hostWindow, tabId: request.tabId }, (entry) => {
+        const webContents = entry.view.webContents;
+        if (request.action === "stop" || request.query.length === 0) {
+          if (entry.findRequestId !== null) {
+            // `clearSelection`, not `keepSelection`: closing the find bar leaves
+            // the page as the user had it rather than with a selection they
+            // never made.
+            webContents.stopFindInPage("clearSelection");
+            entry.findRequestId = null;
+          }
+          // The keyboard was in the find field, which is about to be gone. Hand
+          // it back to the page — only the shell can focus a native view.
+          if (entry.visible && !entry.overlayActive) {
+            webContents.focus();
+          }
+          return;
+        }
+        entry.findRequestId = webContents.findInPage(request.query, {
+          // `findNext` is Chromium's `new_session` under a misleading name: true
+          // begins a search, false steps through the one already running. A step
+          // with no session behind it — the first Enter after a navigation ended
+          // one — is a new search rather than a no-op.
+          findNext: request.action === "start" || entry.findRequestId === null,
+          forward: request.action !== "previous",
+        });
+      });
+    },
+    setPopupTabs({ hostWindow, request }) {
+      const prefix = `${hostWindow.webContents.id}:`;
+      for (const key of [...popupTabKeys]) {
+        if (key.startsWith(prefix)) {
+          popupTabKeys.delete(key);
+        }
+      }
+      for (const tabId of request.tabIds) {
+        popupTabKeys.add(browserViewKey(hostWindow, tabId));
+      }
+    },
+    setContextMenuItems({ request }) {
+      contextMenuItems = request.items;
+    },
     async downloadAction({ action, savePath }) {
       if (!writtenDownloadPaths.has(savePath)) {
         return {
@@ -3112,6 +4171,27 @@ export function createDesktopBrowserViewManager(
     },
     snapshotIn({ hostWindow, request }) {
       return captureTabSnapshot({ hostWindow, request });
+    },
+    respondToPagePrompt({ hostWindow, request }) {
+      const entry = entries.get(browserViewKey(hostWindow, request.tabId));
+      const pending = entry?.pagePrompt ?? null;
+      if (entry === undefined || pending === null) {
+        return Promise.resolve(false);
+      }
+      // The tab may have moved on while a human was typing: a prompt that was
+      // replaced (or reopened) is not the one this answer was written for.
+      if (pending.details.id !== request.id) {
+        return Promise.resolve(false);
+      }
+      closePagePrompt(
+        hostWindow,
+        request.tabId,
+        entry,
+        pagePromptAnswerFits(pending.details, request.answer)
+          ? request.answer
+          : { kind: "cancel" },
+      );
+      return Promise.resolve(true);
     },
     async respondToDialog({ hostWindow, request }) {
       const entry = entries.get(browserViewKey(hostWindow, request.tabId));
@@ -3300,7 +4380,12 @@ export function createDesktopBrowserViewManager(
         // Same reason as in `snapshot` and `interact`: once we drive this tab,
         // its dialogs are ours to answer, and an evaluated `confirm()` would
         // otherwise block the page with nothing able to respond.
-        await ensureDialogInterception(hostWindow, request.tabId, entry, session);
+        await ensureDialogInterception(
+          hostWindow,
+          request.tabId,
+          entry,
+          session,
+        );
         return await performControl(session, entry, request.tabId, request);
       } catch (error) {
         if (error instanceof ControlRefusal) {
@@ -3350,7 +4435,12 @@ export function createDesktopBrowserViewManager(
         // tab's dialogs onto the protocol. So the same rule as everywhere else
         // applies, and for a sharper reason: a page that opens a dialog
         // mid-recording would otherwise sit there with nobody able to answer it.
-        await ensureDialogInterception(hostWindow, request.tabId, entry, session);
+        await ensureDialogInterception(
+          hostWindow,
+          request.tabId,
+          entry,
+          session,
+        );
         return await performRecord(
           session,
           entry,

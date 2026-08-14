@@ -588,6 +588,43 @@ export interface PluginUi {
    * unique within the plugin.
    */
   registerMentionProvider(provider: PluginMentionProviderRegistration): void;
+  /**
+   * Rebind a keyboard shortcut for the shipped app (`browser.shortcuts`).
+   *
+   * This changes what *this install's* defaults are, so it sits under the
+   * user's own overrides: a shortcut the user has rebound in settings keeps
+   * winning, and the settings UI shows a plugin's binding as the default rather
+   * than as something the user changed.
+   *
+   * `command` must be a known app command id — `browser.newTab`,
+   * `thread.search`, and so on; an unknown one is a registration error rather
+   * than a silent no-op. A null `shortcut` unassigns the command, which is how
+   * a plugin frees a chord it wants to leave to the page.
+   *
+   * Between plugins the lowest plugin id wins a contested command, so the
+   * result does not depend on load order.
+   */
+  registerKeybinding(keybinding: PluginKeybinding): void;
+}
+
+/**
+ * Modifiers default to false, so a binding names only what it uses. `mod` is
+ * Command on macOS and Control elsewhere — the portable one, and the one almost
+ * every binding wants.
+ */
+export interface PluginKeybindingShortcut {
+  key: string;
+  alt?: boolean;
+  control?: boolean;
+  meta?: boolean;
+  mod?: boolean;
+  shift?: boolean;
+}
+
+export interface PluginKeybinding {
+  command: string;
+  /** Null unassigns the command. */
+  shortcut: PluginKeybindingShortcut | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -711,9 +748,102 @@ export interface PluginBrowserDownload {
  * folder first and hands the result over; a plugin that wants files elsewhere
  * moves them, and one that wants them gone deletes them.
  */
+/** What a context-menu item was clicked on. Every field is page-supplied. */
+export interface PluginBrowserContextMenuContext {
+  /** The browser tab the menu was opened in. */
+  tabId: string;
+  pageUrl: string;
+  /** The link under the pointer, when there was one. */
+  linkUrl: string | null;
+  /** The image under the pointer, when there was one. */
+  imageUrl: string | null;
+  selectionText: string | null;
+}
+
+/**
+ * Where an item appears. Any match is enough, so `{ link: true, image: true }`
+ * shows on both; omitting `when` shows it everywhere.
+ *
+ * `page` means a right-click with nothing under the pointer — no link, no
+ * image, no selection.
+ */
+export interface PluginBrowserContextMenuWhen {
+  image?: boolean;
+  link?: boolean;
+  page?: boolean;
+  selection?: boolean;
+}
+
+export interface PluginBrowserContextMenuItemRegistration {
+  /** Unique within this plugin: [a-zA-Z0-9_-]+. */
+  id: string;
+  /** The menu label, shown under the browser's own entries. */
+  title: string;
+  when?: PluginBrowserContextMenuWhen;
+  /**
+   * Runs server-side when the user picks the item. Fire-and-forget from the
+   * menu's point of view — the menu has already closed — so report progress
+   * through your own surfaces rather than by returning something.
+   */
+  run(context: PluginBrowserContextMenuContext): void | Promise<void>;
+}
+
 export type PluginBrowserDownloadHandler = (
   download: PluginBrowserDownload,
 ) => void | Promise<void>;
+
+/** A site asking a browsed page for a username and password. */
+export interface PluginBrowserAuthChallenge {
+  /** The browser tab whose page was challenged. */
+  tabId: string;
+  /** `example.com`, or `example.com:8443` when the port is not the default. */
+  host: string;
+  /** True when the credentials would travel unencrypted (plain `http`). */
+  insecure: boolean;
+}
+
+export interface PluginBrowserAuthCredentials {
+  username: string;
+  password: string;
+}
+
+/**
+ * Answers an HTTP authentication challenge before a human is asked, which is
+ * what makes a password manager a plugin rather than a feature.
+ *
+ * Return null to decline — the browser then asks the user, which is also what
+ * happens when every provider declines, throws or takes too long. A provider is
+ * asked **once per host per tab**: a second challenge from the same host means
+ * the first answer was wrong, and repeating it would spin.
+ */
+export type PluginBrowserAuthProvider = (
+  challenge: PluginBrowserAuthChallenge,
+) =>
+  | PluginBrowserAuthCredentials
+  | null
+  | Promise<PluginBrowserAuthCredentials | null>;
+
+/** What a find action was run with. */
+export interface PluginBrowserFindContext {
+  /** The browser tab whose find bar the button was pressed in. */
+  tabId: string;
+  pageUrl: string;
+  /** What the user had typed. Never empty — an empty bar offers no actions. */
+  query: string;
+}
+
+export interface PluginBrowserFindActionRegistration {
+  /** Unique within this plugin: [a-zA-Z0-9_-]+. */
+  id: string;
+  /** The button label, shown after the browser's own find controls. */
+  title: string;
+  /**
+   * Runs server-side when the user presses the button. Fire-and-forget, like a
+   * context-menu item: the find bar does not wait for it, so report progress
+   * through your own surfaces rather than by returning something.
+   */
+  run(context: PluginBrowserFindContext): void | Promise<void>;
+}
 
 // ---------------------------------------------------------------------------
 // Browser control: browser.tabs.*, browser.page.*, browser.navigation.*.
@@ -1411,6 +1541,41 @@ export interface PluginBrowser {
    * Additive: several handlers, in this plugin or across plugins, all run.
    */
   registerDownloadHandler(handler: PluginBrowserDownloadHandler): void;
+  /**
+   * Add an entry to the right-click menu of a browsed page
+   * (`browser.contextMenu.items`).
+   *
+   * Items are **declared**, not asked for at click time: the shell holds the
+   * list so a right-click opens without waiting on the server. The consequence
+   * worth knowing is that `title` and `when` are fixed at registration — an
+   * item cannot decide its own label from what was clicked.
+   *
+   * Entries appear below the browser's own, in plugin id order.
+   */
+  registerContextMenuItem(item: PluginBrowserContextMenuItemRegistration): void;
+  /**
+   * Add a button to the browser's find bar (`browser.find.actions`), carrying
+   * whatever the user has typed into it.
+   *
+   * The find bar is the one place that knows what the user is looking for on
+   * this page, which is what makes it worth extending: "search this across my
+   * tabs", "look it up in our docs", "ask an agent about it". The bar's own
+   * counter and arrows are the browser's; contributed buttons sit after them.
+   *
+   * Declared like context-menu items, and with the same consequence: `title` is
+   * fixed at registration, so a button cannot rename itself from the query.
+   */
+  registerFindAction(action: PluginBrowserFindActionRegistration): void;
+  /**
+   * Answer HTTP authentication challenges for browsed pages
+   * (`browser.auth.providers`) — see {@link PluginBrowserAuthProvider}.
+   *
+   * Additive: providers are asked in plugin id order and the first one to
+   * return credentials wins. Nothing else in the browser is delegated this way,
+   * deliberately — a certificate error stays the user's decision, because
+   * "trust this server anyway" is not a credential a plugin can look up.
+   */
+  registerAuthProvider(provider: PluginBrowserAuthProvider): void;
   /**
    * Drive the browser surface's tabs, pages and navigation.
    *

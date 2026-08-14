@@ -7,13 +7,19 @@ import type { Context } from "hono";
 import {
   CUSTOM_THEME_CSS_MAX_LENGTH,
   formatPluginThemeId,
+  type AppKeybindingOverride,
+  type AppKeybindingOverrides,
   type JsonValue,
   type PluginThemeMeta,
   type ToolCallResponse,
 } from "@bb/domain";
 import {
   PLUGIN_CLI_OUTPUT_MAX_BYTES,
+  type PluginBrowserAuthChallenge,
+  type PluginBrowserAuthCredentials,
+  type PluginBrowserContextMenuContext,
   type PluginBrowserDownload,
+  type PluginBrowserFindContext,
   type PluginCliExecutionResult,
   type PluginCliOutputLimitError,
   type PluginRpcError,
@@ -99,6 +105,8 @@ import type {
   PluginMentionResolveResult,
   PluginMentionSearchGroup,
   PluginMentionSearchItem,
+  PluginContextMenuItemContribution,
+  PluginFindActionContribution,
   PluginOmniboxProviderContribution,
   PluginOmniboxRunOutcome,
   PluginOmniboxSuggestGroup,
@@ -122,6 +130,8 @@ export type {
   PluginMentionResolveResult,
   PluginMentionSearchGroup,
   PluginMentionSearchItem,
+  PluginContextMenuItemContribution,
+  PluginFindActionContribution,
   PluginOmniboxProviderContribution,
   PluginOmniboxRunOutcome,
   PluginOmniboxSuggestGroup,
@@ -359,6 +369,60 @@ export interface PluginService {
    */
   listOmniboxProviderContributions(): PluginOmniboxProviderContribution[];
   /**
+   * Keyboard shortcuts plugins contributed (`bb.ui.registerKeybinding`), for
+   * the system config to fold under the user's own overrides. Ordered by plugin
+   * id and deduplicated, so a command two plugins both bind resolves to the
+   * lowest plugin id rather than to whichever loaded first. No plugin code
+   * runs.
+   */
+  listKeybindingContributions(): AppKeybindingOverrides;
+  /**
+   * Context-menu entries plugins contributed
+   * (`browser.contextMenu.items`), for the app to hand to the shell. Ordered
+   * by plugin id, then registration order. No plugin code runs.
+   */
+  listContextMenuItemContributions(): PluginContextMenuItemContribution[];
+  /**
+   * Run a picked context-menu item. Time-boxed and failure-isolated like every
+   * other plugin call; nothing waits on it, since the menu closed when the user
+   * clicked.
+   */
+  runContextMenuItem(args: {
+    pluginId: string;
+    itemId: string;
+    context: PluginBrowserContextMenuContext;
+  }): Promise<{ ok: true } | { ok: false; error: string }>;
+  /**
+   * Find-bar buttons plugins contributed (`browser.find.actions`), for the
+   * browser's find bar to render after its own controls. Ordered by plugin id,
+   * then registration order. No plugin code runs.
+   */
+  listFindActionContributions(): PluginFindActionContribution[];
+  /**
+   * Run a pressed find-bar button. A deliberate user action like a picked menu
+   * item, so it takes the same time box and the same failure isolation; the bar
+   * does not wait on it.
+   */
+  runFindAction(args: {
+    pluginId: string;
+    itemId: string;
+    context: PluginBrowserFindContext;
+  }): Promise<{ ok: true } | { ok: false; error: string }>;
+  /**
+   * Ask every registered auth provider (`browser.auth.providers`) for the
+   * credentials a browsed page was challenged for, in plugin id order, and stop
+   * at the first that answers.
+   *
+   * Sequential rather than concurrent, unlike omnibox providers: the answer is
+   * a credential, so asking a second keychain after the first has already said
+   * yes is a lookup nobody needed. Each is time-boxed and failure-isolated, and
+   * resolves null when nobody answered — which is what sends the question to
+   * the user.
+   */
+  resolveBrowserAuth(args: {
+    challenge: PluginBrowserAuthChallenge;
+  }): Promise<PluginBrowserAuthCredentials | null>;
+  /**
    * Run every loaded plugin's omnibox providers against one query
    * (`browser.omnibox.providers`). Providers run concurrently, each wrapped in
    * the failure-isolation discipline (invokeWrapped) and time-boxed (2s); a
@@ -427,6 +491,15 @@ const DEFAULT_OMNIBOX_RUN_TIMEOUT_MS = 10_000;
  * waits on it: the file is written and the user has already been told.
  */
 const DEFAULT_BROWSER_DOWNLOAD_TIMEOUT_MS = 30_000;
+/** A picked menu item is a deliberate user action, like an omnibox `run`. */
+const DEFAULT_CONTEXT_MENU_RUN_TIMEOUT_MS = 10_000;
+/**
+ * An auth provider is looked up while a page sits stopped and a human waits, so
+ * it gets a tighter box than a picked action: long enough to unlock a keychain,
+ * short enough that a wedged provider does not become a hung browser. Running
+ * out of time is not an error — the user is asked instead.
+ */
+const DEFAULT_BROWSER_AUTH_TIMEOUT_MS = 5_000;
 /** Plugin scores are advisory; the browser owns the top row. */
 const DEFAULT_OMNIBOX_SUGGESTION_SCORE = 0.5;
 const DEFAULT_STABILIZATION_WINDOW_MS = 30_000;
@@ -1073,6 +1146,9 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
     deps.omniboxRunTimeoutMs ?? DEFAULT_OMNIBOX_RUN_TIMEOUT_MS;
   const browserDownloadTimeoutMs =
     deps.browserDownloadTimeoutMs ?? DEFAULT_BROWSER_DOWNLOAD_TIMEOUT_MS;
+  const contextMenuRunTimeoutMs =
+    deps.contextMenuRunTimeoutMs ?? DEFAULT_CONTEXT_MENU_RUN_TIMEOUT_MS;
+  const browserAuthTimeoutMs = DEFAULT_BROWSER_AUTH_TIMEOUT_MS;
   const stabilizationWindowMs =
     deps.stabilizationWindowMs ?? DEFAULT_STABILIZATION_WINDOW_MS;
   const artifactRetentionMs =
@@ -2275,6 +2351,141 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
       );
       if (outcome.ok) return { ok: true, context: outcome.value };
       return { ok: false, error: outcome.error };
+    },
+
+    listContextMenuItemContributions() {
+      const contributions: PluginContextMenuItemContribution[] = [];
+      for (const [id, plugin] of [...loaded.entries()].sort(([a], [b]) =>
+        a.localeCompare(b),
+      )) {
+        for (const record of plugin.handle.contextMenuItems) {
+          contributions.push({
+            pluginId: id,
+            itemId: record.id,
+            title: record.title,
+            when: record.when,
+          });
+        }
+      }
+      return contributions;
+    },
+
+    async runContextMenuItem({ context, itemId, pluginId }) {
+      const plugin = loaded.get(pluginId);
+      const record = plugin?.handle.contextMenuItems.find(
+        (candidate) => candidate.id === itemId,
+      );
+      if (!plugin || record === undefined) {
+        return {
+          ok: false,
+          error: `plugin "${pluginId}" has no context menu item "${itemId}"`,
+        };
+      }
+      const outcome = await invokeWrapped(
+        pluginId,
+        `context menu ${itemId}`,
+        async () =>
+          withPluginTimeout({
+            run: async () => record.run(context),
+            timeoutMs: contextMenuRunTimeoutMs,
+          }),
+      );
+      return outcome.ok ? { ok: true } : { ok: false, error: outcome.error };
+    },
+
+    listFindActionContributions() {
+      const contributions: PluginFindActionContribution[] = [];
+      for (const [id, plugin] of [...loaded.entries()].sort(([a], [b]) =>
+        a.localeCompare(b),
+      )) {
+        for (const record of plugin.handle.findActions) {
+          contributions.push({
+            pluginId: id,
+            itemId: record.id,
+            title: record.title,
+          });
+        }
+      }
+      return contributions;
+    },
+
+    async runFindAction({ context, itemId, pluginId }) {
+      const plugin = loaded.get(pluginId);
+      const record = plugin?.handle.findActions.find(
+        (candidate) => candidate.id === itemId,
+      );
+      if (!plugin || record === undefined) {
+        return {
+          ok: false,
+          error: `plugin "${pluginId}" has no find action "${itemId}"`,
+        };
+      }
+      const outcome = await invokeWrapped(
+        pluginId,
+        `find action ${itemId}`,
+        async () =>
+          withPluginTimeout({
+            run: async () => record.run(context),
+            // The same box a picked menu item gets: both are one deliberate
+            // click on a browser surface.
+            timeoutMs: contextMenuRunTimeoutMs,
+          }),
+      );
+      return outcome.ok ? { ok: true } : { ok: false, error: outcome.error };
+    },
+
+    async resolveBrowserAuth({ challenge }) {
+      for (const [pluginId, plugin] of [...loaded.entries()].sort(([a], [b]) =>
+        a.localeCompare(b),
+      )) {
+        for (const provider of plugin.handle.authProviders) {
+          const outcome = await invokeWrapped(
+            pluginId,
+            "browser auth provider",
+            async () =>
+              withPluginTimeout({
+                run: async () => provider(challenge),
+                timeoutMs: browserAuthTimeoutMs,
+              }),
+          );
+          if (!outcome.ok || outcome.value === null) {
+            continue;
+          }
+          const credentials =
+            outcome.value as Partial<PluginBrowserAuthCredentials>;
+          // A provider that answered with something other than credentials has
+          // not answered: the browser asks the user rather than sending a
+          // half-formed login.
+          if (
+            typeof credentials?.username !== "string" ||
+            typeof credentials.password !== "string"
+          ) {
+            continue;
+          }
+          return {
+            username: credentials.username,
+            password: credentials.password,
+          };
+        }
+      }
+      return null;
+    },
+
+    listKeybindingContributions() {
+      const contributions: AppKeybindingOverride[] = [];
+      const claimed = new Set<string>();
+      for (const [, plugin] of [...loaded.entries()].sort(([a], [b]) =>
+        a.localeCompare(b),
+      )) {
+        for (const keybinding of plugin.handle.keybindings) {
+          if (claimed.has(keybinding.command)) {
+            continue;
+          }
+          claimed.add(keybinding.command);
+          contributions.push(keybinding);
+        }
+      }
+      return contributions;
     },
 
     listOmniboxProviderContributions() {

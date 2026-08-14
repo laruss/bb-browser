@@ -114,6 +114,8 @@ describe("plugin CLI commands (bb.cli.register + endpoints + skill + logs)", () 
     );
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
+      browserContextMenuItems: [],
+      browserFindActions: [],
       cliCommands: [
         {
           pluginId: "acme",

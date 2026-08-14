@@ -6,7 +6,10 @@ import {
   bbDesktopBrowserStateSchema,
 } from "@bb/desktop-contract";
 import {
+  browserUrlHost,
   evaluatePopupRate,
+  isAllowedBrowserPopupTarget,
+  formatBrowserAuthHost,
   isAllowedBrowserUrl,
   isBlockedBrowserRequestHost,
   isBlockedBrowserRequestUrl,
@@ -16,6 +19,7 @@ import {
   resolveRequestingFrameLocalOriginKey,
   resolveWindowOpenAction,
   shouldBlockBrowserRequest,
+  shouldPromptForBrowserAuth,
   type ShouldBlockBrowserRequestArgs,
 } from "../src/desktop-browser-policy.js";
 
@@ -683,5 +687,141 @@ describe("loopback SPA subresource firewall (regression)", () => {
         }),
       }),
     ).toBe(true);
+  });
+});
+
+describe("isAllowedBrowserPopupTarget", () => {
+  // The addition that makes real popups useful: half the OAuth SDKs open a
+  // blank window and write into it, and dropping that is what made "Sign in
+  // with ..." impossible.
+  it("allows about:blank, which the plain-tab path cannot", () => {
+    expect(isAllowedBrowserPopupTarget("about:blank")).toBe(true);
+    expect(resolveWindowOpenAction("about:blank").openTabUrl).toBeNull();
+  });
+
+  it("allows a public page, as the plain-tab path does", () => {
+    expect(isAllowedBrowserPopupTarget("https://accounts.example.com/o")).toBe(
+      true,
+    );
+  });
+
+  // A page chooses these URLs, so a real popup refuses exactly what a simulated
+  // one always did.
+  it("refuses schemes and hosts the popup policy always refused", () => {
+    for (const url of [
+      "javascript:alert(1)",
+      "file:///etc/passwd",
+      "about:srcdoc",
+      "http://127.0.0.1:38886/",
+      "https://192.168.1.10/admin",
+      "not a url",
+    ]) {
+      expect(isAllowedBrowserPopupTarget(url)).toBe(false);
+    }
+  });
+});
+
+describe("shouldPromptForBrowserAuth", () => {
+  const PAGE = "https://example.com/app";
+
+  function challenge(
+    overrides: Partial<Parameters<typeof shouldPromptForBrowserAuth>[0]> = {},
+  ): Parameters<typeof shouldPromptForBrowserAuth>[0] {
+    return {
+      isProxy: false,
+      isRequestForNavigation: false,
+      isLoadingMainFrame: false,
+      pageUrl: PAGE,
+      requestUrl: "https://example.com/private",
+      ...overrides,
+    };
+  }
+
+  // The user went there; the site asking is the site they asked for.
+  it("asks about a navigation, whatever its origin", () => {
+    expect(
+      shouldPromptForBrowserAuth(
+        challenge({
+          isRequestForNavigation: true,
+          requestUrl: "https://other.test/secret",
+        }),
+      ),
+    ).toBe(true);
+  });
+
+  it("asks about the page's own subresources", () => {
+    expect(shouldPromptForBrowserAuth(challenge())).toBe(true);
+  });
+
+  // Any page could embed an image that answers 401 and put a password box in
+  // front of a user looking at someone else's address bar.
+  it("refuses a cross-origin subresource", () => {
+    expect(
+      shouldPromptForBrowserAuth(
+        challenge({ requestUrl: "https://cdn.evil.test/pixel.png" }),
+      ),
+    ).toBe(false);
+  });
+
+  it("refuses a proxy challenge even during a navigation", () => {
+    expect(
+      shouldPromptForBrowserAuth(
+        challenge({ isProxy: true, isRequestForNavigation: true }),
+      ),
+    ).toBe(false);
+  });
+
+  // Older Electron does not report which it was, so a challenge arriving while
+  // the main frame is still loading is read as that load's own.
+  it("falls back to the load in flight when the runtime did not say", () => {
+    expect(
+      shouldPromptForBrowserAuth(
+        challenge({
+          isRequestForNavigation: null,
+          isLoadingMainFrame: true,
+          requestUrl: "https://other.test/secret",
+        }),
+      ),
+    ).toBe(true);
+    expect(
+      shouldPromptForBrowserAuth(
+        challenge({
+          isRequestForNavigation: null,
+          isLoadingMainFrame: false,
+          requestUrl: "https://other.test/secret",
+        }),
+      ),
+    ).toBe(false);
+  });
+
+  it("refuses when neither URL parses", () => {
+    expect(
+      shouldPromptForBrowserAuth(
+        challenge({ pageUrl: "", requestUrl: "not a url" }),
+      ),
+    ).toBe(false);
+  });
+});
+
+describe("formatBrowserAuthHost", () => {
+  it("leaves a default port out and keeps any other", () => {
+    expect(formatBrowserAuthHost({ host: "example.com", port: 443 })).toBe(
+      "example.com",
+    );
+    expect(formatBrowserAuthHost({ host: "example.com", port: 80 })).toBe(
+      "example.com",
+    );
+    expect(formatBrowserAuthHost({ host: "example.com", port: 8443 })).toBe(
+      "example.com:8443",
+    );
+  });
+});
+
+describe("browserUrlHost", () => {
+  it("reads the host, and falls back to the string it was given", () => {
+    expect(browserUrlHost("https://example.com:8443/x")).toBe(
+      "example.com:8443",
+    );
+    expect(browserUrlHost("not a url")).toBe("not a url");
   });
 });

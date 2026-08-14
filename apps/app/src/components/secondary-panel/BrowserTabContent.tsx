@@ -10,6 +10,7 @@ import {
 } from "react";
 import type {
   BbDesktopBrowserDialog,
+  BbDesktopBrowserPagePromptDetails,
   BbDesktopBrowserApi,
   BbDesktopBrowserState,
   BbDesktopBrowserViewportBounds,
@@ -34,6 +35,8 @@ import { BROWSER_VIEW_BOUNDS_SYNC_EVENT } from "@/lib/browser-view-bounds-sync";
 import { useIsBrowserDimmingModalOpen } from "@/hooks/useBrowserDimmingModal";
 import { usePointerCoarse } from "@bb/shared-ui/hooks/use-pointer-coarse";
 import { BrowserPageDialog } from "@/components/browser-surface/BrowserPageDialog";
+import { BrowserPagePrompt } from "@/components/browser-surface/BrowserPagePrompt";
+import { resolvePluginBrowserAuth } from "@/hooks/queries/plugin-contribution-queries";
 import { BrowserNewTabScreen } from "./BrowserNewTabScreen";
 import {
   registerBrowserView,
@@ -500,9 +503,16 @@ export function BrowserTabContent({
   const [isEditing, setIsEditing] = useState(false);
   // Bitmap stand-in pushed by the desktop main process while the native view
   // is hidden during a native window resize; null outside resize bursts.
-  const [pageDialog, setPageDialog] = useState<
-    BbDesktopBrowserDialog["dialog"]
-  >(null);
+  const [pageDialog, setPageDialog] =
+    useState<BbDesktopBrowserDialog["dialog"]>(null);
+  // A question from the network — authentication, an untrusted certificate, a
+  // client certificate — that the shell is holding the page open for.
+  const [pagePrompt, setPagePrompt] =
+    useState<BbDesktopBrowserPagePromptDetails | null>(null);
+  // Hosts a plugin has already answered for in this tab. A second challenge
+  // from the same host means the first answer was wrong, so the user is asked
+  // rather than the same credentials being replayed forever.
+  const pluginAnsweredAuthHostsRef = useRef<Set<string>>(new Set());
   const [resizeSnapshotUrl, setResizeSnapshotUrl] = useState<string | null>(
     null,
   );
@@ -669,6 +679,48 @@ export function BrowserTabContent({
       setPageDialog(event.dialog);
     });
 
+    // Questions from the network. Optional for version skew like the rest — an
+    // older shell cancels these instead of asking, which is the dead end this
+    // channel exists to close.
+    const unsubscribePagePrompt = desktopBrowser.onPagePrompt?.((event) => {
+      if (event.tabId !== tabId) {
+        return;
+      }
+      const prompt = event.prompt;
+      if (prompt === null || prompt.kind !== "auth") {
+        setPagePrompt(prompt);
+        return;
+      }
+      const answeredHosts = pluginAnsweredAuthHostsRef.current;
+      if (answeredHosts.has(prompt.host)) {
+        setPagePrompt(prompt);
+        return;
+      }
+      // Ask the plugins first: a password manager is what makes this prompt
+      // unnecessary. Nothing is shown while that is in flight, which is a
+      // moment on a page that is already stopped.
+      answeredHosts.add(prompt.host);
+      void resolvePluginBrowserAuth({
+        host: prompt.host,
+        insecure: prompt.insecure,
+        tabId,
+      }).then((credentials) => {
+        if (credentials === null) {
+          setPagePrompt(prompt);
+          return;
+        }
+        void desktopBrowser.respondToPagePrompt?.({
+          tabId,
+          id: prompt.id,
+          answer: {
+            kind: "credentials",
+            username: credentials.username,
+            password: credentials.password,
+          },
+        });
+      });
+    });
+
     // Also optional for version skew (an older shell pushes no icons), and this
     // component keeps none of it: the icon belongs to the tab, which outlives
     // this mount, so it goes straight to whoever owns the tab list.
@@ -682,6 +734,7 @@ export function BrowserTabContent({
     return () => {
       unsubscribe();
       unsubscribeDialog?.();
+      unsubscribePagePrompt?.();
       unsubscribeSnapshot?.();
       unsubscribeFavicon?.();
       // Nothing observes this tab's loading state once its content unmounts, so
@@ -929,6 +982,21 @@ export function BrowserTabContent({
         ) : null}
         {/* After the placeholder, so it draws over the frozen page rather than
             under it — both are absolutely positioned siblings. */}
+        {pagePrompt !== null ? (
+          <BrowserPagePrompt
+            prompt={pagePrompt}
+            onRespond={(answer) => {
+              // Clear optimistically, like the dialog above: the shell reveals
+              // the page as soon as it has the answer.
+              setPagePrompt(null);
+              void desktopBrowser?.respondToPagePrompt?.({
+                tabId,
+                id: pagePrompt.id,
+                answer,
+              });
+            }}
+          />
+        ) : null}
         {pageDialog !== null ? (
           <BrowserPageDialog
             dialog={pageDialog}

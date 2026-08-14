@@ -21,6 +21,9 @@ import {
   browserCookieSchema,
   browserInteractionSchema,
   browserStorageItemSchema,
+  appCommandIdSchema,
+  type AppKeybindingOverride,
+  type AppKeybindingOverrides,
   type BrowserCommand,
   type BrowserCommandValue,
   type BrowserControlOperation,
@@ -57,6 +60,9 @@ import type {
   PluginMentionItem,
   PluginMentionSearchContext,
   PluginMentionTrigger,
+  PluginBrowserAuthProvider,
+  PluginBrowserContextMenuContext,
+  PluginBrowserFindContext,
   PluginBrowserDownloadHandler,
   PluginOmniboxRunContext,
   PluginOmniboxRunResult,
@@ -489,10 +495,33 @@ export interface PluginApiHandle {
   omniboxProviders: PluginOmniboxProviderRecord[];
   /** Download handlers recorded by `bb.browser.registerDownloadHandler`. */
   downloadHandlers: PluginBrowserDownloadHandler[];
+  /** Keybindings recorded by `bb.ui.registerKeybinding`. */
+  keybindings: AppKeybindingOverrides;
+  /** Context-menu items recorded by `bb.browser.registerContextMenuItem`. */
+  contextMenuItems: PluginBrowserContextMenuItemRecord[];
+  /** Find-bar buttons recorded by `bb.browser.registerFindAction`. */
+  findActions: PluginBrowserFindActionRecord[];
+  /** Auth providers recorded by `bb.browser.registerAuthProvider`. */
+  authProviders: PluginBrowserAuthProvider[];
   /** Publish factory-time host declarations and status only after commit. */
   activate(): void;
   /** Poison every method on the handle. */
   invalidate(): void;
+}
+
+/** Runtime shape of a `bb.browser.registerContextMenuItem` registration. */
+export interface PluginBrowserContextMenuItemRecord {
+  id: string;
+  title: string;
+  when: { image: boolean; link: boolean; page: boolean; selection: boolean };
+  run: (context: PluginBrowserContextMenuContext) => void | Promise<void>;
+}
+
+/** Runtime shape of a `bb.browser.registerFindAction` registration. */
+export interface PluginBrowserFindActionRecord {
+  id: string;
+  title: string;
+  run: (context: PluginBrowserFindContext) => void | Promise<void>;
 }
 
 /** Provider registered by `bb.agents.contributeInstructions`. */
@@ -1233,6 +1262,45 @@ export function createPluginApi(options: {
         resolve: provider.resolve.bind(provider),
       });
     },
+    registerKeybinding(keybinding) {
+      assertLive();
+      const command = appCommandIdSchema.safeParse(keybinding?.command);
+      if (!command.success) {
+        // Named rather than ignored: a plugin binding a command that does not
+        // exist has made a typo, and a silent no-op is the worst way to find
+        // out. The message lists nothing — the id space is large — but the
+        // value it rejected is in it.
+        throw new Error(
+          `registerKeybinding: unknown app command ${JSON.stringify(keybinding?.command)}`,
+        );
+      }
+      if (keybindings.some((entry) => entry.command === command.data)) {
+        throw new Error(
+          `keybinding for "${command.data}" is already registered by this plugin`,
+        );
+      }
+      const requested = keybinding.shortcut;
+      if (requested === null || requested === undefined) {
+        keybindings.push({ command: command.data, shortcut: null });
+        return;
+      }
+      if (typeof requested.key !== "string" || requested.key.length === 0) {
+        throw new Error(
+          `registerKeybinding: "${command.data}" needs a non-empty key`,
+        );
+      }
+      keybindings.push({
+        command: command.data,
+        shortcut: {
+          key: requested.key,
+          alt: requested.alt ?? false,
+          control: requested.control ?? false,
+          meta: requested.meta ?? false,
+          mod: requested.mod ?? false,
+          shift: requested.shift ?? false,
+        },
+      });
+    },
   };
 
   // Argument validation for bb.browser.*. It happens here rather than on the
@@ -1265,10 +1333,7 @@ export function createPluginApi(options: {
     return url;
   }
 
-  function normalizeBrowserUrlArg(
-    url: unknown,
-    method: string,
-  ): string | null {
+  function normalizeBrowserUrlArg(url: unknown, method: string): string | null {
     if (url === undefined || url === null || url === "") {
       return null;
     }
@@ -1448,7 +1513,10 @@ export function createPluginApi(options: {
    * session — so `setCookies({ name, value })` behaves like `document.cookie =`
    * rather than silently writing something broader.
    */
-  function normalizeStorageArea(area: unknown, method: string): "local" | "session" {
+  function normalizeStorageArea(
+    area: unknown,
+    method: string,
+  ): "local" | "session" {
     if (area !== "local" && area !== "session") {
       throw new Error(`${method} area must be "local" or "session"`);
     }
@@ -1460,14 +1528,18 @@ export function createPluginApi(options: {
       return null;
     }
     if (typeof name !== "string" || name.length === 0) {
-      throw new Error(`${method} name must be a non-empty string when provided`);
+      throw new Error(
+        `${method} name must be a non-empty string when provided`,
+      );
     }
     return name;
   }
 
   function normalizeCookies(cookies: unknown): BrowserCookie[] {
     if (!Array.isArray(cookies) || cookies.length === 0) {
-      throw new Error("browser.storage.setCookies requires at least one cookie");
+      throw new Error(
+        "browser.storage.setCookies requires at least one cookie",
+      );
     }
     return cookies.map((cookie, index) => {
       if (typeof cookie !== "object" || cookie === null) {
@@ -1490,7 +1562,9 @@ export function createPluginApi(options: {
         const issue = parsed.error.issues[0];
         throw new Error(
           `browser.storage.setCookies cookie ${index} is invalid${
-            issue === undefined ? "" : ` (${issue.path.join(".")}): ${issue.message}`
+            issue === undefined
+              ? ""
+              : ` (${issue.path.join(".")}): ${issue.message}`
           }`,
         );
       }
@@ -1645,6 +1719,10 @@ export function createPluginApi(options: {
 
   const omniboxProviders: PluginOmniboxProviderRecord[] = [];
   const downloadHandlers: PluginBrowserDownloadHandler[] = [];
+  const contextMenuItems: PluginBrowserContextMenuItemRecord[] = [];
+  const findActions: PluginBrowserFindActionRecord[] = [];
+  const authProviders: PluginBrowserAuthProvider[] = [];
+  const keybindings: AppKeybindingOverride[] = [];
   const browser: PluginBrowser = {
     registerOmniboxProvider(provider) {
       assertLive();
@@ -1680,6 +1758,74 @@ export function createPluginApi(options: {
         run: provider.run === undefined ? null : provider.run.bind(provider),
       });
     },
+    registerContextMenuItem(item) {
+      assertLive();
+      const id = item?.id;
+      if (typeof id !== "string" || !OMNIBOX_PROVIDER_ID_PATTERN.test(id)) {
+        throw new Error(
+          `invalid context menu item id ${JSON.stringify(id)} — use letters, digits, "-" and "_"`,
+        );
+      }
+      if (contextMenuItems.some((record) => record.id === id)) {
+        throw new Error(`context menu item "${id}" is already registered`);
+      }
+      if (typeof item.title !== "string" || item.title.trim().length === 0) {
+        throw new Error(`context menu item "${id}" must provide a title`);
+      }
+      if (typeof item.run !== "function") {
+        throw new Error(
+          `context menu item "${id}" must provide a run(context) function`,
+        );
+      }
+      contextMenuItems.push({
+        id,
+        title: item.title.trim(),
+        when: {
+          image: item.when?.image ?? false,
+          link: item.when?.link ?? false,
+          page: item.when?.page ?? false,
+          selection: item.when?.selection ?? false,
+        },
+        run: item.run.bind(item),
+      });
+    },
+    registerFindAction(action) {
+      assertLive();
+      const id = action?.id;
+      if (typeof id !== "string" || !OMNIBOX_PROVIDER_ID_PATTERN.test(id)) {
+        throw new Error(
+          `invalid find action id ${JSON.stringify(id)} — use letters, digits, "-" and "_"`,
+        );
+      }
+      if (findActions.some((record) => record.id === id)) {
+        throw new Error(`find action "${id}" is already registered`);
+      }
+      if (
+        typeof action.title !== "string" ||
+        action.title.trim().length === 0
+      ) {
+        throw new Error(`find action "${id}" must provide a title`);
+      }
+      if (typeof action.run !== "function") {
+        throw new Error(
+          `find action "${id}" must provide a run(context) function`,
+        );
+      }
+      findActions.push({
+        id,
+        title: action.title.trim(),
+        run: action.run.bind(action),
+      });
+    },
+    registerAuthProvider(provider) {
+      assertLive();
+      if (typeof provider !== "function") {
+        throw new Error(
+          "registerAuthProvider(provider) needs a function taking one challenge",
+        );
+      }
+      authProviders.push(provider);
+    },
     registerDownloadHandler(handler) {
       assertLive();
       if (typeof handler !== "function") {
@@ -1708,7 +1854,10 @@ export function createPluginApi(options: {
       },
       async close(args, options) {
         const value = await callBrowser(
-          { type: "tabs.close", tabId: requireTabId(args?.tabId, "tabs.close") },
+          {
+            type: "tabs.close",
+            tabId: requireTabId(args?.tabId, "tabs.close"),
+          },
           options,
           "closed",
         );
@@ -2034,7 +2183,10 @@ export function createPluginApi(options: {
             tabId: optionalTabId(args?.tabId),
             operation: {
               kind: "items-set",
-              area: normalizeStorageArea(args?.area, "browser.storage.setItems"),
+              area: normalizeStorageArea(
+                args?.area,
+                "browser.storage.setItems",
+              ),
               items: normalizeStorageItems(args?.items),
             },
           },
@@ -2458,6 +2610,10 @@ export function createPluginApi(options: {
     mentionProviders,
     omniboxProviders,
     downloadHandlers,
+    keybindings,
+    contextMenuItems,
+    findActions,
+    authProviders,
     activate() {
       if (activated) return;
       assertLive();

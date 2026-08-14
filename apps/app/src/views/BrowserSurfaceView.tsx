@@ -5,11 +5,26 @@ import type {
   BrowserTabLoadingArgs,
 } from "@/components/secondary-panel/BrowserTabContent";
 import type { UpdateBrowserTabArgs } from "@/components/secondary-panel/useThreadFileTabs";
+import { BrowserFindBar } from "@/components/browser-surface/BrowserFindBar";
 import { BrowserSurfaceChrome } from "@/components/browser-surface/BrowserSurfaceChrome";
 import { BrowserSurfaceTabStrip } from "@/components/browser-surface/BrowserSurfaceTabStrip";
-import { usePluginContributions } from "@/hooks/queries/plugin-contribution-queries";
+import { BrowserTabSwitcher } from "@/components/browser-surface/BrowserTabSwitcher";
+import { BROWSER_SELECT_TAB_APP_COMMAND_IDS } from "@bb/domain";
+import {
+  useAppCommandHandler,
+  useIndexedAppCommandHandlers,
+} from "@/components/commands/AppCommandProvider";
+import {
+  runPluginContextMenuItem,
+  runPluginFindAction,
+  usePluginContributions,
+} from "@/hooks/queries/plugin-contribution-queries";
 import { getDesktopBrowserApi } from "@/lib/bb-desktop";
+import { useDesktopWindowState } from "@/hooks/useDesktopWindowState";
+import { buildBrowserSearchUrl } from "@/lib/browser-url";
+import { useBrowserFind } from "@/lib/browser-find";
 import { useBrowserHistory } from "@/lib/browser-history";
+import { useBrowserTabCycling } from "@/lib/browser-tab-mru";
 import {
   BROWSER_SURFACE_SCOPE_ID,
   useBrowserSurfaceTabs,
@@ -38,8 +53,16 @@ import {
  * belongs to no workspace.
  */
 export function BrowserSurfaceView() {
-  const { activateTab, activeTab, closeTab, openTab, state, updateTab } =
-    useBrowserSurfaceTabs();
+  const {
+    activateTab,
+    activeTab,
+    adoptTab,
+    closeTab,
+    openTab,
+    reopenClosedTab,
+    state,
+    updateTab,
+  } = useBrowserSurfaceTabs();
   const { entries: history } = useBrowserHistory(BROWSER_SURFACE_SCOPE_ID);
   const tabCount = state.tabs.length;
 
@@ -93,6 +116,85 @@ export function BrowserSurfaceView() {
       openTab(url);
     });
   }, [openTab, surfaceTabIds]);
+
+  // Real popups. This surface claims them for its own tabs: it owns them, so it
+  // can host a window Chromium created — which is what gives a page back the
+  // handle `window.open()` returns and the `window.opener` an OAuth flow talks
+  // to. The thread panel deliberately claims nothing: there a link follows the
+  // user's in-app-link preference and may leave for the system browser, where
+  // an opener means nothing.
+  useEffect(() => {
+    const browserApi = getDesktopBrowserApi();
+    if (browserApi?.setPopupTabs === undefined) {
+      return;
+    }
+    browserApi.setPopupTabs({ tabIds: [...surfaceTabIds] });
+  }, [surfaceTabIds]);
+
+  useEffect(() => {
+    const browserApi = getDesktopBrowserApi();
+    if (browserApi?.onPopup === undefined) {
+      return;
+    }
+    return browserApi.onPopup((popup) => {
+      if (popup.kind === "closed") {
+        // The page closed its own popup, which is how every OAuth flow ends.
+        closeTab(popup.tabId);
+        return;
+      }
+      if (surfaceTabIds.has(popup.openerTabId)) {
+        adoptTab({ tabId: popup.tabId, url: popup.url });
+      }
+    });
+  }, [adoptTab, closeTab, surfaceTabIds]);
+
+  // "Search for <selection>" from a page's context menu. The shell sends the
+  // query rather than a URL, because the search engine is the omnibox's and
+  // only the renderer knows it.
+  useEffect(() => {
+    const browserApi = getDesktopBrowserApi();
+    if (browserApi?.onSearchSelection === undefined) {
+      return;
+    }
+    return browserApi.onSearchSelection(({ query, tabId }) => {
+      if (surfaceTabIds.has(tabId)) {
+        openTab(buildBrowserSearchUrl(query));
+      }
+    });
+  }, [openTab, surfaceTabIds]);
+
+  // Plugin context-menu entries. Declared up front and handed to the shell, so
+  // a right-click composes its menu without waiting on the server; the click is
+  // what travels back.
+  const contributedMenuItems =
+    usePluginContributions().data?.browserContextMenuItems;
+  useEffect(() => {
+    const browserApi = getDesktopBrowserApi();
+    if (browserApi?.setContextMenuItems === undefined) {
+      return;
+    }
+    browserApi.setContextMenuItems({
+      items: (contributedMenuItems ?? []).map((item) => ({
+        pluginId: item.pluginId,
+        itemId: item.itemId,
+        title: item.title,
+        when: item.when,
+      })),
+    });
+  }, [contributedMenuItems]);
+
+  useEffect(() => {
+    const browserApi = getDesktopBrowserApi();
+    if (browserApi?.onContextMenuInvoke === undefined) {
+      return;
+    }
+    return browserApi.onContextMenuInvoke((invoke) => {
+      if (!surfaceTabIds.has(invoke.tabId)) {
+        return;
+      }
+      void runPluginContextMenuItem(invoke);
+    });
+  }, [surfaceTabIds]);
 
   // Page icons live for the session only, deliberately: they are bytes a page
   // supplied, the persisted tab state is localStorage (a 5MB budget the tab list
@@ -176,11 +278,165 @@ export function BrowserSurfaceView() {
     ],
   );
 
+  // Browser tab commands. Registered here because this is what owns the tabs;
+  // the chrome owns only the address bar and its reload.
+  const tabIds = useMemo(() => state.tabs.map((tab) => tab.id), [state.tabs]);
+  const { cycleRecentTab, selectSwitcherTab, switcher } = useBrowserTabCycling({
+    activateTab,
+    activeTabId: state.activeTabId,
+    tabIds,
+  });
+  const desktopBrowser = useMemo(() => getDesktopBrowserApi(), []);
+
+  const isSwitcherOpen = switcher !== null;
+  useEffect(() => {
+    const browserApi = getDesktopBrowserApi();
+    if (browserApi?.setOverlay === undefined || state.activeTabId === null) {
+      return;
+    }
+    const tabId = state.activeTabId;
+    browserApi.setOverlay({ tabId, active: isSwitcherOpen });
+    return () => {
+      browserApi.setOverlay?.({ tabId, active: false });
+    };
+  }, [isSwitcherOpen, state.activeTabId]);
+
+  // Find in page. Owned here rather than by the chrome because the bar takes a
+  // strip of layout of its own — the page below it shrinks while it is open.
+  const find = useBrowserFind({
+    tabId: activeTab?.id ?? null,
+    url: activeTab?.url ?? "",
+  });
+  const contributedFindActions =
+    usePluginContributions().data?.browserFindActions;
+  const runFindAction = useCallback(
+    (action: { itemId: string; pluginId: string }) => {
+      if (activeTab === null) {
+        return;
+      }
+      void runPluginFindAction({
+        itemId: action.itemId,
+        pageUrl: activeTab.url,
+        pluginId: action.pluginId,
+        query: find.query,
+        tabId: activeTab.id,
+      });
+    },
+    [activeTab, find.query],
+  );
+  useAppCommandHandler("browser.find", () => find.open());
+
+  // Give the page the whole window. Offered only while the app window is
+  // already full screen: covering the tab strip and the omnibox in an ordinary
+  // window would leave the user with a page and no browser around it, and no
+  // obvious way back. In an ordinary window the chord does nothing, which is
+  // what a browser does with a shortcut that does not apply.
+  const windowState = useDesktopWindowState();
+  const [isPageFullscreen, setIsPageFullscreen] = useState(false);
+  const setTabFullscreen = useCallback(
+    (fullscreen: boolean) => {
+      const browserApi = getDesktopBrowserApi();
+      if (browserApi?.setFullscreen === undefined || activeTab === null) {
+        return false;
+      }
+      browserApi.setFullscreen({ tabId: activeTab.id, fullscreen });
+      setIsPageFullscreen(fullscreen);
+      return true;
+    },
+    [activeTab],
+  );
+  useAppCommandHandler("browser.fullscreen.toggle", () => {
+    if (!windowState.isFullScreen) {
+      return false;
+    }
+    return setTabFullscreen(!isPageFullscreen);
+  });
+  // Leaving the window's own full screen takes the page's with it — otherwise a
+  // view sized to the whole window would stay over the chrome of a normal one.
+  useEffect(() => {
+    if (!windowState.isFullScreen && isPageFullscreen) {
+      setTabFullscreen(false);
+    }
+  }, [isPageFullscreen, setTabFullscreen, windowState.isFullScreen]);
+
+  // ...and so does switching tabs: the expansion belongs to the tab it was
+  // asked for, and a tab left expanded would come back that way over a strip
+  // the user can no longer see.
+  const activeTabId = activeTab?.id ?? null;
+  useEffect(() => {
+    if (activeTabId === null) {
+      return;
+    }
+    return () => {
+      getDesktopBrowserApi()?.setFullscreen?.({
+        tabId: activeTabId,
+        fullscreen: false,
+      });
+      setIsPageFullscreen(false);
+    };
+  }, [activeTabId]);
+
+  useAppCommandHandler("browser.newTab", () => {
+    openTab();
+    return true;
+  });
+  useAppCommandHandler("browser.closeTab", () => {
+    if (state.activeTabId === null) {
+      return false;
+    }
+    closeTab(state.activeTabId);
+    return true;
+  });
+  useAppCommandHandler("browser.reopenClosedTab", () => {
+    reopenClosedTab();
+    return true;
+  });
+  useAppCommandHandler("browser.selectLastTab", () => {
+    const last = state.tabs.at(-1);
+    if (last === undefined) {
+      return false;
+    }
+    activateTab(last.id);
+    return true;
+  });
+  useAppCommandHandler("browser.recentTab.next", () => {
+    cycleRecentTab(1);
+    return true;
+  });
+  useAppCommandHandler("browser.recentTab.previous", () => {
+    cycleRecentTab(-1);
+    return true;
+  });
+  useAppCommandHandler("browser.goBack", () => {
+    if (state.activeTabId === null || desktopBrowser === null) {
+      return false;
+    }
+    desktopBrowser.goBack(state.activeTabId);
+    return true;
+  });
+  useAppCommandHandler("browser.goForward", () => {
+    if (state.activeTabId === null || desktopBrowser === null) {
+      return false;
+    }
+    desktopBrowser.goForward(state.activeTabId);
+    return true;
+  });
+  // Cmd+1..8 by position. A number past the last tab does nothing rather than
+  // clamping, which is Chromium's behaviour and the one that never surprises.
+  useIndexedAppCommandHandlers(BROWSER_SELECT_TAB_APP_COMMAND_IDS, (index) => {
+    const tab = state.tabs[index];
+    if (tab === undefined) {
+      return false;
+    }
+    activateTab(tab.id);
+    return true;
+  });
+
   return (
     // `data-app-browser` puts the whole surface in the browser command context,
     // so Cmd+L and Cmd+R work from the tab strip and chrome, not just from
     // inside the page.
-    <div data-app-browser className="flex h-full min-h-0 flex-col">
+    <div data-app-browser className="relative flex h-full min-h-0 flex-col">
       <BrowserSurfaceTabStrip
         activeTabId={state.activeTabId}
         favicons={favicons}
@@ -197,6 +453,26 @@ export function BrowserSurfaceView() {
           providers={omniboxProviders}
           tabId={activeTab.id}
           url={activeTab.url}
+        />
+      )}
+      {find.isOpen ? (
+        <BrowserFindBar
+          actions={contributedFindActions}
+          focusToken={find.focusToken}
+          matches={find.matches}
+          onClose={find.close}
+          onRunAction={runFindAction}
+          onSearch={find.search}
+          onStep={find.step}
+          query={find.query}
+        />
+      ) : null}
+      {switcher === null ? null : (
+        <BrowserTabSwitcher
+          favicons={favicons}
+          onSelect={selectSwitcherTab}
+          switcher={switcher}
+          tabs={state.tabs}
         />
       )}
       <BrowserTabDeck

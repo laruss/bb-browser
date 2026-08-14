@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import { useAtom } from "jotai";
+import { atom, useAtom, useSetAtom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 import { z } from "zod";
 import { createLocalStorageSyncStorage } from "./browser-storage";
@@ -106,6 +106,53 @@ export function closeBrowserSurfaceTab(
   return { activeTabId: successor?.id ?? null, tabs };
 }
 
+export interface ClosedBrowserSurfaceTab {
+  /** Where it was in the strip, so reopening puts it back rather than at the end. */
+  index: number;
+  tab: BrowserFixedPanelTab;
+}
+
+/** How many closed tabs can be reopened, matching the shell's session store. */
+export const MAX_CLOSED_BROWSER_SURFACE_TABS = 10;
+
+/**
+ * Push a just-closed tab onto the reopen stack, newest first.
+ *
+ * Deliberately **not** persisted, unlike the open tabs. What makes a reopened
+ * tab land where it left off is the navigation history the shell captured as
+ * the view was destroyed, and that dies with the app — so a stack that survived
+ * a restart would promise a restore it could no longer perform.
+ */
+export function pushClosedBrowserSurfaceTab(
+  stack: readonly ClosedBrowserSurfaceTab[],
+  closed: ClosedBrowserSurfaceTab,
+): readonly ClosedBrowserSurfaceTab[] {
+  return [closed, ...stack].slice(0, MAX_CLOSED_BROWSER_SURFACE_TABS);
+}
+
+/**
+ * Put a closed tab back where it was and focus it.
+ *
+ * The tab keeps its **id**, which is what lets the shell recognise it and
+ * restore the page's history and scroll: the id is the key its session was
+ * stored under.
+ */
+export function reopenBrowserSurfaceTab(
+  state: BrowserSurfaceTabsState,
+  closed: ClosedBrowserSurfaceTab,
+): BrowserSurfaceTabsState {
+  if (state.tabs.some((tab) => tab.id === closed.tab.id)) {
+    return activateBrowserSurfaceTab(state, closed.tab.id);
+  }
+  const index = Math.min(Math.max(closed.index, 0), state.tabs.length);
+  const tabs = [
+    ...state.tabs.slice(0, index),
+    closed.tab,
+    ...state.tabs.slice(index),
+  ];
+  return { activeTabId: closed.tab.id, tabs };
+}
+
 export function activateBrowserSurfaceTab(
   state: BrowserSurfaceTabsState,
   tabId: string,
@@ -202,11 +249,24 @@ export const browserSurfaceTabsAtom = atomWithStorage<BrowserSurfaceTabsState>(
   { getOnInit: true },
 );
 
+/** Session-scoped; see {@link pushClosedBrowserSurfaceTab} for why. */
+const closedBrowserSurfaceTabsAtom = atom<readonly ClosedBrowserSurfaceTab[]>(
+  [],
+);
+
 export interface BrowserSurfaceTabsController {
   activeTab: BrowserFixedPanelTab | null;
   activateTab: (tabId: string) => void;
   closeTab: (tabId: string) => void;
   openTab: (url?: string) => BrowserFixedPanelTab;
+  /**
+   * Adopt a tab the desktop shell already created — a popup, whose page exists
+   * before this surface has heard of it, so the id is the shell's and this side
+   * takes it rather than inventing one.
+   */
+  adoptTab: (args: { tabId: string; url: string }) => void;
+  /** Reopen the most recently closed tab, where it left off. */
+  reopenClosedTab: () => void;
   state: BrowserSurfaceTabsState;
   updateTab: (args: UpdateBrowserSurfaceTabArgs) => void;
 }
@@ -225,12 +285,49 @@ export function useBrowserSurfaceTabs(): BrowserSurfaceTabsController {
     [setState],
   );
 
-  const closeTab = useCallback(
-    (tabId: string) => {
-      setState((current) => closeBrowserSurfaceTab(current, tabId));
+  const adoptTab = useCallback(
+    ({ tabId, url }: { tabId: string; url: string }) => {
+      setState((current) =>
+        addBrowserSurfaceTab(current, {
+          environmentId: null,
+          id: tabId,
+          kind: "browser",
+          title: null,
+          url,
+        }),
+      );
     },
     [setState],
   );
+
+  const setClosedTabs = useSetAtom(closedBrowserSurfaceTabsAtom);
+
+  const closeTab = useCallback(
+    (tabId: string) => {
+      setState((current) => {
+        const index = current.tabs.findIndex((tab) => tab.id === tabId);
+        const tab = current.tabs[index];
+        if (tab !== undefined) {
+          setClosedTabs((stack) =>
+            pushClosedBrowserSurfaceTab(stack, { index, tab }),
+          );
+        }
+        return closeBrowserSurfaceTab(current, tabId);
+      });
+    },
+    [setClosedTabs, setState],
+  );
+
+  const reopenClosedTab = useCallback(() => {
+    setClosedTabs((stack) => {
+      const closed = stack[0];
+      if (closed === undefined) {
+        return stack;
+      }
+      setState((current) => reopenBrowserSurfaceTab(current, closed));
+      return stack.slice(1);
+    });
+  }, [setClosedTabs, setState]);
 
   const activateTab = useCallback(
     (tabId: string) => {
@@ -251,8 +348,10 @@ export function useBrowserSurfaceTabs(): BrowserSurfaceTabsController {
   return {
     activeTab,
     activateTab,
+    adoptTab,
     closeTab,
     openTab,
+    reopenClosedTab,
     state,
     updateTab,
   };

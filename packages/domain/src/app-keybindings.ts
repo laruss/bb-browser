@@ -35,6 +35,22 @@ export const PANE_FOCUS_APP_COMMAND_IDS = [
   "pane.focus.8",
 ] as const;
 
+/**
+ * Jump straight to a browser tab by position. Eight, not nine: the ninth is
+ * `browser.selectLastTab`, which is Chromium's rule — `Cmd+9` is the *last* tab
+ * however many there are, not the ninth one.
+ */
+export const BROWSER_SELECT_TAB_APP_COMMAND_IDS = [
+  "browser.selectTab.1",
+  "browser.selectTab.2",
+  "browser.selectTab.3",
+  "browser.selectTab.4",
+  "browser.selectTab.5",
+  "browser.selectTab.6",
+  "browser.selectTab.7",
+  "browser.selectTab.8",
+] as const;
+
 export const APP_COMMAND_IDS = [
   "thread.new",
   "thread.search",
@@ -64,6 +80,17 @@ export const APP_COMMAND_IDS = [
   "modelPicker.cycleReasoning",
   "browser.focusLocation",
   "browser.reload",
+  "browser.find",
+  "browser.fullscreen.toggle",
+  "browser.newTab",
+  "browser.closeTab",
+  "browser.reopenClosedTab",
+  ...BROWSER_SELECT_TAB_APP_COMMAND_IDS,
+  "browser.selectLastTab",
+  "browser.recentTab.next",
+  "browser.recentTab.previous",
+  "browser.goBack",
+  "browser.goForward",
   "workspace.openPreferred",
   ...QUESTION_SELECT_APP_COMMAND_IDS,
 ] as const;
@@ -261,6 +288,35 @@ export const appKeybindingOverridesSchema = z
 export type AppKeybindingOverrides = z.infer<
   typeof appKeybindingOverridesSchema
 >;
+
+/**
+ * Fold plugin-contributed bindings into the defaults.
+ *
+ * A separate layer from {@link applyAppKeybindingOverrides}, and *under* it:
+ * a plugin decides what this install's defaults are, while an override is the
+ * user's own decision and has to win. Folding into the defaults rather than
+ * into the overrides is what keeps the settings UI honest — a command a plugin
+ * rebound reads as this install's default, not as something the user changed.
+ *
+ * Keeps the {@link AppDefaultKeybindings} shape, so a plugin can also unassign
+ * a command by contributing a null shortcut.
+ */
+export function applyPluginAppKeybindings(
+  defaults: AppDefaultKeybindings,
+  bindings: AppKeybindingOverrides,
+): AppDefaultKeybindings {
+  if (bindings.length === 0) {
+    return defaults;
+  }
+  return defaults.map((binding) => {
+    const contributed = bindings.find(
+      (candidate) => candidate.command === binding.command,
+    );
+    return contributed === undefined
+      ? binding
+      : { ...binding, shortcut: contributed.shortcut };
+  });
+}
 
 export function applyAppKeybindingOverrides(
   defaults: AppDefaultKeybindings,

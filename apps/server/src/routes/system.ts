@@ -15,6 +15,7 @@ import {
 } from "@bb/db";
 import {
   applyAppKeybindingOverrides,
+  applyPluginAppKeybindings,
   customThemeNameSchema,
   isBuiltInThemeId,
   type AppKeybindingOverrides,
@@ -148,14 +149,22 @@ export function registerSystemRoutes(
 
   async function buildSystemConfigResponse(serverUrl: string) {
     const keybindingOverrides = readAppKeybindingOverrides();
+    // Plugins decide what this install's *defaults* are; the user's overrides
+    // still sit on top. Folding them into the defaults rather than into the
+    // overrides is what keeps the settings UI honest about which shortcuts the
+    // user has actually changed.
+    const defaultKeybindings = applyPluginAppKeybindings(
+      DEFAULT_APP_KEYBINDINGS,
+      pluginService.listKeybindingContributions(),
+    );
     const primaryHostId = resolvePrimaryHostId(deps);
     return {
       generalSettings: getAppSettings(deps.db),
       keybindings: applyAppKeybindingOverrides(
-        DEFAULT_APP_KEYBINDINGS,
+        defaultKeybindings,
         keybindingOverrides,
       ),
-      defaultKeybindings: DEFAULT_APP_KEYBINDINGS,
+      defaultKeybindings,
       keybindingOverrides,
       experiments: getExperiments(deps.db),
       appearance: await resolveSelectedTheme(

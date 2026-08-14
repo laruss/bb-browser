@@ -30,6 +30,49 @@ import { rankAcceptedAssetEncodings } from "../asset-content-encoding.js";
  * contract: the server does not depend on the desktop boundary, and this route
  * has to defend itself against any caller, not only against our own shell.
  */
+/**
+ * A picked context-menu entry. Everything but the ids came from the page, so
+ * each field is capped rather than trusted.
+ */
+const pluginContextMenuInvokeSchema = z
+  .object({
+    pluginId: z.string().min(1).max(128),
+    itemId: z.string().min(1).max(128),
+    tabId: z.string().min(1).max(256),
+    pageUrl: z.string().max(4096),
+    linkUrl: z.string().max(4096).nullable(),
+    imageUrl: z.string().max(4096).nullable(),
+    selectionText: z.string().max(4096).nullable(),
+  })
+  .strict();
+
+/**
+ * A pressed find-bar button. The query is what the user typed and the page URL
+ * is the page's own, so both are capped rather than trusted; the cap on the
+ * query matches the find bar's own.
+ */
+const pluginFindActionInvokeSchema = z
+  .object({
+    pluginId: z.string().min(1).max(128),
+    itemId: z.string().min(1).max(128),
+    tabId: z.string().min(1).max(256),
+    pageUrl: z.string().max(4096),
+    query: z.string().min(1).max(256),
+  })
+  .strict();
+
+/**
+ * An authentication challenge a browsed page hit. The host is the shell's own
+ * formatting of what the server asked as, and is capped like the rest.
+ */
+const pluginBrowserAuthChallengeSchema = z
+  .object({
+    tabId: z.string().min(1).max(256),
+    host: z.string().min(1).max(1024),
+    insecure: z.boolean(),
+  })
+  .strict();
+
 const pluginBrowserDownloadSchema = z
   .object({
     id: z.string().min(1).max(128),
@@ -225,6 +268,8 @@ export function registerPluginRoutes(
       cliCommands: plugins.listCliContributions(),
       mentionProviders: plugins.listMentionProviderContributions(),
       omniboxProviders: plugins.listOmniboxProviderContributions(),
+      browserContextMenuItems: plugins.listContextMenuItemContributions(),
+      browserFindActions: plugins.listFindActionContributions(),
     }),
   );
 
@@ -318,6 +363,92 @@ export function registerPluginRoutes(
       return context.json({ ok: false, error: outcome.error }, 422);
     }
     return context.json({ ok: true, navigate: outcome.navigate });
+  });
+
+  // A plugin context-menu entry the user picked. Executes plugin code, so it
+  // takes the same local-origin guard; registered before /plugins/:id/* so
+  // "browser" cannot be captured as a plugin id.
+  app.post("/plugins/browser/context-menu", async (context) => {
+    const problem = localAuthProblem(context, deps);
+    if (problem) {
+      return context.json({ ok: false, error: problem.error }, problem.status);
+    }
+    const body = await context.req.json().catch(() => null);
+    const parsed = pluginContextMenuInvokeSchema.safeParse(body);
+    if (!parsed.success) {
+      return context.json(
+        {
+          ok: false,
+          error:
+            "expected { pluginId, itemId, tabId, pageUrl, linkUrl, imageUrl, selectionText }",
+        },
+        400,
+      );
+    }
+    const { itemId, pluginId, ...menuContext } = parsed.data;
+    const outcome = await plugins.runContextMenuItem({
+      context: menuContext,
+      itemId,
+      pluginId,
+    });
+    return outcome.ok
+      ? context.json({ ok: true })
+      : context.json({ ok: false, error: outcome.error }, 422);
+  });
+
+  // A plugin button pressed on the browser's find bar. Same guard and same
+  // ordering rule as the context-menu route above, and the same fire-and-forget
+  // contract: the bar has already moved on.
+  app.post("/plugins/browser/find-action", async (context) => {
+    const problem = localAuthProblem(context, deps);
+    if (problem) {
+      return context.json({ ok: false, error: problem.error }, problem.status);
+    }
+    const body = await context.req.json().catch(() => null);
+    const parsed = pluginFindActionInvokeSchema.safeParse(body);
+    if (!parsed.success) {
+      return context.json(
+        {
+          ok: false,
+          error: "expected { pluginId, itemId, tabId, pageUrl, query }",
+        },
+        400,
+      );
+    }
+    const { itemId, pluginId, ...findContext } = parsed.data;
+    const outcome = await plugins.runFindAction({
+      context: findContext,
+      itemId,
+      pluginId,
+    });
+    return outcome.ok
+      ? context.json({ ok: true })
+      : context.json({ ok: false, error: outcome.error }, 422);
+  });
+
+  // Credentials for a page the browser could not open, asked of every plugin
+  // that registered a provider (`browser.auth.providers`) before the user is.
+  //
+  // This is the one plugin route whose *response* is a credential, so it takes
+  // the same local-origin guard as the rest and says nothing about which plugin
+  // answered: the caller needs the login, not its provenance.
+  app.post("/plugins/browser/auth", async (context) => {
+    const problem = localAuthProblem(context, deps);
+    if (problem) {
+      return context.json({ ok: false, error: problem.error }, problem.status);
+    }
+    const body = await context.req.json().catch(() => null);
+    const parsed = pluginBrowserAuthChallengeSchema.safeParse(body);
+    if (!parsed.success) {
+      return context.json(
+        { ok: false, error: "expected { tabId, host, insecure }" },
+        400,
+      );
+    }
+    const credentials = await plugins.resolveBrowserAuth({
+      challenge: parsed.data,
+    });
+    return context.json({ ok: true, credentials });
   });
 
   // A download the browser finished, handed to every plugin that registered a

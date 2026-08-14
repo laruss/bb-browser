@@ -44,6 +44,31 @@ export const BB_DESKTOP_BROWSER_DOWNLOAD_ACTION_CHANNEL =
 // to sequence (capture, then hide) and undo in the right order.
 export const BB_DESKTOP_BROWSER_SET_OVERLAY_CHANNEL =
   "bb-desktop:browser:set-overlay";
+// The user asked for the page to fill the window. Its own channel rather than a
+// flag on `set-bounds`: bounds are the renderer's measured layout, pushed on
+// every resize, while this is a mode the shell holds until it is told otherwise.
+export const BB_DESKTOP_BROWSER_SET_FULLSCREEN_CHANNEL =
+  "bb-desktop:browser:set-fullscreen";
+// "Search for <selection>" from the page's context menu. The shell has the
+// selection; only the renderer knows which search engine the omnibox uses, so
+// the query travels rather than a URL.
+export const BB_DESKTOP_BROWSER_SEARCH_SELECTION_CHANNEL =
+  "bb-desktop:browser:search-selection";
+// Plugin context-menu entries: the declared list going down, a click coming
+// back up. Two channels because they run in opposite directions and at
+// completely different rates — the list changes when plugins load, the click
+// happens when a user picks one.
+export const BB_DESKTOP_BROWSER_SET_CONTEXT_MENU_ITEMS_CHANNEL =
+  "bb-desktop:browser:set-context-menu-items";
+export const BB_DESKTOP_BROWSER_CONTEXT_MENU_INVOKE_CHANNEL =
+  "bb-desktop:browser:context-menu-invoke";
+// Find in page: the command going down, the running count coming back up. Two
+// channels rather than an invoke pair because one query answers many times —
+// Chromium reports the count while it is still scanning — and a request/response
+// shape could carry only the first of those answers or only the last.
+export const BB_DESKTOP_BROWSER_FIND_CHANNEL = "bb-desktop:browser:find";
+export const BB_DESKTOP_BROWSER_FIND_RESULT_CHANNEL =
+  "bb-desktop:browser:find-result";
 // The browser channels that answer. Reads are request/response, so these are
 // `invoke`/`handle` pairs rather than `send`; each is a new channel behind an
 // optional preload method for the same reason favicons were (invariant 2 in
@@ -60,6 +85,23 @@ export const BB_DESKTOP_BROWSER_SNAPSHOT_TREE_CHANNEL =
 export const BB_DESKTOP_BROWSER_DIALOG_CHANNEL = "bb-desktop:browser:dialog";
 export const BB_DESKTOP_BROWSER_DIALOG_RESPOND_CHANNEL =
   "bb-desktop:browser:dialog-respond";
+// Real popups: the tabs that may have them going down, the popup the shell
+// created (or that closed itself) coming back up. Two channels because they run
+// in opposite directions and at completely different rates — the declaration
+// changes when tabs open and close, the popup happens when a page calls
+// `window.open()`.
+export const BB_DESKTOP_BROWSER_SET_POPUP_TABS_CHANNEL =
+  "bb-desktop:browser:set-popup-tabs";
+export const BB_DESKTOP_BROWSER_POPUP_CHANNEL = "bb-desktop:browser:popup";
+// The questions the network asks and only a human can answer: an authentication
+// challenge, an untrusted certificate, a request for a client certificate. Their
+// own channels rather than the dialog's, because that payload is wire-frozen and
+// because these come from the network stack rather than from the page's script —
+// a shell that has one has no reason to have the other.
+export const BB_DESKTOP_BROWSER_PAGE_PROMPT_CHANNEL =
+  "bb-desktop:browser:page-prompt";
+export const BB_DESKTOP_BROWSER_PAGE_PROMPT_RESPOND_CHANNEL =
+  "bb-desktop:browser:page-prompt-respond";
 // Acting on the page. One channel for every verb, because they share the whole
 // preamble (resolve a ref, check the snapshot generation, wait for the element
 // to be actionable) and a channel per verb would freeze nine copies of it.
@@ -68,20 +110,17 @@ export const BB_DESKTOP_BROWSER_INTERACT_CHANNEL =
 // Looking at the page without touching it: screenshot, PDF, console log,
 // network log. One channel for the same reason `interact` is one, and the only
 // automation channel that never attaches the browser debugger.
-export const BB_DESKTOP_BROWSER_OBSERVE_CHANNEL =
-  "bb-desktop:browser:observe";
+export const BB_DESKTOP_BROWSER_OBSERVE_CHANNEL = "bb-desktop:browser:observe";
 // Cookies and web storage, read and written. Kept off the observe channel even
 // though it attaches no debugger either: what crosses this one is the user's
 // logins rather than what a page rendered, and that is worth being able to see
 // in a stack trace and in a log without decoding a payload first.
-export const BB_DESKTOP_BROWSER_STORAGE_CHANNEL =
-  "bb-desktop:browser:storage";
+export const BB_DESKTOP_BROWSER_STORAGE_CHANNEL = "bb-desktop:browser:storage";
 // Driving a tab past the paths that make the rest of this safe: the caller's own
 // JavaScript in the page, input at raw coordinates, a mocked network. Its own
 // channel because what these have in common is how much they hand over, which is
 // also the line per-plugin permissions would one day be drawn along.
-export const BB_DESKTOP_BROWSER_CONTROL_CHANNEL =
-  "bb-desktop:browser:control";
+export const BB_DESKTOP_BROWSER_CONTROL_CHANNEL = "bb-desktop:browser:control";
 // The accessibility snapshot of one part of a page. Its own channel because the
 // unscoped snapshot's request is strict and frozen: a `selector` added to it
 // would be refused by every shell that predates this, and refused as "no view",

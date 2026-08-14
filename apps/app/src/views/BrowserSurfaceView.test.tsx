@@ -208,6 +208,65 @@ describe("BrowserSurfaceView", () => {
     expect(attach.mock.calls.at(-1)?.[0].url).toBe("https://example.com/popup");
   });
 
+  // Real popups: the shell created the window and chose the tab id, because the
+  // page had its `window.open()` handle before this surface heard of the tab.
+  it("adopts a popup the shell created, and drops it when it closes itself", () => {
+    const attach = vi.fn();
+    const setPopupTabs = vi.fn();
+    const popupListeners: Array<
+      (
+        popup:
+          | { kind: "opened"; openerTabId: string; tabId: string; url: string }
+          | { kind: "closed"; tabId: string },
+      ) => void
+    > = [];
+    renderSurface({
+      ...createNoopDesktopBrowserApi(),
+      attach,
+      setPopupTabs,
+      onPopup(listener) {
+        popupListeners.push(listener);
+        return () => {};
+      },
+    });
+    const openerTabId = attach.mock.calls[0]?.[0].tabId as string;
+    const emit = (popup: Parameters<(typeof popupListeners)[number]>[0]) => {
+      act(() => {
+        popupListeners.at(-1)?.(popup);
+      });
+    };
+
+    // The surface claims its own tabs, which is what lets the shell host a real
+    // popup for them at all.
+    expect(setPopupTabs.mock.calls.at(-1)?.[0].tabIds).toEqual([openerTabId]);
+
+    // A popup from a tab this surface does not own is another view's business.
+    emit({
+      kind: "opened",
+      openerTabId: "not-a-surface-tab",
+      tabId: "browser-popup:9",
+      url: "https://accounts.example.com/oauth",
+    });
+    expect(tabButtons()).toHaveLength(1);
+
+    emit({
+      kind: "opened",
+      openerTabId,
+      tabId: "browser-popup:1",
+      url: "https://accounts.example.com/oauth",
+    });
+
+    expect(tabButtons()).toHaveLength(2);
+    // The shell's id, not one this surface invented: the view it already holds
+    // is keyed by it.
+    expect(attach.mock.calls.at(-1)?.[0].tabId).toBe("browser-popup:1");
+
+    // How an OAuth flow ends.
+    emit({ kind: "closed", tabId: "browser-popup:1" });
+
+    expect(tabButtons()).toHaveLength(1);
+  });
+
   // Version skew: a shell predating source-attributed popups offers only the
   // unscoped channel, and the link still has to open.
   it("opens a popup from a shell with no scoped channel", () => {

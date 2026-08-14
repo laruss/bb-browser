@@ -29,12 +29,16 @@ import type {
   PluginSharedPortTunnelIdentity,
   PluginInteractionRequest,
   PluginInteractionResult,
+  PluginKeybinding,
   PluginKvStorage,
   PluginLogger,
   PluginMentionItem,
   PluginMentionSearchContext,
   PluginMentionTrigger,
   PluginBrowser,
+  PluginBrowserContextMenuItemRegistration,
+  PluginBrowserAuthProvider,
+  PluginBrowserFindActionRegistration,
   PluginBrowserDownloadHandler,
   PluginBrowserConsoleEntry,
   PluginBrowserCookie,
@@ -440,8 +444,16 @@ export interface FakePluginRegistrations {
   threadEventHandlers: Record<PluginThreadEventName, number>;
   mentionProviders: FakeMentionProviderRecord[];
   omniboxProviders: FakeOmniboxProviderRecord[];
+  /** Keybindings from `bb.ui.registerKeybinding`, in registration order. */
+  keybindings: PluginKeybinding[];
   /** Handlers from `bb.browser.registerDownloadHandler`, in registration order. */
   downloadHandlers: PluginBrowserDownloadHandler[];
+  /** Items from `bb.browser.registerContextMenuItem`, in registration order. */
+  contextMenuItems: PluginBrowserContextMenuItemRegistration[];
+  /** Buttons from `bb.browser.registerFindAction`, in registration order. */
+  findActions: PluginBrowserFindActionRegistration[];
+  /** Providers from `bb.browser.registerAuthProvider`, in registration order. */
+  authProviders: PluginBrowserAuthProvider[];
 }
 
 /** Read-only state for assertions after a plugin registers or handles work. */
@@ -1727,6 +1739,7 @@ function createFakePluginHostInternal(
 
   // --- ui ---
   const mentionProviders: FakeMentionProviderRecord[] = [];
+  const keybindings: PluginKeybinding[] = [];
   const ui: PluginUi = {
     requestInput,
     registerMentionProvider(provider) {
@@ -1763,6 +1776,18 @@ function createFakePluginHostInternal(
         search: provider.search.bind(provider),
         resolve: provider.resolve.bind(provider),
       });
+    },
+    registerKeybinding(keybinding) {
+      assertLive();
+      if (
+        typeof keybinding?.command !== "string" ||
+        keybinding.command.length === 0
+      ) {
+        throw new Error("registerKeybinding needs an app command id");
+      }
+      // The real host also rejects an id that is not a known command; the fake
+      // has no command table, so it records what it was given.
+      keybindings.push(keybinding);
     },
   };
 
@@ -1811,10 +1836,7 @@ function createFakePluginHostInternal(
   } | null = null;
 
   /** The host reports refusals by name, not by class — mirror that here. */
-  function browserError(
-    code: PluginBrowserErrorCode,
-    message: string,
-  ): Error {
+  function browserError(code: PluginBrowserErrorCode, message: string): Error {
     const error = Object.assign(new Error(message), {
       name: "BrowserCommandError",
       code,
@@ -1939,6 +1961,9 @@ function createFakePluginHostInternal(
 
   const omniboxProviders: FakeOmniboxProviderRecord[] = [];
   const downloadHandlers: PluginBrowserDownloadHandler[] = [];
+  const contextMenuItems: PluginBrowserContextMenuItemRegistration[] = [];
+  const findActions: PluginBrowserFindActionRegistration[] = [];
+  const authProviders: PluginBrowserAuthProvider[] = [];
   const browser: PluginBrowser = {
     registerOmniboxProvider(provider) {
       assertLive();
@@ -1973,6 +1998,39 @@ function createFakePluginHostInternal(
         suggest: provider.suggest.bind(provider),
         run: provider.run === undefined ? null : provider.run.bind(provider),
       });
+    },
+    registerContextMenuItem(item) {
+      assertLive();
+      if (typeof item?.id !== "string" || item.id.length === 0) {
+        throw new Error("registerContextMenuItem needs an id");
+      }
+      if (typeof item.run !== "function") {
+        throw new Error(
+          `context menu item "${item.id}" must provide a run(context) function`,
+        );
+      }
+      contextMenuItems.push(item);
+    },
+    registerFindAction(action) {
+      assertLive();
+      if (typeof action?.id !== "string" || action.id.length === 0) {
+        throw new Error("registerFindAction needs an id");
+      }
+      if (typeof action.run !== "function") {
+        throw new Error(
+          `find action "${action.id}" must provide a run(context) function`,
+        );
+      }
+      findActions.push(action);
+    },
+    registerAuthProvider(provider) {
+      assertLive();
+      if (typeof provider !== "function") {
+        throw new Error(
+          "registerAuthProvider(provider) needs a function taking one challenge",
+        );
+      }
+      authProviders.push(provider);
     },
     registerDownloadHandler(handler) {
       assertLive();
@@ -2459,7 +2517,8 @@ function createFakePluginHostInternal(
       }));
     },
     setPageContent(tabId, content) {
-      const existing = browserPageContent.get(tabId) ?? EMPTY_BROWSER_PAGE_CONTENT;
+      const existing =
+        browserPageContent.get(tabId) ?? EMPTY_BROWSER_PAGE_CONTENT;
       browserPageContent.set(tabId, {
         text: content.text ?? existing.text,
         selection: content.selection ?? existing.selection,
@@ -2785,7 +2844,11 @@ function createFakePluginHostInternal(
       },
       mentionProviders,
       omniboxProviders,
-    downloadHandlers,
+      downloadHandlers,
+      keybindings,
+      contextMenuItems,
+      findActions,
+      authProviders,
     },
     get pendingInteractions() {
       return [...pendingInteractions].map(([id, pending]) => ({

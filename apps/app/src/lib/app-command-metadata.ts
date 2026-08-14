@@ -1,4 +1,5 @@
 import {
+  BROWSER_SELECT_TAB_APP_COMMAND_IDS,
   QUESTION_SELECT_APP_COMMAND_IDS,
   PANE_FOCUS_APP_COMMAND_IDS,
   THREAD_JUMP_APP_COMMAND_IDS,
@@ -185,6 +186,51 @@ export const APP_COMMAND_GROUPS: readonly AppCommandGroup[] = [
         "Reload page",
         "Reload the active embedded browser page.",
       ),
+      command(
+        "browser.find",
+        "Find in page",
+        "Search the active browser page for text.",
+      ),
+      command(
+        "browser.fullscreen.toggle",
+        "Full screen page",
+        "Give the page the whole window, while the app is already full screen.",
+      ),
+      command("browser.newTab", "New browser tab", "Open a new browser tab."),
+      command(
+        "browser.closeTab",
+        "Close browser tab",
+        "Close the active browser tab.",
+      ),
+      command(
+        "browser.reopenClosedTab",
+        "Reopen closed tab",
+        "Reopen the most recently closed browser tab, where it left off.",
+      ),
+      ...BROWSER_SELECT_TAB_APP_COMMAND_IDS.map((id, index) =>
+        command(
+          id,
+          `Select browser tab ${index + 1}`,
+          `Switch to browser tab ${index + 1}.`,
+        ),
+      ),
+      command(
+        "browser.selectLastTab",
+        "Select last browser tab",
+        "Switch to the rightmost browser tab.",
+      ),
+      command(
+        "browser.recentTab.next",
+        "Next recent tab",
+        "Step back through recently used browser tabs.",
+      ),
+      command(
+        "browser.recentTab.previous",
+        "Previous recent tab",
+        "Step forward through recently used browser tabs.",
+      ),
+      command("browser.goBack", "Back", "Go back in the browser tab."),
+      command("browser.goForward", "Forward", "Go forward in the browser tab."),
     ],
   },
   {

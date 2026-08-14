@@ -1,12 +1,17 @@
 import { BrowserWindow, ipcMain, type IpcMainEvent } from "electron";
 import {
   bbDesktopBrowserAttachRequestSchema,
+  bbDesktopBrowserContextMenuItemsSchema,
   bbDesktopBrowserDownloadActionRequestSchema,
   bbDesktopBrowserSetOverlayRequestSchema,
+  bbDesktopBrowserSetFullscreenRequestSchema,
+  bbDesktopBrowserFindRequestSchema,
   bbDesktopBrowserNavigateRequestSchema,
   bbDesktopBrowserSetBoundsRequestSchema,
   bbDesktopBrowserSetVisibleRequestSchema,
   bbDesktopBrowserDialogRespondRequestSchema,
+  bbDesktopBrowserPagePromptAnswerSchema,
+  bbDesktopBrowserPopupTabsSchema,
   bbDesktopBrowserCaptureFullPageRequestSchema,
   bbDesktopBrowserControlRequestSchema,
   bbDesktopBrowserRecordRequestSchema,
@@ -33,9 +38,14 @@ import {
   BB_DESKTOP_BROWSER_GO_FORWARD_CHANNEL,
   BB_DESKTOP_BROWSER_NAVIGATE_CHANNEL,
   BB_DESKTOP_BROWSER_DOWNLOAD_ACTION_CHANNEL,
+  BB_DESKTOP_BROWSER_SET_CONTEXT_MENU_ITEMS_CHANNEL,
   BB_DESKTOP_BROWSER_SET_OVERLAY_CHANNEL,
+  BB_DESKTOP_BROWSER_SET_FULLSCREEN_CHANNEL,
+  BB_DESKTOP_BROWSER_SET_POPUP_TABS_CHANNEL,
+  BB_DESKTOP_BROWSER_FIND_CHANNEL,
   BB_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
   BB_DESKTOP_BROWSER_DIALOG_RESPOND_CHANNEL,
+  BB_DESKTOP_BROWSER_PAGE_PROMPT_RESPOND_CHANNEL,
   BB_DESKTOP_BROWSER_CAPTURE_FULL_PAGE_CHANNEL,
   BB_DESKTOP_BROWSER_CONTROL_CHANNEL,
   BB_DESKTOP_BROWSER_RECORD_CHANNEL,
@@ -185,6 +195,64 @@ export function registerDesktopBrowserIpc(
     },
   );
 
+  ipcMain.on(
+    BB_DESKTOP_BROWSER_SET_FULLSCREEN_CHANNEL,
+    (event, payload: unknown) => {
+      const hostWindow = hostWindowFromBrowserIpcEvent(event);
+      if (hostWindow === null) {
+        return;
+      }
+      const parsed =
+        bbDesktopBrowserSetFullscreenRequestSchema.safeParse(payload);
+      if (!parsed.success) {
+        return;
+      }
+      manager.setFullscreen({ hostWindow, request: parsed.data });
+    },
+  );
+
+  ipcMain.on(BB_DESKTOP_BROWSER_FIND_CHANNEL, (event, payload: unknown) => {
+    const hostWindow = hostWindowFromBrowserIpcEvent(event);
+    if (hostWindow === null) {
+      return;
+    }
+    const parsed = bbDesktopBrowserFindRequestSchema.safeParse(payload);
+    if (!parsed.success) {
+      return;
+    }
+    manager.find({ hostWindow, request: parsed.data });
+  });
+
+  ipcMain.on(
+    BB_DESKTOP_BROWSER_SET_POPUP_TABS_CHANNEL,
+    (event, payload: unknown) => {
+      const hostWindow = hostWindowFromBrowserIpcEvent(event);
+      if (hostWindow === null) {
+        return;
+      }
+      const parsed = bbDesktopBrowserPopupTabsSchema.safeParse(payload);
+      if (!parsed.success) {
+        return;
+      }
+      manager.setPopupTabs({ hostWindow, request: parsed.data });
+    },
+  );
+
+  ipcMain.on(
+    BB_DESKTOP_BROWSER_SET_CONTEXT_MENU_ITEMS_CHANNEL,
+    (event, payload: unknown) => {
+      const hostWindow = hostWindowFromBrowserIpcEvent(event);
+      if (hostWindow === null) {
+        return;
+      }
+      const parsed = bbDesktopBrowserContextMenuItemsSchema.safeParse(payload);
+      if (!parsed.success) {
+        return;
+      }
+      manager.setContextMenuItems({ hostWindow, request: parsed.data });
+    },
+  );
+
   // Opening a download needs no host window: the manager answers from the set
   // of paths it wrote, which is not scoped to a window.
   ipcMain.handle(
@@ -299,7 +367,10 @@ export function registerDesktopBrowserIpc(
   // caller to go activate a tab would send it after the wrong fix.
   ipcMain.handle(
     BB_DESKTOP_BROWSER_INTERACT_CHANNEL,
-    async (event, payload: unknown): Promise<BbDesktopBrowserInteractResult> => {
+    async (
+      event,
+      payload: unknown,
+    ): Promise<BbDesktopBrowserInteractResult> => {
       const hostWindow = BrowserWindow.fromWebContents(event.sender);
       if (hostWindow === null) {
         return { ok: false, reason: "no-view" };
@@ -450,6 +521,31 @@ export function registerDesktopBrowserIpc(
         return await manager.record({ hostWindow, request: parsed.data });
       } catch {
         return { ok: false, reason: "failed" };
+      }
+    },
+  );
+
+  // Answering a page prompt reports whether there was one to answer, for the
+  // same reason the dialog channel does — and here the race is real: a prompt
+  // can be closed by a navigation while a human is still typing into it.
+  ipcMain.handle(
+    BB_DESKTOP_BROWSER_PAGE_PROMPT_RESPOND_CHANNEL,
+    async (event, payload: unknown): Promise<boolean> => {
+      const hostWindow = BrowserWindow.fromWebContents(event.sender);
+      if (hostWindow === null) {
+        return false;
+      }
+      const parsed = bbDesktopBrowserPagePromptAnswerSchema.safeParse(payload);
+      if (!parsed.success) {
+        return false;
+      }
+      try {
+        return await manager.respondToPagePrompt({
+          hostWindow,
+          request: parsed.data,
+        });
+      } catch {
+        return false;
       }
     },
   );

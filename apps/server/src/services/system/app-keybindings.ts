@@ -8,6 +8,7 @@ import type {
   AppShortcut,
 } from "@bb/domain";
 import {
+  BROWSER_SELECT_TAB_APP_COMMAND_IDS,
   QUESTION_SELECT_APP_COMMAND_IDS,
   PANE_FOCUS_APP_COMMAND_IDS,
   THREAD_JUMP_APP_COMMAND_IDS,
@@ -111,6 +112,13 @@ const mainWithoutModal = {
   none: ["modalOpen"],
 } as const;
 
+/** Only while the browser surface (or a browsed page) has focus. */
+const browserWithoutModal = {
+  all: ["mainSurface", "browserFocus"],
+  desktopOnly: true,
+  none: ["modalOpen"],
+} as const;
+
 const splitWithoutModal = {
   all: ["mainSurface", "splitActive"],
   none: ["modalOpen"],
@@ -120,25 +128,50 @@ export const DEFAULT_APP_KEYBINDINGS: AppDefaultKeybindings = [
   // Browsers reserve Mod+N before the page receives a key event. Keep the
   // t3code-style alias available in web clients while desktop retains Mod+N.
   binding("thread.new", "o", { mod: true, shift: true }, mainWithoutModal),
-  binding("thread.new", "n", { mod: true }, {
-    ...mainWithoutModal,
-    desktopOnly: true,
-  }),
+  binding(
+    "thread.new",
+    "n",
+    { mod: true },
+    {
+      ...mainWithoutModal,
+      desktopOnly: true,
+    },
+  ),
   binding("thread.search", "k", { mod: true }, mainWithoutModal),
   unassignedBinding("thread.rename", mainWithoutModal),
   unassignedBinding("thread.archive", mainWithoutModal),
   binding("settings.open", ",", { mod: true }, mainWithoutModal),
   binding("sidebar.toggle", "\\", { mod: true }, mainWithoutModal),
-  binding("thread.previous", "ArrowUp", { mod: true, shift: true }, mainWithoutModal),
-  binding("thread.previous", "[", { mod: true, shift: true }, {
-    ...mainWithoutModal,
-    desktopOnly: true,
-  }),
-  binding("thread.next", "ArrowDown", { mod: true, shift: true }, mainWithoutModal),
-  binding("thread.next", "]", { mod: true, shift: true }, {
-    ...mainWithoutModal,
-    desktopOnly: true,
-  }),
+  binding(
+    "thread.previous",
+    "ArrowUp",
+    { mod: true, shift: true },
+    mainWithoutModal,
+  ),
+  binding(
+    "thread.previous",
+    "[",
+    { mod: true, shift: true },
+    {
+      ...mainWithoutModal,
+      desktopOnly: true,
+    },
+  ),
+  binding(
+    "thread.next",
+    "ArrowDown",
+    { mod: true, shift: true },
+    mainWithoutModal,
+  ),
+  binding(
+    "thread.next",
+    "]",
+    { mod: true, shift: true },
+    {
+      ...mainWithoutModal,
+      desktopOnly: true,
+    },
+  ),
   // Browsers reserve Mod+1…9 for native tab switching. Match Slack's web
   // navigation convention: Control+N on macOS and Ctrl+Shift+N elsewhere,
   // while keeping the shorter Mod chord on desktop.
@@ -162,85 +195,208 @@ export const DEFAULT_APP_KEYBINDINGS: AppDefaultKeybindings = [
     { mod: true, shift: true },
     splitWithoutModal,
   ),
-  binding(
-    "pane.close",
-    "x",
-    { mod: true, shift: true },
-    splitWithoutModal,
-  ),
+  binding("pane.close", "x", { mod: true, shift: true }, splitWithoutModal),
   binding("panel.newTab", "t", { mod: true }, mainWithoutModal),
   binding("panel.close", "w", { mod: true }, mainWithoutModal),
   binding("panel.toggle", "j", { mod: true }, mainWithoutModal),
   binding("file.quickOpen", "p", { mod: true }, mainWithoutModal),
-  binding("diff.toggle", "d", { mod: true }, {
-    ...mainWithoutModal,
-    none: ["modalOpen", "editableFocus", "terminalFocus", "browserFocus"],
-  }),
+  binding(
+    "diff.toggle",
+    "d",
+    { mod: true },
+    {
+      ...mainWithoutModal,
+      none: ["modalOpen", "editableFocus", "terminalFocus", "browserFocus"],
+    },
+  ),
   // Browsers reserve Mod+Shift+T for reopening a closed tab before the page
   // receives the event. Use Enter as the web alias and retain T on desktop.
-  binding("terminal.open", "Enter", { mod: true, shift: true }, mainWithoutModal),
-  binding("terminal.open", "t", { mod: true, shift: true }, {
-    ...mainWithoutModal,
-    desktopOnly: true,
-  }),
-  binding("composer.focus", "c", { mod: true, shift: true }, {
-    all: ["mainSurface", "promptAvailable"],
-    none: ["modalOpen", "terminalFocus", "browserFocus"],
-  }),
-  binding("modelPicker.toggle", "m", { mod: true, shift: true }, {
-    all: ["mainSurface", "promptAvailable"],
-    none: ["modalOpen", "terminalFocus", "browserFocus"],
-  }),
+  binding(
+    "terminal.open",
+    "Enter",
+    { mod: true, shift: true },
+    mainWithoutModal,
+  ),
+  binding(
+    "terminal.open",
+    "t",
+    { mod: true, shift: true },
+    {
+      ...mainWithoutModal,
+      desktopOnly: true,
+    },
+  ),
+  binding(
+    "composer.focus",
+    "c",
+    { mod: true, shift: true },
+    {
+      all: ["mainSurface", "promptAvailable"],
+      none: ["modalOpen", "terminalFocus", "browserFocus"],
+    },
+  ),
+  binding(
+    "modelPicker.toggle",
+    "m",
+    { mod: true, shift: true },
+    {
+      all: ["mainSurface", "promptAvailable"],
+      none: ["modalOpen", "terminalFocus", "browserFocus"],
+    },
+  ),
   // The picker popover is itself modal. This later, scoped binding lets the
   // same chord close it while the general binding remains blocked by unrelated
   // dialogs.
-  binding("modelPicker.toggle", "m", { mod: true, shift: true }, {
-    all: ["mainSurface", "modelPickerOpen"],
-    none: [],
-  }),
+  binding(
+    "modelPicker.toggle",
+    "m",
+    { mod: true, shift: true },
+    {
+      all: ["mainSurface", "modelPickerOpen"],
+      none: [],
+    },
+  ),
   // Rotate the composer's model and reasoning level without opening the picker,
   // scoped exactly like `modelPicker.toggle` above. Alt is otherwise unused by
   // bb, the browser, and both desktop menus, so these chords shadow nothing.
   // macOS composes Option+<letter> into another character, so they match on the
   // physical key — see `normalizeAppShortcutInputKey` in @bb/domain.
-  binding("modelPicker.cycleModel", "m", { alt: true }, {
-    all: ["mainSurface", "promptAvailable"],
-    none: ["modalOpen", "terminalFocus", "browserFocus"],
-  }),
-  binding("modelPicker.cycleReasoning", "t", { alt: true }, {
-    all: ["mainSurface", "promptAvailable"],
-    none: ["modalOpen", "terminalFocus", "browserFocus"],
-  }),
+  binding(
+    "modelPicker.cycleModel",
+    "m",
+    { alt: true },
+    {
+      all: ["mainSurface", "promptAvailable"],
+      none: ["modalOpen", "terminalFocus", "browserFocus"],
+    },
+  ),
+  binding(
+    "modelPicker.cycleReasoning",
+    "t",
+    { alt: true },
+    {
+      all: ["mainSurface", "promptAvailable"],
+      none: ["modalOpen", "terminalFocus", "browserFocus"],
+    },
+  ),
   // The picker popover is itself modal, so the bindings above stop the moment it
   // opens. These later, scoped copies keep cycling available while it is open —
   // the same escape hatch `modelPicker.toggle` uses to close itself.
-  binding("modelPicker.cycleModel", "m", { alt: true }, {
-    all: ["mainSurface", "modelPickerOpen"],
-    none: [],
-  }),
-  binding("modelPicker.cycleReasoning", "t", { alt: true }, {
-    all: ["mainSurface", "modelPickerOpen"],
-    none: [],
-  }),
-  binding("browser.focusLocation", "l", { mod: true }, {
-    all: ["mainSurface", "browserFocus"],
-    desktopOnly: true,
-    none: ["modalOpen"],
-  }),
-  binding("browser.reload", "r", { mod: true }, {
-    all: ["mainSurface", "browserFocus"],
-    desktopOnly: true,
-    none: ["modalOpen"],
-  }),
+  binding(
+    "modelPicker.cycleModel",
+    "m",
+    { alt: true },
+    {
+      all: ["mainSurface", "modelPickerOpen"],
+      none: [],
+    },
+  ),
+  binding(
+    "modelPicker.cycleReasoning",
+    "t",
+    { alt: true },
+    {
+      all: ["mainSurface", "modelPickerOpen"],
+      none: [],
+    },
+  ),
+  binding(
+    "browser.focusLocation",
+    "l",
+    { mod: true },
+    {
+      all: ["mainSurface", "browserFocus"],
+      desktopOnly: true,
+      none: ["modalOpen"],
+    },
+  ),
+  binding(
+    "browser.reload",
+    "r",
+    { mod: true },
+    {
+      all: ["mainSurface", "browserFocus"],
+      desktopOnly: true,
+      none: ["modalOpen"],
+    },
+  ),
+  // The find bar. Same chord every browser uses, and — like the address bar —
+  // it must keep working while the page has focus, which is what the shell's
+  // host-focusing list is for.
+  binding(
+    "browser.find",
+    "f",
+    { mod: true },
+    {
+      all: ["mainSurface", "browserFocus"],
+      desktopOnly: true,
+      none: ["modalOpen"],
+    },
+  ),
+  // Give the page the whole window. It does nothing unless the app window is
+  // already full screen — the renderer owns that gate, because covering the app
+  // chrome in an ordinary window would trap the user with no way back.
+  binding(
+    "browser.fullscreen.toggle",
+    "f",
+    { mod: true, shift: true },
+    {
+      all: ["mainSurface", "browserFocus"],
+      desktopOnly: true,
+      none: ["modalOpen"],
+    },
+  ),
+  // Browser tab commands. Registered *after* `panel.newTab` / `panel.close`
+  // deliberately: both resolvers walk the table from the end, so these win
+  // whenever the browser has focus while the panel bindings keep working
+  // everywhere else. Same chords a browser has, so muscle memory transfers.
+  binding("browser.newTab", "t", { mod: true }, browserWithoutModal),
+  binding("browser.closeTab", "w", { mod: true }, browserWithoutModal),
+  binding(
+    "browser.reopenClosedTab",
+    "t",
+    { mod: true, shift: true },
+    browserWithoutModal,
+  ),
+  ...BROWSER_SELECT_TAB_APP_COMMAND_IDS.map((command, index) =>
+    binding(command, String(index + 1), { mod: true }, browserWithoutModal),
+  ),
+  binding("browser.selectLastTab", "9", { mod: true }, browserWithoutModal),
+  // Literal Control on every platform, as in an IDE — not `mod`, which would be
+  // Command on macOS and collide with nothing useful there.
+  binding(
+    "browser.recentTab.next",
+    "Tab",
+    { control: true },
+    browserWithoutModal,
+  ),
+  binding(
+    "browser.recentTab.previous",
+    "Tab",
+    { control: true, shift: true },
+    browserWithoutModal,
+  ),
+  binding("browser.goBack", "[", { mod: true }, browserWithoutModal),
+  binding("browser.goForward", "]", { mod: true }, browserWithoutModal),
   binding("workspace.openPreferred", "o", { mod: true }, mainWithoutModal),
   ...QUESTION_SELECT_APP_COMMAND_IDS.map((command, index) =>
-    binding(command, String(index + 1), {}, {
-      all: ["mainSurface", "questionOpen"],
-      none: ["modalOpen", "editableFocus"],
-    }),
+    binding(
+      command,
+      String(index + 1),
+      {},
+      {
+        all: ["mainSurface", "questionOpen"],
+        none: ["modalOpen", "editableFocus"],
+      },
+    ),
   ),
-  binding("window.new", "n", { mod: true, shift: true }, {
-    ...mainWithoutModal,
-    desktopOnly: true,
-  }),
+  binding(
+    "window.new",
+    "n",
+    { mod: true, shift: true },
+    {
+      ...mainWithoutModal,
+      desktopOnly: true,
+    },
+  ),
 ];

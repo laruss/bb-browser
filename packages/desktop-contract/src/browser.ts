@@ -303,7 +303,10 @@ export const bbDesktopBrowserDownloadSchema = z
     /** Stable across this download's `started` and terminal events. */
     id: z.string().min(1),
     tabId: z.string().min(1),
-    filename: z.string().min(1).max(BB_DESKTOP_BROWSER_MAX_DOWNLOAD_PATH_LENGTH),
+    filename: z
+      .string()
+      .min(1)
+      .max(BB_DESKTOP_BROWSER_MAX_DOWNLOAD_PATH_LENGTH),
     savePath: z
       .string()
       .min(1)
@@ -347,6 +350,29 @@ export const bbDesktopBrowserSetOverlayRequestSchema = z
   .strict();
 export type BbDesktopBrowserSetOverlayRequest = z.infer<
   typeof bbDesktopBrowserSetOverlayRequestSchema
+>;
+
+/**
+ * Give the page the whole window, or give the chrome back.
+ *
+ * The same expansion Chromium's own HTML fullscreen produces, asked for by the
+ * user instead of by the page — which is why it is a separate flag in the
+ * shell: a video leaving fullscreen must not take the user's own choice with
+ * it.
+ *
+ * Whether it is offered at all is the renderer's decision, not the shell's: it
+ * is the side that knows the window is already fullscreen, which is the only
+ * state where covering the app chrome is something a user asked for rather than
+ * something that traps them.
+ */
+export const bbDesktopBrowserSetFullscreenRequestSchema = z
+  .object({
+    tabId: z.string().min(1),
+    fullscreen: z.boolean(),
+  })
+  .strict();
+export type BbDesktopBrowserSetFullscreenRequest = z.infer<
+  typeof bbDesktopBrowserSetFullscreenRequestSchema
 >;
 
 /**
@@ -569,9 +595,7 @@ export const bbDesktopBrowserDialogSchema = z
     dialog: z
       .object({
         type: z.enum(["alert", "confirm", "prompt", "beforeunload"]),
-        message: z
-          .string()
-          .max(BB_DESKTOP_BROWSER_MAX_DIALOG_MESSAGE_LENGTH),
+        message: z.string().max(BB_DESKTOP_BROWSER_MAX_DIALOG_MESSAGE_LENGTH),
         defaultPrompt: z
           .string()
           .max(BB_DESKTOP_BROWSER_MAX_DIALOG_MESSAGE_LENGTH),
@@ -604,6 +628,143 @@ export type BbDesktopBrowserDialogRespondRequest = z.infer<
 export type BbDesktopBrowserDialogHandler = (
   dialog: BbDesktopBrowserDialog,
 ) => void;
+
+/**
+ * Caps on a page prompt. Every string here is chosen by a server the page
+ * reached — a host, a certificate's own fields — so each is bounded rather than
+ * trusted, and a credential is bounded because it crosses a process boundary.
+ */
+export const BB_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH = 1024;
+export const BB_DESKTOP_BROWSER_MAX_CREDENTIAL_LENGTH = 1024;
+/** A certificate store with more than this is not a list a human picks from. */
+export const BB_DESKTOP_BROWSER_MAX_CLIENT_CERTIFICATES = 20;
+
+/**
+ * A question the network asked that only a human can answer.
+ *
+ * Three Chromium events land here — an HTTP authentication challenge, an
+ * untrusted certificate, and a server asking for a client certificate. They
+ * share a channel because they share a shape: the page's load is stopped until
+ * something answers, and answering hands the decision back to Chromium.
+ *
+ * `id` is what makes a late answer harmless: a prompt the tab has moved past
+ * (it navigated, the tab closed, a second challenge replaced it) can still be
+ * answered by a renderer that had not heard, and the shell drops it.
+ *
+ * **The authentication realm is deliberately absent.** It is server-controlled
+ * text next to a username field, which is what made realm strings a spoofing
+ * surface; Chrome stopped showing it for that reason and so does this. The
+ * shell keeps it only as the key that decides which requests one answer covers.
+ */
+export const bbDesktopBrowserPagePromptDetailsSchema = z.discriminatedUnion(
+  "kind",
+  [
+    z
+      .object({
+        kind: z.literal("auth"),
+        id: z.string().min(1),
+        /** `host` or `host:port` — who is asking, which is the whole question. */
+        host: z.string().min(1).max(BB_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH),
+        /** The credentials would travel in the clear; worth saying out loud. */
+        insecure: z.boolean(),
+      })
+      .strict(),
+    z
+      .object({
+        kind: z.literal("certificate"),
+        id: z.string().min(1),
+        host: z.string().min(1).max(BB_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH),
+        /** Chromium's own error code, e.g. `net::ERR_CERT_DATE_INVALID`. */
+        errorCode: z.string().max(BB_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH),
+        subjectName: z.string().max(BB_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH),
+        issuerName: z.string().max(BB_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH),
+        /** Unix seconds, as Chromium reports them; formatting is the app's. */
+        validFrom: z.number().int(),
+        validTo: z.number().int(),
+        fingerprint: z.string().max(BB_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH),
+      })
+      .strict(),
+    z
+      .object({
+        kind: z.literal("client-certificate"),
+        id: z.string().min(1),
+        host: z.string().min(1).max(BB_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH),
+        certificates: z
+          .array(
+            z
+              .object({
+                /** Position in the shell's own list; the answer names one. */
+                index: z.number().int().min(0),
+                subjectName: z
+                  .string()
+                  .max(BB_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH),
+                issuerName: z
+                  .string()
+                  .max(BB_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH),
+                validTo: z.number().int(),
+              })
+              .strict(),
+          )
+          .max(BB_DESKTOP_BROWSER_MAX_CLIENT_CERTIFICATES),
+      })
+      .strict(),
+  ],
+);
+export type BbDesktopBrowserPagePromptDetails = z.infer<
+  typeof bbDesktopBrowserPagePromptDetailsSchema
+>;
+
+/**
+ * The prompt a tab is waiting on, or `null` when it stopped waiting. One
+ * channel reports both, as the dialog channel does, so a listener cannot miss
+ * the close.
+ */
+export const bbDesktopBrowserPagePromptSchema = z
+  .object({
+    tabId: z.string().min(1),
+    prompt: bbDesktopBrowserPagePromptDetailsSchema.nullable(),
+  })
+  .strict();
+export type BbDesktopBrowserPagePrompt = z.infer<
+  typeof bbDesktopBrowserPagePromptSchema
+>;
+export type BbDesktopBrowserPagePromptHandler = (
+  prompt: BbDesktopBrowserPagePrompt,
+) => void;
+
+/**
+ * What a human decided. `cancel` answers every kind; the other three each
+ * belong to one, and an answer that does not match the open prompt is treated
+ * as a cancel rather than guessed at.
+ */
+export const bbDesktopBrowserPagePromptAnswerSchema = z
+  .object({
+    tabId: z.string().min(1),
+    /** The prompt being answered; an answer to a closed one is dropped. */
+    id: z.string().min(1),
+    answer: z.discriminatedUnion("kind", [
+      z.object({ kind: z.literal("cancel") }).strict(),
+      z
+        .object({
+          kind: z.literal("credentials"),
+          username: z.string().max(BB_DESKTOP_BROWSER_MAX_CREDENTIAL_LENGTH),
+          password: z.string().max(BB_DESKTOP_BROWSER_MAX_CREDENTIAL_LENGTH),
+        })
+        .strict(),
+      /** Proceed to a site whose certificate does not verify. */
+      z.object({ kind: z.literal("proceed") }).strict(),
+      z
+        .object({
+          kind: z.literal("client-certificate"),
+          index: z.number().int().min(0),
+        })
+        .strict(),
+    ]),
+  })
+  .strict();
+export type BbDesktopBrowserPagePromptAnswer = z.infer<
+  typeof bbDesktopBrowserPagePromptAnswerSchema
+>;
 
 /**
  * Caps on what an interaction may carry into a page.
@@ -647,75 +808,82 @@ const bbDesktopBrowserKeyModifierSchema = z.enum([
  * reaches, and "click the checkbox" is a toggle, which is the wrong primitive
  * for an agent that wants a known end state.
  */
-export const bbDesktopBrowserInteractionSchema = z.discriminatedUnion("action", [
-  z.object({
-    action: z.literal("click"),
-    ref: bbDesktopBrowserRefSchema,
-    button: z.enum(["left", "middle", "right"]),
-    /** 2 is a double click; Chromium wants the count on the event itself. */
-    clickCount: z.union([z.literal(1), z.literal(2)]),
-    modifiers: z.array(bbDesktopBrowserKeyModifierSchema).max(4),
-  }),
-  z.object({ action: z.literal("hover"), ref: bbDesktopBrowserRefSchema }),
-  z.object({
-    action: z.literal("drag"),
-    ref: bbDesktopBrowserRefSchema,
-    targetRef: bbDesktopBrowserRefSchema,
-  }),
-  z.object({
-    action: z.literal("fill"),
-    ref: bbDesktopBrowserRefSchema,
-    text: z.string().max(BB_DESKTOP_BROWSER_MAX_FILL_TEXT_LENGTH),
-  }),
-  z.object({
-    action: z.literal("type"),
-    ref: bbDesktopBrowserRefSchema,
-    text: z.string().max(BB_DESKTOP_BROWSER_MAX_TYPE_TEXT_LENGTH),
-  }),
-  z.object({
-    action: z.literal("press"),
-    /** Null presses the key at whatever the page has focused. */
-    ref: bbDesktopBrowserRefSchema.nullable(),
-    key: z.string().min(1).max(64),
-  }),
-  z.object({
-    action: z.literal("select"),
-    ref: bbDesktopBrowserRefSchema,
-    values: z
-      .array(z.string().max(BB_DESKTOP_BROWSER_MAX_TYPE_TEXT_LENGTH))
-      .min(1)
-      .max(BB_DESKTOP_BROWSER_MAX_SELECT_VALUES),
-  }),
-  z.object({
-    action: z.literal("check"),
-    ref: bbDesktopBrowserRefSchema,
-    /** The end state, not a toggle, so repeating the command is harmless. */
-    checked: z.boolean(),
-  }),
-  z.object({
-    action: z.literal("upload"),
-    ref: bbDesktopBrowserRefSchema,
-    /**
-     * Absolute paths on the machine running the shell. This hands a web page
-     * the contents of local files; see docs/architecture/browser-automation.md
-     * for what that does and does not add to bb's threat model.
-     */
-    paths: z
-      .array(z.string().min(1).max(1024))
-      .min(1)
-      .max(BB_DESKTOP_BROWSER_MAX_UPLOAD_FILES),
-  }),
-  z.object({
-    action: z.literal("resize"),
-    /** Both zero restores the tab to the panel's own size. */
-    width: z.number().int().nonnegative().max(BB_DESKTOP_BROWSER_MAX_VIEWPORT_SIZE),
-    height: z
-      .number()
-      .int()
-      .nonnegative()
-      .max(BB_DESKTOP_BROWSER_MAX_VIEWPORT_SIZE),
-  }),
-]);
+export const bbDesktopBrowserInteractionSchema = z.discriminatedUnion(
+  "action",
+  [
+    z.object({
+      action: z.literal("click"),
+      ref: bbDesktopBrowserRefSchema,
+      button: z.enum(["left", "middle", "right"]),
+      /** 2 is a double click; Chromium wants the count on the event itself. */
+      clickCount: z.union([z.literal(1), z.literal(2)]),
+      modifiers: z.array(bbDesktopBrowserKeyModifierSchema).max(4),
+    }),
+    z.object({ action: z.literal("hover"), ref: bbDesktopBrowserRefSchema }),
+    z.object({
+      action: z.literal("drag"),
+      ref: bbDesktopBrowserRefSchema,
+      targetRef: bbDesktopBrowserRefSchema,
+    }),
+    z.object({
+      action: z.literal("fill"),
+      ref: bbDesktopBrowserRefSchema,
+      text: z.string().max(BB_DESKTOP_BROWSER_MAX_FILL_TEXT_LENGTH),
+    }),
+    z.object({
+      action: z.literal("type"),
+      ref: bbDesktopBrowserRefSchema,
+      text: z.string().max(BB_DESKTOP_BROWSER_MAX_TYPE_TEXT_LENGTH),
+    }),
+    z.object({
+      action: z.literal("press"),
+      /** Null presses the key at whatever the page has focused. */
+      ref: bbDesktopBrowserRefSchema.nullable(),
+      key: z.string().min(1).max(64),
+    }),
+    z.object({
+      action: z.literal("select"),
+      ref: bbDesktopBrowserRefSchema,
+      values: z
+        .array(z.string().max(BB_DESKTOP_BROWSER_MAX_TYPE_TEXT_LENGTH))
+        .min(1)
+        .max(BB_DESKTOP_BROWSER_MAX_SELECT_VALUES),
+    }),
+    z.object({
+      action: z.literal("check"),
+      ref: bbDesktopBrowserRefSchema,
+      /** The end state, not a toggle, so repeating the command is harmless. */
+      checked: z.boolean(),
+    }),
+    z.object({
+      action: z.literal("upload"),
+      ref: bbDesktopBrowserRefSchema,
+      /**
+       * Absolute paths on the machine running the shell. This hands a web page
+       * the contents of local files; see docs/architecture/browser-automation.md
+       * for what that does and does not add to bb's threat model.
+       */
+      paths: z
+        .array(z.string().min(1).max(1024))
+        .min(1)
+        .max(BB_DESKTOP_BROWSER_MAX_UPLOAD_FILES),
+    }),
+    z.object({
+      action: z.literal("resize"),
+      /** Both zero restores the tab to the panel's own size. */
+      width: z
+        .number()
+        .int()
+        .nonnegative()
+        .max(BB_DESKTOP_BROWSER_MAX_VIEWPORT_SIZE),
+      height: z
+        .number()
+        .int()
+        .nonnegative()
+        .max(BB_DESKTOP_BROWSER_MAX_VIEWPORT_SIZE),
+    }),
+  ],
+);
 export type BbDesktopBrowserInteraction = z.infer<
   typeof bbDesktopBrowserInteractionSchema
 >;
@@ -827,11 +995,19 @@ export const bbDesktopBrowserObservationSchema = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("console"),
     /** Newest entries first cut from the tail, so a limit keeps what is recent. */
-    limit: z.number().int().min(1).max(BB_DESKTOP_BROWSER_MAX_OBSERVATION_ENTRIES),
+    limit: z
+      .number()
+      .int()
+      .min(1)
+      .max(BB_DESKTOP_BROWSER_MAX_OBSERVATION_ENTRIES),
   }),
   z.object({
     kind: z.literal("network"),
-    limit: z.number().int().min(1).max(BB_DESKTOP_BROWSER_MAX_OBSERVATION_ENTRIES),
+    limit: z
+      .number()
+      .int()
+      .min(1)
+      .max(BB_DESKTOP_BROWSER_MAX_OBSERVATION_ENTRIES),
   }),
 ]);
 export type BbDesktopBrowserObservation = z.infer<
@@ -1024,7 +1200,13 @@ export const bbDesktopBrowserCaptureFullPageResultSchema = z.union([
      * viewport picture instead.
      */
     reason: z
-      .enum(["no-view", "no-page", "debugger-unavailable", "too-large", "failed"])
+      .enum([
+        "no-view",
+        "no-page",
+        "debugger-unavailable",
+        "too-large",
+        "failed",
+      ])
       .catch("failed"),
     message: z.string().max(1024).optional(),
   }),
@@ -1073,7 +1255,9 @@ const bbDesktopBrowserCookieSchema = z.object({
   secure: z.boolean(),
   sameSite: z.enum(["Strict", "Lax", "None"]),
 });
-export type BbDesktopBrowserCookie = z.infer<typeof bbDesktopBrowserCookieSchema>;
+export type BbDesktopBrowserCookie = z.infer<
+  typeof bbDesktopBrowserCookieSchema
+>;
 
 const bbDesktopBrowserStorageItemSchema = z.object({
   name: z.string().max(BB_DESKTOP_BROWSER_MAX_COOKIE_NAME_LENGTH),
@@ -1216,9 +1400,7 @@ export const bbDesktopBrowserStorageResultSchema = z.union([
      * script, which is the same hazard the page read has. `failed` — anything
      * else, including an origin whose storage the browser refuses to open.
      */
-    reason: z
-      .enum(["no-view", "no-page", "timeout", "failed"])
-      .catch("failed"),
+    reason: z.enum(["no-view", "no-page", "timeout", "failed"]).catch("failed"),
     message: z.string().max(1024).optional(),
   }),
 ]);
@@ -1296,8 +1478,16 @@ export const bbDesktopBrowserControlOperationSchema = z.discriminatedUnion(
     z.object({
       kind: z.literal("mouse-move"),
       /** CSS pixels from the viewport's top-left, as a screenshot shows them. */
-      x: z.number().int().nonnegative().max(BB_DESKTOP_BROWSER_MAX_VIEWPORT_SIZE),
-      y: z.number().int().nonnegative().max(BB_DESKTOP_BROWSER_MAX_VIEWPORT_SIZE),
+      x: z
+        .number()
+        .int()
+        .nonnegative()
+        .max(BB_DESKTOP_BROWSER_MAX_VIEWPORT_SIZE),
+      y: z
+        .number()
+        .int()
+        .nonnegative()
+        .max(BB_DESKTOP_BROWSER_MAX_VIEWPORT_SIZE),
     }),
     z.object({
       kind: z.literal("mouse-button"),
@@ -1568,6 +1758,222 @@ export type BbDesktopBrowserStateHandler = (
 export type BbDesktopBrowserFaviconHandler = (
   favicon: BbDesktopBrowserFavicon,
 ) => void;
+/**
+ * A search the page's context menu asked for. The query is the raw selection,
+ * capped: the renderer turns it into a URL with the same search engine the
+ * omnibox uses, which is the only place that knows what it is.
+ */
+export const bbDesktopBrowserSearchSelectionSchema = z
+  .object({
+    tabId: z.string().min(1),
+    query: z.string().min(1).max(BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH),
+  })
+  .strict();
+export type BbDesktopBrowserSearchSelection = z.infer<
+  typeof bbDesktopBrowserSearchSelectionSchema
+>;
+export type BbDesktopBrowserSearchSelectionHandler = (
+  request: BbDesktopBrowserSearchSelection,
+) => void;
+
+/**
+ * Context-menu entries plugins have contributed, pushed renderer → main and
+ * held by the shell.
+ *
+ * Declared ahead of time rather than asked for on right-click, and that is the
+ * whole design: a menu that waited on the server before opening would lag every
+ * right-click by a round trip. The shell composes what it already has, and the
+ * *click* is what travels back.
+ */
+export const BB_DESKTOP_BROWSER_MAX_CONTEXT_MENU_ITEMS = 20;
+
+export const bbDesktopBrowserContextMenuItemSchema = z
+  .object({
+    pluginId: z.string().min(1).max(128),
+    itemId: z.string().min(1).max(128),
+    title: z.string().min(1).max(BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH),
+    /** Any match shows the item; empty means every context. */
+    when: z
+      .object({
+        image: z.boolean(),
+        link: z.boolean(),
+        page: z.boolean(),
+        selection: z.boolean(),
+      })
+      .strict(),
+  })
+  .strict();
+export type BbDesktopBrowserContextMenuItem = z.infer<
+  typeof bbDesktopBrowserContextMenuItemSchema
+>;
+
+export const bbDesktopBrowserContextMenuItemsSchema = z
+  .object({
+    items: z
+      .array(bbDesktopBrowserContextMenuItemSchema)
+      .max(BB_DESKTOP_BROWSER_MAX_CONTEXT_MENU_ITEMS),
+  })
+  .strict();
+export type BbDesktopBrowserContextMenuItems = z.infer<
+  typeof bbDesktopBrowserContextMenuItemsSchema
+>;
+
+/** A plugin entry the user picked, with what it was picked on. */
+export const bbDesktopBrowserContextMenuInvokeSchema = z
+  .object({
+    pluginId: z.string().min(1).max(128),
+    itemId: z.string().min(1).max(128),
+    tabId: z.string().min(1),
+    pageUrl: z.string().max(BB_DESKTOP_BROWSER_MAX_URL_LENGTH),
+    linkUrl: z.string().max(BB_DESKTOP_BROWSER_MAX_URL_LENGTH).nullable(),
+    imageUrl: z.string().max(BB_DESKTOP_BROWSER_MAX_URL_LENGTH).nullable(),
+    selectionText: z
+      .string()
+      .max(BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH)
+      .nullable(),
+  })
+  .strict();
+export type BbDesktopBrowserContextMenuInvoke = z.infer<
+  typeof bbDesktopBrowserContextMenuInvokeSchema
+>;
+export type BbDesktopBrowserContextMenuInvokeHandler = (
+  invoke: BbDesktopBrowserContextMenuInvoke,
+) => void;
+
+/**
+ * Cap on a find query. A find bar is a phrase, not a document: Chromium itself
+ * stops being useful long before this, and the string crosses a process
+ * boundary on every keystroke.
+ */
+export const BB_DESKTOP_BROWSER_MAX_FIND_QUERY_LENGTH = 256;
+
+/**
+ * What to do with a tab's find session.
+ *
+ * `start` begins or restarts the search — the find bar sends one per keystroke,
+ * which is what makes it search as you type. `next` and `previous` step through
+ * the matches of the session already running. `stop` ends it and drops the
+ * highlights.
+ */
+export const bbDesktopBrowserFindActionSchema = z.enum([
+  "start",
+  "next",
+  "previous",
+  "stop",
+]);
+export type BbDesktopBrowserFindAction = z.infer<
+  typeof bbDesktopBrowserFindActionSchema
+>;
+
+/**
+ * One find command for one tab.
+ *
+ * The query rides every action rather than being remembered by the shell,
+ * because Chromium's own find takes the text on each call — a `next` that
+ * carried no text would have nothing to search for. An empty query ends the
+ * session whatever the action says: searching for nothing is not a search.
+ */
+export const bbDesktopBrowserFindRequestSchema = z
+  .object({
+    tabId: z.string().min(1),
+    action: bbDesktopBrowserFindActionSchema,
+    query: z.string().max(BB_DESKTOP_BROWSER_MAX_FIND_QUERY_LENGTH),
+  })
+  .strict();
+export type BbDesktopBrowserFindRequest = z.infer<
+  typeof bbDesktopBrowserFindRequestSchema
+>;
+
+/**
+ * How a tab's find session is going, pushed main → renderer.
+ *
+ * Chromium counts matches while it scans, so several of these arrive for one
+ * query and the count climbs; `finalUpdate` marks the last. The renderer shows
+ * every one of them — a counter that only appeared at the end would look frozen
+ * on a long page — and the shell drops results belonging to a superseded
+ * request, so a stale count never lands on a newer query.
+ */
+export const bbDesktopBrowserFindResultSchema = z
+  .object({
+    tabId: z.string().min(1),
+    /** 1-based position of the highlighted match; 0 when there are none. */
+    activeMatchOrdinal: z.number().int().min(0),
+    matches: z.number().int().min(0),
+    finalUpdate: z.boolean(),
+  })
+  .strict();
+export type BbDesktopBrowserFindResult = z.infer<
+  typeof bbDesktopBrowserFindResultSchema
+>;
+export type BbDesktopBrowserFindResultHandler = (
+  result: BbDesktopBrowserFindResult,
+) => void;
+
+/**
+ * How many tabs may claim real popups at once. A surface declares its whole tab
+ * list, so this is the same cap the tab list itself lives under.
+ */
+export const BB_DESKTOP_BROWSER_MAX_POPUP_TABS = 200;
+
+/**
+ * The tabs whose pages get **real** popups — windows Chromium creates, with a
+ * live `window.opener` and a handle `window.open()` can return.
+ *
+ * Declared by the renderer because only it knows which of its surfaces is a
+ * browser. A thread panel's browser tab opens links by the user's own
+ * in-app-link preference, which may send them to the system browser, and an
+ * opener means nothing there; the browser surface owns its tabs and can host
+ * one. A tab not on this list keeps the older behaviour — the popup is denied
+ * and its URL pushed over as a plain new tab.
+ *
+ * Replaces the previous set, so the caller owns the whole list.
+ */
+export const bbDesktopBrowserPopupTabsSchema = z
+  .object({
+    tabIds: z.array(z.string().min(1)).max(BB_DESKTOP_BROWSER_MAX_POPUP_TABS),
+  })
+  .strict();
+export type BbDesktopBrowserPopupTabs = z.infer<
+  typeof bbDesktopBrowserPopupTabsSchema
+>;
+
+/**
+ * A popup the shell created and is holding, or one that closed itself.
+ *
+ * `opened` carries a tab id the **shell** chose, which is the reversal that
+ * makes real popups possible: every other tab exists because the renderer asked
+ * for one, while a popup exists the moment `window.open()` returns — the page
+ * has the handle before the app has heard of it. The renderer's job is to adopt
+ * the id, not to invent one.
+ *
+ * `closed` is the other half. A page closing its own popup (`window.close()`,
+ * which is how every OAuth flow ends) has to remove the tab, and only the shell
+ * sees it happen.
+ */
+export const bbDesktopBrowserPopupSchema = z.discriminatedUnion("kind", [
+  z
+    .object({
+      kind: z.literal("opened"),
+      /** The tab whose page called `window.open()`. */
+      openerTabId: z.string().min(1),
+      /** The shell's id for the new tab; the renderer must use this one. */
+      tabId: z.string().min(1),
+      /** Where it is going, for the tab the renderer creates. */
+      url: z.string().max(BB_DESKTOP_BROWSER_MAX_URL_LENGTH),
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal("closed"),
+      tabId: z.string().min(1),
+    })
+    .strict(),
+]);
+export type BbDesktopBrowserPopup = z.infer<typeof bbDesktopBrowserPopupSchema>;
+export type BbDesktopBrowserPopupHandler = (
+  popup: BbDesktopBrowserPopup,
+) => void;
+
 export type BbDesktopBrowserDownloadHandler = (
   download: BbDesktopBrowserDownload,
 ) => void;
@@ -1658,6 +2064,61 @@ export interface BbDesktopBrowserApi {
    */
   setOverlay?(request: BbDesktopBrowserSetOverlayRequest): void;
   /**
+   * Give the page the whole window, or give the chrome back — see
+   * {@link bbDesktopBrowserSetFullscreenRequestSchema}. Optional for version
+   * skew: against a shell that predates it the page simply stays where it is.
+   */
+  setFullscreen?(request: BbDesktopBrowserSetFullscreenRequest): void;
+  /**
+   * Subscribe to "Search for …" from a browsed page's context menu. Optional
+   * for version skew, like the rest: an older shell simply never offers the
+   * menu item.
+   */
+  onSearchSelection?(
+    listener: BbDesktopBrowserSearchSelectionHandler,
+  ): BbDesktopBrowserUnsubscribe;
+  /**
+   * Hand the shell the plugin context-menu entries it should offer. Replaces
+   * the previous set, so the caller owns the whole list.
+   */
+  setContextMenuItems?(request: BbDesktopBrowserContextMenuItems): void;
+  /** Subscribe to a plugin entry being picked. */
+  onContextMenuInvoke?(
+    listener: BbDesktopBrowserContextMenuInvokeHandler,
+  ): BbDesktopBrowserUnsubscribe;
+  /**
+   * Declare which tabs get real popups — see
+   * {@link bbDesktopBrowserPopupTabsSchema}. A caller that never calls this
+   * keeps the older behaviour for every tab, which is why it is safe for a
+   * surface that is not a browser to ignore it entirely.
+   */
+  setPopupTabs?(request: BbDesktopBrowserPopupTabs): void;
+  /**
+   * Subscribe to popups the shell created for those tabs, and to their
+   * closing. Optional for version skew: a shell that predates it denies every
+   * popup and pushes the URL instead, which is what the open-tab channels are.
+   */
+  onPopup?(listener: BbDesktopBrowserPopupHandler): BbDesktopBrowserUnsubscribe;
+  /**
+   * Drive a tab's find bar — see
+   * {@link bbDesktopBrowserFindRequestSchema}. Fire-and-forget, like the
+   * navigation commands: the count comes back on
+   * {@link BbDesktopBrowserApi.onFindResult} rather than as an answer, because
+   * one query produces several as Chromium scans.
+   *
+   * Optional for the same version skew as the pushes above: a shell that
+   * predates find has no such channel, and a caller that finds no `find` must
+   * not offer a find bar that would do nothing.
+   */
+  find?(request: BbDesktopBrowserFindRequest): void;
+  /**
+   * Subscribe to find counts. Paired with {@link BbDesktopBrowserApi.find}: a
+   * shell that has one has the other.
+   */
+  onFindResult?(
+    listener: BbDesktopBrowserFindResultHandler,
+  ): BbDesktopBrowserUnsubscribe;
+  /**
    * Read what a tab is currently showing — url, title, rendered text and the
    * user's selection.
    *
@@ -1718,6 +2179,26 @@ export interface BbDesktopBrowserApi {
    */
   respondToDialog?(
     request: BbDesktopBrowserDialogRespondRequest,
+  ): Promise<boolean>;
+  /**
+   * Subscribe to the questions the network asks and only a human can answer —
+   * an authentication challenge, an untrusted certificate, a request for a
+   * client certificate. See
+   * {@link bbDesktopBrowserPagePromptDetailsSchema}.
+   *
+   * Optional for the same version skew as the pushes above. A shell that
+   * predates it does not merely fail to ask: it cancels every one of these,
+   * which is what made them silent dead ends.
+   */
+  onPagePrompt?(
+    listener: BbDesktopBrowserPagePromptHandler,
+  ): BbDesktopBrowserUnsubscribe;
+  /**
+   * Answer the prompt a tab is waiting on. Resolves false when there was
+   * nothing to answer — including when the prompt had already been replaced.
+   */
+  respondToPagePrompt?(
+    answer: BbDesktopBrowserPagePromptAnswer,
   ): Promise<boolean>;
   /**
    * Act on the page — click, fill, press, and the rest — addressing elements by
