@@ -170,4 +170,60 @@ describe("BrowserSurfaceView", () => {
     expect(attach).toHaveBeenCalledTimes(2);
     expect(attach.mock.calls[1]?.[0].tabId).not.toBe(firstTabId);
   });
+
+  // A page's `target="_blank"` link never becomes a native popup: the shell
+  // denies it and pushes the request back, so this surface is what has to turn
+  // it into a tab. With no subscriber the link did nothing at all.
+  it("opens a popup from one of its own tabs as a new tab", () => {
+    const attach = vi.fn();
+    const scopedListeners: Array<
+      (request: { tabId: string; url: string }) => void
+    > = [];
+    renderSurface({
+      ...createNoopDesktopBrowserApi(),
+      attach,
+      onScopedOpenTab(listener) {
+        scopedListeners.push(listener);
+        return () => {};
+      },
+    });
+    const tabId = attach.mock.calls[0]?.[0].tabId as string;
+    // The subscription is renewed as the tab list changes and this fake's
+    // unsubscribe keeps the dead listeners, so the last one is the live one.
+    const emit = (request: { tabId: string; url: string }) => {
+      act(() => {
+        scopedListeners.at(-1)?.(request);
+      });
+    };
+
+    // A popup from a tab this surface does not own is another view's business.
+    emit({ tabId: "not-a-surface-tab", url: "https://example.com/elsewhere" });
+    expect(tabButtons()).toHaveLength(1);
+
+    emit({ tabId, url: "https://example.com/popup" });
+
+    expect(tabButtons()).toHaveLength(2);
+    // Foreground, as every browser opens one: the popup's tab is the one the
+    // deck then attaches, so its page is what loads.
+    expect(attach.mock.calls.at(-1)?.[0].url).toBe("https://example.com/popup");
+  });
+
+  // Version skew: a shell predating source-attributed popups offers only the
+  // unscoped channel, and the link still has to open.
+  it("opens a popup from a shell with no scoped channel", () => {
+    const openTabListeners: Array<(request: { url: string }) => void> = [];
+    renderSurface({
+      ...createNoopDesktopBrowserApi(),
+      onOpenTab(listener) {
+        openTabListeners.push(listener);
+        return () => {};
+      },
+    });
+
+    act(() => {
+      openTabListeners.at(-1)?.({ url: "https://example.com/popup" });
+    });
+
+    expect(tabButtons()).toHaveLength(2);
+  });
 });

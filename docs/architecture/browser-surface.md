@@ -43,6 +43,29 @@ empty surface behind a populated strip.
 The native view pushes navigation state on every `webContents` event, so without
 that the whole strip would re-render on each one.
 
+### Popups are a subscription, and this surface shipped without one
+
+`window.open` and `target="_blank"` never open a native popup: the shell denies
+every one of them and pushes the request to the renderer instead
+(`setWindowOpenHandler` → the open-tab channels). Nothing in the shell decides
+where such a tab goes — **the mounted view does**, by subscribing. So the
+subscription is not plumbing, it is the whole feature, and a route without one is
+a link that silently does nothing. That is exactly what this surface shipped
+with: `ThreadDetailView` and `RootComposeView` each subscribe for their own
+panel, neither is mounted on `/browser`, and the surface subscribed nowhere.
+
+It prefers `onScopedOpenTab`, which names the tab that asked, and opens the
+popup only for a tab this surface owns — the thread panel's popups are that
+panel's business. `onOpenTab` is the fallback for a shell predating attribution
+(invariant 2's version skew, again), where a route path is filtered out because
+it belongs to `RouteNavigationProvider`.
+
+The popup opens in the foreground, which `addBrowserSurfaceTab` already does for
+every tab. Two limits are the shell's policy rather than the surface's: the
+popup URL must be public `http(s)` (`isAllowedPublicBrowserPopupUrl`, so
+`about:blank` popups are dropped), and a page churning them hits the same rate
+limiter the favicon path uses.
+
 ## The `threadId` prop is a scope key, not a thread
 
 `BrowserTabDeck` and `BrowserTabContent` take `threadId`, and pass it to the
@@ -251,6 +274,9 @@ URL — is the user's destination and is left alone.
   after the last close, and that the surface **attaches the active tab's native
   view** and re-attaches on switch (the point of the surface is that it drives
   the real Electron layer, so that assertion is the load-bearing one).
+- `BrowserSurfaceView.test.tsx` — a popup from one of the surface's own tabs
+  opening as a foreground tab whose URL is what gets attached, one from a tab it
+  does not own ignored, and the unscoped fallback still opening the tab.
 - Full `apps/app` suite: 2577 tests green. Repo typecheck: 58/58.
 - Live: `bun run dev` plus `bun run dev:desktop` bring up server, daemon, Vite
   and the Electron shell; both new modules compile through Vite in the dev server.
@@ -258,6 +284,29 @@ URL — is the user's destination and is left alone.
 Not verified automatically: how the surface _looks_, and a live page rendering
 inside it. Open the desktop app and click the Browser button in the sidebar
 footer, or go to `/browser`.
+
+## Drawing over a page is possible, and costs a frozen page
+
+Two documents here say React cannot draw over the page area, and both are right
+about the constraint: a native `WebContentsView` composites above the DOM. What
+neither said is that there **is** a way through, that this repo already had it,
+and that it is worth reaching for when the alternative reads wrong.
+
+JavaScript dialogs freeze the page to a bitmap, hide the native view and draw on
+the DOM that is left ([browser-automation.md](browser-automation.md), Stage A).
+That sequence is now a command — `setOverlay` — and the downloads dropdown uses
+it ([browser-downloads.md](browser-downloads.md)). It buys two things: a panel
+that floats over the page, and clicks that land on the DOM everywhere, which is
+what makes close-on-outside-click possible at all.
+
+It costs a still page for as long as the overlay is up. So the rule is not "in
+layout or nothing", it is:
+
+- **Taking layout space** suits something tied to typing, where the page is not
+  what the user is looking at and freezing it for the length of a search would
+  be worse. The omnibox suggestion list stays as it is.
+- **Freezing and overlaying** suits a transient panel opened and closed in
+  seconds, where shoving the page down would read as a bug.
 
 ## Next
 

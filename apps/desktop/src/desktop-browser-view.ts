@@ -1,6 +1,7 @@
 import { Menu, WebContentsView, session, type Session } from "electron";
 import {
   BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH,
+  BB_DESKTOP_BROWSER_MAX_MIME_TYPE_LENGTH,
   BB_DESKTOP_BROWSER_MAX_URL_LENGTH,
   clampBbDesktopBrowserViewBounds,
   type BbDesktopBrowserAttachRequest,
@@ -9,6 +10,10 @@ import {
   type BbDesktopBrowserScopedOpenTabRequest,
   type BbDesktopBrowserSetBoundsRequest,
   type BbDesktopBrowserSetVisibleRequest,
+  type BbDesktopBrowserDownload,
+  type BbDesktopBrowserDownloadActionRequest,
+  type BbDesktopBrowserDownloadActionResult,
+  type BbDesktopBrowserSetOverlayRequest,
   type BbDesktopBrowserFavicon,
   BB_DESKTOP_BROWSER_MAX_SNAPSHOT_LENGTH,
   BB_DESKTOP_BROWSER_MAX_DIALOG_MESSAGE_LENGTH,
@@ -49,6 +54,7 @@ import {
 import type { AppCommandId, AppShortcutInput } from "@bb/domain";
 import {
   BB_DESKTOP_BROWSER_DIALOG_CHANNEL,
+  BB_DESKTOP_BROWSER_DOWNLOAD_CHANNEL,
   BB_DESKTOP_BROWSER_FAVICON_CHANNEL,
   BB_DESKTOP_BROWSER_OPEN_TAB_CHANNEL,
   BB_DESKTOP_BROWSER_SCOPED_OPEN_TAB_CHANNEL,
@@ -60,6 +66,12 @@ import {
   resolveBrowserFaviconPageKey,
   selectBrowserFaviconUrl,
 } from "./desktop-browser-favicon.js";
+import {
+  DOWNLOAD_RATE_MAX_IN_WINDOW,
+  DOWNLOAD_RATE_WINDOW_MS,
+  resolveUniqueDownloadPath,
+  sanitizeDownloadFilename,
+} from "./desktop-browser-download.js";
 import {
   createCdpSession,
   type CdpSession,
@@ -142,6 +154,13 @@ const POPUP_RATE_WINDOW_MS = 10_000;
 const POPUP_RATE_MAX_IN_WINDOW = 3;
 
 /**
+ * How many download paths stay openable. Comfortably more than the ten the
+ * renderer lists, so the list can never contain a path this has forgotten,
+ * and bounded so a page downloading in a loop cannot grow it without limit.
+ */
+const MAX_REMEMBERED_DOWNLOAD_PATHS = 100;
+
+/**
  * At the start of a resize burst the view stays visible until its snapshot
  * capture resolves (capturing a hidden view is unreliable). This cap bounds
  * how long a stalled capture may leave the stale view on screen.
@@ -174,6 +193,15 @@ const ERR_ABORTED = -3;
 
 interface BrowserViewEntry {
   view: WebContentsView;
+  /**
+   * The tab and window this view belongs to, kept on the entry because
+   * **session**-level events do not carry them. A `webContents` event closes
+   * over both at wiring time; `will-download` arrives on the shared browsing
+   * session with only a `webContents`, so the reverse lookup has to end
+   * somewhere that knows where to send the result.
+   */
+  tabId: string;
+  hostWindow: DesktopBrowserHostWindow;
   lastErrorText: string | null;
   currentMainFrameLocalOriginKey: string | null;
   /**
@@ -192,6 +220,15 @@ interface BrowserViewEntry {
   faviconPageKey: string | null;
   /** Fetch stamps behind the same sliding-window limiter the popups use. */
   faviconFetchTimestamps: number[];
+  /** Download stamps behind that same limiter — see `desktop-browser-download.ts`. */
+  downloadTimestamps: number[];
+  /**
+   * The app is drawing its own chrome over the page area, so the view is
+   * hidden behind a bitmap of itself. Separate from `visible`, which is the
+   * renderer's layout intent: an overlay must not be forgotten when layout
+   * changes underneath it, and must not survive one either.
+   */
+  overlayActive: boolean;
   visible: boolean;
   /**
    * CDP session, attached lazily on the first automation command. Null until
@@ -268,6 +305,7 @@ export type DesktopBrowserHostWebContentsPayload =
   | BbDesktopBrowserScopedOpenTabRequest
   | BbDesktopBrowserSnapshot
   | BbDesktopBrowserDialog
+  | BbDesktopBrowserDownload
   | BbDesktopBrowserFavicon;
 
 export interface DesktopBrowserHostContentBounds {
@@ -300,8 +338,29 @@ export interface DispatchDesktopBrowserAppCommandArgs {
 
 export interface CreateDesktopBrowserViewManagerArgs {
   dispatchAppCommand: (args: DispatchDesktopBrowserAppCommandArgs) => void;
+  /**
+   * Whether a path is already taken, so a download can pick the next free
+   * name. Injected rather than imported: it is the only filesystem call this
+   * module makes, and a manager under test must not consult a real disk.
+   */
+  downloadPathExists: (path: string) => boolean;
   focusHostWebContents: (hostWebContentsId: number) => void;
+  /**
+   * Open a downloaded file with the OS default handler, resolving to Electron's
+   * failure string (empty when it opened). Injected for the same reason the
+   * filesystem check is: the manager must be drivable without opening anything
+   * on the machine running its tests.
+   */
+  openDownloadPath: (savePath: string) => Promise<string>;
   partition?: string;
+  /** Show a downloaded file in the OS file manager. */
+  revealDownloadPath: (savePath: string) => void;
+  /**
+   * Where downloads are written. Read per download rather than captured once,
+   * so the answer can change (a setting, a plugin) without recreating the
+   * manager — this is the seam any future download policy goes through.
+   */
+  resolveDownloadDirectory: () => string;
   resolveAppCommand: (input: AppShortcutInput) => AppCommandId | null;
 }
 
@@ -347,6 +406,21 @@ export interface DesktopBrowserViewManager {
   readPage(
     args: HostScopedTabArgs,
   ): Promise<BbDesktopBrowserPageReadResult>;
+  /**
+   * Freeze the page to a bitmap and hide the view so the app can draw over it,
+   * or reveal it again. The only way React can put anything over a page.
+   */
+  setOverlay(
+    args: HostScopedRequestArgs<BbDesktopBrowserSetOverlayRequest>,
+  ): void;
+  /**
+   * Open a finished download or show it in the file manager. Refuses any path
+   * this manager did not write, which is what keeps it from being a general
+   * "open this file" primitive. Never rejects.
+   */
+  downloadAction(
+    request: BbDesktopBrowserDownloadActionRequest,
+  ): Promise<BbDesktopBrowserDownloadActionResult>;
   /**
    * Accessibility snapshot with a ref on every interactive element — the
    * primitive the interaction commands address elements through. Attaches the
@@ -1978,6 +2052,40 @@ export function createDesktopBrowserViewManager(
   // windows stay hidden regardless of renderer-declared visibility.
   const resizingHostIds = new Set<number>();
   let hardenedSession: Session | null = null;
+  // Ties a download's `started` event to its terminal one. Per manager rather
+  // than per tab, so two tabs downloading at once never collide.
+  let downloadSequence = 0;
+  /**
+   * Every path this manager has written a download to, which is the allowlist
+   * for opening one. Without it, `downloadAction` is an "open any file on this
+   * machine" primitive that happens to be reachable from the renderer.
+   *
+   * Session-scoped and bounded: insertion-ordered, oldest dropped past the cap.
+   * The renderer only ever lists the ten most recent, so a caller cannot ask
+   * for one this has forgotten.
+   */
+  const writtenDownloadPaths = new Set<string>();
+
+  function rememberDownloadPath(savePath: string): void {
+    writtenDownloadPaths.add(savePath);
+    if (writtenDownloadPaths.size <= MAX_REMEMBERED_DOWNLOAD_PATHS) {
+      return;
+    }
+    const oldest = writtenDownloadPaths.values().next();
+    if (!oldest.done) {
+      writtenDownloadPaths.delete(oldest.value);
+    }
+  }
+
+  function sendDownload(
+    entry: BrowserViewEntry,
+    download: Omit<BbDesktopBrowserDownload, "tabId">,
+  ): void {
+    send(entry.hostWindow, BB_DESKTOP_BROWSER_DOWNLOAD_CHANNEL, {
+      ...download,
+      tabId: entry.tabId,
+    });
+  }
 
   function isHostResizing(hostWindow: DesktopBrowserHostWindow): boolean {
     return resizingHostIds.has(hostWindow.webContents.id);
@@ -1994,7 +2102,9 @@ export function createDesktopBrowserViewManager(
       entry.visible &&
         !isHostResizing(hostWindow) &&
         // A dialog means the app is drawing its own modal where the page was.
-        entry.pendingDialog === null,
+        entry.pendingDialog === null &&
+        // As does an overlay — a dropdown the app draws over the page.
+        !entry.overlayActive,
     );
   }
 
@@ -2052,9 +2162,83 @@ export function createDesktopBrowserViewManager(
     browserSession.setPermissionCheckHandler((_wc, permission) =>
       isAllowedBrowserPermission(permission),
     );
-    // Downloads are denied in v1 (lowest file-surface risk).
-    browserSession.on("will-download", (event) => {
-      event.preventDefault();
+    // A download is written straight to the user's downloads folder under a
+    // name the shell chose, and the renderer is told so it can say so. It is
+    // never asked where to put it: the save dialog Electron shows by default is
+    // owned by the app window, so a page could block the whole workspace with
+    // it, and an automation-driven download would wait on a modal nobody is
+    // there to answer.
+    browserSession.on("will-download", (event, item, webContents) => {
+      const entry = entriesByWebContentsId.get(webContents.id) ?? null;
+      if (entry === null) {
+        // A view this manager no longer tracks. There is no tab to attribute
+        // the file to and nobody to tell about it, so it is refused rather than
+        // written somewhere unattributable.
+        event.preventDefault();
+        return;
+      }
+      const filename = sanitizeDownloadFilename(item.getFilename());
+      const id = `download-${(downloadSequence += 1)}`;
+      const now = Date.now();
+      // Truncated rather than rejected: these two are carried for a plugin's
+      // benefit, and a payload the preload's schema drops would cost the user
+      // the message about their own download.
+      const source = {
+        url: truncate(item.getURL(), BB_DESKTOP_BROWSER_MAX_URL_LENGTH),
+        mimeType: truncate(
+          item.getMimeType(),
+          BB_DESKTOP_BROWSER_MAX_MIME_TYPE_LENGTH,
+        ),
+      };
+      const decision = evaluatePopupRate({
+        timestamps: entry.downloadTimestamps,
+        now,
+        windowMs: DOWNLOAD_RATE_WINDOW_MS,
+        maxInWindow: DOWNLOAD_RATE_MAX_IN_WINDOW,
+      });
+      entry.downloadTimestamps = decision.timestamps;
+      if (!decision.allowed) {
+        event.preventDefault();
+        sendDownload(entry, {
+          ...source,
+          id,
+          filename,
+          savePath: null,
+          state: "refused",
+        });
+        return;
+      }
+      const savePath = resolveUniqueDownloadPath({
+        directory: args.resolveDownloadDirectory(),
+        exists: args.downloadPathExists,
+        filename,
+        now,
+      });
+      rememberDownloadPath(savePath);
+      // Setting the path is what suppresses that dialog, and it only counts
+      // inside this handler — Electron reads `savePath` as the event returns.
+      item.setSavePath(savePath);
+      sendDownload(entry, {
+        ...source,
+        id,
+        filename,
+        savePath,
+        state: "started",
+      });
+      item.once("done", (_doneEvent, state) => {
+        sendDownload(entry, {
+          ...source,
+          id,
+          filename,
+          savePath,
+          state:
+            state === "completed"
+              ? "completed"
+              : state === "cancelled"
+                ? "cancelled"
+                : "interrupted",
+        });
+      });
     });
     // Network firewall: untrusted pages must not invisibly reach bb's loopback
     // services or the user's LAN. Top-level http(s) navigation remains allowed;
@@ -2412,6 +2596,8 @@ export function createDesktopBrowserViewManager(
     });
     const entry: BrowserViewEntry = {
       view,
+      tabId: args.tabId,
+      hostWindow: args.hostWindow,
       lastErrorText: null,
       currentMainFrameLocalOriginKey: null,
       desiredBounds: args.desiredBounds,
@@ -2419,6 +2605,8 @@ export function createDesktopBrowserViewManager(
       faviconUrl: null,
       faviconPageKey: null,
       faviconFetchTimestamps: [],
+      downloadTimestamps: [],
+      overlayActive: false,
       visible: false,
       cdp: null,
       pendingDialog: null,
@@ -2805,6 +2993,79 @@ export function createDesktopBrowserViewManager(
       withEntry({ hostWindow, tabId }, (entry) => {
         entry.view.webContents.stop();
       });
+    },
+    setOverlay({ hostWindow, request }) {
+      const entry = entries.get(browserViewKey(hostWindow, request.tabId));
+      if (!entry || entry.view.webContents.isDestroyed()) {
+        return;
+      }
+      if (entry.overlayActive === request.active) {
+        return;
+      }
+      entry.overlayActive = request.active;
+      if (!request.active) {
+        // Reveal first, then drop the placeholder, so the swap never flashes an
+        // empty panel — the ordering `clearPendingDialog` uses.
+        applyEntryVisibility(entry, hostWindow);
+        send(hostWindow, BB_DESKTOP_BROWSER_SNAPSHOT_CHANNEL, {
+          tabId: request.tabId,
+          dataUrl: null,
+        });
+        return;
+      }
+      // Capture *before* hiding, unlike the dialog path. A dialog has already
+      // blocked the page and must be hidden at once; this is a menu the user
+      // opened, so it can afford the round trip and open without a flash of
+      // empty panel.
+      entry.view.webContents
+        .capturePage()
+        .then((image) => {
+          if (!entry.overlayActive || entry.view.webContents.isDestroyed()) {
+            return;
+          }
+          if (!image.isEmpty()) {
+            send(hostWindow, BB_DESKTOP_BROWSER_SNAPSHOT_CHANNEL, {
+              tabId: request.tabId,
+              dataUrl: `data:image/jpeg;base64,${image
+                .toJPEG(RESIZE_SNAPSHOT_JPEG_QUALITY)
+                .toString("base64")}`,
+            });
+          }
+          applyEntryVisibility(entry, hostWindow);
+        })
+        .catch(() => {
+          // No placeholder; hide anyway, because the overlay is already being
+          // drawn and a live page under it would be drawn over by nothing.
+          if (entry.overlayActive) {
+            applyEntryVisibility(entry, hostWindow);
+          }
+        });
+    },
+    async downloadAction({ action, savePath }) {
+      if (!writtenDownloadPaths.has(savePath)) {
+        return {
+          ok: false,
+          reason: "unknown-path",
+          message: "bb did not download that file.",
+        };
+      }
+      if (action === "reveal") {
+        // Showing a file in the file manager answers nothing, and cannot fail
+        // in a way a caller could act on: a missing file simply opens its
+        // folder.
+        args.revealDownloadPath(savePath);
+        return { ok: true };
+      }
+      const failure = await args.openDownloadPath(savePath);
+      // Electron's `openPath` reports failure as a non-empty string rather than
+      // by rejecting; the usual content is that the file no longer exists.
+      return failure.length === 0
+        ? { ok: true }
+        : {
+            ok: false,
+            reason: "failed",
+            message: truncate(failure, BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH),
+          };
     },
     async readPage({ hostWindow, tabId }) {
       const entry = entries.get(browserViewKey(hostWindow, tabId));

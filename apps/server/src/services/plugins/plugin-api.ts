@@ -57,6 +57,7 @@ import type {
   PluginMentionItem,
   PluginMentionSearchContext,
   PluginMentionTrigger,
+  PluginBrowserDownloadHandler,
   PluginOmniboxRunContext,
   PluginOmniboxRunResult,
   PluginOmniboxSuggestContext,
@@ -115,6 +116,7 @@ export type {
   PluginMentionProviderRegistration,
   PluginMentionSearchContext,
   PluginMentionTrigger,
+  PluginBrowserDownloadHandler,
   PluginOmniboxProviderRegistration,
   PluginOmniboxRunContext,
   PluginOmniboxRunResult,
@@ -485,6 +487,8 @@ export interface PluginApiHandle {
   mentionProviders: PluginMentionProviderRecord[];
   /** Omnibox providers recorded by `bb.browser.registerOmniboxProvider`. */
   omniboxProviders: PluginOmniboxProviderRecord[];
+  /** Download handlers recorded by `bb.browser.registerDownloadHandler`. */
+  downloadHandlers: PluginBrowserDownloadHandler[];
   /** Publish factory-time host declarations and status only after commit. */
   activate(): void;
   /** Poison every method on the handle. */
@@ -1640,6 +1644,7 @@ export function createPluginApi(options: {
   }
 
   const omniboxProviders: PluginOmniboxProviderRecord[] = [];
+  const downloadHandlers: PluginBrowserDownloadHandler[] = [];
   const browser: PluginBrowser = {
     registerOmniboxProvider(provider) {
       assertLive();
@@ -1674,6 +1679,15 @@ export function createPluginApi(options: {
         suggest: provider.suggest.bind(provider),
         run: provider.run === undefined ? null : provider.run.bind(provider),
       });
+    },
+    registerDownloadHandler(handler) {
+      assertLive();
+      if (typeof handler !== "function") {
+        throw new Error(
+          "registerDownloadHandler(handler) needs a function taking one download",
+        );
+      }
+      downloadHandlers.push(handler);
     },
     tabs: {
       async list(options) {
@@ -2443,6 +2457,7 @@ export function createPluginApi(options: {
     },
     mentionProviders,
     omniboxProviders,
+    downloadHandlers,
     activate() {
       if (activated) return;
       assertLive();

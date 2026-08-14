@@ -35,6 +35,7 @@ import type {
   PluginMentionSearchContext,
   PluginMentionTrigger,
   PluginBrowser,
+  PluginBrowserDownloadHandler,
   PluginBrowserConsoleEntry,
   PluginBrowserCookie,
   PluginBrowserErrorCode,
@@ -439,6 +440,8 @@ export interface FakePluginRegistrations {
   threadEventHandlers: Record<PluginThreadEventName, number>;
   mentionProviders: FakeMentionProviderRecord[];
   omniboxProviders: FakeOmniboxProviderRecord[];
+  /** Handlers from `bb.browser.registerDownloadHandler`, in registration order. */
+  downloadHandlers: PluginBrowserDownloadHandler[];
 }
 
 /** Read-only state for assertions after a plugin registers or handles work. */
@@ -1935,6 +1938,7 @@ function createFakePluginHostInternal(
   }
 
   const omniboxProviders: FakeOmniboxProviderRecord[] = [];
+  const downloadHandlers: PluginBrowserDownloadHandler[] = [];
   const browser: PluginBrowser = {
     registerOmniboxProvider(provider) {
       assertLive();
@@ -1969,6 +1973,15 @@ function createFakePluginHostInternal(
         suggest: provider.suggest.bind(provider),
         run: provider.run === undefined ? null : provider.run.bind(provider),
       });
+    },
+    registerDownloadHandler(handler) {
+      assertLive();
+      if (typeof handler !== "function") {
+        throw new Error(
+          "registerDownloadHandler(handler) needs a function taking one download",
+        );
+      }
+      downloadHandlers.push(handler);
     },
     tabs: {
       list() {
@@ -2772,6 +2785,7 @@ function createFakePluginHostInternal(
       },
       mentionProviders,
       omniboxProviders,
+    downloadHandlers,
     },
     get pendingInteractions() {
       return [...pendingInteractions].map(([id, pending]) => ({

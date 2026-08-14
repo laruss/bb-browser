@@ -27,6 +27,23 @@ export const BB_DESKTOP_BROWSER_SNAPSHOT_CHANNEL =
 // payload, so an older SPA's strict parser never sees a shape it would reject
 // (invariant 2 in docs/architecture/bb-migration.md).
 export const BB_DESKTOP_BROWSER_FAVICON_CHANNEL = "bb-desktop:browser:favicon";
+// What a download did. Its own channel for the reason favicons got one, and one
+// more: this is the only main -> renderer push that reports something the shell
+// did to the user's filesystem, so it is worth seeing on its own name in a log.
+export const BB_DESKTOP_BROWSER_DOWNLOAD_CHANNEL =
+  "bb-desktop:browser:download";
+// Opening a finished download, or showing it in the file manager. An invoke
+// rather than a send because "the file is gone" is worth reporting, and its own
+// channel because it is the only browser command that touches a path on disk
+// instead of a tab.
+export const BB_DESKTOP_BROWSER_DOWNLOAD_ACTION_CHANNEL =
+  "bb-desktop:browser:download-action";
+// The app is drawing over the page area, so the page has to become a bitmap the
+// app can draw on. Its own channel rather than a flag on `set-visible`: that
+// one is the renderer's layout intent, while this one is a freeze the shell has
+// to sequence (capture, then hide) and undo in the right order.
+export const BB_DESKTOP_BROWSER_SET_OVERLAY_CHANNEL =
+  "bb-desktop:browser:set-overlay";
 // The browser channels that answer. Reads are request/response, so these are
 // `invoke`/`handle` pairs rather than `send`; each is a new channel behind an
 // optional preload method for the same reason favicons were (invariant 2 in

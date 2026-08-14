@@ -4,6 +4,7 @@ import {
   type BbDesktopBrowserCaptureFullPageResult,
   type BbDesktopBrowserInteractResult,
   type BbDesktopBrowserObserveResult,
+  type BbDesktopBrowserDownloadActionResult,
   type BbDesktopBrowserPageReadResult,
   type BbDesktopBrowserSnapshotResult,
   type BbDesktopBrowserControlResult,
@@ -90,6 +91,10 @@ type SetBoundsCall = Parameters<DesktopBrowserViewManager["setBounds"]>[0];
 type SetVisibleCall = Parameters<DesktopBrowserViewManager["setVisible"]>[0];
 type TabCommandCall = Parameters<DesktopBrowserViewManager["reload"]>[0];
 type ReadPageCall = Parameters<DesktopBrowserViewManager["readPage"]>[0];
+type DownloadActionCall = Parameters<
+  DesktopBrowserViewManager["downloadAction"]
+>[0];
+type SetOverlayCall = Parameters<DesktopBrowserViewManager["setOverlay"]>[0];
 type SnapshotCall = Parameters<DesktopBrowserViewManager["snapshot"]>[0];
 type SnapshotInCall = Parameters<DesktopBrowserViewManager["snapshotIn"]>[0];
 type DialogRespondCall = Parameters<
@@ -141,6 +146,12 @@ class RecordingDesktopBrowserViewManager implements DesktopBrowserViewManager {
   public readonly setVisibleCalls: SetVisibleCall[] = [];
   public readonly stopCalls: TabCommandCall[] = [];
   public readonly readPageCalls: ReadPageCall[] = [];
+  public readonly downloadActionCalls: DownloadActionCall[] = [];
+  public readonly setOverlayCalls: SetOverlayCall[] = [];
+  public downloadActionFailure: Error | null = null;
+  public downloadActionResult: BbDesktopBrowserDownloadActionResult = {
+    ok: true,
+  };
   public readPageFailure: Error | null = null;
   public readPageResult: BbDesktopBrowserPageReadResult = {
     ok: false,
@@ -242,6 +253,20 @@ class RecordingDesktopBrowserViewManager implements DesktopBrowserViewManager {
 
   stop(args: TabCommandCall): void {
     this.stopCalls.push(args);
+  }
+
+  setOverlay(args: SetOverlayCall): void {
+    this.setOverlayCalls.push(args);
+  }
+
+  downloadAction(
+    request: DownloadActionCall,
+  ): Promise<BbDesktopBrowserDownloadActionResult> {
+    this.downloadActionCalls.push(request);
+    if (this.downloadActionFailure !== null) {
+      return Promise.reject(this.downloadActionFailure);
+    }
+    return Promise.resolve(this.downloadActionResult);
   }
 
   readPage(args: ReadPageCall): Promise<BbDesktopBrowserPageReadResult> {

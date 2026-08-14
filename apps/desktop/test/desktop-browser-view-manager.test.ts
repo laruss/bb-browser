@@ -5,10 +5,15 @@ import {
   BB_DESKTOP_BROWSER_MAX_FULL_PAGE_DIMENSION,
   BB_DESKTOP_BROWSER_MAX_SCREENSHOT_BASE64_LENGTH,
   BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH,
+  type BbDesktopBrowserDownload,
   type BbDesktopBrowserViewBounds,
 } from "@bb/desktop-contract";
 import { BB_DESKTOP_BROWSER_CONTENT_SIZE_SCRIPT } from "../src/desktop-browser-capture.js";
-import { BB_DESKTOP_BROWSER_FAVICON_CHANNEL } from "../src/desktop-browser-ipc.js";
+import {
+  BB_DESKTOP_BROWSER_DOWNLOAD_CHANNEL,
+  BB_DESKTOP_BROWSER_FAVICON_CHANNEL,
+  BB_DESKTOP_BROWSER_SNAPSHOT_CHANNEL,
+} from "../src/desktop-browser-ipc.js";
 import {
   BB_DESKTOP_BROWSER_PAGE_READ_SCRIPT,
   BB_DESKTOP_BROWSER_PAGE_READ_TIMEOUT_MS,
@@ -31,12 +36,20 @@ import {
   type DesktopBrowserHostWindow,
 } from "../src/desktop-browser-view.js";
 
+const TEST_DOWNLOAD_DIRECTORY = "/tmp/bb-test-downloads";
+
 function createDesktopBrowserViewManager(
   args: Partial<CreateDesktopBrowserViewManagerArgs> = {},
 ): DesktopBrowserViewManager {
   return createProductionDesktopBrowserViewManager({
     dispatchAppCommand: () => undefined,
+    // No test touches a real disk: downloads resolve against a directory that
+    // exists nowhere and a filesystem that reports every path free.
+    downloadPathExists: () => false,
     focusHostWebContents: () => undefined,
+    openDownloadPath: async () => "",
+    revealDownloadPath: () => undefined,
+    resolveDownloadDirectory: () => TEST_DOWNLOAD_DIRECTORY,
     resolveAppCommand: () => null,
     ...args,
   });
@@ -222,7 +235,57 @@ interface FakeSessionEvent {
   preventDefault(): void;
 }
 
-type FakeSessionListener = (event: FakeSessionEvent) => void;
+type FakeDownloadDoneState = "completed" | "cancelled" | "interrupted";
+
+type FakeDownloadDoneListener = (
+  event: FakeSessionEvent,
+  state: FakeDownloadDoneState,
+) => void;
+
+/**
+ * Electron's `DownloadItem`, as far as the manager touches it: the name the
+ * page asked for, the path we choose, and the one terminal event.
+ */
+class FakeDownloadItem {
+  public savePath: string | null = null;
+  private doneListener: FakeDownloadDoneListener | null = null;
+
+  constructor(
+    private readonly filename: string,
+    private readonly url = "https://example.com/file",
+    private readonly mimeType = "application/octet-stream",
+  ) {}
+
+  getFilename(): string {
+    return this.filename;
+  }
+
+  getURL(): string {
+    return this.url;
+  }
+
+  getMimeType(): string {
+    return this.mimeType;
+  }
+
+  setSavePath(path: string): void {
+    this.savePath = path;
+  }
+
+  once(_eventName: "done", listener: FakeDownloadDoneListener): void {
+    this.doneListener = listener;
+  }
+
+  finish(state: FakeDownloadDoneState): void {
+    this.doneListener?.({ preventDefault: () => undefined }, state);
+  }
+}
+
+type FakeSessionListener = (
+  event: FakeSessionEvent,
+  item: FakeDownloadItem,
+  webContents: { id: number },
+) => void;
 
 type FakePermissionRequestHandler = (
   webContents: unknown,
@@ -324,6 +387,8 @@ const electronMock = vi.hoisted(() => {
     public readonly pendingCaptureResolvers: Array<
       (image: FakeNativeImage) => void
     > = [];
+    public readonly pendingCaptureRejecters: Array<(reason: Error) => void> =
+      [];
     public readonly isolatedWorldCalls: Array<{
       worldId: number;
       scripts: Array<{ code: string }>;
@@ -372,8 +437,9 @@ const electronMock = vi.hoisted(() => {
     public pdfResult: Buffer | Error = Buffer.from("%PDF-1.4\n");
 
     capturePage(): Promise<FakeNativeImage> {
-      return new Promise((resolve) => {
+      return new Promise((resolve, reject) => {
         this.pendingCaptureResolvers.push(resolve);
+        this.pendingCaptureRejecters.push(reject);
       });
     }
 
@@ -894,6 +960,49 @@ function requireFakeView(
     throw new Error("Expected the browser view to be created.");
   }
   return view;
+}
+
+function requireWillDownloadListener(): FakeSessionListener {
+  const fakeSession = electronMock.fakeSessions.at(-1);
+  expect(fakeSession).toBeDefined();
+  if (fakeSession === undefined) {
+    throw new Error("Expected a browser session to be created.");
+  }
+  const listener = fakeSession.willDownloadListeners.at(-1);
+  expect(listener).toBeDefined();
+  if (listener === undefined) {
+    throw new Error("Expected a will-download listener to be registered.");
+  }
+  return listener;
+}
+
+interface StartFakeDownloadArgs {
+  filename: string;
+  webContentsId: number;
+}
+
+/** Drive one `will-download`, returning what the shell did with it. */
+function startFakeDownload(args: StartFakeDownloadArgs): {
+  event: { defaultPrevented: boolean };
+  item: FakeDownloadItem;
+} {
+  const event = {
+    defaultPrevented: false,
+    preventDefault(): void {
+      event.defaultPrevented = true;
+    },
+  };
+  const item = new FakeDownloadItem(args.filename);
+  requireWillDownloadListener()(event, item, { id: args.webContentsId });
+  return { event, item };
+}
+
+function downloadPayloads(
+  hostWindow: FakeHostWindow,
+): BbDesktopBrowserDownload[] {
+  return hostWindow.webContents.sentMessages
+    .filter((message) => message.channel === BB_DESKTOP_BROWSER_DOWNLOAD_CHANNEL)
+    .map((message) => message.payload as BbDesktopBrowserDownload);
 }
 
 function requireOnBeforeRequestListener(): FakeOnBeforeRequestListener {
@@ -4779,5 +4888,357 @@ describe("DesktopBrowserViewManager full-page captures", () => {
       reason: "failed",
       message: "capture failed",
     });
+  });
+});
+
+describe("browser downloads", () => {
+  function attachTabForDownload(): {
+    hostWindow: FakeHostWindow;
+    manager: DesktopBrowserViewManager;
+    webContentsId: number;
+  } {
+    const manager = createDesktopBrowserViewManager({
+      partition: "persist:test",
+    });
+    const hostWindow = new FakeHostWindow({
+      contentBounds: { width: 900, height: 600 },
+      webContentsId: 1,
+    });
+    attachBrowserTab({
+      hostWindow,
+      manager,
+      tabId: "browser:a",
+      url: "https://example.com/",
+    });
+    return {
+      hostWindow,
+      manager,
+      webContentsId: requireFakeView(0).webContents.id,
+    };
+  }
+
+  // The whole point: a download is written, without the save dialog Electron
+  // shows by default — which is what setting the path suppresses.
+  it("saves to the downloads folder under a sanitized name", () => {
+    const { hostWindow, webContentsId } = attachTabForDownload();
+
+    const { event, item } = startFakeDownload({
+      filename: "../../.ssh/authorized_keys",
+      webContentsId,
+    });
+
+    expect(event.defaultPrevented).toBe(false);
+    expect(item.savePath).toBe(`${TEST_DOWNLOAD_DIRECTORY}/authorized_keys`);
+    expect(downloadPayloads(hostWindow)).toEqual([
+      {
+        id: "download-1",
+        tabId: "browser:a",
+        filename: "authorized_keys",
+        savePath: `${TEST_DOWNLOAD_DIRECTORY}/authorized_keys`,
+        url: "https://example.com/file",
+        mimeType: "application/octet-stream",
+        state: "started",
+      },
+    ]);
+  });
+
+  it("reports the outcome under the id it started with", () => {
+    const { hostWindow, webContentsId } = attachTabForDownload();
+    const { item } = startFakeDownload({
+      filename: "report.pdf",
+      webContentsId,
+    });
+
+    item.finish("completed");
+
+    const payloads = downloadPayloads(hostWindow);
+    expect(payloads.map((payload) => payload.state)).toEqual([
+      "started",
+      "completed",
+    ]);
+    // One download, one id — this is what lets the renderer replace its own
+    // in-flight message rather than stacking a second one.
+    expect(new Set(payloads.map((payload) => payload.id)).size).toBe(1);
+  });
+
+  it("passes a failed transfer through as its own state", () => {
+    const { hostWindow, webContentsId } = attachTabForDownload();
+    const { item } = startFakeDownload({ filename: "big.iso", webContentsId });
+
+    item.finish("interrupted");
+
+    expect(downloadPayloads(hostWindow).at(-1)?.state).toBe("interrupted");
+  });
+
+  // A page that fires downloads in a loop is farming the user's disk. The
+  // refusal is reported rather than silent, because the same cap catches a
+  // legitimate "download all" button.
+  it("refuses past the rate limit, and says so", () => {
+    const { hostWindow, webContentsId } = attachTabForDownload();
+
+    for (let index = 0; index < 5; index += 1) {
+      const { event } = startFakeDownload({
+        filename: `file-${index}.txt`,
+        webContentsId,
+      });
+      expect(event.defaultPrevented).toBe(false);
+    }
+    const { event, item } = startFakeDownload({
+      filename: "file-6.txt",
+      webContentsId,
+    });
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(item.savePath).toBeNull();
+    expect(downloadPayloads(hostWindow).at(-1)).toEqual({
+      id: "download-6",
+      tabId: "browser:a",
+      filename: "file-6.txt",
+      savePath: null,
+      url: "https://example.com/file",
+      mimeType: "application/octet-stream",
+      state: "refused",
+    });
+  });
+
+  // Nothing to attribute it to and nobody to tell, so it must not be written.
+  it("refuses a download from a view it does not track", () => {
+    const { hostWindow, webContentsId } = attachTabForDownload();
+
+    const { event, item } = startFakeDownload({
+      filename: "orphan.txt",
+      webContentsId: webContentsId + 999,
+    });
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(item.savePath).toBeNull();
+    expect(downloadPayloads(hostWindow)).toEqual([]);
+  });
+
+  it("steps around a name already on disk", () => {
+    const manager = createDesktopBrowserViewManager({
+      partition: "persist:test",
+      downloadPathExists: (path) =>
+        path === `${TEST_DOWNLOAD_DIRECTORY}/report.pdf`,
+    });
+    const hostWindow = new FakeHostWindow({
+      contentBounds: { width: 900, height: 600 },
+      webContentsId: 1,
+    });
+    attachBrowserTab({
+      hostWindow,
+      manager,
+      tabId: "browser:a",
+      url: "https://example.com/",
+    });
+
+    const { item } = startFakeDownload({
+      filename: "report.pdf",
+      webContentsId: requireFakeView(0).webContents.id,
+    });
+
+    expect(item.savePath).toBe(`${TEST_DOWNLOAD_DIRECTORY}/report (1).pdf`);
+  });
+});
+
+describe("browser download actions", () => {
+  interface DownloadActionHarness {
+    manager: DesktopBrowserViewManager;
+    openCalls: string[];
+    revealCalls: string[];
+    savePath: string;
+  }
+
+  /** A manager that has written exactly one download. */
+  function harnessWithOneDownload(
+    openFailure = "",
+  ): DownloadActionHarness {
+    const openCalls: string[] = [];
+    const revealCalls: string[] = [];
+    const manager = createDesktopBrowserViewManager({
+      partition: "persist:test",
+      openDownloadPath: async (savePath) => {
+        openCalls.push(savePath);
+        return openFailure;
+      },
+      revealDownloadPath: (savePath) => {
+        revealCalls.push(savePath);
+      },
+    });
+    const hostWindow = new FakeHostWindow({
+      contentBounds: { width: 900, height: 600 },
+      webContentsId: 1,
+    });
+    attachBrowserTab({
+      hostWindow,
+      manager,
+      tabId: "browser:a",
+      url: "https://example.com/",
+    });
+    startFakeDownload({
+      filename: "report.pdf",
+      webContentsId: requireFakeView(0).webContents.id,
+    });
+    return {
+      manager,
+      openCalls,
+      revealCalls,
+      savePath: `${TEST_DOWNLOAD_DIRECTORY}/report.pdf`,
+    };
+  }
+
+  it("opens a file it downloaded", async () => {
+    const { manager, openCalls, savePath } = harnessWithOneDownload();
+
+    await expect(
+      manager.downloadAction({ action: "open", savePath }),
+    ).resolves.toEqual({ ok: true });
+    expect(openCalls).toEqual([savePath]);
+  });
+
+  it("shows a file it downloaded in the file manager", async () => {
+    const { manager, revealCalls, savePath } = harnessWithOneDownload();
+
+    await expect(
+      manager.downloadAction({ action: "reveal", savePath }),
+    ).resolves.toEqual({ ok: true });
+    expect(revealCalls).toEqual([savePath]);
+  });
+
+  // The property the whole design rests on: without it this is "open any file
+  // on this machine", reachable from the renderer.
+  it("refuses a path it did not write, and touches nothing", async () => {
+    const { manager, openCalls, revealCalls } = harnessWithOneDownload();
+
+    await expect(
+      manager.downloadAction({
+        action: "open",
+        savePath: "/Users/someone/.ssh/id_rsa",
+      }),
+    ).resolves.toEqual({
+      ok: false,
+      reason: "unknown-path",
+      message: "bb did not download that file.",
+    });
+    // Even a path inside the downloads folder is refused unless bb wrote it.
+    await expect(
+      manager.downloadAction({
+        action: "reveal",
+        savePath: `${TEST_DOWNLOAD_DIRECTORY}/someone-elses.pdf`,
+      }),
+    ).resolves.toMatchObject({ ok: false, reason: "unknown-path" });
+    expect(openCalls).toEqual([]);
+    expect(revealCalls).toEqual([]);
+  });
+
+  // The realistic failure: the user moved or deleted the file afterwards.
+  // Electron reports that as a non-empty string rather than by rejecting.
+  it("passes the OS refusal through as a failure", async () => {
+    const { manager, savePath } = harnessWithOneDownload("No such file");
+
+    await expect(
+      manager.downloadAction({ action: "open", savePath }),
+    ).resolves.toEqual({
+      ok: false,
+      reason: "failed",
+      message: "No such file",
+    });
+  });
+});
+
+describe("browser chrome overlay", () => {
+  function attachVisibleTab(): {
+    hostWindow: FakeHostWindow;
+    manager: DesktopBrowserViewManager;
+    view: (typeof electronMock.fakeViews)[number];
+  } {
+    const manager = createDesktopBrowserViewManager({
+      partition: "persist:test",
+    });
+    const hostWindow = new FakeHostWindow({
+      contentBounds: { width: 900, height: 600 },
+      webContentsId: 1,
+    });
+    attachBrowserTab({
+      hostWindow,
+      manager,
+      tabId: "browser:a",
+      url: "https://example.com/",
+    });
+    manager.setVisible({
+      hostWindow,
+      request: { tabId: "browser:a", visible: true },
+    });
+    const view = requireFakeView(0);
+    expect(view.visible).toBe(true);
+    return { hostWindow, manager, view };
+  }
+
+  function snapshotPayloads(hostWindow: FakeHostWindow): unknown[] {
+    return hostWindow.webContents.sentMessages
+      .filter(
+        (message) => message.channel === BB_DESKTOP_BROWSER_SNAPSHOT_CHANNEL,
+      )
+      .map((message) => message.payload);
+  }
+
+  // The ordering is the feature: hiding first would flash an empty panel where
+  // the page was, which a menu the user opened cannot afford.
+  it("captures the page before hiding it", async () => {
+    const { hostWindow, manager, view } = attachVisibleTab();
+
+    manager.setOverlay({
+      hostWindow,
+      request: { tabId: "browser:a", active: true },
+    });
+
+    // Still showing the live page while the capture is in flight.
+    expect(view.visible).toBe(true);
+
+    await settlePendingCaptures(view);
+
+    expect(view.visible).toBe(false);
+    expect(snapshotPayloads(hostWindow).at(-1)).toMatchObject({
+      tabId: "browser:a",
+    });
+  });
+
+  it("reveals the page and drops the placeholder when the overlay closes", async () => {
+    const { hostWindow, manager, view } = attachVisibleTab();
+    manager.setOverlay({
+      hostWindow,
+      request: { tabId: "browser:a", active: true },
+    });
+    await settlePendingCaptures(view);
+
+    manager.setOverlay({
+      hostWindow,
+      request: { tabId: "browser:a", active: false },
+    });
+
+    expect(view.visible).toBe(true);
+    // Revealed first, then the placeholder cleared, so the swap never flashes.
+    expect(snapshotPayloads(hostWindow).at(-1)).toEqual({
+      tabId: "browser:a",
+      dataUrl: null,
+    });
+  });
+
+  // A capture that never arrives must not leave a live page under a panel that
+  // is already drawn over it.
+  it("hides the page even when the capture fails", async () => {
+    const { hostWindow, manager, view } = attachVisibleTab();
+
+    manager.setOverlay({
+      hostWindow,
+      request: { tabId: "browser:a", active: true },
+    });
+    for (const reject of view.webContents.pendingCaptureRejecters.splice(0)) {
+      reject(new Error("capture failed"));
+    }
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(view.visible).toBe(false);
   });
 });

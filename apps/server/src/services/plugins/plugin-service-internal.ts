@@ -116,6 +116,8 @@ export interface PluginServiceDeps {
   omniboxSuggestTimeoutMs?: number;
   /** Time box per omnibox `run` action; tests shrink it. */
   omniboxRunTimeoutMs?: number;
+  /** Time box per browser download handler; tests shrink it. */
+  browserDownloadTimeoutMs?: number;
   /** Failed candidates must remain healthy for this long before activation commits. */
   stabilizationWindowMs?: number;
   /** Previous artifacts and activation snapshots remain rollbackable for this long. */

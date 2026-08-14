@@ -1,6 +1,8 @@
 import { BrowserWindow, ipcMain, type IpcMainEvent } from "electron";
 import {
   bbDesktopBrowserAttachRequestSchema,
+  bbDesktopBrowserDownloadActionRequestSchema,
+  bbDesktopBrowserSetOverlayRequestSchema,
   bbDesktopBrowserNavigateRequestSchema,
   bbDesktopBrowserSetBoundsRequestSchema,
   bbDesktopBrowserSetVisibleRequestSchema,
@@ -15,6 +17,7 @@ import {
   bbDesktopBrowserStorageRequestSchema,
   bbDesktopBrowserTabRefSchema,
   type BbDesktopBrowserCaptureFullPageResult,
+  type BbDesktopBrowserDownloadActionResult,
   type BbDesktopBrowserControlResult,
   type BbDesktopBrowserRecordResult,
   type BbDesktopBrowserInteractResult,
@@ -29,6 +32,8 @@ import {
   BB_DESKTOP_BROWSER_GO_BACK_CHANNEL,
   BB_DESKTOP_BROWSER_GO_FORWARD_CHANNEL,
   BB_DESKTOP_BROWSER_NAVIGATE_CHANNEL,
+  BB_DESKTOP_BROWSER_DOWNLOAD_ACTION_CHANNEL,
+  BB_DESKTOP_BROWSER_SET_OVERLAY_CHANNEL,
   BB_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
   BB_DESKTOP_BROWSER_DIALOG_RESPOND_CHANNEL,
   BB_DESKTOP_BROWSER_CAPTURE_FULL_PAGE_CHANNEL,
@@ -165,6 +170,52 @@ export function registerDesktopBrowserIpc(
   // remote method …" string carrying nothing the caller could branch on, so
   // every failure — including an unresolvable window and a malformed payload —
   // comes back as a typed `ok: false` instead.
+  ipcMain.on(
+    BB_DESKTOP_BROWSER_SET_OVERLAY_CHANNEL,
+    (event, payload: unknown) => {
+      const hostWindow = hostWindowFromBrowserIpcEvent(event);
+      if (hostWindow === null) {
+        return;
+      }
+      const parsed = bbDesktopBrowserSetOverlayRequestSchema.safeParse(payload);
+      if (!parsed.success) {
+        return;
+      }
+      manager.setOverlay({ hostWindow, request: parsed.data });
+    },
+  );
+
+  // Opening a download needs no host window: the manager answers from the set
+  // of paths it wrote, which is not scoped to a window.
+  ipcMain.handle(
+    BB_DESKTOP_BROWSER_DOWNLOAD_ACTION_CHANNEL,
+    async (
+      _event,
+      payload: unknown,
+    ): Promise<BbDesktopBrowserDownloadActionResult> => {
+      const parsed =
+        bbDesktopBrowserDownloadActionRequestSchema.safeParse(payload);
+      if (!parsed.success) {
+        return {
+          ok: false,
+          reason: "unknown-path",
+          message: "bb did not download that file.",
+        };
+      }
+      try {
+        return await manager.downloadAction(parsed.data);
+      } catch {
+        // An invoke rejection reaches the renderer as an opaque string, so
+        // every failure becomes a typed refusal instead.
+        return {
+          ok: false,
+          reason: "failed",
+          message: "The file could not be opened.",
+        };
+      }
+    },
+  );
+
   ipcMain.handle(
     BB_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
     async (

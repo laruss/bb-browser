@@ -348,3 +348,39 @@ export async function runPluginOmniboxAction(
     ? body.navigate
     : null;
 }
+
+export interface ReportPluginBrowserDownloadArgs {
+  filename: string;
+  id: string;
+  mimeType: string;
+  savePath: string | null;
+  state: "completed" | "cancelled" | "interrupted" | "refused";
+  tabId: string;
+  url: string;
+}
+
+/**
+ * Hand a finished download to whatever plugins registered a handler
+ * (`browser.downloads.handlers`).
+ *
+ * Fire-and-forget by design: the file is already written and the user has
+ * already been told, so this cannot fail in a way worth interrupting them
+ * about. It resolves to how many handlers ran, which is what the tests assert
+ * on and what a caller can log.
+ */
+export async function reportPluginBrowserDownload(
+  args: ReportPluginBrowserDownloadArgs,
+): Promise<number> {
+  const response = await fetch("/api/v1/plugins/browser/downloads", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(args),
+  });
+  if (!response.ok) return 0;
+  const body = (await response.json()) as {
+    handlerCount?: unknown;
+    ok?: unknown;
+  };
+  if (body.ok !== true || typeof body.handlerCount !== "number") return 0;
+  return body.handlerCount;
+}

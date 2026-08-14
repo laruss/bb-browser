@@ -27,6 +27,16 @@ import {
   type OmniboxProvider,
   type OmniboxSuggestion,
 } from "@/lib/omnibox";
+import {
+  resolveBrowserDownloadsBadge,
+  useAcknowledgeBrowserDownloads,
+  useBrowserDownloadActions,
+  useBrowserDownloads,
+} from "@/lib/browser-downloads";
+import {
+  BrowserDownloadsButton,
+  BrowserDownloadsPanel,
+} from "./BrowserDownloads";
 import { BrowserOmniboxSuggestions } from "./BrowserOmniboxSuggestions";
 
 export interface BrowserSurfaceChromeProps {
@@ -112,6 +122,58 @@ export function BrowserSurfaceChrome({
   const [isEditing, setIsEditing] = useState(false);
   const [highlight, setHighlight] = useState(NO_OMNIBOX_HIGHLIGHT);
   const omnibox = useOmnibox({ providers });
+  const downloads = useBrowserDownloads();
+  const acknowledgeDownloads = useAcknowledgeBrowserDownloads();
+  const { openDownload, revealDownload } = useBrowserDownloadActions();
+  const [isDownloadsOpen, setIsDownloadsOpen] = useState(false);
+  const downloadsPanelRef = useRef<HTMLDivElement>(null);
+  const downloadsButtonRef = useRef<HTMLDivElement>(null);
+
+  const toggleDownloads = useCallback(() => {
+    const next = !isDownloadsOpen;
+    setIsDownloadsOpen(next);
+    // Opening the list *is* the acknowledgement the button's green and red
+    // states are waiting for.
+    if (next) {
+      acknowledgeDownloads();
+    }
+  }, [acknowledgeDownloads, isDownloadsOpen]);
+
+  // React cannot draw over a live page — the native view composites above the
+  // DOM — so the shell freezes it to a bitmap and hides it while the dropdown
+  // is open. That is also what makes the whole window DOM again, so a click on
+  // the page area can close the dropdown.
+  useEffect(() => {
+    if (desktopBrowser?.setOverlay === undefined) {
+      return;
+    }
+    desktopBrowser.setOverlay({ tabId, active: isDownloadsOpen });
+    return () => {
+      // Never leave a tab frozen behind a panel that is gone.
+      desktopBrowser.setOverlay?.({ tabId, active: false });
+    };
+  }, [desktopBrowser, isDownloadsOpen, tabId]);
+
+  useEffect(() => {
+    if (!isDownloadsOpen) {
+      return;
+    }
+    const handlePointerDown = (event: MouseEvent) => {
+      const target = event.target as Node | null;
+      if (
+        target !== null &&
+        (downloadsPanelRef.current?.contains(target) === true ||
+          downloadsButtonRef.current?.contains(target) === true)
+      ) {
+        return;
+      }
+      setIsDownloadsOpen(false);
+    };
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+    };
+  }, [isDownloadsOpen]);
 
   useEffect(() => {
     if (desktopBrowser === null) {
@@ -253,7 +315,18 @@ export function BrowserSurfaceChrome({
   const isOpen = isEditing && suggestions.length > 0;
 
   return (
-    <div className="flex shrink-0 flex-col border-b border-border bg-sidebar">
+    <div
+      className="relative z-20 flex shrink-0 flex-col border-b border-border bg-sidebar"
+      // Escape closes the downloads list from anywhere in the chrome. There is
+      // deliberately no close-on-outside-click: a click on the page lands in a
+      // native view and never reaches the DOM, so the behaviour would work
+      // everywhere except where a user would most expect it.
+      onKeyDown={(event) => {
+        if (event.key === "Escape" && isDownloadsOpen) {
+          setIsDownloadsOpen(false);
+        }
+      }}
+    >
       <div className="flex h-11 items-center gap-1 px-2 py-1.5">
         <ChromeButton
           icon="ChevronLeft"
@@ -316,6 +389,9 @@ export function BrowserSurfaceChrome({
               onFocus={() => {
                 setDraft(url);
                 setIsEditing(true);
+                // Both take the same strip of layout under the toolbar, so the
+                // one the user just reached for wins.
+                setIsDownloadsOpen(false);
               }}
               onBlur={closeOmnibox}
               onKeyDown={handleKeyDown}
@@ -341,6 +417,13 @@ export function BrowserSurfaceChrome({
             />
           </div>
         </form>
+        <div ref={downloadsButtonRef} className="contents">
+          <BrowserDownloadsButton
+            badge={resolveBrowserDownloadsBadge(downloads)}
+            isOpen={isDownloadsOpen}
+            onToggle={toggleDownloads}
+          />
+        </div>
         <ChromeButton
           icon="ExternalLink"
           label="Open in external browser"
@@ -350,6 +433,14 @@ export function BrowserSurfaceChrome({
           }}
         />
       </div>
+      {isDownloadsOpen ? (
+        <BrowserDownloadsPanel
+          entries={downloads.entries}
+          onOpen={openDownload}
+          onReveal={revealDownload}
+          panelRef={downloadsPanelRef}
+        />
+      ) : null}
       {isOpen ? (
         <BrowserOmniboxSuggestions
           highlightedIndex={highlightedIndex}

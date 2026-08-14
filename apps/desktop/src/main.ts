@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 import {
@@ -2159,6 +2160,9 @@ async function runDesktopApp(): Promise<void> {
         command,
       );
     },
+    downloadPathExists(path) {
+      return existsSync(path);
+    },
     focusHostWebContents(hostWebContentsId) {
       const browserWindow = BrowserWindow.getAllWindows().find(
         (candidate) => candidate.webContents.id === hostWebContentsId,
@@ -2166,6 +2170,18 @@ async function runDesktopApp(): Promise<void> {
       if (browserWindow !== undefined) {
         browserWindow.webContents.focus();
       }
+    },
+    async openDownloadPath(savePath) {
+      return await shell.openPath(savePath);
+    },
+    revealDownloadPath(savePath) {
+      shell.showItemInFolder(savePath);
+    },
+    resolveDownloadDirectory() {
+      // The OS downloads folder, which is where a browser puts things and
+      // where the user already looks for them. Resolved per download so a
+      // relocated folder is picked up without restarting the app.
+      return app.getPath("downloads");
     },
     resolveAppCommand(input) {
       return resolveDesktopBrowserAppCommand({

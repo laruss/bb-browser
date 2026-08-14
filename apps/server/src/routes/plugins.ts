@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { promisify } from "node:util";
 import { brotliCompress, constants as zlibConstants, gzip } from "node:zlib";
 import type { Context, Hono } from "hono";
+import { z } from "zod";
 import type { ServerRuntimeConfig } from "../types.js";
 import {
   browserRequestProblem,
@@ -19,6 +20,27 @@ import {
   type AppAssetCompressionCache,
 } from "../services/plugins/app-asset-compression-cache.js";
 import { rankAcceptedAssetEncodings } from "../asset-content-encoding.js";
+
+/**
+ * A finished download, as the app reports it.
+ *
+ * Every string here originated with a page — a filename from
+ * `Content-Disposition`, a URL, a media type — so each is capped rather than
+ * trusted. The caps are stated locally rather than imported from the desktop
+ * contract: the server does not depend on the desktop boundary, and this route
+ * has to defend itself against any caller, not only against our own shell.
+ */
+const pluginBrowserDownloadSchema = z
+  .object({
+    id: z.string().min(1).max(128),
+    tabId: z.string().min(1).max(256),
+    filename: z.string().min(1).max(4096),
+    savePath: z.string().min(1).max(4096).nullable(),
+    url: z.string().max(4096),
+    mimeType: z.string().max(255),
+    state: z.enum(["completed", "cancelled", "interrupted", "refused"]),
+  })
+  .strict();
 import {
   pluginApplyUpdateRequestSchema,
   pluginInstallRequestSchema,
@@ -296,6 +318,35 @@ export function registerPluginRoutes(
       return context.json({ ok: false, error: outcome.error }, 422);
     }
     return context.json({ ok: true, navigate: outcome.navigate });
+  });
+
+  // A download the browser finished, handed to every plugin that registered a
+  // handler (`browser.downloads.handlers`). Executes plugin code, so it takes
+  // the same local-origin guard as the rest, and is registered before the
+  // /plugins/:id/* routes so "browser" cannot be captured as a plugin id.
+  //
+  // The app reports; it does not ask. bb has already written the file and told
+  // the user, so a failure here costs the hand-over and nothing else — which is
+  // why the response says how many handlers ran rather than what they did.
+  app.post("/plugins/browser/downloads", async (context) => {
+    const problem = localAuthProblem(context, deps);
+    if (problem) {
+      return context.json({ ok: false, error: problem.error }, problem.status);
+    }
+    const body = await context.req.json().catch(() => null);
+    const parsed = pluginBrowserDownloadSchema.safeParse(body);
+    if (!parsed.success) {
+      return context.json(
+        {
+          ok: false,
+          error:
+            "expected { id, tabId, filename, savePath, url, mimeType, state }",
+        },
+        400,
+      );
+    }
+    const { handlerCount } = await plugins.reportBrowserDownload(parsed.data);
+    return context.json({ ok: true, handlerCount });
   });
 
   // Proxied `bb <plugin-command>` / `bb plugin run` invocation (design §4.4).

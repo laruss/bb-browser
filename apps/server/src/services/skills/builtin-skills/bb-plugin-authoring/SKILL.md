@@ -805,6 +805,33 @@ bb.browser.registerOmniboxProvider({
 });
 ```
 
+### bb.browser — taking over downloads
+
+BB writes a browser download to the user's downloads folder, then hands it to
+every registered handler. This is where a plugin re-homes, renames, consumes or
+deletes downloads.
+
+```ts
+import { rename } from "node:fs/promises";
+
+bb.browser.registerDownloadHandler(async (download) => {
+  // state: "completed" | "cancelled" | "interrupted" | "refused".
+  // Only "completed" has a file behind it; "refused" is BB's own rate limit
+  // and never wrote anything, so its savePath is null.
+  if (download.state !== "completed" || download.savePath === null) return;
+  if (download.mimeType !== "application/pdf") return;
+  await rename(download.savePath, `/Users/me/Papers/${download.filename}`);
+  bb.log.info("filed a paper", { url: download.url });
+});
+```
+
+The handler runs **after** the write, never before it, and that is a platform
+limit rather than a policy: Chromium demands the save path synchronously while
+a plugin lives in another process. So a plugin cannot stop a download — it
+moves or deletes the finished file instead. Handlers are additive, time-boxed
+(30s) and failure-isolated: throwing changes nothing for the other handlers or
+for the browser.
+
 ### bb.browser — driving the browser surface
 
 Tabs, pages and navigation of the BB desktop app's browser. Needs a connected

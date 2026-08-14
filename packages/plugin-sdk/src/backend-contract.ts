@@ -667,6 +667,54 @@ export interface PluginOmniboxProviderRegistration {
   ): PluginOmniboxRunResult | void | Promise<PluginOmniboxRunResult | void>;
 }
 
+/**
+ * How a download ended. There is no `started`: a handler runs once a download
+ * is over, so it never sees a half-written file it might be tempted to move.
+ *
+ * `refused` is bb's own decision (the page asked for too many at once) and
+ * nothing was written, which is why `savePath` is null for it alone.
+ */
+export type PluginBrowserDownloadState =
+  | "completed"
+  | "cancelled"
+  | "interrupted"
+  | "refused";
+
+export interface PluginBrowserDownload {
+  /** Unique per download, for correlating a handler's own bookkeeping. */
+  id: string;
+  /** The browser tab whose page started it. */
+  tabId: string;
+  /** The name bb wrote — sanitized, and not necessarily what the page asked for. */
+  filename: string;
+  /** Absolute path of the file on disk; null when nothing was written. */
+  savePath: string | null;
+  /** Where it came from, and what the server said it was. */
+  url: string;
+  mimeType: string;
+  state: PluginBrowserDownloadState;
+}
+
+/**
+ * Called after bb has finished writing a download.
+ *
+ * **This is where a plugin takes downloads over.** The file is on disk and
+ * nothing else is holding it, so a handler is free to move it somewhere by
+ * media type, rename it from the page's title, hand it to an agent, upload it,
+ * or delete it outright. Multiple handlers run independently; each is
+ * time-boxed and failure-isolated, so a slow or throwing one changes nothing
+ * for the others or for the browser.
+ *
+ * What a handler cannot do is stop the write, and that is a platform limit
+ * rather than a policy: Chromium demands the save path **synchronously**, while
+ * a plugin lives in another process. So bb writes to the user's downloads
+ * folder first and hands the result over; a plugin that wants files elsewhere
+ * moves them, and one that wants them gone deletes them.
+ */
+export type PluginBrowserDownloadHandler = (
+  download: PluginBrowserDownload,
+) => void | Promise<void>;
+
 // ---------------------------------------------------------------------------
 // Browser control: browser.tabs.*, browser.page.*, browser.navigation.*.
 // ---------------------------------------------------------------------------
@@ -1354,6 +1402,15 @@ export interface PluginBrowser {
    * be unique within the plugin.
    */
   registerOmniboxProvider(provider: PluginOmniboxProviderRegistration): void;
+  /**
+   * Take over what happens to a file the browser downloaded
+   * (`browser.downloads.handlers`). Runs after bb has written it to the user's
+   * downloads folder — see {@link PluginBrowserDownloadHandler} for what a
+   * handler may do with it and why it cannot prevent the write.
+   *
+   * Additive: several handlers, in this plugin or across plugins, all run.
+   */
+  registerDownloadHandler(handler: PluginBrowserDownloadHandler): void;
   /**
    * Drive the browser surface's tabs, pages and navigation.
    *

@@ -590,6 +590,55 @@ is not the `.nvmrc` version — this one runs Node 25 (ABI 141) against a 22.20.
 `.nvmrc`, so it always applies here. Not bun-specific; bun only makes installs
 frequent enough to notice.
 
+### Finding 10: the repair itself could leave the module unloadable, on macOS
+
+Observed on macOS 26.5.1 (arm64): after the fix above had run,
+`bun dev:desktop` died with
+
+```
+scripts/bb-dev-app: line 318: 70660 Killed: 9   node .../ensure-native-modules.mjs
+error: script "dev:desktop" exited with code 137
+```
+
+and every other `better-sqlite3` consumer died the same way — SIGKILL, no
+JavaScript error, no stack, nothing on stderr. `codesign -v` reported the binary
+**valid**, the architecture was right, and the ABI was right.
+
+The kernel's crash report is what names it
+(`~/Library/Logs/DiagnosticReports/node-*.ips`):
+
+```
+termination: { namespace: "CODESIGNING", indicator: "Invalid Page" }
+exception:   { signal: "SIGKILL (Code Signature Invalid)" }
+```
+
+macOS caches a mach-o's code-signature page hashes against the **vnode**.
+`prebuild-install` unpacks over the existing `build/Release/better_sqlite3.node`
+**in place**, so the file keeps its inode while its contents change; the cached
+hashes then describe the old bytes, and the next `dlopen` faults a page that no
+longer matches one. `codesign -v` still passes because it reads the file from
+disk, where the bytes are correct and self-consistent. Only the mapping is
+poisoned.
+
+Two things make this worse than it sounds, and both are why the script changed
+rather than the machine:
+
+- **It is not catchable.** The kill lands on whichever process loads the module,
+  which was `ensure-native-modules.mjs` itself — the repair tool died to the
+  thing it exists to repair, taking `bb-dev-app` with it.
+- **It survives reinstalls.** Re-running the install writes in place again.
+
+`scripts/ensure-native-modules.mjs` now does its **first** verification in a
+child process, so a kill is an exit code rather than the end of the script, and
+rewrites each `.node` through a fresh inode (copy + rename) after anything
+writes there. Recovering by hand, if it ever bites outside the script, is the
+same one line:
+
+```bash
+F=node_modules/.bun/better-sqlite3@*/node_modules/better-sqlite3/build/Release/better_sqlite3.node
+cp $F $F.new && mv $F.new $F
+```
+
 ### Pre-existing conditions, not migration regressions
 
 - `bun run format:check` fails on 441 files. The committed formatting matches

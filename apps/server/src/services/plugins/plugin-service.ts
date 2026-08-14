@@ -13,6 +13,7 @@ import {
 } from "@bb/domain";
 import {
   PLUGIN_CLI_OUTPUT_MAX_BYTES,
+  type PluginBrowserDownload,
   type PluginCliExecutionResult,
   type PluginCliOutputLimitError,
   type PluginRpcError,
@@ -368,6 +369,19 @@ export interface PluginService {
    */
   suggestOmnibox(args: { query: string }): Promise<PluginOmniboxSuggestGroup[]>;
   /**
+   * Hand a finished download to every plugin that registered a handler
+   * (`browser.downloads.handlers`). Handlers run concurrently under the same
+   * failure isolation and time box as omnibox providers: a slow or throwing
+   * one changes nothing for the others, and nothing for the browser, which
+   * finished writing the file before this was called.
+   *
+   * Resolves once every handler has settled, so a caller can await the
+   * hand-over; it never rejects.
+   */
+  reportBrowserDownload(
+    download: PluginBrowserDownload,
+  ): Promise<{ handlerCount: number }>;
+  /**
    * Perform one picked `{ type: "run" }` suggestion. `itemId` is the
    * wire-composed "<providerId>:<item id>" from suggestOmnibox. Dispatch and
    * handler problems map to `{ ok: false, error }` so the browser can report
@@ -406,6 +420,13 @@ const DEFAULT_OMNIBOX_SUGGEST_TIMEOUT_MS = 2_000;
  * spawn a thread — so it gets the same longer box as mention resolve.
  */
 const DEFAULT_OMNIBOX_RUN_TIMEOUT_MS = 10_000;
+/**
+ * A download handler is doing filesystem work on a file that already exists —
+ * moving it, hashing it, handing it to something else — so it gets the looser
+ * box a picked action gets rather than the omnibox's per-keystroke 2s. Nothing
+ * waits on it: the file is written and the user has already been told.
+ */
+const DEFAULT_BROWSER_DOWNLOAD_TIMEOUT_MS = 30_000;
 /** Plugin scores are advisory; the browser owns the top row. */
 const DEFAULT_OMNIBOX_SUGGESTION_SCORE = 0.5;
 const DEFAULT_STABILIZATION_WINDOW_MS = 30_000;
@@ -1050,6 +1071,8 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
     deps.omniboxSuggestTimeoutMs ?? DEFAULT_OMNIBOX_SUGGEST_TIMEOUT_MS;
   const omniboxRunTimeoutMs =
     deps.omniboxRunTimeoutMs ?? DEFAULT_OMNIBOX_RUN_TIMEOUT_MS;
+  const browserDownloadTimeoutMs =
+    deps.browserDownloadTimeoutMs ?? DEFAULT_BROWSER_DOWNLOAD_TIMEOUT_MS;
   const stabilizationWindowMs =
     deps.stabilizationWindowMs ?? DEFAULT_STABILIZATION_WINDOW_MS;
   const artifactRetentionMs =
@@ -2307,6 +2330,26 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
       return (await Promise.all(tasks)).filter(
         (group): group is PluginOmniboxSuggestGroup => group !== null,
       );
+    },
+
+    async reportBrowserDownload(download) {
+      const tasks: Array<Promise<unknown>> = [];
+      for (const [id, plugin] of [...loaded.entries()].sort(([a], [b]) =>
+        a.localeCompare(b),
+      )) {
+        for (const handler of [...plugin.handle.downloadHandlers]) {
+          tasks.push(
+            invokeWrapped(id, "browser download handler", async () =>
+              withPluginTimeout({
+                run: async () => handler(download),
+                timeoutMs: browserDownloadTimeoutMs,
+              }),
+            ),
+          );
+        }
+      }
+      await Promise.all(tasks);
+      return { handlerCount: tasks.length };
     },
 
     async runOmniboxAction({ itemId, pluginId, query }) {

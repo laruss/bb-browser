@@ -2,6 +2,8 @@ import { contextBridge, ipcRenderer, webFrame } from "electron";
 import { appCommandIdSchema } from "@bb/domain";
 import {
   bbDesktopBrowserCaptureFullPageResultSchema,
+  bbDesktopBrowserDownloadActionResultSchema,
+  bbDesktopBrowserDownloadSchema,
   bbDesktopBrowserFaviconSchema,
   bbDesktopBrowserInteractResultSchema,
   bbDesktopBrowserControlResultSchema,
@@ -20,6 +22,10 @@ import {
   type BbDesktopApi,
   type BbDesktopAppCommandHandler,
   type BbDesktopBrowserApi,
+  type BbDesktopBrowserDownloadActionRequest,
+  type BbDesktopBrowserSetOverlayRequest,
+  type BbDesktopBrowserDownloadActionResult,
+  type BbDesktopBrowserDownloadHandler,
   type BbDesktopBrowserFaviconHandler,
   type BbDesktopBrowserCaptureFullPageResult,
   type BbDesktopBrowserInteractResult,
@@ -57,6 +63,9 @@ import {
   BB_DESKTOP_BROWSER_ATTACH_CHANNEL,
   BB_DESKTOP_BROWSER_CAPTURE_FULL_PAGE_CHANNEL,
   BB_DESKTOP_BROWSER_DETACH_CHANNEL,
+  BB_DESKTOP_BROWSER_DOWNLOAD_ACTION_CHANNEL,
+  BB_DESKTOP_BROWSER_SET_OVERLAY_CHANNEL,
+  BB_DESKTOP_BROWSER_DOWNLOAD_CHANNEL,
   BB_DESKTOP_BROWSER_FAVICON_CHANNEL,
   BB_DESKTOP_BROWSER_GO_BACK_CHANNEL,
   BB_DESKTOP_BROWSER_GO_FORWARD_CHANNEL,
@@ -193,6 +202,7 @@ const browserScopedOpenTabListeners =
   new Set<BbDesktopBrowserScopedOpenTabHandler>();
 const browserSnapshotListeners = new Set<BbDesktopBrowserSnapshotHandler>();
 const browserFaviconListeners = new Set<BbDesktopBrowserFaviconHandler>();
+const browserDownloadListeners = new Set<BbDesktopBrowserDownloadHandler>();
 const browserDialogListeners = new Set<BbDesktopBrowserDialogHandler>();
 const closeWindowRequestListeners =
   new Set<BbDesktopCloseWindowRequestHandler>();
@@ -306,6 +316,37 @@ const bbBrowserApi: BbDesktopBrowserApi = {
     return () => {
       browserFaviconListeners.delete(listener);
     };
+  },
+  onDownload(listener): BbDesktopBrowserUnsubscribe {
+    browserDownloadListeners.add(listener);
+    return () => {
+      browserDownloadListeners.delete(listener);
+    };
+  },
+  setOverlay(request: BbDesktopBrowserSetOverlayRequest): void {
+    ipcRenderer.send(BB_DESKTOP_BROWSER_SET_OVERLAY_CHANNEL, request);
+  },
+  async downloadAction(
+    request: BbDesktopBrowserDownloadActionRequest,
+  ): Promise<BbDesktopBrowserDownloadActionResult> {
+    // Same discipline as `readPage`: parse here and swallow rejections, so the
+    // SPA always gets a value it can branch on.
+    const failed = {
+      ok: false,
+      reason: "failed",
+      message: "The file could not be opened.",
+    } as const;
+    try {
+      const payload: unknown = await ipcRenderer.invoke(
+        BB_DESKTOP_BROWSER_DOWNLOAD_ACTION_CHANNEL,
+        request,
+      );
+      const parsed =
+        bbDesktopBrowserDownloadActionResultSchema.safeParse(payload);
+      return parsed.success ? parsed.data : failed;
+    } catch {
+      return failed;
+    }
   },
   async readPage(tabId): Promise<BbDesktopBrowserPageReadResult> {
     // Parse here and swallow rejections, the same way `invokeDesktopInfo` does:
@@ -603,6 +644,19 @@ ipcRenderer.on(
       return;
     }
     for (const listener of browserFaviconListeners) {
+      listener(parsed.data);
+    }
+  },
+);
+
+ipcRenderer.on(
+  BB_DESKTOP_BROWSER_DOWNLOAD_CHANNEL,
+  (_event, payload: unknown) => {
+    const parsed = bbDesktopBrowserDownloadSchema.safeParse(payload);
+    if (!parsed.success) {
+      return;
+    }
+    for (const listener of browserDownloadListeners) {
       listener(parsed.data);
     }
   },

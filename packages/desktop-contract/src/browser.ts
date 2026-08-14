@@ -256,6 +256,145 @@ export type BbDesktopBrowserFavicon = z.infer<
 >;
 
 /**
+ * Cap on the strings a download event carries. A filename comes from the page's
+ * `Content-Disposition` (or its URL) and a path is built from it, so both are
+ * attacker-influenced and bounded here as well as sanitized in the shell.
+ */
+export const BB_DESKTOP_BROWSER_MAX_DOWNLOAD_PATH_LENGTH = 4096;
+
+/** A media type is short; anything longer is not one, so it is cut. */
+export const BB_DESKTOP_BROWSER_MAX_MIME_TYPE_LENGTH = 255;
+
+/**
+ * What a download did, pushed main → renderer. `started` fires when the shell
+ * has chosen the save path and let the transfer begin; exactly one terminal
+ * event follows it for the same `id`.
+ *
+ * `refused` is the shell's own decision rather than a transfer outcome: the
+ * page asked for more downloads than the rate limit allows, and nothing was
+ * written. It is a distinct state because a caller must be able to tell "the
+ * network failed" from "we said no", and only one of those is worth retrying.
+ */
+export const bbDesktopBrowserDownloadStateSchema = z.enum([
+  "started",
+  "completed",
+  "cancelled",
+  "interrupted",
+  "refused",
+]);
+export type BbDesktopBrowserDownloadState = z.infer<
+  typeof bbDesktopBrowserDownloadStateSchema
+>;
+
+/**
+ * A download belonging to a browser tab.
+ *
+ * `savePath` is where the shell decided to write, already sanitized and made
+ * unique — it is not the name the page asked for, and the two can differ. It is
+ * null on `refused`, where nothing was ever written.
+ *
+ * The renderer is told about downloads so it can say one happened; it is given
+ * no control over them. There is no cancel, no pause and no path selection on
+ * this wire, because a browser download is the shell's business once the user's
+ * page has started it.
+ */
+export const bbDesktopBrowserDownloadSchema = z
+  .object({
+    /** Stable across this download's `started` and terminal events. */
+    id: z.string().min(1),
+    tabId: z.string().min(1),
+    filename: z.string().min(1).max(BB_DESKTOP_BROWSER_MAX_DOWNLOAD_PATH_LENGTH),
+    savePath: z
+      .string()
+      .min(1)
+      .max(BB_DESKTOP_BROWSER_MAX_DOWNLOAD_PATH_LENGTH)
+      .nullable(),
+    /**
+     * Where the file came from and what the server said it was. Neither is used
+     * to decide anything here — they are carried because a plugin deciding what
+     * to do with a download needs more than a filename, and the shell is the
+     * only place that knows them.
+     */
+    url: z.string().max(BB_DESKTOP_BROWSER_MAX_URL_LENGTH),
+    mimeType: z.string().max(BB_DESKTOP_BROWSER_MAX_MIME_TYPE_LENGTH),
+    state: bbDesktopBrowserDownloadStateSchema,
+  })
+  .strict();
+export type BbDesktopBrowserDownload = z.infer<
+  typeof bbDesktopBrowserDownloadSchema
+>;
+
+/**
+ * Tell the shell the app is drawing its own chrome over the page area — a
+ * dropdown, a menu, anything that has to float above the page.
+ *
+ * This exists because a `WebContentsView` composites above the DOM: React
+ * cannot draw over a live page, at all. So the shell freezes the page to a
+ * bitmap, pushes it on the snapshot channel and hides the view, leaving the
+ * whole window as DOM that can be drawn on **and clicked on** — which is what
+ * makes click-outside-to-close work. `active: false` reveals the live view
+ * again.
+ *
+ * The same machinery a JavaScript dialog uses, and the cost is the same: the
+ * page is a still image while the overlay is open. Fine for something the user
+ * opens and closes in seconds; not something to leave on.
+ */
+export const bbDesktopBrowserSetOverlayRequestSchema = z
+  .object({
+    tabId: z.string().min(1),
+    active: z.boolean(),
+  })
+  .strict();
+export type BbDesktopBrowserSetOverlayRequest = z.infer<
+  typeof bbDesktopBrowserSetOverlayRequestSchema
+>;
+
+/**
+ * Open a finished download, or show it in the OS file manager.
+ *
+ * `savePath` is echoed back from a download event rather than composed by the
+ * caller, and the shell **only acts on a path it wrote itself** this session.
+ * That check is the point of the design: without it this channel is "open any
+ * file on this machine", reachable from the renderer, with a path a page had a
+ * hand in naming.
+ */
+export const bbDesktopBrowserDownloadActionRequestSchema = z
+  .object({
+    action: z.enum(["open", "reveal"]),
+    savePath: z
+      .string()
+      .min(1)
+      .max(BB_DESKTOP_BROWSER_MAX_DOWNLOAD_PATH_LENGTH),
+  })
+  .strict();
+export type BbDesktopBrowserDownloadActionRequest = z.infer<
+  typeof bbDesktopBrowserDownloadActionRequestSchema
+>;
+
+/**
+ * `unknown-path` is the refusal above; `failed` is the OS declining, which in
+ * practice means the user moved or deleted the file after downloading it. They
+ * are separate because only the second is worth showing to a user — the first
+ * is a bug on our side.
+ */
+export const bbDesktopBrowserDownloadActionResultSchema = z.discriminatedUnion(
+  "ok",
+  [
+    z.object({ ok: z.literal(true) }).strict(),
+    z
+      .object({
+        ok: z.literal(false),
+        reason: z.enum(["unknown-path", "failed"]),
+        message: z.string().max(BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH),
+      })
+      .strict(),
+  ],
+);
+export type BbDesktopBrowserDownloadActionResult = z.infer<
+  typeof bbDesktopBrowserDownloadActionResultSchema
+>;
+
+/**
  * Caps on the page content a read returns. Unlike the other caps here these
  * bound what reaches an *agent's* context rather than what reaches the tab
  * strip, so they are sized for a page's readable text and for a deliberate
@@ -1429,6 +1568,9 @@ export type BbDesktopBrowserStateHandler = (
 export type BbDesktopBrowserFaviconHandler = (
   favicon: BbDesktopBrowserFavicon,
 ) => void;
+export type BbDesktopBrowserDownloadHandler = (
+  download: BbDesktopBrowserDownload,
+) => void;
 export type BbDesktopBrowserOpenTabHandler = (
   request: BbDesktopBrowserOpenTabRequest,
 ) => void;
@@ -1485,6 +1627,36 @@ export interface BbDesktopBrowserApi {
   onFavicon?(
     listener: BbDesktopBrowserFaviconHandler,
   ): BbDesktopBrowserUnsubscribe;
+  /**
+   * Subscribe to downloads a browsed page started. Optional for the same
+   * version skew as {@link BbDesktopBrowserApi.onFavicon}: a shell that
+   * predates downloads has no such channel, and — because that shell also
+   * *denied* every download — a caller that finds no `onDownload` is correctly
+   * told there is nothing to report rather than being left waiting for events
+   * that will never come.
+   */
+  onDownload?(
+    listener: BbDesktopBrowserDownloadHandler,
+  ): BbDesktopBrowserUnsubscribe;
+  /**
+   * Open a download, or reveal it in the OS file manager. Optional for the same
+   * version skew as {@link BbDesktopBrowserApi.onDownload}, and paired with it:
+   * a shell with no downloads has nothing to open, so a caller that finds no
+   * `onDownload` will never have a path to pass here either.
+   *
+   * Never rejects — an unopenable file comes back as `ok: false`.
+   */
+  downloadAction?(
+    request: BbDesktopBrowserDownloadActionRequest,
+  ): Promise<BbDesktopBrowserDownloadActionResult>;
+  /**
+   * Freeze and hide the page so the app can draw over it — see
+   * {@link bbDesktopBrowserSetOverlayRequestSchema}. Optional for version skew:
+   * against a shell that predates it the caller simply gets no overlay, so a
+   * floating panel would be invisible and must fall back to taking layout
+   * space.
+   */
+  setOverlay?(request: BbDesktopBrowserSetOverlayRequest): void;
   /**
    * Read what a tab is currently showing — url, title, rendered text and the
    * user's selection.

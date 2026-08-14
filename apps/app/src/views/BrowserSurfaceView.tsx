@@ -8,11 +8,13 @@ import type { UpdateBrowserTabArgs } from "@/components/secondary-panel/useThrea
 import { BrowserSurfaceChrome } from "@/components/browser-surface/BrowserSurfaceChrome";
 import { BrowserSurfaceTabStrip } from "@/components/browser-surface/BrowserSurfaceTabStrip";
 import { usePluginContributions } from "@/hooks/queries/plugin-contribution-queries";
+import { getDesktopBrowserApi } from "@/lib/bb-desktop";
 import { useBrowserHistory } from "@/lib/browser-history";
 import {
   BROWSER_SURFACE_SCOPE_ID,
   useBrowserSurfaceTabs,
 } from "@/lib/browser-surface-tabs";
+import { isRoutePath } from "@/lib/route-paths";
 import {
   createOmniboxHistoryProvider,
   createOmniboxNavigationProvider,
@@ -59,6 +61,38 @@ export function BrowserSurfaceView() {
   const handleOpen = useCallback(() => {
     openTab();
   }, [openTab]);
+
+  // Popups (`window.open`, `target="_blank"`) become a new surface tab. The
+  // shell denies every native popup and pushes the request to the renderer
+  // instead, so a route with no subscriber is a link that does nothing at all.
+  //
+  // The scoped channel names the tab that asked, which is what keeps a thread
+  // panel's popups out of the surface; the unscoped one is the fallback for a
+  // shell that predates attribution, where a route path belongs to
+  // `RouteNavigationProvider` rather than here.
+  const surfaceTabIds = useMemo(
+    () => new Set(state.tabs.map((tab) => tab.id)),
+    [state.tabs],
+  );
+  useEffect(() => {
+    const browserApi = getDesktopBrowserApi();
+    if (browserApi === null) {
+      return;
+    }
+    if (browserApi.onScopedOpenTab) {
+      return browserApi.onScopedOpenTab(({ tabId, url }) => {
+        if (surfaceTabIds.has(tabId)) {
+          openTab(url);
+        }
+      });
+    }
+    return browserApi.onOpenTab(({ url }) => {
+      if (isRoutePath({ path: url })) {
+        return;
+      }
+      openTab(url);
+    });
+  }, [openTab, surfaceTabIds]);
 
   // Page icons live for the session only, deliberately: they are bytes a page
   // supplied, the persisted tab state is localStorage (a 5MB budget the tab list
