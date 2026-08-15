@@ -51,6 +51,11 @@ interface HarnessArgs {
   live?: Record<string, BbDesktopBrowserState>;
   readPage?: BbDesktopBrowserPageReadResult;
   omitReadPage?: boolean;
+  resolvePdfText?: (args: {
+    pageUrl: string;
+    tabId: string;
+    title: string | null;
+  }) => Promise<string | null>;
   snapshot?: BbDesktopBrowserSnapshotResult;
   omitSnapshot?: boolean;
   omitSnapshotIn?: boolean;
@@ -248,6 +253,7 @@ function createHarness(args: HarnessArgs = {}) {
                 url: "https://example.com/",
                 title: "Example",
                 isLoading: false,
+                contentKind: "html" as const,
                 text: "page text",
                 textTruncated: false,
                 selection: "selected",
@@ -275,6 +281,9 @@ function createHarness(args: HarnessArgs = {}) {
     destroyView: ({ tabId }) => {
       calls.destroyed.push(tabId);
     },
+    ...(args.resolvePdfText === undefined
+      ? {}
+      : { resolvePdfText: args.resolvePdfText }),
     ...(args.trace === undefined ? {} : { trace: args.trace }),
     now: () => clock,
   };
@@ -479,6 +488,10 @@ describe("executeBrowserCommand — page reads", () => {
       [{ ok: false, reason: "no-page" }, "tab_not_live"],
       [{ ok: false, reason: "timeout" }, "page_read_timeout"],
       [{ ok: false, reason: "unreadable" }, "page_read_failed"],
+      // PDF-only refusals from a newer shell, which an older app maps onto the
+      // same code rather than onto nothing.
+      [{ ok: false, reason: "too-large" }, "page_read_failed"],
+      [{ ok: false, reason: "password-protected" }, "page_read_failed"],
     ];
 
     for (const [readPage, code] of cases) {
@@ -494,6 +507,177 @@ describe("executeBrowserCommand — page reads", () => {
         code,
       );
     }
+  });
+
+  // A PDF's text does not come from its DOM: the shell refetches and parses
+  // the document. What is left for the app to decide is the one case the
+  // shell can answer truthfully and uselessly — a scan, with no text in it.
+  it("reads a PDF tab like any other page once the shell has parsed it", async () => {
+    const harness = createHarness({
+      state: { activeTabId: "a", tabs: [tab("a")] },
+      readPage: {
+        ok: true,
+        tabId: "a",
+        url: "https://example.com/report.pdf",
+        title: "report.pdf",
+        isLoading: false,
+        contentKind: "pdf",
+        text: "Quarterly Report",
+        textTruncated: false,
+        selection: "",
+        selectionTruncated: false,
+      },
+    });
+
+    await expect(
+      executeBrowserCommand(
+        { type: "page.get_text", tabId: null, maxLength: 1000 },
+        harness.deps,
+      ),
+    ).resolves.toEqual({
+      ok: true,
+      value: { type: "text", text: "Quarterly Report", truncated: false },
+    });
+  });
+
+  it("asks plugins for a PDF the shell read and found no text in", async () => {
+    const asked: unknown[] = [];
+    const harness = createHarness({
+      state: { activeTabId: "a", tabs: [tab("a")] },
+      readPage: {
+        ok: true,
+        tabId: "a",
+        url: "https://example.com/scan.pdf",
+        title: "scan.pdf",
+        isLoading: false,
+        contentKind: "pdf",
+        text: "",
+        textTruncated: false,
+        selection: "",
+        selectionTruncated: false,
+      },
+      resolvePdfText: async (request) => {
+        asked.push(request);
+        return "text an OCR pass produced";
+      },
+    });
+
+    await expect(
+      executeBrowserCommand(
+        { type: "page.get_text", tabId: null, maxLength: 1000 },
+        harness.deps,
+      ),
+    ).resolves.toEqual({
+      ok: true,
+      value: {
+        type: "text",
+        text: "text an OCR pass produced",
+        truncated: false,
+      },
+    });
+    expect(asked).toEqual([
+      {
+        pageUrl: "https://example.com/scan.pdf",
+        tabId: "a",
+        title: "scan.pdf",
+      },
+    ]);
+  });
+
+  it("never asks plugins about a PDF that already read as text", async () => {
+    let asked = 0;
+    const harness = createHarness({
+      state: { activeTabId: "a", tabs: [tab("a")] },
+      readPage: {
+        ok: true,
+        tabId: "a",
+        url: "https://example.com/report.pdf",
+        title: null,
+        isLoading: false,
+        contentKind: "pdf",
+        text: "Quarterly Report",
+        textTruncated: false,
+        selection: "",
+        selectionTruncated: false,
+      },
+      resolvePdfText: async () => {
+        asked += 1;
+        return "should never be used";
+      },
+    });
+
+    await executeBrowserCommand(
+      { type: "page.get_text", tabId: null, maxLength: 1000 },
+      harness.deps,
+    );
+
+    // Providers exist for what the browser cannot read, not to intercept what
+    // it can — and the round trip is not spent on documents that read fine.
+    expect(asked).toBe(0);
+  });
+
+  it("says a scan has no text layer rather than answering with nothing", async () => {
+    for (const resolvePdfText of [
+      undefined,
+      async () => null,
+      async () => "",
+    ]) {
+      const harness = createHarness({
+        state: { activeTabId: "a", tabs: [tab("a")] },
+        readPage: {
+          ok: true,
+          tabId: "a",
+          url: "https://example.com/scan.pdf",
+          title: null,
+          isLoading: false,
+          contentKind: "pdf",
+          text: "",
+          textTruncated: false,
+          selection: "",
+          selectionTruncated: false,
+        },
+        ...(resolvePdfText === undefined ? {} : { resolvePdfText }),
+      });
+
+      const outcome = await executeBrowserCommand(
+        { type: "page.get_text", tabId: null, maxLength: 1000 },
+        harness.deps,
+      );
+
+      // An empty success would read as a blank document. The difference
+      // between "this PDF says nothing" and "this PDF is a picture of text" is
+      // the whole answer an agent needs.
+      expectFailure(outcome, "page_read_failed");
+      expect(outcome.ok ? "" : outcome.message).toContain("no text layer");
+    }
+  });
+
+  it("leaves an empty HTML page as the empty success it is", async () => {
+    const harness = createHarness({
+      state: { activeTabId: "a", tabs: [tab("a")] },
+      readPage: {
+        ok: true,
+        tabId: "a",
+        url: "https://example.com/",
+        title: null,
+        isLoading: false,
+        contentKind: "html",
+        text: "",
+        textTruncated: false,
+        selection: "",
+        selectionTruncated: false,
+      },
+    });
+
+    await expect(
+      executeBrowserCommand(
+        { type: "page.get_text", tabId: null, maxLength: 1000 },
+        harness.deps,
+      ),
+    ).resolves.toEqual({
+      ok: true,
+      value: { type: "text", text: "", truncated: false },
+    });
   });
 
   it("reports an older desktop shell that has no read-page channel", async () => {

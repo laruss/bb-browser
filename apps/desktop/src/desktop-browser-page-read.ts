@@ -58,6 +58,7 @@ export const BB_DESKTOP_BROWSER_PAGE_READ_SCRIPT = `(() => {
   const selection = window.getSelection();
   const rawSelection = selection === null ? "" : String(selection.toString());
   return {
+    contentType: String(document.contentType ?? ""),
     text: rawText.slice(0, ${BB_DESKTOP_BROWSER_MAX_PAGE_TEXT_LENGTH}),
     textTruncated: rawText.length > ${BB_DESKTOP_BROWSER_MAX_PAGE_TEXT_LENGTH},
     selection: rawSelection.slice(0, ${BB_DESKTOP_BROWSER_MAX_PAGE_SELECTION_LENGTH}),
@@ -67,6 +68,13 @@ export const BB_DESKTOP_BROWSER_PAGE_READ_SCRIPT = `(() => {
 
 /** What {@link BB_DESKTOP_BROWSER_PAGE_READ_SCRIPT} resolves to. */
 export interface BrowserPageReadContent {
+  /**
+   * What Chromium decided this document is. The read asks because a PDF's text
+   * is not in its DOM and has to be fetched and parsed instead (see
+   * desktop-browser-pdf-text.ts) — and the content type is how the viewer's
+   * empty wrapper is told apart from a page that really is blank.
+   */
+  contentType: string;
   text: string;
   textTruncated: boolean;
   selection: string;
@@ -96,10 +104,8 @@ export function parseBrowserPageReadContent(
   if (typeof raw !== "object" || raw === null) {
     return null;
   }
-  const { text, textTruncated, selection, selectionTruncated } = raw as Record<
-    string,
-    unknown
-  >;
+  const { contentType, text, textTruncated, selection, selectionTruncated } =
+    raw as Record<string, unknown>;
   if (
     typeof text !== "string" ||
     typeof selection !== "string" ||
@@ -109,6 +115,10 @@ export function parseBrowserPageReadContent(
     return null;
   }
   return {
+    // Leniently, unlike the four above: the content type decides which of two
+    // ways the text is read, and a page that somehow has none is a page read
+    // the ordinary way — which is what every read did before it was asked for.
+    contentType: typeof contentType === "string" ? contentType : "",
     text: truncate(text, BB_DESKTOP_BROWSER_MAX_PAGE_TEXT_LENGTH),
     textTruncated:
       textTruncated || text.length > BB_DESKTOP_BROWSER_MAX_PAGE_TEXT_LENGTH,

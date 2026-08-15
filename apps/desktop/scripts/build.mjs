@@ -81,6 +81,13 @@ await Promise.all([
   }),
   build({
     ...commonOptions,
+    entryPoints: [resolve(packageRoot, "src", "pdf-text-process.ts")],
+    external: ["electron"],
+    format: "cjs",
+    outfile: resolve(distDir, "pdf-text-process.js"),
+  }),
+  build({
+    ...commonOptions,
     entryPoints: [resolve(packageRoot, "src", "bb-app-bridge.ts")],
     external: ["bb-app", "bb-app/*"],
     format: "esm",

@@ -346,6 +346,18 @@ export const DEFAULT_APP_KEYBINDINGS: AppDefaultKeybindings = [
       none: ["modalOpen"],
     },
   ),
+  // Chromium's own chord for the developer tools, and the panel it opens is
+  // Chromium's own too.
+  binding(
+    "browser.devTools.toggle",
+    "i",
+    { mod: true, alt: true },
+    {
+      all: ["mainSurface", "browserFocus"],
+      desktopOnly: true,
+      none: ["modalOpen"],
+    },
+  ),
   // Browser tab commands. Registered *after* `panel.newTab` / `panel.close`
   // deliberately: both resolvers walk the table from the end, so these win
   // whenever the browser has focus while the panel bindings keep working

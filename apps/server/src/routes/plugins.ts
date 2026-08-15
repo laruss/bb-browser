@@ -73,6 +73,18 @@ const pluginBrowserAuthChallengeSchema = z
   })
   .strict();
 
+/**
+ * A PDF the browser could not read as text. The URL and title are the page's
+ * own, so both are capped rather than trusted.
+ */
+const pluginBrowserPdfDocumentSchema = z
+  .object({
+    tabId: z.string().min(1).max(256),
+    pageUrl: z.string().max(4096),
+    title: z.string().max(1024).nullable(),
+  })
+  .strict();
+
 const pluginBrowserDownloadSchema = z
   .object({
     id: z.string().min(1).max(128),
@@ -449,6 +461,32 @@ export function registerPluginRoutes(
       challenge: parsed.data,
     });
     return context.json({ ok: true, credentials });
+  });
+
+  // A PDF the browser opened, parsed, and found no text in
+  // (`browser.pdf.textProviders`). Executes plugin code, so it takes the same
+  // local-origin guard as the rest.
+  //
+  // The browser asks only after its own read came back empty, so an empty
+  // answer here changes nothing: the agent is told the document has no text
+  // layer either way.
+  app.post("/plugins/browser/pdf-text", async (context) => {
+    const problem = localAuthProblem(context, deps);
+    if (problem) {
+      return context.json({ ok: false, error: problem.error }, problem.status);
+    }
+    const body = await context.req.json().catch(() => null);
+    const parsed = pluginBrowserPdfDocumentSchema.safeParse(body);
+    if (!parsed.success) {
+      return context.json(
+        { ok: false, error: "expected { tabId, pageUrl, title }" },
+        400,
+      );
+    }
+    const text = await plugins.resolveBrowserPdfText({
+      document: parsed.data,
+    });
+    return context.json({ ok: true, text: text ?? "" });
   });
 
   // A download the browser finished, handed to every plugin that registered a

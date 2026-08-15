@@ -5,6 +5,7 @@ import type {
   BrowserTabLoadingArgs,
 } from "@/components/secondary-panel/BrowserTabContent";
 import type { UpdateBrowserTabArgs } from "@/components/secondary-panel/useThreadFileTabs";
+import { BrowserDevToolsPanel } from "@/components/browser-surface/BrowserDevToolsPanel";
 import { BrowserFindBar } from "@/components/browser-surface/BrowserFindBar";
 import { BrowserSurfaceChrome } from "@/components/browser-surface/BrowserSurfaceChrome";
 import { BrowserSurfaceTabStrip } from "@/components/browser-surface/BrowserSurfaceTabStrip";
@@ -376,6 +377,58 @@ export function BrowserSurfaceView() {
     };
   }, [activeTabId]);
 
+  // Chromium's own DevTools, per tab as in Chromium: switching tabs hides one
+  // tab's tools and shows the other's, and the shell reports both directions
+  // because "Inspect" and the tools' own close button are not this app's doing.
+  const [devToolsTabIds, setDevToolsTabIds] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
+  useEffect(() => {
+    const browserApi = getDesktopBrowserApi();
+    if (browserApi?.onDevToolsState === undefined) {
+      return;
+    }
+    return browserApi.onDevToolsState(({ open, tabId }) => {
+      setDevToolsTabIds((current) => {
+        if (current.has(tabId) === open) {
+          return current;
+        }
+        const next = new Set(current);
+        if (open) {
+          next.add(tabId);
+        } else {
+          next.delete(tabId);
+        }
+        return next;
+      });
+    });
+  }, []);
+  const isDevToolsOpen = activeTab !== null && devToolsTabIds.has(activeTab.id);
+  const setDevToolsOpen = useCallback(
+    (open: boolean) => {
+      const browserApi = getDesktopBrowserApi();
+      if (browserApi?.setDevTools === undefined || activeTab === null) {
+        return false;
+      }
+      // Opening carries an empty rect: the panel is not mounted yet, and it
+      // pushes the real one as soon as it is. The shell answers
+      // `devtools-opened` either way, which is what mounts it.
+      browserApi.setDevTools({
+        tabId: activeTab.id,
+        open,
+        bounds: { x: 0, y: 0, width: 0, height: 0 },
+      });
+      return true;
+    },
+    [activeTab],
+  );
+  const closeDevTools = useCallback(() => {
+    setDevToolsOpen(false);
+  }, [setDevToolsOpen]);
+  useAppCommandHandler("browser.devTools.toggle", () =>
+    setDevToolsOpen(!isDevToolsOpen),
+  );
+
   useAppCommandHandler("browser.newTab", () => {
     openTab();
     return true;
@@ -488,6 +541,9 @@ export function BrowserSurfaceView() {
         onFavicon={handleFavicon}
         onLoadingChange={handleLoadingChange}
       />
+      {isDevToolsOpen && activeTab !== null ? (
+        <BrowserDevToolsPanel onClose={closeDevTools} tabId={activeTab.id} />
+      ) : null}
     </div>
   );
 }

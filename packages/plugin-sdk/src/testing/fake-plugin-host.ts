@@ -38,6 +38,7 @@ import type {
   PluginBrowser,
   PluginBrowserContextMenuItemRegistration,
   PluginBrowserAuthProvider,
+  PluginBrowserPdfTextProvider,
   PluginBrowserFindActionRegistration,
   PluginBrowserDownloadHandler,
   PluginBrowserConsoleEntry,
@@ -454,6 +455,8 @@ export interface FakePluginRegistrations {
   findActions: PluginBrowserFindActionRegistration[];
   /** Providers from `bb.browser.registerAuthProvider`, in registration order. */
   authProviders: PluginBrowserAuthProvider[];
+  /** Providers from `bb.browser.registerPdfTextProvider`, in order. */
+  pdfTextProviders: PluginBrowserPdfTextProvider[];
 }
 
 /** Read-only state for assertions after a plugin registers or handles work. */
@@ -1964,6 +1967,7 @@ function createFakePluginHostInternal(
   const contextMenuItems: PluginBrowserContextMenuItemRegistration[] = [];
   const findActions: PluginBrowserFindActionRegistration[] = [];
   const authProviders: PluginBrowserAuthProvider[] = [];
+  const pdfTextProviders: PluginBrowserPdfTextProvider[] = [];
   const browser: PluginBrowser = {
     registerOmniboxProvider(provider) {
       assertLive();
@@ -2031,6 +2035,15 @@ function createFakePluginHostInternal(
         );
       }
       authProviders.push(provider);
+    },
+    registerPdfTextProvider(provider) {
+      assertLive();
+      if (typeof provider !== "function") {
+        throw new Error(
+          "registerPdfTextProvider(provider) needs a function taking one document",
+        );
+      }
+      pdfTextProviders.push(provider);
     },
     registerDownloadHandler(handler) {
       assertLive();
@@ -2849,6 +2862,7 @@ function createFakePluginHostInternal(
       contextMenuItems,
       findActions,
       authProviders,
+      pdfTextProviders,
     },
     get pendingInteractions() {
       return [...pendingInteractions].map(([id, pending]) => ({

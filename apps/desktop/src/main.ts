@@ -143,6 +143,7 @@ import {
   createDesktopBrowserViewManager,
   type DesktopBrowserViewManager,
 } from "./desktop-browser-view.js";
+import { createBrowserPdfTextExtractor } from "./desktop-browser-pdf-process.js";
 import { resolveDesktopBrowserAppCommand } from "./desktop-browser-shortcuts.js";
 import { registerDesktopBrowserIpc } from "./desktop-browser-main-ipc.js";
 import { ensurePackagedMacOsUserShellPath } from "./desktop-shell-path.js";
@@ -2163,6 +2164,9 @@ async function runDesktopApp(): Promise<void> {
     downloadPathExists(path) {
       return existsSync(path);
     },
+    extractPdfText: createBrowserPdfTextExtractor({
+      modulePath: join(paths.appPath, "dist", "pdf-text-process.js"),
+    }),
     focusHostWebContents(hostWebContentsId) {
       const browserWindow = BrowserWindow.getAllWindows().find(
         (candidate) => candidate.webContents.id === hostWebContentsId,

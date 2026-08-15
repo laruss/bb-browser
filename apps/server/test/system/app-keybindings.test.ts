@@ -221,11 +221,14 @@ describe("app keybindings", () => {
           when: { all: ["mainSurface", "modelPickerOpen"], none: [] },
         },
       ]);
-      // No other default binding may use Alt, so the cycle chords cannot be
-      // shadowed by an earlier binding for the same chord.
+      // No other default binding may use **plain** Alt, so the cycle chords
+      // cannot be shadowed by an earlier binding for the same chord. A chord
+      // that also holds Mod is a different chord and cannot collide with them —
+      // `browser.devTools.toggle` is Cmd+Alt+I, Chromium's own — so the filter
+      // is what the rule is actually about rather than Alt appearing at all.
       expect(
         assignedDefaultKeybindings
-          .filter((binding) => binding.shortcut.alt)
+          .filter((binding) => binding.shortcut.alt && !binding.shortcut.mod)
           .map((binding) => binding.command),
       ).toEqual([
         "modelPicker.cycleModel",
@@ -336,6 +339,7 @@ describe("app keybindings", () => {
         "browser.reload",
         "browser.find",
         "browser.fullscreen.toggle",
+        "browser.devTools.toggle",
         "browser.newTab",
         "browser.closeTab",
         "browser.reopenClosedTab",

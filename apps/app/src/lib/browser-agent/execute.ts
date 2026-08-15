@@ -70,6 +70,17 @@ export interface BrowserCommandDeps {
     tabId: string;
   }) => void;
   /**
+   * Ask plugins for the text of a PDF the browser read but found no text in
+   * (`browser.pdf.textProviders`). A seam like the others: absent means no
+   * plugin is consulted at all, which is what the web build and most tests
+   * want. Resolves null when nobody answered.
+   */
+  resolvePdfText?: (args: {
+    pageUrl: string;
+    tabId: string;
+    title: string | null;
+  }) => Promise<string | null>;
+  /**
    * Where the session's trace is kept, when the bridge holds one. Absent here
    * means tracing is simply unavailable rather than idle.
    */
@@ -669,7 +680,31 @@ async function runBrowserCommand(
       if (!read.ok) {
         return read.outcome;
       }
-      const full = read.content.text;
+      // A PDF the shell read but found nothing in is a scan: pages of images
+      // with no text layer, which no amount of re-reading turns into words.
+      // That is the one case worth handing to a plugin, because reading it
+      // needs something the browser does not have (an OCR pass, a document
+      // service), and the one case where asking costs nothing — the built-in
+      // read has already come back empty.
+      const isEmptyPdf =
+        read.content.contentKind === "pdf" && read.content.text.length === 0;
+      const full =
+        isEmptyPdf && deps.resolvePdfText !== undefined
+          ? ((await deps.resolvePdfText({
+              pageUrl: read.content.url,
+              tabId: tab.id,
+              title: read.content.title,
+            })) ?? "")
+          : read.content.text;
+      if (full.length === 0 && read.content.contentKind === "pdf") {
+        // Not an empty success: "" would read as a blank document, and the
+        // difference between "this PDF says nothing" and "this PDF is a
+        // picture of text" is the whole answer an agent needs here.
+        return failure(
+          "page_read_failed",
+          `Browser tab ${tab.id} is a PDF with no text layer — a scan, or images of text. Nothing could be read from it as text.`,
+        );
+      }
       const text = full.slice(0, command.maxLength);
       return success({
         type: "text",

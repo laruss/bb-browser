@@ -108,6 +108,7 @@ type SetFullscreenCall = Parameters<
 type SetPopupTabsCall = Parameters<
   DesktopBrowserViewManager["setPopupTabs"]
 >[0];
+type SetDevToolsCall = Parameters<DesktopBrowserViewManager["setDevTools"]>[0];
 type SetContextMenuItemsCall = Parameters<
   DesktopBrowserViewManager["setContextMenuItems"]
 >[0];
@@ -167,6 +168,7 @@ class RecordingDesktopBrowserViewManager implements DesktopBrowserViewManager {
   public readonly findCalls: FindCall[] = [];
   public readonly setFullscreenCalls: SetFullscreenCall[] = [];
   public readonly setPopupTabsCalls: SetPopupTabsCall[] = [];
+  public readonly setDevToolsCalls: SetDevToolsCall[] = [];
   public readonly setContextMenuItemsCalls: SetContextMenuItemsCall[] = [];
   public downloadActionFailure: Error | null = null;
   public downloadActionResult: BbDesktopBrowserDownloadActionResult = {
@@ -291,6 +293,10 @@ class RecordingDesktopBrowserViewManager implements DesktopBrowserViewManager {
 
   setPopupTabs(args: SetPopupTabsCall): void {
     this.setPopupTabsCalls.push(args);
+  }
+
+  setDevTools(args: SetDevToolsCall): void {
+    this.setDevToolsCalls.push(args);
   }
 
   respondToPagePrompt(args: PagePromptRespondCall): Promise<boolean> {
@@ -678,6 +684,7 @@ describe("registerDesktopBrowserIpc", () => {
       textTruncated: false,
       selection: "",
       selectionTruncated: false,
+      contentKind: "html",
     };
     registerDesktopBrowserIpc(manager);
     const renderer = createTrustedRenderer("main-window");

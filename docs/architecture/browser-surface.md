@@ -652,23 +652,149 @@ the OS reader — moves the same parsing to a program with **no** sandbox at all
 so refusing here would not have been the safer choice, only the one that looked
 safer.
 
-Three consequences worth knowing:
+Two consequences worth knowing:
 
 - The viewer brings **its own toolbar** (zoom, rotate, print, download) drawn by
   Chromium inside the page. It is not ours and does not follow the app's theme.
 - Its download button goes through `will-download` like any other download, so
   it is named, rate-limited and reported by the same code
   ([browser-downloads.md](browser-downloads.md)).
-- **An agent reading a PDF tab gets nothing.** `readPage` and the accessibility
-  snapshot run against the main frame, and for a PDF that frame is the viewer's
-  wrapper rather than the document's text. Extracting PDF text is its own job;
-  the honest note is that this is not a regression — before this the tab was a
-  download and there was no page to read at all.
 
-No plugin contribution point was added here, and that is a decision rather than
-an omission: the viewer is Chromium's own, so there is no hook to offer that is
-not Chromium's, and the plugin surface that already touches PDFs is the download
-handler — a plugin that wants to re-home, convert or read them registers there.
+### Reading one as text
+
+`readPage` answers a PDF tab with the document's text, so `page.get_text` works
+on a PDF the way it works on an article. Everything about how is decided by one
+fact: **the text is not in the DOM.** Chromium leaves a stub in the main frame —
+a stylesheet link and an empty body — and renders the document in a process of
+its own, so `document.body.innerText` is `""`.
+
+Two ways around that were tried against a real viewer before the third was
+written, and both are recorded in desktop-browser-pdf-text.ts so they are not
+tried again. **The accessibility tree** does not carry it: PDFium builds one —
+it is how a screen reader reads a PDF in Chrome — but in the browser process,
+not in the renderer CDP answers from, so attaching to the PDF content frame
+returns five nodes ending in an `EmbeddedObject`, with
+`--force-renderer-accessibility` making no difference. **Asking the viewer** for
+its selection means scripting an extension frame whose internals carry no
+compatibility promise.
+
+So the shell refetches the document and parses it:
+
+- **Through the browsing session**, with `credentials: "include"`. That is what
+  makes a PDF behind a login readable at all — the cookies that fetched it for
+  the viewer fetch it again — and the usual answer comes straight from the cache
+  the viewer just filled.
+- **Bounded while streaming.** The body is read in chunks against a 32MB cap, so
+  a server that keeps sending is refused at the first chunk past it rather than
+  buffered whole: `Content-Length` is a claim, and `arrayBuffer()` on a body
+  that keeps going is a page-controlled allocation in the main process.
+- **In a utility process.** Not for privilege — the parser is JavaScript, so
+  this is not the sandbox PDFium has — but because parsing is unbounded CPU work
+  on a document the page chose, and the main process is where every window's UI
+  thread lives. A parse that spins there freezes the app and no timeout can
+  rescue it; a parse that spins in a child is killed. One process per document,
+  killed as soon as it answers.
+- **Under one deadline** of 15s covering fetch and parse together, so a slow
+  server cannot buy the parser more time than the whole read is allowed.
+
+The parser is pdf.js, packaged as `unpdf`: one dependency, no native code, and
+no `eval` or `Function` constructor anywhere in the build — the path that made
+CVE-2024-4367 possible was removed upstream rather than switched off.
+
+What it does not do, stated rather than discovered:
+
+- **`blob:` and `data:` documents are out of reach**, because the main process
+  cannot resolve a URL that means something only inside one renderer, and
+  neither can a document that exists only as the answer to a POST. All of them
+  read as `unreadable`. An in-page fetch would cover the first two and is the
+  fallback to add if it turns out to matter.
+- **A long document is truncated** to the same 64KB every page read is, with
+  `textTruncated` set. There is no page range to ask for.
+- **A scan reads as nothing**, because there is nothing to read: its pages are
+  images. The agent is told so — "no text layer" — rather than handed an empty
+  success that reads as a blank document.
+
+Two refusals are PDF-only and exist because each is worth a different next step
+than "could not be read": `too-large` says the document is past the cap and will
+not become readable by asking again, and `password-protected` says a human has
+something the agent does not.
+
+### The plugin contribution point
+
+`bb.browser.registerPdfTextProvider` — `browser.pdf.textProviders`. A provider
+is handed `{ tabId, pageUrl, title }` and returns the document's text, or null.
+
+It is asked in exactly one case: a document the browser parsed and found **no
+text** in. That is the scan above, and it is the one case where reading needs
+something the browser does not have — an OCR pass, a document service — and the
+one case where asking costs nothing, because the built-in read has already come
+back empty. A PDF with a text layer never reaches a provider, so this is not a
+way to intercept ordinary reads.
+
+Providers are asked in plugin id order and the first non-empty answer wins;
+declining, throwing, and running past the 10s box all mean "ask the next one".
+That box is the longest of any browser hook because this is the only one asked
+to do real work, and nothing is held up on screen while it runs — an agent is
+waiting for a tool result.
+
+The viewer itself still offers no hook, for the reason it never did: it is
+Chromium's own. A plugin that wants to re-home or convert PDFs registers a
+download handler ([browser-downloads.md](browser-downloads.md)) instead.
+
+## Developer tools
+
+`Cmd+Alt+I` — Chromium's own chord — opens Chromium's own DevTools: Elements,
+Console, Network, Sources. Not a panel that resembles them. The shell creates a
+second native view, points the page's `webContents` at it with
+`setDevToolsWebContents`, and opens the tools with `mode: "detach"` — detached
+meaning "the host is ours", without which Chromium would dock them into a window
+of its own choosing.
+
+That decides almost everything else about the feature:
+
+- **The app renders one control and nothing else.** `BrowserDevToolsPanel`
+  reserves the area and reports its rect, exactly as `BrowserTabContent` does
+  for the page. The exception is a close button, and it is an exception made
+  after seeing the panel run: DevTools are opened detached because the host view
+  is ours, and a detached DevTools expects a **window frame** to carry its close
+  control — so it draws none. Preferring to add no chrome of our own is worth
+  less than being able to close the panel without a keyboard.
+- **The panel takes layout space**, like the find bar and for a sharper version
+  of the same reason: two native views cannot be stacked, and freezing the page
+  to draw over it would defeat the point of inspecting a live one.
+- **The tools are per tab**, as in Chromium. Switching tabs hides one tab's
+  tools and shows the other's, because the view's visibility follows its entry's
+  — which is also what keeps it from compositing over a dropdown.
+- **Both directions are reported.** DevTools open without the app asking
+  ("Inspect" from the page menu) and close from their own toolbar, so
+  `devtools-opened` / `devtools-closed` are pushed rather than assumed.
+- **The view takes default web preferences.** It is not a browsed page: it is
+  Chromium's own UI, and handing it the hardened, partitioned, sandboxed
+  preferences meant for untrusted content would break the tools rather than
+  contain them.
+
+### The cost, which was predicted
+
+[browser-gaps.md](browser-gaps.md) said this item would eventually argue with
+the CDP decision, and it does: DevTools holds Chromium's only protocol client,
+so while the panel is open the automation commands on that tab answer
+`debugger-unavailable`.
+
+Nothing had to be built for that. `createCdpSession` already refuses a target
+that is attached, precisely because "DevTools is the realistic case", and every
+automation result already carries `debugger-unavailable` as a typed refusal. A
+human debugging a page and an agent driving it are two clients for one seat, and
+the browser says so instead of failing somewhere else.
+
+### Inspect
+
+The page's context menu ends with **Inspect**, where every browser puts it: it
+is about the page rather than about what was clicked. It opens the tools if they
+are closed and calls `inspectElement` at the pointer, so the Elements panel
+lands on the node — again Chromium's behaviour, because it is Chromium's code.
+
+The entry is absent when the caller has no way to host the tools, rather than
+present and inert.
 
 ## Fullscreen
 

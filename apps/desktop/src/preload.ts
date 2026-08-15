@@ -18,6 +18,7 @@ import {
   bbDesktopBrowserDialogSchema,
   bbDesktopBrowserPagePromptSchema,
   bbDesktopBrowserPopupSchema,
+  bbDesktopBrowserDevToolsStateSchema,
   bbDesktopBrowserSnapshotResultSchema,
   bbDesktopBrowserSnapshotSchema,
   bbDesktopBrowserStateSchema,
@@ -50,6 +51,8 @@ import {
   type BbDesktopBrowserPagePromptHandler,
   type BbDesktopBrowserPopupHandler,
   type BbDesktopBrowserPopupTabs,
+  type BbDesktopBrowserDevToolsRequest,
+  type BbDesktopBrowserDevToolsStateHandler,
   type BbDesktopBrowserSnapshotResult,
   type BbDesktopBrowserSnapshotHandler,
   type BbDesktopBrowserStateHandler,
@@ -105,6 +108,8 @@ import {
   BB_DESKTOP_BROWSER_PAGE_PROMPT_RESPOND_CHANNEL,
   BB_DESKTOP_BROWSER_POPUP_CHANNEL,
   BB_DESKTOP_BROWSER_SET_POPUP_TABS_CHANNEL,
+  BB_DESKTOP_BROWSER_SET_DEV_TOOLS_CHANNEL,
+  BB_DESKTOP_BROWSER_DEV_TOOLS_STATE_CHANNEL,
   BB_DESKTOP_BROWSER_INTERACT_CHANNEL,
   BB_DESKTOP_BROWSER_SNAPSHOT_TREE_CHANNEL,
   BB_DESKTOP_BROWSER_SET_BOUNDS_CHANNEL,
@@ -235,6 +240,8 @@ const browserContextMenuInvokeListeners =
 const browserDialogListeners = new Set<BbDesktopBrowserDialogHandler>();
 const browserPagePromptListeners = new Set<BbDesktopBrowserPagePromptHandler>();
 const browserPopupListeners = new Set<BbDesktopBrowserPopupHandler>();
+const browserDevToolsListeners =
+  new Set<BbDesktopBrowserDevToolsStateHandler>();
 const closeWindowRequestListeners =
   new Set<BbDesktopCloseWindowRequestHandler>();
 const openNewTabListeners = new Set<BbDesktopOpenNewTabHandler>();
@@ -431,6 +438,18 @@ const bbBrowserApi: BbDesktopBrowserApi = {
   },
   setPopupTabs(request: BbDesktopBrowserPopupTabs): void {
     ipcRenderer.send(BB_DESKTOP_BROWSER_SET_POPUP_TABS_CHANNEL, request);
+  },
+  setDevTools(request: BbDesktopBrowserDevToolsRequest): void {
+    ipcRenderer.send(BB_DESKTOP_BROWSER_SET_DEV_TOOLS_CHANNEL, {
+      ...request,
+      bounds: browserViewBoundsAtWindowScale(request.bounds),
+    });
+  },
+  onDevToolsState(listener): BbDesktopBrowserUnsubscribe {
+    browserDevToolsListeners.add(listener);
+    return () => {
+      browserDevToolsListeners.delete(listener);
+    };
   },
   onPopup(listener): BbDesktopBrowserUnsubscribe {
     browserPopupListeners.add(listener);
@@ -770,6 +789,19 @@ ipcRenderer.on(
       return;
     }
     for (const listener of browserDownloadListeners) {
+      listener(parsed.data);
+    }
+  },
+);
+
+ipcRenderer.on(
+  BB_DESKTOP_BROWSER_DEV_TOOLS_STATE_CHANNEL,
+  (_event, payload: unknown) => {
+    const parsed = bbDesktopBrowserDevToolsStateSchema.safeParse(payload);
+    if (!parsed.success) {
+      return;
+    }
+    for (const listener of browserDevToolsListeners) {
       listener(parsed.data);
     }
   },

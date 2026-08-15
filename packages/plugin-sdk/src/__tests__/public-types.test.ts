@@ -63,6 +63,8 @@ const EXPECTED_BACKEND_ROOT_TYPE_EXPORTS = [
   "PluginBrowserPageSnapshot",
   "PluginBrowserPageState",
   "PluginBrowserPdf",
+  "PluginBrowserPdfDocument",
+  "PluginBrowserPdfTextProvider",
   "PluginBrowserRecording",
   "PluginBrowserRoute",
   "PluginBrowserRouteState",

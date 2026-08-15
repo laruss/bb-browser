@@ -892,6 +892,36 @@ second challenge from the same host means the first answer was wrong.
 Certificate errors are deliberately not delegated. "Trust this server anyway"
 is not a credential a plugin can look up.
 
+### bb.browser — reading a PDF the browser cannot
+
+BB reads a PDF tab as text by refetching the document through the browsing
+session and parsing it. A scan has nothing to parse — its pages are images —
+and that is the one case a provider is asked about.
+
+```ts
+bb.browser.registerPdfTextProvider(async (document) => {
+  // document: { tabId, pageUrl, title }
+  // The document is behind whatever the tab is signed in to, so fetch it the
+  // way the browser would.
+  const { cookies } = await bb.browser.storage.cookies({
+    tabId: document.tabId,
+  });
+  const text = await ocrService(document.pageUrl, cookies);
+  return text.length > 0 ? text : null; // null declines, and the next is asked
+});
+```
+
+Providers are **only** asked for a document BB has already parsed and found no
+text in, so this is not a way to intercept ordinary reads — a PDF with a text
+layer never reaches one. They are asked in plugin id order, the first non-empty
+answer wins, and declining, throwing, answering with the wrong shape and running
+past the 10s box all mean the same thing: ask the next one. When nobody answers,
+the agent is told the document has no text layer.
+
+The box is the longest of any browser hook because this is the only one asked to
+do real work — an OCR pass, a call to a document service — and nothing is held
+up on screen while it runs.
+
 ### bb.browser — taking over downloads
 
 BB writes a browser download to the user's downloads folder, then hands it to

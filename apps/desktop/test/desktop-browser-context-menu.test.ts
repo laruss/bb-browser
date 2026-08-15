@@ -116,7 +116,10 @@ describe("buildBrowserContextMenuTemplate", () => {
 
     const inlineImage = buildBrowserContextMenuTemplate({
       actions: actions(),
-      target: target({ mediaType: "image", srcURL: "data:image/png;base64,aa" }),
+      target: target({
+        mediaType: "image",
+        srcURL: "data:image/png;base64,aa",
+      }),
     });
     expect(
       inlineImage.find((item) => item.label === "Save Image")?.enabled,
@@ -129,7 +132,7 @@ describe("buildBrowserContextMenuTemplate", () => {
       target: target({ selectionText: "  hello\n  world  " }),
     });
 
-    expect(labels(template)).toEqual(['Search for “hello world”']);
+    expect(labels(template)).toEqual(["Search for “hello world”"]);
   });
 
   // With nothing under the pointer a right-click is about the page itself.
@@ -167,11 +170,7 @@ describe("buildBrowserContextMenuTemplate", () => {
     });
 
     for (const item of template) {
-      item.click?.(
-        undefined as never,
-        undefined as never,
-        undefined as never,
-      );
+      item.click?.(undefined as never, undefined as never, undefined as never);
     }
 
     expect(menuActions.openInNewTab).toHaveBeenCalledWith(
@@ -183,6 +182,35 @@ describe("buildBrowserContextMenuTemplate", () => {
     expect(menuActions.copyText).toHaveBeenCalledWith(
       "https://example.test/page",
     );
+  });
+});
+
+describe("Inspect", () => {
+  // Where every browser puts it: last of the browser's own entries, because it
+  // is about the page rather than about what was clicked.
+  it("comes last, and opens the tools on what was clicked", () => {
+    const inspect = vi.fn();
+    const template = buildBrowserContextMenuTemplate({
+      actions: { ...actions(), inspect },
+      target: target({ linkURL: "https://example.test/page" }),
+    });
+
+    expect(labels(template).at(-1)).toBe("Inspect");
+    template
+      .at(-1)
+      ?.click?.(undefined as never, undefined as never, undefined as never);
+    expect(inspect).toHaveBeenCalled();
+  });
+
+  // A caller that cannot host the tools must not offer an entry that does
+  // nothing.
+  it("stays off the menu when there is nowhere to open them", () => {
+    const template = buildBrowserContextMenuTemplate({
+      actions: actions(),
+      target: target(),
+    });
+
+    expect(labels(template)).not.toContain("Inspect");
   });
 });
 
@@ -267,9 +295,9 @@ describe("matchesContextMenuTarget", () => {
   it("matches any one of several conditions", () => {
     const when = { image: true, link: true, page: false, selection: false };
 
-    expect(
-      matchesContextMenuTarget(when, target({ mediaType: "image" })),
-    ).toBe(true);
+    expect(matchesContextMenuTarget(when, target({ mediaType: "image" }))).toBe(
+      true,
+    );
     expect(matchesContextMenuTarget(when, target({ selectionText: "x" }))).toBe(
       false,
     );

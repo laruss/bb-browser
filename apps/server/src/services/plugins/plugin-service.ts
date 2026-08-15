@@ -16,6 +16,7 @@ import {
 import {
   PLUGIN_CLI_OUTPUT_MAX_BYTES,
   type PluginBrowserAuthChallenge,
+  type PluginBrowserPdfDocument,
   type PluginBrowserAuthCredentials,
   type PluginBrowserContextMenuContext,
   type PluginBrowserDownload,
@@ -423,6 +424,19 @@ export interface PluginService {
     challenge: PluginBrowserAuthChallenge;
   }): Promise<PluginBrowserAuthCredentials | null>;
   /**
+   * Ask every registered PDF text provider (`browser.pdf.textProviders`) for
+   * the text of a document the browser parsed and found none in, in plugin id
+   * order, stopping at the first that answers.
+   *
+   * Sequential and first-wins like auth, and for the same reason: a second
+   * extractor after the first has already produced the document's text is work
+   * nobody asked for. Each is time-boxed and failure-isolated; null means
+   * nobody answered, which the agent is told as "no text layer".
+   */
+  resolveBrowserPdfText(args: {
+    document: PluginBrowserPdfDocument;
+  }): Promise<string | null>;
+  /**
    * Run every loaded plugin's omnibox providers against one query
    * (`browser.omnibox.providers`). Providers run concurrently, each wrapped in
    * the failure-isolation discipline (invokeWrapped) and time-boxed (2s); a
@@ -500,6 +514,21 @@ const DEFAULT_CONTEXT_MENU_RUN_TIMEOUT_MS = 10_000;
  * out of time is not an error — the user is asked instead.
  */
 const DEFAULT_BROWSER_AUTH_TIMEOUT_MS = 5_000;
+/**
+ * A PDF text provider gets the longest box of any browser hook, because it is
+ * the only one asked to do real work: an OCR pass, or a round trip to a
+ * document service. Nothing is held up on screen while it runs — an agent is
+ * waiting for a tool result — so the cost of the wait is one slow answer rather
+ * than a browser that feels stuck. Running out of time is not an error; the
+ * agent is told the document has no text layer, which is what it had before.
+ */
+const DEFAULT_BROWSER_PDF_TEXT_TIMEOUT_MS = 10_000;
+/**
+ * The same cap the browser's own page read carries, restated rather than
+ * imported: the server does not depend on the desktop boundary, and a plugin's
+ * text lands in the same agent context the browser's would have.
+ */
+const BROWSER_PDF_TEXT_MAX_LENGTH = 65_536;
 /** Plugin scores are advisory; the browser owns the top row. */
 const DEFAULT_OMNIBOX_SUGGESTION_SCORE = 0.5;
 const DEFAULT_STABILIZATION_WINDOW_MS = 30_000;
@@ -1149,6 +1178,7 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
   const contextMenuRunTimeoutMs =
     deps.contextMenuRunTimeoutMs ?? DEFAULT_CONTEXT_MENU_RUN_TIMEOUT_MS;
   const browserAuthTimeoutMs = DEFAULT_BROWSER_AUTH_TIMEOUT_MS;
+  const browserPdfTextTimeoutMs = DEFAULT_BROWSER_PDF_TEXT_TIMEOUT_MS;
   const stabilizationWindowMs =
     deps.stabilizationWindowMs ?? DEFAULT_STABILIZATION_WINDOW_MS;
   const artifactRetentionMs =
@@ -2466,6 +2496,40 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
             username: credentials.username,
             password: credentials.password,
           };
+        }
+      }
+      return null;
+    },
+
+    async resolveBrowserPdfText({ document }) {
+      for (const [pluginId, plugin] of [...loaded.entries()].sort(([a], [b]) =>
+        a.localeCompare(b),
+      )) {
+        for (const provider of plugin.handle.pdfTextProviders) {
+          const outcome = await invokeWrapped(
+            pluginId,
+            "browser pdf text provider",
+            async () =>
+              withPluginTimeout({
+                run: async () => provider(document),
+                timeoutMs: browserPdfTextTimeoutMs,
+              }),
+          );
+          if (!outcome.ok || typeof outcome.value !== "string") {
+            continue;
+          }
+          const text = outcome.value;
+          // An empty answer is a decline, not an answer: it leaves the next
+          // provider its turn, and leaves the agent the same honest "no text
+          // layer" it would have got with no plugins at all.
+          if (text.length === 0) {
+            continue;
+          }
+          // Capped here rather than at the route, because this is where the
+          // untrusted length arrives. The cap is the browser's own page-read
+          // cap: a plugin's text lands in the same agent context as the
+          // browser's would have.
+          return text.slice(0, BROWSER_PDF_TEXT_MAX_LENGTH);
         }
       }
       return null;

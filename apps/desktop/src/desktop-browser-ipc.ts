@@ -85,6 +85,14 @@ export const BB_DESKTOP_BROWSER_SNAPSHOT_TREE_CHANNEL =
 export const BB_DESKTOP_BROWSER_DIALOG_CHANNEL = "bb-desktop:browser:dialog";
 export const BB_DESKTOP_BROWSER_DIALOG_RESPOND_CHANNEL =
   "bb-desktop:browser:dialog-respond";
+// Chromium's own DevTools, hosted in a view the shell owns: the open/close and
+// placement going down, the state coming back up. The push is not an echo —
+// "Inspect" from the page menu opens them, and their own toolbar closes them,
+// neither of which the renderer asked for.
+export const BB_DESKTOP_BROWSER_SET_DEV_TOOLS_CHANNEL =
+  "bb-desktop:browser:set-dev-tools";
+export const BB_DESKTOP_BROWSER_DEV_TOOLS_STATE_CHANNEL =
+  "bb-desktop:browser:dev-tools-state";
 // Real popups: the tabs that may have them going down, the popup the shell
 // created (or that closed itself) coming back up. Two channels because they run
 // in opposite directions and at completely different rates — the declaration

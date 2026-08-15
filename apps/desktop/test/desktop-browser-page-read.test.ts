@@ -36,12 +36,14 @@ describe("parseBrowserPageReadContent", () => {
   it("accepts a well-formed result", () => {
     expect(
       parseBrowserPageReadContent({
+        contentType: "text/html",
         text: "hello",
         textTruncated: false,
         selection: "ell",
         selectionTruncated: false,
       }),
     ).toEqual({
+      contentType: "text/html",
       text: "hello",
       textTruncated: false,
       selection: "ell",
@@ -71,6 +73,22 @@ describe("parseBrowserPageReadContent", () => {
         selectionTruncated: false,
       }),
     ).toBeNull();
+  });
+
+  it("reads a missing content type as unknown rather than failing the whole read", () => {
+    // The content type only decides which of two ways the text is read. A page
+    // that somehow has none is read the ordinary way, which is what every read
+    // did before PDFs were read at all.
+    const parsed = parseBrowserPageReadContent({
+      contentType: 42,
+      text: "hello",
+      textTruncated: false,
+      selection: "",
+      selectionTruncated: false,
+    });
+
+    expect(parsed?.contentType).toBe("");
+    expect(parsed?.text).toBe("hello");
   });
 
   it("re-truncates and re-flags a result the in-page slice did not bound", () => {

@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useStore } from "jotai";
+import { resolvePluginBrowserPdfText } from "@/hooks/queries/plugin-contribution-queries";
 import { getDesktopBrowserApi } from "../bb-desktop";
 import { browserSurfaceTabsAtom } from "../browser-surface-tabs";
 import { destroyPersistedBrowserView } from "@/components/secondary-panel/browserViewVisibilityCoordinator";
@@ -53,6 +54,7 @@ export function useBrowserAgentBridge(): void {
         getLiveState: getBrowserLiveState,
         waitForSettled: (tabId) => waitForBrowserTabSettled(tabId),
         destroyView: destroyPersistedBrowserView,
+        resolvePdfText: resolvePluginBrowserPdfText,
         trace,
       })
         .then((outcome) => {

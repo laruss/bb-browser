@@ -12,6 +12,7 @@ import {
   bbDesktopBrowserDialogRespondRequestSchema,
   bbDesktopBrowserPagePromptAnswerSchema,
   bbDesktopBrowserPopupTabsSchema,
+  bbDesktopBrowserDevToolsRequestSchema,
   bbDesktopBrowserCaptureFullPageRequestSchema,
   bbDesktopBrowserControlRequestSchema,
   bbDesktopBrowserRecordRequestSchema,
@@ -42,6 +43,7 @@ import {
   BB_DESKTOP_BROWSER_SET_OVERLAY_CHANNEL,
   BB_DESKTOP_BROWSER_SET_FULLSCREEN_CHANNEL,
   BB_DESKTOP_BROWSER_SET_POPUP_TABS_CHANNEL,
+  BB_DESKTOP_BROWSER_SET_DEV_TOOLS_CHANNEL,
   BB_DESKTOP_BROWSER_FIND_CHANNEL,
   BB_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
   BB_DESKTOP_BROWSER_DIALOG_RESPOND_CHANNEL,
@@ -222,6 +224,21 @@ export function registerDesktopBrowserIpc(
     }
     manager.find({ hostWindow, request: parsed.data });
   });
+
+  ipcMain.on(
+    BB_DESKTOP_BROWSER_SET_DEV_TOOLS_CHANNEL,
+    (event, payload: unknown) => {
+      const hostWindow = hostWindowFromBrowserIpcEvent(event);
+      if (hostWindow === null) {
+        return;
+      }
+      const parsed = bbDesktopBrowserDevToolsRequestSchema.safeParse(payload);
+      if (!parsed.success) {
+        return;
+      }
+      manager.setDevTools({ hostWindow, request: parsed.data });
+    },
+  );
 
   ipcMain.on(
     BB_DESKTOP_BROWSER_SET_POPUP_TABS_CHANNEL,

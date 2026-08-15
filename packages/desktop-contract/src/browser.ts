@@ -452,6 +452,12 @@ export const BB_DESKTOP_BROWSER_MAX_PAGE_SELECTION_LENGTH = 16_384;
  * nothing sanitizes this and no consumer may treat it as trusted. The flags are
  * separate because a caller that asked for a selection should not have to guess
  * which of the two was cut.
+ *
+ * `contentKind` is the field that non-strict parse was written for. A PDF tab's
+ * text does not come from its DOM (see desktop-browser-pdf-text.ts), and a
+ * caller that gets an empty read wants to know whether it is looking at a blank
+ * page or at a scan with no text layer. An older shell sends nothing and the
+ * default answers "html", which is what every read was before.
  */
 export const bbDesktopBrowserPageReadResultSchema = z.union([
   z.object({
@@ -464,6 +470,8 @@ export const bbDesktopBrowserPageReadResultSchema = z.union([
     textTruncated: z.boolean(),
     selection: z.string().max(BB_DESKTOP_BROWSER_MAX_PAGE_SELECTION_LENGTH),
     selectionTruncated: z.boolean(),
+    /** Where `text` came from. A PDF has no selection, so it always reads "". */
+    contentKind: z.enum(["html", "pdf"]).catch("html").default("html"),
   }),
   z.object({
     ok: z.literal(false),
@@ -471,9 +479,21 @@ export const bbDesktopBrowserPageReadResultSchema = z.union([
      * `no-view` — the tab has no live `WebContentsView` (never attached this
      * session, or destroyed). `no-page` — attached but nothing loaded yet.
      * `timeout` — the page never answered. `unreadable` — anything else.
+     *
+     * The last two are PDF-only and exist because both are worth a different
+     * next step than "could not be read": `too-large` says the document is past
+     * the shell's byte cap and will not become readable by asking again, and
+     * `password-protected` says a human has something the agent does not.
      */
     reason: z
-      .enum(["no-view", "no-page", "timeout", "unreadable"])
+      .enum([
+        "no-view",
+        "no-page",
+        "timeout",
+        "unreadable",
+        "too-large",
+        "password-protected",
+      ])
       .catch("unreadable"),
   }),
 ]);
@@ -1974,6 +1994,51 @@ export type BbDesktopBrowserPopupHandler = (
   popup: BbDesktopBrowserPopup,
 ) => void;
 
+/**
+ * Open or close Chromium's own DevTools for a tab, and say where to draw them.
+ *
+ * The panel is **real DevTools** — Elements, Console, Network, Sources — hosted
+ * in a second native view the shell owns, rather than a re-implementation of
+ * them. So the renderer's whole job is to reserve the space and report the rect,
+ * exactly as it does for the page itself; `bounds` is in the same coordinate
+ * space as {@link bbDesktopBrowserSetBoundsRequestSchema}, and re-sending with
+ * `open: true` is how a resize is reported.
+ *
+ * The cost is stated where it is paid: DevTools holds Chromium's only protocol
+ * client, so while this is open the automation commands on that tab answer
+ * `debugger-unavailable`.
+ */
+export const bbDesktopBrowserDevToolsRequestSchema = z
+  .object({
+    tabId: z.string().min(1),
+    open: z.boolean(),
+    bounds: bbDesktopBrowserViewBoundsSchema,
+  })
+  .strict();
+export type BbDesktopBrowserDevToolsRequest = z.infer<
+  typeof bbDesktopBrowserDevToolsRequestSchema
+>;
+
+/**
+ * Whether a tab's DevTools are open, pushed main → renderer.
+ *
+ * Not merely an echo: DevTools can open without the app asking — "Inspect" from
+ * the page's context menu — and can close from its own toolbar. Either way the
+ * renderer has to find out, because it owns the space the panel occupies.
+ */
+export const bbDesktopBrowserDevToolsStateSchema = z
+  .object({
+    tabId: z.string().min(1),
+    open: z.boolean(),
+  })
+  .strict();
+export type BbDesktopBrowserDevToolsState = z.infer<
+  typeof bbDesktopBrowserDevToolsStateSchema
+>;
+export type BbDesktopBrowserDevToolsStateHandler = (
+  state: BbDesktopBrowserDevToolsState,
+) => void;
+
 export type BbDesktopBrowserDownloadHandler = (
   download: BbDesktopBrowserDownload,
 ) => void;
@@ -2099,6 +2164,20 @@ export interface BbDesktopBrowserApi {
    * popup and pushes the URL instead, which is what the open-tab channels are.
    */
   onPopup?(listener: BbDesktopBrowserPopupHandler): BbDesktopBrowserUnsubscribe;
+  /**
+   * Open or close Chromium's own DevTools for a tab, and place them — see
+   * {@link bbDesktopBrowserDevToolsRequestSchema}. Optional for version skew: a
+   * shell that predates it has no DevTools to place, so a caller that finds no
+   * `setDevTools` must not reserve space for a panel that will never appear.
+   */
+  setDevTools?(request: BbDesktopBrowserDevToolsRequest): void;
+  /**
+   * Subscribe to a tab's DevTools opening or closing, including when something
+   * other than this app did it.
+   */
+  onDevToolsState?(
+    listener: BbDesktopBrowserDevToolsStateHandler,
+  ): BbDesktopBrowserUnsubscribe;
   /**
    * Drive a tab's find bar — see
    * {@link bbDesktopBrowserFindRequestSchema}. Fire-and-forget, like the

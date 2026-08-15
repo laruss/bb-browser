@@ -82,6 +82,7 @@ export const APP_COMMAND_IDS = [
   "browser.reload",
   "browser.find",
   "browser.fullscreen.toggle",
+  "browser.devTools.toggle",
   "browser.newTab",
   "browser.closeTab",
   "browser.reopenClosedTab",

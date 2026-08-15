@@ -270,6 +270,7 @@ describe("desktop preload browser API", () => {
       "navigate",
       "observe",
       "onContextMenuInvoke",
+      "onDevToolsState",
       "onDialog",
       "onDownload",
       "onFavicon",
@@ -288,6 +289,7 @@ describe("desktop preload browser API", () => {
       "respondToPagePrompt",
       "setBounds",
       "setContextMenuItems",
+      "setDevTools",
       "setFullscreen",
       "setOverlay",
       "setPopupTabs",
@@ -379,7 +381,12 @@ describe("desktop preload browser API", () => {
     };
     electronMock.setReadPageReply(() => Promise.resolve(content));
 
-    await expect(api.browser.readPage?.("browser:a")).resolves.toEqual(content);
+    // `contentKind` is absent above on purpose: that is what an older shell
+    // sends, and the SPA must read it as the HTML page every read used to be.
+    await expect(api.browser.readPage?.("browser:a")).resolves.toEqual({
+      ...content,
+      contentKind: "html",
+    });
     expect(electronMock.invokeCalls).toContain(
       BB_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
     );

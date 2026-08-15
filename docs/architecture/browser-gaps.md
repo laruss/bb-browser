@@ -55,10 +55,13 @@ viewer admits one more parser of an attacker-supplied format, bounded by
 PDFium's own sandboxed process — where the alternative, an OS reader opening
 every downloaded PDF, has no sandbox at all.
 
-What is genuinely still missing is **reading** one: `readPage` and the
-accessibility snapshot see the viewer's wrapper frame, not the document's text,
-so an agent handed a PDF tab gets nothing. That is its own job, listed in Tier 2
-rather than here — it is not a dead end for a human.
+**Reading** one was the other half, and it is closed too. The viewer's wrapper
+frame really is empty, and Chromium hands the text over nowhere — not through
+the accessibility tree, which is where it looked most likely to be. So the shell
+refetches the document through the browsing session and parses it in a utility
+process; the accessibility snapshot still sees only the wrapper, which is the
+honest limit, because a PDF has no elements to act on either way. See the PDF
+section of [browser-surface.md](browser-surface.md).
 
 ### ~~`window.open` flows break~~ — closed
 
@@ -129,15 +132,15 @@ against; it is simply not written.
 | Zoom (`Cmd +/-/0`), per-site zoom | `setZoomFactor` exists only for the app window, never for a browsed view                                                              |
 | Print (`Cmd+P`)                   | `printToPDF` exists for agents only; no user-facing print                                                                             |
 | Page context menu                 | **Done** — link, image, selection and navigation entries, plus a plugin contribution point ([browser-surface.md](browser-surface.md)) |
-| View source                       | None                                                                                                                                  |
-| Reading a PDF as text             | The viewer renders it, but `readPage` and the snapshot see its wrapper frame, so an agent handed a PDF tab gets nothing               |
+| View source                       | **Done** — Chromium's own DevTools, opened in the panel ([browser-surface.md](browser-surface.md))                                    |
+| Reading a PDF as text             | **Done** — the shell refetches the document and parses it out of process, plus a plugin contribution point for scans ([browser-surface.md](browser-surface.md)) |
 | Spellcheck corrections            | Underlining is Chromium's default; the browsed view's menu offers no suggestions                                                      |
 
 The context menu is now built (open link in new tab or the default browser,
 copy link address, copy/save image, search for the selection, back/forward/
-reload), and plugins can add entries to it. What is left in that table is find,
-zoom, print and view-source — each blocked on a shell capability rather than on
-menu wiring.
+reload), and plugins can add entries to it. What is left in that table is zoom,
+print and spellcheck suggestions — each blocked on a shell capability rather
+than on menu wiring.
 
 **Developer panel**
 
@@ -295,17 +298,20 @@ By value against cost, not by tier:
    provider plugins can answer from. `Cmd+Shift+F` arrived with the fullscreen
    handler, since it is the same expansion asked for by hand.
 5. ~~**PDF**~~ — done: the preference is on, the security question is answered
-   in writing. Extracting a PDF's text for an agent is left open, and belongs
-   with page reads rather than with browser features.
+   in writing, and reading one as text is done too. That last part is not the
+   viewer's doing — the text is not in the DOM and Chromium will not hand it
+   over, so the shell refetches the document and parses it in a utility
+   process.
 6. ~~**Downloads**~~ — done; the manager UI it deliberately left out is in
    [browser-downloads.md](browser-downloads.md)'s Next section.
 7. ~~**Popups with a live opener**~~ — done: real windows for tabs that claim
    them, hosted as tabs, with the popup policy and rate limiter intact and
    `about:blank` admitted on purpose.
-8. **Developer panel** — last by request rather than by cost: its console and
-   network tabs are cheap (the data is already captured), but it is the one
-   item that eventually argues with the CDP decision, and nothing else here
-   waits on it.
+8. ~~**Developer panel**~~ — done, and it turned out not to need building:
+   `setDevToolsWebContents` puts Chromium's own DevTools in a view of ours, so
+   the panel _is_ Elements, Console, Network and Sources rather than an
+   imitation. It did argue with the CDP decision as predicted, and the argument
+   was already settled — see [browser-surface.md](browser-surface.md).
 
 History's 24-entry cap sits outside this list: it is cheap to raise and it
 changes what the omnibox can do, so it belongs with whatever omnibox work comes
@@ -319,7 +325,10 @@ What is **inferred from code rather than observed in a running browser**, and
 should be confirmed by hand before anyone plans around it:
 
 - that a PDF link produces nothing (the `plugins`-off → download → cancelled
-  chain);
+  chain) — the reading half of this was measured rather than inferred: the
+  viewer's frame layout, the empty accessibility tree, the cookie-carrying
+  refetch and the utility-process parse were each run against a real Electron
+  before being written;
 - the exact failure mode of an OAuth popup, which differs per SDK;
 - the multi-window behaviour described above;
 - that `<input type="file">` still opens Chromium's native picker, and that

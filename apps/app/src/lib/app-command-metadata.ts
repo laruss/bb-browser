@@ -196,6 +196,11 @@ export const APP_COMMAND_GROUPS: readonly AppCommandGroup[] = [
         "Full screen page",
         "Give the page the whole window, while the app is already full screen.",
       ),
+      command(
+        "browser.devTools.toggle",
+        "Developer tools",
+        "Open or close Chromium's developer tools for the page.",
+      ),
       command("browser.newTab", "New browser tab", "Open a new browser tab."),
       command(
         "browser.closeTab",

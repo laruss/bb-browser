@@ -56,6 +56,12 @@ export interface BrowserContextMenuTarget {
 
 export interface BrowserContextMenuActions {
   copyImage: () => void;
+  /**
+   * Open Chromium's DevTools on the node under the pointer. Undefined when the
+   * caller cannot host them, which is what keeps the entry off a menu where it
+   * would do nothing.
+   */
+  inspect?: () => void;
   /** Hand a picked plugin entry back to the renderer, which owns plugin calls. */
   invokePluginItem: (item: BbDesktopBrowserContextMenuItem) => void;
   copyText: (text: string) => void;
@@ -226,6 +232,21 @@ export function buildBrowserContextMenuTemplate({
       { type: "separator" },
       { role: "selectAll", enabled: target.editFlags.canSelectAll },
     );
+  }
+
+  // Last of the browser's own entries, where every browser puts it: it is about
+  // the page rather than about what was clicked, so it belongs after the things
+  // that are.
+  if (actions.inspect !== undefined) {
+    if (template.length > 0) {
+      template.push({ type: "separator" });
+    }
+    template.push({
+      label: "Inspect",
+      click: () => {
+        actions.inspect?.();
+      },
+    });
   }
 
   const contributed = pluginItems.filter((item) =>

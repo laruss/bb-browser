@@ -15,6 +15,7 @@ import {
   BB_DESKTOP_BROWSER_FIND_RESULT_CHANNEL,
   BB_DESKTOP_BROWSER_PAGE_PROMPT_CHANNEL,
   BB_DESKTOP_BROWSER_POPUP_CHANNEL,
+  BB_DESKTOP_BROWSER_DEV_TOOLS_STATE_CHANNEL,
   BB_DESKTOP_BROWSER_SNAPSHOT_CHANNEL,
 } from "../src/desktop-browser-ipc.js";
 import {
@@ -49,6 +50,8 @@ function createDesktopBrowserViewManager(
     // No test touches a real disk: downloads resolve against a directory that
     // exists nowhere and a filesystem that reports every path free.
     downloadPathExists: () => false,
+    // Nothing is forked either: a test that wants a PDF read overrides this.
+    extractPdfText: async () => ({ ok: false, reason: "unreadable" }),
     focusHostWebContents: () => undefined,
     openDownloadPath: async () => "",
     openExternalUrl: () => undefined,
@@ -219,6 +222,8 @@ interface FakeWebContentsEventMap {
   unresponsive: FakeVoidWebContentsListener;
   responsive: FakeVoidWebContentsListener;
   destroyed: FakeVoidWebContentsListener;
+  "devtools-opened": FakeVoidWebContentsListener;
+  "devtools-closed": FakeVoidWebContentsListener;
   "will-frame-navigate": FakeWillFrameNavigateListener;
   "will-navigate": FakeWillNavigateListener;
   "will-redirect": FakeWillRedirectListener;
@@ -497,6 +502,8 @@ const electronMock = vi.hoisted(() => {
       unresponsive: [],
       responsive: [],
       destroyed: [],
+      "devtools-opened": [],
+      "devtools-closed": [],
       "will-frame-navigate": [],
       "will-navigate": [],
       "will-redirect": [],
@@ -972,6 +979,41 @@ const electronMock = vi.hoisted(() => {
       return this.windowOpenHandler({ url });
     }
 
+    /** What Chromium's DevTools were pointed at, and how they were opened. */
+    public devToolsHost: FakeWebContents | null = null;
+    public readonly openDevToolsCalls: Array<{ mode?: string }> = [];
+    public closeDevToolsCalls = 0;
+    public readonly inspectElementCalls: Array<{ x: number; y: number }> = [];
+
+    setDevToolsWebContents(host: FakeWebContents): void {
+      this.devToolsHost = host;
+    }
+
+    openDevTools(options?: { mode?: string }): void {
+      this.openDevToolsCalls.push(options ?? {});
+      for (const listener of this.listeners["devtools-opened"]) {
+        listener();
+      }
+    }
+
+    closeDevTools(): void {
+      this.closeDevToolsCalls += 1;
+      for (const listener of this.listeners["devtools-closed"]) {
+        listener();
+      }
+    }
+
+    inspectElement(x: number, y: number): void {
+      this.inspectElementCalls.push({ x, y });
+    }
+
+    /** The user closing the tools from their own toolbar. */
+    emitDevToolsClosed(): void {
+      for (const listener of this.listeners["devtools-closed"]) {
+        listener();
+      }
+    }
+
     /** The page closing itself, as `window.close()` does. */
     emitDestroyed(): void {
       this.destroyed = true;
@@ -1067,15 +1109,24 @@ const electronMock = vi.hoisted(() => {
     };
 
     public readonly fetchedUrls: string[] = [];
+    /** Recorded so a PDF read can be shown to carry the session's cookies. */
+    public readonly fetchInits: Array<Record<string, unknown> | undefined> = [];
+    public fetchRejection: Error | null = null;
     public fetchResponse: FakeFaviconFetchResponse = {
       ok: true,
       headers: { get: () => "image/png" },
       arrayBuffer: async () => Buffer.from("icon-bytes"),
     };
 
-    fetch(url: string): Promise<FakeFaviconFetchResponse> {
+    fetch(
+      url: string,
+      init?: Record<string, unknown>,
+    ): Promise<FakeFaviconFetchResponse> {
       this.fetchedUrls.push(url);
-      return Promise.resolve(this.fetchResponse);
+      this.fetchInits.push(init);
+      return this.fetchRejection === null
+        ? Promise.resolve(this.fetchResponse)
+        : Promise.reject(this.fetchRejection);
     }
 
     on(eventName: "will-download", listener: FakeSessionListener): void {
@@ -2816,6 +2867,7 @@ describe("DesktopBrowserViewManager page reads", () => {
     const { hostWindow, manager, webContents } = attachTabForReads();
     webContents.setTitle("Example Domain");
     webContents.isolatedWorldResult = {
+      contentType: "text/html",
       text: "hello world",
       textTruncated: false,
       selection: "world",
@@ -2830,6 +2882,7 @@ describe("DesktopBrowserViewManager page reads", () => {
       url: "https://example.com/",
       title: "Example Domain",
       isLoading: false,
+      contentKind: "html",
       text: "hello world",
       textTruncated: false,
       selection: "world",
@@ -2903,6 +2956,7 @@ describe("DesktopBrowserViewManager page reads", () => {
     const { hostWindow, manager, webContents } = attachTabForReads();
     webContents.setTitle("t".repeat(BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH + 50));
     webContents.isolatedWorldResult = {
+      contentType: "text/html",
       text: "",
       textTruncated: false,
       selection: "",
@@ -2915,6 +2969,154 @@ describe("DesktopBrowserViewManager page reads", () => {
     if (result.ok) {
       expect(result.title).toHaveLength(BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH);
     }
+  });
+});
+
+// A PDF is the one document the read script cannot see: Chromium's viewer
+// leaves an empty wrapper in the main frame and renders the document in a
+// process of its own. These cover the seam that replaces the DOM read — the
+// refetch and what happens to each way it can fail.
+describe("DesktopBrowserViewManager PDF reads", () => {
+  const PDF_URL = "https://example.com/report.pdf";
+
+  function attachPdfTab(
+    args: {
+      extractPdfText?: CreateDesktopBrowserViewManagerArgs["extractPdfText"];
+    } = {},
+  ): {
+    fakeSession: (typeof electronMock.fakeSessions)[number];
+    hostWindow: FakeHostWindow;
+    manager: DesktopBrowserViewManager;
+  } {
+    const manager = createDesktopBrowserViewManager({
+      partition: "persist:test",
+      ...(args.extractPdfText === undefined
+        ? {}
+        : { extractPdfText: args.extractPdfText }),
+    });
+    const hostWindow = new FakeHostWindow({
+      contentBounds: { width: 700, height: 450 },
+      webContentsId: 85,
+    });
+    attachBrowserTab({ manager, hostWindow, tabId: "browser:a", url: PDF_URL });
+    const view = requireFakeView(0);
+    view.webContents.setTitle("report.pdf");
+    // What the viewer leaves behind: the content type says PDF, the body is
+    // empty, and nothing in the DOM is the document.
+    view.webContents.isolatedWorldResult = {
+      contentType: "application/pdf",
+      text: "",
+      textTruncated: false,
+      selection: "",
+      selectionTruncated: false,
+    };
+    const fakeSession = electronMock.fakeSessions.at(-1);
+    if (fakeSession === undefined) {
+      throw new Error("Expected a browser session to be created.");
+    }
+    fakeSession.fetchResponse = {
+      ok: true,
+      headers: { get: () => "application/pdf" },
+      arrayBuffer: async () => Buffer.from("%PDF-1.7 bytes"),
+    };
+    return { fakeSession, hostWindow, manager };
+  }
+
+  it("refetches the document through the browsing session and answers with its text", async () => {
+    const calls: Array<{ bytes: Uint8Array; timeoutMs: number }> = [];
+    const { fakeSession, hostWindow, manager } = attachPdfTab({
+      extractPdfText: async (request) => {
+        calls.push(request);
+        return { ok: true, text: "Quarterly Report", truncated: false };
+      },
+    });
+
+    await expect(
+      manager.readPage({ hostWindow, tabId: "browser:a" }),
+    ).resolves.toEqual({
+      ok: true,
+      tabId: "browser:a",
+      url: PDF_URL,
+      title: "report.pdf",
+      isLoading: false,
+      contentKind: "pdf",
+      text: "Quarterly Report",
+      textTruncated: false,
+      // A PDF's selection belongs to PDFium; the wrapper frame has none.
+      selection: "",
+      selectionTruncated: false,
+    });
+
+    expect(fakeSession.fetchedUrls).toContain(PDF_URL);
+    // The cookies are the point: a PDF behind a login is refetched with the
+    // session that opened it, or it is not readable at all.
+    expect(fakeSession.fetchInits.at(-1)?.credentials).toBe("include");
+    expect(calls[0]?.bytes).toEqual(new Uint8Array(Buffer.from("%PDF-1.7 bytes")));
+    expect(calls[0]?.timeoutMs).toBeGreaterThan(0);
+  });
+
+  it("refuses a document the session will not hand back, without parsing anything", async () => {
+    let parsed = false;
+    const { fakeSession, hostWindow, manager } = attachPdfTab({
+      extractPdfText: async () => {
+        parsed = true;
+        return { ok: true, text: "", truncated: false };
+      },
+    });
+
+    // A `blob:` URL, a POST-only document, a server that stopped answering:
+    // all arrive here as one refusal, because none is fixed by asking again.
+    fakeSession.fetchRejection = new Error("net::ERR_FAILED");
+    await expect(
+      manager.readPage({ hostWindow, tabId: "browser:a" }),
+    ).resolves.toEqual({ ok: false, reason: "unreadable" });
+
+    fakeSession.fetchRejection = null;
+    fakeSession.fetchResponse = {
+      ok: false,
+      headers: { get: () => "text/html" },
+      arrayBuffer: async () => Buffer.from(""),
+    };
+    await expect(
+      manager.readPage({ hostWindow, tabId: "browser:a" }),
+    ).resolves.toEqual({ ok: false, reason: "unreadable" });
+
+    expect(parsed).toBe(false);
+  });
+
+  it("passes the parser's own refusals through to the caller", async () => {
+    // `too-large` and `password-protected` exist because each is worth a
+    // different next step than "could not be read".
+    for (const reason of ["too-large", "password-protected", "timeout"] as const) {
+      const { hostWindow, manager } = attachPdfTab({
+        extractPdfText: async () => ({ ok: false, reason }),
+      });
+
+      await expect(
+        manager.readPage({ hostWindow, tabId: "browser:a" }),
+      ).resolves.toEqual({ ok: false, reason });
+
+      electronMock.fakeViews.length = 0;
+      electronMock.fakeSessions.length = 0;
+    }
+  });
+
+  it("reads an ordinary page the ordinary way, with no refetch at all", async () => {
+    const { fakeSession, hostWindow, manager } = attachPdfTab({
+      extractPdfText: async () => ({ ok: true, text: "pdf", truncated: false }),
+    });
+    requireFakeView(0).webContents.isolatedWorldResult = {
+      contentType: "text/html",
+      text: "hello",
+      textTruncated: false,
+      selection: "",
+      selectionTruncated: false,
+    };
+
+    const result = await manager.readPage({ hostWindow, tabId: "browser:a" });
+
+    expect(result).toMatchObject({ ok: true, contentKind: "html", text: "hello" });
+    expect(fakeSession.fetchedUrls).toEqual([]);
   });
 });
 
@@ -6356,6 +6558,162 @@ describe("fullscreen", () => {
     view.webContents.emitHtmlFullScreen(false);
 
     expect(view.boundsCalls.at(-1)).toEqual(FULL_WINDOW);
+  });
+});
+
+describe("developer tools", () => {
+  const PANEL = { x: 0, y: 300, width: 900, height: 300 };
+
+  function attachTab(): {
+    hostWindow: FakeHostWindow;
+    manager: DesktopBrowserViewManager;
+    view: (typeof electronMock.fakeViews)[number];
+  } {
+    const manager = createDesktopBrowserViewManager({
+      partition: "persist:test",
+    });
+    const hostWindow = new FakeHostWindow({
+      contentBounds: { width: 900, height: 600 },
+      webContentsId: 1,
+    });
+    attachBrowserTab({
+      hostWindow,
+      manager,
+      tabId: "browser:a",
+      url: "https://example.com/",
+    });
+    manager.setVisible({
+      hostWindow,
+      request: { tabId: "browser:a", visible: true },
+    });
+    return { hostWindow, manager, view: requireFakeView(0) };
+  }
+
+  function devToolsPushes(hostWindow: FakeHostWindow): unknown[] {
+    return hostWindow.webContents.sentMessages
+      .filter(
+        (message) =>
+          message.channel === BB_DESKTOP_BROWSER_DEV_TOOLS_STATE_CHANNEL,
+      )
+      .map((message) => message.payload);
+  }
+
+  // The point of the whole item: what opens is Chromium's own DevTools, drawn
+  // into a view we own, rather than a panel that imitates them.
+  it("points Chromium's own DevTools at a view of ours", () => {
+    const { hostWindow, manager, view } = attachTab();
+
+    manager.setDevTools({
+      hostWindow,
+      request: { tabId: "browser:a", open: true, bounds: PANEL },
+    });
+
+    const devToolsView = requireFakeView(1);
+    expect(view.webContents.devToolsHost).toBe(devToolsView.webContents);
+    // Detached, because the host is ours: without it Chromium would dock the
+    // tools into a window of its own choosing.
+    expect(view.webContents.openDevToolsCalls).toEqual([{ mode: "detach" }]);
+    expect(devToolsView.boundsCalls.at(-1)).toEqual(PANEL);
+    expect(hostWindow.contentView.addedViews).toContain(devToolsView);
+    expect(devToolsPushes(hostWindow)).toEqual([
+      { tabId: "browser:a", open: true },
+    ]);
+  });
+
+  // The same call opens and places, so a resize is a re-send.
+  it("moves the panel without opening a second one", () => {
+    const { hostWindow, manager } = attachTab();
+    manager.setDevTools({
+      hostWindow,
+      request: { tabId: "browser:a", open: true, bounds: PANEL },
+    });
+
+    manager.setDevTools({
+      hostWindow,
+      request: {
+        tabId: "browser:a",
+        open: true,
+        bounds: { x: 0, y: 400, width: 900, height: 200 },
+      },
+    });
+
+    expect(electronMock.fakeViews).toHaveLength(2);
+    expect(requireFakeView(1).boundsCalls.at(-1)).toEqual({
+      x: 0,
+      y: 400,
+      width: 900,
+      height: 200,
+    });
+  });
+
+  it("closes them, and takes the view with them", () => {
+    const { hostWindow, manager, view } = attachTab();
+    manager.setDevTools({
+      hostWindow,
+      request: { tabId: "browser:a", open: true, bounds: PANEL },
+    });
+    const devToolsView = requireFakeView(1);
+
+    manager.setDevTools({
+      hostWindow,
+      request: { tabId: "browser:a", open: false, bounds: PANEL },
+    });
+
+    expect(view.webContents.closeDevToolsCalls).toBe(1);
+    expect(hostWindow.contentView.removedViews).toContain(devToolsView);
+    expect(devToolsPushes(hostWindow).at(-1)).toEqual({
+      tabId: "browser:a",
+      open: false,
+    });
+  });
+
+  // The tools have their own close button, and the renderer owns the space they
+  // are drawn in — so it has to hear about it.
+  it("reports the tools closing themselves", () => {
+    const { hostWindow, manager, view } = attachTab();
+    manager.setDevTools({
+      hostWindow,
+      request: { tabId: "browser:a", open: true, bounds: PANEL },
+    });
+
+    view.webContents.emitDevToolsClosed();
+
+    expect(devToolsPushes(hostWindow).at(-1)).toEqual({
+      tabId: "browser:a",
+      open: false,
+    });
+  });
+
+  // It is a native view like the page's, so anything that hides one has to hide
+  // the other or it composites over the app's own chrome.
+  it("hides the panel with the page it belongs to", () => {
+    const { hostWindow, manager } = attachTab();
+    manager.setDevTools({
+      hostWindow,
+      request: { tabId: "browser:a", open: true, bounds: PANEL },
+    });
+    const devToolsView = requireFakeView(1);
+    expect(devToolsView.visible).toBe(true);
+
+    manager.setVisible({
+      hostWindow,
+      request: { tabId: "browser:a", visible: false },
+    });
+
+    expect(devToolsView.visible).toBe(false);
+  });
+
+  it("tears the panel down with its tab", () => {
+    const { hostWindow, manager, view } = attachTab();
+    manager.setDevTools({
+      hostWindow,
+      request: { tabId: "browser:a", open: true, bounds: PANEL },
+    });
+
+    manager.detach({ hostWindow, tabId: "browser:a" });
+
+    expect(view.webContents.closeDevToolsCalls).toBe(1);
+    expect(hostWindow.contentView.removedViews).toContain(requireFakeView(1));
   });
 });
 

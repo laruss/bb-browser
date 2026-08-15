@@ -43,6 +43,8 @@ import {
   type BbDesktopBrowserPagePromptDetails,
   type BbDesktopBrowserPopup,
   type BbDesktopBrowserPopupTabs,
+  type BbDesktopBrowserDevToolsRequest,
+  type BbDesktopBrowserDevToolsState,
   BB_DESKTOP_BROWSER_MAX_COOKIES,
   BB_DESKTOP_BROWSER_MAX_EVAL_RESULT_LENGTH,
   BB_DESKTOP_BROWSER_MAX_PDF_BASE64_LENGTH,
@@ -83,6 +85,7 @@ import {
   BB_DESKTOP_BROWSER_FIND_RESULT_CHANNEL,
   BB_DESKTOP_BROWSER_PAGE_PROMPT_CHANNEL,
   BB_DESKTOP_BROWSER_POPUP_CHANNEL,
+  BB_DESKTOP_BROWSER_DEV_TOOLS_STATE_CHANNEL,
   BB_DESKTOP_BROWSER_OPEN_TAB_CHANNEL,
   BB_DESKTOP_BROWSER_SCOPED_OPEN_TAB_CHANNEL,
   BB_DESKTOP_BROWSER_CONTEXT_MENU_INVOKE_CHANNEL,
@@ -147,6 +150,12 @@ import {
   BB_DESKTOP_BROWSER_PAGE_READ_WORLD_ID,
   parseBrowserPageReadContent,
 } from "./desktop-browser-page-read.js";
+import {
+  BB_DESKTOP_BROWSER_PDF_READ_TIMEOUT_MS,
+  isBrowserPdfContentType,
+  readBrowserPdfBytes,
+  type DesktopBrowserPdfTextOutcome,
+} from "./desktop-browser-pdf-text.js";
 import {
   formatBrowserEvalValue,
   matchBrowserRoute,
@@ -409,6 +418,16 @@ interface BrowserViewEntry {
    * take the user's choice with it, and neither must the reverse.
    */
   userFullscreen: boolean;
+  /**
+   * The view hosting Chromium's own DevTools for this tab, or null when they
+   * are closed.
+   *
+   * A second native view rather than a panel we draw: `setDevToolsWebContents`
+   * puts the real DevTools UI — Elements, Console, Network, Sources — inside it,
+   * so what the user gets is Chromium's, not an imitation. Its bounds come from
+   * the renderer exactly as the page's do.
+   */
+  devToolsView: WebContentsView | null;
   /** Guards one-time dialog wiring per CDP session. */
   dialogsWired: boolean;
   /**
@@ -475,6 +494,7 @@ export type DesktopBrowserHostWebContentsPayload =
   | BbDesktopBrowserFindResult
   | BbDesktopBrowserPagePrompt
   | BbDesktopBrowserPopup
+  | BbDesktopBrowserDevToolsState
   | BbDesktopBrowserSearchSelection
   | BbDesktopBrowserContextMenuInvoke;
 
@@ -522,6 +542,16 @@ export interface CreateDesktopBrowserViewManagerArgs {
    * module makes, and a manager under test must not consult a real disk.
    */
   downloadPathExists: (path: string) => boolean;
+  /**
+   * Turn a PDF's bytes into its text. Injected because the real one forks a
+   * utility process (see desktop-browser-pdf-process.ts) and a manager under
+   * test must not fork anything; the shaping and the caps around it are
+   * exercised on their own in desktop-browser-pdf-text.ts.
+   */
+  extractPdfText: (request: {
+    bytes: Uint8Array;
+    timeoutMs: number;
+  }) => Promise<DesktopBrowserPdfTextOutcome>;
   focusHostWebContents: (hostWebContentsId: number) => void;
   /**
    * Open a downloaded file with the OS default handler, resolving to Electron's
@@ -604,6 +634,13 @@ export interface DesktopBrowserViewManager {
    */
   setFullscreen(
     args: HostScopedRequestArgs<BbDesktopBrowserSetFullscreenRequest>,
+  ): void;
+  /**
+   * Open or close Chromium's own DevTools for a tab, and place the view they
+   * draw into. Re-sending with `open: true` reports a resize.
+   */
+  setDevTools(
+    args: HostScopedRequestArgs<BbDesktopBrowserDevToolsRequest>,
   ): void;
   /**
    * Replace the set of tabs whose pages get real popups — see
@@ -2485,17 +2522,21 @@ export function createDesktopBrowserViewManager(
     if (entry.view.webContents.isDestroyed()) {
       return;
     }
-    entry.view.setVisible(
+    const visible =
       entry.visible &&
-        !isHostResizing(hostWindow) &&
-        // A dialog means the app is drawing its own modal where the page was.
-        entry.pendingDialog === null &&
-        // A network prompt is the same situation, arrived at from the other
-        // side: the load is stopped and the app is drawing the question.
-        entry.pagePrompt === null &&
-        // As does an overlay — a dropdown the app draws over the page.
-        !entry.overlayActive,
-    );
+      !isHostResizing(hostWindow) &&
+      // A dialog means the app is drawing its own modal where the page was.
+      entry.pendingDialog === null &&
+      // A network prompt is the same situation, arrived at from the other
+      // side: the load is stopped and the app is drawing the question.
+      entry.pagePrompt === null &&
+      // As does an overlay — a dropdown the app draws over the page.
+      !entry.overlayActive;
+    entry.view.setVisible(visible);
+    // The DevTools panel follows the page it belongs to, for every reason
+    // above: it is a native view too, so a dropdown drawn over the page area
+    // would be composited over by it just the same.
+    entry.devToolsView?.setVisible(visible);
   }
 
   /**
@@ -2917,6 +2958,23 @@ export function createDesktopBrowserViewManager(
       return { action: "deny" };
     });
 
+    // DevTools can open and close without the app asking — "Inspect" from the
+    // page menu opens them, their own toolbar closes them — and the renderer
+    // owns the space they occupy, so both directions are reported.
+    webContents.on("devtools-opened", () => {
+      send(hostWindow, BB_DESKTOP_BROWSER_DEV_TOOLS_STATE_CHANNEL, {
+        tabId,
+        open: true,
+      });
+    });
+    webContents.on("devtools-closed", () => {
+      closeDevToolsView(entry, hostWindow);
+      send(hostWindow, BB_DESKTOP_BROWSER_DEV_TOOLS_STATE_CHANNEL, {
+        tabId,
+        open: false,
+      });
+    });
+
     // A popup closing itself (`window.close()`, which is how an OAuth flow
     // ends) destroys its `webContents` without anyone asking the renderer. Only
     // the shell sees it, so only the shell can say the tab is gone.
@@ -2962,6 +3020,10 @@ export function createDesktopBrowserViewManager(
         },
         pluginItems: contextMenuItems,
         actions: {
+          inspect: () => {
+            ensureDevToolsView(entry, hostWindow);
+            webContents.inspectElement(params.x, params.y);
+          },
           invokePluginItem: (item) => {
             send(hostWindow, BB_DESKTOP_BROWSER_CONTEXT_MENU_INVOKE_CHANNEL, {
               pluginId: item.pluginId,
@@ -3467,6 +3529,7 @@ export function createDesktopBrowserViewManager(
       htmlFullscreen: false,
       windowFullscreenForPage: false,
       userFullscreen: false,
+      devToolsView: null,
       dialogsWired: false,
       automationWorldId: null,
       consoleLog: new BrowserObservationLog(BB_BROWSER_OBSERVATION_BUFFER_SIZE),
@@ -3519,6 +3582,8 @@ export function createDesktopBrowserViewManager(
     // Closing a tab mid-video must not leave the window in the full screen that
     // tab's page asked for.
     restoreWindowFromPageFullscreen(entry, hostWindow);
+    // Nor leave its DevTools drawn over the tab that takes its place.
+    closeDevToolsView(entry, hostWindow);
     // Before anything is torn down: this is the last moment the page's own
     // history and scroll still exist.
     rememberClosedTabSession(entry);
@@ -3698,6 +3763,57 @@ export function createDesktopBrowserViewManager(
     entry.windowFullscreenForPage = false;
     if (!hostWindow.isDestroyed()) {
       hostWindow.setFullScreen(false);
+    }
+  }
+
+  /**
+   * The view Chromium's DevTools draw into, created on first use.
+   *
+   * `setDevToolsWebContents` is what makes this the real thing rather than a
+   * panel that looks like it, and `mode: "detach"` is how Electron is told the
+   * host is ours: without it Chromium would dock the tools into a window of its
+   * own choosing.
+   *
+   * The view takes default web preferences on purpose. It is not a browsed
+   * page: it is Chromium's own UI, and handing it the hardened, partitioned,
+   * sandboxed preferences meant for untrusted content would break the tools
+   * rather than contain them.
+   */
+  function ensureDevToolsView(
+    entry: BrowserViewEntry,
+    hostWindow: DesktopBrowserHostWindow,
+  ): WebContentsView | null {
+    if (entry.devToolsView !== null) {
+      return entry.devToolsView;
+    }
+    if (entry.view.webContents.isDestroyed() || hostWindow.isDestroyed()) {
+      return null;
+    }
+    const devToolsView = new WebContentsView();
+    entry.devToolsView = devToolsView;
+    hostWindow.contentView.addChildView(devToolsView);
+    entry.view.webContents.setDevToolsWebContents(devToolsView.webContents);
+    entry.view.webContents.openDevTools({ mode: "detach" });
+    return devToolsView;
+  }
+
+  function closeDevToolsView(
+    entry: BrowserViewEntry,
+    hostWindow: DesktopBrowserHostWindow,
+  ): void {
+    const devToolsView = entry.devToolsView;
+    if (devToolsView === null) {
+      return;
+    }
+    entry.devToolsView = null;
+    if (!entry.view.webContents.isDestroyed()) {
+      entry.view.webContents.closeDevTools();
+    }
+    if (!hostWindow.isDestroyed()) {
+      hostWindow.contentView.removeChildView(devToolsView);
+    }
+    if (!devToolsView.webContents.isDestroyed()) {
+      devToolsView.webContents.close();
     }
   }
 
@@ -3934,6 +4050,53 @@ export function createDesktopBrowserViewManager(
     }
   }
 
+  /**
+   * Read a PDF tab the only way a PDF can be read: fetch the document again
+   * and parse it out of process.
+   *
+   * The refetch goes through the browsing session, which is what makes a PDF
+   * behind a login readable at all — the cookies that fetched it for the viewer
+   * fetch it again here — and what keeps this from becoming a way to read a URL
+   * the tab was never on. The fetch and the parse share one deadline, so a slow
+   * server cannot buy the parser more time than the whole read is allowed.
+   */
+  async function readPdfText(url: string): Promise<DesktopBrowserPdfTextOutcome> {
+    const deadline = Date.now() + BB_DESKTOP_BROWSER_PDF_READ_TIMEOUT_MS;
+    let response: Awaited<ReturnType<Session["fetch"]>>;
+    try {
+      response = await ensureHardenedSession().fetch(url, {
+        // The whole point of refetching through this session rather than
+        // plainly: a PDF behind a login is fetched with the cookies that
+        // already opened it for the viewer.
+        credentials: "include",
+        signal: AbortSignal.timeout(BB_DESKTOP_BROWSER_PDF_READ_TIMEOUT_MS),
+      });
+    } catch {
+      // A `blob:` URL, a document that only exists as the answer to a POST, a
+      // server that has stopped answering: one refusal covers them, because
+      // none of them becomes readable by asking again the same way.
+      return { ok: false, reason: "unreadable" };
+    }
+    if (!response.ok) {
+      return { ok: false, reason: "unreadable" };
+    }
+    const read = await readBrowserPdfBytes(response).catch(() => null);
+    if (read === null) {
+      return { ok: false, reason: "unreadable" };
+    }
+    if (!read.ok) {
+      return read;
+    }
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) {
+      return { ok: false, reason: "timeout" };
+    }
+    return await args.extractPdfText({
+      bytes: read.bytes,
+      timeoutMs: remaining,
+    });
+  }
+
   return {
     attach({ hostWindow, request }) {
       const key = browserViewKey(hostWindow, request.tabId);
@@ -4086,6 +4249,24 @@ export function createDesktopBrowserViewManager(
         });
       });
     },
+    setDevTools({ hostWindow, request }) {
+      withEntry({ hostWindow, tabId: request.tabId }, (entry) => {
+        if (!request.open) {
+          closeDevToolsView(entry, hostWindow);
+          return;
+        }
+        const devToolsView = ensureDevToolsView(entry, hostWindow);
+        // Re-sent on every resize, which is what makes this both the open and
+        // the placement command.
+        devToolsView?.setBounds(
+          clampBbDesktopBrowserViewBounds({
+            bounds: request.bounds,
+            viewport: hostWindowViewportBounds({ hostWindow }),
+          }),
+        );
+        applyEntryVisibility(entry, hostWindow);
+      });
+    },
     setPopupTabs({ hostWindow, request }) {
       const prefix = `${hostWindow.webContents.id}:`;
       for (const key of [...popupTabKeys]) {
@@ -4157,13 +4338,39 @@ export function createDesktopBrowserViewManager(
       if (content === null) {
         return { ok: false, reason: "unreadable" };
       }
+      const { contentType, ...page } = content;
+
+      if (isBrowserPdfContentType(contentType)) {
+        const pdf = await readPdfText(webContents.getURL());
+        if (webContents.isDestroyed()) {
+          return { ok: false, reason: "no-view" };
+        }
+        if (!pdf.ok) {
+          return { ok: false, reason: pdf.reason };
+        }
+        return {
+          ok: true,
+          tabId,
+          ...entryPageIdentity(entry),
+          isLoading: webContents.isLoadingMainFrame(),
+          contentKind: "pdf",
+          text: pdf.text,
+          textTruncated: pdf.truncated,
+          // Nothing selected, rather than nothing to select: what a user
+          // highlights in the viewer is PDFium's, and `getSelection()` on the
+          // wrapper frame cannot see it.
+          selection: "",
+          selectionTruncated: false,
+        };
+      }
 
       return {
         ok: true,
         tabId,
         ...entryPageIdentity(entry),
         isLoading: webContents.isLoadingMainFrame(),
-        ...content,
+        contentKind: "html",
+        ...page,
       };
     },
     snapshot({ hostWindow, request }) {

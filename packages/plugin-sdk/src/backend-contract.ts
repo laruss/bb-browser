@@ -832,6 +832,32 @@ export interface PluginBrowserFindContext {
   query: string;
 }
 
+/** A PDF the browser opened but could not read as text. */
+export interface PluginBrowserPdfDocument {
+  /** The browser tab the document is open in. */
+  tabId: string;
+  /** Where it came from — fetchable again with `bb.browser.storage` cookies. */
+  pageUrl: string;
+  title: string | null;
+}
+
+/**
+ * Read a PDF the browser could not, which is what makes OCR a plugin rather
+ * than a feature.
+ *
+ * Asked **only** for a document the browser has already parsed and found no
+ * text in: a scan, or pages that are images of text. A PDF with a text layer
+ * never reaches a provider, so this is not a way to intercept ordinary reads —
+ * it is the one case where the browser has nothing and something else might.
+ *
+ * Providers are asked in plugin id order and the first non-empty answer wins.
+ * Return null to decline; declining, throwing and running out of time are the
+ * same answer, and the agent is told the document has no text layer.
+ */
+export type PluginBrowserPdfTextProvider = (
+  document: PluginBrowserPdfDocument,
+) => string | null | Promise<string | null>;
+
 export interface PluginBrowserFindActionRegistration {
   /** Unique within this plugin: [a-zA-Z0-9_-]+. */
   id: string;
@@ -1576,6 +1602,14 @@ export interface PluginBrowser {
    * "trust this server anyway" is not a credential a plugin can look up.
    */
   registerAuthProvider(provider: PluginBrowserAuthProvider): void;
+  /**
+   * Supply the text of a PDF the browser could not read
+   * (`browser.pdf.textProviders`) — see {@link PluginBrowserPdfTextProvider}
+   * for when a provider is asked and why that is the only time.
+   *
+   * Additive: providers are asked in plugin id order until one answers.
+   */
+  registerPdfTextProvider(provider: PluginBrowserPdfTextProvider): void;
   /**
    * Drive the browser surface's tabs, pages and navigation.
    *

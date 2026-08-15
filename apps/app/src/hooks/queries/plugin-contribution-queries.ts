@@ -530,6 +530,36 @@ export async function resolvePluginBrowserAuth(
   };
 }
 
+export interface ResolvePluginBrowserPdfTextArgs {
+  pageUrl: string;
+  tabId: string;
+  title: string | null;
+}
+
+/**
+ * Ask plugins to read a PDF the browser could not (`browser.pdf.textProviders`).
+ *
+ * Only ever called for a document the browser has already parsed and found no
+ * text in, so a failure here costs an answer nobody had anyway: null means
+ * nobody answered, which is also what a server that is not listening means.
+ */
+export async function resolvePluginBrowserPdfText(
+  args: ResolvePluginBrowserPdfTextArgs,
+): Promise<string | null> {
+  const response = await fetch("/api/v1/plugins/browser/pdf-text", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(args),
+  }).catch(() => null);
+  if (response === null || !response.ok) return null;
+  const body = (await response.json().catch(() => null)) as {
+    ok?: unknown;
+    text?: unknown;
+  } | null;
+  if (body?.ok !== true || typeof body.text !== "string") return null;
+  return body.text.length === 0 ? null : body.text;
+}
+
 export interface ReportPluginBrowserDownloadArgs {
   filename: string;
   id: string;

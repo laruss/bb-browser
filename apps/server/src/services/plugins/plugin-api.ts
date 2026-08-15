@@ -61,6 +61,7 @@ import type {
   PluginMentionSearchContext,
   PluginMentionTrigger,
   PluginBrowserAuthProvider,
+  PluginBrowserPdfTextProvider,
   PluginBrowserContextMenuContext,
   PluginBrowserFindContext,
   PluginBrowserDownloadHandler,
@@ -503,6 +504,8 @@ export interface PluginApiHandle {
   findActions: PluginBrowserFindActionRecord[];
   /** Auth providers recorded by `bb.browser.registerAuthProvider`. */
   authProviders: PluginBrowserAuthProvider[];
+  /** PDF text providers recorded by `bb.browser.registerPdfTextProvider`. */
+  pdfTextProviders: PluginBrowserPdfTextProvider[];
   /** Publish factory-time host declarations and status only after commit. */
   activate(): void;
   /** Poison every method on the handle. */
@@ -1722,6 +1725,7 @@ export function createPluginApi(options: {
   const contextMenuItems: PluginBrowserContextMenuItemRecord[] = [];
   const findActions: PluginBrowserFindActionRecord[] = [];
   const authProviders: PluginBrowserAuthProvider[] = [];
+  const pdfTextProviders: PluginBrowserPdfTextProvider[] = [];
   const keybindings: AppKeybindingOverride[] = [];
   const browser: PluginBrowser = {
     registerOmniboxProvider(provider) {
@@ -1825,6 +1829,15 @@ export function createPluginApi(options: {
         );
       }
       authProviders.push(provider);
+    },
+    registerPdfTextProvider(provider) {
+      assertLive();
+      if (typeof provider !== "function") {
+        throw new Error(
+          "registerPdfTextProvider(provider) needs a function taking one document",
+        );
+      }
+      pdfTextProviders.push(provider);
     },
     registerDownloadHandler(handler) {
       assertLive();
@@ -2614,6 +2627,7 @@ export function createPluginApi(options: {
     contextMenuItems,
     findActions,
     authProviders,
+    pdfTextProviders,
     activate() {
       if (activated) return;
       assertLive();
