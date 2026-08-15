@@ -65,21 +65,21 @@ section of [browser-surface.md](browser-surface.md).
 
 ### ~~`window.open` flows break~~ — closed
 
-The shell denies every popup and hands the URL to the renderer to open as a tab
-(`desktop-browser-view.ts:2285`). For a plain `target="_blank"` link that is
-exactly right, and it works — see the popup section of
+The shell used to deny every popup and hand the URL to the renderer to open as
+a tab. For a plain `target="_blank"` link that is exactly right, and it still
+works that way — see the popup section of
 [browser-surface.md](browser-surface.md), which is where the surface's missing
 subscription was fixed.
 
-What it cannot serve is a page that **uses the handle it got back**:
+What it could not serve is a page that **uses the handle it got back**:
 
-- `window.open()` returns `null`, which is precisely how a page detects a popup
-  blocker — so OAuth and payment SDKs report "popup blocked" and stop, rather
-  than continuing into the tab we opened for them;
-- the new tab has no `window.opener`, so the `postMessage` handshake an OAuth
-  popup completes with cannot run;
+- `window.open()` returned `null`, which is precisely how a page detects a popup
+  blocker — so OAuth and payment SDKs reported "popup blocked" and stopped,
+  rather than continuing into the tab we opened for them;
+- the new tab had no `window.opener`, so the `postMessage` handshake an OAuth
+  popup completes with could not run;
 - `about:blank` popups — the shape a page uses when it opens a window and writes
-  into it — are dropped outright, because `isAllowedPublicBrowserPopupUrl`
+  into it — were dropped outright, because `isAllowedPublicBrowserPopupUrl`
   requires public `http(s)`.
 
 The practical consequence was that **"Sign in with …" did not work**, on a
@@ -122,7 +122,9 @@ now reach exactly that machinery rather than growing a second one.
 ## Tier 2 — unbuilt surfaces
 
 Standard browser functionality with no code behind it. Nothing here is decided
-against; it is simply not written.
+against; it is simply not written. Entries marked **Done** were written since
+this list was made and are kept rather than deleted, because what a surface was
+missing is part of why it ended up shaped the way it is.
 
 **Page**
 
@@ -133,7 +135,7 @@ against; it is simply not written.
 | Print (`Cmd+P`)                   | `printToPDF` exists for agents only; no user-facing print                                                                             |
 | Page context menu                 | **Done** — link, image, selection and navigation entries, plus a plugin contribution point ([browser-surface.md](browser-surface.md)) |
 | View source                       | **Done** — Chromium's own DevTools, opened in the panel ([browser-surface.md](browser-surface.md))                                    |
-| Reading a PDF as text             | **Done** — the shell refetches the document and parses it out of process, plus a plugin contribution point for scans ([browser-surface.md](browser-surface.md)) |
+| Reading a PDF as text             | **Done** — refetched through the browsing session and parsed out of process ([browser-surface.md](browser-surface.md))                |
 | Spellcheck corrections            | Underlining is Chromium's default; the browsed view's menu offers no suggestions                                                      |
 
 The context menu is now built (open link in new tab or the default browser,
@@ -142,48 +144,39 @@ reload), and plugins can add entries to it. What is left in that table is zoom,
 print and spellcheck suggestions — each blocked on a shell capability rather
 than on menu wiring.
 
-**Developer panel**
+**Developer panel** — closed
 
-There is no way to look at a page as a developer: no console, no network list,
-no source, no element inspection. Wanted, at least at the level of Chromium's
-first three panels — **view source, network, console** — plus an **Inspect**
-entry in the page context menu once there is a panel for it to open.
+`Cmd+Alt+I` opens Chromium's own DevTools — Elements, Console, Network,
+Sources — in a view the shell owns, with an **Inspect** entry in the page
+context menu. See [browser-surface.md](browser-surface.md).
 
-This entry is worth more detail than the rest of the table, because most of it
-is **already captured and unexposed**, and the one part that is genuinely
-blocked is blocked by a decision rather than by work:
+What this entry planned for is worth keeping, because almost none of it was
+needed:
 
-- **Console and network are recorded now**, per tab, from the moment the tab
-  exists — `entry.consoleLog` and `entry.networkLog` in
-  `desktop-browser-view.ts`, read through the `observe` channel, which is on the
-  preload API and therefore reachable from the app rather than only from agents.
-  A panel over these is a UI and a read loop, not a new capability.
-- **Their limits come with them**, and a panel must not pretend otherwise:
-  `console-message` hands over text Chromium has already flattened, so there
-  are no structured arguments and no stack traces, and `webRequest` sees method,
-  type, status and cache but **never bodies**
+- **The panel was going to be built** over the per-tab console and network
+  buffers (`entry.consoleLog` / `entry.networkLog`, read through `observe`),
+  with their limits written on it: flattened console text, no stack traces, and
+  network without bodies. `setDevToolsWebContents` made that unnecessary — the
+  panel _is_ DevTools, so it carries none of those limits. The buffers stayed
+  where they were useful, as what an agent reads
   ([browser-automation.md](browser-automation.md), Stage C).
-- **View source is the one piece with nothing behind it.** `page.getText`
-  returns rendered text, not markup. The cheap version is another constant
-  script in the page-read isolated world returning `documentElement.outerHTML`
-  — which is the _live DOM_, not what the server sent; the two differ on any
-  page that scripts itself, and which one "view source" means is a decision to
-  make rather than to discover.
-- **Inspect needs element identity.** The context menu already carries `x`/`y`,
-  which is exactly what `DOM.getNodeForLocation` wants — but that is CDP, which
-  is the contested part below.
+- **View source** was the piece with nothing behind it, and the open question
+  was which source it means: the live DOM or what the server sent. Real DevTools
+  answers both and does not have to choose — Elements is the live DOM, Sources
+  and Network are the served bytes.
+- **Inspect** was going to need `DOM.getNodeForLocation` and the context menu's
+  `x`/`y`. It needs neither: `inspectElement(x, y)` is Chromium's own.
 
-Two constraints shape it before any code is written. The panel is **persistent**
-— open while browsing — so it cannot use the freeze-and-overlay trick the
-downloads dropdown and tab switcher use; it has to take layout space, the way
-the omnibox suggestion list does, and let the page shrink around it. And
-anything richer than the buffers above wants CDP, which is where this collides
-with a Tier 3 decision: **DevTools on browsed views is denied**, and the
-automation stack now depends on holding the one protocol client per
-`webContents` that Chromium allows. Opening native DevTools would take that
-slot. A panel built on the existing observation channels does not; a panel that
-grows an Elements tree eventually will, and that trade is the thing to decide
-deliberately rather than discover.
+One constraint did survive the change: the panel is **persistent**, open while
+browsing, so it cannot use the freeze-and-overlay trick the downloads dropdown
+and tab switcher use. It takes layout space and the page shrinks around it —
+sharpened, because freezing a page to draw over it would defeat the point of
+inspecting a live one.
+
+And the Tier 3 collision predicted here was real and already settled: DevTools
+takes the one protocol client per `webContents` that Chromium allows, so a tab
+whose tools are open refuses automation with a typed `debugger-unavailable`
+rather than failing obscurely.
 
 **Tabs**
 
@@ -202,10 +195,11 @@ scroll, not just the URL), `Cmd+1`–`9`, `Cmd+[` / `Cmd+]`, and `Ctrl+Tab` /
 `Cmd+T` between the browser and the thread panel, and for why the MRU cycle ends
 on a timer.
 
-`Cmd+F` is in too, and arrived with the find bar rather than as a binding — see
-[browser-surface.md](browser-surface.md). Still missing, and each blocked on a
-capability rather than on a binding: `Cmd+P` (needs a user-facing print) and the
-zoom trio (needs `setZoomLevel` on a browsed view). Those belong with their
+`Cmd+F` is in too, and arrived with the find bar rather than as a binding; so
+did `Cmd+Shift+F` with fullscreen and `Cmd+Alt+I` with the developer panel —
+see [browser-surface.md](browser-surface.md). Still missing, and each blocked on
+a capability rather than on a binding: `Cmd+P` (needs a user-facing print) and
+the zoom trio (needs `setZoomLevel` on a browsed view). Those belong with their
 features, not with the keyboard.
 
 **Data**
@@ -233,7 +227,7 @@ play. Session restore carries URLs only — no scroll position, no form state.
 
 **Multiple windows** is the one structural item in this tier. Browser views are
 keyed `${hostWindow.webContents.id}:${tabId}`
-(`desktop-browser-view.ts:453`), while surface tabs live in one module-scoped
+(`browserViewKey` in `desktop-browser-view.ts`), while surface tabs live in one module-scoped
 `atomWithStorage` over localStorage. Two app windows on `/browser` would
 therefore share a single tab list while each built its **own** `WebContentsView`
 for every tab in it — the same page loaded twice, and a tab list mutating under
@@ -244,12 +238,17 @@ both. Not run; the keying and the storage are what imply it.
 These look like gaps in a feature comparison and are answers, each with its
 reasoning already written down somewhere in this directory or in a code comment:
 
-- **Permissions**: everything denied except `clipboard-sanitized-write`
-  (`desktop-browser-view.ts:2043`). A prompt UI is explicitly "a later phase".
-- **DevTools on browsed views**: denied, and CDP's one-client-per-`webContents`
-  rule now depends on it ([browser-automation.md](browser-automation.md)).
-  **Contested** — see the developer panel in Tier 2, which wants some of what
-  DevTools would give and mostly does not need DevTools to give it.
+- **Permissions**: everything denied except `clipboard-sanitized-write` and
+  `fullscreen` (`isAllowedBrowserPermission`); the second was added after the
+  first blanket denial turned out to make every fullscreen button dead. A prompt
+  UI is still explicitly "a later phase".
+- **DevTools on browsed views**: **reversed**, the way favicons were. It was
+  denied because CDP allows one protocol client per `webContents` and the
+  automation stack holds it ([browser-automation.md](browser-automation.md)).
+  The trade turned out to be worth making in the other direction — a browser
+  with no way to look at a page is missing more than automation loses — and the
+  conflict is now a typed refusal (`debugger-unavailable`) on the tab whose
+  tools are open, rather than a denial for every tab.
 - **Search completions** from a suggest endpoint: a network and privacy
   decision, not an omnibox one ([omnibox.md](omnibox.md)).
 - **Chrome extension compatibility**: plan §10, out of scope for the MVP.
@@ -265,10 +264,15 @@ the way favicons were reversed, not as filling in a blank.
 
 Three patterns, and each suggests a different kind of fix:
 
-1. **Silence.** Downloads, PDFs, popups and every absent handler fail without
-   telling anyone. The error screen already exists; none of these paths reaches
-   it. A single "the browser refused this, and why" channel would improve all of
-   them before any of the underlying features are built.
+1. **Silence.** Downloads, PDFs, popups and every absent handler used to fail
+   without telling anyone, while the error screen that could have said so
+   already existed. All of those paths now report — each through the surface
+   that fits it rather than through one shared channel, which is the part of
+   this diagnosis that did not survive contact: a refused download, a page
+   asking for a password and a PDF an agent cannot read are three different
+   answers to three different audiences. The pattern is still the way to read
+   what is left here — an unbuilt feature announces itself, a denied one has to
+   be made to.
 2. **v1 denials that were never revisited.** Downloads and permissions were both
    deferred with a comment. Both turned out to be load-bearing in a way the
    comments did not say: the download denial made every download link dead, and
@@ -277,10 +281,11 @@ Three patterns, and each suggests a different kind of fix:
    before any handler can run. Both are now allowed, deliberately and
    individually — the rest of the list still stands as written.
 3. **The shell is finished where the renderer is not.** Keyboard forwarding, the
-   context menu, favicons and page reads all have complete main-process support;
-   what is missing is the command table, the menu entries, the UI. That
-   asymmetry is why the keyboard and context-menu items are cheap and the
-   downloads and popup items are not.
+   context menu, favicons and page reads all had complete main-process support
+   and were missing only a command table, menu entries, a UI — which is why
+   those items closed cheaply and downloads and popups did not. The asymmetry
+   still predicts cost in what is left: a tab context menu is renderer work,
+   zoom and print are not.
 
 ## Ordering
 

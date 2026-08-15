@@ -248,9 +248,9 @@ Other commands:
 - `bb theme set <id> [--favicon-color <color>]` — switch to a built-in
   (`default`, `nord`, `dracula`, `solarized`, `gruvbox`, `catppuccin`), custom,
   or plugin-contributed theme. Omitting the flag preserves the favicon color.
-- `bb theme show --css` — dump the active theme's CSS; `bb theme list` shows the
-  active palette and all discovered themes; `bb theme reset` returns to
-  `default` without changing the favicon color.
+- `bb theme show` — print the active palette; `--css` dumps the active theme's
+  CSS. `bb theme list` shows the active palette and all discovered themes;
+  `bb theme reset` returns to `default` without changing the favicon color.
 - `bb theme favicon set <color>` / `bb theme favicon reset` — update or reset
   the favicon tint without changing the active theme. Valid colors are
   `default`, `red`, `orange`, `yellow`, `green`, `teal`, `blue`, `purple`, and

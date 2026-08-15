@@ -1,4 +1,5 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
+import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import * as pluginSdkApp from "@bb/plugin-sdk/app";
@@ -36,14 +37,27 @@ const FRONTEND_RUNTIME_EXPORT_NAMES = Object.keys(pluginSdkApp).sort();
  * Durability test for the bb-plugin-authoring builtin skill: the skill must
  * document the ENTIRE plugin API. Growing BbPluginApi or the frontend SDK
  * surface without documenting the new member fails here.
+ *
+ * The skill is progressively disclosed — SKILL.md stays small and routes to
+ * references/*.md — so coverage is asserted against the whole skill tree. The
+ * split itself (SKILL.md size, reachable reference files) is guarded for every
+ * built-in skill by test/skills/builtin-skill-structure.test.ts.
  */
 
-const SKILL_PATH = fileURLToPath(
+const SKILL_DIR = fileURLToPath(
   new URL(
-    "../../../src/services/skills/builtin-skills/bb-plugin-authoring/SKILL.md",
+    "../../../src/services/skills/builtin-skills/bb-plugin-authoring/",
     import.meta.url,
   ),
 );
+const SKILL_PATH = path.join(SKILL_DIR, "SKILL.md");
+const REFERENCES_DIR = path.join(SKILL_DIR, "references");
+
+function readReferenceFileNames(): string[] {
+  return readdirSync(REFERENCES_DIR)
+    .filter((name) => name.endsWith(".md"))
+    .sort();
+}
 
 /**
  * Every property of BbPluginApi, compile-time checked in both directions:
@@ -352,10 +366,18 @@ const _assertAllThreadChatMessageActionFieldsListed: MissingThreadChatMessageAct
 void _assertAllThreadChatMessageActionFieldsListed;
 
 describe("bb-plugin-authoring skill", () => {
-  const skill = readFileSync(SKILL_PATH, "utf8");
+  const skillEntry = readFileSync(SKILL_PATH, "utf8");
+  const referenceFileNames = readReferenceFileNames();
+  /** SKILL.md plus every reference file: the agent reaches all of it. */
+  const skill = [
+    skillEntry,
+    ...referenceFileNames.map((name) =>
+      readFileSync(path.join(REFERENCES_DIR, name), "utf8"),
+    ),
+  ].join("\n");
 
   it("has frontmatter naming the skill after its directory", () => {
-    expect(skill).toMatch(/^---\nname: bb-plugin-authoring\n/);
+    expect(skillEntry).toMatch(/^---\nname: bb-plugin-authoring\n/);
   });
 
   it("documents every BbPluginApi property", () => {
