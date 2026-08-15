@@ -167,6 +167,28 @@ export function createLocalStorageSyncStorage<T>(
   };
 }
 
+/**
+ * Storage for state that belongs to this window's session: it survives a
+ * reload of the renderer and dies with the window, which is what "for this
+ * session only" means once the UI can be reloaded under a shell that outlives
+ * it. Deliberately no `storage` subscription — that event fires in *other*
+ * tabs, and this value is nobody else's.
+ */
+export function createSessionStorageSyncStorage<T>(
+  codec: StoredValueCodec<T>,
+): SyncStorage<T> {
+  return {
+    getItem: (key: string, initialValue: T) =>
+      codec.parse(getSessionStorage()?.getItem(key) ?? null, initialValue),
+    setItem: (key: string, value: T) => {
+      getSessionStorage()?.setItem(key, codec.serialize(value));
+    },
+    removeItem: (key: string) => {
+      getSessionStorage()?.removeItem(key);
+    },
+  };
+}
+
 export function createLocalStorageEnumStorage<T extends string>(
   isValue: StringValueGuard<T>,
 ): SyncStorage<T> {

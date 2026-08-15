@@ -2,6 +2,7 @@
 
 import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { MemoryRouter } from "react-router-dom";
 import type {
   BbDesktopApi,
   BbDesktopBrowserApi,
@@ -103,7 +104,9 @@ function renderSurface(initialWindowFullScreen: boolean): FullscreenHarness {
   render(
     <Wrapper>
       <AppCommandProvider>
-        <BrowserSurfaceView />
+        <MemoryRouter initialEntries={["/browser"]}>
+          <BrowserSurfaceView />
+        </MemoryRouter>
       </AppCommandProvider>
     </Wrapper>,
   );

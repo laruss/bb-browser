@@ -4,6 +4,7 @@ import { flushSync } from "react-dom";
 import { Slot } from "@radix-ui/react-slot";
 
 import { useIsCompactViewport } from "@bb/shared-ui/hooks/use-compact-viewport";
+import { useBrowserDimmingModal } from "@/hooks/useBrowserDimmingModal";
 import { cn } from "@bb/shared-ui/lib/utils";
 import { Button } from "@bb/shared-ui/button";
 import { COARSE_POINTER_HEADER_ICON_BUTTON_CLASS } from "@bb/shared-ui/coarse-pointer-sizing";
@@ -707,6 +708,15 @@ const Sidebar = React.forwardRef<
       return undefined;
     }, [shouldSuppressMobileCloseAnimation]);
 
+    // On a narrow window the sidebar is a drawer drawn *over* the content, and
+    // over the content is not somewhere the DOM can draw when a native browser
+    // view is there: the page is an OS-level overlay that no backdrop covers.
+    // Registering as a dimming modal takes the page away for as long as the
+    // drawer is open, which is what makes the drawer visible at all — without
+    // it the panel and its backdrop are behind the page, and opening it looks
+    // like nothing happening.
+    useBrowserDimmingModal(isCompactViewport && openMobile);
+
     if (collapsible === "none") {
       return (
         <div
@@ -972,9 +982,8 @@ const SidebarMobilePanel = React.forwardRef<
       // assistive-technology activation leave the trigger focus-visible, so
       // keep the modal focus move for those paths.
       const shouldMoveFocus =
-        previouslyFocused?.matches(
-          '[data-sidebar="trigger"]:focus-visible',
-        ) ?? false;
+        previouslyFocused?.matches('[data-sidebar="trigger"]:focus-visible') ??
+        false;
       if (shouldMoveFocus) {
         panelRef.current?.focus({ preventScroll: true });
       }
@@ -1022,7 +1031,9 @@ const SidebarMobilePanel = React.forwardRef<
         for (let step = 1; step <= stops.length; step += 1) {
           const nextIndex =
             activeIndex === -1
-              ? (event.shiftKey ? stops.length - step : step - 1)
+              ? event.shiftKey
+                ? stops.length - step
+                : step - 1
               : (((activeIndex + direction * step) % stops.length) +
                   stops.length) %
                 stops.length;
@@ -1038,7 +1049,10 @@ const SidebarMobilePanel = React.forwardRef<
       return () => {
         window.removeEventListener("keydown", handleKeyDown);
         const active = document.activeElement;
-        if (active instanceof HTMLElement && panelRef.current?.contains(active)) {
+        if (
+          active instanceof HTMLElement &&
+          panelRef.current?.contains(active)
+        ) {
           active.blur();
           if (shouldMoveFocus) {
             previouslyFocused?.focus({ preventScroll: true });
@@ -1121,7 +1135,8 @@ const SidebarMobilePanel = React.forwardRef<
       const nowMs = Date.now();
       const elapsedMs = nowMs - session.lastTimeMs;
       if (elapsedMs > 0) {
-        session.velocityX = ((clientX - session.lastClientX) / elapsedMs) * 1000;
+        session.velocityX =
+          ((clientX - session.lastClientX) / elapsedMs) * 1000;
         session.lastClientX = clientX;
         session.lastTimeMs = nowMs;
       }
@@ -1233,10 +1248,7 @@ const SidebarMobilePanel = React.forwardRef<
 
       const handleMove = (moveEvent: PointerEvent) => {
         const session = dragSessionRef.current;
-        if (
-          session?.kind !== "pointer" ||
-          moveEvent.pointerId !== session.id
-        ) {
+        if (session?.kind !== "pointer" || moveEvent.pointerId !== session.id) {
           return;
         }
         continuePanelDrag(moveEvent.clientX, moveEvent.clientY, moveEvent);
@@ -1270,9 +1282,7 @@ const SidebarMobilePanel = React.forwardRef<
       removeDragListenersRef.current = removeListeners;
     };
 
-    const handlePanelTouchStart = (
-      event: React.TouchEvent<HTMLDivElement>,
-    ) => {
+    const handlePanelTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
       onTouchStart?.(event);
       if (
         !open ||

@@ -2,6 +2,7 @@ export * from "./controller";
 export * from "./default-action";
 export * from "./highlight";
 export * from "./match";
+export * from "./providers/app-routes";
 export * from "./providers/history";
 export * from "./providers/navigation";
 export * from "./providers/open-tabs";

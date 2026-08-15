@@ -42,6 +42,15 @@ export interface PluginHomepageSectionProps {
  */
 export interface PluginSettingsSectionProps {}
 
+/**
+ * Props passed to an `experimental_leadingPanel` component.
+ *
+ * Deliberately empty: the panel is not a route and has no context to hand it.
+ * Named rather than omitted so fields can be added additively later without
+ * changing what a plugin's component signature looks like.
+ */
+export interface PluginLeadingPanelProps {}
+
 /** Props passed to a `navPanel` component (it owns its whole route). */
 export interface PluginNavPanelProps {
   /**
@@ -226,6 +235,33 @@ export interface PluginSettingsSectionRegistration {
    */
   description?: string;
   component: ComponentType<PluginSettingsSectionProps>;
+}
+
+/**
+ * A panel on the window's **leading** edge — the end opposite the sidebar.
+ *
+ * bb puts nothing there itself. The edge exists for plugins and is absent
+ * entirely when no plugin has asked for it: no empty column, no toggle for a
+ * panel with nothing in it. What appears is decided by how many registrations
+ * there are, not by configuration — one plugin gets the whole panel with no
+ * chrome of bb's own around it, and a second one is what makes bb draw a rail
+ * to switch between them.
+ *
+ * Unlike a `navPanel` this is not a route: it has no path, nothing links to it,
+ * and it stays where it is while the user navigates. Use it for something that
+ * accompanies the work rather than something the user goes to.
+ *
+ * Experimental: see docs/api_to_audit.md.
+ */
+export interface PluginLeadingPanelRegistration {
+  /** Unique within the plugin; letters, digits, `-`, `_`. */
+  id: string;
+  /** Named in the rail's tooltip, and its accessible name. */
+  title: string;
+  /** Icon hint (BB icon name); unknown names fall back to a generic icon. */
+  icon: string;
+  /** Rendered as the whole panel body; it owns its own scrolling. */
+  component: ComponentType<PluginLeadingPanelProps>;
 }
 
 export interface PluginNavPanelRegistration {
@@ -751,6 +787,12 @@ export interface PluginAppSlots {
   homepageSection(registration: PluginHomepageSectionRegistration): void;
   settingsSection(registration: PluginSettingsSectionRegistration): void;
   navPanel(registration: PluginNavPanelRegistration): void;
+  /**
+   * Claim a place on the window's leading edge (see
+   * {@link PluginLeadingPanelRegistration}). Experimental: see
+   * docs/api_to_audit.md.
+   */
+  experimental_leadingPanel(registration: PluginLeadingPanelRegistration): void;
   /**
    * Add an action to an existing thread's panel launcher. This slot is
    * thread-only; use `experimental_newThreadPanelAction` for root compose.

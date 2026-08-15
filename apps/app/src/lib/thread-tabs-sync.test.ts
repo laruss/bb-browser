@@ -1,7 +1,26 @@
 import type { ThreadTab } from "@bb/server-contract";
 import { describe, expect, it } from "vitest";
-import { createEmptyFixedPanelTabsState } from "./fixed-panel-tabs-state";
+import {
+  createEmptyFixedPanelTabsState,
+  createWorkspaceFilePreviewFixedPanelTab,
+} from "./fixed-panel-tabs-state";
 import { reconcileFixedPanelTabsState } from "./thread-tabs-sync";
+
+function fileTab(
+  id: string,
+): Extract<ThreadTab, { kind: "workspace-file-preview" }> {
+  const tab = createWorkspaceFilePreviewFixedPanelTab({
+    environmentId: "env-1",
+    projectId: null,
+    tab: {
+      lineRange: null,
+      path: `src/${id}.ts`,
+      source: { kind: "working-tree" },
+      statusLabel: null,
+    },
+  });
+  return tab;
+}
 
 function browserTab(
   id: string,
@@ -18,8 +37,8 @@ function browserTab(
 
 describe("thread tab synchronization", () => {
   it("preserves local presentation state while adopting remote tabs", () => {
-    const first = browserTab("first", "First");
-    const second = browserTab("second", "Second");
+    const first = fileTab("first");
+    const second = fileTab("second");
     const current = createEmptyFixedPanelTabsState({
       lastUsedAt: 123,
       secondary: {

@@ -6,6 +6,7 @@ import type {
   PluginHomepageSectionRegistration,
   PluginMessageActionRegistration,
   PluginMessageDirectiveRegistration,
+  PluginLeadingPanelRegistration,
   PluginNavPanelRegistration,
   PluginNewThreadPanelActionRegistration,
   PluginSettingsSectionRegistration,
@@ -27,6 +28,8 @@ export interface PluginRegistrationSet {
   homepageSections: readonly PluginHomepageSectionRegistration[];
   settingsSections: readonly PluginSettingsSectionRegistration[];
   navPanels: readonly PluginNavPanelRegistration[];
+  /** Optional for bundles built before this experimental slot existed. */
+  leadingPanels?: readonly PluginLeadingPanelRegistration[];
   threadPanelActions: readonly PluginThreadPanelActionRegistration[];
   /** Optional for bundles built before this experimental slot existed. */
   newThreadPanelActions?: readonly PluginNewThreadPanelActionRegistration[];
@@ -62,6 +65,8 @@ export interface PluginSettingsSectionSlot
   extends PluginSettingsSectionRegistration, PluginSlotBase {}
 export interface PluginNavPanelSlot
   extends PluginNavPanelRegistration, PluginSlotBase {}
+export interface PluginLeadingPanelSlot
+  extends PluginLeadingPanelRegistration, PluginSlotBase {}
 export interface PluginThreadPanelActionSlot
   extends PluginThreadPanelActionRegistration, PluginSlotBase {}
 export interface PluginNewThreadPanelActionSlot
@@ -88,6 +93,7 @@ export interface PluginSlotSnapshot {
   homepageSections: readonly PluginHomepageSectionSlot[];
   settingsSections: readonly PluginSettingsSectionSlot[];
   navPanels: readonly PluginNavPanelSlot[];
+  leadingPanels: readonly PluginLeadingPanelSlot[];
   threadPanelActions: readonly PluginThreadPanelActionSlot[];
   newThreadPanelActions: readonly PluginNewThreadPanelActionSlot[];
   composerCustomizations: readonly PluginComposerCustomizationSlot[];
@@ -104,6 +110,7 @@ export const EMPTY_PLUGIN_SLOT_SNAPSHOT: PluginSlotSnapshot = {
   homepageSections: [],
   settingsSections: [],
   navPanels: [],
+  leadingPanels: [],
   threadPanelActions: [],
   newThreadPanelActions: [],
   composerCustomizations: [],
@@ -127,6 +134,7 @@ function buildSnapshot(): PluginSlotSnapshot {
     homepageSections: PluginHomepageSectionSlot[];
     settingsSections: PluginSettingsSectionSlot[];
     navPanels: PluginNavPanelSlot[];
+    leadingPanels: PluginLeadingPanelSlot[];
     threadPanelActions: PluginThreadPanelActionSlot[];
     newThreadPanelActions: PluginNewThreadPanelActionSlot[];
     composerCustomizations: PluginComposerCustomizationSlot[];
@@ -141,6 +149,7 @@ function buildSnapshot(): PluginSlotSnapshot {
     homepageSections: [],
     settingsSections: [],
     navPanels: [],
+    leadingPanels: [],
     threadPanelActions: [],
     newThreadPanelActions: [],
     composerCustomizations: [],
@@ -164,6 +173,9 @@ function buildSnapshot(): PluginSlotSnapshot {
     }
     for (const registration of set.navPanels) {
       next.navPanels.push({ ...registration, pluginId, generation });
+    }
+    for (const registration of set.leadingPanels ?? []) {
+      next.leadingPanels.push({ ...registration, pluginId, generation });
     }
     for (const registration of set.threadPanelActions) {
       next.threadPanelActions.push({ ...registration, pluginId, generation });

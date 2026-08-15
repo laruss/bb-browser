@@ -113,7 +113,6 @@ import { createLocalStorageEnumStorage } from "@/lib/browser-storage";
 import {
   getProjectComposeRoutePath,
   getThreadRoutePath,
-  isRoutePath,
   type ThreadRoutePathArgs,
 } from "@/lib/route-paths";
 import { useGitDiffPanel } from "@/components/secondary-panel/git-diff/useGitDiffPanel";
@@ -145,8 +144,7 @@ import {
   ThreadStorageFilePreviewTabContent,
   WorkspaceFilePreviewTabContent,
 } from "@/components/secondary-panel/ThreadSecondaryPanelTabContent";
-import { BrowserTabDeck } from "@/components/secondary-panel/BrowserTabDeck";
-import type { BrowserAddressFocusRequest } from "@/components/secondary-panel/BrowserTabContent";
+import { useOpenBrowserSurfaceTab } from "@/lib/browser-surface-tabs";
 import {
   SIDE_CHAT_PLUGIN_ID,
   SIDE_CHAT_PLUGIN_PANEL_ACTION_ID,
@@ -166,7 +164,6 @@ import { getFileExtension } from "@/lib/file-opener-preference";
 import { Icon } from "@bb/shared-ui/icon";
 import {
   getBbDesktopInfo,
-  getDesktopBrowserApi,
   isDesktopBrowserAvailable,
 } from "@/lib/bb-desktop";
 import {
@@ -622,8 +619,6 @@ function ThreadDetailViewInternal(props: ThreadDetailViewInternalProps) {
     () => setShouldAutoFocusNewTab(false),
     [],
   );
-  const [browserAddressFocusRequest, setBrowserAddressFocusRequest] =
-    useState<BrowserAddressFocusRequest | null>(null);
   const shouldLoadThreadStorageFiles = thread !== undefined;
   const {
     isThreadStorageFilesLoading,
@@ -641,7 +636,6 @@ function ThreadDetailViewInternal(props: ThreadDetailViewInternalProps) {
     enabled: isSecondaryPanelOpen,
   });
   const {
-    activeBrowserTab,
     activeHostFileLineRange,
     activeHostFilePath,
     activeStorageFileLineRange,
@@ -651,7 +645,6 @@ function ThreadDetailViewInternal(props: ThreadDetailViewInternalProps) {
     activeWorkspaceFileSource,
     activeWorkspaceFileStatusLabel,
     activePluginPanelTab,
-    browserTabs,
     clearActiveFileTabs,
     activateTab,
     closeTab,
@@ -661,7 +654,6 @@ function ThreadDetailViewInternal(props: ThreadDetailViewInternalProps) {
     orderedSecondaryFileTabs,
     reorderFileTab,
     selectFileSearchResult,
-    updateBrowserTab,
   } = useThreadFileTabs({
     panelStateId: threadId,
     syncThreadId: threadId,
@@ -683,52 +675,6 @@ function ThreadDetailViewInternal(props: ThreadDetailViewInternalProps) {
     environmentId: thread?.environmentId,
     openTab,
   });
-  const browserDeckThreadId = thread?.id ?? null;
-  const browserDeckEnvironmentId = thread?.environmentId ?? null;
-  const handleBrowserAddressFocusRequestConsumed = useCallback(
-    (request: BrowserAddressFocusRequest) => {
-      setBrowserAddressFocusRequest((current) =>
-        current?.requestId === request.requestId &&
-        current.tabId === request.tabId
-          ? null
-          : current,
-      );
-    },
-    [],
-  );
-  // Browser tabs are not rendered through the single `fileTabContent` slot:
-  // each one keeps a live native view that must persist across tab switches, so
-  // the deck stays mounted independently of which tab is active.
-  const renderBrowserDeck = useCallback(
-    ({ canShowNativeBrowserView }: { canShowNativeBrowserView: boolean }) => {
-      if (browserDeckThreadId === null) {
-        return null;
-      }
-      return (
-        <BrowserTabDeck
-          browserTabs={browserTabs}
-          activeBrowserTabId={activeBrowserTab?.id ?? null}
-          addressFocusRequest={browserAddressFocusRequest}
-          onAddressFocusRequestConsumed={
-            handleBrowserAddressFocusRequestConsumed
-          }
-          environmentId={browserDeckEnvironmentId}
-          canShowNativeBrowserView={canShowNativeBrowserView}
-          threadId={browserDeckThreadId}
-          onUpdate={updateBrowserTab}
-        />
-      );
-    },
-    [
-      activeBrowserTab?.id,
-      browserAddressFocusRequest,
-      browserTabs,
-      browserDeckEnvironmentId,
-      browserDeckThreadId,
-      handleBrowserAddressFocusRequestConsumed,
-      updateBrowserTab,
-    ],
-  );
   const openPersistedWorkspaceFile =
     useCallback<ThreadSecondaryPanelWorkspaceFileOpenHandler>(
       (file, options) =>
@@ -747,19 +693,6 @@ function ThreadDetailViewInternal(props: ThreadDetailViewInternalProps) {
         openTab({ kind: "host-file-preview", tab: file }, options),
       [openTab],
     );
-  const openBrowserTab = useCallback(
-    (url?: string) => {
-      const browserUrl = url ?? "";
-      const tab = openTab({ kind: "browser", url: browserUrl });
-      if (browserUrl.length === 0 && tab?.kind === "browser") {
-        setBrowserAddressFocusRequest((current) => ({
-          requestId: (current?.requestId ?? 0) + 1,
-          tabId: tab.id,
-        }));
-      }
-    },
-    [openTab],
-  );
   const openNewTab = useCallback(() => {
     openTab({ kind: "new-tab" });
   }, [openTab]);
@@ -768,10 +701,6 @@ function ThreadDetailViewInternal(props: ThreadDetailViewInternalProps) {
   // and handled web links keep their external-open behavior.
   const desktopBrowserAvailable = isDesktopBrowserAvailable();
   const canOpenUrlsInAppBrowser = desktopBrowserAvailable;
-  const browserTabIds = useMemo(
-    () => new Set(browserTabs.map((tab) => tab.id)),
-    [browserTabs],
-  );
   const isThreadRoot = isRootThread(thread);
   const [
     parentThreadsRequestedForThreadId,
@@ -1272,23 +1201,21 @@ function ThreadDetailViewInternal(props: ThreadDetailViewInternalProps) {
       },
       [openCompactDrawer, openPluginPanel, pluginThreadPanelActions],
     );
-  const openBrowserTabAndReveal = useCallback(
-    (url?: string) => {
-      openBrowserTab(url);
-      openCompactDrawer();
-    },
-    [openBrowserTab, openCompactDrawer],
-  );
+  // There is one browser, and it is the surface. A page opened from a thread
+  // becomes a tab there rather than a browser inside this panel — and on an
+  // agent route the surface already owns the main area, so it appears beside the
+  // conversation without navigating away from it.
+  const openPageInBrowser = useOpenBrowserSurfaceTab();
   const handleOpenUrlByPreference = useCallback(
     (url: string) =>
       openUrlByPreference({
         desktopBrowserAvailable: canOpenUrlsInAppBrowser,
         openExternalBrowser: openUrlInExternalBrowser,
-        openInAppBrowser: openBrowserTabAndReveal,
+        openInAppBrowser: openPageInBrowser,
         openLinksInAppBrowser,
         url,
       }),
-    [canOpenUrlsInAppBrowser, openBrowserTabAndReveal, openLinksInAppBrowser],
+    [canOpenUrlsInAppBrowser, openLinksInAppBrowser, openPageInBrowser],
   );
   const handleSelectFileSearchResult = useCallback(
     (selection: FileSearchSelection) => {
@@ -1304,27 +1231,6 @@ function ThreadDetailViewInternal(props: ThreadDetailViewInternalProps) {
     },
     [activateTab, openCompactDrawer],
   );
-  // Popups (`window.open`/`target=_blank`) from a browser view open as a new
-  // in-panel browser tab; the native OS popup is denied in the main process.
-  useEffect(() => {
-    const browserApi = getDesktopBrowserApi();
-    if (browserApi === null) {
-      return;
-    }
-    if (browserApi.onScopedOpenTab) {
-      return browserApi.onScopedOpenTab(({ tabId, url }) => {
-        if (browserTabIds.has(tabId)) {
-          handleOpenUrlByPreference(url);
-        }
-      });
-    }
-    return browserApi.onOpenTab(({ url }) => {
-      if (isRoutePath({ path: url })) {
-        return;
-      }
-      handleOpenUrlByPreference(url);
-    });
-  }, [browserTabIds, handleOpenUrlByPreference]);
   const handleSelectStorageBrowserPath =
     useCallback<ThreadStoragePathSelectHandler>(
       (path) => {
@@ -1444,9 +1350,6 @@ function ThreadDetailViewInternal(props: ThreadDetailViewInternalProps) {
     }
     return desktopInfo.onOpenNewTab(handleOpenNewTab);
   }, [handleOpenNewTab, isFocused]);
-  const handleOpenBrowser = useCallback(() => {
-    openBrowserTabAndReveal();
-  }, [openBrowserTabAndReveal]);
   const handleStartTerminal = useCallback(() => {
     if (!canCreateTerminal || createTerminal.isPending || !threadId) {
       return;
@@ -2665,7 +2568,6 @@ function ThreadDetailViewInternal(props: ThreadDetailViewInternalProps) {
       currentThreadId={thread.id}
       onAutoFocusHandled={handleNewTabAutoFocusHandled}
       onSelect={handleSelectFileSearchResult}
-      onOpenBrowser={handleOpenBrowser}
       onStartTerminal={canCreateTerminal ? handleStartTerminal : undefined}
       pluginActions={pluginPanelActions}
     />
@@ -2717,14 +2619,13 @@ function ThreadDetailViewInternal(props: ThreadDetailViewInternalProps) {
       />
     </ThreadTimelineNavigationProvider>
   ) : undefined;
-  const isBrowserTabActive = activeBrowserTab !== null;
   const threadDetailContent = (
     <MarkdownLocalFileContextMenuContext.Provider
       value={getLocalFileContextMenuItems}
     >
       <UrlOpenRoutingProvider
         openInAppBrowser={
-          canOpenUrlsInAppBrowser ? openBrowserTabAndReveal : null
+          canOpenUrlsInAppBrowser ? openPageInBrowser : null
         }
       >
         <ThreadDetailSecondaryContent
@@ -2742,7 +2643,7 @@ function ThreadDetailViewInternal(props: ThreadDetailViewInternalProps) {
             >
               <UrlOpenRoutingProvider
                 openInAppBrowser={
-                  canOpenUrlsInAppBrowser ? openBrowserTabAndReveal : null
+                  canOpenUrlsInAppBrowser ? openPageInBrowser : null
                 }
               >
                 {panel}
@@ -2797,8 +2698,6 @@ function ThreadDetailViewInternal(props: ThreadDetailViewInternalProps) {
                   candidate.pluginId === activePluginPanelTab.pluginId &&
                   candidate.id === activePluginPanelTab.actionId,
               )?.layout === "flush",
-            renderBrowserDeck,
-            isBrowserTabActive,
             isOpen: isSecondaryPanelOpen,
             onClose: closeSecondaryPanel,
             onCollapse: closeSecondaryPanel,

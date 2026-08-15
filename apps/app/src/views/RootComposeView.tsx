@@ -61,8 +61,6 @@ import {
   ThreadStorageFilePreviewTabContent,
   WorkspaceFilePreviewTabContent,
 } from "@/components/secondary-panel/ThreadSecondaryPanelTabContent";
-import { BrowserTabDeck } from "@/components/secondary-panel/BrowserTabDeck";
-import type { BrowserAddressFocusRequest } from "@/components/secondary-panel/BrowserTabContent";
 import { NewTabPage } from "@/components/secondary-panel/NewTabPage";
 import { EmptyStatePanel } from "@bb/shared-ui/empty-state";
 import { Icon } from "@bb/shared-ui/icon";
@@ -144,13 +142,11 @@ import {
   getThreadRoutePath,
   getProjectComposeRoutePath,
   getRootComposeRoutePath,
-  isRoutePath,
   isProjectlessProjectId,
 } from "@/lib/route-paths";
 import { resolveAbsoluteFilePath } from "@/lib/absolute-file-path";
 import { getBrowserUrlHost } from "@/lib/browser-url";
 import {
-  getDesktopBrowserApi,
   isDesktopBrowserAvailable,
 } from "@/lib/bb-desktop";
 import {
@@ -173,6 +169,7 @@ import {
   resolveUrlOpenTarget,
   useOpenLinksInAppBrowserPreference,
 } from "@/lib/in-app-browser-link-preference";
+import { useOpenBrowserSurfaceTab } from "@/lib/browser-surface-tabs";
 import type { MarkdownPreviewLinkHandler } from "@/components/ui/markdown-link";
 import {
   useRootComposeProjectId,
@@ -2067,8 +2064,6 @@ export function RootComposeView() {
     () => setShouldAutoFocusNewTab(false),
     [],
   );
-  const [browserAddressFocusRequest, setBrowserAddressFocusRequest] =
-    useState<BrowserAddressFocusRequest | null>(null);
   const { newThreadPanelActions: rootPanelNewThreadPanelActions } =
     usePluginSlots();
   const {
@@ -2087,8 +2082,6 @@ export function RootComposeView() {
     activeWorkspaceFileProjectId,
     activeWorkspaceFileSource,
     activeWorkspaceFileStatusLabel,
-    activeBrowserTab,
-    browserTabs,
     clearActiveFileTabs,
     activateTab,
     closeTab,
@@ -2098,7 +2091,6 @@ export function RootComposeView() {
     orderedSecondaryFileTabs,
     reorderFileTab,
     selectFileSearchResult,
-    updateBrowserTab,
   } = useThreadFileTabs({
     panelStateId: ROOT_COMPOSE_FIXED_PANEL_STATE_ID,
     syncThreadId: null,
@@ -2316,96 +2308,10 @@ export function RootComposeView() {
     }
     openTab({ kind: "new-tab" });
   }, [activeFixedSecondaryTab, isSecondaryPanelOpen, openTab]);
-  const openBrowserTab = useCallback(
-    (url?: string) => {
-      const browserUrl = url ?? "";
-      const tab = openTab({ kind: "browser", url: browserUrl });
-      if (browserUrl.length === 0 && tab?.kind === "browser") {
-        setBrowserAddressFocusRequest((current) => ({
-          requestId: (current?.requestId ?? 0) + 1,
-          tabId: tab.id,
-        }));
-      }
-    },
-    [openTab],
-  );
-  const openBrowserTabAndReveal = useCallback(
-    (url?: string) => {
-      if (rootPanelThreadId === null) {
-        return;
-      }
-      openBrowserTab(url);
-      openCompactDrawer();
-    },
-    [openBrowserTab, openCompactDrawer, rootPanelThreadId],
-  );
-  const handleOpenBrowser = useCallback(() => {
-    openBrowserTabAndReveal();
-  }, [openBrowserTabAndReveal]);
-  const handleBrowserAddressFocusRequestConsumed = useCallback(
-    (request: BrowserAddressFocusRequest) => {
-      setBrowserAddressFocusRequest((current) =>
-        current?.requestId === request.requestId &&
-        current.tabId === request.tabId
-          ? null
-          : current,
-      );
-    },
-    [],
-  );
-  const browserTabIds = useMemo(
-    () => new Set(browserTabs.map((tab) => tab.id)),
-    [browserTabs],
-  );
-  useEffect(() => {
-    const browserApi = getDesktopBrowserApi();
-    if (browserApi === null) {
-      return;
-    }
-    if (browserApi.onScopedOpenTab) {
-      return browserApi.onScopedOpenTab(({ tabId, url }) => {
-        if (browserTabIds.has(tabId)) {
-          openBrowserTabAndReveal(url);
-        }
-      });
-    }
-    return browserApi.onOpenTab(({ url }) => {
-      if (isRoutePath({ path: url })) {
-        return;
-      }
-      openBrowserTabAndReveal(url);
-    });
-  }, [browserTabIds, openBrowserTabAndReveal]);
-  const renderBrowserDeck = useCallback(
-    ({ canShowNativeBrowserView }: { canShowNativeBrowserView: boolean }) => {
-      if (rootPanelThreadId === null) {
-        return null;
-      }
-      return (
-        <BrowserTabDeck
-          browserTabs={browserTabs}
-          activeBrowserTabId={activeBrowserTab?.id ?? null}
-          addressFocusRequest={browserAddressFocusRequest}
-          onAddressFocusRequestConsumed={
-            handleBrowserAddressFocusRequestConsumed
-          }
-          environmentId={rootPanelEnvironmentId}
-          canShowNativeBrowserView={canShowNativeBrowserView}
-          threadId={rootPanelThreadId}
-          onUpdate={updateBrowserTab}
-        />
-      );
-    },
-    [
-      activeBrowserTab?.id,
-      browserAddressFocusRequest,
-      browserTabs,
-      handleBrowserAddressFocusRequestConsumed,
-      rootPanelEnvironmentId,
-      rootPanelThreadId,
-      updateBrowserTab,
-    ],
-  );
+  // There is one browser, and it is the surface. A page opened from here becomes
+  // a tab there rather than a browser inside this panel; on an agent route the
+  // surface already owns the main area, so it appears beside the composer.
+  const openPageInBrowser = useOpenBrowserSurfaceTab();
   const handleSelectFileSearchResult = useCallback(
     (selection: FileSearchSelection) => {
       selectFileSearchResult(selection);
@@ -2941,13 +2847,13 @@ export function RootComposeView() {
       ) {
         return false;
       }
-      openBrowserTabAndReveal(href);
+      openPageInBrowser(href);
       return true;
     },
     [
       desktopBrowserAvailable,
-      openBrowserTabAndReveal,
       openLinksInAppBrowser,
+      openPageInBrowser,
       rootPanelThreadId,
     ],
   );
@@ -2978,7 +2884,6 @@ export function RootComposeView() {
         onAutoFocusHandled={handleNewTabAutoFocusHandled}
         onSelect={handleSelectFileSearchResult}
         recentItemsThreadId={ROOT_COMPOSE_FIXED_PANEL_STATE_ID}
-        onOpenBrowser={rootPanelThreadId ? handleOpenBrowser : undefined}
         onStartTerminal={
           canCreateRootTerminal ? handleStartTerminal : undefined
         }
@@ -3056,7 +2961,6 @@ export function RootComposeView() {
         }}
       />
     ) : undefined;
-  const isBrowserTabActive = activeBrowserTab !== null;
   const rootPanelMetadataContent = useMemo(
     () => (
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pt-1">
@@ -3520,8 +3424,6 @@ export function RootComposeView() {
                   candidate.pluginId === activePluginPanelTab.pluginId &&
                   candidate.id === activePluginPanelTab.actionId,
               )?.layout === "flush",
-            renderBrowserDeck,
-            isBrowserTabActive,
             isOpen: isSecondaryPanelOpen,
             showConversationCollapseControl: false,
             showGitDiffTab: false,

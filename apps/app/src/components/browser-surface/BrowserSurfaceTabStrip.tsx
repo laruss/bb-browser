@@ -1,21 +1,26 @@
 import { useState } from "react";
-import { Icon } from "@bb/shared-ui/icon";
+import { Icon, type IconName } from "@bb/shared-ui/icon";
 import { cn } from "@bb/shared-ui/lib/utils";
+import { useDesktopWindowState } from "@/hooks/useDesktopWindowState";
 import { useIsCompactViewport } from "@bb/shared-ui/hooks/use-compact-viewport";
 import { useOptionalIsSidebarShowing } from "@/components/ui/sidebar.js";
-import { useDesktopWindowState } from "@/hooks/useDesktopWindowState";
 import {
-  BROWSER_COLLAPSED_HEADER_RESERVE_CLASS,
   CHROME_ROW_HEIGHT_CLASS,
   getBbDesktopInfo,
-  MACOS_COLLAPSED_TOP_LEFT_RESERVE_CLASS,
+  MACOS_TRAFFIC_LIGHT_LEADING_RESERVE_CLASS,
   MACOS_WINDOW_DRAG_CLASS,
   MACOS_WINDOW_NO_DRAG_CLASS,
   shouldReserveMacosTrafficLights,
   shouldUseMacosDesktopChrome,
+  SIDEBAR_TRIGGER_TRAILING_RESERVE_CLASS,
 } from "@/lib/bb-desktop";
-import type { BrowserFixedPanelTab } from "@/lib/fixed-panel-tabs-state";
+import { resolveAppTabIconName } from "@/lib/app-surface-tabs";
+import {
+  isAppSurfaceTab,
+  type BrowserSurfaceTab,
+} from "@/lib/browser-surface-tabs";
 import { getBrowserUrlHost } from "@/lib/browser-url";
+import { useIsLeadingPanelShowing } from "@/components/layout/PluginLeadingPanel";
 
 export interface BrowserSurfaceTabStripProps {
   activeTabId: string | null;
@@ -31,10 +36,10 @@ export interface BrowserSurfaceTabStripProps {
   onActivate: (tabId: string) => void;
   onClose: (tabId: string) => void;
   onOpen: () => void;
-  tabs: readonly BrowserFixedPanelTab[];
+  tabs: readonly BrowserSurfaceTab[];
 }
 
-interface TabStripTopLeftReserveArgs {
+interface TabStripChromeReserveArgs {
   /** Null outside a `SidebarProvider`, where nothing is pinned over the strip. */
   isSidebarShowing: boolean | null;
   isCompactViewport: boolean;
@@ -42,31 +47,27 @@ interface TabStripTopLeftReserveArgs {
 }
 
 /**
- * Left-padding class that clears the window's top-left chrome footprint, or
- * `false` when nothing sits there. The surface draws no page header, so this
- * strip is the flush top-left row and inherits that row's obligations: clear the
- * pinned sidebar trigger (see AppLayout's SidebarTriggerOverlay), plus the macOS
- * traffic lights while they are visible. The rule is AppPageHeader's — the
- * trigger is pinned over the sidebar panel while the sidebar shows, and on
- * compact viewports the sidebar opens as an overlay above the strip, so the
- * reserve stays put across drawer state instead of shifting tabs behind it.
+ * Padding classes that clear the window's pinned title-bar chrome. The surface
+ * draws no page header, so this strip *is* the title-bar row and inherits its
+ * obligations — the same two, reserved by the same rule, as AppPageHeader: the
+ * macOS traffic lights at the leading end while they are visible, and the pinned
+ * sidebar trigger at the trailing end while the sidebar is collapsed (an open
+ * sidebar covers the trigger and reserves it in its own top row).
  *
- * Both reserve tokens are sized against a 16px base inset, which is why the
- * strip is `px-4` rather than the tighter inset a tab row would otherwise use —
- * see {@link MACOS_COLLAPSED_TOP_LEFT_RESERVE_CLASS} for that geometry.
+ * Both tokens are sized against a 16px base inset, which is why the strip is
+ * `px-4` rather than the tighter inset a tab row would otherwise use — see
+ * {@link MACOS_TRAFFIC_LIGHT_LEADING_RESERVE_CLASS} for that geometry.
  */
-export function resolveTabStripTopLeftReserveClassName({
+export function resolveTabStripChromeReserveClassName({
   isSidebarShowing,
   isCompactViewport,
   reserveMacosTrafficLights,
-}: TabStripTopLeftReserveArgs): string | false {
-  const reserves = isCompactViewport || isSidebarShowing === false;
-  if (!reserves) {
-    return false;
-  }
-  return reserveMacosTrafficLights
-    ? MACOS_COLLAPSED_TOP_LEFT_RESERVE_CLASS
-    : BROWSER_COLLAPSED_HEADER_RESERVE_CLASS;
+}: TabStripChromeReserveArgs): string {
+  return cn(
+    reserveMacosTrafficLights && MACOS_TRAFFIC_LIGHT_LEADING_RESERVE_CLASS,
+    (isCompactViewport || isSidebarShowing === false) &&
+      SIDEBAR_TRIGGER_TRAILING_RESERVE_CLASS,
+  );
 }
 
 /**
@@ -74,12 +75,25 @@ export function resolveTabStripTopLeftReserveClassName({
  * says, that width is Chromium's own 240px until the tabs stop fitting, and from
  * there they shrink together down to a floor.
  *
- * An identical fixed `basis-60` — not `flex-1`, which would divide the strip and
+ * An identical fixed width — not `flex-1`, which would divide the strip and
  * stretch two tabs across it — is what makes the widths equal and content-
  * independent: a title cannot widen its own tab, and a half-empty strip leaves
  * the space after the last tab rather than inflating tabs into it. Shrinking is
- * `shrink` against that shared basis: equal bases shrink by equal amounts, so the
+ * `shrink` against that shared width: equal bases shrink by equal amounts, so the
  * tabs stay identical the whole way down. No measuring, no resize observer.
+ *
+ * A definite `w-60` rather than `basis-60`, and the difference is the whole of a
+ * bug that outlived two attempts to fix it. Both give the same flex base size,
+ * but they give the tab list around the tabs different **max-content** sizes, and
+ * that size is what the list is sized by (it is `flex: 0 1 auto`). Flexbox
+ * computes it from the items' content, not their bases: each item offers
+ * `(max-content contribution − flex base size)`, and when *every* tab's content
+ * is narrower than 240 — a fresh tab reading "New tab", a host name, a page that
+ * has not reported a title yet — that difference is negative for all of them, the
+ * list shrinks below 240 × N, and the tabs shrink with it. One long title arrives
+ * and they all snap back out. A definite width makes the contribution definite
+ * too, so it equals the base, the difference is zero, and the list is 240 × N
+ * whatever the pages say.
  *
  * The floor is what a tab still needs when its title has been squeezed out
  * entirely: the page icon and the close control, nothing else. It is the sum of
@@ -88,16 +102,20 @@ export function resolveTabStripTopLeftReserveClassName({
  * paddings means recomputing it. Below the floor the strip clips instead of
  * scrolling (see the list container).
  */
-const TAB_WIDTH_CLASS = "min-w-15 shrink basis-60";
+const TAB_WIDTH_CLASS = "min-w-15 w-60 shrink";
 
 /**
- * A tab's visible name. Titles arrive asynchronously from the native view, so
- * the host is the interim label and "New tab" covers a tab with no page yet
- * (empty URL — see the desktop browser IPC contract).
+ * A tab's visible name. Titles arrive asynchronously — from the native view for
+ * a web tab, from the screen's own document title for an app tab — so the host
+ * (or the path) is the interim label, and "New tab" covers a tab with no page
+ * yet (empty URL — see the desktop browser IPC contract).
  */
-export function browserSurfaceTabLabel(tab: BrowserFixedPanelTab): string {
+export function browserSurfaceTabLabel(tab: BrowserSurfaceTab): string {
   if (tab.title !== null && tab.title.trim().length > 0) {
     return tab.title;
+  }
+  if (isAppSurfaceTab(tab)) {
+    return tab.path;
   }
   if (tab.url.length === 0) {
     return "New tab";
@@ -115,12 +133,20 @@ export function browserSurfaceTabLabel(tab: BrowserFixedPanelTab): string {
  * would be a second attacker-controlled string in the strip.
  */
 function BrowserSurfaceTabIcon({
+  appIcon,
   dataUrl,
   isLoading,
 }: {
+  /** Set for an app tab, which has no page and so never has a page icon. */
+  appIcon: IconName | null;
   dataUrl: string | null;
   isLoading: boolean;
 }) {
+  if (appIcon !== null) {
+    return (
+      <Icon name={appIcon} className="size-4 shrink-0 opacity-70" aria-hidden />
+    );
+  }
   if (isLoading) {
     return (
       <Icon
@@ -157,14 +183,19 @@ export function BrowserSurfaceTabStrip({
   const desktopWindowState = useDesktopWindowState();
   const isCompactViewport = useIsCompactViewport();
   const isSidebarShowing = useOptionalIsSidebarShowing();
+  const isLeadingPanelShowing = useIsLeadingPanelShowing();
   const usesDesktopChrome = shouldUseMacosDesktopChrome(desktopInfo);
-  const topLeftReserveClassName = resolveTabStripTopLeftReserveClassName({
+  const chromeReserveClassName = resolveTabStripChromeReserveClassName({
     isCompactViewport,
     isSidebarShowing,
-    reserveMacosTrafficLights: shouldReserveMacosTrafficLights({
-      desktopInfo,
-      windowState: desktopWindowState,
-    }),
+    // Not while the plugin panel is there: it owns the window's leading edge
+    // and holds the lights' strip open itself.
+    reserveMacosTrafficLights:
+      !isLeadingPanelShowing &&
+      shouldReserveMacosTrafficLights({
+        desktopInfo,
+        windowState: desktopWindowState,
+      }),
   });
   // In desktop chrome the strip is the window's drag handle, so every control on
   // it has to opt back out of dragging to stay clickable.
@@ -179,16 +210,17 @@ export function BrowserSurfaceTabStrip({
         CHROME_ROW_HEIGHT_CLASS,
         usesDesktopChrome && MACOS_WINDOW_DRAG_CLASS,
         "transition-[padding] duration-200 ease-linear",
-        topLeftReserveClassName,
+        chromeReserveClassName,
       )}
     >
       {/* The tabs get their own box so the new-tab button, which never shrinks,
           stays outside what clipping can reach. The box is sized by its tabs
           rather than by the strip (no `flex-1`), which is what puts the new-tab
-          button immediately after the last tab instead of against the right edge;
-          `min-w-0` still lets it be squeezed below its content, and then it clips.
-          No scrolling: past the width floor the strip clips, which is the cost of
-          the floor being a floor. */}
+          button immediately after the last tab instead of against the right edge
+          — and "by its tabs" holds only because each tab caps its own
+          contribution (see TAB_WIDTH_CLASS); `min-w-0` still lets it be squeezed
+          below its content, and then it clips. No scrolling: past the width floor
+          the strip clips, which is the cost of the floor being a floor. */}
       <div
         className="flex min-w-0 items-stretch overflow-hidden"
         role="tablist"
@@ -238,6 +270,11 @@ export function BrowserSurfaceTabStrip({
                 className="flex min-w-0 flex-1 items-center gap-1.5 rounded-md pl-2 pr-7 text-left text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               >
                 <BrowserSurfaceTabIcon
+                  appIcon={
+                    isAppSurfaceTab(tab)
+                      ? resolveAppTabIconName(tab.path)
+                      : null
+                  }
                   dataUrl={favicons[tab.id] ?? null}
                   isLoading={loadingTabIds.has(tab.id)}
                 />

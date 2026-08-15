@@ -4,43 +4,59 @@ import type {
   BbDesktopWindowState,
 } from "@bb/desktop-contract";
 
-// The macOS traffic-light cluster sits in a fixed strip on the left of the
-// frameless window. In-flow chrome clears it with left padding; the pinned
-// sidebar trigger clears it with a matching left offset (`left: 84px`). These
-// are fixed px geometry values because they are paired with Electron/macOS
-// window-control coordinates, not app typography.
+// The window's title-bar row has pinned chrome at both ends, and the ends are
+// independent because they have different owners. These are fixed px geometry
+// values because they are paired with Electron/macOS window-control coordinates
+// and with a fixed-size button, not with app typography. Both reserves are
+// paddings rather than spacer elements, so they transition in lockstep with the
+// sidebar slide instead of snapping on/off while the inset animates.
 //
-// One shared target: when the main sidebar is collapsed the pinned sidebar
-// trigger (84px + a 28px button + an 8px gap = the strip ends at 120px) is the
-// last thing on the title-bar row, so a surface that owns the window's
-// top-left must land its leading content at x = 120px — just right of the
-// trigger, not merely past the lights. Both such surfaces start from the same
-// `px-4` (16px) base inset, so one reserve serves both; 16 + 104 = 120. It is
-// folded into a single left padding (rather than padding + a spacer element) so
-// it can transition in lockstep with the sidebar slide instead of snapping
-// on/off while the inset animates. The two surfaces are:
-//  - the page header content row.
+// ONE RULE FOR BOTH, and it is the rule these tokens were twice written against:
+// a reserve is the **whole** distance from the window edge, and it must be put
+// on the element that already carries the surface's own inset. `pl-*`/`pr-*`
+// replace one side of a `px-*` on the same element, but *add* to a `px-*` on an
+// ancestor — so a reserve written as "the surface's 16px plus N" lands at N on
+// some surfaces and at 16 + N on others, and there is no value of N that is
+// right for both. Both spellings shipped, and each produced its own overlap:
+// tabs under the traffic lights, and the new-tab button under the sidebar
+// trigger. Adding a new reserving surface means giving it the inset and the
+// reserve on one element.
+//
+// LEADING (left) — the macOS traffic-light cluster, in a fixed strip of the
+// frameless window ending at 84px, which is therefore the whole reserve. It
+// depends only on whether the lights are visible: the sidebar is at the other
+// end and never covers them. The surfaces:
+//  - the page header content row;
+//  - the browser surface's tab strip, which draws no page header above it;
 //  - the secondary panel's top chrome, while the conversation is collapsed and
 //    the panel is flush at the window top-left. That happens on both thread
 //    surfaces, not just the split-workspace host: collapsing takes the
 //    conversation column to zero width and the thread header rides inside it,
 //    so inline thread detail hands over the top-left too. Assuming otherwise is
-//    what once left its tab strip sitting under the lights. Root compose is
-//    genuinely exempt — it keeps the panel to the right of the main content.
+//    what once left its tab strip sitting under the lights.
 export const MACOS_TRAFFIC_LIGHT_RESERVE_OFFSET_CLASS = "left-[84px]";
-export const MACOS_COLLAPSED_TOP_LEFT_RESERVE_CLASS = "pl-[104px]";
+export const MACOS_TRAFFIC_LIGHT_LEADING_RESERVE_CLASS = "pl-[84px]";
+// The same strip, reserved downwards instead of sideways. A surface that owns
+// the whole leading edge — the plugin panel — cannot clear the lights by
+// indenting, because it is a column and its content would then be indented all
+// the way down. It gives up its first row instead, the same 48px row the
+// lights are centred in.
+export const MACOS_TRAFFIC_LIGHT_TOP_RESERVE_CLASS = "pt-[48px]";
 
-// Browser-chrome analogs of the macOS reserve above. The web build has no
-// traffic lights, so it pins the sidebar toggle flush at the app's top-left with
-// a small inset (see AppLayout's SidebarTriggerOverlay), and the collapsed page
-// header reserves that footprint as left padding so its content clears the
-// pinned toggle — the same trick as macOS, just smaller. Keep the inset and the
-// reserve in sync: `padding-left: 32px` on top of the header's own `px-4` (16px) sums to
-// 48px, which clears the 12px inset + the 28px trigger + an 8px gap;
-// `max-md:pointer-coarse:pl-[40px]` covers the larger 36px touch trigger.
-export const BROWSER_SIDEBAR_TRIGGER_INSET_CLASS = "pl-[12px]";
-export const BROWSER_COLLAPSED_HEADER_RESERVE_CLASS =
-  "pl-[32px] max-md:pointer-coarse:pl-[40px]";
+// TRAILING (right) — the pinned sidebar trigger, which sits beside the panel it
+// toggles (see AppLayout's SidebarTriggerOverlay). macOS puts no window controls
+// at this end, so one token serves desktop chrome and the web build alike.
+//
+// The whole gap again: 12px inset + the 28px trigger + an 8px gap = 48, and
+// `max-md:pointer-coarse:pr-[56px]` covers the larger 36px touch trigger.
+//
+// Who reserves it depends on what the trigger is over, and the two cases are
+// complementary: with the sidebar **open** it covers the sidebar's own top row,
+// so that row reserves it; with the sidebar **collapsed** it covers whatever
+// main-area chrome owns the window's top-right, so that chrome does.
+export const SIDEBAR_TRIGGER_TRAILING_INSET_CLASS = "pr-[12px]";
+export const SIDEBAR_TRIGGER_TRAILING_RESERVE_CLASS =
+  "pr-[48px] max-md:pointer-coarse:pr-[56px]";
 export const MACOS_WINDOW_DRAG_CLASS =
   "select-none [app-region:drag] [-webkit-app-region:drag]";
 export const MACOS_APP_REGION_NO_DRAG_CLASS =

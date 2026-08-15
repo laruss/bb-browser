@@ -69,15 +69,11 @@ export const ROOT_COMPOSE_PINNED_PANEL_TOGGLE_POSITION_CLASS =
 
 type RootSecondaryPanelProps = Omit<
   ComponentProps<typeof ThreadSecondaryPanel>,
-  | "browserDeck"
   | "isConversationCollapsed"
   | "onToggleConversationCollapse"
   | "renderAsDrawer"
   | "showNewTabButton"
 > & {
-  renderBrowserDeck?: (args: {
-    canShowNativeBrowserView: boolean;
-  }) => ReactNode;
 };
 
 interface RootComposeSecondaryContentProps {
@@ -128,8 +124,6 @@ export function RootComposeSecondaryContent({
   useEffect(() => {
     persistedSecondaryWidthRef.current = persistedSecondaryWidthPercent;
   }, [persistedSecondaryWidthPercent]);
-  const [isCompactDrawerContentSettled, setIsCompactDrawerContentSettled] =
-    useState(false);
   const { isPanelRealized, realizePanel } = useDrawerPanelRealization({
     isDrawerOpen: isSecondaryPanelOpen,
     rendersAsDrawer: renderAsDrawer,
@@ -169,7 +163,6 @@ export function RootComposeSecondaryContent({
 
   useLayoutEffect(() => {
     cancelCompactDrawerContentSettleFrame();
-    setIsCompactDrawerContentSettled(false);
   }, [
     cancelCompactDrawerContentSettleFrame,
     isSecondaryPanelOpen,
@@ -217,7 +210,6 @@ export function RootComposeSecondaryContent({
             stateAfterSync.isSecondaryPanelOpen &&
             stateAfterSync.renderAsDrawer
           ) {
-            setIsCompactDrawerContentSettled(true);
             realizePanel();
           }
         },
@@ -226,15 +218,7 @@ export function RootComposeSecondaryContent({
     [cancelCompactDrawerContentSettleFrame, realizePanel],
   );
 
-  const canShowNativeBrowserView = renderAsDrawer
-    ? isSecondaryPanelOpen && isCompactDrawerContentSettled
-    : isSecondaryPanelOpen &&
-      (secondaryPanelHost === null || paneContext?.isFocused === true);
-  const { renderBrowserDeck, ...threadSecondaryPanelProps } = secondaryPanel;
-  const browserDeck = useMemo(
-    () => renderBrowserDeck?.({ canShowNativeBrowserView }),
-    [canShowNativeBrowserView, renderBrowserDeck],
-  );
+  const threadSecondaryPanelProps = secondaryPanel;
   useLayoutEffect(() => {
     const group = horizontalPanelGroupRef.current;
     if (group === null || renderAsDrawer) {
@@ -257,7 +241,6 @@ export function RootComposeSecondaryContent({
       !renderAsDrawer ? (
         <ThreadSecondaryPanel
           {...threadSecondaryPanelProps}
-          browserDeck={browserDeck}
           renderAsDrawer={false}
           isConversationCollapsed={false}
           onToggleConversationCollapse={noopToggleConversationCollapse}
@@ -273,7 +256,6 @@ export function RootComposeSecondaryContent({
         />
       ) : null,
     [
-      browserDeck,
       paneContext,
       renderAsDrawer,
       secondaryPanelHost,
@@ -283,7 +265,6 @@ export function RootComposeSecondaryContent({
   const drawerSecondaryPanelContent = renderAsDrawer ? (
     <ThreadSecondaryPanel
       {...threadSecondaryPanelProps}
-      browserDeck={browserDeck}
       renderAsDrawer={true}
       isConversationCollapsed={false}
       onToggleConversationCollapse={noopToggleConversationCollapse}

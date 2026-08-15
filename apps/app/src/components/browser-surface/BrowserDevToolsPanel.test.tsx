@@ -2,9 +2,16 @@
 
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  createBbDesktopApi,
+  createNoopDesktopBrowserApi,
+} from "@/test/bb-desktop-test-utils";
 import { BrowserDevToolsPanel } from "./BrowserDevToolsPanel";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  delete window.bbDesktop;
+});
 
 describe("BrowserDevToolsPanel", () => {
   // DevTools are opened detached, because the host view is ours, and a detached
@@ -19,6 +26,41 @@ describe("BrowserDevToolsPanel", () => {
     );
 
     expect(onClose).toHaveBeenCalled();
+  });
+
+  // The shell hides native views with the page they belong to, and the page
+  // goes away for reasons that leave this panel where it is — a failed load,
+  // where the app draws "page unavailable" in the page's rect. Only the app can
+  // tell the shell the difference, and being mounted is how it says so.
+  it("reports itself on screen for as long as it is mounted", () => {
+    const setDevToolsVisible = vi.fn();
+    window.bbDesktop = createBbDesktopApi(
+      {
+        lastCheckedAt: null,
+        latestVersion: null,
+        pendingVersion: null,
+        platform: "macos",
+        updateAvailable: false,
+        updateDownloaded: false,
+        version: "0.0.0-test",
+      },
+      { ...createNoopDesktopBrowserApi(), setDevToolsVisible },
+    );
+
+    const { unmount } = render(
+      <BrowserDevToolsPanel onClose={vi.fn()} tabId="browser:a" />,
+    );
+    expect(setDevToolsVisible).toHaveBeenLastCalledWith({
+      tabId: "browser:a",
+      visible: true,
+    });
+
+    unmount();
+
+    expect(setDevToolsVisible).toHaveBeenLastCalledWith({
+      tabId: "browser:a",
+      visible: false,
+    });
   });
 
   // Everything below the strip belongs to Chromium: the app measures that area

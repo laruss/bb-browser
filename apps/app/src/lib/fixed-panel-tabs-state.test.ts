@@ -346,9 +346,15 @@ describe("legacy side-chat tabs", () => {
   // The native side chat is gone, but its tabs can still sit in stored panel
   // state. They must not fail the parse — they simply disappear.
   it("drops tabs persisted before the native side chat was removed", () => {
-    const browserTab = createBrowserFixedPanelTab({
-      environmentId: null,
-      url: "https://example.com",
+    const survivor = createWorkspaceFilePreviewFixedPanelTab({
+      environmentId: "env-1",
+      projectId: null,
+      tab: {
+        lineRange: null,
+        path: "src/index.ts",
+        source: { kind: "working-tree" },
+        statusLabel: null,
+      },
     });
     const stored = JSON.stringify({
       version: FIXED_PANEL_TABS_STATE_STORAGE_VERSION,
@@ -357,7 +363,7 @@ describe("legacy side-chat tabs", () => {
         activeTabId: "side-chat:legacy",
         isOpen: true,
         tabs: [
-          browserTab,
+          survivor,
           {
             id: "side-chat:legacy",
             kind: "side-chat",
@@ -376,6 +382,47 @@ describe("legacy side-chat tabs", () => {
       storedValue: stored,
     });
 
-    expect(parsed.secondary.tabs).toEqual([browserTab]);
+    expect(parsed.secondary.tabs).toEqual([survivor]);
+  });
+
+  // The panel no longer hosts a browser — there is one browser and it is the
+  // surface — but saved state still holds the tabs it used to keep, and the kind
+  // is still in the schema because the surface's own tabs are the same record.
+  // So they parse and then disappear, rather than failing the parse or coming
+  // back as tabs nothing can render.
+  it("drops the browser tabs the panel used to host", () => {
+    const survivor = createWorkspaceFilePreviewFixedPanelTab({
+      environmentId: "env-1",
+      projectId: null,
+      tab: {
+        lineRange: null,
+        path: "src/index.ts",
+        source: { kind: "working-tree" },
+        statusLabel: null,
+      },
+    });
+    const browserTab = createBrowserFixedPanelTab({
+      environmentId: null,
+      url: "https://example.com",
+    });
+    const stored = JSON.stringify({
+      version: FIXED_PANEL_TABS_STATE_STORAGE_VERSION,
+      lastUsedAt: NOW,
+      secondary: {
+        activeTabId: browserTab.id,
+        isOpen: true,
+        tabs: [survivor, browserTab],
+      },
+    });
+
+    const parsed = parseFixedPanelTabsState({
+      initialValue: EMPTY_FIXED_PANEL_TABS_STATE,
+      now: NOW,
+      storedValue: stored,
+    });
+
+    expect(parsed.secondary.tabs).toEqual([survivor]);
+    // The pointer went with it rather than naming a tab that is gone.
+    expect(parsed.secondary.activeTabId).not.toBe(browserTab.id);
   });
 });

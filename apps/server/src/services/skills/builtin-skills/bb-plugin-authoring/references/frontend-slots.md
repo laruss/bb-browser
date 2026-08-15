@@ -64,6 +64,12 @@ export default definePluginApp((app) => {
     component: Board,
     experimental_sidebarAccessory: OpenIssueCount,
   });
+  app.slots.experimental_leadingPanel({
+    id: "board-rail",
+    title: "Board",
+    icon: "Columns",
+    component: BoardPanel,
+  });
   app.slots.threadPanelAction({
     id: "issue",
     title: "Open issue",
@@ -316,6 +322,17 @@ Versioned and additive-only:
   for data. Enabled plugins appear in the
   settings sidebar when they declare settings descriptors OR register
   settings sections.
+- `experimental_leadingPanel` → `{}` — a panel on the window's **leading**
+  edge, the end opposite the sidebar. Registration:
+  `{ id, title, icon, component }`. It is not a route: nothing links to it, it
+  has no path, and it stays put while the user navigates — use it for something
+  that accompanies the work rather than somewhere the user goes.
+  bb contributes nothing to this edge, so it does not exist until a plugin
+  claims it, and what the host draws around it follows from how many plugins
+  did: one gets the panel whole with no host chrome, and a second is what makes
+  the host add a rail of icons to switch between them. `title` names the rail
+  button; `icon` is a BB icon name. The user can resize the panel; the plugin
+  does not choose its width.
 - `navPanel` → `{ subPath: string }` — owns the whole route at
   `/plugins/<pluginId>/<path>/*` and gets its own sidebar entry. `subPath`
   is the route remainder after the panel root (`""` at the root), so deep

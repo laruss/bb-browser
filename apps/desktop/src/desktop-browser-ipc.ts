@@ -93,6 +93,11 @@ export const BB_DESKTOP_BROWSER_SET_DEV_TOOLS_CHANNEL =
   "bb-desktop:browser:set-dev-tools";
 export const BB_DESKTOP_BROWSER_DEV_TOOLS_STATE_CHANNEL =
   "bb-desktop:browser:dev-tools-state";
+// A third channel rather than a field on the first: whether the panel is on
+// screen is not whether the tools are open, and the browser request schemas are
+// wire-frozen (see docs/architecture/bb-migration.md, invariant 2).
+export const BB_DESKTOP_BROWSER_SET_DEV_TOOLS_VISIBLE_CHANNEL =
+  "bb-desktop:browser:set-dev-tools-visible";
 // Real popups: the tabs that may have them going down, the popup the shell
 // created (or that closed itself) coming back up. Two channels because they run
 // in opposite directions and at completely different rates — the declaration

@@ -6,6 +6,7 @@ import type {
   OmniboxProviderSuggestion,
   OmniboxSuggestion,
 } from "../types";
+import { createOmniboxAppRouteProvider } from "./app-routes";
 import { createOmniboxHistoryProvider } from "./history";
 import { createOmniboxNavigationProvider } from "./navigation";
 import {
@@ -233,5 +234,49 @@ describe("built-in provider ordering", () => {
       "open-tabs",
       "history",
     ]);
+  });
+});
+
+// bb's own screens are reachable from the address bar the way Chromium's
+// chrome:// pages are — by name, not by knowing the path they live at.
+describe("app routes provider", () => {
+  const provider = createOmniboxAppRouteProvider({
+    routes: [
+      {
+        id: "extensions",
+        keywords: ["extensions", "plugins"],
+        path: "/tools/plugins",
+        subtitle: "Installed plugins",
+        title: "Extensions",
+      },
+    ],
+  });
+
+  it("offers a screen by a word the user would actually type", () => {
+    const [suggestion] = suggest(provider, "plugins");
+
+    expect(suggestion?.action).toEqual({
+      type: "open-app-tab",
+      path: "/tools/plugins",
+    });
+    // Attributed to bb rather than left as a plain "Go": the row leads out of
+    // the web and into the app, and that is worth seeing before Enter.
+    expect(suggestion?.sourceLabel).toBe("bb");
+  });
+
+  it("stays out of the way of a real address", () => {
+    const ranked = rankAcross(
+      [createOmniboxNavigationProvider(), provider],
+      "extensions.example.com",
+    );
+
+    expect(ranked[0]?.action).toEqual({
+      type: "navigate",
+      url: "https://extensions.example.com",
+    });
+  });
+
+  it("says nothing for a query that names no screen", () => {
+    expect(suggest(provider, "weather")).toEqual([]);
   });
 });

@@ -9,7 +9,7 @@ import {
 import {
   CHROME_ROW_CLASS,
   CHROME_ROW_HEIGHT_CLASS,
-  MACOS_COLLAPSED_TOP_LEFT_RESERVE_CLASS,
+  MACOS_TRAFFIC_LIGHT_LEADING_RESERVE_CLASS,
 } from "@/lib/bb-desktop";
 import { SECONDARY_PANEL_TOP_CHROME_BACKGROUND_CLASS } from "./panelChromeClasses";
 
@@ -81,7 +81,6 @@ describe("resolveCollapsedPanelTrafficLightReserveClassName", () => {
   const base = {
     isConversationCollapsed: true,
     renderAsDrawer: false,
-    isSidebarShowing: false as boolean | null,
     reserveMacosTrafficLights: true,
   };
 
@@ -93,17 +92,8 @@ describe("resolveCollapsedPanelTrafficLightReserveClassName", () => {
   // gone the surfaces are indistinguishable here, so one case covers them.
   it("reserves the safe area for the panel full-screen case", () => {
     expect(resolveCollapsedPanelTrafficLightReserveClassName(base)).toBe(
-      MACOS_COLLAPSED_TOP_LEFT_RESERVE_CLASS,
+      MACOS_TRAFFIC_LIGHT_LEADING_RESERVE_CLASS,
     );
-  });
-
-  it("does not reserve when the main sidebar is showing (it hosts the lights)", () => {
-    expect(
-      resolveCollapsedPanelTrafficLightReserveClassName({
-        ...base,
-        isSidebarShowing: true,
-      }),
-    ).toBe(false);
   });
 
   it("does not reserve when the conversation is expanded (panel sits on the right)", () => {
@@ -129,15 +119,6 @@ describe("resolveCollapsedPanelTrafficLightReserveClassName", () => {
       resolveCollapsedPanelTrafficLightReserveClassName({
         ...base,
         reserveMacosTrafficLights: false,
-      }),
-    ).toBe(false);
-  });
-
-  it("treats an absent sidebar context (null) as showing, so it does not reserve", () => {
-    expect(
-      resolveCollapsedPanelTrafficLightReserveClassName({
-        ...base,
-        isSidebarShowing: null,
       }),
     ).toBe(false);
   });

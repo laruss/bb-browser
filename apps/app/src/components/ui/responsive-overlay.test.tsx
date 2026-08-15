@@ -8,6 +8,7 @@ import type {
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { POINTER_COARSE_QUERY } from "@bb/shared-ui/hooks/use-pointer-coarse";
+import { useIsBrowserDimmingModalOpen } from "@/hooks/useBrowserDimmingModal";
 import {
   PersistentResponsiveDrawerShell,
   ResponsiveDrawerShell,
@@ -459,5 +460,46 @@ describe("PersistentResponsiveDrawerShell", () => {
 
     expect(onOpenChange).toHaveBeenCalledWith(false);
     expect(readHeight).toHaveBeenCalledTimes(1);
+  });
+});
+
+// The drawer covers the page area, and the in-app browser there is an OS-level
+// overlay that no backdrop dims — so the page has to step aside, exactly as it
+// does for a dialog. Without this the drawer opens *behind* the page, which is
+// now reachable from any width: a thread in the side panel renders in this
+// single-column form and opens its details here.
+describe("PersistentResponsiveDrawerShell and the native browser view", () => {
+  function DimmingProbe() {
+    return (
+      <span data-testid="dimming">
+        {useIsBrowserDimmingModalOpen() ? "dimmed" : "live"}
+      </span>
+    );
+  }
+
+  function renderShell(open: boolean) {
+    return (
+      <>
+        <DimmingProbe />
+        <PersistentResponsiveDrawerShell
+          open={open}
+          onOpenChange={() => {}}
+          srLabel="Details"
+        >
+          <button type="button">Panel action</button>
+        </PersistentResponsiveDrawerShell>
+      </>
+    );
+  }
+
+  it("takes the page away while it is open, and gives it back", () => {
+    const view = render(renderShell(false));
+    expect(screen.getByTestId("dimming").textContent).toBe("live");
+
+    view.rerender(renderShell(true));
+    expect(screen.getByTestId("dimming").textContent).toBe("dimmed");
+
+    view.rerender(renderShell(false));
+    expect(screen.getByTestId("dimming").textContent).toBe("live");
   });
 });

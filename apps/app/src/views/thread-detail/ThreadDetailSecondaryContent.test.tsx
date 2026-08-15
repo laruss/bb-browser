@@ -17,9 +17,6 @@ import { MemoryRouter } from "react-router-dom";
 type ThreadDetailSecondaryContentProps = ComponentProps<
   typeof ThreadDetailSecondaryContent
 >;
-type RenderBrowserDeck = NonNullable<
-  ThreadDetailSecondaryContentProps["secondaryPanel"]["renderBrowserDeck"]
->;
 type DrawerShellCallback = (open: boolean) => void;
 
 const drawerShellState = vi.hoisted(() => ({
@@ -135,22 +132,17 @@ vi.mock(
       >();
 
     const ThreadSecondaryPanel = ({
-      browserDeck,
       inlinePanelToggle,
       isOpen,
       renderAsDrawer,
     }: ComponentProps<typeof actual.ThreadSecondaryPanel>) =>
-      React.createElement(
-        "section",
-        {
-          "data-open": String(isOpen),
-          "data-inline-panel-toggle": inlinePanelToggle,
-          "data-testid": renderAsDrawer
-            ? "drawer-secondary-panel"
-            : "inline-secondary-panel",
-        },
-        browserDeck,
-      );
+      React.createElement("section", {
+        "data-open": String(isOpen),
+        "data-inline-panel-toggle": inlinePanelToggle,
+        "data-testid": renderAsDrawer
+          ? "drawer-secondary-panel"
+          : "inline-secondary-panel",
+      });
 
     return { ...actual, ThreadSecondaryPanel };
   },
@@ -182,7 +174,6 @@ interface RenderThreadDetailArgs {
   isFocusedHosted?: boolean;
   isCompactViewport: boolean;
   isSecondaryPanelOpen: boolean;
-  renderBrowserDeck: RenderBrowserDeck;
   threadId: string;
 }
 
@@ -300,21 +291,8 @@ function makeThread(
   } as ThreadDetailSecondaryContentProps["metadata"]["thread"];
 }
 
-function createBrowserDeckRenderer(order?: string[]): RenderBrowserDeck {
-  return vi.fn(({ canShowNativeBrowserView }) => {
-    order?.push(`render:${String(canShowNativeBrowserView)}`);
-    return (
-      <div
-        data-can-show-native-browser-view={String(canShowNativeBrowserView)}
-        data-testid="browser-deck"
-      />
-    );
-  });
-}
-
 function createProps({
   isSecondaryPanelOpen,
-  renderBrowserDeck,
   threadId,
 }: Omit<
   RenderThreadDetailArgs,
@@ -358,7 +336,6 @@ function createProps({
       activeTab: null,
       canUseGitUi: false,
       fileTabs: [],
-      isBrowserTabActive: true,
       isOpen: isSecondaryPanelOpen,
       onCollapse: noop,
       onClose: noop,
@@ -366,7 +343,6 @@ function createProps({
       onOpenNewTab: noop,
       onPanelChange: noop,
       onPanelFocus: noop,
-      renderBrowserDeck,
       showGitDiffTab: false,
     },
     timeline: {
@@ -401,7 +377,6 @@ function renderThreadDetail(args: RenderThreadDetailArgs) {
         <ThreadDetailSecondaryContent
           {...createProps({
             isSecondaryPanelOpen: renderArgs.isSecondaryPanelOpen,
-            renderBrowserDeck: renderArgs.renderBrowserDeck,
             threadId: renderArgs.threadId,
           })}
         />
@@ -423,7 +398,6 @@ function renderThreadDetail(args: RenderThreadDetailArgs) {
             <ThreadDetailSecondaryContent
               {...createProps({
                 isSecondaryPanelOpen: renderArgs.isSecondaryPanelOpen,
-                renderBrowserDeck: renderArgs.renderBrowserDeck,
                 threadId: renderArgs.threadId,
               })}
             />
@@ -432,14 +406,6 @@ function renderThreadDetail(args: RenderThreadDetailArgs) {
       );
     },
   };
-}
-
-function expectBrowserDeckVisibility(canShowNativeBrowserView: boolean) {
-  expect(
-    screen
-      .getByTestId("browser-deck")
-      .getAttribute("data-can-show-native-browser-view"),
-  ).toBe(String(canShowNativeBrowserView));
 }
 
 // Before the compact drawer paints its light shell, the whole secondary panel
@@ -484,7 +450,6 @@ describe("ThreadDetailSecondaryContent compact drawer settling", () => {
     renderThreadDetail({
       isCompactViewport: false,
       isSecondaryPanelOpen: true,
-      renderBrowserDeck: createBrowserDeckRenderer(),
       threadId: "thread-1",
     });
 
@@ -500,7 +465,6 @@ describe("ThreadDetailSecondaryContent compact drawer settling", () => {
       isCompactViewport: false,
       isFocusedHosted: true,
       isSecondaryPanelOpen: true,
-      renderBrowserDeck: createBrowserDeckRenderer(),
       threadId: "thread-1",
     });
 
@@ -519,7 +483,6 @@ describe("ThreadDetailSecondaryContent compact drawer settling", () => {
     renderThreadDetail({
       isCompactViewport: false,
       isSecondaryPanelOpen: true,
-      renderBrowserDeck: createBrowserDeckRenderer(),
       threadId: "thread-1",
     });
 
@@ -532,47 +495,19 @@ describe("ThreadDetailSecondaryContent compact drawer settling", () => {
     expect(panelGroup.contains(sidePanel)).toBe(true);
   });
 
-  it("hides and restores native browser readiness as hosted pane focus changes", () => {
-    const order: string[] = [];
-    const renderBrowserDeck = createBrowserDeckRenderer(order);
-    const view = renderThreadDetail({
-      isCompactViewport: false,
-      isFocusedHosted: true,
-      isSecondaryPanelOpen: true,
-      renderBrowserDeck,
-      threadId: "thread-1",
-    });
-
-    expect(renderBrowserDeck).toHaveBeenLastCalledWith({
-      canShowNativeBrowserView: true,
-    });
-    view.rerenderWith({ isFocusedHosted: false });
-    expect(renderBrowserDeck).toHaveBeenLastCalledWith({
-      canShowNativeBrowserView: false,
-    });
-    view.rerenderWith({ isFocusedHosted: true });
-    expect(renderBrowserDeck).toHaveBeenLastCalledWith({
-      canShowNativeBrowserView: true,
-    });
-    expect(order.filter((entry) => entry.startsWith("render:"))).toEqual([
-      "render:true",
-      "render:false",
-      "render:true",
-    ]);
-  });
-
-  it("orders open-animation completion, rAF, bounds sync, and drawer settled true", () => {
+  // The drawer opens over the page area, so the browser's own view has to be
+  // told where things are once the slide has finished — after the animation end,
+  // one frame later, and not before.
+  it("orders open-animation completion, rAF, and bounds sync", () => {
     const order: string[] = [];
     const frames = installAnimationFrameQueue(order);
     vi.mocked(dispatchBrowserViewBoundsSync).mockImplementation(() => {
       order.push("dispatchBrowserViewBoundsSync");
     });
-    const renderBrowserDeck = createBrowserDeckRenderer(order);
 
     renderThreadDetail({
       isCompactViewport: true,
       isSecondaryPanelOpen: true,
-      renderBrowserDeck,
       threadId: "thread-1",
     });
 
@@ -580,39 +515,32 @@ describe("ThreadDetailSecondaryContent compact drawer settling", () => {
     expect(frames.requestAnimationFrame).toHaveBeenCalledTimes(1);
 
     realizeDrawerPanel(frames);
-    expectBrowserDeckVisibility(false);
 
     order.push("animationEnd:true");
     scheduleCompactDrawerSettleFrame();
 
     expect(frames.requestAnimationFrame).toHaveBeenCalledTimes(3);
     expect(dispatchBrowserViewBoundsSync).not.toHaveBeenCalled();
-    expectBrowserDeckVisibility(false);
 
     act(() => {
       frames.flushAll();
     });
 
-    expectBrowserDeckVisibility(true);
     expect(order).toEqual([
-      "render:false",
       "requestAnimationFrame",
       "requestAnimationFrame",
       "animationEnd:true",
       "requestAnimationFrame",
       "dispatchBrowserViewBoundsSync",
-      "render:true",
     ]);
   });
 
   it("ignores close-animation completion without dispatching bounds sync", () => {
     const frames = installAnimationFrameQueue();
-    const renderBrowserDeck = createBrowserDeckRenderer();
 
     renderThreadDetail({
       isCompactViewport: true,
       isSecondaryPanelOpen: true,
-      renderBrowserDeck,
       threadId: "thread-1",
     });
 
@@ -634,11 +562,9 @@ describe("ThreadDetailSecondaryContent compact drawer settling", () => {
 
   it("does not schedule a stale open callback after the compact drawer closes", () => {
     const frames = installAnimationFrameQueue();
-    const renderBrowserDeck = createBrowserDeckRenderer();
     const view = renderThreadDetail({
       isCompactViewport: true,
       isSecondaryPanelOpen: true,
-      renderBrowserDeck,
       threadId: "thread-1",
     });
 
@@ -653,11 +579,9 @@ describe("ThreadDetailSecondaryContent compact drawer settling", () => {
 
   it("cancels a pending compact drawer settle rAF when the drawer closes", () => {
     const frames = installAnimationFrameQueue();
-    const renderBrowserDeck = createBrowserDeckRenderer();
     const view = renderThreadDetail({
       isCompactViewport: true,
       isSecondaryPanelOpen: true,
-      renderBrowserDeck,
       threadId: "thread-1",
     });
 
@@ -674,16 +598,13 @@ describe("ThreadDetailSecondaryContent compact drawer settling", () => {
     });
 
     expect(dispatchBrowserViewBoundsSync).not.toHaveBeenCalled();
-    expectBrowserDeckVisibility(false);
   });
 
   it("cancels a pending compact drawer settle rAF when the thread changes", () => {
     const frames = installAnimationFrameQueue();
-    const renderBrowserDeck = createBrowserDeckRenderer();
     const view = renderThreadDetail({
       isCompactViewport: true,
       isSecondaryPanelOpen: true,
-      renderBrowserDeck,
       threadId: "thread-1",
     });
 
@@ -700,16 +621,13 @@ describe("ThreadDetailSecondaryContent compact drawer settling", () => {
     });
 
     expect(dispatchBrowserViewBoundsSync).not.toHaveBeenCalled();
-    expectBrowserDeckVisibility(false);
   });
 
   it("cancels a pending compact drawer settle rAF on compact-to-wide transition", () => {
     const frames = installAnimationFrameQueue();
-    const renderBrowserDeck = createBrowserDeckRenderer();
     const view = renderThreadDetail({
       isCompactViewport: true,
       isSecondaryPanelOpen: true,
-      renderBrowserDeck,
       threadId: "thread-1",
     });
 
@@ -726,16 +644,13 @@ describe("ThreadDetailSecondaryContent compact drawer settling", () => {
     });
 
     expect(dispatchBrowserViewBoundsSync).not.toHaveBeenCalled();
-    expectBrowserDeckVisibility(true);
   });
 
   it("cancels a pending compact drawer settle rAF on unmount", () => {
     const frames = installAnimationFrameQueue();
-    const renderBrowserDeck = createBrowserDeckRenderer();
     const view = renderThreadDetail({
       isCompactViewport: true,
       isSecondaryPanelOpen: true,
-      renderBrowserDeck,
       threadId: "thread-1",
     });
 
@@ -754,49 +669,5 @@ describe("ThreadDetailSecondaryContent compact drawer settling", () => {
     expect(dispatchBrowserViewBoundsSync).not.toHaveBeenCalled();
   });
 
-  it("passes compact opening and wide layout visibility values to the browser deck render prop", () => {
-    const frames = installAnimationFrameQueue();
-    vi.mocked(dispatchBrowserViewBoundsSync).mockImplementation(() => {});
-    const compactRenderBrowserDeck = createBrowserDeckRenderer();
 
-    renderThreadDetail({
-      isCompactViewport: true,
-      isSecondaryPanelOpen: true,
-      renderBrowserDeck: compactRenderBrowserDeck,
-      threadId: "thread-1",
-    });
-
-    expect(compactRenderBrowserDeck).toHaveBeenLastCalledWith({
-      canShowNativeBrowserView: false,
-    });
-    realizeDrawerPanel(frames);
-    scheduleCompactDrawerSettleFrame();
-    act(() => {
-      frames.flushAll();
-    });
-    expect(compactRenderBrowserDeck).toHaveBeenLastCalledWith({
-      canShowNativeBrowserView: true,
-    });
-
-    cleanup();
-
-    const wideRenderBrowserDeck = createBrowserDeckRenderer();
-    const wideView = renderThreadDetail({
-      isCompactViewport: false,
-      isSecondaryPanelOpen: false,
-      renderBrowserDeck: wideRenderBrowserDeck,
-      threadId: "thread-1",
-    });
-
-    expect(wideRenderBrowserDeck).toHaveBeenLastCalledWith({
-      canShowNativeBrowserView: false,
-    });
-
-    wideView.rerenderWith({ isSecondaryPanelOpen: true });
-
-    expect(wideRenderBrowserDeck).toHaveBeenLastCalledWith({
-      canShowNativeBrowserView: true,
-    });
-    expect(dispatchBrowserViewBoundsSync).toHaveBeenCalledTimes(1);
-  });
 });

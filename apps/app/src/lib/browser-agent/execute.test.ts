@@ -15,6 +15,7 @@ import type { BrowserCommandOutcome } from "@bb/domain";
 import { createBrowserFixedPanelTab } from "../fixed-panel-tabs-state";
 import {
   EMPTY_BROWSER_SURFACE_TABS_STATE,
+  getBrowserSurfaceWebTabs,
   type BrowserSurfaceTabsState,
 } from "../browser-surface-tabs";
 import { executeBrowserCommand, type BrowserCommandDeps } from "./execute";
@@ -27,7 +28,11 @@ import { BrowserTraceRecorder } from "./trace";
  */
 
 function tab(id: string, url = "", title: string | null = null) {
-  return { ...createBrowserFixedPanelTab({ environmentId: null, url }), id, title };
+  return {
+    ...createBrowserFixedPanelTab({ environmentId: null, url }),
+    id,
+    title,
+  };
 }
 
 function liveState(
@@ -311,11 +316,17 @@ function expectFailure(outcome: BrowserCommandOutcome, code: string): void {
 describe("executeBrowserCommand — tabs", () => {
   it("lists tabs with liveness, activity and navigation flags", async () => {
     const harness = createHarness({
-      state: { activeTabId: "a", tabs: [tab("a"), tab("b", "https://b.test/")] },
+      state: {
+        activeTabId: "a",
+        tabs: [tab("a"), tab("b", "https://b.test/")],
+      },
       live: { a: liveState("a", { canGoBack: true, title: "Live title" }) },
     });
 
-    const outcome = await executeBrowserCommand({ type: "tabs.list" }, harness.deps);
+    const outcome = await executeBrowserCommand(
+      { type: "tabs.list" },
+      harness.deps,
+    );
 
     expect(outcome).toEqual({
       ok: true,
@@ -360,10 +371,9 @@ describe("executeBrowserCommand — tabs", () => {
     );
 
     expect(harness.state.activeTabId).toBe("a");
-    expect(harness.state.tabs.map((each) => each.url)).toEqual([
-      "",
-      "https://example.com",
-    ]);
+    expect(
+      getBrowserSurfaceWebTabs(harness.state).map((each) => each.url),
+    ).toEqual(["", "https://example.com"]);
 
     await executeBrowserCommand(
       { type: "tabs.open", url: null, activate: true },
@@ -375,7 +385,11 @@ describe("executeBrowserCommand — tabs", () => {
   it("refuses to open anything that is not an http(s) address", async () => {
     const harness = createHarness();
 
-    for (const url of ["javascript:alert(1)", "file:///etc/passwd", "not a url"]) {
+    for (const url of [
+      "javascript:alert(1)",
+      "file:///etc/passwd",
+      "not a url",
+    ]) {
       expectFailure(
         await executeBrowserCommand(
           { type: "tabs.open", url, activate: true },
@@ -708,7 +722,10 @@ describe("executeBrowserCommand — page reads", () => {
     // These work on the web build and for tabs that were never opened, which is
     // why they are not gated behind the desktop shell.
     await expect(
-      executeBrowserCommand({ type: "page.get_url", tabId: null }, harness.deps),
+      executeBrowserCommand(
+        { type: "page.get_url", tabId: null },
+        harness.deps,
+      ),
     ).resolves.toEqual({
       ok: true,
       value: { type: "url", url: "https://stored.test/" },
@@ -765,7 +782,9 @@ describe("executeBrowserCommand — navigation", () => {
     // Nothing to drive yet, but the tab loads this when it is next opened.
     expect(harness.calls.navigate).toEqual([]);
     expect(harness.calls.settled).toEqual([]);
-    expect(harness.state.tabs[0]?.url).toBe("https://example.com/later");
+    expect(getBrowserSurfaceWebTabs(harness.state)[0]?.url).toBe(
+      "https://example.com/later",
+    );
     expect(outcome.ok).toBe(true);
   });
 
@@ -785,7 +804,9 @@ describe("executeBrowserCommand — navigation", () => {
     );
 
     expect(harness.state.tabs).toHaveLength(2);
-    expect(harness.state.tabs[1]?.url).toBe("https://example.com/new");
+    expect(getBrowserSurfaceWebTabs(harness.state)[1]?.url).toBe(
+      "https://example.com/new",
+    );
   });
 
   it("refuses a URL the browser would not open", async () => {
@@ -873,13 +894,13 @@ describe("executeBrowserCommand — guards", () => {
       "invalid_command",
     );
     expectFailure(
-      await executeBrowserCommand(
-        { type: "tabs.close" },
-        harness.deps,
-      ),
+      await executeBrowserCommand({ type: "tabs.close" }, harness.deps),
       "invalid_command",
     );
-    expectFailure(await executeBrowserCommand(null, harness.deps), "invalid_command");
+    expectFailure(
+      await executeBrowserCommand(null, harness.deps),
+      "invalid_command",
+    );
   });
 
   it("explains that anything touching a page needs the desktop app", async () => {
@@ -900,9 +921,9 @@ describe("executeBrowserCommand — guards", () => {
     }
 
     // Listing still works: tabs are renderer state, not an Electron thing.
-    expect((await executeBrowserCommand({ type: "tabs.list" }, harness.deps)).ok).toBe(
-      true,
-    );
+    expect(
+      (await executeBrowserCommand({ type: "tabs.list" }, harness.deps)).ok,
+    ).toBe(true);
   });
 
   it("sees its own writes within one turn", async () => {
@@ -997,7 +1018,12 @@ describe("executeBrowserCommand — snapshot", () => {
       });
       expectFailure(
         await executeBrowserCommand(
-          { type: "page.snapshot", tabId: null, maxDepth: null, selector: null },
+          {
+            type: "page.snapshot",
+            tabId: null,
+            maxDepth: null,
+            selector: null,
+          },
           harness.deps,
         ),
         code,
@@ -1721,7 +1747,11 @@ describe("executeBrowserCommand — storage", () => {
 
     await expect(
       executeBrowserCommand(
-        { type: "page.storage", tabId: null, operation: { kind: "cookies-get" } },
+        {
+          type: "page.storage",
+          tabId: null,
+          operation: { kind: "cookies-get" },
+        },
         harness.deps,
       ),
     ).resolves.toMatchObject({ ok: false, code: "unsupported_command" });

@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createElement, type ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-  createBrowserFixedPanelTab,
+  createWorkspaceFilePreviewFixedPanelTab,
   createEmptyFixedPanelTabsState,
   createThreadInfoFixedPanelTab,
   getFixedPanelTabsStateStorageKey,
@@ -93,9 +93,15 @@ describe("fixed panel tab server sync", () => {
     const threadId = "sync-remote-tabs";
     const localTab = createThreadInfoFixedPanelTab();
     const lastUsedAt = Date.now();
-    const remoteTab = createBrowserFixedPanelTab({
+    const remoteTab = createWorkspaceFilePreviewFixedPanelTab({
       environmentId: null,
-      url: "https://remote.example.com",
+      projectId: null,
+      tab: {
+        lineRange: null,
+        path: "src/https-remote-example-com.ts",
+        source: { kind: "working-tree" },
+        statusLabel: null,
+      },
     });
     window.localStorage.setItem(
       getFixedPanelTabsStateStorageKey({ threadId }),
@@ -133,9 +139,15 @@ describe("fixed panel tab server sync", () => {
 
   it("migrates existing local tabs when the server has no tab row", async () => {
     const threadId = "sync-local-migration";
-    const localTab = createBrowserFixedPanelTab({
+    const localTab = createWorkspaceFilePreviewFixedPanelTab({
       environmentId: null,
-      url: "https://example.com",
+      projectId: null,
+      tab: {
+        lineRange: null,
+        path: "src/https-example-com.ts",
+        source: { kind: "working-tree" },
+        statusLabel: null,
+      },
     });
     window.localStorage.setItem(
       getFixedPanelTabsStateStorageKey({ threadId }),
@@ -171,13 +183,25 @@ describe("fixed panel tab server sync", () => {
 
   it("uses server tabs when local migration is stale", async () => {
     const threadId = "sync-stale-migration";
-    const localTab = createBrowserFixedPanelTab({
+    const localTab = createWorkspaceFilePreviewFixedPanelTab({
       environmentId: null,
-      url: "https://local.example.com",
+      projectId: null,
+      tab: {
+        lineRange: null,
+        path: "src/https-local-example-com.ts",
+        source: { kind: "working-tree" },
+        statusLabel: null,
+      },
     });
-    const serverTab = createBrowserFixedPanelTab({
+    const serverTab = createWorkspaceFilePreviewFixedPanelTab({
       environmentId: null,
-      url: "https://server.example.com",
+      projectId: null,
+      tab: {
+        lineRange: null,
+        path: "src/https-server-example-com.ts",
+        source: { kind: "working-tree" },
+        statusLabel: null,
+      },
     });
     window.localStorage.setItem(
       getFixedPanelTabsStateStorageKey({ threadId }),
@@ -271,13 +295,25 @@ describe("fixed panel tab server sync", () => {
   it("refreshes from the server after a stale local write", async () => {
     const threadId = "sync-stale-write";
     const originalTab = createThreadInfoFixedPanelTab();
-    const localTab = createBrowserFixedPanelTab({
+    const localTab = createWorkspaceFilePreviewFixedPanelTab({
       environmentId: null,
-      url: "https://local.example.com",
+      projectId: null,
+      tab: {
+        lineRange: null,
+        path: "src/https-local-example-com.ts",
+        source: { kind: "working-tree" },
+        statusLabel: null,
+      },
     });
-    const concurrentTab = createBrowserFixedPanelTab({
+    const concurrentTab = createWorkspaceFilePreviewFixedPanelTab({
       environmentId: null,
-      url: "https://concurrent.example.com",
+      projectId: null,
+      tab: {
+        lineRange: null,
+        path: "src/https-concurrent-example-com.ts",
+        source: { kind: "working-tree" },
+        statusLabel: null,
+      },
     });
     apiMocks.getThreadTabs
       .mockResolvedValueOnce({ revision: 1, tabs: [originalTab] })

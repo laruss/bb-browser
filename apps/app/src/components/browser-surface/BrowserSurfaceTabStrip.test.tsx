@@ -5,13 +5,15 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { BbDesktopInfo } from "@bb/desktop-contract";
 import { createBbDesktopApi } from "@/test/bb-desktop-test-utils";
 import type { BrowserFixedPanelTab } from "@/lib/fixed-panel-tabs-state";
+import { createAppSurfaceTab } from "@/lib/browser-surface-tabs";
 import {
-  BROWSER_COLLAPSED_HEADER_RESERVE_CLASS,
-  MACOS_COLLAPSED_TOP_LEFT_RESERVE_CLASS,
+  MACOS_TRAFFIC_LIGHT_LEADING_RESERVE_CLASS,
+  SIDEBAR_TRIGGER_TRAILING_RESERVE_CLASS,
 } from "@/lib/bb-desktop";
+import type { BrowserSurfaceTab } from "@/lib/browser-surface-tabs";
 import {
   BrowserSurfaceTabStrip,
-  resolveTabStripTopLeftReserveClassName,
+  resolveTabStripChromeReserveClassName,
 } from "./BrowserSurfaceTabStrip";
 
 function browserTab(
@@ -23,7 +25,7 @@ function browserTab(
 }
 
 function renderStrip(
-  tabs: readonly BrowserFixedPanelTab[],
+  tabs: readonly BrowserSurfaceTab[],
   favicons: Readonly<Record<string, string>> = {},
   loadingTabIds: ReadonlySet<string> = new Set(),
 ) {
@@ -59,63 +61,62 @@ afterEach(() => {
 });
 
 // The surface draws no page header, so this strip owns the window's title-bar
-// row. Getting the reserve wrong is BB-46 again — the pinned sidebar trigger and
-// the macOS traffic lights land on top of the first tab.
-describe("browser surface tab strip top-left reserve", () => {
-  it("reserves the pinned trigger footprint while the sidebar is collapsed", () => {
+// row. Getting a reserve wrong is BB-46 again — the pinned sidebar trigger or the
+// macOS traffic lights land on top of a tab. The two ends are independent, so
+// each is asserted on its own.
+describe("browser surface tab strip chrome reserve", () => {
+  it("reserves the traffic lights at the leading end when they are visible", () => {
+    const className = resolveTabStripChromeReserveClassName({
+      isCompactViewport: false,
+      isSidebarShowing: true,
+      reserveMacosTrafficLights: true,
+    });
+
+    expect(className).toContain(MACOS_TRAFFIC_LIGHT_LEADING_RESERVE_CLASS);
+    expect(className).not.toContain(SIDEBAR_TRIGGER_TRAILING_RESERVE_CLASS);
+  });
+
+  // An open sidebar hosts the pinned trigger over its own top row, so the strip
+  // starts at its own inset instead of leaving a gap nothing sits in.
+  it("reserves the trigger at the trailing end only while the sidebar is collapsed", () => {
     expect(
-      resolveTabStripTopLeftReserveClassName({
+      resolveTabStripChromeReserveClassName({
         isCompactViewport: false,
         isSidebarShowing: false,
         reserveMacosTrafficLights: false,
       }),
-    ).toBe(BROWSER_COLLAPSED_HEADER_RESERVE_CLASS);
-  });
-
-  it("reserves the wider traffic-light footprint when the lights are visible", () => {
+    ).toContain(SIDEBAR_TRIGGER_TRAILING_RESERVE_CLASS);
     expect(
-      resolveTabStripTopLeftReserveClassName({
-        isCompactViewport: false,
-        isSidebarShowing: false,
-        reserveMacosTrafficLights: true,
-      }),
-    ).toBe(MACOS_COLLAPSED_TOP_LEFT_RESERVE_CLASS);
-  });
-
-  // An expanded sidebar hosts the trigger and the lights itself, so the strip
-  // starts at its own inset instead of leaving a gap nothing sits in.
-  it("reserves nothing while the sidebar shows", () => {
-    expect(
-      resolveTabStripTopLeftReserveClassName({
+      resolveTabStripChromeReserveClassName({
         isCompactViewport: false,
         isSidebarShowing: true,
-        reserveMacosTrafficLights: true,
+        reserveMacosTrafficLights: false,
       }),
-    ).toBe(false);
+    ).toBe("");
   });
 
   // On compact viewports the sidebar opens as an overlay above the strip, so the
   // reserve has to hold across drawer state rather than shifting tabs behind it.
-  it("keeps the reserve on compact viewports whatever the drawer does", () => {
+  it("keeps the trailing reserve on compact viewports whatever the drawer does", () => {
     expect(
-      resolveTabStripTopLeftReserveClassName({
+      resolveTabStripChromeReserveClassName({
         isCompactViewport: true,
         isSidebarShowing: true,
         reserveMacosTrafficLights: false,
       }),
-    ).toBe(BROWSER_COLLAPSED_HEADER_RESERVE_CLASS);
+    ).toContain(SIDEBAR_TRIGGER_TRAILING_RESERVE_CLASS);
   });
 
   // Rendered outside a SidebarProvider (isolation tests, Ladle) there is no
   // pinned trigger to clear.
-  it("reserves nothing with no sidebar context", () => {
+  it("reserves no trigger with no sidebar context", () => {
     expect(
-      resolveTabStripTopLeftReserveClassName({
+      resolveTabStripChromeReserveClassName({
         isCompactViewport: false,
         isSidebarShowing: null,
-        reserveMacosTrafficLights: true,
+        reserveMacosTrafficLights: false,
       }),
-    ).toBe(false);
+    ).toBe("");
   });
 });
 
@@ -144,10 +145,15 @@ describe("browser surface tab strip sizing", () => {
         .join(" "),
     );
     expect(new Set(sizing).size).toBe(1);
-    // One shared basis rather than a share of the strip, so tabs neither stretch
+    // One shared width rather than a share of the strip, so tabs neither stretch
     // to fill it nor follow their titles; they shrink from there to a floor that
-    // holds the page icon and the close control. See TAB_WIDTH_CLASS.
-    expect(sizing[0]).toBe("basis-60 min-w-15 shrink");
+    // holds the page icon and the close control.
+    //
+    // Definite (`w-60`), not `basis-60`: the two flex identically but hand the
+    // list around the tabs different max-content sizes, and a basis let the list
+    // — and every tab in it — shrink below 240 whenever no page had yet reported
+    // a title long enough to fill one. See TAB_WIDTH_CLASS.
+    expect(sizing[0]).toBe("min-w-15 shrink w-60");
   });
 
   it("clips instead of scrolling once tabs reach the floor", () => {
@@ -326,5 +332,41 @@ describe("browser surface tab strip icons", () => {
     const icon = iconOf("Two");
     expect(icon?.tagName).not.toBe("IMG");
     expect(icon?.getAttribute("data-icon")).toBe("Globe");
+  });
+});
+
+// bb's own screens ride the same strip as web pages. They have no page icon and
+// never will, so they carry a mark of their own — otherwise a Settings tab
+// would be indistinguishable from a page that has not loaded its favicon yet.
+describe("app tabs in the strip", () => {
+  it("names a screen by its title and marks it as bb's own", () => {
+    const settings = createAppSurfaceTab({
+      path: "/settings/servers",
+      title: "Settings",
+    });
+    renderStrip([settings]);
+
+    const tab = screen.getAllByRole("tab")[0];
+    expect(tab?.textContent).toBe("Settings");
+    expect(tab?.querySelector("[data-icon='Settings']")).toBeTruthy();
+    expect(tab?.querySelector("img")).toBeNull();
+  });
+
+  it("falls back to the path before a title arrives", () => {
+    renderStrip([createAppSurfaceTab({ path: "/tools/plugins", title: null })]);
+
+    expect(screen.getAllByRole("tab")[0]?.textContent).toBe("/tools/plugins");
+  });
+
+  it("closes like any other tab", () => {
+    const settings = createAppSurfaceTab({
+      path: "/settings",
+      title: "Settings",
+    });
+    const { onClose } = renderStrip([settings]);
+
+    fireEvent.click(screen.getByRole("button", { name: "Close Settings" }));
+
+    expect(onClose).toHaveBeenCalledWith(settings.id);
   });
 });

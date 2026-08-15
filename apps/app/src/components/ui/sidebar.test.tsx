@@ -1,9 +1,16 @@
 // @vitest-environment jsdom
 
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react";
 import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CompactViewportOverrideProvider } from "@bb/shared-ui/hooks/use-compact-viewport";
+import { useIsBrowserDimmingModalOpen } from "@/hooks/useBrowserDimmingModal";
 import {
   Sidebar,
   SidebarInset,
@@ -477,5 +484,50 @@ describe("mobile sidebar text-selection arbitration", () => {
     fireTouch(window, "touchmove", createTouch(260, 164));
 
     expect(getMobilePanel()?.dataset.state).toBe("closed");
+  });
+});
+
+// The drawer is drawn over the content, and on a surface hosting a native
+// browser view that is not somewhere the DOM can draw: the page is an OS-level
+// overlay no backdrop covers. So the drawer has to take the page away while it
+// is open, the same way a modal dialog does — otherwise it opens behind the
+// page and the tap looks like nothing happening.
+describe("the mobile drawer and the native browser view", () => {
+  function DimmingProbe() {
+    return (
+      <span data-testid="dimming">
+        {useIsBrowserDimmingModalOpen() ? "dimmed" : "live"}
+      </span>
+    );
+  }
+
+  function renderDrawer() {
+    render(
+      <CompactViewportOverrideProvider isCompactViewport>
+        <SidebarProvider>
+          <Sidebar>Sidebar content</Sidebar>
+          <SidebarInset>
+            <DimmingProbe />
+            <SidebarTrigger />
+          </SidebarInset>
+        </SidebarProvider>
+      </CompactViewportOverrideProvider>,
+    );
+  }
+
+  it("takes the page away while it is open, and gives it back", () => {
+    vi.useFakeTimers();
+    renderDrawer();
+    expect(screen.getByTestId("dimming").textContent).toBe("live");
+
+    fireEvent.click(screen.getByRole("button", { name: /sidebar/i }));
+    settleMobileToggle();
+
+    expect(screen.getByTestId("dimming").textContent).toBe("dimmed");
+
+    fireEvent.click(screen.getByRole("button", { name: /sidebar/i }));
+    settleMobileToggle();
+
+    expect(screen.getByTestId("dimming").textContent).toBe("live");
   });
 });

@@ -32,7 +32,8 @@ import {
   addBrowserSurfaceTab,
   closeBrowserSurfaceTab,
   createBrowserSurfaceTab,
-  getActiveBrowserSurfaceTab,
+  getActiveBrowserSurfaceWebTab,
+  getBrowserSurfaceWebTabs,
   updateBrowserSurfaceTab,
   type BrowserSurfaceTabsState,
 } from "../browser-surface-tabs";
@@ -127,7 +128,11 @@ function snapshotAll(
   state: BrowserSurfaceTabsState,
   deps: BrowserCommandDeps,
 ): BrowserTabSnapshot[] {
-  return state.tabs.map((tab) =>
+  // Web tabs only, here and in `resolveTab`. The strip also carries bb's own
+  // screens (Settings, Extensions, a plugin's panel), and those have no page for
+  // an agent to read, navigate or screenshot — listing them would be offering
+  // tools that cannot work on them.
+  return getBrowserSurfaceWebTabs(state).map((tab) =>
     toSnapshot(tab, state, deps.getLiveState(tab.id)),
   );
 }
@@ -148,7 +153,7 @@ function resolveTab(
 ): Resolution {
   const state = deps.getState();
   if (tabId === null) {
-    const active = getActiveBrowserSurfaceTab(state);
+    const active = getActiveBrowserSurfaceWebTab(state);
     if (active === null) {
       return {
         ok: false,
@@ -160,7 +165,9 @@ function resolveTab(
     }
     return { ok: true, resolved: { tab: active, state } };
   }
-  const tab = state.tabs.find((candidate) => candidate.id === tabId);
+  const tab = getBrowserSurfaceWebTabs(state).find(
+    (candidate) => candidate.id === tabId,
+  );
   if (tab === undefined) {
     return {
       ok: false,
@@ -278,7 +285,10 @@ function interactFailure(
     case "unknown-ref":
       return failure("unknown_ref", `No such element.${detail}`);
     case "not-actionable":
-      return failure("not_actionable", `The element could not be acted on.${detail}`);
+      return failure(
+        "not_actionable",
+        `The element could not be acted on.${detail}`,
+      );
     case "unsupported-key":
       return failure("unsupported_key", `That key cannot be pressed.${detail}`);
     default:
@@ -321,7 +331,10 @@ function observeFailure(
         `The browser debugger could not attach to tab ${tabId}${detail}. Close DevTools for that tab and try again, or ask for the visible viewport instead.`,
       );
     case "too-large":
-      return failure("result_too_large", `That is too large to return.${detail}`);
+      return failure(
+        "result_too_large",
+        `That is too large to return.${detail}`,
+      );
     default:
       return failure(
         "page_read_failed",
@@ -383,7 +396,10 @@ function controlFailure(
         `The browser debugger could not attach to tab ${tabId}${detail}. Close DevTools for that tab and try again.`,
       );
     case "stale-refs":
-      return failure("stale_refs", `Those element refs are out of date.${detail}`);
+      return failure(
+        "stale_refs",
+        `Those element refs are out of date.${detail}`,
+      );
     case "unknown-ref":
       return failure("unknown_ref", `No such element.${detail}`);
     case "evaluation-failed":
@@ -391,7 +407,10 @@ function controlFailure(
       // what to change about the expression.
       return failure("evaluation_failed", `The page threw.${detail}`);
     case "too-many-routes":
-      return failure("too_many_routes", `That tab holds too many routes.${detail}`);
+      return failure(
+        "too_many_routes",
+        `That tab holds too many routes.${detail}`,
+      );
     default:
       return failure(
         "page_read_failed",
@@ -423,7 +442,10 @@ function recordFailure(
         `The browser debugger could not attach to tab ${tabId}${detail}. Close DevTools for that tab and try again.`,
       );
     case "already-recording":
-      return failure("already_recording", `That tab is already being filmed.${detail}`);
+      return failure(
+        "already_recording",
+        `That tab is already being filmed.${detail}`,
+      );
     case "not-recording":
       return failure("not_recording", `That tab is not being filmed.${detail}`);
     default:
@@ -482,7 +504,7 @@ async function captureTraceImage(
   deps: BrowserCommandDeps,
 ): Promise<string | null> {
   const observe = deps.desktopBrowser?.observe;
-  const active = getActiveBrowserSurfaceTab(deps.getState());
+  const active = getActiveBrowserSurfaceWebTab(deps.getState());
   if (observe === undefined || active === null) {
     return null;
   }
@@ -845,7 +867,10 @@ async function runBrowserCommand(
       // so it is decided here rather than forwarded. This is also why the
       // screenshot observation is rebuilt below instead of being passed
       // through: the shell's union has no `fullPage`, and would drop it.
-      if (command.observation.kind === "screenshot" && command.observation.fullPage) {
+      if (
+        command.observation.kind === "screenshot" &&
+        command.observation.fullPage
+      ) {
         if (desktopBrowser.captureFullPage === undefined) {
           return failure(
             "unsupported_command",
@@ -890,7 +915,11 @@ async function runBrowserCommand(
       // The shell's four success shapes map one-to-one onto four result
       // variants; the `kind`/`type` rename is the only difference, and doing it
       // here keeps the agent-facing vocabulary independent of the shell's.
-      const page = { tabId: result.tabId, url: result.url, title: result.title };
+      const page = {
+        tabId: result.tabId,
+        url: result.url,
+        title: result.title,
+      };
       switch (result.kind) {
         case "screenshot":
           return success({
@@ -1000,7 +1029,11 @@ async function runBrowserCommand(
       if (!result.ok) {
         return controlFailure(result, tab.id);
       }
-      const page = { tabId: result.tabId, url: result.url, title: result.title };
+      const page = {
+        tabId: result.tabId,
+        url: result.url,
+        title: result.title,
+      };
       switch (result.kind) {
         case "evaluated":
           return success({
@@ -1123,7 +1156,9 @@ async function runBrowserCommand(
       }
       const state = deps.getState();
       const updated =
-        state.tabs.find((candidate) => candidate.id === tab.id) ?? tab;
+        getBrowserSurfaceWebTabs(state).find(
+          (candidate) => candidate.id === tab.id,
+        ) ?? tab;
       return success({
         type: "tab",
         tab: toSnapshot(updated, state, deps.getLiveState(tab.id)),
@@ -1169,7 +1204,9 @@ async function runBrowserCommand(
       await deps.waitForSettled(tab.id);
       const state = deps.getState();
       const updated =
-        state.tabs.find((candidate) => candidate.id === tab.id) ?? tab;
+        getBrowserSurfaceWebTabs(state).find(
+          (candidate) => candidate.id === tab.id,
+        ) ?? tab;
       return success({
         type: "tab",
         tab: toSnapshot(updated, state, deps.getLiveState(tab.id)),

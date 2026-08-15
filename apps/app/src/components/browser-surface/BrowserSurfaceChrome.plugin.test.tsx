@@ -92,6 +92,7 @@ function renderChrome() {
   render(
     <BrowserSurfaceChrome
       onActivateTab={() => {}}
+      onOpenAppRoute={() => {}}
       providers={[
         createOmniboxNavigationProvider(),
         createOmniboxSearchProvider(),

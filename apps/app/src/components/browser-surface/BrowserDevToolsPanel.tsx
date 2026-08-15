@@ -76,6 +76,23 @@ export function BrowserDevToolsPanel({
     browserApi.setDevTools({ tabId, open: true, bounds });
   }, [tabId]);
 
+  // Whether the panel is on screen, which the shell cannot work out for itself.
+  // It hides native views with the page they belong to, and the page goes away
+  // for reasons that leave this panel exactly where it was — a failed load,
+  // where the app draws "page unavailable" in the page's rect and DevTools are
+  // the thing you most want. Mounted means on screen: this panel is rendered
+  // only for the active tab's own tools.
+  useEffect(() => {
+    const browserApi = getDesktopBrowserApi();
+    if (browserApi?.setDevToolsVisible === undefined) {
+      return;
+    }
+    browserApi.setDevToolsVisible({ tabId, visible: true });
+    return () => {
+      browserApi.setDevToolsVisible?.({ tabId, visible: false });
+    };
+  }, [tabId]);
+
   useEffect(() => {
     syncBounds();
     const element = containerRef.current;

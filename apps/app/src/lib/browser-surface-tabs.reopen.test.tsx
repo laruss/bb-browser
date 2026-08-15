@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   getBrowserSurfaceTabsStorageKey,
   useBrowserSurfaceTabs,
+  useOpenBrowserSurfaceTab,
 } from "./browser-surface-tabs";
 
 /**
@@ -33,13 +34,13 @@ describe("reopening closed tabs through the controller", () => {
       result.current.openTab("https://second.test/");
       result.current.openTab("https://third.test/");
     });
-    const middle = result.current.state.tabs[1];
+    const middle = result.current.webTabs[1];
     expect(middle?.url).toBe("https://second.test/");
 
     act(() => {
       result.current.closeTab(middle?.id as string);
     });
-    expect(result.current.state.tabs.map((tab) => tab.url)).toEqual([
+    expect(result.current.webTabs.map((tab) => tab.url)).toEqual([
       "https://first.test/",
       "https://third.test/",
     ]);
@@ -48,7 +49,7 @@ describe("reopening closed tabs through the controller", () => {
       result.current.reopenClosedTab();
     });
 
-    expect(result.current.state.tabs.map((tab) => tab.url)).toEqual([
+    expect(result.current.webTabs.map((tab) => tab.url)).toEqual([
       "https://first.test/",
       "https://second.test/",
       "https://third.test/",
@@ -95,5 +96,65 @@ describe("reopening closed tabs through the controller", () => {
     });
 
     expect(result.current.state.tabs).toEqual(before.tabs);
+  });
+});
+
+// The surface makes sure a page always exists to come back to, and does it
+// while the user may be reading Settings. Stealing focus there would throw them
+// out of the screen they are on to show them a blank tab they never asked for.
+describe("opening a tab in the background", () => {
+  it("leaves the strip pointing where it was", () => {
+    const { result } = renderTabs();
+    act(() => {
+      result.current.openTab("https://first.test/");
+    });
+    const first = result.current.state.activeTabId;
+
+    act(() => {
+      result.current.openTab("https://second.test/", { activate: false });
+    });
+
+    expect(result.current.webTabs).toHaveLength(2);
+    expect(result.current.state.activeTabId).toBe(first);
+  });
+
+  it("focuses it anyway when there was nothing to keep", () => {
+    const { result } = renderTabs();
+
+    act(() => {
+      result.current.openTab("https://only.test/", { activate: false });
+    });
+
+    expect(result.current.state.activeTabId).toBe(
+      result.current.webTabs[0]?.id,
+    );
+  });
+});
+
+// One browser. A thread that wants to show a page hands it to the surface
+// instead of hosting a browser of its own beside the conversation — and since
+// the surface already owns the main area on an agent route, the page lands
+// beside the thread rather than instead of it.
+describe("opening a page from elsewhere in the app", () => {
+  function renderBoth() {
+    return renderHook(
+      () => ({
+        open: useOpenBrowserSurfaceTab(),
+        tabs: useBrowserSurfaceTabs(),
+      }),
+      { wrapper: Provider },
+    );
+  }
+
+  it("puts the page in the surface's strip, focused", () => {
+    const { result } = renderBoth();
+
+    act(() => {
+      result.current.open("https://example.test/page");
+    });
+
+    const opened = result.current.tabs.webTabs.at(-1);
+    expect(opened?.url).toBe("https://example.test/page");
+    expect(result.current.tabs.state.activeTabId).toBe(opened?.id);
   });
 });

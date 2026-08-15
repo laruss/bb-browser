@@ -15,6 +15,7 @@ import {
   type PluginMessageActionContext,
   type PluginMessageActionRegistration,
   type PluginMessageDirectiveProps,
+  type PluginLeadingPanelProps,
   type PluginNavPanelProps,
   type PluginNavPanelRegistration,
   type PluginNewThreadPanelProps,
@@ -169,6 +170,7 @@ type SlotPropsByName = {
   homepageSection: PluginHomepageSectionProps;
   settingsSection: PluginSettingsSectionProps;
   navPanel: PluginNavPanelProps;
+  experimental_leadingPanel: PluginLeadingPanelProps;
   threadPanelAction: PluginThreadPanelProps;
   experimental_newThreadPanelAction: PluginNewThreadPanelProps;
   pendingInteraction: PluginPendingInteractionProps;
@@ -233,6 +235,7 @@ const FRONTEND_SLOT_PROP_FIELDS = {
   homepageSection: ["projectId"],
   settingsSection: [],
   navPanel: ["subPath"],
+  experimental_leadingPanel: [],
   threadPanelAction: ["threadId", "params"],
   experimental_newThreadPanelAction: ["projectId", "params"],
   pendingInteraction: ["interaction", "submit", "cancel"],

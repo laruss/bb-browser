@@ -126,12 +126,206 @@ behaviour; the type system will carry the rename whenever it happens.
 
 ## Layout, for now
 
-The route renders inside `AppLayout`, so bb's sidebar is still present and the
-surface is reachable from a footer button next to Settings. That is deliberate
-for Milestone A — plan §14 says to reuse bb surfaces until replacement is
+The surface renders inside `AppLayout`, so bb's sidebar is still present and it
+is reachable from a footer button next to Settings. That is deliberate for
+Milestone A — plan §14 says to reuse bb surfaces until replacement is
 necessary. The dedicated browser window (its own Electron window, no agent-
 workspace chrome) is a later step, and the plan's target layout — tabs on top,
 page left, agent panel right — arrives with it.
+
+### The surface is hosted by the shell, not by its route
+
+It began as a route element and is now mounted by `AppLayout` above `<Routes>`.
+The reason is what the product is: this is a browser, so the browser is a
+**region of the shell that outlives navigation**, not a page the router swaps in
+and out. Keeping it mounted keeps its tabs, omnibox draft, find state and
+recently-used cycle alive across a trip to Settings; the native views already
+survived, since only an explicit tab close detaches one.
+
+On desktop the surface now holds the main area for **every** route, and there is
+no longer an inactive state — that is what stage 3 finished. The three kinds of
+route are told apart by `classifySurfaceRoute` (`lib/app-surface-tabs.ts`):
+
+- `browser` — `/browser` itself; the active web tab fills the page area.
+- `agent-panel` — the agent screens (`/`, a thread, a project's compose screen).
+  They paint in the side panel, and the browser keeps the main area behind them.
+- `app-tab` — everything else: Settings, Extensions, a plugin's panel. These
+  paint **inside** the surface, in place of the page area, as `appScreen`.
+
+The constraint behind all three is the same one the visibility coordinator
+exists for: a `WebContentsView` is an OS-level overlay that no DOM node can draw
+over. So an app screen cannot be layered on the page — the deck unmounts and the
+tab content hides its native view on cleanup. The view itself survives, keyed by
+tab id, which is why returning from Settings shows the same page rather than a
+reloaded one.
+
+### A narrow window has a different panel, and it is over the page
+
+Below 768px the sidebar is not a docked column but a drawer over the content,
+with an open state of its own that nothing persists. Both halves of the agent
+route broke there, and each for its own reason:
+
+- **The wrong state was opened.** Entering an agent route opens the panel,
+  because it is the only place that route paints — but the opener lived outside
+  `SidebarProvider` (it renders it), so all it could reach was the docked state.
+  Setting that on a narrow window opens nothing, and the screen painted into a
+  closed drawer: the route looked like it had done nothing. `SidebarRouteOpener`
+  now sits inside the provider, where which state _is_ the panel is knowable.
+  The drawer also opens when it **becomes** the panel, which the docked one does
+  not need: the docked state is persisted, so widening a window restores the
+  user's last choice, while the drawer always starts closed.
+- **The right state would not have helped.** "Over the content" is not available
+  to the DOM while a page is there. The drawer and its backdrop would have opened
+  behind the page, so it registers as a browser-dimming modal
+  (`useBrowserDimmingModal`) — the same mechanism dialogs use — and the page
+  steps aside for as long as it is open.
+
+The app's toggle chord moved inside the provider with the opener, and for the
+same reason: it was flipping the docked state too, so on a narrow window the
+keyboard could not open the panel either.
+
+### The panel says it is a narrow column, and its contents believe it
+
+An agent screen moved into the panel keeps the layout it was given for a
+full-width main area, and none of it survives a 400px column: a split workspace
+puts panes side by side, each pane draws a header for maximize and close, the
+thread's secondary panel splits the column again, and the collapsed-conversation
+chrome reserves space for traffic lights that are at the other end of the window.
+
+The app already renders all of that as a single page surface — at narrow widths,
+where `useSplitWorkspaceActive` turns the pane chrome off. So `AgentPanelSidebar`
+wraps its content in `CompactViewportOverrideProvider`: the panel states what it
+is, and every one of those decisions follows from the statement rather than from
+a width each screen would otherwise have to measure. Unconditional, not derived
+from the dragged width — a split workspace inside a side panel is wrong at every
+width, and a measured answer would re-lay-out the conversation mid-drag.
+
+One thing had to follow it. In that form the secondary panel opens as a drawer
+over the page area, and a drawer's backdrop cannot dim a `WebContentsView` any
+more than a dialog's can — so `PersistentResponsiveDrawerShell` registers as a
+browser-dimming modal, like every other modal that covers the page. It was
+already missing that: on a genuinely narrow window the drawer opened behind the
+page, and the panel only made it reachable at every width.
+
+### There is one browser, and it is this surface
+
+The thread's secondary panel used to host browser tabs of its own — a deck, an
+address bar, popups, the lot. In the panel that became a browser inside a panel
+beside the real one, which is the point at which the arrangement stopped being
+defensible: two browsers, two tab strips, two sets of history, and a page whose
+home depended on where the user happened to click.
+
+So the panel hosts none. What opened a tab there now opens one here, through
+`useOpenBrowserSurfaceTab`, and **no navigation goes with it**: on an agent route
+the surface already owns the main area, so a link followed from a thread appears
+beside the conversation rather than instead of it. The web build is unchanged —
+it has no surface and no native view, so links keep going to the system browser,
+gated as they always were on `isDesktopBrowserAvailable`.
+
+Three things went with the hosting, and each was only ever there to serve it: the
+panel's deck slot and its readiness gate, the popup subscription (the surface has
+its own, scoped to its own tabs — and two subscribers to the unscoped fallback
+channel meant an old shell's popup opened twice), and the "Browser" action on the
+panel's new-tab page.
+
+The `browser` tab kind stays in both schemas, and that is not an oversight: the
+surface's own tabs are the same record, and saved panel state still holds the
+tabs it used to keep. They are dropped in `normalizeFixedPanelTabsState` — the
+one path both loading and saving go through — so they parse and then disappear
+rather than failing a parse or returning as tabs nothing can render. The same
+goes for a `browser` tab arriving from the server's thread-tab sync, written by
+an older client.
+
+Two things fall out and are worth stating:
+
+- `data-app-browser` covers the app screen too, so the browser's chords keep
+  working from Settings the way they do from a page in Chromium — Cmd+T opens a
+  tab there. Handlers that need a page (find, reload, DevTools, fullscreen)
+  decline when the active tab is not a web tab, so the chord falls through
+  instead of acting on nothing. Every browser binding is scoped `browserFocus`,
+  which resolves from the event target's `[data-app-browser]` ancestor.
+- The **web build keeps the surface on its route**, because it has no native
+  views to preserve and no shell to preserve them in — that is where its "needs
+  the desktop app" screen still comes from. `isDesktopBrowserAvailable()` is the
+  single gate both `AppLayout` and the route read, and on the web build every
+  route renders in `main` exactly as before.
+
+### The leading edge belongs to plugins
+
+The window now has chrome at both ends, and they are owned by different people.
+The trailing edge is bb's: the sidebar, the agent screens, the pinned trigger.
+The leading edge is nobody's until a plugin claims it — `PluginLeadingPanel`
+renders **nothing at all** with no registrations, because an empty column and a
+toggle for a panel with nothing in it would be bb claiming an edge it has no use
+for.
+
+What the host draws there follows from how many plugins asked, not from
+configuration:
+
+- **one** gets the panel whole, with no chrome of bb's own around it. A rail to
+  switch between one thing is a control that does nothing.
+- **two or more** get a rail of icons, because now there is a choice to make and
+  only the host can offer it.
+
+The panel is not collapsible — the way to be rid of it is to disable the plugin
+— and it is resizable, because how much room a plugin's panel needs is the
+user's judgement rather than the plugin's. Its handle is on its **trailing**
+edge, so the drag runs the opposite way to the sidebar's; that sign is the whole
+content of `resolveLeadingPanelResizeWidth`.
+
+Two shell obligations moved with the edge:
+
+- **The macOS traffic lights.** They sit in the window's top-left, which is this
+  panel's corner when it is there. So the surfaces that reserved that strip stop
+  — the tab strip and the page header both read `useIsLeadingPanelShowing` — and
+  the panel holds it open itself. It cannot indent the way they do: it is a
+  column, and indenting would inset its content all the way down, so it gives up
+  its first 48px row instead (`MACOS_TRAFFIC_LIGHT_TOP_RESERVE_CLASS`). Two
+  surfaces reserving one strip is content inset twice; none reserving it is
+  BB-46.
+- **The browser's bounds.** The panel is in flow, so appearing, disappearing or
+  being dragged moves the main area — and a `WebContentsView` is positioned from
+  measured DOM rather than from layout. It dispatches a bounds sync on both.
+
+### App tabs: many tabs, one router
+
+A tab strip is plural and a window URL is singular, which is the one place this
+migration could have grown a second navigation system. It did not. An
+`AppSurfaceTab` record is a **remembered route** (`kind: "app"`, a `path`, a
+`title`), only the active one is mounted, and what mounts it is the window's own
+router. An inactive app tab is a path waiting to be visited.
+
+The strip and the URL are kept describing the same thing by
+`useBrowserSurfaceRouteSync`, and **whichever one just moved is the one that
+wins**:
+
+- the user navigates (a sidebar link, a deep link, Back) → the strip follows,
+  via `reconcileBrowserSurfaceTabsWithRoute`;
+- something activates a tab without the router hearing about it (an agent's
+  `browser_tabs_open`, a page's popup, reopening a closed tab) → the window
+  follows, via `resolveSurfaceTabRoute`.
+
+A fixed winner breaks one direction or the other: route-always-wins snaps an
+agent's new tab back out of view, strip-always-wins refuses to open Settings.
+
+App tabs are **singletons per destination**, the way Chromium treats its own
+`chrome://` pages: `resolveAppTabDestinationKey` maps every page under Settings
+to one key, so asking for Settings again returns to the Settings tab wherever
+inside it you had got to, and navigating within a destination moves its tab
+rather than stacking near-identical ones.
+
+Two consequences worth knowing before changing this:
+
+- Restoring a session has no special path. The window URL wins there too, so
+  whatever the app opens on is what the strip is corrected to — a persisted
+  pointer at an app tab does not survive a start on `/browser`.
+- The side panel and the main area share one URL, so a thread in the panel
+  cannot be read _beside_ Settings the way it can beside a web page. That is the
+  price of one router, and it is the thing a per-tab router would buy.
+
+An agent's tools see web tabs only (`getBrowserSurfaceWebTabs`): bb's own screens
+have no page to read, navigate or screenshot, and listing them would offer tools
+that cannot work on them.
 
 ### The shell draws no chrome around the surface
 
@@ -145,12 +339,29 @@ footprint, so the **tab strip inherits its obligations**. It therefore takes the
 shared `CHROME_ROW_HEIGHT_CLASS` (48px) title-bar row and reserves the pinned
 sidebar trigger — plus the macOS traffic lights while they are visible — by the
 same rule as `AppPageHeader`
-(`resolveTabStripTopLeftReserveClassName`). Two things break if that reserve
+(`resolveTabStripChromeReserveClassName`). Two things break if that reserve
 drifts, both silently: on the web build the sidebar toggle covers the first tab,
 and in the macOS desktop app the traffic lights do — which is BB-46, a bug this
 repo has already had once (see `lib/bb-desktop.ts` for the paired geometry).
 A strip shorter than the row would also let those controls spill onto the omnibox
 row below, so the height is part of the contract, not styling.
+
+Each reserve is the **whole** gap from the window edge, and it must ride the
+element that already carries the surface's own inset. `pl-*`/`pr-*` replace one
+side of a `px-*` on the same element but _add_ to a `px-*` on an ancestor, so a
+reserve written as "the surface's 16px plus N" is right on whichever spelling it
+was measured against and 16px wrong on the other. Both spellings were in the tree
+at once, and both overlaps followed: the new-tab button under the sidebar
+trigger, and the first tab under the traffic lights. `bb-desktop.test.ts` now
+locks each token to its target rather than to a sum, and the two surfaces that
+had the reserve on an inner element (the page header, the secondary panel's top
+chrome) carry it on the inset element instead.
+
+When an app screen renders inside a tab, the shared page header comes with it and
+lands _below_ the strip. It therefore claims none of the window chrome —
+`ownsWindowTopLeft`, `ownsWindowTopRight` and `isWindowDragRegion` all go false —
+because the strip above it already reserved both ends and already is the drag
+region.
 
 In desktop chrome the strip is also the window's drag region, since it is now the
 only chrome on the title-bar row; every control on it opts back out
@@ -161,13 +372,28 @@ only chrome on the title-bar row; every control on it opts back out
 Every tab is the same width whatever its title says: Chromium's own 240px until
 the tabs stop fitting, and from there they shrink together down to a floor.
 
-The mechanism is one shared fixed basis (`basis-60`) plus `shrink`, deliberately
+The mechanism is one shared fixed width (`w-60`) plus `shrink`, deliberately
 **not** `flex-1`: a title cannot widen its own tab either way, but dividing the
 strip would stretch two open tabs across the whole window, and — the visible
 tell — it would leave the leftover space _inside_ the tab list, pushing the
 new-tab button to the far edge instead of following the last tab as Chromium's
 does. Equal bases also shrink by equal amounts, so the tabs stay identical the
 whole way down. No measuring, no resize observer.
+
+**A definite width, not `basis-60`**, and the difference is a bug that survived
+two fixes aimed at the wrong thing. The two flex identically; what they change is
+the tab list's **max-content** size, which is what the list is sized by (it is
+`flex: 0 1 auto`, so its width is `min(max-content, available)`). Flexbox derives
+that from the items' content rather than their bases: each item offers
+`max-content contribution − flex base size`, and when _every_ tab's content is
+narrower than 240 — a fresh tab reading "New tab", a host name, a page that has
+not reported a title yet — the largest of those offers is negative, so the list
+sizes below 240 × N and the tabs shrink with it. One long title arrives and they
+all snap back out, which is the jitter users saw on every load. A definite width
+makes the contribution definite too: it equals the base, the offer is zero, and
+the list is 240 × N whatever the pages say. Neither an added `max-width` (with
+`flex-grow: 0` a long title could never stretch anything) nor the paddings around
+the strip had anything to do with it.
 
 The floor (`min-w-15`) is **what a tab needs once its title is gone**: the page
 icon and the close control, nothing else. It is a sum of the tab's own geometry —
@@ -772,8 +998,21 @@ That decides almost everything else about the feature:
   of the same reason: two native views cannot be stacked, and freezing the page
   to draw over it would defeat the point of inspecting a live one.
 - **The tools are per tab**, as in Chromium. Switching tabs hides one tab's
-  tools and shows the other's, because the view's visibility follows its entry's
-  — which is also what keeps it from compositing over a dropdown.
+  tools and shows the other's, and the panel still hides for everything the app
+  draws across the whole page area — a resize placeholder, a dialog, a network
+  prompt, a dropdown — because it is a native view that would otherwise
+  composite over them.
+- **It no longer hides with the page itself**, which it used to. The page goes
+  away for reasons that leave the panel exactly where it is, chief among them a
+  failed load: the app hides the page view to draw "page unavailable" in the
+  page's rect, and the shell, seeing only that the page had gone, took the panel
+  with it. Turning the network off in the Network tab blanked the tools that
+  reported it. Only the app can tell those cases apart, so it says which —
+  `setDevToolsVisible`, an optional method on a channel of its own, per invariant
+  2's shape (the request schemas are wire-frozen). A shell that predates it never
+  hears it and keeps the old coupling; an app that never sends it gets the same,
+  which is what the thread browser — where "Inspect" can open DevTools with no
+  panel of bb's own — still relies on.
 - **Both directions are reported.** DevTools open without the app asking
   ("Inspect" from the page menu) and close from their own toolbar, so
   `devtools-opened` / `devtools-closed` are pushed rather than assumed.

@@ -86,6 +86,16 @@ list would reshuffle under the user's cursor as answers trickle in.
 | `search`     | a search for the typed text (always)         | navigate     |
 | `open-tabs`  | open tabs matching by title or host          | activate-tab |
 | `history`    | previously visited pages                     | navigate     |
+| `app-routes` | bb's own screens, and every plugin panel     | open-app-tab |
+
+`app-routes` is what makes Settings reachable by typing "settings" rather than by
+knowing bb spells Extensions `/tools/plugins`. Its action is `open-app-tab`, not
+`navigate`, because the destination belongs to the window's router: the surface
+opens or focuses the destination's tab instead of pointing a `WebContentsView` at
+a path (see [browser-surface.md](browser-surface.md), "App tabs"). Its list is
+passed in, so a plugin's registered panel appears here on the same footing as
+Settings — a plugin gets an address-bar entry by registering a panel, with no
+change to the provider.
 
 Matching is deliberately crude — prefix beats substring, nothing else scores.
 A wrong fuzzy ranking is harder to explain than a missing row, and fuzzy matching

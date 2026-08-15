@@ -6,7 +6,7 @@ import type { TerminalSession } from "@bb/server-contract";
 import { createElement, type ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-  createBrowserFixedPanelTab,
+  createWorkspaceFilePreviewFixedPanelTab,
   createEmptyFixedPanelTabsState,
   createHostFilePreviewFixedPanelTab,
   createTerminalFixedPanelTab,
@@ -619,9 +619,15 @@ describe("useThreadFileTabs legacy side-chat tabs", () => {
   // strip, and they must not break the rest of a thread's stored tabs.
   it("drops tabs persisted before the native side chat was removed", () => {
     const threadId = "legacy-side-chat";
-    const browserTab = createBrowserFixedPanelTab({
+    const survivor = createWorkspaceFilePreviewFixedPanelTab({
       environmentId: "env_current",
-      url: "https://example.com",
+      projectId: null,
+      tab: {
+        lineRange: null,
+        path: "src/index.ts",
+        source: { kind: "working-tree" },
+        statusLabel: null,
+      },
     });
     window.localStorage.setItem(
       getFixedPanelTabsStateStorageKey({ threadId }),
@@ -632,7 +638,7 @@ describe("useThreadFileTabs legacy side-chat tabs", () => {
           activeTabId: "side-chat:legacy",
           isOpen: true,
           tabs: [
-            browserTab,
+            survivor,
             {
               id: "side-chat:legacy",
               kind: "side-chat",
@@ -660,6 +666,6 @@ describe("useThreadFileTabs legacy side-chat tabs", () => {
 
     expect(
       result.current.orderedSecondaryFileTabs.map((tab) => tab.id),
-    ).toEqual([browserTab.id]);
+    ).toEqual([survivor.id]);
   });
 });

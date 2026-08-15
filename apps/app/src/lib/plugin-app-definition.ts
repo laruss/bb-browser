@@ -7,6 +7,7 @@ import {
   type PluginHomepageSectionRegistration,
   type PluginMessageActionRegistration,
   type PluginMessageDirectiveRegistration,
+  type PluginLeadingPanelRegistration,
   type PluginNavPanelRegistration,
   type PluginNewThreadPanelActionRegistration,
   type PluginPendingInteractionRegistration,
@@ -74,6 +75,7 @@ export function collectPluginAppRegistrations(
   const homepageSections: PluginHomepageSectionRegistration[] = [];
   const settingsSections: PluginSettingsSectionRegistration[] = [];
   const navPanels: PluginNavPanelRegistration[] = [];
+  const leadingPanels: PluginLeadingPanelRegistration[] = [];
   const threadPanelActions: PluginThreadPanelActionRegistration[] = [];
   const newThreadPanelActions: PluginNewThreadPanelActionRegistration[] = [];
   const composerCustomizations: ComposerCustomization[] = [];
@@ -89,6 +91,7 @@ export function collectPluginAppRegistrations(
     homepageSection: new Set<string>(),
     settingsSection: new Set<string>(),
     navPanel: new Set<string>(),
+    leadingPanel: new Set<string>(),
     threadPanelAction: new Set<string>(),
     newThreadPanelAction: new Set<string>(),
     composerCustomization: new Set<string>(),
@@ -172,6 +175,17 @@ export function collectPluginAppRegistrations(
           ...(registration.headerContent !== undefined
             ? { headerContent: registration.headerContent }
             : {}),
+        });
+      },
+      experimental_leadingPanel(registration) {
+        const kind = "slots.experimental_leadingPanel";
+        const id = requireSlotId(kind, registration?.id);
+        requireUniqueId(kind, seenIds.leadingPanel, id);
+        leadingPanels.push({
+          id,
+          title: requireNonEmptyString(kind, "title", registration.title),
+          icon: requireNonEmptyString(kind, "icon", registration.icon),
+          component: requireComponent(kind, registration.component),
         });
       },
       threadPanelAction(registration) {
@@ -369,6 +383,7 @@ export function collectPluginAppRegistrations(
     homepageSections,
     settingsSections,
     navPanels,
+    leadingPanels,
     threadPanelActions,
     newThreadPanelActions,
     composerCustomizations,

@@ -2020,6 +2020,31 @@ export type BbDesktopBrowserDevToolsRequest = z.infer<
 >;
 
 /**
+ * Whether the app's DevTools panel is on screen for a tab, renderer → main.
+ *
+ * A separate statement from {@link bbDesktopBrowserDevToolsRequestSchema}, which
+ * says whether the tools are *open*. Open and on screen part company whenever
+ * the app draws something where the page was: it hides the page view to draw a
+ * load-error screen in the page's rect, and the shell — seeing only that the
+ * page went away — used to take the panel with it, leaving a tab whose network
+ * failure could not be inspected.
+ *
+ * A shell that predates this channel never hears it and keeps tying the panel to
+ * the page, which is the behaviour it already had; an app that never sends it
+ * gets the same. That is the whole of the negotiation — see
+ * {@link BbDesktopBrowserApi.setDevToolsVisible}.
+ */
+export const bbDesktopBrowserDevToolsVisibleRequestSchema = z
+  .object({
+    tabId: z.string().min(1),
+    visible: z.boolean(),
+  })
+  .strict();
+export type BbDesktopBrowserDevToolsVisibleRequest = z.infer<
+  typeof bbDesktopBrowserDevToolsVisibleRequestSchema
+>;
+
+/**
  * Whether a tab's DevTools are open, pushed main → renderer.
  *
  * Not merely an echo: DevTools can open without the app asking — "Inspect" from
@@ -2171,6 +2196,14 @@ export interface BbDesktopBrowserApi {
    * `setDevTools` must not reserve space for a panel that will never appear.
    */
   setDevTools?(request: BbDesktopBrowserDevToolsRequest): void;
+  /**
+   * Report whether the DevTools panel is on screen for a tab — see
+   * {@link bbDesktopBrowserDevToolsVisibleRequestSchema}. Optional for version
+   * skew, and the feature detection is the negotiation: an app that finds no
+   * `setDevToolsVisible` says nothing, and the shell keeps tying the panel to
+   * the page exactly as it did before this existed.
+   */
+  setDevToolsVisible?(request: BbDesktopBrowserDevToolsVisibleRequest): void;
   /**
    * Subscribe to a tab's DevTools opening or closing, including when something
    * other than this app did it.

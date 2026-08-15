@@ -790,9 +790,17 @@ function stripTransientFixedPanelTabsStateForStorage({
 export function normalizeFixedPanelTabsState({
   state,
 }: NormalizeFixedPanelTabsStateArgs): FixedPanelTabsState {
-  const normalizedSecondary = normalizeFixedSecondaryPanelTabGroupState(
-    state.secondary,
-  );
+  const normalizedSecondary = normalizeFixedSecondaryPanelTabGroupState({
+    ...state.secondary,
+    // The secondary panel no longer hosts a browser: there is one browser and it
+    // is the surface, so a page opened from a thread becomes a tab there. The
+    // kind stays in the schema because saved state still contains it — and
+    // because the surface's own tabs are the same record — so the tabs are
+    // dropped here instead, on the one path that both loading and saving go
+    // through. Reconciling the active tab id is the group normalizer's job and
+    // already happens below.
+    tabs: state.secondary.tabs.filter((tab) => tab.kind !== "browser"),
+  });
 
   return {
     version: state.version,

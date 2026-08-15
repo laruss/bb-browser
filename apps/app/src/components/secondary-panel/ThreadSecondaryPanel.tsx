@@ -66,14 +66,13 @@ import {
   getBbDesktopInfo,
   MACOS_APP_REGION_NO_DRAG_CLASS,
   MACOS_CHROME_CONTROL_AXIS_CLASS,
-  MACOS_COLLAPSED_TOP_LEFT_RESERVE_CLASS,
+  MACOS_TRAFFIC_LIGHT_LEADING_RESERVE_CLASS,
   MACOS_WINDOW_DRAG_CLASS,
   MACOS_WINDOW_NO_DRAG_CLASS,
   shouldReserveMacosTrafficLights,
   shouldUseMacosDesktopChrome,
 } from "@/lib/bb-desktop";
 import { useDesktopWindowState } from "@/hooks/useDesktopWindowState";
-import { useOptionalIsSidebarShowing } from "@/components/ui/sidebar.js";
 import { IframeDragGuardOverlay } from "@/lib/iframe-drag-guard";
 import type { SecondaryFixedPanelTab } from "@/lib/fixed-panel-tabs-state";
 import { useAppCommandShortcut } from "@/components/commands/AppCommandProvider";
@@ -151,12 +150,6 @@ interface CollapsedPanelTrafficLightReserveArgs {
   /** The compact drawer layout (never the window's top-left surface). */
   renderAsDrawer: boolean;
   /**
-   * Whether the main app sidebar is showing. `null` when the sidebar context is
-   * absent (e.g. tests) — treated as showing, so no reserve is applied. The
-   * sidebar hosts the traffic lights in its own top strip while open.
-   */
-  isSidebarShowing: boolean | null;
-  /**
    * Whether macOS traffic lights are visible (macOS desktop chrome, not
    * fullscreen). False on the web build and in fullscreen, where the lights are
    * hidden.
@@ -168,11 +161,15 @@ interface CollapsedPanelTrafficLightReserveArgs {
  * Left-padding class that clears the macOS traffic-light safe area for the
  * secondary panel's leading top-chrome toolbar, or `false` when no reserve is
  * needed. The reserve applies when the panel is the window's flush top-left
- * surface — the conversation is collapsed — while the main sidebar is collapsed
- * and the lights are visible: the collapsed-left / expanded-right case from
- * BB-46. It lands the leading controls on the same x = 120px as
- * AppPageHeader's own reserve. See {@link MACOS_COLLAPSED_TOP_LEFT_RESERVE_CLASS}
- * for the geometry.
+ * surface — the conversation is collapsed — and the lights are visible: the
+ * collapsed-left / expanded-right case from BB-46. It lands the leading controls
+ * past the lights, on the same x as AppPageHeader's own leading reserve. See
+ * {@link MACOS_TRAFFIC_LIGHT_LEADING_RESERVE_CLASS} for the geometry.
+ *
+ * Sidebar state is not part of the test: this reserve is now only about the
+ * lights, which the sidebar never covers from the trailing edge. The pinned
+ * trigger moved to that edge and is reserved separately, by whoever owns the
+ * window's top-right.
  *
  * Collapsing hands the panel the top-left on BOTH thread surfaces, so this does
  * not test for the split host. Either way the conversation column collapses to
@@ -186,15 +183,11 @@ interface CollapsedPanelTrafficLightReserveArgs {
 export function resolveCollapsedPanelTrafficLightReserveClassName({
   isConversationCollapsed,
   renderAsDrawer,
-  isSidebarShowing,
   reserveMacosTrafficLights,
 }: CollapsedPanelTrafficLightReserveArgs): string | false {
   const reserves =
-    isConversationCollapsed &&
-    !renderAsDrawer &&
-    isSidebarShowing === false &&
-    reserveMacosTrafficLights;
-  return reserves && MACOS_COLLAPSED_TOP_LEFT_RESERVE_CLASS;
+    isConversationCollapsed && !renderAsDrawer && reserveMacosTrafficLights;
+  return reserves && MACOS_TRAFFIC_LIGHT_LEADING_RESERVE_CLASS;
 }
 
 interface ResolveActiveFixedPanelArgs {
@@ -225,17 +218,6 @@ export interface ThreadSecondaryPanelProps {
    */
   fileTabContentFillsRegion?: boolean;
   onFileTabReorder: SecondaryPanelTabReorderHandler;
-  /**
-   * The browser-tab deck slot. Rendered in the content region so the deck can
-   * own browser-view visibility and retention; absent on the web build / in
-   * tests with no browser tabs.
-   */
-  browserDeck?: ReactNode;
-  /**
-   * Whether the active panel tab is a browser tab. When true the deck fills the
-   * content region and the normal content slot is suppressed.
-   */
-  isBrowserTabActive?: boolean;
   isOpen: boolean;
   showConversationCollapseControl?: boolean;
   showGitDiffTab?: boolean;
@@ -332,8 +314,6 @@ export function ThreadSecondaryPanel({
   fileTabContent,
   fileTabContentFillsRegion,
   onFileTabReorder,
-  browserDeck,
-  isBrowserTabActive = false,
   isOpen,
   showConversationCollapseControl = true,
   showGitDiffTab = true,
@@ -521,16 +501,13 @@ export function ThreadSecondaryPanel({
     useState<CodeOverflowMode>(DEFAULT_CODE_OVERFLOW_MODE);
   const usesDesktopChrome = shouldUseMacosDesktopChrome(desktopInfo);
   const desktopWindowState = useDesktopWindowState();
-  const isSidebarShowing = useOptionalIsSidebarShowing();
   // The panel reserves the traffic-light safe area only when it is the window's
-  // flush top-left surface (conversation collapsed) with the main sidebar
-  // collapsed and the lights visible. See
-  // resolveCollapsedPanelTrafficLightReserveClassName.
+  // flush top-left surface (conversation collapsed) and the lights are visible.
+  // See resolveCollapsedPanelTrafficLightReserveClassName.
   const collapsedPanelTrafficLightReserveClassName =
     resolveCollapsedPanelTrafficLightReserveClassName({
       isConversationCollapsed,
       renderAsDrawer,
-      isSidebarShowing,
       reserveMacosTrafficLights: shouldReserveMacosTrafficLights({
         desktopInfo,
         windowState: desktopWindowState,
@@ -631,27 +608,28 @@ export function ThreadSecondaryPanel({
             "min-w-0 justify-between gap-2 px-4",
             usesDesktopChrome && MACOS_WINDOW_DRAG_CLASS,
             usesDesktopChrome && MACOS_CHROME_CONTROL_AXIS_CLASS,
+            // When this panel owns the window's top-left (conversation
+            // collapsed, on either thread surface), reserve the traffic-light
+            // safe area so the leading controls clear the lights. It rides this
+            // element rather than the leading group below because it replaces
+            // one side of the `px-4` above — see `lib/bb-desktop.ts`; on the
+            // inner element it would have added to it instead, and no single
+            // value is right for both spellings.
+            //
+            // The padding must animate on the SAME timing/easing as the panel's
+            // collapse slide (PANEL_COLLAPSE_TRANSITION_CLASS): the panel's left
+            // edge starts well right of the reserve and both ease to their
+            // endpoints together, so the combined inset (panel-left + padding)
+            // decreases monotonically to exactly the safe area and never dips
+            // below it mid-animation. A faster/looser padding transition would
+            // let the panel reach the left edge before the padding fills,
+            // briefly sliding the leading controls back under the lights.
+            `transition-[padding] ${PANEL_COLLAPSE_TRANSITION_CLASS}`,
+            collapsedPanelTrafficLightReserveClassName,
           )}
         >
           <div
-            className={cn(
-              "flex min-w-0 flex-1 items-center gap-1",
-              // When this panel owns the window's top-left (conversation
-              // collapsed, on either thread surface, with the sidebar
-              // collapsed), reserve the traffic-light
-              // safe area so the leading controls clear the lights and the
-              // pinned sidebar trigger. The padding must animate on the SAME
-              // timing/easing as the panel's collapse slide
-              // (PANEL_COLLAPSE_TRANSITION_CLASS): the panel's left edge starts
-              // well right of 120px and both ease to their endpoints together,
-              // so the combined inset (panel-left + px-4 + padding) decreases
-              // monotonically to exactly 120px and never dips below it
-              // mid-animation. A faster/looser padding transition would let the
-              // panel reach the left edge before the padding fills, briefly
-              // sliding the leading controls back under the lights/trigger.
-              `transition-[padding] ${PANEL_COLLAPSE_TRANSITION_CLASS}`,
-              collapsedPanelTrafficLightReserveClassName,
-            )}
+            className="flex min-w-0 flex-1 items-center gap-1"
             // A toolbar, not a tablist: the pinned Info view, Diff control, and
             // open-view pills are toggle buttons (`aria-pressed`) rather than
             // `role="tab"` widgets backed by tabpanels, so `role="tablist"`
@@ -793,13 +771,7 @@ export function ThreadSecondaryPanel({
         ) : null}
       </div>
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-sidebar">
-        {/*
-          The browser deck owns native-view visibility/retention and renders
-          content only when a browser tab is active. The normal content slot is
-          suppressed in that case because the deck fills the region.
-        */}
-        {browserDeck}
-        {isBrowserTabActive ? null : hasActiveFileTab ? (
+        {hasActiveFileTab ? (
           <div
             className={
               isTerminalTabActive || fileTabContentFillsRegion

@@ -2,6 +2,7 @@ import * as React from "react";
 import { createPortal } from "react-dom";
 import { Slot } from "@radix-ui/react-slot";
 
+import { useBrowserDimmingModal } from "../../hooks/useBrowserDimmingModal";
 import { Drawer, DrawerContent, DrawerTitle } from "./drawer.js";
 import {
   blurActiveKeyboardInputBeforeOverlayOpen,
@@ -384,6 +385,12 @@ export function PersistentResponsiveDrawerShell({
   onContentAnimationEnd,
   children,
 }: PersistentResponsiveDrawerShellProps) {
+  // Like every other modal that covers the page area: the in-app browser is an
+  // OS-level overlay that this drawer's backdrop cannot dim, so the page steps
+  // aside while the drawer is up. Without it the drawer opens *behind* the page
+  // wherever a browser view is on screen — which is now anywhere the agent
+  // panel is, since a thread in that column renders in this single-column form.
+  useBrowserDimmingModal(open);
   const parentDrawerDepth = React.useContext(ResponsiveDrawerDepthContext);
   const panelRef = React.useRef<HTMLDivElement>(null);
   const backdropRef = React.useRef<HTMLDivElement>(null);

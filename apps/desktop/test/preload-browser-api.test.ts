@@ -290,6 +290,7 @@ describe("desktop preload browser API", () => {
       "setBounds",
       "setContextMenuItems",
       "setDevTools",
+      "setDevToolsVisible",
       "setFullscreen",
       "setOverlay",
       "setPopupTabs",

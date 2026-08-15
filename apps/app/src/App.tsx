@@ -8,6 +8,7 @@ import {
 } from "react-router-dom";
 import { AppLayout } from "./components/layout/AppLayout";
 import { AuthCallbackView } from "./views/AuthCallbackView";
+import { isDesktopBrowserAvailable } from "./lib/bb-desktop";
 import { useBrowserFirstStartupRoute } from "./lib/browser-first-startup";
 import { QuickCreateProjectProvider } from "./hooks/useQuickCreateProject";
 import { RouteNavigationProvider } from "./components/ui/app-route-anchor";
@@ -80,6 +81,20 @@ const ProjectSettingsView = lazy(() =>
 );
 const SplitWorkspaceRoute = lazy(() => import("./views/SplitWorkspaceRoute"));
 const BrowserSurfaceView = lazy(() => import("./views/BrowserSurfaceView"));
+
+/**
+ * On desktop the browser surface is hosted by `AppLayout`, above `<Routes>`, so
+ * its tabs and chrome outlive a trip through another route. This route then
+ * renders nothing and exists only to keep `/browser` from falling through to the
+ * workspace catch-all — which would otherwise mount the split workspace behind
+ * the browser.
+ *
+ * The web build has no native views to preserve and no host, so it still renders
+ * the surface here; that is where its "needs the desktop app" screen comes from.
+ */
+function BrowserSurfaceRoute() {
+  return isDesktopBrowserAvailable() ? null : <BrowserSurfaceView />;
+}
 
 export function LegacyAutomationDetailRedirect() {
   const location = useLocation();
@@ -247,7 +262,7 @@ function AppRoutes() {
           </Route>
           <Route
             path={BROWSER_SURFACE_ROUTE_PATH}
-            element={<BrowserSurfaceView />}
+            element={<BrowserSurfaceRoute />}
           />
           <Route path="*" element={<SplitWorkspaceRoute />} />
         </Routes>

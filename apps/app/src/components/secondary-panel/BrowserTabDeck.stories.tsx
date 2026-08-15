@@ -7,12 +7,7 @@ import {
 import type { BrowserFixedPanelTab } from "@/lib/fixed-panel-tabs-state";
 import { StoryCard, StoryRow } from "../../../.ladle/story-card";
 import { WithDesktopBrowser } from "../../../.ladle/story-desktop";
-import { Icon } from "@bb/shared-ui/icon";
 import { BrowserTabDeck } from "./BrowserTabDeck";
-import {
-  ThreadSecondaryPanel,
-  type SecondaryPanelFileTab,
-} from "./ThreadSecondaryPanel";
 
 export default {
   title: "right-panel/Browser tab",
@@ -119,50 +114,20 @@ interface BrowserTabStageProps {
 }
 
 function BrowserTabStage({ tab, threadId, width }: BrowserTabStageProps) {
-  const label = tab.title ?? "Browser";
-  const fileTabs: SecondaryPanelFileTab[] = [
-    {
-      id: tab.id,
-      filename: label,
-      isActive: true,
-      leadingVisual: <Icon name="Globe" className="size-3.5" aria-hidden />,
-      statusLabel: null,
-      onSelect: noop,
-      onClose: noop,
-    },
-  ];
-
+  // A bare box, not a thread's secondary panel: the deck's only host is the
+  // browser surface now. A thread that wants to show a page opens a tab there
+  // rather than a browser of its own, so a story composing the two would
+  // document an arrangement the app no longer has.
   return (
     <PanelStage width={width}>
-      <ThreadSecondaryPanel
-        activeTab={tab}
-        canUseGitUi={false}
-        requestedMergeBaseBranch="main"
-        environmentId={undefined}
-        fileTabs={fileTabs}
-        fileTabContent={
-          <BrowserTabDeck
-            browserTabs={[tab]}
-            activeBrowserTabId={tab.id}
-            canShowNativeBrowserView
-            threadId={threadId}
-            environmentId={null}
-            onUpdate={noop}
-          />
-        }
-        isBrowserTabActive
-        isConversationCollapsed={false}
-        isOpen
-        metadataContent={null}
-        onClose={noop}
-        onCollapse={noop}
-        onFileTabReorder={noop}
-        onOpenNewTab={noop}
-        onPanelChange={noop}
-        onPanelFocus={noop}
-        onToggleConversationCollapse={noop}
-        renderAsDrawer
-        showGitDiffTab={false}
+      <BrowserTabDeck
+        browserTabs={[tab]}
+        activeBrowserTabId={tab.id}
+        canShowNativeBrowserView
+        threadId={threadId}
+        environmentId={null}
+        showChrome={false}
+        onUpdate={noop}
       />
     </PanelStage>
   );

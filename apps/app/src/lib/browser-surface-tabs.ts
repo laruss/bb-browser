@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { atom, useAtom, useSetAtom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
+import { nanoid } from "nanoid";
 import { z } from "zod";
 import { createLocalStorageSyncStorage } from "./browser-storage";
 import {
@@ -31,9 +32,42 @@ export const BROWSER_SURFACE_SCOPE_ID = "browser-surface";
  */
 export const BROWSER_SURFACE_NEW_TAB_URL = "";
 
+/**
+ * A bb screen carried in the strip beside web pages — Settings, Extensions, a
+ * plugin's panel.
+ *
+ * The record is a **remembered route**, not a live view: the strip holds many
+ * tabs while the window holds one URL, so an inactive app tab is a path waiting
+ * to be visited and the active one is whatever the window's own router is
+ * already rendering. That is what keeps a single navigation system here; see
+ * `app-surface-tabs.ts` for the route ↔ strip rules built on it.
+ */
+export interface AppSurfaceTab {
+  id: string;
+  kind: "app";
+  /** Window path, search string included. */
+  path: string;
+  /** The screen's document title; null until it reports one. */
+  title: string | null;
+}
+
+/** Either kind of tab in the surface's one ordered strip. */
+export type BrowserSurfaceTab = BrowserFixedPanelTab | AppSurfaceTab;
+
+export function isAppSurfaceTab(tab: BrowserSurfaceTab): tab is AppSurfaceTab {
+  return tab.kind === "app";
+}
+
+/** A tab showing a web page — the kind that owns a native `WebContentsView`. */
+export function isWebSurfaceTab(
+  tab: BrowserSurfaceTab,
+): tab is BrowserFixedPanelTab {
+  return tab.kind === "browser";
+}
+
 export interface BrowserSurfaceTabsState {
   activeTabId: string | null;
-  tabs: readonly BrowserFixedPanelTab[];
+  tabs: readonly BrowserSurfaceTab[];
 }
 
 export const EMPTY_BROWSER_SURFACE_TABS_STATE: BrowserSurfaceTabsState = {
@@ -41,7 +75,7 @@ export const EMPTY_BROWSER_SURFACE_TABS_STATE: BrowserSurfaceTabsState = {
   tabs: [],
 };
 
-const browserSurfaceTabSchema = z
+const webSurfaceTabSchema = z
   .object({
     environmentId: z.string().min(1).nullable(),
     id: z.string().min(1),
@@ -51,10 +85,31 @@ const browserSurfaceTabSchema = z
   })
   .strict();
 
+const appSurfaceTabSchema = z
+  .object({
+    id: z.string().min(1),
+    kind: z.literal("app"),
+    path: z.string().min(1),
+    title: z.string().min(1).nullable(),
+  })
+  .strict();
+
+/**
+ * The storage version stays at 1 across the arrival of app tabs: every state an
+ * older build wrote is a list of web tabs, which still parses. Only the reverse
+ * — an older build reading a strip that now holds an app tab — fails, and it
+ * fails into {@link EMPTY_BROWSER_SURFACE_TABS_STATE} and reopens a new tab
+ * rather than into anything the user has to repair.
+ */
+const surfaceTabSchema = z.discriminatedUnion("kind", [
+  webSurfaceTabSchema,
+  appSurfaceTabSchema,
+]);
+
 const browserSurfaceTabsStateSchema = z
   .object({
     activeTabId: z.string().min(1).nullable(),
-    tabs: z.array(browserSurfaceTabSchema),
+    tabs: z.array(surfaceTabSchema),
   })
   .strict();
 
@@ -77,7 +132,7 @@ function reconcileActiveTabId(
 
 export function addBrowserSurfaceTab(
   state: BrowserSurfaceTabsState,
-  tab: BrowserFixedPanelTab,
+  tab: BrowserSurfaceTab,
 ): BrowserSurfaceTabsState {
   if (state.tabs.some((existing) => existing.id === tab.id)) {
     return activateBrowserSurfaceTab(state, tab.id);
@@ -109,7 +164,7 @@ export function closeBrowserSurfaceTab(
 export interface ClosedBrowserSurfaceTab {
   /** Where it was in the strip, so reopening puts it back rather than at the end. */
   index: number;
-  tab: BrowserFixedPanelTab;
+  tab: BrowserSurfaceTab;
 }
 
 /** How many closed tabs can be reopened, matching the shell's session store. */
@@ -157,6 +212,12 @@ export function activateBrowserSurfaceTab(
   state: BrowserSurfaceTabsState,
   tabId: string,
 ): BrowserSurfaceTabsState {
+  // Same state object back when nothing moves: the route sync re-runs this on
+  // every navigation, and a fresh object each time would republish the strip to
+  // every subscriber for a tab switch that did not happen.
+  if (state.activeTabId === tabId) {
+    return state;
+  }
   if (!state.tabs.some((tab) => tab.id === tabId)) {
     return state;
   }
@@ -175,7 +236,9 @@ export function updateBrowserSurfaceTab(
 ): BrowserSurfaceTabsState {
   let changed = false;
   const tabs = state.tabs.map((tab) => {
-    if (tab.id !== args.tabId) {
+    // Page title and URL come from a native view, so an app tab under the same
+    // id is not a stale record to refresh — it is the wrong tab.
+    if (tab.id !== args.tabId || !isWebSurfaceTab(tab)) {
       return tab;
     }
     const title = args.title === undefined ? tab.title : args.title;
@@ -189,13 +252,69 @@ export function updateBrowserSurfaceTab(
   return changed ? { ...state, tabs } : state;
 }
 
+/** Moves an app tab to another screen, and records the title that screen reports. */
+export interface UpdateAppSurfaceTabArgs {
+  path?: string;
+  tabId: string;
+  title?: string | null;
+}
+
+export function updateAppSurfaceTab(
+  state: BrowserSurfaceTabsState,
+  args: UpdateAppSurfaceTabArgs,
+): BrowserSurfaceTabsState {
+  let changed = false;
+  const tabs = state.tabs.map((tab) => {
+    if (tab.id !== args.tabId || !isAppSurfaceTab(tab)) {
+      return tab;
+    }
+    const path = args.path ?? tab.path;
+    const title = args.title === undefined ? tab.title : args.title;
+    if (path === tab.path && title === tab.title) {
+      return tab;
+    }
+    changed = true;
+    return { ...tab, path, title };
+  });
+  return changed ? { ...state, tabs } : state;
+}
+
 export function getActiveBrowserSurfaceTab(
   state: BrowserSurfaceTabsState,
-): BrowserFixedPanelTab | null {
+): BrowserSurfaceTab | null {
   if (state.activeTabId === null) {
     return null;
   }
   return state.tabs.find((tab) => tab.id === state.activeTabId) ?? null;
+}
+
+/** The web tabs alone — what the deck mounts and what an agent's tools address. */
+export function getBrowserSurfaceWebTabs(
+  state: BrowserSurfaceTabsState,
+): readonly BrowserFixedPanelTab[] {
+  return state.tabs.filter(isWebSurfaceTab);
+}
+
+/**
+ * The active tab when it is a web page, and null when an app screen holds the
+ * strip. Null here reads as "no page to act on", which is what every caller that
+ * drives a native view (find, reload, DevTools, the agent's tools) needs.
+ */
+export function getActiveBrowserSurfaceWebTab(
+  state: BrowserSurfaceTabsState,
+): BrowserFixedPanelTab | null {
+  const active = getActiveBrowserSurfaceTab(state);
+  return active !== null && isWebSurfaceTab(active) ? active : null;
+}
+
+export function createAppSurfaceTab({
+  path,
+  title = null,
+}: {
+  path: string;
+  title?: string | null;
+}): AppSurfaceTab {
+  return { id: `app:${nanoid()}`, kind: "app", path, title };
 }
 
 export function createBrowserSurfaceTab(url: string): BrowserFixedPanelTab {
@@ -255,10 +374,22 @@ const closedBrowserSurfaceTabsAtom = atom<readonly ClosedBrowserSurfaceTab[]>(
 );
 
 export interface BrowserSurfaceTabsController {
-  activeTab: BrowserFixedPanelTab | null;
+  activeTab: BrowserSurfaceTab | null;
+  /** {@link getActiveBrowserSurfaceWebTab} — null while an app screen is active. */
+  activeWebTab: BrowserFixedPanelTab | null;
+  /** {@link getBrowserSurfaceWebTabs}, memoised for the deck and the omnibox. */
+  webTabs: readonly BrowserFixedPanelTab[];
   activateTab: (tabId: string) => void;
   closeTab: (tabId: string) => void;
-  openTab: (url?: string) => BrowserFixedPanelTab;
+  /**
+   * `activate: false` opens it in the background, leaving the strip pointing
+   * where it was — what the surface needs when it is only making sure a page
+   * exists to come back to, and what an agent's `browser_tabs_open` asks for.
+   */
+  openTab: (
+    url?: string,
+    options?: { activate?: boolean },
+  ) => BrowserFixedPanelTab;
   /**
    * Adopt a tab the desktop shell already created — a popup, whose page exists
    * before this surface has heard of it, so the id is the shell's and this side
@@ -271,15 +402,51 @@ export interface BrowserSurfaceTabsController {
   updateTab: (args: UpdateBrowserSurfaceTabArgs) => void;
 }
 
+/**
+ * Open a page in the browser, from anywhere in the app.
+ *
+ * There is one browser and it is this surface. A thread that wants to show a
+ * page hands it here rather than hosting a browser of its own beside the
+ * conversation — which is what the thread's secondary panel used to do, and what
+ * left the app with two browsers, one of them a panel inside the other.
+ *
+ * No navigation: on an agent route the surface already owns the main area, so
+ * the page appears beside the thread the user is reading rather than instead of
+ * it. On the web build there is no surface and no native view, so callers gate
+ * on {@link isDesktopBrowserAvailable} and send links to the system browser as
+ * they always have.
+ */
+export function useOpenBrowserSurfaceTab(): (url: string) => void {
+  const setState = useSetAtom(browserSurfaceTabsAtom);
+  return useCallback(
+    (url: string) => {
+      setState((current) =>
+        addBrowserSurfaceTab(current, createBrowserSurfaceTab(url)),
+      );
+    },
+    [setState],
+  );
+}
+
 export function useBrowserSurfaceTabs(): BrowserSurfaceTabsController {
   const [state, setState] = useAtom(browserSurfaceTabsAtom);
 
   const openTab = useCallback(
-    (url: string = BROWSER_SURFACE_NEW_TAB_URL) => {
+    (
+      url: string = BROWSER_SURFACE_NEW_TAB_URL,
+      { activate = true }: { activate?: boolean } = {},
+    ) => {
       // Built here rather than inside the reducer so the reducers stay pure and
       // directly testable; only this hook needs an id generator.
       const tab = createBrowserSurfaceTab(url);
-      setState((current) => addBrowserSurfaceTab(current, tab));
+      setState((current) => {
+        const opened = addBrowserSurfaceTab(current, tab);
+        // `addBrowserSurfaceTab` always focuses; put focus back for a background
+        // tab, falling through to the new one when there was nothing to keep.
+        return activate
+          ? opened
+          : { ...opened, activeTabId: current.activeTabId ?? tab.id };
+      });
       return tab;
     },
     [setState],
@@ -344,9 +511,15 @@ export function useBrowserSurfaceTabs(): BrowserSurfaceTabsController {
   );
 
   const activeTab = useMemo(() => getActiveBrowserSurfaceTab(state), [state]);
+  const activeWebTab = useMemo(
+    () => (activeTab !== null && isWebSurfaceTab(activeTab) ? activeTab : null),
+    [activeTab],
+  );
+  const webTabs = useMemo(() => getBrowserSurfaceWebTabs(state), [state]);
 
   return {
     activeTab,
+    activeWebTab,
     activateTab,
     adoptTab,
     closeTab,
@@ -354,5 +527,6 @@ export function useBrowserSurfaceTabs(): BrowserSurfaceTabsController {
     reopenClosedTab,
     state,
     updateTab,
+    webTabs,
   };
 }

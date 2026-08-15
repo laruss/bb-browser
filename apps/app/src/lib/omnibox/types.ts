@@ -7,6 +7,13 @@ export type OmniboxAction =
   | { type: "navigate"; url: string }
   | { type: "activate-tab"; tabId: string }
   /**
+   * Go to one of bb's own screens — Settings, Extensions, a plugin's panel.
+   * Distinct from `navigate` because the destination is a route, not a page:
+   * it belongs to the window's router, and the surface opens or focuses its
+   * tab rather than pointing a `WebContentsView` at it.
+   */
+  | { type: "open-app-tab"; path: string }
+  /**
    * Call a plugin's `run(itemId)` back on the server and open whatever URL it
    * returns. The browser deliberately learns nothing about what the plugin
    * does — that is what makes the omnibox extensible without core changes.
@@ -94,6 +101,8 @@ export function omniboxActionKey(action: OmniboxAction): string {
       return `navigate:${action.url}`;
     case "activate-tab":
       return `activate-tab:${action.tabId}`;
+    case "open-app-tab":
+      return `open-app-tab:${action.path}`;
     case "plugin-run":
       // Two plugins offering "ask an agent" are two different offers, so the
       // plugin and provider are part of the identity, not just the item.

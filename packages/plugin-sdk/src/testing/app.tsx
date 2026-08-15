@@ -29,6 +29,7 @@ import {
   type PluginHomepageSectionRegistration,
   type PluginMessageActionRegistration,
   type PluginMessageDirectiveRegistration,
+  type PluginLeadingPanelRegistration,
   type PluginNavPanelRegistration,
   type PluginNewThreadPanelActionRegistration,
   type PluginPendingInteractionRegistration,
@@ -516,6 +517,7 @@ export interface CapturedPluginApp {
   homepageSections: PluginHomepageSectionRegistration[];
   settingsSections: PluginSettingsSectionRegistration[];
   navPanels: PluginNavPanelRegistration[];
+  leadingPanels: PluginLeadingPanelRegistration[];
   threadPanelActions: PluginThreadPanelActionRegistration[];
   newThreadPanelActions: PluginNewThreadPanelActionRegistration[];
   composerCustomizations: ComposerCustomization[];
@@ -547,6 +549,7 @@ function collectRegistrations(
     homepageSections: [],
     settingsSections: [],
     navPanels: [],
+    leadingPanels: [],
     threadPanelActions: [],
     newThreadPanelActions: [],
     composerCustomizations: [],
@@ -563,6 +566,7 @@ function collectRegistrations(
     homepageSection: new Set<string>(),
     settingsSection: new Set<string>(),
     navPanel: new Set<string>(),
+    leadingPanel: new Set<string>(),
     threadPanelAction: new Set<string>(),
     newThreadPanelAction: new Set<string>(),
     composerCustomization: new Set<string>(),
@@ -602,6 +606,17 @@ function collectRegistrations(
           id,
           ...(title !== undefined ? { title } : {}),
           ...(description !== undefined ? { description } : {}),
+          component: requireComponent(kind, registration.component),
+        });
+      },
+      experimental_leadingPanel(registration) {
+        const kind = "slots.experimental_leadingPanel";
+        const id = requireSlotId(kind, registration?.id);
+        requireUniqueId(kind, seenIds.leadingPanel, id);
+        captured.leadingPanels.push({
+          id,
+          title: requireNonEmptyString(kind, "title", registration.title),
+          icon: requireNonEmptyString(kind, "icon", registration.icon),
           component: requireComponent(kind, registration.component),
         });
       },

@@ -4,7 +4,15 @@ import {
   type Ref,
   type ReactNode,
 } from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useAtom, useStore } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 import { Link, matchPath, useLocation, useNavigate } from "react-router-dom";
@@ -15,8 +23,11 @@ import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar.js";
 import { AppSidebar } from "@/components/sidebar/AppSidebar";
+import { AgentPanelSidebar } from "@/components/sidebar/AgentPanelSidebar";
+import { PluginLeadingPanel } from "./PluginLeadingPanel";
 import { ThreadTitleMentionResourcesProvider } from "@/components/thread/ThreadTitleMentions";
 import { AppCommandShortcutHint } from "@/components/commands/AppCommandShortcutHint";
 import { SettingsSidebar } from "@/components/settings/SettingsSidebar";
@@ -52,18 +63,18 @@ import {
 import { ThreadActionsProvider } from "@/components/thread/ThreadActionsProvider";
 import { usePluginSlots, type PluginNavPanelSlot } from "@/lib/plugin-slots";
 import { createLocalStorageSyncStorage } from "@/lib/browser-storage";
+import { classifySurfaceRoute } from "@/lib/app-surface-tabs";
+import { useBrowserSurfaceRouteSync } from "@/hooks/useBrowserSurfaceRouteSync";
 import {
-  BROWSER_SIDEBAR_TRIGGER_INSET_CLASS,
   CHROME_ROW_CLASS,
   getBbDesktopInfo,
+  isDesktopBrowserAvailable,
   MACOS_CHROME_CONTROL_NO_DRAG_CLASS,
   MACOS_CHROME_TRAFFIC_LIGHT_AXIS_NUDGE_CLASS,
-  MACOS_TRAFFIC_LIGHT_RESERVE_OFFSET_CLASS,
   MACOS_WINDOW_DRAG_CLASS,
-  shouldReserveMacosTrafficLights,
   shouldUseMacosDesktopChrome,
+  SIDEBAR_TRIGGER_TRAILING_INSET_CLASS,
 } from "@/lib/bb-desktop";
-import { useDesktopWindowState } from "@/hooks/useDesktopWindowState";
 import {
   BROWSER_SURFACE_ROUTE_PATH,
   getLegacyProjectComposeRoutePath,
@@ -98,14 +109,68 @@ import { useSplitWorkspaceActive } from "@/hooks/useSplitWorkspaceActive";
 import { useAppSettingsRouteMemory } from "@/hooks/useAppSettingsRouteMemory";
 import { useSystemConfig } from "@/hooks/queries/system-queries";
 
+/**
+ * Hosted here rather than behind its route: this is a browser, so the browser
+ * surface is a region of the shell that outlives navigation, not a page the
+ * router swaps in and out. Keeping it mounted keeps its tabs, omnibox draft,
+ * find state and recently-used cycle alive while the user is elsewhere in the
+ * app — the native `WebContentsView`s already survived, since only an explicit
+ * tab close detaches one.
+ *
+ * Lazy for the same reason `App.tsx` loads it lazily; both specifiers resolve to
+ * the one module, so this is the same chunk rather than a second copy.
+ */
+const BrowserSurfaceView = lazy(() => import("@/views/BrowserSurfaceView"));
+
 const SIDEBAR_WIDTH_KEY = "bb.sidebar.width";
 const SIDEBAR_OPEN_KEY = "bb.sidebar.open";
+// The panel is no longer only a nav list: the agent screens (New thread, a
+// thread) paint inside it, so it has to hold a conversation and a composer. The
+// ceiling is raised well past the default so dragging the panel wide is a real
+// option rather than a nudge; the floor stays where the nav list still reads.
 const SIDEBAR_MIN_WIDTH = 240;
-const SIDEBAR_MAX_WIDTH = 460;
-const SIDEBAR_DEFAULT_WIDTH = 320;
+const SIDEBAR_MAX_WIDTH = 900;
+/** The default never grows past this, however wide the display is. */
+const SIDEBAR_DEFAULT_MAX_WIDTH = 400;
 
 function clampSidebarWidth(value: number) {
   return Math.min(SIDEBAR_MAX_WIDTH, Math.max(SIDEBAR_MIN_WIDTH, value));
+}
+
+/**
+ * A third of the window, capped — enough for a conversation on a laptop, and not
+ * a third of an ultrawide on a large display.
+ *
+ * Read once at module load rather than tracked: this is only the fallback for a
+ * panel whose width has never been dragged, and a stored width always wins. A
+ * default that chased the window would move a panel the user never sized.
+ */
+export function resolveDefaultSidebarWidth(viewportWidth: number): number {
+  return clampSidebarWidth(
+    Math.min(Math.round(viewportWidth / 3), SIDEBAR_DEFAULT_MAX_WIDTH),
+  );
+}
+
+const SIDEBAR_DEFAULT_WIDTH = resolveDefaultSidebarWidth(
+  typeof window === "undefined" ? SIDEBAR_DEFAULT_MAX_WIDTH : window.innerWidth,
+);
+
+/**
+ * Width for a live resize drag, clamped to the sidebar's range.
+ *
+ * The sidebar is on the window's trailing edge and its grab handle is on its
+ * leading one, so dragging **left** widens it: the pointer delta is subtracted,
+ * not added. Extracted and tested because flipping that sign is the kind of
+ * regression that still "works" — the drag simply runs backwards.
+ */
+export function resolveSidebarResizeWidth({
+  deltaX,
+  startWidth,
+}: {
+  deltaX: number;
+  startWidth: number;
+}): number {
+  return clampSidebarWidth(startWidth - deltaX);
 }
 
 const sidebarWidthStorage = createLocalStorageSyncStorage<number>({
@@ -152,6 +217,12 @@ interface SidebarStateBridgeProps {
   className?: string;
   providerRef: Ref<HTMLDivElement>;
   style: CSSProperties;
+  /**
+   * The panel is the only place this route paints. Collapsed, it would show
+   * nothing at all, so entering such a route opens it — once, so the user can
+   * still collapse it and stay collapsed while reading.
+   */
+  opensForRoute: boolean;
   children: ReactNode;
 }
 
@@ -162,10 +233,51 @@ type SidebarProviderStyle = CSSProperties & {
   "--sidebar-width": string;
 };
 
+/**
+ * Opening the panel, and the app's toggle chord — both inside the provider,
+ * because both need to know which of its two open states is the panel right now.
+ *
+ * The sidebar keeps one state for the docked panel and another for the drawer it
+ * becomes on a narrow window, and only the viewport says which applies. From
+ * outside the provider — where the bridge below has to live, since it renders it
+ * — only the docked one is reachable, and setting it on a narrow window opens
+ * nothing: an agent screen would paint into a closed drawer and the route would
+ * look like it had done nothing at all.
+ */
+function SidebarRouteOpener({ opensForRoute }: { opensForRoute: boolean }) {
+  const { isCompactViewport, setOpen, setOpenMobile, toggleSidebar } =
+    useSidebar();
+  useAppCommandHandler("sidebar.toggle", () => {
+    toggleSidebar();
+    return true;
+  });
+  // Keyed on entering such a route, not on `open`: re-opening whenever the user
+  // collapses would make the panel impossible to close while reading a thread.
+  useEffect(() => {
+    if (opensForRoute && !isCompactViewport) {
+      setOpen(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- entering the route is the trigger
+  }, [opensForRoute]);
+  // The drawer also opens when it *becomes* the panel, which the docked one has
+  // no need of: the docked state is persisted, so widening a window restores
+  // whatever the user last chose, while the drawer always starts closed. Without
+  // the second trigger, narrowing a window while reading a thread would put the
+  // thread behind the browser with no sign of where it went.
+  useEffect(() => {
+    if (opensForRoute && isCompactViewport) {
+      setOpenMobile(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- entering the route, or the drawer becoming the panel, is the trigger
+  }, [opensForRoute, isCompactViewport]);
+  return null;
+}
+
 function SidebarStateBridge({
   className,
   providerRef,
   style,
+  opensForRoute,
   children,
 }: SidebarStateBridgeProps) {
   const [open, setOpen] = useAtom(sidebarOpenAtom);
@@ -176,10 +288,6 @@ function SidebarStateBridge({
     },
     [setOpen],
   );
-  useAppCommandHandler("sidebar.toggle", () => {
-    handleOpenChange(!open);
-    return true;
-  });
   return (
     <SidebarProvider
       ref={providerRef}
@@ -189,9 +297,31 @@ function SidebarStateBridge({
       open={open}
       onOpenChange={handleOpenChange}
     >
+      <SidebarRouteOpener opensForRoute={opensForRoute} />
       {children}
     </SidebarProvider>
   );
+}
+
+/**
+ * Runs the route ↔ tab-strip sync without AppLayout subscribing to the tabs
+ * atom, the same trick {@link SidebarStateBridge} uses: every tab title change
+ * would otherwise re-render the whole route subtree.
+ */
+function BrowserSurfaceRouteSyncBridge({
+  enabled,
+  path,
+  title,
+}: {
+  enabled: boolean;
+  path: string | null;
+  title: string;
+}) {
+  useBrowserSurfaceRouteSync({
+    enabled,
+    target: path === null ? null : { path, title },
+  });
+  return null;
 }
 
 function resetSidebarResizeDocumentState(): void {
@@ -201,27 +331,31 @@ function resetSidebarResizeDocumentState(): void {
 }
 
 interface SidebarTriggerOverlayProps {
-  reserveMacosTrafficLights: boolean;
   usesDesktopChrome: boolean;
 }
 
 /**
- * Sidebar toggle pinned at the app's top-left, rendered once at the layout root
- * — outside the sliding sidebar panel and the content inset — so it holds a
+ * Sidebar toggle pinned at the app's top-**right**, rendered once at the layout
+ * root — outside the sliding sidebar panel and the content inset — so it holds a
  * constant position while the sidebar animates in/out behind it, instead of
- * riding whichever container would otherwise host it. The collapsed page header
- * reserves its footprint as animated padding (see AppPageHeader), so toggling
- * slides the header content smoothly past it rather than snapping around a
- * toggle that mounts/unmounts in the header.
+ * riding whichever container would otherwise host it. Whatever chrome it covers
+ * reserves its footprint as animated padding, so toggling slides that content
+ * smoothly past it rather than snapping around a toggle that mounts/unmounts.
+ *
+ * It sits at the trailing end because that is the end the sidebar is on: a
+ * toggle belongs next to the thing it toggles. That end used to be taken by the
+ * thread's window-panel toggle; the agent screens moving into the side panel
+ * took their header off the title-bar row and freed it.
+ *
+ * The macOS traffic lights keep the *leading* end whatever the sidebar does, so
+ * unlike the left-hand version this one needs no offset for them, and one inset
+ * serves desktop chrome and the web build alike.
  *
  * Desktop chrome keeps the strip a window-drag region; only the button itself
  * is no-drag, so the title strip above and below the (shorter) button stays
- * draggable rather than becoming an oversized dead zone. When macOS traffic
- * lights are visible it offsets past them; in fullscreen, where the lights are
- * hidden, it uses the same small top-left inset as browser chrome.
+ * draggable rather than becoming an oversized dead zone.
  */
 function SidebarTriggerOverlay({
-  reserveMacosTrafficLights,
   usesDesktopChrome,
 }: SidebarTriggerOverlayProps) {
   const shortcut = useAppCommandShortcut("sidebar.toggle");
@@ -236,12 +370,9 @@ function SidebarTriggerOverlay({
       <div
         data-testid="app-desktop-sidebar-trigger"
         className={cn(
-          "fixed top-0 z-50",
+          "fixed top-0 right-0 z-50",
           CHROME_ROW_CLASS,
-          reserveMacosTrafficLights
-            ? MACOS_TRAFFIC_LIGHT_RESERVE_OFFSET_CLASS
-            : "left-0",
-          !reserveMacosTrafficLights && BROWSER_SIDEBAR_TRIGGER_INSET_CLASS,
+          SIDEBAR_TRIGGER_TRAILING_INSET_CLASS,
           MACOS_WINDOW_DRAG_CLASS,
         )}
       >
@@ -252,10 +383,11 @@ function SidebarTriggerOverlay({
           className={MACOS_CHROME_CONTROL_NO_DRAG_CLASS}
           {...triggerProps}
         />
+        {/* The hint trails the trigger, so at this end it goes to its left. */}
         <AppCommandShortcutHint
           shortcut={shortcut}
           className={cn(
-            "absolute left-full ml-1",
+            "absolute right-full mr-1",
             MACOS_CHROME_TRAFFIC_LIGHT_AXIS_NUDGE_CLASS,
           )}
         />
@@ -266,15 +398,15 @@ function SidebarTriggerOverlay({
     <div
       data-testid="app-sidebar-trigger-overlay"
       className={cn(
-        "fixed top-[env(safe-area-inset-top)] left-[env(safe-area-inset-left)] z-50",
+        "fixed top-[env(safe-area-inset-top)] right-[env(safe-area-inset-right)] z-50",
         CHROME_ROW_CLASS,
-        BROWSER_SIDEBAR_TRIGGER_INSET_CLASS,
+        SIDEBAR_TRIGGER_TRAILING_INSET_CLASS,
       )}
     >
       <SidebarTrigger {...triggerProps} />
       <AppCommandShortcutHint
         shortcut={shortcut}
-        className="absolute left-full ml-1"
+        className="absolute right-full mr-1"
       />
     </div>
   );
@@ -305,6 +437,12 @@ interface AppHeaderProps {
    */
   usesProjectChromeStyle: boolean;
   usesDesktopChrome: boolean;
+  /**
+   * True when this header is inside a browser tab rather than at the window top.
+   * The tab strip above owns the title-bar row then — its chrome reserves, its
+   * drag region — so this header must claim neither.
+   */
+  isInsideBrowserTab: boolean;
   isSettingsView: boolean;
   projectId?: string;
   project?: ProjectResponse;
@@ -324,6 +462,7 @@ interface AppHeaderProps {
 function AppHeader({
   usesProjectChromeStyle,
   usesDesktopChrome,
+  isInsideBrowserTab,
   isSettingsView,
   projectId,
   project,
@@ -394,7 +533,15 @@ function AppHeader({
     </>
   ) : null;
 
-  return <AppPageHeader center={center} actions={actions} />;
+  return (
+    <AppPageHeader
+      center={center}
+      actions={actions}
+      isWindowDragRegion={!isInsideBrowserTab}
+      ownsWindowTopLeft={!isInsideBrowserTab}
+      ownsWindowTopRight={!isInsideBrowserTab}
+    />
+  );
 }
 
 interface AppLayoutProps {
@@ -524,6 +671,21 @@ export function AppLayout({ children }: AppLayoutProps) {
   // header nor content padding here.
   const isBrowserSurfaceView =
     matchPath(BROWSER_SURFACE_ROUTE_PATH, location.pathname) !== null;
+  // The web build has no native views to keep alive and no shell to keep them
+  // in, so it leaves the surface on its route — which is where its "needs the
+  // desktop app" screen comes from. `App.tsx` reads the same gate to decide
+  // whether that route still renders anything.
+  const [hostsBrowserSurface] = useState(isDesktopBrowserAvailable);
+  // Where this route paints, now that the browser holds the main area for all of
+  // them. Desktop-only for the same reason as the surface itself: with no
+  // browser to host them, the web build keeps every route in `main`.
+  const surfaceRouteKind = classifySurfaceRoute(location.pathname);
+  // The agent screens paint in the side panel rather than the main area, so the
+  // browser can stay put underneath them.
+  const isAgentPanelRoute =
+    hostsBrowserSurface && surfaceRouteKind === "agent-panel";
+  // ...and every remaining destination paints inside a browser tab.
+  const isAppTabRoute = hostsBrowserSurface && surfaceRouteKind === "app-tab";
   const pluginPanelMatch = matchPath(
     PLUGIN_PANEL_ROUTE_PATH,
     location.pathname,
@@ -594,12 +756,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     !isBrowserSurfaceView &&
     !(splitWorkspaceActive && pluginPanelMatch !== null);
   const [desktopInfo] = useState(getBbDesktopInfo);
-  const desktopWindowState = useDesktopWindowState();
   const usesDesktopChrome = shouldUseMacosDesktopChrome(desktopInfo);
-  const reserveMacosTrafficLights = shouldReserveMacosTrafficLights({
-    desktopInfo,
-    windowState: desktopWindowState,
-  });
   const sidebarProviderStyle: SidebarProviderStyle = {
     "--sidebar-width": `${sidebarWidth}px`,
   };
@@ -792,8 +949,10 @@ export function AppLayout({ children }: AppLayoutProps) {
     };
 
     const handleMouseMove = (event: MouseEvent) => {
-      const delta = event.clientX - startXRef.current;
-      liveWidthRef.current = clampSidebarWidth(startWidthRef.current + delta);
+      liveWidthRef.current = resolveSidebarResizeWidth({
+        deltaX: event.clientX - startXRef.current,
+        startWidth: startWidthRef.current,
+      });
       if (animationFrameRef.current === null) {
         animationFrameRef.current =
           window.requestAnimationFrame(applyLiveWidth);
@@ -832,6 +991,40 @@ export function AppLayout({ children }: AppLayoutProps) {
     document.title = documentTitle;
   }, [documentTitle]);
 
+  // bb's own screens: the shared header, then the route's output. Composed once
+  // and placed in one of two hosts — inside the browser's active tab on desktop,
+  // or straight into the content shell on the web build, which has no surface.
+  const appScreen = (
+    <>
+      {showHeader ? (
+        <AppHeader
+          usesDesktopChrome={usesDesktopChrome}
+          isInsideBrowserTab={isAppTabRoute}
+          usesProjectChromeStyle={
+            isRootView || isArchivedView || isSettingsView
+          }
+          isSettingsView={isSettingsView}
+          projectId={projectId}
+          project={project}
+          pluginPanel={pluginPanel}
+          pluginPanelSubPath={pluginPanelMatch?.params["*"] ?? ""}
+          meta={meta}
+        />
+      ) : null}
+      <main
+        data-testid="app-layout-route-main"
+        className={cn(
+          "flex min-h-0 flex-1 flex-col",
+          !isBrowserSurfaceView && "p-4 md:p-5",
+        )}
+      >
+        {/* An agent route's children paint in the side panel instead;
+            rendering them here too would mount the screen twice. */}
+        {isAgentPanelRoute ? null : children}
+      </main>
+    </>
+  );
+
   return (
     <ToolsHubExperimentProvider enabled={toolsHubEnabled}>
       <ProjectActionsProvider>
@@ -841,8 +1034,46 @@ export function AppLayout({ children }: AppLayoutProps) {
             <SidebarStateBridge
               providerRef={providerRef}
               style={sidebarProviderStyle}
+              opensForRoute={isAgentPanelRoute}
             >
-              {isGlobalSettingsView ? (
+              {/* The leading edge belongs to plugins, and renders nothing at
+                  all until one asks for it — see PluginLeadingPanel. First in
+                  DOM order because it is in flow: it takes its width from the
+                  row, and the inset below shrinks to what is left. */}
+              <PluginLeadingPanel />
+              {/* Content first, sidebar after: the sidebar reserves its width
+                  with an in-flow "gap" element rendered where <Sidebar> sits,
+                  and the panel itself is fixed. DOM order is therefore what puts
+                  the sidebar on the trailing edge — `side="right"` alone would
+                  pin the panel right while the gap still held space on the
+                  left. */}
+              <SidebarInset>
+                <div
+                  ref={contentShellRef}
+                  data-testid="app-layout-content-shell"
+                  className="relative flex h-full min-h-0 min-w-0 w-full flex-col pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)]"
+                >
+                  {hostsBrowserSurface ? (
+                    <Suspense fallback={null}>
+                      <BrowserSurfaceView
+                        appScreen={isAppTabRoute ? appScreen : null}
+                      />
+                    </Suspense>
+                  ) : (
+                    appScreen
+                  )}
+                </div>
+              </SidebarInset>
+              {isAgentPanelRoute ? (
+                <AgentPanelSidebar
+                  backLabel="Threads"
+                  backTo={BROWSER_SURFACE_ROUTE_PATH}
+                  isResizing={isSidebarResizing}
+                  onResizeMouseDown={handleResizeMouseDown}
+                >
+                  {children}
+                </AgentPanelSidebar>
+              ) : isGlobalSettingsView ? (
                 <SettingsSidebar
                   onResizeMouseDown={handleResizeMouseDown}
                   isResizing={isSidebarResizing}
@@ -865,39 +1096,15 @@ export function AppLayout({ children }: AppLayoutProps) {
                   toolsRoutePath={toolsHubEnabled ? toolsRoutePath : undefined}
                 />
               )}
-              <SidebarInset>
-                <div
-                  ref={contentShellRef}
-                  data-testid="app-layout-content-shell"
-                  className="relative flex h-full min-h-0 min-w-0 w-full flex-col pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)]"
-                >
-                  {showHeader ? (
-                    <AppHeader
-                      usesDesktopChrome={usesDesktopChrome}
-                      usesProjectChromeStyle={
-                        isRootView || isArchivedView || isSettingsView
-                      }
-                      isSettingsView={isSettingsView}
-                      projectId={projectId}
-                      project={project}
-                      pluginPanel={pluginPanel}
-                      pluginPanelSubPath={pluginPanelMatch?.params["*"] ?? ""}
-                      meta={meta}
-                    />
-                  ) : null}
-                  <main
-                    className={cn(
-                      "flex min-h-0 flex-1 flex-col",
-                      !isBrowserSurfaceView && "p-4 md:p-5",
-                    )}
-                  >
-                    {children}
-                  </main>
-                </div>
-              </SidebarInset>
-              <SidebarTriggerOverlay
-                reserveMacosTrafficLights={reserveMacosTrafficLights}
-                usesDesktopChrome={usesDesktopChrome}
+              <SidebarTriggerOverlay usesDesktopChrome={usesDesktopChrome} />
+              <BrowserSurfaceRouteSyncBridge
+                enabled={hostsBrowserSurface}
+                path={
+                  isAppTabRoute
+                    ? `${location.pathname}${location.search}`
+                    : null
+                }
+                title={documentTitle}
               />
             </SidebarStateBridge>
             <ProjectPathDialog

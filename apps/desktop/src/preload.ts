@@ -52,6 +52,7 @@ import {
   type BbDesktopBrowserPopupHandler,
   type BbDesktopBrowserPopupTabs,
   type BbDesktopBrowserDevToolsRequest,
+  type BbDesktopBrowserDevToolsVisibleRequest,
   type BbDesktopBrowserDevToolsStateHandler,
   type BbDesktopBrowserSnapshotResult,
   type BbDesktopBrowserSnapshotHandler,
@@ -109,6 +110,7 @@ import {
   BB_DESKTOP_BROWSER_POPUP_CHANNEL,
   BB_DESKTOP_BROWSER_SET_POPUP_TABS_CHANNEL,
   BB_DESKTOP_BROWSER_SET_DEV_TOOLS_CHANNEL,
+  BB_DESKTOP_BROWSER_SET_DEV_TOOLS_VISIBLE_CHANNEL,
   BB_DESKTOP_BROWSER_DEV_TOOLS_STATE_CHANNEL,
   BB_DESKTOP_BROWSER_INTERACT_CHANNEL,
   BB_DESKTOP_BROWSER_SNAPSHOT_TREE_CHANNEL,
@@ -444,6 +446,9 @@ const bbBrowserApi: BbDesktopBrowserApi = {
       ...request,
       bounds: browserViewBoundsAtWindowScale(request.bounds),
     });
+  },
+  setDevToolsVisible(request: BbDesktopBrowserDevToolsVisibleRequest): void {
+    ipcRenderer.send(BB_DESKTOP_BROWSER_SET_DEV_TOOLS_VISIBLE_CHANNEL, request);
   },
   onDevToolsState(listener): BbDesktopBrowserUnsubscribe {
     browserDevToolsListeners.add(listener);

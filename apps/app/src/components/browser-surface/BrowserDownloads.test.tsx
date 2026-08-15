@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react";
 import { Provider } from "jotai";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type {
@@ -49,6 +55,7 @@ function DownloadsHarness() {
   return (
     <BrowserSurfaceChrome
       onActivateTab={() => undefined}
+      onOpenAppRoute={() => {}}
       providers={[]}
       tabId="tab-active"
       url="https://current.test/page"
@@ -99,7 +106,10 @@ function downloadsButton(): HTMLElement | null {
 beforeEach(() => {
   // The reporter hands finished downloads to plugins over HTTP; nothing here
   // asserts on that, but an unstubbed fetch rejects into an unhandled promise.
-  vi.stubGlobal("fetch", vi.fn(async () => new Response("{}")));
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => new Response("{}")),
+  );
 });
 
 afterEach(() => {
@@ -176,8 +186,9 @@ describe("browser downloads chrome", () => {
       screen.getByRole("button", { name: "Show report.pdf in folder" }),
     );
 
-    const requests = downloadAction.mock
-      .calls as unknown as Array<[BbDesktopBrowserDownloadActionRequest]>;
+    const requests = downloadAction.mock.calls as unknown as Array<
+      [BbDesktopBrowserDownloadActionRequest]
+    >;
     expect(requests.map((call) => call[0])).toEqual([
       { action: "open", savePath: "/Users/someone/Downloads/report.pdf" },
       { action: "reveal", savePath: "/Users/someone/Downloads/report.pdf" },

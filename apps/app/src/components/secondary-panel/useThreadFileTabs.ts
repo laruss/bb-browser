@@ -1,17 +1,15 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect } from "react";
 import type { TerminalSession } from "@bb/server-contract";
 import {
   useFixedPanelTabsState,
   useUpdateFixedPanelTabsState,
 } from "@/lib/fixed-panel-tabs";
 import {
-  createBrowserFixedPanelTab,
   createHostFilePreviewFixedPanelTab,
   createNewTabFixedPanelTab,
   createPluginPanelFixedPanelTab,
   createThreadStorageFilePreviewFixedPanelTab,
   createWorkspaceFilePreviewFixedPanelTab,
-  type BrowserFixedPanelTab,
   type FixedPanelTab,
   type HostFilePreviewFixedPanelTab,
   type NewTabFixedPanelTab,
@@ -44,7 +42,6 @@ import {
   findSecondaryPanelTab,
   getActiveSecondaryPanelTab,
   getActiveTabIdAfterPrune,
-  isBrowserTab,
   openSecondaryPanelTabInState,
   pruneStorageTabs,
   removeWorkspaceTabsForOtherEnvironments,
@@ -95,7 +92,6 @@ export type OpenSecondaryPanelTabRequest =
   | { kind: "workspace-file-preview"; tab: WorkspaceFileTabState }
   | { kind: "host-file-preview"; tab: HostFileTabState }
   | { kind: "thread-storage-file-preview"; tab: ThreadStorageFileTabState }
-  | { kind: "browser"; url: string }
   | { kind: "new-tab" };
 
 interface CreateTabForOpenRequestArgs {
@@ -122,7 +118,6 @@ type SecondaryPanelTab =
   | WorkspaceFilePreviewFixedPanelTab
   | HostFilePreviewFixedPanelTab
   | ThreadStorageFilePreviewFixedPanelTab
-  | BrowserFixedPanelTab
   | NewTabFixedPanelTab
   | PluginPanelFixedPanelTab;
 
@@ -170,11 +165,6 @@ function createTabForOpenRequest({
         request.tab,
         threadId,
       );
-    case "browser":
-      return createBrowserFixedPanelTab({
-        environmentId: resolvedEnvironmentId ?? null,
-        url: request.url,
-      });
     case "new-tab":
       return createNewTabFixedPanelTab();
   }
@@ -445,12 +435,9 @@ export function useThreadFileTabs({
         recordRecentItem({ source: "thread-storage", path: request.tab.path });
       }
 
-      updateFixedPanelTabsState((state) => {
-        if (request.kind === "browser") {
-          return replaceNewTabWithSecondaryPanelTabInState({ state, tab });
-        }
-        return openSecondaryPanelTabInState({ state, tab });
-      });
+      updateFixedPanelTabsState((state) =>
+        openSecondaryPanelTabInState({ state, tab }),
+      );
       return tab;
     },
     [
@@ -542,26 +529,6 @@ export function useThreadFileTabs({
     ],
   );
 
-  const updateBrowserTab = useCallback(
-    ({ tabId, url, title }: UpdateBrowserTabArgs) => {
-      updateFixedPanelTabsState((state) => {
-        const tab = findSecondaryPanelTab(state.secondary.tabs, tabId);
-        if (!tab || !isBrowserTab(tab)) {
-          return state;
-        }
-        return updateSecondaryPanelTabInState({
-          state,
-          tab: {
-            ...tab,
-            title,
-            url,
-          },
-        });
-      });
-    },
-    [updateFixedPanelTabsState],
-  );
-
   const clearActiveFileTabs = useCallback(() => {
     updateFixedPanelTabsState(clearActiveSecondaryFileTabInState);
   }, [updateFixedPanelTabsState]);
@@ -581,10 +548,6 @@ export function useThreadFileTabs({
     tabs: fixedPanelTabsState.secondary.tabs,
     resolvedEnvironmentId,
   });
-  const browserTabs = useMemo(
-    () => fixedPanelTabsState.secondary.tabs.filter(isBrowserTab),
-    [fixedPanelTabsState.secondary.tabs],
-  );
   const activeWorkspaceFileTab =
     activeTab?.kind === "workspace-file-preview" &&
     (preserveWorkspaceTabsAcrossContexts ||
@@ -595,14 +558,12 @@ export function useThreadFileTabs({
     activeTab?.kind === "thread-storage-file-preview" ? activeTab : null;
   const activeHostFileTab =
     activeTab?.kind === "host-file-preview" ? activeTab : null;
-  const activeBrowserTab = activeTab?.kind === "browser" ? activeTab : null;
   const activeNewTab = activeTab?.kind === "new-tab" ? activeTab : null;
   const activePluginPanelTab =
     activeTab?.kind === "plugin-panel" ? activeTab : null;
 
   return {
     activateTab,
-    activeBrowserTab,
     activeHostFileEnvironmentId: activeHostFileTab?.environmentId ?? null,
     activeHostFileLineRange: activeHostFileTab?.lineRange ?? null,
     activeHostFilePath: activeHostFileTab?.path ?? null,
@@ -619,7 +580,6 @@ export function useThreadFileTabs({
     activeWorkspaceFileSource: activeWorkspaceFileTab?.source ?? null,
     activeWorkspaceFileStatusLabel: activeWorkspaceFileTab?.statusLabel ?? null,
     activePluginPanelTab,
-    browserTabs,
     clearActiveFileTabs,
     closeTab,
     isNewTabActive: activeNewTab !== null,
@@ -628,6 +588,5 @@ export function useThreadFileTabs({
     orderedSecondaryFileTabs,
     reorderFileTab,
     selectFileSearchResult,
-    updateBrowserTab,
   };
 }

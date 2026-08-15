@@ -1769,9 +1769,13 @@ describe("SplitThreadArea", () => {
       (await screen.findByText(path))
         .closest("header")
         ?.querySelector('[data-testid="app-page-header-content-row"]');
-    expect((await contentRow("top-left"))?.className).toContain("pl-[104px]");
+    // The leading reserve clears the macOS traffic lights, and only the
+    // structural top-left pane is under them. (The pinned sidebar trigger is at
+    // the *trailing* end now and is reserved separately, by every pane whose row
+    // the collapsed sidebar leaves it over — so it is not what this asserts.)
+    expect((await contentRow("top-left"))?.className).toContain("pl-[84px]");
     for (const path of ["top-right", "bottom-left", "bottom-right"]) {
-      expect((await contentRow(path))?.className).not.toContain("pl-[104px]");
+      expect((await contentRow(path))?.className).not.toContain("pl-[84px]");
     }
 
     expect(screen.getAllByRole("button", { name: /Full Screen/ })).toHaveLength(

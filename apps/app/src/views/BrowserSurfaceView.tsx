@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+import { useAtom } from "jotai";
+import { useLocation, useNavigate } from "react-router-dom";
 import { BrowserTabDeck } from "@/components/secondary-panel/BrowserTabDeck";
 import type {
   BrowserTabFaviconArgs,
@@ -21,6 +29,7 @@ import {
   usePluginContributions,
 } from "@/hooks/queries/plugin-contribution-queries";
 import { getDesktopBrowserApi } from "@/lib/bb-desktop";
+import { browserFaviconsAtom, setBrowserFavicon } from "@/lib/browser-favicons";
 import { useDesktopWindowState } from "@/hooks/useDesktopWindowState";
 import { buildBrowserSearchUrl } from "@/lib/browser-url";
 import { useBrowserFind } from "@/lib/browser-find";
@@ -28,10 +37,19 @@ import { useBrowserHistory } from "@/lib/browser-history";
 import { useBrowserTabCycling } from "@/lib/browser-tab-mru";
 import {
   BROWSER_SURFACE_SCOPE_ID,
+  closeBrowserSurfaceTab,
+  getActiveBrowserSurfaceTab,
   useBrowserSurfaceTabs,
+  type BrowserSurfaceTab,
 } from "@/lib/browser-surface-tabs";
-import { isRoutePath } from "@/lib/route-paths";
 import {
+  BB_APP_TAB_DESTINATIONS,
+  resolveSurfaceTabRoute,
+} from "@/lib/app-surface-tabs";
+import { getPluginPanelRoutePath, isRoutePath } from "@/lib/route-paths";
+import { usePluginSlots } from "@/lib/plugin-slots";
+import {
+  createOmniboxAppRouteProvider,
   createOmniboxHistoryProvider,
   createOmniboxNavigationProvider,
   createOmniboxOpenTabsProvider,
@@ -52,28 +70,129 @@ import {
  * `threadId` here is the deck's opaque scope key, not a thread — see
  * `BROWSER_SURFACE_SCOPE_ID`. `environmentId` is null because a surface tab
  * belongs to no workspace.
+ *
+ * On desktop the view is **hosted by `AppLayout` rather than by a route**, so it
+ * holds the main area for every route: the agent screens paint in the side panel
+ * beside it, and bb's own destinations paint inside it as {@link
+ * BrowserSurfaceViewProps.appScreen}. Nothing displaces it, which is why there is
+ * no longer an inactive state to keep correct.
  */
-export function BrowserSurfaceView() {
+export interface BrowserSurfaceViewProps {
+  /**
+   * The bb screen the window is currently routed to — Settings, Extensions, a
+   * plugin's panel — rendered in place of the page area when present.
+   *
+   * Route-driven rather than read off the active tab, and deliberately: the two
+   * agree within a commit, but the strip is corrected by an effect, so painting
+   * from the tab would show the page the user just left for one frame. What the
+   * strip decides is which tab is *highlighted*; what this decides is what is on
+   * screen.
+   */
+  appScreen?: ReactNode;
+}
+
+export function BrowserSurfaceView({
+  appScreen = null,
+}: BrowserSurfaceViewProps = {}) {
   const {
     activateTab,
-    activeTab,
+    activeWebTab,
     adoptTab,
     closeTab,
     openTab,
     reopenClosedTab,
     state,
     updateTab,
+    webTabs,
   } = useBrowserSurfaceTabs();
   const { entries: history } = useBrowserHistory(BROWSER_SURFACE_SCOPE_ID);
-  const tabCount = state.tabs.length;
+  const navigate = useNavigate();
+  const showsAppScreen = appScreen !== null;
+  const webTabCount = webTabs.length;
 
   useEffect(() => {
-    // The surface is never empty: an empty-URL tab shows the new-tab screen,
-    // which is also what the user gets after closing the last tab.
-    if (tabCount === 0) {
-      openTab();
+    // The surface is never without a page: an empty-URL tab shows the new-tab
+    // screen, which is also what the user gets after closing the last one. App
+    // tabs do not count — a strip holding only Settings still owes the browser
+    // somewhere to go.
+    //
+    // In the background, so closing the last page while reading Settings does
+    // not throw the user out of Settings: the replacement is a page to come
+    // back to, not one being asked for.
+    if (webTabCount === 0) {
+      openTab(undefined, { activate: false });
     }
-  }, [openTab, tabCount]);
+  }, [openTab, webTabCount]);
+
+  const location = useLocation();
+  const currentPath = `${location.pathname}${location.search}`;
+  /**
+   * Tab selection, with the navigation it implies. Every entry point goes
+   * through here — the strip, the switcher, Cmd+1..8, the MRU cycle, the
+   * omnibox — because a tab that cannot paint where the window is standing is
+   * not selected, it is merely highlighted.
+   */
+  const goToTabRoute = useCallback(
+    (tab: BrowserSurfaceTab | null) => {
+      const route = resolveSurfaceTabRoute({
+        isOnAppTabRoute: showsAppScreen,
+        tab,
+      });
+      // Already there is not a navigation: re-selecting the active tab, or
+      // closing a background one, would otherwise push a duplicate history
+      // entry and make Back do nothing visible.
+      if (route !== null && route !== currentPath) {
+        void navigate(route);
+      }
+    },
+    [currentPath, navigate, showsAppScreen],
+  );
+
+  const activateSurfaceTab = useCallback(
+    (tabId: string) => {
+      activateTab(tabId);
+      goToTabRoute(state.tabs.find((tab) => tab.id === tabId) ?? null);
+    },
+    [activateTab, goToTabRoute, state.tabs],
+  );
+
+  const openSurfaceTab = useCallback(
+    (url?: string) => {
+      const tab = openTab(url);
+      goToTabRoute(tab);
+      return tab;
+    },
+    [goToTabRoute, openTab],
+  );
+
+  // Page icons live for this window's session, deliberately — see
+  // `browser-favicons.ts` for why they are not stored with the tabs. The deck
+  // mounts only the active tab, so the strip shows an icon for every tab visited
+  // since the app started and its generic mark for the rest.
+  const [favicons, setFavicons] = useAtom(browserFaviconsAtom);
+
+  const dropFavicon = useCallback(
+    (tabId: string) => {
+      setFavicons((current) =>
+        setBrowserFavicon(current, { dataUrl: null, tabId }),
+      );
+    },
+    [setFavicons],
+  );
+
+  const closeSurfaceTab = useCallback(
+    (tabId: string) => {
+      closeTab(tabId);
+      dropFavicon(tabId);
+      // Whoever inherits the strip decides where the window goes; the reducer is
+      // pure, so asking it here costs nothing and keeps the successor rule in
+      // one place.
+      goToTabRoute(
+        getActiveBrowserSurfaceTab(closeBrowserSurfaceTab(state, tabId)),
+      );
+    },
+    [closeTab, dropFavicon, goToTabRoute, state],
+  );
 
   const handleUpdate = useCallback(
     ({ tabId, title, url }: UpdateBrowserTabArgs) => {
@@ -83,8 +202,8 @@ export function BrowserSurfaceView() {
   );
 
   const handleOpen = useCallback(() => {
-    openTab();
-  }, [openTab]);
+    openSurfaceTab();
+  }, [openSurfaceTab]);
 
   // Popups (`window.open`, `target="_blank"`) become a new surface tab. The
   // shell denies every native popup and pushes the request to the renderer
@@ -95,8 +214,8 @@ export function BrowserSurfaceView() {
   // shell that predates attribution, where a route path belongs to
   // `RouteNavigationProvider` rather than here.
   const surfaceTabIds = useMemo(
-    () => new Set(state.tabs.map((tab) => tab.id)),
-    [state.tabs],
+    () => new Set(webTabs.map((tab) => tab.id)),
+    [webTabs],
   );
   useEffect(() => {
     const browserApi = getDesktopBrowserApi();
@@ -106,7 +225,7 @@ export function BrowserSurfaceView() {
     if (browserApi.onScopedOpenTab) {
       return browserApi.onScopedOpenTab(({ tabId, url }) => {
         if (surfaceTabIds.has(tabId)) {
-          openTab(url);
+          openSurfaceTab(url);
         }
       });
     }
@@ -114,9 +233,9 @@ export function BrowserSurfaceView() {
       if (isRoutePath({ path: url })) {
         return;
       }
-      openTab(url);
+      openSurfaceTab(url);
     });
-  }, [openTab, surfaceTabIds]);
+  }, [openSurfaceTab, surfaceTabIds]);
 
   // Real popups. This surface claims them for its own tabs: it owns them, so it
   // can host a window Chromium created — which is what gives a page back the
@@ -141,13 +260,14 @@ export function BrowserSurfaceView() {
       if (popup.kind === "closed") {
         // The page closed its own popup, which is how every OAuth flow ends.
         closeTab(popup.tabId);
+        dropFavicon(popup.tabId);
         return;
       }
       if (surfaceTabIds.has(popup.openerTabId)) {
         adoptTab({ tabId: popup.tabId, url: popup.url });
       }
     });
-  }, [adoptTab, closeTab, surfaceTabIds]);
+  }, [adoptTab, closeTab, dropFavicon, surfaceTabIds]);
 
   // "Search for <selection>" from a page's context menu. The shell sends the
   // query rather than a URL, because the search engine is the omnibox's and
@@ -159,10 +279,10 @@ export function BrowserSurfaceView() {
     }
     return browserApi.onSearchSelection(({ query, tabId }) => {
       if (surfaceTabIds.has(tabId)) {
-        openTab(buildBrowserSearchUrl(query));
+        openSurfaceTab(buildBrowserSearchUrl(query));
       }
     });
-  }, [openTab, surfaceTabIds]);
+  }, [openSurfaceTab, surfaceTabIds]);
 
   // Plugin context-menu entries. Declared up front and handed to the shell, so
   // a right-click composes its menu without waiting on the server; the click is
@@ -197,12 +317,6 @@ export function BrowserSurfaceView() {
     });
   }, [surfaceTabIds]);
 
-  // Page icons live for the session only, deliberately: they are bytes a page
-  // supplied, the persisted tab state is localStorage (a 5MB budget the tab list
-  // must not spend on icons), and the deck mounts only the active tab — so the
-  // strip shows an icon for every tab visited since launch and its generic mark
-  // for the rest.
-  const [favicons, setFavicons] = useState<Record<string, string>>({});
   // Which tabs are loading, so the strip can spin in place of the icon. Only the
   // mounted (active) tab reports, and it reports "not loading" on unmount.
   const [loadingTabIds, setLoadingTabIds] = useState<ReadonlySet<string>>(
@@ -227,27 +341,51 @@ export function BrowserSurfaceView() {
   );
   const handleFavicon = useCallback(
     ({ dataUrl, tabId }: BrowserTabFaviconArgs) => {
-      setFavicons((current) => {
-        if (dataUrl === null) {
-          if (current[tabId] === undefined) {
-            return current;
-          }
-          const { [tabId]: _removed, ...rest } = current;
-          return rest;
-        }
-        return current[tabId] === dataUrl
-          ? current
-          : { ...current, [tabId]: dataUrl };
-      });
+      setFavicons((current) => setBrowserFavicon(current, { dataUrl, tabId }));
     },
-    [],
+    [setFavicons],
+  );
+  // Icons outlive their tab now that they are stored, so closing one has to take
+  // its icon with it. Done on the close rather than by reconciling the map
+  // against the open tabs: that reconcile runs on every change to the strip,
+  // including the commit where a restored tab list has not landed yet, and it
+  // wiped every icon it could not yet see a tab for.
+
+  // bb's own destinations, plus every panel a plugin registered. The panels ride
+  // the same list rather than a parallel mechanism, so a plugin's screen is
+  // reachable from the address bar on the same terms as Settings.
+  const { navPanels } = usePluginSlots();
+  const appRoutes = useMemo(
+    () => [
+      ...BB_APP_TAB_DESTINATIONS,
+      ...navPanels.map((panel) => ({
+        id: `plugin:${panel.pluginId}/${panel.path}`,
+        keywords: [panel.title, panel.pluginId],
+        path: getPluginPanelRoutePath({
+          pluginId: panel.pluginId,
+          path: panel.path,
+        }),
+        subtitle: "Plugin panel",
+        title: panel.title,
+      })),
+    ],
+    [navPanels],
+  );
+
+  const openAppRoute = useCallback(
+    (path: string) => {
+      void navigate(path);
+    },
+    [navigate],
   );
 
   // One shared request per query across every plugin provider; stable for the
-  // life of the surface so it can dedupe consecutive runs.
-  const pluginSuggestionSource = useRef(
-    createPluginOmniboxSuggestionSource(),
-  ).current;
+  // life of the surface so it can dedupe consecutive runs. A lazy `useState`
+  // initializer rather than a ref read during render, which is the same "build
+  // it once" but without reading `.current` where React cannot see it.
+  const [pluginSuggestionSource] = useState(
+    createPluginOmniboxSuggestionSource,
+  );
   const contributedOmniboxProviders =
     usePluginContributions().data?.omniboxProviders;
 
@@ -262,20 +400,22 @@ export function BrowserSurfaceView() {
       createOmniboxSearchProvider(),
       createOmniboxOpenTabsProvider({
         activeTabId: state.activeTabId,
-        tabs: state.tabs,
+        tabs: webTabs,
       }),
       createOmniboxHistoryProvider({ entries: history }),
+      createOmniboxAppRouteProvider({ routes: appRoutes }),
       ...createOmniboxPluginProviders({
         contributions: contributedOmniboxProviders ?? [],
         source: pluginSuggestionSource,
       }),
     ],
     [
+      appRoutes,
       contributedOmniboxProviders,
       history,
       pluginSuggestionSource,
       state.activeTabId,
-      state.tabs,
+      webTabs,
     ],
   );
 
@@ -283,49 +423,54 @@ export function BrowserSurfaceView() {
   // the chrome owns only the address bar and its reload.
   const tabIds = useMemo(() => state.tabs.map((tab) => tab.id), [state.tabs]);
   const { cycleRecentTab, selectSwitcherTab, switcher } = useBrowserTabCycling({
-    activateTab,
+    activateTab: activateSurfaceTab,
     activeTabId: state.activeTabId,
     tabIds,
   });
   const desktopBrowser = useMemo(() => getDesktopBrowserApi(), []);
 
   const isSwitcherOpen = switcher !== null;
+  const activeWebTabId = activeWebTab?.id ?? null;
   useEffect(() => {
     const browserApi = getDesktopBrowserApi();
-    if (browserApi?.setOverlay === undefined || state.activeTabId === null) {
+    if (browserApi?.setOverlay === undefined || activeWebTabId === null) {
       return;
     }
-    const tabId = state.activeTabId;
-    browserApi.setOverlay({ tabId, active: isSwitcherOpen });
+    browserApi.setOverlay({ tabId: activeWebTabId, active: isSwitcherOpen });
     return () => {
-      browserApi.setOverlay?.({ tabId, active: false });
+      browserApi.setOverlay?.({ tabId: activeWebTabId, active: false });
     };
-  }, [isSwitcherOpen, state.activeTabId]);
+  }, [activeWebTabId, isSwitcherOpen]);
 
   // Find in page. Owned here rather than by the chrome because the bar takes a
   // strip of layout of its own — the page below it shrinks while it is open.
   const find = useBrowserFind({
-    tabId: activeTab?.id ?? null,
-    url: activeTab?.url ?? "",
+    tabId: activeWebTab?.id ?? null,
+    url: activeWebTab?.url ?? "",
   });
   const contributedFindActions =
     usePluginContributions().data?.browserFindActions;
   const runFindAction = useCallback(
     (action: { itemId: string; pluginId: string }) => {
-      if (activeTab === null) {
+      if (activeWebTab === null) {
         return;
       }
       void runPluginFindAction({
         itemId: action.itemId,
-        pageUrl: activeTab.url,
+        pageUrl: activeWebTab.url,
         pluginId: action.pluginId,
         query: find.query,
-        tabId: activeTab.id,
+        tabId: activeWebTab.id,
       });
     },
-    [activeTab, find.query],
+    [activeWebTab, find.query],
   );
-  useAppCommandHandler("browser.find", () => find.open());
+  // Declined on an app screen so the chord falls through to whatever that screen
+  // does with it: there is no page to search, and a find bar over one would be a
+  // control wired to nothing.
+  useAppCommandHandler("browser.find", () =>
+    activeWebTab === null ? false : find.open(),
+  );
 
   // Give the page the whole window. Offered only while the app window is
   // already full screen: covering the tab strip and the omnibox in an ordinary
@@ -337,14 +482,14 @@ export function BrowserSurfaceView() {
   const setTabFullscreen = useCallback(
     (fullscreen: boolean) => {
       const browserApi = getDesktopBrowserApi();
-      if (browserApi?.setFullscreen === undefined || activeTab === null) {
+      if (browserApi?.setFullscreen === undefined || activeWebTab === null) {
         return false;
       }
-      browserApi.setFullscreen({ tabId: activeTab.id, fullscreen });
+      browserApi.setFullscreen({ tabId: activeWebTab.id, fullscreen });
       setIsPageFullscreen(fullscreen);
       return true;
     },
-    [activeTab],
+    [activeWebTab],
   );
   useAppCommandHandler("browser.fullscreen.toggle", () => {
     if (!windowState.isFullScreen) {
@@ -363,19 +508,18 @@ export function BrowserSurfaceView() {
   // ...and so does switching tabs: the expansion belongs to the tab it was
   // asked for, and a tab left expanded would come back that way over a strip
   // the user can no longer see.
-  const activeTabId = activeTab?.id ?? null;
   useEffect(() => {
-    if (activeTabId === null) {
+    if (activeWebTabId === null) {
       return;
     }
     return () => {
       getDesktopBrowserApi()?.setFullscreen?.({
-        tabId: activeTabId,
+        tabId: activeWebTabId,
         fullscreen: false,
       });
       setIsPageFullscreen(false);
     };
-  }, [activeTabId]);
+  }, [activeWebTabId]);
 
   // Chromium's own DevTools, per tab as in Chromium: switching tabs hides one
   // tab's tools and shows the other's, and the shell reports both directions
@@ -403,24 +547,25 @@ export function BrowserSurfaceView() {
       });
     });
   }, []);
-  const isDevToolsOpen = activeTab !== null && devToolsTabIds.has(activeTab.id);
+  const isDevToolsOpen =
+    activeWebTab !== null && devToolsTabIds.has(activeWebTab.id);
   const setDevToolsOpen = useCallback(
     (open: boolean) => {
       const browserApi = getDesktopBrowserApi();
-      if (browserApi?.setDevTools === undefined || activeTab === null) {
+      if (browserApi?.setDevTools === undefined || activeWebTab === null) {
         return false;
       }
       // Opening carries an empty rect: the panel is not mounted yet, and it
       // pushes the real one as soon as it is. The shell answers
       // `devtools-opened` either way, which is what mounts it.
       browserApi.setDevTools({
-        tabId: activeTab.id,
+        tabId: activeWebTab.id,
         open,
         bounds: { x: 0, y: 0, width: 0, height: 0 },
       });
       return true;
     },
-    [activeTab],
+    [activeWebTab],
   );
   const closeDevTools = useCallback(() => {
     setDevToolsOpen(false);
@@ -430,14 +575,14 @@ export function BrowserSurfaceView() {
   );
 
   useAppCommandHandler("browser.newTab", () => {
-    openTab();
+    openSurfaceTab();
     return true;
   });
   useAppCommandHandler("browser.closeTab", () => {
     if (state.activeTabId === null) {
       return false;
     }
-    closeTab(state.activeTabId);
+    closeSurfaceTab(state.activeTabId);
     return true;
   });
   useAppCommandHandler("browser.reopenClosedTab", () => {
@@ -449,7 +594,7 @@ export function BrowserSurfaceView() {
     if (last === undefined) {
       return false;
     }
-    activateTab(last.id);
+    activateSurfaceTab(last.id);
     return true;
   });
   useAppCommandHandler("browser.recentTab.next", () => {
@@ -481,31 +626,38 @@ export function BrowserSurfaceView() {
     if (tab === undefined) {
       return false;
     }
-    activateTab(tab.id);
+    activateSurfaceTab(tab.id);
     return true;
   });
 
   return (
     // `data-app-browser` puts the whole surface in the browser command context,
     // so Cmd+L and Cmd+R work from the tab strip and chrome, not just from
-    // inside the page.
+    // inside the page. It covers an app screen too, which is what a browser
+    // does: Cmd+T from Settings opens a tab. The handlers that need a page
+    // decline when there is none, so the chord falls through instead of acting
+    // on the wrong thing.
     <div data-app-browser className="relative flex h-full min-h-0 flex-col">
       <BrowserSurfaceTabStrip
         activeTabId={state.activeTabId}
         favicons={favicons}
         loadingTabIds={loadingTabIds}
-        onActivate={activateTab}
-        onClose={closeTab}
+        onActivate={activateSurfaceTab}
+        onClose={closeSurfaceTab}
         onOpen={handleOpen}
         tabs={state.tabs}
       />
-      {activeTab === null ? null : (
+      {/* No address bar over an app screen: bb's own screens are not pages to
+          type a URL into, and an omnibox that could not describe what is below
+          it would be chrome pretending to drive something. */}
+      {showsAppScreen || activeWebTab === null ? null : (
         <BrowserSurfaceChrome
-          key={activeTab.id}
-          onActivateTab={activateTab}
+          key={activeWebTab.id}
+          onActivateTab={activateSurfaceTab}
+          onOpenAppRoute={openAppRoute}
           providers={omniboxProviders}
-          tabId={activeTab.id}
-          url={activeTab.url}
+          tabId={activeWebTab.id}
+          url={activeWebTab.url}
         />
       )}
       {find.isOpen ? (
@@ -528,21 +680,29 @@ export function BrowserSurfaceView() {
           tabs={state.tabs}
         />
       )}
-      <BrowserTabDeck
-        browserTabs={state.tabs}
-        activeBrowserTabId={state.activeTabId}
-        environmentId={null}
-        // The route owns the whole viewport, so the native view may show as soon
-        // as it attaches — there is no drawer animation to wait out.
-        canShowNativeBrowserView
-        showChrome={false}
-        threadId={BROWSER_SURFACE_SCOPE_ID}
-        onUpdate={handleUpdate}
-        onFavicon={handleFavicon}
-        onLoadingChange={handleLoadingChange}
-      />
-      {isDevToolsOpen && activeTab !== null ? (
-        <BrowserDevToolsPanel onClose={closeDevTools} tabId={activeTab.id} />
+      {/* An app screen replaces the deck rather than covering it: a
+          `WebContentsView` is an OS overlay no DOM node can paint over, so the
+          page has to leave. Unmounting the deck is what takes it away — the tab
+          content hides its native view on cleanup, and the view itself survives
+          for when the tab comes back. */}
+      {appScreen ?? (
+        <BrowserTabDeck
+          browserTabs={webTabs}
+          activeBrowserTabId={state.activeTabId}
+          environmentId={null}
+          // The surface owns the whole page area whenever the deck is rendered
+          // at all, so the native view may show as soon as it attaches — there
+          // is no drawer animation to wait out.
+          canShowNativeBrowserView={true}
+          showChrome={false}
+          threadId={BROWSER_SURFACE_SCOPE_ID}
+          onUpdate={handleUpdate}
+          onFavicon={handleFavicon}
+          onLoadingChange={handleLoadingChange}
+        />
+      )}
+      {isDevToolsOpen && activeWebTab !== null ? (
+        <BrowserDevToolsPanel onClose={closeDevTools} tabId={activeWebTab.id} />
       ) : null}
     </div>
   );

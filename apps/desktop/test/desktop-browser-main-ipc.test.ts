@@ -29,6 +29,7 @@ import {
   BB_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
   BB_DESKTOP_BROWSER_RELOAD_CHANNEL,
   BB_DESKTOP_BROWSER_SET_BOUNDS_CHANNEL,
+  BB_DESKTOP_BROWSER_SET_DEV_TOOLS_VISIBLE_CHANNEL,
   BB_DESKTOP_BROWSER_SET_VISIBLE_CHANNEL,
   BB_DESKTOP_BROWSER_STOP_CHANNEL,
   BB_DESKTOP_BROWSER_CONTROL_CHANNEL,
@@ -109,6 +110,9 @@ type SetPopupTabsCall = Parameters<
   DesktopBrowserViewManager["setPopupTabs"]
 >[0];
 type SetDevToolsCall = Parameters<DesktopBrowserViewManager["setDevTools"]>[0];
+type SetDevToolsVisibleCall = Parameters<
+  DesktopBrowserViewManager["setDevToolsVisible"]
+>[0];
 type SetContextMenuItemsCall = Parameters<
   DesktopBrowserViewManager["setContextMenuItems"]
 >[0];
@@ -169,6 +173,7 @@ class RecordingDesktopBrowserViewManager implements DesktopBrowserViewManager {
   public readonly setFullscreenCalls: SetFullscreenCall[] = [];
   public readonly setPopupTabsCalls: SetPopupTabsCall[] = [];
   public readonly setDevToolsCalls: SetDevToolsCall[] = [];
+  public readonly setDevToolsVisibleCalls: SetDevToolsVisibleCall[] = [];
   public readonly setContextMenuItemsCalls: SetContextMenuItemsCall[] = [];
   public downloadActionFailure: Error | null = null;
   public downloadActionResult: BbDesktopBrowserDownloadActionResult = {
@@ -297,6 +302,10 @@ class RecordingDesktopBrowserViewManager implements DesktopBrowserViewManager {
 
   setDevTools(args: SetDevToolsCall): void {
     this.setDevToolsCalls.push(args);
+  }
+
+  setDevToolsVisible(args: SetDevToolsVisibleCall): void {
+    this.setDevToolsVisibleCalls.push(args);
   }
 
   respondToPagePrompt(args: PagePromptRespondCall): Promise<boolean> {
@@ -631,6 +640,32 @@ describe("registerDesktopBrowserIpc", () => {
 
   // The find bar sends one of these per keystroke, so what it may say is worth
   // pinning: an action outside the set, or a stray field, is not a find.
+  // A channel of its own rather than a field on the DevTools request, because
+  // the request schemas are wire-frozen — so it needs its own parse, and its own
+  // refusal of anything that is not one.
+  it("routes DevTools panel visibility and refuses a payload that is not one", () => {
+    const manager = new RecordingDesktopBrowserViewManager();
+    registerDesktopBrowserIpc(manager);
+    const renderer = createTrustedRenderer("main-window");
+
+    sendBrowserIpc({
+      channel: BB_DESKTOP_BROWSER_SET_DEV_TOOLS_VISIBLE_CHANNEL,
+      payload: { tabId: "browser:a", visible: "yes" },
+      sender: renderer.sender,
+    });
+    sendBrowserIpc({
+      channel: BB_DESKTOP_BROWSER_SET_DEV_TOOLS_VISIBLE_CHANNEL,
+      payload: { tabId: "browser:a", visible: true },
+      sender: renderer.sender,
+    });
+
+    expect(manager.setDevToolsVisibleCalls).toHaveLength(1);
+    expect(manager.setDevToolsVisibleCalls[0]?.request).toEqual({
+      tabId: "browser:a",
+      visible: true,
+    });
+  });
+
   it("routes find commands and drops payloads that are not one", () => {
     const manager = new RecordingDesktopBrowserViewManager();
     registerDesktopBrowserIpc(manager);

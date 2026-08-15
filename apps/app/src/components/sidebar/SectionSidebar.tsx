@@ -23,6 +23,7 @@ import {
   MACOS_CHROME_CONTROL_NO_DRAG_CLASS,
   MACOS_WINDOW_DRAG_CLASS,
   shouldUseMacosDesktopChrome,
+  SIDEBAR_TRIGGER_TRAILING_RESERVE_CLASS,
 } from "@/lib/bb-desktop";
 
 export function SectionSidebarIcon({ name }: { name: IconName }) {
@@ -102,13 +103,16 @@ export function SectionSidebar({
   const usesDesktopChrome = shouldUseMacosDesktopChrome(desktopInfo);
 
   return (
-    <Sidebar>
+    <Sidebar side="right">
       {showTopReserve ? (
         <div
           data-testid={`${testIdPrefix}-sidebar-top-reserve-row`}
           className={cn(
             CHROME_ROW_CLASS,
             "shrink-0 justify-end px-2",
+            // The pinned sidebar trigger sits over this row while the panel is
+            // open, so the controls here clear its footprint.
+            SIDEBAR_TRIGGER_TRAILING_RESERVE_CLASS,
             usesDesktopChrome && MACOS_WINDOW_DRAG_CLASS,
           )}
         >
@@ -136,7 +140,9 @@ export function SectionSidebar({
       <div
         data-testid={`${testIdPrefix}-sidebar-resize-handle`}
         className={cn(
-          "absolute -right-1.5 top-0 z-30 hidden h-full w-3 cursor-col-resize md:block",
+          // Leading edge, like AppSidebar's: the sidebar is on the right, so its
+          // grabbable seam is the one facing the content.
+          "absolute -left-1.5 top-0 z-30 hidden h-full w-3 cursor-col-resize md:block",
           "before:absolute before:inset-y-0 before:left-1/2 before:w-px before:-translate-x-1/2 before:bg-transparent before:transition-colors hover:before:bg-sidebar-border",
           "group-data-[collapsible=icon]:hidden",
           isResizing && "before:bg-sidebar-border",

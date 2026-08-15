@@ -1,7 +1,11 @@
 import { useEffect, useRef } from "react";
 import { Icon } from "@bb/shared-ui/icon";
 import { cn } from "@bb/shared-ui/lib/utils";
-import type { BrowserFixedPanelTab } from "@/lib/fixed-panel-tabs-state";
+import { resolveAppTabIconName } from "@/lib/app-surface-tabs";
+import {
+  isAppSurfaceTab,
+  type BrowserSurfaceTab,
+} from "@/lib/browser-surface-tabs";
 import type { BrowserTabSwitcherState } from "@/lib/browser-tab-mru";
 import { browserSurfaceTabLabel } from "./BrowserSurfaceTabStrip";
 
@@ -9,7 +13,7 @@ export interface BrowserTabSwitcherProps {
   favicons?: Readonly<Record<string, string>>;
   onSelect: (tabId: string) => void;
   switcher: BrowserTabSwitcherState;
-  tabs: readonly BrowserFixedPanelTab[];
+  tabs: readonly BrowserSurfaceTab[];
 }
 
 /**
@@ -90,7 +94,13 @@ export function BrowserTabSwitcher({
                   : "text-muted-foreground",
               )}
             >
-              {dataUrl === null ? (
+              {isAppSurfaceTab(tab) ? (
+                <Icon
+                  name={resolveAppTabIconName(tab.path)}
+                  className="size-4 shrink-0 opacity-70"
+                  aria-hidden
+                />
+              ) : dataUrl === null ? (
                 <Icon
                   name="Globe"
                   className="size-4 shrink-0 opacity-70"

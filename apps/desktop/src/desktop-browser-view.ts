@@ -44,6 +44,7 @@ import {
   type BbDesktopBrowserPopup,
   type BbDesktopBrowserPopupTabs,
   type BbDesktopBrowserDevToolsRequest,
+  type BbDesktopBrowserDevToolsVisibleRequest,
   type BbDesktopBrowserDevToolsState,
   BB_DESKTOP_BROWSER_MAX_COOKIES,
   BB_DESKTOP_BROWSER_MAX_EVAL_RESULT_LENGTH,
@@ -428,6 +429,21 @@ interface BrowserViewEntry {
    * the renderer exactly as the page's do.
    */
   devToolsView: WebContentsView | null;
+  /**
+   * Whether the renderer says its DevTools panel is on screen, or null when it
+   * has never said — an app built before the channel existed, or a surface that
+   * hosts no panel of its own (the thread browser, where "Inspect" can still
+   * open DevTools).
+   *
+   * Null falls back to the page's own visibility, which is all the shell had to
+   * go on before: the panel is a native view, so it had to be hidden whenever
+   * the page was. That fallback is wrong in one case the renderer can see and
+   * the shell cannot — the page is hidden because the app is drawing its
+   * "page unavailable" screen where the page was, and that screen covers the
+   * page's rect, not the panel's. Chromium keeps DevTools usable on a failed
+   * load, and a failed load is exactly when they are worth having.
+   */
+  devToolsVisible: boolean | null;
   /** Guards one-time dialog wiring per CDP session. */
   dialogsWired: boolean;
   /**
@@ -641,6 +657,13 @@ export interface DesktopBrowserViewManager {
    */
   setDevTools(
     args: HostScopedRequestArgs<BbDesktopBrowserDevToolsRequest>,
+  ): void;
+  /**
+   * Report whether the app's DevTools panel is on screen for a tab — see
+   * {@link BrowserViewEntry.devToolsVisible}.
+   */
+  setDevToolsVisible(
+    args: HostScopedRequestArgs<BbDesktopBrowserDevToolsVisibleRequest>,
   ): void;
   /**
    * Replace the set of tabs whose pages get real popups — see
@@ -2522,21 +2545,24 @@ export function createDesktopBrowserViewManager(
     if (entry.view.webContents.isDestroyed()) {
       return;
     }
-    const visible =
-      entry.visible &&
-      !isHostResizing(hostWindow) &&
-      // A dialog means the app is drawing its own modal where the page was.
-      entry.pendingDialog === null &&
-      // A network prompt is the same situation, arrived at from the other
-      // side: the load is stopped and the app is drawing the question.
-      entry.pagePrompt === null &&
-      // As does an overlay — a dropdown the app draws over the page.
-      !entry.overlayActive;
-    entry.view.setVisible(visible);
-    // The DevTools panel follows the page it belongs to, for every reason
-    // above: it is a native view too, so a dropdown drawn over the page area
-    // would be composited over by it just the same.
-    entry.devToolsView?.setVisible(visible);
+    // Reasons the app is drawing its own chrome across the whole page area, and
+    // possibly across the DevTools panel below it: a resize burst is standing in
+    // a bitmap, a dialog or a network prompt is a modal where the page was, and
+    // an overlay is a dropdown that can reach down over either view.
+    const appDrawsOverBothViews =
+      isHostResizing(hostWindow) ||
+      entry.pendingDialog !== null ||
+      entry.pagePrompt !== null ||
+      entry.overlayActive;
+    entry.view.setVisible(entry.visible && !appDrawsOverBothViews);
+    // The panel is a native view too, so it hides for all of those. What it no
+    // longer follows is the page's own visibility: the renderer hides the page
+    // to draw a load-error screen in its rect, and the panel has a rect of its
+    // own. See {@link BrowserViewEntry.devToolsVisible} for the fallback that
+    // keeps an app which never reports panel visibility working as before.
+    entry.devToolsView?.setVisible(
+      (entry.devToolsVisible ?? entry.visible) && !appDrawsOverBothViews,
+    );
   }
 
   /**
@@ -3530,6 +3556,7 @@ export function createDesktopBrowserViewManager(
       windowFullscreenForPage: false,
       userFullscreen: false,
       devToolsView: null,
+      devToolsVisible: null,
       dialogsWired: false,
       automationWorldId: null,
       consoleLog: new BrowserObservationLog(BB_BROWSER_OBSERVATION_BUFFER_SIZE),
@@ -4060,7 +4087,9 @@ export function createDesktopBrowserViewManager(
    * the tab was never on. The fetch and the parse share one deadline, so a slow
    * server cannot buy the parser more time than the whole read is allowed.
    */
-  async function readPdfText(url: string): Promise<DesktopBrowserPdfTextOutcome> {
+  async function readPdfText(
+    url: string,
+  ): Promise<DesktopBrowserPdfTextOutcome> {
     const deadline = Date.now() + BB_DESKTOP_BROWSER_PDF_READ_TIMEOUT_MS;
     let response: Awaited<ReturnType<Session["fetch"]>>;
     try {
@@ -4264,6 +4293,15 @@ export function createDesktopBrowserViewManager(
             viewport: hostWindowViewportBounds({ hostWindow }),
           }),
         );
+        applyEntryVisibility(entry, hostWindow);
+      });
+    },
+    setDevToolsVisible({ hostWindow, request }) {
+      withEntry({ hostWindow, tabId: request.tabId }, (entry) => {
+        if (entry.devToolsVisible === request.visible) {
+          return;
+        }
+        entry.devToolsVisible = request.visible;
         applyEntryVisibility(entry, hostWindow);
       });
     },

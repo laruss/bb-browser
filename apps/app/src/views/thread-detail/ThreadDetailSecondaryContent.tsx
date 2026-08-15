@@ -4,7 +4,6 @@ import {
   useLayoutEffect,
   useMemo,
   useRef,
-  useState,
   type ComponentProps,
   type ReactNode,
 } from "react";
@@ -58,11 +57,7 @@ type ThreadSecondaryPanelProps = Omit<
   | "renderAsDrawer"
   | "isConversationCollapsed"
   | "onToggleConversationCollapse"
-  | "browserDeck"
 > & {
-  renderBrowserDeck?: (args: {
-    canShowNativeBrowserView: boolean;
-  }) => ReactNode;
 };
 
 interface ThreadDetailSecondaryContentProps {
@@ -111,7 +106,7 @@ function ThreadDetailSecondaryContentBody({
   secondaryPanel,
   timeline,
 }: ThreadDetailSecondaryContentProps) {
-  const { isFocused, paneId, secondaryPanelHost } = usePaneContext();
+  const { paneId, secondaryPanelHost } = usePaneContext();
   const composerHost = usePluginComposerHost();
   const stableMetadata = metadata;
   const stableSecondaryPanel = secondaryPanel;
@@ -125,8 +120,6 @@ function ThreadDetailSecondaryContentBody({
   const canCollapseConversation = isSecondaryPanelOpen && !renderAsDrawer;
   const isConversationCollapsedActive =
     canCollapseConversation && isConversationCollapsed;
-  const [isCompactDrawerContentSettled, setIsCompactDrawerContentSettled] =
-    useState(false);
   const { isPanelRealized, realizePanel } = useDrawerPanelRealization({
     isDrawerOpen: isSecondaryPanelOpen,
     rendersAsDrawer: renderAsDrawer,
@@ -158,7 +151,6 @@ function ThreadDetailSecondaryContentBody({
 
   useLayoutEffect(() => {
     cancelCompactDrawerContentSettleFrame();
-    setIsCompactDrawerContentSettled(false);
   }, [
     cancelCompactDrawerContentSettleFrame,
     isSecondaryPanelOpen,
@@ -210,7 +202,6 @@ function ThreadDetailSecondaryContentBody({
             stateAfterSync.isSecondaryPanelOpen &&
             stateAfterSync.renderAsDrawer
           ) {
-            setIsCompactDrawerContentSettled(true);
             realizePanel();
           }
         },
@@ -218,15 +209,7 @@ function ThreadDetailSecondaryContentBody({
     },
     [cancelCompactDrawerContentSettleFrame, realizePanel],
   );
-  const canShowNativeBrowserView = renderAsDrawer
-    ? isSecondaryPanelOpen && isCompactDrawerContentSettled
-    : isSecondaryPanelOpen && (secondaryPanelHost === null || isFocused);
-  const { renderBrowserDeck, ...threadSecondaryPanelProps } =
-    stableSecondaryPanel;
-  const browserDeck = useMemo(
-    () => renderBrowserDeck?.({ canShowNativeBrowserView }),
-    [canShowNativeBrowserView, renderBrowserDeck],
-  );
+  const threadSecondaryPanelProps = stableSecondaryPanel;
 
   const horizontalPanelGroupRef = useRef<ImperativePanelGroupHandle | null>(
     null,
@@ -289,7 +272,6 @@ function ThreadDetailSecondaryContentBody({
       !renderAsDrawer ? (
         <ThreadSecondaryPanel
           {...threadSecondaryPanelProps}
-          browserDeck={browserDeck}
           renderAsDrawer={false}
           isConversationCollapsed={isConversationCollapsedActive}
           onToggleConversationCollapse={onToggleConversationCollapse}
@@ -307,7 +289,6 @@ function ThreadDetailSecondaryContentBody({
         />
       ) : null,
     [
-      browserDeck,
       isConversationCollapsedActive,
       metadataContent,
       onToggleConversationCollapse,
@@ -320,7 +301,6 @@ function ThreadDetailSecondaryContentBody({
   const drawerSecondaryPanelContent = renderAsDrawer ? (
     <ThreadSecondaryPanel
       {...threadSecondaryPanelProps}
-      browserDeck={browserDeck}
       renderAsDrawer={true}
       isConversationCollapsed={false}
       onToggleConversationCollapse={onToggleConversationCollapse}

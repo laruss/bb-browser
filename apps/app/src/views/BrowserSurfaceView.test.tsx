@@ -8,12 +8,16 @@ import {
   screen,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { ReactNode } from "react";
+import { MemoryRouter } from "react-router-dom";
+import type { BbDesktopBrowserStateHandler } from "@bb/desktop-contract";
 import {
   createBbDesktopApi,
   createNoopDesktopBrowserApi,
 } from "@/test/bb-desktop-test-utils";
 import { createQueryClientTestHarness } from "@/test/queryClientTestHarness";
 import { getBrowserSurfaceTabsStorageKey } from "@/lib/browser-surface-tabs";
+import { getBrowserFaviconsStorageKey } from "@/lib/browser-favicons";
 import { BrowserSurfaceView } from "./BrowserSurfaceView";
 
 const desktopInfo = {
@@ -26,30 +30,58 @@ const desktopInfo = {
   version: "0.0.0-test",
 };
 
-function renderSurface(browserApi = createNoopDesktopBrowserApi()) {
+function renderSurface(
+  browserApi = createNoopDesktopBrowserApi(),
+  { appScreen = null }: { appScreen?: ReactNode } = {},
+) {
   window.bbDesktop = createBbDesktopApi(desktopInfo, browserApi);
   // A fresh jotai store per test (the tab atom is module-scoped, so without one
   // the previous test's tabs leak into the next) plus a query client, which the
   // surface needs to read its plugin omnibox contributions.
   const { wrapper: Wrapper } = createQueryClientTestHarness();
-  return render(
+  // A router because tab selection navigates: picking bb's own screen sends the
+  // window to it, and picking a page sends it back to the browser.
+  const result = render(
     <Wrapper>
-      <BrowserSurfaceView />
+      <MemoryRouter initialEntries={["/browser"]}>
+        <BrowserSurfaceView appScreen={appScreen} />
+      </MemoryRouter>
     </Wrapper>,
   );
+  return {
+    ...result,
+    /**
+     * Give the surface an app screen, or take it away, without remounting —
+     * the way AppLayout does when the window navigates to Settings and back.
+     */
+    setAppScreen(next: ReactNode) {
+      result.rerender(
+        <Wrapper>
+          <MemoryRouter initialEntries={["/browser"]}>
+            <BrowserSurfaceView appScreen={next} />
+          </MemoryRouter>
+        </Wrapper>,
+      );
+    },
+  };
 }
 
 function tabButtons(): HTMLElement[] {
   return screen.getAllByRole("tab");
 }
 
-beforeEach(() => {
+function clearSurfaceStorage(): void {
   window.localStorage.removeItem(getBrowserSurfaceTabsStorageKey());
-});
+  // Page icons are session-scoped rather than React state, so they outlive a
+  // test's unmount the same way they outlive a reload.
+  window.sessionStorage.removeItem(getBrowserFaviconsStorageKey());
+}
+
+beforeEach(clearSurfaceStorage);
 
 afterEach(() => {
   cleanup();
-  window.localStorage.removeItem(getBrowserSurfaceTabsStorageKey());
+  clearSurfaceStorage();
 });
 
 describe("BrowserSurfaceView", () => {
@@ -85,6 +117,66 @@ describe("BrowserSurfaceView", () => {
     expect(tabButtons()[0]?.querySelector("img")?.getAttribute("src")).toBe(
       "data:image/png;base64,aWNvbg==",
     );
+  });
+
+  // An app screen — Settings, Extensions, a plugin panel — takes the page area
+  // rather than covering it, because nothing in the DOM can draw over an
+  // OS-level overlay. The page must therefore *leave* and come back, and coming
+  // back must not mean being recreated.
+  it("hides the page for an app screen and brings the same one back", () => {
+    const attach = vi.fn();
+    const detach = vi.fn();
+    const setVisible = vi.fn();
+    const stateListeners: BbDesktopBrowserStateHandler[] = [];
+    const { setAppScreen } = renderSurface({
+      ...createNoopDesktopBrowserApi(),
+      attach,
+      detach,
+      setVisible,
+      onState(listener) {
+        stateListeners.push(listener);
+        return () => {};
+      },
+    });
+
+    expect(attach).toHaveBeenCalledTimes(1);
+    const tabId = attach.mock.calls[0]?.[0].tabId as string;
+    // Give the tab a page, the way the shell reports one after a navigation:
+    // an empty tab hides its view for want of content, which would make the
+    // assertions below pass for the wrong reason.
+    act(() => {
+      for (const listener of stateListeners) {
+        listener({
+          canGoBack: false,
+          canGoForward: false,
+          errorText: null,
+          isLoading: false,
+          tabId,
+          title: "Example",
+          url: "https://example.com/",
+        });
+      }
+    });
+    expect(setVisible).toHaveBeenLastCalledWith({ tabId, visible: true });
+
+    setAppScreen(<p>Settings</p>);
+
+    // The screen is on, the page is off, and the strip still holds the tab.
+    expect(screen.getByText("Settings")).toBeTruthy();
+    expect(tabButtons()).toHaveLength(1);
+    expect(setVisible).toHaveBeenLastCalledWith({ tabId, visible: false });
+
+    setAppScreen(null);
+
+    expect(setVisible).toHaveBeenLastCalledWith({ tabId, visible: true });
+    // The same page came back, not a new one. The deck really did unmount and
+    // remount — that is how the overlay is taken away — so it asks for the view
+    // again, and the shell hands back the one it kept under this id. What must
+    // never happen is a detach, which is the call that destroys the page.
+    expect(
+      attach.mock.calls.every(([request]) => request.tabId === tabId),
+    ).toBe(true);
+    expect(detach).not.toHaveBeenCalled();
   });
 
   // The surface is the product here, so it must never present an empty frame.

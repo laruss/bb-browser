@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import type { BbDesktopInfo } from "@bb/desktop-contract";
 import { createBbDesktopApi } from "@/test/bb-desktop-test-utils";
 import {
-  MACOS_COLLAPSED_TOP_LEFT_RESERVE_CLASS,
+  MACOS_TRAFFIC_LIGHT_LEADING_RESERVE_CLASS,
   MACOS_TRAFFIC_LIGHT_RESERVE_OFFSET_CLASS,
+  SIDEBAR_TRIGGER_TRAILING_INSET_CLASS,
+  SIDEBAR_TRIGGER_TRAILING_RESERVE_CLASS,
   shouldReserveMacosTrafficLights,
 } from "./bb-desktop";
 
@@ -16,6 +18,15 @@ const desktopInfo: BbDesktopInfo = {
   updateDownloaded: false,
   version: "0.0.0-test",
 };
+
+/** The pixel count out of an arbitrary-value Tailwind class. */
+function px(className: string): number {
+  const match = /\[(\d+)px\]/.exec(className);
+  if (match === null) {
+    throw new Error(`no px token in "${className}"`);
+  }
+  return Number(match[1]);
+}
 
 describe("desktop chrome geometry", () => {
   it("reserves macOS traffic-light space only when lights are visible", () => {
@@ -41,33 +52,30 @@ describe("desktop chrome geometry", () => {
     ).toBe(false);
   });
 
-  // The traffic-light reserve is px geometry, not typography. Both the page
-  // header and the collapsed split-workspace panel land their leading content
-  // at the same absolute x (just right of the pinned sidebar trigger) from the
-  // same `px-4` base inset. A silent drift here reintroduces BB-46's overlap,
-  // so lock the target.
-  it("lands the collapsed reserve at the traffic-light-clearing target", () => {
-    const px = (className: string): number => {
-      const match = /\[(\d+)px\]/.exec(className);
-      if (match === null) {
-        throw new Error(`no px token in "${className}"`);
-      }
-      return Number(match[1]);
-    };
+  // Both reserves are px geometry, not typography, and a silent drift in either
+  // reintroduces BB-46's overlap — content sitting under pinned window chrome.
+  // So lock both targets.
+  //
+  // Each is the WHOLE distance from the window edge, never a surface's inset
+  // plus a remainder: a reserve replaces one side of the `px-*` on the element
+  // it rides. Asserting a sum here is what let both tokens ship 16px short —
+  // tabs under the traffic lights at one end, the new-tab button under the
+  // sidebar trigger at the other.
+  it("lands the leading reserve just past the traffic lights", () => {
+    // Where the traffic-light strip ends: leading content must clear it. The
+    // pinned trigger is no longer here — it moved to the trailing edge — so the
+    // target is the lights alone.
+    const TARGET = px(MACOS_TRAFFIC_LIGHT_RESERVE_OFFSET_CLASS); // 84
 
-    const TRIGGER_OFFSET = px(MACOS_TRAFFIC_LIGHT_RESERVE_OFFSET_CLASS); // 84
+    expect(px(MACOS_TRAFFIC_LIGHT_LEADING_RESERVE_CLASS)).toBe(TARGET);
+  });
+
+  it("lands the trailing reserve just past the pinned sidebar trigger", () => {
+    const TRIGGER_INSET = px(SIDEBAR_TRIGGER_TRAILING_INSET_CLASS); // 12
     const TRIGGER_BUTTON = 28;
     const TRIGGER_GAP = 8;
-    // Where the pinned sidebar trigger ends: leading content must clear it.
-    const TARGET = TRIGGER_OFFSET + TRIGGER_BUTTON + TRIGGER_GAP; // 120
+    const TARGET = TRIGGER_INSET + TRIGGER_BUTTON + TRIGGER_GAP; // 48
 
-    // Both surfaces are flush at the window top-left and inset their content
-    // with `px-4`: the page header content row and the collapsed
-    // split-workspace panel's top chrome.
-    const BASE_INSET = 16;
-
-    expect(BASE_INSET + px(MACOS_COLLAPSED_TOP_LEFT_RESERVE_CLASS)).toBe(
-      TARGET,
-    );
+    expect(px(SIDEBAR_TRIGGER_TRAILING_RESERVE_CLASS)).toBe(TARGET);
   });
 });

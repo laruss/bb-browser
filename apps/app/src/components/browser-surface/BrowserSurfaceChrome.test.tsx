@@ -78,6 +78,7 @@ function renderChrome(): RenderChromeResult {
   render(
     <BrowserSurfaceChrome
       onActivateTab={onActivateTab}
+      onOpenAppRoute={() => {}}
       providers={builtInProviders()}
       tabId={ACTIVE_TAB_ID}
       url={CURRENT_URL}
@@ -267,6 +268,7 @@ describe("BrowserSurfaceChrome", () => {
     render(
       <BrowserSurfaceChrome
         onActivateTab={() => {}}
+        onOpenAppRoute={() => {}}
         providers={builtInProviders()}
         tabId={ACTIVE_TAB_ID}
         url={CURRENT_URL}
@@ -310,6 +312,7 @@ describe("BrowserSurfaceChrome", () => {
     render(
       <BrowserSurfaceChrome
         onActivateTab={() => {}}
+        onOpenAppRoute={() => {}}
         providers={builtInProviders()}
         tabId={ACTIVE_TAB_ID}
         url={CURRENT_URL}

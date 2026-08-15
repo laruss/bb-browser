@@ -42,6 +42,12 @@ import { BrowserOmniboxSuggestions } from "./BrowserOmniboxSuggestions";
 export interface BrowserSurfaceChromeProps {
   /** Tab switches are surface state, so the surface performs them. */
   onActivateTab: (tabId: string) => void;
+  /**
+   * Go to one of bb's own screens. A route, not a page: the window's router
+   * takes it and the strip opens or focuses the destination's tab, which is why
+   * this cannot go through `desktopBrowser.navigate`.
+   */
+  onOpenAppRoute: (path: string) => void;
   providers: readonly OmniboxProvider[];
   /** The active tab, whose native view this chrome drives. */
   tabId: string;
@@ -108,6 +114,7 @@ function ChromeButton({ disabled, icon, label, onClick }: ChromeButtonProps) {
  */
 export function BrowserSurfaceChrome({
   onActivateTab,
+  onOpenAppRoute,
   providers,
   tabId,
   url,
@@ -219,6 +226,9 @@ export function BrowserSurfaceChrome({
         case "activate-tab":
           onActivateTab(action.tabId);
           break;
+        case "open-app-tab":
+          onOpenAppRoute(action.path);
+          break;
         case "plugin-run":
           // The plugin's action runs server-side and may take a moment; the
           // omnibox closes now and the tab navigates only if the plugin asks
@@ -240,7 +250,7 @@ export function BrowserSurfaceChrome({
       // just asked for.
       inputRef.current?.blur();
     },
-    [closeOmnibox, desktopBrowser, onActivateTab, tabId],
+    [closeOmnibox, desktopBrowser, onActivateTab, onOpenAppRoute, tabId],
   );
 
   const handleSubmit = useCallback(

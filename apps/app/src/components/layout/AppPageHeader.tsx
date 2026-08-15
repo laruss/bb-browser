@@ -6,18 +6,19 @@ import {
 } from "@bb/shared-ui/coarse-pointer-sizing";
 import { useIsCompactViewport } from "@bb/shared-ui/hooks/use-compact-viewport";
 import {
-  BROWSER_COLLAPSED_HEADER_RESERVE_CLASS,
   CHROME_ROW_CLASS,
   CHROME_ROW_HEIGHT_CLASS,
   getBbDesktopInfo,
   MACOS_CHROME_CONTROL_AXIS_CLASS,
-  MACOS_COLLAPSED_TOP_LEFT_RESERVE_CLASS,
+  MACOS_TRAFFIC_LIGHT_LEADING_RESERVE_CLASS,
   MACOS_WINDOW_DRAG_CLASS,
   MACOS_WINDOW_NO_DRAG_CLASS,
   shouldReserveMacosTrafficLights,
   shouldUseMacosDesktopChrome,
+  SIDEBAR_TRIGGER_TRAILING_RESERVE_CLASS,
 } from "@/lib/bb-desktop";
 import { useDesktopWindowState } from "@/hooks/useDesktopWindowState";
+import { useIsLeadingPanelShowing } from "./PluginLeadingPanel";
 import { cn } from "@bb/shared-ui/lib/utils";
 
 /**
@@ -67,6 +68,13 @@ interface AppPageHeaderProps {
    * leaf may clear the pinned sidebar trigger and macOS traffic lights.
    */
   ownsWindowTopLeft?: boolean;
+  /**
+   * Whether this header owns the window's top-right chrome footprint — the
+   * pinned sidebar trigger. False for a header that sits below a row which
+   * already reserved it, such as the browser surface's tab strip when an app
+   * screen renders inside a tab.
+   */
+  ownsWindowTopRight?: boolean;
 }
 
 export function AppPageHeader({
@@ -76,25 +84,40 @@ export function AppPageHeader({
   headerRef,
   isWindowDragRegion = true,
   ownsWindowTopLeft = true,
+  ownsWindowTopRight = true,
 }: AppPageHeaderProps) {
   const isSidebarShowing = useIsSidebarShowing();
   const isCompactViewport = useIsCompactViewport();
   const [desktopInfo] = useState(getBbDesktopInfo);
   const desktopWindowState = useDesktopWindowState();
   const usesDesktopChrome = shouldUseMacosDesktopChrome(desktopInfo);
-  const reserveMacosTrafficLights = shouldReserveMacosTrafficLights({
-    desktopInfo,
-    windowState: desktopWindowState,
-  });
+  // Not while the plugin panel is there: it owns the window's leading edge, so
+  // it holds the lights' strip open and this header is no longer under them.
+  const isLeadingPanelShowing = useIsLeadingPanelShowing();
+  const reserveMacosTrafficLights =
+    !isLeadingPanelShowing &&
+    shouldReserveMacosTrafficLights({
+      desktopInfo,
+      windowState: desktopWindowState,
+    });
+  // Trailing: the pinned trigger is over this header only while the sidebar is
+  // collapsed — an open one covers it instead, and reserves it in its own top
+  // row. On compact viewports the sidebar opens as an overlay above the header,
+  // so the reserve holds across drawer state rather than shifting content behind
+  // the overlay.
   const shouldReserveSidebarTrigger =
-    ownsWindowTopLeft && (isCompactViewport || !isSidebarShowing);
+    ownsWindowTopRight && (isCompactViewport || !isSidebarShowing);
   return (
     <header
       ref={headerRef}
       className={cn(
         CHROME_ROW_HEIGHT_CLASS,
         HEADER_SEAM_CLASS,
-        "relative shrink-0 bg-surface-scrim px-4 backdrop-blur-sm",
+        // The fill and the seam stay full-bleed; the inset lives on the content
+        // row below, because that is the element the chrome reserves replace a
+        // side of. See `lib/bb-desktop.ts` — an inset on this element instead
+        // would make every reserve 16px too wide.
+        "relative shrink-0 bg-surface-scrim backdrop-blur-sm",
         usesDesktopChrome && isWindowDragRegion && MACOS_WINDOW_DRAG_CLASS,
         className,
       )}
@@ -105,24 +128,21 @@ export function AppPageHeader({
           // Center title/actions on the shared chrome axis using the full
           // chrome-row height so native title-bar controls stay aligned.
           CHROME_ROW_CLASS,
-          "relative z-10 gap-1 md:gap-2",
+          "relative z-10 gap-1 px-4 md:gap-2",
           // In macOS desktop chrome, keep header content on the shared native
           // traffic-light axis so the title bar lines up with the lights, the
           // pinned collapse trigger, and the sidebar arrows. No-op in the web
           // build (no traffic lights).
           usesDesktopChrome && MACOS_CHROME_CONTROL_AXIS_CLASS,
-          // The sidebar toggle is pinned at the app's top-left (see AppLayout's
-          // SidebarTriggerOverlay). Reserve the fixed button's footprint when
-          // the sidebar is collapsed and content shares that row with it; macOS
-          // traffic lights add extra left space only while they are visible. On
-          // compact viewports, the sidebar opens as an overlay that covers the
-          // header, so keep the reserve stable across open/closed drawer state
-          // instead of shifting content behind the overlay.
+          // Two pinned ends, reserved independently: the macOS traffic lights
+          // hold the leading one whenever they are visible, and the sidebar
+          // toggle holds the trailing one (see AppLayout's
+          // SidebarTriggerOverlay).
           "transition-[padding] duration-200 ease-linear",
-          shouldReserveSidebarTrigger &&
-            (reserveMacosTrafficLights
-              ? MACOS_COLLAPSED_TOP_LEFT_RESERVE_CLASS
-              : BROWSER_COLLAPSED_HEADER_RESERVE_CLASS),
+          ownsWindowTopLeft &&
+            reserveMacosTrafficLights &&
+            MACOS_TRAFFIC_LIGHT_LEADING_RESERVE_CLASS,
+          shouldReserveSidebarTrigger && SIDEBAR_TRIGGER_TRAILING_RESERVE_CLASS,
         )}
       >
         {center ? (

@@ -1,6 +1,17 @@
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { mergeConfig, type ViteUserConfig } from "vitest/config";
+
+/**
+ * Runs before every package's own setup. See the file for what it repairs; it
+ * is here rather than in each package because it is a property of the runtime.
+ * `mergeConfig` concatenates arrays, so a package's own `setupFiles` are kept
+ * and run after this one.
+ */
+const JSDOM_STORAGE_SETUP_FILE = fileURLToPath(
+  new URL("./vitest.jsdom-storage.setup.ts", import.meta.url),
+);
 
 /**
  * Wraps a package's Vitest config so workspace imports (`@bb/*`) resolve to
@@ -137,6 +148,7 @@ export function defineWorkspaceTestConfig(
       },
       test: {
         maxWorkers: PACKAGE_MAX_WORKERS,
+        setupFiles: [JSDOM_STORAGE_SETUP_FILE],
       },
     },
     config,

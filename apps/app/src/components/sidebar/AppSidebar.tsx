@@ -30,12 +30,9 @@ import {
   MACOS_CHROME_CONTROL_NO_DRAG_CLASS,
   MACOS_WINDOW_DRAG_CLASS,
   shouldUseMacosDesktopChrome,
+  SIDEBAR_TRIGGER_TRAILING_RESERVE_CLASS,
 } from "@/lib/bb-desktop";
-import {
-  BROWSER_SURFACE_ROUTE_PATH,
-  getRootComposeRoutePath,
-  getThreadRoutePath,
-} from "@/lib/route-paths";
+import { getRootComposeRoutePath, getThreadRoutePath } from "@/lib/route-paths";
 import { useThreadSplitsEnabled } from "@/hooks/useThreadSplitsEnabled";
 import { usePaneContentSplitDrag } from "./usePaneContentSplitDrag";
 import { openUrlInExternalBrowser } from "@/lib/url-open-routing";
@@ -279,13 +276,16 @@ export function AppSidebar({
 
   return (
     <SidebarThreadShortcutKeysContext.Provider value={threadShortcutKeysById}>
-      <Sidebar ref={sidebarRef} onKeyDown={threadSearch.onKeyDown}>
+      <Sidebar ref={sidebarRef} side="right" onKeyDown={threadSearch.onKeyDown}>
         {showTopReserve ? (
           /* Top reserve that keeps the sidebar's content (New Thread / New
              Projects) anchored below the title-bar chrome, mirroring
              the page-header height on the content side. The sidebar toggle is
-             pinned at the app's top-left for every chrome (see AppLayout's
-             SidebarTriggerOverlay), so this row hosts no trigger of its own — it
+             pinned at the app's top-right for every chrome (see AppLayout's
+             SidebarTriggerOverlay) — over this very row while the sidebar is
+             open, which is why the row reserves its footprint at the trailing
+             end and the history controls sit clear of it. The row hosts no
+             trigger of its own; it
              stays mounted in every sidebar state, including while the panel
              collapses off-canvas, so the content holds its vertical position
              instead of riding up under the pinned toggle during the animation.
@@ -299,6 +299,7 @@ export function AppSidebar({
             className={cn(
               CHROME_ROW_CLASS,
               "shrink-0 justify-end px-2",
+              SIDEBAR_TRIGGER_TRAILING_RESERVE_CLASS,
               usesDesktopChrome && MACOS_WINDOW_DRAG_CLASS,
             )}
           >
@@ -383,23 +384,6 @@ export function AppSidebar({
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
-            <SidebarMenuItem className="min-w-0">
-              <SidebarMenuButton
-                asChild
-                aria-label="Browser"
-                tooltip={{
-                  children: "Browser",
-                  hidden: false,
-                  side: "top",
-                }}
-                className={SIDEBAR_FOOTER_ACTION_CLASS}
-              >
-                <Link to={BROWSER_SURFACE_ROUTE_PATH} onClick={closeOnMobile}>
-                  <Icon name="Browser" />
-                  <span className="sr-only">Browser</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
             <PluginSidebarFooterActions onNavigate={closeOnMobile} />
             <SidebarMenuItem className="min-w-0">
               <SidebarMenuButton
@@ -426,7 +410,9 @@ export function AppSidebar({
         <div
           data-testid="app-sidebar-resize-handle"
           className={cn(
-            "absolute -right-1.5 top-0 z-30 hidden h-full w-3 cursor-col-resize md:block",
+            // Leading edge: the sidebar is on the right, so its grabbable seam
+            // is the one facing the content.
+            "absolute -left-1.5 top-0 z-30 hidden h-full w-3 cursor-col-resize md:block",
             "before:absolute before:inset-y-0 before:left-1/2 before:w-px before:-translate-x-1/2 before:bg-transparent before:transition-colors hover:before:bg-sidebar-border",
             "group-data-[collapsible=icon]:hidden",
             isResizing && "before:bg-sidebar-border",

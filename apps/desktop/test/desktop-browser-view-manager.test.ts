@@ -3051,7 +3051,9 @@ describe("DesktopBrowserViewManager PDF reads", () => {
     // The cookies are the point: a PDF behind a login is refetched with the
     // session that opened it, or it is not readable at all.
     expect(fakeSession.fetchInits.at(-1)?.credentials).toBe("include");
-    expect(calls[0]?.bytes).toEqual(new Uint8Array(Buffer.from("%PDF-1.7 bytes")));
+    expect(calls[0]?.bytes).toEqual(
+      new Uint8Array(Buffer.from("%PDF-1.7 bytes")),
+    );
     expect(calls[0]?.timeoutMs).toBeGreaterThan(0);
   });
 
@@ -3087,7 +3089,11 @@ describe("DesktopBrowserViewManager PDF reads", () => {
   it("passes the parser's own refusals through to the caller", async () => {
     // `too-large` and `password-protected` exist because each is worth a
     // different next step than "could not be read".
-    for (const reason of ["too-large", "password-protected", "timeout"] as const) {
+    for (const reason of [
+      "too-large",
+      "password-protected",
+      "timeout",
+    ] as const) {
       const { hostWindow, manager } = attachPdfTab({
         extractPdfText: async () => ({ ok: false, reason }),
       });
@@ -3115,7 +3121,11 @@ describe("DesktopBrowserViewManager PDF reads", () => {
 
     const result = await manager.readPage({ hostWindow, tabId: "browser:a" });
 
-    expect(result).toMatchObject({ ok: true, contentKind: "html", text: "hello" });
+    expect(result).toMatchObject({
+      ok: true,
+      contentKind: "html",
+      text: "hello",
+    });
     expect(fakeSession.fetchedUrls).toEqual([]);
   });
 });
@@ -6699,6 +6709,75 @@ describe("developer tools", () => {
       hostWindow,
       request: { tabId: "browser:a", visible: false },
     });
+
+    expect(devToolsView.visible).toBe(false);
+  });
+
+  // The page goes away for reasons that leave the panel where it is — chief
+  // among them a failed load, where the app draws "page unavailable" in the
+  // page's rect. Chromium keeps DevTools usable then, and a failed load is
+  // exactly when they are worth having.
+  it("keeps the panel up when the page hides but the panel is still on screen", () => {
+    const { hostWindow, manager } = attachTab();
+    manager.setDevTools({
+      hostWindow,
+      request: { tabId: "browser:a", open: true, bounds: PANEL },
+    });
+    manager.setDevToolsVisible({
+      hostWindow,
+      request: { tabId: "browser:a", visible: true },
+    });
+    const devToolsView = requireFakeView(1);
+
+    manager.setVisible({
+      hostWindow,
+      request: { tabId: "browser:a", visible: false },
+    });
+
+    expect(devToolsView.visible).toBe(true);
+  });
+
+  it("hides it once the app says the panel has gone", () => {
+    const { hostWindow, manager } = attachTab();
+    manager.setDevTools({
+      hostWindow,
+      request: { tabId: "browser:a", open: true, bounds: PANEL },
+    });
+    manager.setDevToolsVisible({
+      hostWindow,
+      request: { tabId: "browser:a", visible: true },
+    });
+    const devToolsView = requireFakeView(1);
+
+    manager.setDevToolsVisible({
+      hostWindow,
+      request: { tabId: "browser:a", visible: false },
+    });
+
+    expect(devToolsView.visible).toBe(false);
+  });
+
+  // An overlay is a dropdown the app draws over the page area, and it can reach
+  // down over this panel too — so that reason still hides both views.
+  it("still hides it under an overlay the app draws", async () => {
+    const { hostWindow, manager, view } = attachTab();
+    manager.setDevTools({
+      hostWindow,
+      request: { tabId: "browser:a", open: true, bounds: PANEL },
+    });
+    manager.setDevToolsVisible({
+      hostWindow,
+      request: { tabId: "browser:a", visible: true },
+    });
+    const devToolsView = requireFakeView(1);
+
+    manager.setOverlay({
+      hostWindow,
+      request: { tabId: "browser:a", active: true },
+    });
+    // The overlay path captures a placeholder before hiding, so the hide lands
+    // a tick later than the request.
+    await settlePendingCaptures(view);
 
     expect(devToolsView.visible).toBe(false);
   });
