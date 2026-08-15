@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getLatestThreadSequence, getThread } from "@bb/db";
 import { turnScope } from "@bb/domain";
+import { threadTimelineResponseSchema } from "@bb/server-contract";
 import {
   generatedSkillsRootPath,
   pluginCommandsSkillDir,
@@ -425,6 +426,135 @@ describe("hero plugin: omnibox-agent", () => {
         .list()
         .find((p) => p.id === "omnibox-agent");
       expect(listed?.handlerStats.errorCount).toBe(0);
+    } finally {
+      await server.pluginService.stop();
+      await server.close();
+    }
+  });
+});
+
+describe("hero plugin: explain-selection", () => {
+  // Plan §22's second end-to-end scenario, and §18 Phase 6's deliverable: a
+  // plugin is installed, it registers a context-menu item, the user selects text
+  // and picks it, and an agent receives the selected text. Nothing here is
+  // hardcoded for the demo — every step goes through the shipped surfaces.
+  it("installs, contributes the entry, and hands an agent the selection", async () => {
+    const server = await startTestServer({ appVersion: APP_VERSION });
+    try {
+      const { host } = seedHostSession(server.deps);
+      seedPrimaryHost(server.deps, host.id);
+      const { project } = seedProjectWithSource(server.deps, {
+        hostId: host.id,
+        path: "/tmp/explain-selection-hero-source",
+      });
+      server.pluginService.bindSdk({ baseUrl: server.baseUrl });
+
+      const entry = await server.pluginService.installPath(
+        join(EXAMPLES_DIR, "explain-selection"),
+      );
+      expect(entry.id).toBe("explain-selection");
+      // Unconfigured it contributes no entry at all. A context-menu item is
+      // declared rather than asked for at click time, so one that cannot work
+      // would sit in the menu doing nothing when clicked.
+      expect(entry.status).toBe("needs-configuration");
+      expect(entry.statusDetail).toContain(
+        "bb plugin config explain-selection",
+      );
+      expect(server.pluginService.listContextMenuItemContributions()).toEqual(
+        [],
+      );
+
+      // Configure (as `bb plugin config explain-selection set ...` would) and
+      // reload: the page's context menu gains an entry, with no browser-core
+      // change and no restart.
+      await server.pluginService.updateSettings("explain-selection", {
+        project: project.id,
+      });
+      await server.pluginService.reload("explain-selection");
+      expect(
+        server.pluginService.list().find((p) => p.id === "explain-selection")
+          ?.status,
+      ).toBe("running");
+      expect(server.pluginService.listContextMenuItemContributions()).toEqual([
+        {
+          pluginId: "explain-selection",
+          itemId: "explain",
+          title: "Explain with Agent",
+          // Normalized by the host, so the shell reads every key rather than
+          // treating an absent one as unknown.
+          when: { image: false, link: false, page: false, selection: true },
+        },
+      ]);
+
+      // The user selects text and picks the entry. Only the click travels back:
+      // the shell composed the menu from the declared list above.
+      const selection = "Retries must be idempotent.";
+      const picked = await fetch(
+        `${server.baseUrl}/api/v1/plugins/browser/context-menu`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            pluginId: "explain-selection",
+            itemId: "explain",
+            tabId: "tab-1",
+            pageUrl: "https://example.test/spec",
+            linkUrl: null,
+            imageUrl: null,
+            selectionText: selection,
+          }),
+        },
+      );
+      expect(picked.status).toBe(200);
+      expect(await picked.json()).toEqual({ ok: true });
+
+      // One thread, attributed to the plugin, titled from the selection.
+      const listResponse = await fetch(
+        `${server.baseUrl}/api/v1/threads?originPluginId=explain-selection`,
+      );
+      expect(listResponse.status).toBe(200);
+      const threads = (await listResponse.json()) as Array<{
+        id: string;
+        title: string | null;
+      }>;
+      expect(threads).toHaveLength(1);
+      const threadId = threads[0]?.id ?? "";
+      expect(getThread(server.db, threadId)?.originPluginId).toBe(
+        "explain-selection",
+      );
+      expect(threads[0]?.title).toBe("Explain: Retries must be idempotent.");
+
+      // …and the agent received the selected text, as quoted content behind the
+      // prompt's marker rather than as instructions.
+      const timelineResponse = await fetch(
+        `${server.baseUrl}/api/v1/threads/${threadId}/timeline`,
+      );
+      expect(timelineResponse.status).toBe(200);
+      const timeline = threadTimelineResponseSchema.parse(
+        await timelineResponse.json(),
+      );
+      const userRow = timeline.rows.find(
+        (row) => row.kind === "conversation" && row.role === "user",
+      );
+      if (
+        !userRow ||
+        userRow.kind !== "conversation" ||
+        userRow.role !== "user"
+      ) {
+        throw new Error("Expected user conversation timeline row");
+      }
+      expect(userRow.text).toContain("--- quoted page content follows ---");
+      expect(userRow.text.indexOf(selection)).toBeGreaterThan(
+        userRow.text.indexOf("--- quoted page content follows ---"),
+      );
+
+      // No desktop app is connected, so the plugin's tab-open could not run —
+      // and the explanation still happened. A courtesy that fails is not a
+      // failed menu action.
+      const listedPlugin = server.pluginService
+        .list()
+        .find((p) => p.id === "explain-selection");
+      expect(listedPlugin?.handlerStats.errorCount).toBe(0);
     } finally {
       await server.pluginService.stop();
       await server.close();

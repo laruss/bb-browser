@@ -67,6 +67,11 @@ cannot decide its own label from what was clicked. `run` is time-boxed (10s)
 and failure-isolated, and nothing waits on it: the menu closed when the user
 clicked.
 
+`examples/plugins/explain-selection` is the worked example — a selection handed
+to an agent — including what to do when an item needs configuration it does not
+have, and how to quote page text into a prompt as data rather than as
+instructions.
+
 ## bb.browser — adding a button to the find bar
 
 The browser's `Cmd+F` bar is the one place that knows what the user is looking

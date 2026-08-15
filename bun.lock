@@ -434,6 +434,17 @@
         "typescript": "^6.0.2",
       },
     },
+    "examples/plugins/explain-selection": {
+      "name": "bb-plugin-explain-selection",
+      "version": "0.1.0",
+      "devDependencies": {
+        "@bb/plugin-sdk": "workspace:*",
+        "@types/node": "^22.0.0",
+        "typescript": "^6.0.2",
+        "typescript-7": "npm:typescript@^7.0.2",
+        "vitest": "^4.1.1",
+      },
+    },
     "examples/plugins/omnibox-agent": {
       "name": "bb-plugin-omnibox-agent",
       "version": "0.1.0",
@@ -2984,6 +2995,8 @@
     "bb-plugin-content-script-example": ["bb-plugin-content-script-example@workspace:examples/plugins/content-script"],
 
     "bb-plugin-custom-instructions": ["bb-plugin-custom-instructions@workspace:plugins/custom-instructions"],
+
+    "bb-plugin-explain-selection": ["bb-plugin-explain-selection@workspace:examples/plugins/explain-selection"],
 
     "bb-plugin-github": ["bb-plugin-github@workspace:plugins/github"],
 

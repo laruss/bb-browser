@@ -503,6 +503,15 @@ Two consequences worth stating because they are visible to plugin authors:
 from what was clicked; and entries append **below** the browser's own behind a
 separator — a plugin adds to this menu, it does not rearrange it.
 
+`examples/plugins/explain-selection/` is the worked example, and it is the
+plan's own Phase 6 one: "Explain with Agent" on a selection, spawning a BB
+thread that quotes it. Its README is where the first consequence above is
+argued from the plugin author's side — an item that needs configuration cannot
+decide per click, so it registers nothing until it has some. The end-to-end path
+is `heroes.test.ts` > `hero plugin: explain-selection`, which is plan §22's
+second scenario: install → declared entry → picked → the selection in an agent's
+first message.
+
 ## Find in page
 
 `Cmd+F` opens a find bar over the active tab: a field that searches as you type,

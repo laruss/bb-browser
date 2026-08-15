@@ -1,0 +1,31 @@
+{
+  "name": "bb-plugin-explain-selection",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "bb": ">=0.0",
+    "bbPluginSdk": "^0.4.1"
+  },
+  "bb": {
+    "name": "Explain selection",
+    "description": "Explain the text selected on a page with a BB agent.",
+    "branding": {
+      "icon": "Puzzle"
+    },
+    "server": "./server.ts"
+  },
+  "keywords": [
+    "bb-plugin"
+  ],
+  "scripts": {
+    "test": "vitest run --config vitest.config.ts"
+  },
+  "devDependencies": {
+    "@bb/plugin-sdk": "workspace:*",
+    "@types/node": "^22.0.0",
+    "typescript": "^6.0.2",
+    "typescript-7": "npm:typescript@^7.0.2",
+    "vitest": "^4.1.1"
+  }
+}
