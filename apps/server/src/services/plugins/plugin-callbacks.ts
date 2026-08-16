@@ -88,7 +88,7 @@ export const PLUGIN_CALLBACKS = {
     category: "call",
     payloadCrosses: false,
     resultCrosses: false,
-    note: "Takes a Hono Context and returns a Response, neither of which is data. The shape they reduce to, and the conversion both ways, is ./plugin-http-message.ts — written and tested, deliberately not applied in-process because it costs a buffered body for no boundary. Applying it is what stops a plugin's streaming response from streaming.",
+    note: "Takes a Hono Context and returns a Response, neither of which is data. ./plugin-http-message.ts is the shape they reduce to, and it is now applied at the boundary and only there: ./plugin-remote-handle.ts reduces on the way out and the plugin process rebuilds a real Context by running the request through a one-route Hono app. In-process the closure still receives the live Context, because reducing it would cost a buffered body for no boundary. The price, paid only by an out-of-process route, is that a streaming response stops streaming.",
     label: (target) => (target ? `http ${target}` : "http"),
   },
   cli: {
@@ -108,8 +108,10 @@ export const PLUGIN_CALLBACKS = {
   backgroundService: {
     category: "lifecycle",
     payloadCrosses: true,
-    resultCrosses: false,
-    note: "Not a call at all: it runs until aborted, so nothing returns and everything interesting happens in between. Its vocabulary is ./plugin-service-message.ts — commands one way, events the other, and the host keeping the state machine because restart policy in two places is restart policy that disagrees.",
+    resultCrosses: true,
+    // The abort a service sees as its signal firing.
+    cancellable: true,
+    note: 'Runs until aborted, so it looked like it needed its own vocabulary — ./plugin-service-message.ts, commands one way and events the other. Applying it showed the channel already carries the whole lifecycle as one cancellable request: it stays open for as long as start() runs, the cancel message is the abort, resolving is "returned" and rejecting is "threw". Those are exactly the two outcomes the host\'s existing runner decides on, so the restart policy stays in one place. `reduceServiceEvent` in that file is the part that turned out to be a second copy of it.',
     label: (target) => (target ? `service ${target}` : "service"),
   },
 

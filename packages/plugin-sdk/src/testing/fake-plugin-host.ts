@@ -807,6 +807,18 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
+/** Is this a `Response`? Asked structurally; see the call site for why. */
+function isResponseLike(value: unknown): value is Response {
+  if (typeof value !== "object" || value === null) return false;
+  const candidate = value as Partial<Response>;
+  return (
+    typeof candidate.status === "number" &&
+    typeof candidate.arrayBuffer === "function" &&
+    typeof candidate.headers === "object" &&
+    candidate.headers !== null
+  );
+}
+
 function jsonRoundTrip(value: unknown, what: string): unknown {
   if (value === undefined) return undefined;
   let json: string | undefined;
@@ -3048,7 +3060,14 @@ function createFakePluginHostInternal(
       app.on(route.method, route.path, async (context) => {
         try {
           const response = await route.handler(context);
-          if (!(response instanceof Response)) {
+          // Structural, exactly as the real host checks it. `instanceof` is
+          // wrong here: `@hono/node-server` replaces `globalThis.Response`
+          // with a class of its own when a server starts listening, and after
+          // that `Response.json({}) instanceof Response` is false — so a
+          // plugin's own tests would fail on a route the real server accepts.
+          // Duplicated rather than imported because the server's copy lives in
+          // a package this one only depends on for types.
+          if (!isResponseLike(response)) {
             throw new Error("http route handler must return a Response");
           }
           return response;

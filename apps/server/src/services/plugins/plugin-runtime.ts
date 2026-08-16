@@ -1,18 +1,13 @@
-import {
-  existsSync,
-  readFileSync,
-  realpathSync,
-  type FSWatcher,
-} from "node:fs";
+import { realpathSync, type FSWatcher } from "node:fs";
 import { readFile, stat } from "node:fs/promises";
-import { dirname, join, resolve } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { join, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { createRequire, registerHooks } from "node:module";
 import { performance } from "node:perf_hooks";
 import { createJiti } from "jiti";
 import semver from "semver";
 import { PLUGIN_SDK_MAJOR, PLUGIN_SDK_VERSION, type Thread } from "@bb/domain";
-import { buildPluginApp, PLUGIN_SERVER_EXTERNALS } from "@bb/plugin-build";
+import { buildPluginApp } from "@bb/plugin-build";
 import { getPluginBuildToolchain } from "./build-toolchain.js";
 import {
   createNodeBbSdk,
@@ -27,15 +22,27 @@ import {
   pluginApiHeaders,
 } from "./plugin-api-identity.js";
 import { linkCancellation } from "./plugin-cancellation.js";
+import { readPluginSettingsValues } from "./plugin-settings.js";
+import { pluginExternalsAlias } from "./plugin-externals-alias.js";
+import { createPluginHostCallServer } from "./plugin-host-call-server.js";
+import { createRemotePluginApiHandle } from "./plugin-remote-handle.js";
+import {
+  createPluginSupervisor,
+  type PluginSupervisor,
+} from "./plugin-supervisor.js";
 import {
   assertCallbackCrosses,
   describeCallback,
   type PluginCallback,
 } from "./plugin-callbacks.js";
 import {
+  deletePluginKvValue,
   getInstalledPlugin,
+  getPluginKvValue,
   listInstalledPlugins,
+  listPluginKvKeys,
   prunePluginSchedules,
+  setPluginKvValue,
   upsertPluginSchedule,
   type InstalledPluginRow,
 } from "@bb/db";
@@ -55,6 +62,7 @@ import {
   createPluginApi,
   isNeedsConfigurationError,
   type BbPluginApi,
+  type PluginApiHandle,
   type PluginThreadEventName,
   type PluginThreadEventPayloads,
 } from "./plugin-api.js";
@@ -66,81 +74,6 @@ import type {
   PluginWireLookup,
   ServiceRuntime,
 } from "./plugin-service-internal.js";
-
-/**
- * Plugin server bundles leave `PLUGIN_SERVER_EXTERNALS` unresolved (see
- * @bb/plugin-build), and plugin authors never have `@bb/plugin-sdk` installed —
- * the scaffold maps that specifier to bundled `.d.ts` files only. Built and
- * packaged servers have no node_modules copy, so the server build ships a
- * self-contained SDK runtime bundle next to the server bundle and the loader
- * aliases the specifier to it.
- *
- * A source checkout has no such bundle, and a plugin root can sit anywhere on
- * disk (a `path:` install, or the data dir), so nothing along the plugin's own
- * directory chain resolves the specifier. This used to work by accident: pnpm's
- * hidden hoisted `node_modules/.pnpm/node_modules` is reachable from any
- * directory that Node's resolver happens to probe, and it holds every installed
- * package whether or not the importer declared it. Package managers with strict
- * per-package linking (bun's isolated linker) have no such directory, so the
- * checkout case is aliased explicitly to the workspace copy the server itself
- * resolves rather than left to the resolver's layout.
- */
-const pluginSdkRuntimePath = join(
-  dirname(fileURLToPath(import.meta.url)),
-  "plugin-sdk-runtime.js",
-);
-
-/**
- * The entry a plain Node consumer would load, deliberately ignoring the
- * workspace `source` export condition. A plugin tree sits anywhere on disk, and
- * an aliased TypeScript source entry would still have to resolve *its own*
- * imports from the plugin's directory chain — which fails. Published runtime
- * entries carry their dependencies or have none.
- */
-function resolveRuntimeEntry(require_: NodeRequire, specifier: string): string {
-  const resolved = require_.resolve(specifier);
-  if (!/\.tsx?$/u.test(resolved)) return resolved;
-  // Walk up for the manifest rather than resolving `<specifier>/package.json`:
-  // an `exports` map that omits that subpath makes the direct resolve throw.
-  let dir = dirname(resolved);
-  for (;;) {
-    const manifestPath = join(dir, "package.json");
-    if (existsSync(manifestPath)) {
-      const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as {
-        exports?: { "."?: Record<string, string> };
-        main?: string;
-      };
-      const entry =
-        manifest.exports?.["."]?.import ??
-        manifest.exports?.["."]?.default ??
-        manifest.main;
-      return entry === undefined ? resolved : join(dir, entry);
-    }
-    const parent = dirname(dir);
-    if (parent === dir) return resolved;
-    dir = parent;
-  }
-}
-
-function resolveWorkspaceExternalsAlias(): Record<string, string> | undefined {
-  const require_ = createRequire(import.meta.url);
-  const alias: Record<string, string> = {};
-  for (const specifier of PLUGIN_SERVER_EXTERNALS) {
-    try {
-      alias[specifier] = resolveRuntimeEntry(require_, specifier);
-    } catch {
-      // Nothing to alias for this one; a load that needs it fails with its own
-      // "Cannot find module" naming the real problem.
-    }
-  }
-  return Object.keys(alias).length === 0 ? undefined : alias;
-}
-
-const pluginExternalsAlias: Record<string, string> | undefined = existsSync(
-  pluginSdkRuntimePath,
-)
-  ? { "@bb/plugin-sdk": pluginSdkRuntimePath }
-  : resolveWorkspaceExternalsAlias();
 
 /**
  * Per-root reload generation for mutable (path:/source-builtin) plugin trees.
@@ -419,6 +352,11 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
   // plugin keeps running, but the dropped registration is surfaced as its
   // status detail. Cleared on the next load.
   const agentToolProblems = new Map<string, string>();
+  // Why a plugin asked to run in a plugin process is running in the server
+  // instead. Placement is best effort, and a silent fallback is the dangerous
+  // kind: an operator who moved a plugin for isolation would have no way to
+  // see it did not move. Cleared at the start of every load.
+  const placementFallbacks = new Map<string, string>();
   // Cumulative per plugin for this server session (kept across reloads so a
   // reload cannot hide cost); removed with the plugin registration.
   const handlerStats = new Map<string, PluginHandlerStats>();
@@ -525,6 +463,41 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
   }
 
   /** Another loaded plugin already owns this tool name? Returns its id. */
+  /** Which plugin owns each registered agent tool name, right now. */
+  function agentToolOwners(): Record<string, string> {
+    const owners: Record<string, string> = {};
+    for (const [otherId, plugin] of loaded) {
+      for (const tool of plugin.handle.agentTools) owners[tool.name] = otherId;
+    }
+    return owners;
+  }
+
+  function browserHostStatus(): { connected: boolean; hostCount: number } {
+    const snapshot = deps.browserBridge?.status();
+    return {
+      connected: snapshot?.connected ?? false,
+      hostCount: snapshot?.hostCount ?? 0,
+    };
+  }
+
+  /** Tell every plugin process what changed on this side. */
+  function pushHostFacts(): void {
+    const states = supervisor?.states() ?? [];
+    if (states.length === 0) return;
+    const browserStatus = browserHostStatus();
+    const owners = agentToolOwners();
+    for (const state of states) {
+      state.channel.notify({
+        method: "host.browserStatus" as never,
+        payload: browserStatus as never,
+      });
+      state.channel.notify({
+        method: "host.agentToolOwners" as never,
+        payload: owners as never,
+      });
+    }
+  }
+
   function findAgentToolOwner(
     name: string,
     excludePluginId: string,
@@ -875,15 +848,18 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
     return undefined;
   }
 
-  async function runFactoryTimeBoxed(
-    factory: (api: BbPluginApi) => unknown,
-    api: BbPluginApi,
-  ): Promise<void> {
+  /**
+   * The load deadline, wherever a load waits on plugin code — the factory
+   * here, or a plugin process's bootstrap, which runs the same factory one
+   * pipe away. One copy, so the two placements cannot drift apart on how long
+   * a plugin may take to load.
+   */
+  async function withLoadTimeout<T>(work: Promise<T>): Promise<T> {
     let timer: NodeJS.Timeout | undefined;
     try {
-      await Promise.race([
-        Promise.resolve(factory(api)),
-        new Promise((_, reject) => {
+      return await Promise.race([
+        work,
+        new Promise<never>((_, reject) => {
           timer = setTimeout(
             () => reject(new Error(`load timed out after ${loadTimeoutMs}ms`)),
             loadTimeoutMs,
@@ -894,6 +870,13 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
     } finally {
       if (timer !== undefined) clearTimeout(timer);
     }
+  }
+
+  async function runFactoryTimeBoxed(
+    factory: (api: BbPluginApi) => unknown,
+    api: BbPluginApi,
+  ): Promise<void> {
+    await withLoadTimeout(Promise.resolve(factory(api)));
   }
 
   /** Parse an incoming install display spec for validation/build policy. */
@@ -1176,11 +1159,34 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
       row.id,
       manifest,
     );
-    const handle = createPluginApi({
+    // One capability object, two consumers: `createPluginApi` builds `bb` from
+    // it in-process, and `createPluginHostCallServer` performs the same calls
+    // for a plugin that lives elsewhere. Constructing it once is what stops
+    // the two placements drifting.
+    const capabilities = {
       pluginId: row.id,
       permissions: manifest.permissions,
       logger: deps.logger,
-      db: deps.db,
+      // The server's own implementation of the two stores `bb` reads through.
+      // A plugin process supplies the same shape backed by its channel; both
+      // sit under one copy of the semantics in plugin-api.ts.
+      kvStore: {
+        get: async (key) => getPluginKvValue(deps.db, row.id, key),
+        set: async (key, json) => {
+          setPluginKvValue(deps.db, row.id, key, json);
+        },
+        delete: async (key) => {
+          deletePluginKvValue(deps.db, row.id, key);
+        },
+        list: async (prefix) => listPluginKvKeys(deps.db, row.id, prefix),
+      },
+      readSettingsValues: (descriptors) =>
+        readPluginSettingsValues({
+          db: deps.db,
+          dataDir: deps.dataDir,
+          pluginId: row.id,
+          descriptors,
+        }),
       dataDir: deps.dataDir,
       getSdk: () => sdkFor(row.id),
       getLoopbackBaseUrl: () => boundLoopbackBaseUrl,
@@ -1249,68 +1255,94 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
         }
         deps.sharedPorts?.replaceDeclarationsForOwner(row.id, declarations);
       },
-    });
-    // Mutable trees are edited between loads, so invalidate the previous
-    // generation's URLs before importing (managed git:/npm: artifacts are
-    // immutable after promotion and keep their cached modules).
-    let rollbackGeneration: (() => void) | undefined;
-    if (row.sourceKind === "path" || row.sourceKind === "builtin") {
-      rollbackGeneration = bumpMutableRootGeneration(row.rootDir);
-      ownedRootUrls.add(mutableRootUrl(mutableRootDir(row.rootDir)));
-    }
-    try {
-      // Fresh instance per load: guarantees re-imports see current sources.
-      const jiti = createJiti(import.meta.url, {
-        moduleCache: false,
-        ...(pluginExternalsAlias === undefined
-          ? {}
-          : { alias: pluginExternalsAlias }),
-      });
-      // Same jiti instance for source and prebuilt dist/server.js, so the
-      // @bb/plugin-sdk resolution applies identically to both.
-      const mod = (await jiti.import(
-        await resolveServerEntry(row, manifest),
-      )) as {
-        default?: unknown;
-      };
-      const factory = mod.default;
-      if (typeof factory !== "function") {
-        throw new Error(
-          `server entry must default-export a factory (bb) => void, got ${typeof factory}`,
-        );
-      }
-      await runFactoryTimeBoxed(
-        factory as (api: BbPluginApi) => unknown,
-        handle.api,
-      );
-    } catch (error) {
-      // The candidate never commits, so its epoch and its CommonJS evictions
-      // must not outlive it: the retained plugin keeps serving its own files.
-      rollbackGeneration?.();
-      for (const database of handle.databaseHandles.splice(0)) {
-        try {
-          database.close();
-        } catch {
-          // The load error below remains the actionable failure. Rollback
-          // replaces the database only after all candidate handles close.
+    } satisfies Parameters<typeof createPluginApi>[0];
+
+    // Everything from here is shared: whichever way the handle was built, the
+    // rest of loading — services, schedules, the registration commit — reads
+    // it through the same `PluginApiHandle` shape and cannot tell them apart.
+    let handle: PluginApiHandle | undefined;
+    let remoteInstanceId: string | null = null;
+    placementFallbacks.delete(row.id);
+    if (deps.runPluginOutOfProcess?.(row.id) === true) {
+      const quarantined = placementQuarantine.get(row.id);
+      if (quarantined !== undefined) {
+        // Trying again is what turns one crashloop into a permanent one.
+        fallBackToServer(row.id, quarantined);
+      } else {
+        // Null means "load it here instead", and the reason is recorded in
+        // `placementFallbacks`. Nothing below this branch differs.
+        const placed = await loadOutOfProcess(row, manifest, capabilities);
+        if (placed !== null) {
+          handle = placed.handle;
+          remoteInstanceId = placed.instanceId;
         }
       }
-      handle.invalidate();
-      let message = error instanceof Error ? error.message : String(error);
-      // --ignore-scripts already prevents gyp builds at install; a .node
-      // addon that slipped through dies here under Electron's ABI.
-      if (/ERR_DLOPEN_FAILED|\.node/.test(message)) {
-        message += " (native dependencies are not supported in BB plugins)";
+    }
+
+    if (handle === undefined) {
+      handle = createPluginApi(capabilities);
+      // Mutable trees are edited between loads, so invalidate the previous
+      // generation's URLs before importing (managed git:/npm: artifacts are
+      // immutable after promotion and keep their cached modules).
+      let rollbackGeneration: (() => void) | undefined;
+      if (row.sourceKind === "path" || row.sourceKind === "builtin") {
+        rollbackGeneration = bumpMutableRootGeneration(row.rootDir);
+        ownedRootUrls.add(mutableRootUrl(mutableRootDir(row.rootDir)));
       }
-      if (previous !== undefined) {
-        setStatus(row.id, "running", `reload failed: ${message}`);
-      } else {
-        setStatus(row.id, "error", message);
+      try {
+        // Fresh instance per load: guarantees re-imports see current sources.
+        const jiti = createJiti(import.meta.url, {
+          moduleCache: false,
+          ...(pluginExternalsAlias === undefined
+            ? {}
+            : { alias: pluginExternalsAlias }),
+        });
+        // Same jiti instance for source and prebuilt dist/server.js, so the
+        // @bb/plugin-sdk resolution applies identically to both.
+        const mod = (await jiti.import(
+          await resolveServerEntry(row, manifest),
+        )) as {
+          default?: unknown;
+        };
+        const factory = mod.default;
+        if (typeof factory !== "function") {
+          throw new Error(
+            `server entry must default-export a factory (bb) => void, got ${typeof factory}`,
+          );
+        }
+        await runFactoryTimeBoxed(
+          factory as (api: BbPluginApi) => unknown,
+          handle.api,
+        );
+      } catch (error) {
+        // The candidate never commits, so its epoch and its CommonJS evictions
+        // must not outlive it: the retained plugin keeps serving its own files.
+        rollbackGeneration?.();
+        for (const database of handle.databaseHandles.splice(0)) {
+          try {
+            database.close();
+          } catch {
+            // The load error below remains the actionable failure. Rollback
+            // replaces the database only after all candidate handles close.
+          }
+        }
+        handle.invalidate();
+        let message = error instanceof Error ? error.message : String(error);
+        // --ignore-scripts already prevents gyp builds at install; a .node
+        // addon that slipped through dies here under Electron's ABI.
+        if (/ERR_DLOPEN_FAILED|\.node/.test(message)) {
+          message += " (native dependencies are not supported in BB plugins)";
+        }
+        if (previous !== undefined) {
+          setStatus(row.id, "running", `reload failed: ${message}`);
+        } else {
+          setStatus(row.id, "error", message);
+        }
+        logger.warn(
+          `plugin ${row.id} failed to load: ${statuses.get(row.id)?.detail}`,
+        );
+        return;
       }
-      logger.warn(
-        `plugin ${row.id} failed to load: ${statuses.get(row.id)?.detail}`,
-      );
-      return;
     }
     const loadedBuiltinName = builtinName(row);
     const plugin: LoadedPlugin = {
@@ -1328,6 +1360,7 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
       })),
       isBuiltin: loadedBuiltinName !== null,
       builtinName: loadedBuiltinName,
+      remoteInstanceId,
     };
     if (previous !== undefined) {
       await disposePluginInstance(row.id, previous);
@@ -1342,6 +1375,10 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
           }
         }
         handle.invalidate();
+        // The candidate was never committed, and out of process it is a live
+        // process member as well as a handle. Dropping only the handle would
+        // leave it bootstrapped and unreachable.
+        await stopRemoteInstance(row.id, remoteInstanceId);
         return;
       }
     }
@@ -1353,6 +1390,9 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
     needsConfiguration.delete(row.id);
     agentToolProblems.delete(row.id);
     handle.activate();
+    // This load changed who owns which tool name, which is one of the two
+    // facts a plugin process holds a copy of.
+    pushHostFacts();
     // Sync durable schedule rows to this load's registrations: upsert each
     // (computing next_run_at from its cron) and drop rows for names the
     // plugin no longer registers. Run history on kept rows survives.
@@ -1382,6 +1422,7 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
       const details = [
         agentToolProblems.get(row.id),
         appBundleCandidate.problem,
+        placementFallbacks.get(row.id),
       ].filter((detail): detail is string => typeof detail === "string");
       setStatus(
         row.id,
@@ -1432,10 +1473,118 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
           );
         }
       }
+      // A plugin process is stopped last, after everything above has had its
+      // chance to run *inside* it: the supervisor's stop sends the `dispose`
+      // callback and then closes the channel. Stopping first would make every
+      // step above fail with "the far side is gone".
+      //
+      // This instance, not this plugin: on a reload the successor is already
+      // started, and it is sharing the process with the one being dropped.
+      await stopRemoteInstance(id, plugin.remoteInstanceId);
     } finally {
       plugin.handle.invalidate();
       disposingPluginIds.delete(id);
     }
+  }
+
+  /**
+   * A plugin whose process the supervisor gave up on.
+   *
+   * It is registered, its channel is shut, and every call into it rejects —
+   * which is worse than a plugin that failed to load, because nothing about it
+   * looks wrong. So: say so, then put it back in the server, where a plugin
+   * that has no working process still works.
+   */
+  async function recoverAbandonedPlugin(
+    plugin: { pluginId: string; instanceId: string },
+    problem: string,
+  ): Promise<void> {
+    const { instanceId, pluginId } = plugin;
+    placementQuarantine.set(pluginId, problem);
+    remoteCapabilities.delete(instanceId);
+    try {
+      await withLifecycleLock(pluginId, async () => {
+        // Under the lock, because a reload may have replaced this instance
+        // while the process was dying: then the plugin is somebody else's
+        // already, its status is its own, and reloading would drop a live one.
+        if (loaded.get(pluginId)?.remoteInstanceId !== instanceId) return;
+        setStatus(pluginId, "error", problem);
+        const row = getInstalledPlugin(deps.db, pluginId);
+        if (row === null || row === undefined) return;
+        await loadOne(row);
+      });
+    } catch (error) {
+      logger.warn(
+        `plugin ${pluginId} could not be recovered into the server: ` +
+          `${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  /**
+   * A channel that always talks to the plugin's *current* process.
+   *
+   * The supervisor revives a crashed process by re-bootstrapping the same
+   * instance, which mints a new channel — while the handle the server is
+   * holding captured the old one. So the recovery was real and the plugin was
+   * unreachable anyway: every call came back "plugin channel … closed". The
+   * handle holds the instance id and looks the channel up per call instead.
+   *
+   * What a restart does *not* refresh is the registration snapshot: the
+   * reinstated process runs the same entry file and registers the same things,
+   * and picking up an edited plugin is what `bb plugin reload` is for.
+   */
+  function liveRemoteChannel(
+    pluginId: string,
+    instanceId: string,
+  ): Parameters<typeof createRemotePluginApiHandle>[0]["channel"] {
+    const live = () => supervisor?.get(instanceId)?.channel;
+    return {
+      request: (message) => {
+        const channel = live();
+        if (channel === undefined) {
+          return Promise.reject(
+            new Error(`plugin "${pluginId}" has no live process`),
+          );
+        }
+        return channel.request(message);
+      },
+      notify: (message) => live()?.notify(message),
+      get pendingCount() {
+        return live()?.pendingCount ?? 0;
+      },
+      get closed() {
+        return live() === undefined;
+      },
+      close: () => {
+        // The supervisor opens and closes these; a handle that could close one
+        // would be closing a channel it does not own.
+        throw new Error("a plugin's channel is closed by the supervisor");
+      },
+    };
+  }
+
+  /** Record why a plugin is loading here, and say so once. */
+  function fallBackToServer(id: string, reason: string): null {
+    placementFallbacks.set(id, reason);
+    logger.warn(`plugin ${id} ${reason}; loading it in the server instead`);
+    return null;
+  }
+
+  /** Stop one supervised instance; a no-op for a plugin that runs here. */
+  async function stopRemoteInstance(
+    id: string,
+    instanceId: string | null,
+  ): Promise<void> {
+    if (instanceId === null) return;
+    try {
+      await supervisor?.stop(instanceId);
+    } catch (error) {
+      logger.warn(
+        `plugin ${id} process stop failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+    remoteCapabilities.delete(instanceId);
   }
 
   async function disposeOne(id: string): Promise<void> {
@@ -1444,6 +1593,9 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
     loaded.delete(id);
     await disposePluginInstance(id, plugin);
     deps.sharedPorts?.clearDeclarationsForOwner(id);
+    // Its tool names are free again, and the processes still running hold a
+    // copy of who owns what.
+    pushHostFacts();
   }
 
   /**
@@ -1477,6 +1629,17 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
     brandingAssets.delete(id);
     needsConfiguration.delete(id);
     agentToolProblems.delete(id);
+    placementFallbacks.delete(id);
+    placementQuarantine.delete(id);
+  }
+
+  /**
+   * Let a plugin be moved out again. An explicit `bb plugin reload` is an
+   * operator saying they fixed whatever kept killing the process; without this
+   * the only way back out is a server restart.
+   */
+  function clearPlacementQuarantine(id: string): void {
+    placementQuarantine.delete(id);
   }
 
   async function loadAll(): Promise<void> {
@@ -1514,11 +1677,161 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
     return { outcome: "found", value };
   }
 
+  /**
+   * Created on the first plugin that opts out of the server process, so a
+   * deployment that moves nothing never spawns anything.
+   */
+  let supervisor: PluginSupervisor | null = null;
+  /**
+   * Capabilities per *instance*, so the supervisor's handlers can find them.
+   * Per instance because a reload's two instances close over different rows:
+   * until the old one is disposed it must keep calling the host it was loaded
+   * with, not its successor's.
+   */
+  const remoteCapabilities = new Map<
+    string,
+    Parameters<typeof createPluginHostCallServer>[0]
+  >();
+  /** Mints instance ids; monotonic for the life of the process. */
+  let remoteLoadSequence = 0;
+  /**
+   * Plugins this server will not try to move again, and why.
+   *
+   * Set when a plugin process crashed past its budget. Without it the recovery
+   * below is a loop: the plugin comes back, `runPluginOutOfProcess` still says
+   * yes, and it walks into the same crashloop. Held in memory only — a
+   * restarted server is a fresh chance — and cleared by an explicit
+   * `bb plugin reload`, which is an operator saying they fixed something.
+   */
+  const placementQuarantine = new Map<string, string>();
+
+  function pluginSupervisor(): PluginSupervisor {
+    supervisor ??= createPluginSupervisor({
+      shared: () => ({
+        dataDir: deps.dataDir,
+        // Null until the server is listening; bindSdk pushes the real one.
+        loopbackBaseUrl: boundLoopbackBaseUrl ?? null,
+        // Read at every start, because both are read by the plugin's factory
+        // while it bootstraps and both change as other plugins come and go.
+        browserStatus: browserHostStatus(),
+        agentToolOwners: agentToolOwners(),
+      }),
+      handlers: {
+        onRequest: (plugin) => (request) => {
+          const capabilities = remoteCapabilities.get(plugin.instanceId);
+          if (capabilities === undefined) {
+            throw new Error(`plugin "${plugin.pluginId}" is not loaded here`);
+          }
+          return createPluginHostCallServer(capabilities).onRequest(request);
+        },
+        onNotify: (plugin) => (notification) => {
+          const capabilities = remoteCapabilities.get(plugin.instanceId);
+          if (capabilities === undefined) return;
+          createPluginHostCallServer(capabilities).onNotify(notification);
+        },
+      },
+      onGaveUp: (plugins, problem) => {
+        for (const plugin of plugins) {
+          void recoverAbandonedPlugin(plugin, problem);
+        }
+      },
+      logger: {
+        warn: (message) => logger.warn(message),
+        info: (message) => logger.info(message),
+      },
+      ...(deps.spawnPluginHost === undefined
+        ? {}
+        : { spawn: deps.spawnPluginHost }),
+      ...(deps.pluginProcessRestart === undefined
+        ? {}
+        : { restart: deps.pluginProcessRestart }),
+    });
+    return supervisor;
+  }
+
+  /**
+   * Try to load a plugin into a plugin process.
+   *
+   * Null means "load it in the server instead", for a plugin whose process did
+   * not work out. **Placement is best effort — the server is the floor.** A
+   * plugin an operator moved for isolation still runs if the move fails; what
+   * it must not do is fail to run, or run somewhere without saying so, which
+   * is why every fallback is recorded in `placementFallbacks` and reported as
+   * the plugin's status detail.
+   *
+   * The cost is that the factory may run twice — once out there and once here.
+   * That is survivable only because a factory has always had to be
+   * re-runnable: `bb plugin reload` re-runs it on every reload.
+   */
+  async function loadOutOfProcess(
+    row: InstalledPluginRow,
+    manifest: PluginManifest,
+    capabilities: Parameters<typeof createPluginHostCallServer>[0],
+  ): Promise<{ handle: PluginApiHandle; instanceId: string } | null> {
+    // One id per load, not per plugin: a reload starts its successor while the
+    // predecessor is still running, and the supervisor has to keep them apart.
+    remoteLoadSequence += 1;
+    const instanceId = `${row.id}#${remoteLoadSequence}`;
+    remoteCapabilities.set(instanceId, capabilities);
+    const abandon = new AbortController();
+    const attempt = pluginSupervisor().start(
+      {
+        instanceId,
+        pluginId: row.id,
+        permissions: manifest.permissions,
+        serverEntry: await resolveServerEntry(row, manifest),
+        apiKey: apiIdentities.keyFor(row.id),
+      },
+      { signal: abandon.signal },
+    );
+    let started;
+    try {
+      // The same time box the in-process factory gets. Without it the most
+      // likely way a plugin process fails — a factory that never returns —
+      // does not fall back, it wedges the loader: nothing else here has a
+      // deadline, because in-process the factory call was the only place
+      // plugin code could hang.
+      started = await withLoadTimeout(attempt);
+    } catch (error) {
+      // Whatever went wrong, this plugin must not end up running in two
+      // places. The abort reaches a start still in flight; the handler covers
+      // one that lands anyway, and drops the capabilities either way.
+      abandon.abort();
+      const cleanUp = (): void => {
+        void stopRemoteInstance(row.id, instanceId);
+      };
+      attempt.then(cleanUp, cleanUp);
+      return fallBackToServer(
+        row.id,
+        `plugin process failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+    return {
+      instanceId,
+      handle: createRemotePluginApiHandle({
+        // By instance, not the channel object in hand: this one dies with the
+        // process, and the plugin is meant to survive that.
+        channel: liveRemoteChannel(row.id, instanceId),
+        pluginId: row.id,
+        snapshot: started.snapshot,
+      }),
+    };
+  }
+
   function bindSdk(args: { baseUrl: string }): void {
     boundLoopbackBaseUrl = args.baseUrl;
     // Any clients built before the bind pointed nowhere useful; drop them so
     // the next `bb.sdk` read builds one against the URL that is now real.
     pluginSdks.clear();
+    // Plugin processes hold their own bind-gate, so they are told too. A
+    // plugin loaded before the server was listening is the case this exists
+    // for, and it is the normal one at startup.
+    for (const state of supervisor?.states() ?? []) {
+      state.channel.notify({
+        method: "host.loopbackBaseUrl" as never,
+        payload: args.baseUrl,
+      });
+    }
   }
 
   return {
@@ -1532,6 +1845,7 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
     builtinSourceWatchers,
     checkEngineRange,
     checkPluginSdkRange,
+    clearPlacementQuarantine,
     clearRuntimeState,
     disposeAll,
     disposeOne,

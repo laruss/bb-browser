@@ -22,6 +22,31 @@
       "source": "./src/thread-visibility.ts",
       "types": "./src/thread-visibility.ts",
       "default": "./src/thread-visibility.ts"
+    },
+    "./browser-control": {
+      "source": "./src/browser-control.ts",
+      "types": "./src/browser-control.ts",
+      "default": "./src/browser-control.ts"
+    },
+    "./plugin-permissions": {
+      "source": "./src/plugin-permissions.ts",
+      "types": "./src/plugin-permissions.ts",
+      "default": "./src/plugin-permissions.ts"
+    },
+    "./app-keybindings": {
+      "source": "./src/app-keybindings.ts",
+      "types": "./src/app-keybindings.ts",
+      "default": "./src/app-keybindings.ts"
+    },
+    "./pending-interactions": {
+      "source": "./src/pending-interactions.ts",
+      "types": "./src/pending-interactions.ts",
+      "default": "./src/pending-interactions.ts"
+    },
+    "./json-value": {
+      "source": "./src/json-value.ts",
+      "types": "./src/json-value.ts",
+      "default": "./src/json-value.ts"
     }
   },
   "types": "./src/index.ts",

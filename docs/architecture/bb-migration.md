@@ -197,7 +197,9 @@ systems before their dependencies are understood; neither has been audited.
    it for plain Node, resolving from `packages/db/package.json`.
 6. **Electron's main process cannot run on Bun.** Electron embeds its own Node
    build. `apps/desktop` stays on Node regardless of toolchain decisions
-   elsewhere.
+   elsewhere. Neither can anything that loads `better-sqlite3` or `node-pty`:
+   both were measured against Bun 1.3.14 and both fail — see
+   [Bun as a runtime](#bun-as-a-runtime-measured-against-the-two-native-modules).
 
 ## Verification baseline
 
@@ -662,6 +664,92 @@ cp $F $F.new && mv $F.new $F
   async pipe write. The bounding assertion the test exists for still passes; only
   the tail assertion fails, and it fails for reasons no toolchain choice affects.
 
+## Bun as a runtime: measured against the two native modules
+
+Bun is the package manager and script runner here; the question this section
+answers is the different one Phase 7 asks — can plugin code _execute_ on Bun.
+Measured on macOS 25.5.0 arm64, Bun 1.3.14, Node 25.6.1, against the two native
+modules named in invariant 5. Both answers are no, for unrelated reasons.
+
+### better-sqlite3: Bun refuses it by name
+
+Not an ABI mismatch — a hardcoded refusal:
+
+```
+Error: 'better-sqlite3' is not yet supported in Bun.
+Track the status in https://github.com/oven-sh/bun/issues/4290
+In the meantime, you could try bun:sqlite which has a similar API.
+```
+
+`require()` of the package succeeds; the throw lands on `new Database(...)`, and
+also on a direct `process.dlopen` of `build/Release/better_sqlite3.node`, so
+there is no path around it. The same script on Node passes all eleven steps
+(WAL, prepared statements, a 500-row transaction, blob and UTF-8 round-trip,
+iteration, `SqliteError` with its code, close).
+
+The addon uses the raw V8 C++ API (`v8::Isolate` in `src/addon.cpp`), which
+JavaScriptCore cannot serve; Bun's partial V8 shim does not cover it. A second
+obstacle sits behind the first even if it lifts: Bun reports
+`process.versions.modules === 137` against this machine's Node 141, so one
+`scripts/ensure-native-modules.mjs` build cannot satisfy both runtimes.
+
+This is not confined to the server. `packages/plugin-sdk` depends on
+better-sqlite3 because `bb.storage.database()` hands the plugin a live
+`Database` — synchronous, with statement objects and iterators, so it is also
+the one part of the plugin API that cannot be proxied over RPC. Two consequences
+for Phase 7:
+
+- A Bun plugin host has to drop `bb.storage.database()` or re-point it at
+  `bun:sqlite`, which changes a plugin-facing type
+  (`backend-contract.ts` imports `Database` from better-sqlite3).
+- `@bb/plugin-sdk/testing` constructs the same handle, so a plugin author who
+  runs their suite under `bun test` hits the refusal today, host process or not.
+
+### node-pty: loads, then the master fd disappears
+
+node-pty 1.1.0 ships N-API prebuilds (`prebuilds/darwin-arm64/pty.node`), so it
+loads and `spawn` returns a pid. It is not usable after that. The functional
+test — write `echo RAN > file; echo BACK-CHANNEL`, then check both that the
+shell executed and that the output came back:
+
+| Runtime | Passed |
+| ------- | ------ |
+| Node    | 5/5    |
+| Bun     | 0/5    |
+
+Under Bun the shell never runs the command. Watching the master fd and the child
+on a timeline explains why: `fstat(term.fd)` is valid at spawn and `EBADF`
+within 500 ms **with no write at all**, so something in Bun closes the
+descriptor node-pty is holding. Afterwards `resize` throws `ioctl(2) failed,
+EBADF`, further writes go nowhere, and `onExit` does not fire. The fd _number_
+then reads valid again a moment later, because Bun reuses it for something else
+— which is worse than staying closed, since node-pty's next `ioctl` would hit an
+unrelated descriptor.
+
+Beware two readings that look like success and are not:
+
+- `onData` delivers bytes containing the text you just wrote. That is the tty
+  echoing the typed characters, not the shell answering. Requiring a _second_
+  occurrence of the marker is what separates them.
+- Resizing immediately after `spawn` succeeds, before the descriptor goes.
+
+The failure is not deterministic in its details — across runs the child was
+sometimes `/bin/sh` that then died, sometimes still stuck as node-pty's
+`spawn-helper` — but it never worked once in any shape.
+
+### What this settles
+
+Bun is not a candidate for a runtime that needs either module. It stays viable
+only for a plugin host that reaches storage and terminals **over RPC**, and only
+once `bb.storage.database()` is redefined, since that call is a native handle by
+contract. The narrower Phase 7 question — a Bun host for plugin code alone — is
+not closed by this, but it now costs a plugin-facing contract change, so it is
+no longer free.
+
+`scripts/check-bun-native.mjs` reproduces all of it — run it under both
+runtimes before trusting these answers against a newer Bun. Today it is 11/11
+on Node and 3/8 on Bun. Bun issue 4290 is the one to watch.
+
 ## Decisions taken
 
 - **Browser surface**: a new top-level route in the existing SPA, reusing the
@@ -676,6 +764,39 @@ cp $F $F.new && mv $F.new $F
   runtime stays Node — plan §6 Stage 1 and §20 both warn against migrating a
   runtime for consistency alone. Upstream `get-bb/bb` will not be merged, so
   replacing the lockfile costs nothing.
+- **Plugin host (plan Phase 7)**: every plugin runs outside the server process,
+  builtin and third-party alike, on **Node**. One runtime for all of them, with
+  the trust tier deciding how much a plugin is sandboxed rather than which
+  runtime it gets — two runtimes would be two implementations of the same host,
+  and the fake-vs-real host taught this repo what that costs. Node is also what
+  keeps `bb.storage.database()` intact: the plugin's own process opens its
+  SQLite file directly, which no transport could have carried and Bun could not
+  have opened at all.
+  Process topology: **plugins share one process by default**, settled by
+  measurement rather than argument, and the measurement is reproducible —
+  `apps/server/scripts/measure-plugin-host.mjs` builds the host the way the
+  release does and reads resident memory of a real forked process.
+  A bundled plugin host cost **~204MB** before it loaded any plugin, against
+  ~48MB for a bare Node process; thirteen of those at one process each is
+  ~2.7GB. It now costs **~84MB**, and almost all of the difference was two
+  imports that nothing needed at startup: `@bb/sdk` builds the entire public
+  API client — every route, every zod schema — at import time (~100MB), and
+  `@bb/domain`'s index runs every schema in the package (~57MB) when three
+  subpath imports cover what the plugin API actually uses. The SDK is deferred
+  behind a literal `require`, which keeps `getSdk()` synchronous: the bundler
+  folds the module in and initialises it on the first call, so a plugin that
+  never touches `bb.sdk` never pays for it.
+  The protocol does not depend on the choice — it is one logical channel per
+  plugin either way — so `placement` in `plugin-supervisor.ts` keeps it a
+  one-line policy, and `ISOLATED_PLACEMENT` is there for a plugin that has
+  earned its own process. Thirteen at ~84MB is ~1.1GB, which is a different
+  conversation from ~2.7GB but not yet a reason to change the default; the
+  remaining ~34MB over bare Node is browser-control's schemas (~22MB) and
+  cron-parser's luxon (~11MB), both deferrable by the same means if
+  process-per-plugin becomes worth it.
+  The two directions of that wire are catalogued before it exists:
+  `plugin-callbacks.ts` (server→plugin) and `plugin-host-calls.ts`
+  (plugin→host), each checked against the real objects by its own test.
 
 ## Open questions
 

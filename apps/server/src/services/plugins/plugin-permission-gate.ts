@@ -1,10 +1,12 @@
+// The subpath, for the reason plugin-api.ts states: every plugin process
+// loads this file, and `@bb/domain`'s index runs every schema in the package.
 import {
   canonicalPermissions,
   permissionForRealtimeEvent,
   PLUGIN_SDK_AREA_PERMISSIONS,
   PLUGIN_SDK_METHOD_EXTRA_PERMISSIONS,
   type PluginPermission,
-} from "@bb/domain";
+} from "@bb/domain/plugin-permissions";
 import type { BbSdk } from "@bb/sdk";
 
 /**

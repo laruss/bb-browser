@@ -129,7 +129,12 @@ describe("the callback table", () => {
         !callbackShape(kind).resultCrosses,
     );
 
-    expect(blocked.sort()).toEqual(["backgroundService", "http"]);
+    // `http` alone, and only in the in-process sense the flags describe: what
+    // `invokeCallback` sees is still a live Hono Context. At the boundary it
+    // is carried — plugin-remote-handle.ts reduces it and the plugin process
+    // rebuilds one. backgroundService left this list when applying its shape
+    // showed the channel already carries it as a cancellable request.
+    expect(blocked.sort()).toEqual(["http"]);
   });
 
   it("explains why each of them blocks", () => {
@@ -148,7 +153,11 @@ describe("the callback table", () => {
       (kind) => callbackShape(kind).cancellable === true,
     );
 
-    expect(cancellable.sort()).toEqual(["agentTool", "cli"]);
+    expect(cancellable.sort()).toEqual([
+      "agentTool",
+      "backgroundService",
+      "cli",
+    ]);
   });
 });
 

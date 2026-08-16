@@ -171,10 +171,10 @@ them so the next rename cannot leak either.
 
 ## Next
 
+- **The transport now exists** — see [plugin-transport.md](plugin-transport.md)
+  for the envelope these kinds travel in and the peer that speaks it. It is not
+  yet wired into the loader; swapping each closure for a send is per-kind work
+  with a test for each.
 - **Applying the two shapes.** They are written and tested but nothing calls
-  them, which is the right state until there is a boundary — and the wrong
-  state to leave them in indefinitely. The transport is what makes them live.
-- **Then the transport.** Every call site already says what it sends, every
-  payload is known to survive the trip, and the two that do not fit
-  request/response have shapes of their own. Swapping the closure for a send is
-  per-kind work with a test for each.
+  them, which is the right state until a plugin actually runs in another
+  process — and the wrong state to leave them in indefinitely.

@@ -47,6 +47,7 @@ export interface RunningTestServer extends TestAppHarness {
 
 export type TestAppHarnessConfigOverrides = Partial<ServerRuntimeConfig> & {
   appVersionService?: AppVersionService;
+  runPluginOutOfProcess?: (pluginId: string) => boolean;
   terminalCloseTimeoutMs?: number;
 };
 
@@ -96,8 +97,12 @@ export function createTestDaemonHostKey(
 export async function createTestAppHarness(
   overrides: TestAppHarnessConfigOverrides = {},
 ): Promise<TestAppHarness> {
-  const { appVersionService, terminalCloseTimeoutMs, ...configOverrides } =
-    overrides;
+  const {
+    appVersionService,
+    runPluginOutOfProcess,
+    terminalCloseTimeoutMs,
+    ...configOverrides
+  } = overrides;
   const dataDir = await mkdtemp(join(tmpdir(), "bb-server-test-"));
   const db = initDb(":memory:");
   const hub = new NotificationHubImpl();
@@ -200,7 +205,10 @@ export async function createTestAppHarness(
     watchInterests,
     sharedPorts,
   };
-  const { app, pluginCatalogService, pluginService } = createApp(deps);
+  const { app, pluginCatalogService, pluginService } = createApp(
+    deps,
+    runPluginOutOfProcess === undefined ? undefined : { runPluginOutOfProcess },
+  );
 
   return {
     app,

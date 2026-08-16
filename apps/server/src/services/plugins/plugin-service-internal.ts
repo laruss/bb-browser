@@ -62,10 +62,38 @@ export interface LoadedPlugin {
   services: ServiceRuntime[];
   isBuiltin: boolean;
   builtinName: string | null;
+  /**
+   * Which supervised instance this load is, or null when it runs in the
+   * server. Per load rather than per plugin: a reload has both instances alive
+   * for the moment the swap takes, so disposing the previous one has to name
+   * it (see `SupervisedPlugin.instanceId`).
+   */
+  remoteInstanceId: string | null;
 }
 
 export interface PluginServiceDeps {
   db: DbConnection;
+  /**
+   * Whether this plugin runs in a plugin process instead of the server's.
+   *
+   * Opt-in and off by default: the in-process path is the one every plugin has
+   * always taken, and moving one is a decision an operator makes per plugin.
+   * A plugin that turns out to be ineligible (see `pluginProcessEligibility`)
+   * falls back to in-process with a warning rather than failing to load.
+   */
+  runPluginOutOfProcess?: (pluginId: string) => boolean;
+  /**
+   * How a plugin host process is spawned. Test seam: the supervisor's own
+   * default forks the real entry, and a test that needs the spawn to fail (or
+   * to be a fake) has no other way to say so.
+   */
+  spawnPluginHost?: import("./plugin-supervisor.js").PluginProcessSpawner;
+  /**
+   * Restart policy for plugin processes. Test seam: the defaults escalate over
+   * ~8 seconds, which is right for a server and far too slow for a test that
+   * needs a crashloop to run out.
+   */
+  pluginProcessRestart?: import("./plugin-supervisor.js").PluginSupervisorOptions["restart"];
   /** Omitted only by isolated plugin-runtime tests without a daemon plane. */
   sharedPorts?: Pick<
     HostSharedPortCoordinator,

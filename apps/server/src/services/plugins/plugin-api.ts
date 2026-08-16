@@ -3,28 +3,44 @@ import { join } from "node:path";
 import Database from "better-sqlite3";
 import { CronExpressionParser } from "cron-parser";
 import { z } from "zod";
-import {
-  deletePluginKvValue,
-  getPluginKvValue,
-  listPluginKvKeys,
-  setPluginKvValue,
-  type DbConnection,
-} from "@bb/db";
+/**
+ * The two host-owned stores `bb` reads through, injected rather than reached.
+ *
+ * They were `db: DbConnection` until the plugin boundary needed this object to
+ * build in a plugin's own process too, where there is no bb.db to open — and
+ * where opening one would be the wrong answer anyway. Everything else about
+ * these members stays here: the JSON round-trip, the 256KB limit, the error
+ * text. Only the last inch is swapped, so the two sides of the boundary cannot
+ * disagree about what `bb.storage.kv` means.
+ *
+ * Values are raw JSON strings on purpose. Parsing them here keeps
+ * `JSON.parse`'s exact failure mode on the plugin's side of any transport.
+ */
+export interface PluginKvStore {
+  get(key: string): Promise<string | undefined>;
+  set(key: string, json: string): Promise<void>;
+  delete(key: string): Promise<void>;
+  list(prefix: string | undefined): Promise<string[]>;
+}
+
+export type PluginSettingsReader = (
+  descriptors: PluginSettingDescriptors,
+) => Promise<Record<string, unknown>>;
+// By subpath, not through `@bb/domain`'s index, and the reason is measured:
+// this module is the one every plugin process loads, and the index runs every
+// schema in the package at import time — ~57MB resident, against ~25MB for the
+// three files anything here actually uses.
+// See apps/server/scripts/measure-plugin-host.mjs.
 import {
   BROWSER_COMMAND_MAX_OBSERVATION_ENTRIES,
   BROWSER_COMMAND_MAX_PAGE_TEXT_LENGTH,
   BROWSER_COMMAND_MAX_URL_LENGTH,
-  PLUGIN_INTERACTION_MAX_TITLE_LENGTH,
+  BROWSER_COMMAND_MAX_SELECTOR_LENGTH,
   browserControlOperationSchema,
   browserRecordOperationSchema,
-  BROWSER_COMMAND_MAX_SELECTOR_LENGTH,
   browserCookieSchema,
   browserInteractionSchema,
   browserStorageItemSchema,
-  appCommandIdSchema,
-  permissionForBrowserCommand,
-  type AppKeybindingOverride,
-  type AppKeybindingOverrides,
   type BrowserCommand,
   type BrowserCommandValue,
   type BrowserControlOperation,
@@ -32,9 +48,18 @@ import {
   type BrowserCookie,
   type BrowserInteraction,
   type BrowserStorageItem,
-  type JsonValue,
+} from "@bb/domain/browser-control";
+import { PLUGIN_INTERACTION_MAX_TITLE_LENGTH } from "@bb/domain/pending-interactions";
+import {
+  appCommandIdSchema,
+  type AppKeybindingOverride,
+  type AppKeybindingOverrides,
+} from "@bb/domain/app-keybindings";
+import {
+  permissionForBrowserCommand,
   type PluginPermission,
-} from "@bb/domain";
+} from "@bb/domain/plugin-permissions";
+import type { JsonValue } from "@bb/domain/json-value";
 import type {
   BbPluginApi,
   PluginAgentConfiguration,
@@ -95,10 +120,10 @@ import {
   createPluginPermissionGate,
   type PluginPermissionGate,
 } from "./plugin-permission-gate.js";
-import {
-  readPluginSettingsValues,
-  registerSettingDescriptors,
-} from "./plugin-settings.js";
+// The descriptor half, deliberately: plugin-settings.ts also reads and writes
+// values, which needs the database — and this module is loaded in every plugin
+// process, where that would be ~60MB of native machinery for a validator.
+import { registerSettingDescriptors } from "./plugin-setting-descriptors.js";
 
 // The backend plugin API contract lives in @bb/plugin-sdk (plugin authors
 // compile against it); this module implements it. Re-exported so server code
@@ -624,7 +649,11 @@ export function createPluginApi(options: {
    */
   permissions: readonly PluginPermission[] | undefined;
   logger: ServerLogger;
-  db: DbConnection;
+  /** `bb.storage.kv`'s rows; db-backed in the server, a channel call in a
+   * plugin process. See {@link PluginKvStore}. */
+  kvStore: PluginKvStore;
+  /** Resolves declared settings to their current values, secrets included. */
+  readSettingsValues: PluginSettingsReader;
   dataDir: string;
   /** Undefined until the server is listening (bb.sdk is bind-gated). */
   getSdk: () => BbSdk | undefined;
@@ -673,7 +702,8 @@ export function createPluginApi(options: {
     pluginId,
     permissions,
     logger,
-    db,
+    kvStore,
+    readSettingsValues,
     dataDir,
     getSdk,
     getLoopbackBaseUrl,
@@ -800,7 +830,7 @@ export function createPluginApi(options: {
   const kv: PluginKvStorage = {
     async get(key) {
       assertLive();
-      const raw = getPluginKvValue(db, pluginId, key);
+      const raw = await kvStore.get(key);
       if (raw === undefined) return undefined;
       return JSON.parse(raw);
     },
@@ -817,15 +847,15 @@ export function createPluginApi(options: {
             `Store large data in storage.database() instead.`,
         );
       }
-      setPluginKvValue(db, pluginId, key, json);
+      await kvStore.set(key, json);
     },
     async delete(key) {
       assertLive();
-      deletePluginKvValue(db, pluginId, key);
+      await kvStore.delete(key);
     },
     async list(kvPrefix) {
       assertLive();
-      return listPluginKvKeys(db, pluginId, kvPrefix);
+      return kvStore.list(kvPrefix);
     },
   };
 
@@ -879,12 +909,7 @@ export function createPluginApi(options: {
           assertLive();
           // The runtime record is untyped; the descriptor generics are the
           // real contract, re-applied at this boundary.
-          return (await readPluginSettingsValues({
-            db,
-            dataDir,
-            pluginId,
-            descriptors: validated,
-          })) as Values;
+          return (await readSettingsValues(validated)) as Values;
         },
         onChange(listener) {
           assertLive();

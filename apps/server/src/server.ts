@@ -118,6 +118,11 @@ function normalizeInternalAuthPath(path: string): string {
 
 interface CreateAppOptions {
   bbAppArtifactService?: BbAppArtifactService;
+  /**
+   * Which plugins run in a plugin process rather than in the server. Opt-in
+   * and off by default; see `PluginServiceDeps.runPluginOutOfProcess`.
+   */
+  runPluginOutOfProcess?: (pluginId: string) => boolean;
   slowApiRequestLogThresholdMs?: number;
   staticDir?: string;
 }
@@ -394,6 +399,9 @@ export function createApp(
   });
   const pluginService = createPluginService({
     db: deps.db,
+    ...(options?.runPluginOutOfProcess === undefined
+      ? {}
+      : { runPluginOutOfProcess: options.runPluginOutOfProcess }),
     hub: deps.hub,
     logger: deps.logger,
     pendingInteractions: deps.pendingInteractions,

@@ -111,6 +111,38 @@ export function rebuildHttpRequest(message: PluginHttpRequestMessage): Request {
   });
 }
 
+/**
+ * Whether a plugin route's return value is a `Response`, asked structurally.
+ *
+ * `instanceof Response` is **not** a usable test in this process, and the way
+ * that was found is worth keeping: an intermittent suite failure whose real
+ * cause is that `@hono/node-server` replaces `globalThis.Response` with a
+ * lightweight class of its own (`getRequestListener`, unless
+ * `overrideGlobalObjects: false`). It replaces it more than once — importing
+ * the package installs one class and `serve()` installs another — so after the
+ * server is listening:
+ *
+ *     Response.json({}) instanceof Response   // false
+ *     new Response("x")  instanceof Response  // true
+ *
+ * because the inherited static still builds with the class that was global
+ * when it was captured. A plugin returning `Response.json(...)` — the obvious
+ * way to answer with JSON — was therefore rejected as "not a Response".
+ *
+ * Same rule as errors crossing the plugin boundary by name rather than by
+ * class: nothing here may depend on class identity.
+ */
+export function isResponseLike(value: unknown): value is Response {
+  if (typeof value !== "object" || value === null) return false;
+  const candidate = value as Partial<Response>;
+  return (
+    typeof candidate.status === "number" &&
+    typeof candidate.arrayBuffer === "function" &&
+    typeof candidate.headers === "object" &&
+    candidate.headers !== null
+  );
+}
+
 export async function reduceHttpResponse(
   response: Response,
 ): Promise<PluginHttpResponseMessage> {

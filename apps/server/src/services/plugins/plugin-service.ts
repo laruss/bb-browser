@@ -26,10 +26,6 @@ import {
   type PluginCliExecutionResult,
   type PluginCliOutputLimitError,
   type PluginRpcError,
-  type PluginRpcValidationIssue,
-  type StandardSchemaV1,
-  type StandardSchemaV1Issue,
-  type StandardSchemaV1Result,
 } from "@bb/plugin-sdk";
 // The build engine's natives (esbuild, Tailwind oxide) are dynamically
 // imported inside buildPluginApp — importing this loads nothing heavy.
@@ -78,6 +74,8 @@ import {
   syncPluginCommandsSkill,
   type PluginCliContribution,
 } from "./plugin-commands-skill.js";
+import { isResponseLike } from "./plugin-http-message.js";
+import { rpcBoundaryError, runRpcCall } from "./plugin-rpc-call.js";
 import { readPluginLogTail } from "./plugin-log.js";
 import {
   buildPluginSettingsView,
@@ -614,146 +612,6 @@ async function settledWithin(
   }
 }
 
-class PluginRpcBoundaryError extends Error {
-  constructor(readonly rpcError: PluginRpcError) {
-    super(rpcError.message);
-    this.name = "PluginRpcBoundaryError";
-  }
-}
-
-function normalizeRpcIssuePath(
-  path: StandardSchemaV1Issue["path"],
-): Array<string | number> | undefined {
-  if (path === undefined) return undefined;
-  const segments = Array.isArray(path) ? path : [path];
-  const normalized = segments.map((segment) => {
-    const key =
-      typeof segment === "object" && segment !== null
-        ? Reflect.get(segment, "key")
-        : segment;
-    return typeof key === "number" ? key : String(key);
-  });
-  return normalized.length > 0 ? normalized : undefined;
-}
-
-function normalizeRpcIssues(
-  issues: readonly StandardSchemaV1Issue[],
-): PluginRpcValidationIssue[] {
-  return issues.map((issue) => {
-    const path = normalizeRpcIssuePath(issue.path);
-    return {
-      message: issue.message,
-      ...(path !== undefined ? { path } : {}),
-    };
-  });
-}
-
-function rpcBoundaryFailure(
-  code: PluginRpcError["code"],
-  message: string,
-  issues?: PluginRpcValidationIssue[],
-): PluginRpcBoundaryError {
-  return new PluginRpcBoundaryError({
-    code,
-    message,
-    ...(issues !== undefined ? { issues } : {}),
-  });
-}
-
-async function validateRpcValue(
-  schema: StandardSchemaV1,
-  value: unknown,
-  phase: "input" | "output",
-): Promise<unknown> {
-  let result: StandardSchemaV1Result<unknown>;
-  try {
-    result = await schema["~standard"].validate(value);
-  } catch (error) {
-    const detail = error instanceof Error ? error.message : String(error);
-    throw rpcBoundaryFailure(
-      phase === "input" ? "invalid_input" : "invalid_output",
-      `rpc ${phase} validator failed: ${detail}`,
-      [{ message: detail }],
-    );
-  }
-  if (result.issues !== undefined) {
-    const issues = normalizeRpcIssues(result.issues);
-    throw rpcBoundaryFailure(
-      phase === "input" ? "invalid_input" : "invalid_output",
-      `rpc ${phase} validation failed`,
-      issues,
-    );
-  }
-  return result.value;
-}
-
-/** Strict JsonValue normalization: no coercion, elision, or toJSON hooks. */
-function normalizeRpcJsonResult(value: unknown): JsonValue {
-  const ancestors = new Set<object>();
-
-  function visit(current: unknown, path: string): JsonValue {
-    if (
-      current === null ||
-      typeof current === "string" ||
-      typeof current === "boolean"
-    ) {
-      return current;
-    }
-    if (typeof current === "number") {
-      if (!Number.isFinite(current)) {
-        throw rpcBoundaryFailure(
-          "non_json_result",
-          `rpc result at ${path} contains a non-finite number`,
-        );
-      }
-      return current;
-    }
-    if (typeof current !== "object") {
-      throw rpcBoundaryFailure(
-        "non_json_result",
-        `rpc result at ${path} is not a JSON value (${typeof current})`,
-      );
-    }
-    if (ancestors.has(current)) {
-      throw rpcBoundaryFailure(
-        "non_json_result",
-        `rpc result at ${path} is cyclic`,
-      );
-    }
-    ancestors.add(current);
-    try {
-      if (Array.isArray(current)) {
-        return current.map((item, index) => visit(item, `${path}[${index}]`));
-      }
-      const prototype = Object.getPrototypeOf(current) as object | null;
-      if (prototype !== Object.prototype && prototype !== null) {
-        throw rpcBoundaryFailure(
-          "non_json_result",
-          `rpc result at ${path} must be a plain JSON object`,
-        );
-      }
-      const symbolKey = Reflect.ownKeys(current).find(
-        (key) => typeof key === "symbol",
-      );
-      if (symbolKey !== undefined) {
-        throw rpcBoundaryFailure(
-          "non_json_result",
-          `rpc result at ${path} contains a symbol key`,
-        );
-      }
-      const normalized: Record<string, JsonValue> = {};
-      for (const [key, child] of Object.entries(current)) {
-        normalized[key] = visit(child, `${path}.${key}`);
-      }
-      return normalized;
-    } finally {
-      ancestors.delete(current);
-    }
-  }
-
-  return visit(value, "$result");
-}
-
 /**
  * Map a tool's return value (string | { content, isError? }) onto the wire
  * ToolCallResponse the daemon round-trip expects. Malformed results throw —
@@ -1239,6 +1097,7 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
     builtinSourceWatchers,
     checkEngineRange,
     checkPluginSdkRange,
+    clearPlacementQuarantine,
     disposeAll,
     disposeOne,
     emitThreadEvent,
@@ -1892,6 +1751,10 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
         (row) => id === undefined || row.id === id,
       );
       for (const row of rows.sort((a, b) => a.id.localeCompare(b.id))) {
+        // An explicit reload is a fresh chance for a plugin whose process kept
+        // crashing: whatever the operator changed, this is them asking for it
+        // to be tried again.
+        clearPlacementQuarantine(row.id);
         await withLifecycleLock(row.id, () => loadOne(row));
       }
       await syncCliSkill();
@@ -2021,7 +1884,11 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
         },
         async (payload) => {
           const response = await route.handler(payload);
-          if (!(response instanceof Response)) {
+          // Structural, not `instanceof`: `@hono/node-server` swaps
+          // `globalThis.Response` for its own class when the server starts
+          // listening, which made a route returning `Response.json(...)` fail
+          // this check in a running server. See `isResponseLike`.
+          if (!isResponseLike(response)) {
             throw new Error("http route handler must return a Response");
           }
           return response;
@@ -2038,25 +1905,13 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
       const outcome = await invokeCallback(
         id,
         { kind: "rpc", target: method, payload: input },
-        async (payload) => {
-          const parsedInput = await validateRpcValue(
-            handler.inputSchema,
-            payload,
-            "input",
-          );
-          const result = await handler.handler(parsedInput as never);
-          const parsedOutput = await validateRpcValue(
-            handler.outputSchema,
-            result,
-            "output",
-          );
-          return normalizeRpcJsonResult(parsedOutput);
-        },
+        // The same call, wherever the handler is: in-process it validates
+        // here, and a plugin process runs this exact function on its side.
+        (payload) => runRpcCall(handler, payload),
       );
       if (outcome.ok) return { ok: true, result: outcome.value };
-      if (outcome.cause instanceof PluginRpcBoundaryError) {
-        return { ok: false, error: outcome.cause.rpcError };
-      }
+      const boundary = rpcBoundaryError(outcome.cause);
+      if (boundary !== null) return { ok: false, error: boundary };
       return {
         ok: false,
         error: { code: "handler_error", message: outcome.error },

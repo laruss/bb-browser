@@ -1,6 +1,5 @@
 import { readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
-import { z } from "zod";
 import {
   getPluginSettingsValues,
   setPluginSettingsValues,
@@ -14,7 +13,12 @@ import type {
 import { deleteSecretFile, writeSecretFile } from "@bb/secret-storage";
 
 // The descriptor types are part of the backend plugin contract in
-// @bb/plugin-sdk; re-exported so server code keeps one import site.
+// @bb/plugin-sdk; re-exported so server code keeps one import site. Descriptor
+// validation is re-exported too, from the half that does not need a database.
+export {
+  PluginSettingsValidationError,
+  registerSettingDescriptors,
+} from "./plugin-setting-descriptors.js";
 export type {
   PluginSettingDescriptor,
   PluginSettingDescriptors,
@@ -22,97 +26,6 @@ export type {
 } from "@bb/plugin-sdk";
 
 /** A settings update the routes rejected: unknown key or wrong value type. */
-export class PluginSettingsValidationError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "PluginSettingsValidationError";
-  }
-}
-
-// Keys become file names (secrets) and CLI arguments; keep them tame.
-const SETTING_KEY_PATTERN = /^[a-zA-Z0-9_-]+$/;
-
-const baseFields = {
-  label: z.string().min(1),
-  description: z.string().min(1).optional(),
-};
-
-const descriptorSchema = z.discriminatedUnion("type", [
-  z
-    .object({
-      type: z.literal("string"),
-      ...baseFields,
-      secret: z.literal(true).optional(),
-      default: z.string().optional(),
-    })
-    .strict(),
-  z
-    .object({
-      type: z.literal("boolean"),
-      ...baseFields,
-      default: z.boolean().optional(),
-    })
-    .strict(),
-  z
-    .object({
-      type: z.literal("select"),
-      ...baseFields,
-      options: z.array(z.string().min(1)).min(1),
-      default: z.string().optional(),
-    })
-    .strict(),
-  z
-    .object({
-      type: z.literal("project"),
-      ...baseFields,
-      default: z.string().optional(),
-    })
-    .strict(),
-]);
-
-/**
- * Validate freeform descriptors from plugin code (jiti-loaded TS is not
- * typechecked at runtime) and merge them into the plugin's registered schema.
- * Throws a human-readable error for the plugin's load-error status.
- */
-export function registerSettingDescriptors(
-  target: PluginSettingDescriptors,
-  added: Record<string, unknown>,
-): PluginSettingDescriptors {
-  const validated: PluginSettingDescriptors = {};
-  for (const [key, raw] of Object.entries(added)) {
-    if (!SETTING_KEY_PATTERN.test(key)) {
-      throw new Error(
-        `invalid setting key "${key}" — use letters, digits, "-" and "_"`,
-      );
-    }
-    if (key in target) {
-      throw new Error(`setting "${key}" is already defined`);
-    }
-    const parsed = descriptorSchema.safeParse(raw);
-    if (!parsed.success) {
-      const issue = parsed.error.issues[0];
-      const path = issue?.path.join(".") ?? "";
-      throw new Error(
-        `invalid descriptor for setting "${key}"${path ? ` (${path})` : ""}: ${issue?.message ?? "unknown error"}`,
-      );
-    }
-    const descriptor = parsed.data;
-    if (
-      descriptor.type === "select" &&
-      descriptor.default !== undefined &&
-      !descriptor.options.includes(descriptor.default)
-    ) {
-      throw new Error(
-        `default for setting "${key}" must be one of its options`,
-      );
-    }
-    validated[key] = descriptor;
-  }
-  Object.assign(target, validated);
-  return validated;
-}
-
 export function pluginSecretsDir(dataDir: string, pluginId: string): string {
   return join(dataDir, "plugins", pluginId, "secrets");
 }
@@ -182,7 +95,8 @@ export async function readPluginSettingsValues(
     ) {
       parsed = undefined;
     }
-    values[key] = (parsed as PluginSettingValue | undefined) ?? descriptor.default;
+    values[key] =
+      (parsed as PluginSettingValue | undefined) ?? descriptor.default;
   }
   return values;
 }
