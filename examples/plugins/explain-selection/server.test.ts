@@ -3,6 +3,7 @@
 import { describe, expect, it } from "vitest";
 import {
   createFakePluginHost,
+  pluginPermissionsFromManifest,
   type FakePluginHost,
 } from "@bb/plugin-sdk/testing";
 import explainSelection from "./server";
@@ -21,6 +22,7 @@ async function load(
   settings: Record<string, string> = {},
 ): Promise<FakePluginHost> {
   const host = createFakePluginHost({
+    permissions: pluginPermissionsFromManifest(import.meta.url),
     pluginId: "explain-selection",
     loopbackBaseUrl: "http://127.0.0.1:38886",
     settings,

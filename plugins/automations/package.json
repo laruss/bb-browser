@@ -20,6 +20,10 @@
     },
     "server": "./src/server.ts",
     "app": "./app.tsx",
+    "permissions": [
+      "threads",
+      "workspace"
+    ],
     "skills": [
       "skills"
     ]

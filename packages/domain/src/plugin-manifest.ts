@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { pluginPermissionSchema } from "./plugin-permissions.js";
 
 const requiredManifestString = z.string().trim().min(1);
 
@@ -50,6 +51,12 @@ export const pluginBbManifestSchema = z
     branding: pluginBrandingSchema,
     server: requiredManifestString,
     app: requiredManifestString.optional(),
+    /**
+     * What this plugin may reach. Absent or empty means it reaches nothing
+     * gated — see {@link PLUGIN_PERMISSIONS} for why there is no "everything"
+     * default and for what these can and cannot enforce.
+     */
+    permissions: z.array(pluginPermissionSchema).optional(),
     skills: z.array(requiredManifestString).optional(),
     themes: z
       .array(

@@ -61,6 +61,7 @@ async function writePlugin(
         name: "Context menu fixture",
         description: "Context menu plugin fixture.",
         branding: { icon: "Zap" },
+        permissions: ["contextMenu.register"],
         server: "./server.ts",
       },
     }),

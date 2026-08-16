@@ -14,7 +14,10 @@
       "icon": "SideChat"
     },
     "server": "./server.ts",
-    "app": "./app.tsx"
+    "app": "./app.tsx",
+    "permissions": [
+      "threads"
+    ]
   },
   "keywords": [
     "bb-plugin"

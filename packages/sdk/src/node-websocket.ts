@@ -21,8 +21,11 @@ function decodeWsMessageData(data: RawData): string {
  * Adapts a `ws`-package WebSocket to the runtime-agnostic socket shape the
  * realtime client consumes.
  */
-export function wrapNodeWsWebsocket(url: string): BbRealtimeSocket {
-  const socket = new NodeWsWebSocket(url);
+export function wrapNodeWsWebsocket(
+  url: string,
+  options?: { headers?: Readonly<Record<string, string>> },
+): BbRealtimeSocket {
+  const socket = new NodeWsWebSocket(url, options);
   const adapter: BbRealtimeSocket = {
     close: () => socket.close(),
     onclose: null,
@@ -46,9 +49,18 @@ export function wrapNodeWsWebsocket(url: string): BbRealtimeSocket {
 /**
  * Node 22+ ships a global WebSocket; older supported Node versions (20.x)
  * fall back to the `ws` package so bb.subscribe works out of the box everywhere.
+ *
+ * `headers` forces the `ws` path whatever the runtime: the global WebSocket
+ * has no way to set request headers, and a socket that has to say who it is
+ * cannot fall back to one that cannot.
  */
-export function createNodeWebsocketFactory(): BbRealtimeSocketFactory {
+export function createNodeWebsocketFactory(options?: {
+  headers?: Readonly<Record<string, string>>;
+}): BbRealtimeSocketFactory {
   return (url) => {
+    if (options?.headers !== undefined) {
+      return wrapNodeWsWebsocket(url, { headers: options.headers });
+    }
     if (typeof WebSocket !== "undefined") {
       return wrapStandardWebsocket(new WebSocket(url));
     }

@@ -113,12 +113,16 @@ What is missing for this project:
 
 - **No browser contribution points** — nothing for omnibox, tabs, toolbar or
   browser context menus.
-- **No permission model at all.** Plugins declare no permissions and are granted
-  everything the host has.
 - **No isolation.** Plugin `server.ts` modules execute in-process inside the bb
   server (`apps/server/src/services/plugins/`). Plan §9 requires the opposite
   for agent-generated plugins, so plan Phase 7 (Bun plugin host) is genuinely new
   work, not a refactor.
+
+  A permission model has since landed on top of this — `bb.permissions`,
+  declared per plugin and denied by default, described in
+  [plugin-permissions.md](plugin-permissions.md). It gates the bb API rather
+  than the process, so it does not change the sentence above: it specifies the
+  boundary Phase 7 has to build, and is not a substitute for it.
 
 Note that `packages/plugin-build/src/toolchain.ts` installs bb's own pinned build
 packages (esbuild 0.28.1 and friends) with **npm**, into a private staging

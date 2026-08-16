@@ -1,4 +1,11 @@
+import {
+  permissionForRealtimeEvent,
+  PLUGIN_SDK_AREA_PERMISSIONS,
+  PLUGIN_SDK_METHOD_EXTRA_PERMISSIONS,
+  type PluginPermission,
+} from "@bb/domain";
 import type { BbPluginApi } from "@bb/plugin-sdk";
+import type { FakePermissionGate } from "./fake-permissions.js";
 
 type BbSdk = BbPluginApi["sdk"];
 
@@ -70,6 +77,7 @@ function withSpawnAttribution(pluginId: string, args: unknown[]): unknown[] {
 export function createFakeSdk(options: {
   pluginId: string;
   overrides?: FakeSdkOverrides;
+  permissions: FakePermissionGate;
 }): { sdk: BbSdk; harness: FakeSdkHarness } {
   const calls: FakeSdkCall[] = [];
   const stubs = new Map<string, (...args: unknown[]) => unknown>();
@@ -87,6 +95,27 @@ export function createFakeSdk(options: {
   addOverrides("", options.overrides ?? {});
 
   function invoke(path: string, rawArgs: unknown[]): unknown {
+    // A few methods cost more than their area because what they touch
+    // straddles two. Charged here as well as in the host, or a plugin's own
+    // tests would pass on a manifest the install refuses — which is the exact
+    // drift the shared map in @bb/domain exists to prevent.
+    const extras: readonly PluginPermission[] | undefined = (
+      PLUGIN_SDK_METHOD_EXTRA_PERMISSIONS as Readonly<
+        Record<string, readonly PluginPermission[]>
+      >
+    )[path];
+    for (const permission of extras ?? []) {
+      options.permissions.assert(permission, `bb.sdk.${path}`);
+    }
+    // `subscribe` picks its feed with an argument, so an area grant cannot
+    // cover it — the host splits it the same way.
+    if (path === "subscribe") {
+      const event = (rawArgs[0] as { event?: unknown } | undefined)?.event;
+      options.permissions.assert(
+        permissionForRealtimeEvent(String(event)),
+        `bb.sdk.subscribe({ event: "${String(event)}" })`,
+      );
+    }
     const args =
       path === "threads.spawn"
         ? withSpawnAttribution(options.pluginId, rawArgs)
@@ -111,6 +140,17 @@ export function createFakeSdk(options: {
       get(_target, prop) {
         // Not thenable: an accidentally awaited node must not hang.
         if (typeof prop !== "string" || prop === "then") return undefined;
+        // Reaching an undeclared area throws, matching the host: it replaces
+        // one with a proxy that refuses the property read, so the failing
+        // line is the plugin's rather than one inside the SDK.
+        if (path === "") {
+          const areas: Readonly<Record<string, PluginPermission | undefined>> =
+            PLUGIN_SDK_AREA_PERMISSIONS;
+          const permission = areas[prop];
+          if (permission !== undefined) {
+            options.permissions.assert(permission, `bb.sdk.${prop}`);
+          }
+        }
         return node(path === "" ? prop : `${path}.${prop}`);
       },
       apply(_target, _thisArg, args: unknown[]) {

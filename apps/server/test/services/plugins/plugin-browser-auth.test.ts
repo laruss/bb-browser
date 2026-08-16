@@ -65,6 +65,7 @@ async function writePlugin(
         name: "Auth fixture",
         description: "Auth provider fixture.",
         branding: { icon: "Zap" },
+        permissions: ["auth.provide"],
         server: "./server.ts",
       },
     }),

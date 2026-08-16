@@ -15,6 +15,9 @@
       "icon": "PanelLeft"
     },
     "app": "./app.tsx",
+    "permissions": [
+      "threads"
+    ],
     "server": "./src/server.ts"
   },
   "keywords": [

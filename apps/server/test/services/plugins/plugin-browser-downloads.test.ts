@@ -56,6 +56,7 @@ async function writePlugin(
         name: "Download handler fixture",
         description: "Download handler plugin fixture.",
         branding: { icon: "Zap" },
+        permissions: ["downloads.handle"],
         server: "./server.ts",
       },
     }),

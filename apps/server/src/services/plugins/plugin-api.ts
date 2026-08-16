@@ -22,6 +22,7 @@ import {
   browserInteractionSchema,
   browserStorageItemSchema,
   appCommandIdSchema,
+  permissionForBrowserCommand,
   type AppKeybindingOverride,
   type AppKeybindingOverrides,
   type BrowserCommand,
@@ -32,6 +33,7 @@ import {
   type BrowserInteraction,
   type BrowserStorageItem,
   type JsonValue,
+  type PluginPermission,
 } from "@bb/domain";
 import type {
   BbPluginApi,
@@ -88,6 +90,11 @@ import type { BbSdk, ThreadForkArgs, ThreadSpawnArgs } from "@bb/sdk";
 import type { ServerLogger } from "../../types.js";
 import type { PluginInteractionResult } from "../interactions/pending-interactions.js";
 import { appendPluginLogLine } from "./plugin-log.js";
+import {
+  applySdkPermissions,
+  createPluginPermissionGate,
+  type PluginPermissionGate,
+} from "./plugin-permission-gate.js";
 import {
   readPluginSettingsValues,
   registerSettingDescriptors,
@@ -572,8 +579,15 @@ function summarizeParseIssues(error: unknown): string {
  * default attribution (`origin: "plugin"`, `originPluginId: <plugin id>`)
  * unless the plugin sets those fields explicitly.
  */
-function wrapSdkForPlugin(sdk: BbSdk, pluginId: string): BbSdk {
-  return {
+function wrapSdkForPlugin(
+  sdk: BbSdk,
+  pluginId: string,
+  gate: PluginPermissionGate,
+): BbSdk {
+  // Attribution first, then the gate: a denied `threads` area replaces this
+  // wrapper wholesale, and doing it the other way round would hand the plugin
+  // an attribution wrapper over a proxy that throws on every read.
+  const attributed: BbSdk = {
     ...sdk,
     threads: {
       ...sdk.threads,
@@ -599,10 +613,16 @@ function wrapSdkForPlugin(sdk: BbSdk, pluginId: string): BbSdk {
       },
     },
   };
+  return applySdkPermissions(attributed, pluginId, gate);
 }
 
 export function createPluginApi(options: {
   pluginId: string;
+  /**
+   * What `bb.permissions` declared. Absent or empty denies everything gated —
+   * there is no legacy "everything" mode, see ./plugin-permission-gate.ts.
+   */
+  permissions: readonly PluginPermission[] | undefined;
   logger: ServerLogger;
   db: DbConnection;
   dataDir: string;
@@ -651,6 +671,7 @@ export function createPluginApi(options: {
 }): PluginApiHandle {
   const {
     pluginId,
+    permissions,
     logger,
     db,
     dataDir,
@@ -668,6 +689,7 @@ export function createPluginApi(options: {
     declareSharedPorts,
     replaceDeclaredSharedPorts,
   } = options;
+  const permissionGate = createPluginPermissionGate(pluginId, permissions);
   let invalidated = false;
   let activated = false;
   let wrappedSdk: BbSdk | undefined;
@@ -1682,6 +1704,13 @@ export function createPluginApi(options: {
     expected: TType,
   ): Promise<Extract<BrowserCommandValue, { type: TType }>> {
     assertLive();
+    // Every bb.browser call that reaches a page funnels through here, so this
+    // is the whole browser half of the gate — and the list of what a plugin
+    // host would have to carry over RPC.
+    permissionGate.assert(
+      permissionForBrowserCommand(command),
+      `bb.browser command "${command.type}"`,
+    );
     const value = await requestBrowserCommand({
       command,
       signal: options?.signal,
@@ -1730,6 +1759,10 @@ export function createPluginApi(options: {
   const browser: PluginBrowser = {
     registerOmniboxProvider(provider) {
       assertLive();
+      permissionGate.assert(
+        "omnibox.register",
+        "bb.browser.registerOmniboxProvider",
+      );
       const id = provider?.id;
       if (typeof id !== "string" || !OMNIBOX_PROVIDER_ID_PATTERN.test(id)) {
         throw new Error(
@@ -1764,6 +1797,10 @@ export function createPluginApi(options: {
     },
     registerContextMenuItem(item) {
       assertLive();
+      permissionGate.assert(
+        "contextMenu.register",
+        "bb.browser.registerContextMenuItem",
+      );
       const id = item?.id;
       if (typeof id !== "string" || !OMNIBOX_PROVIDER_ID_PATTERN.test(id)) {
         throw new Error(
@@ -1795,6 +1832,7 @@ export function createPluginApi(options: {
     },
     registerFindAction(action) {
       assertLive();
+      permissionGate.assert("find.register", "bb.browser.registerFindAction");
       const id = action?.id;
       if (typeof id !== "string" || !OMNIBOX_PROVIDER_ID_PATTERN.test(id)) {
         throw new Error(
@@ -1823,6 +1861,7 @@ export function createPluginApi(options: {
     },
     registerAuthProvider(provider) {
       assertLive();
+      permissionGate.assert("auth.provide", "bb.browser.registerAuthProvider");
       if (typeof provider !== "function") {
         throw new Error(
           "registerAuthProvider(provider) needs a function taking one challenge",
@@ -1832,6 +1871,10 @@ export function createPluginApi(options: {
     },
     registerPdfTextProvider(provider) {
       assertLive();
+      permissionGate.assert(
+        "pdf.provide",
+        "bb.browser.registerPdfTextProvider",
+      );
       if (typeof provider !== "function") {
         throw new Error(
           "registerPdfTextProvider(provider) needs a function taking one document",
@@ -1841,6 +1884,10 @@ export function createPluginApi(options: {
     },
     registerDownloadHandler(handler) {
       assertLive();
+      permissionGate.assert(
+        "downloads.handle",
+        "bb.browser.registerDownloadHandler",
+      );
       if (typeof handler !== "function") {
         throw new Error(
           "registerDownloadHandler(handler) needs a function taking one download",
@@ -2537,10 +2584,14 @@ export function createPluginApi(options: {
   const hosts: PluginHosts = {
     ensureSharedPortTunnel(hostId) {
       assertLive();
+      // Reaching a host, which `sdk.hosts` charges `workspace` for — and this
+      // one does more than read: it mints a gate identity for that machine.
+      permissionGate.assert("workspace", "bb.hosts.ensureSharedPortTunnel");
       return ensureSharedPortTunnel(hostId);
     },
     declareSharedPorts(hostId, ports) {
       assertLive();
+      permissionGate.assert("workspace", "bb.hosts.declareSharedPorts");
       if (activated) declareSharedPorts(hostId, ports);
       else {
         pendingSharedPorts.set(
@@ -2553,6 +2604,11 @@ export function createPluginApi(options: {
   const events: PluginEvents = {
     on(event, handler) {
       assertLive();
+      // Every event here is a thread event, and the payload is the whole
+      // thread — the same data `sdk.threads` and the `thread:changed` feed
+      // both charge for. A push costing less than a pull for identical
+      // content is a hole, not a convenience.
+      permissionGate.assert("threads", "bb.events.on");
       const handlers = threadEventHandlers[event];
       if (handlers === undefined) {
         // Plugin sources are untyped at runtime; fail loudly at registration
@@ -2593,7 +2649,7 @@ export function createPluginApi(options: {
             "use it inside handlers, services, or timers, not at factory load time",
         );
       }
-      wrappedSdk ??= wrapSdkForPlugin(sdk, pluginId);
+      wrappedSdk ??= wrapSdkForPlugin(sdk, pluginId, permissionGate);
       return wrappedSdk;
     },
     onDispose(hook) {

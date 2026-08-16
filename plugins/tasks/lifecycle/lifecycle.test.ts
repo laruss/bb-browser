@@ -1,5 +1,6 @@
 import {
   createFakePluginHost,
+  pluginPermissionsFromManifest,
   makeThreadResponse,
 } from "@bb/plugin-sdk/testing";
 import { describe, expect, it, vi } from "vitest";
@@ -24,6 +25,7 @@ function trackedThreadFixture(
   sdkStatus: "idle" | "starting" | "active" | "stopping" | "error",
 ): TrackedThreadFixture {
   const host = createFakePluginHost({
+    permissions: pluginPermissionsFromManifest(import.meta.url),
     pluginId: "tasks",
     sdk: {
       threads: {
@@ -152,6 +154,7 @@ describe("task thread lifecycle", () => {
         >["harness"]["registrations"]["threadEventHandlers"]
       | undefined;
     const host = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
       sdk: {
         threads: {
@@ -225,6 +228,7 @@ describe("task thread lifecycle", () => {
     vi.useFakeTimers();
     let reads = 0;
     const host = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
       sdk: {
         threads: {
@@ -281,6 +285,7 @@ describe("task thread lifecycle", () => {
   it("backs off reconciliation while no non-terminal task threads exist", async () => {
     vi.useFakeTimers();
     const host = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
       sdk: {
         threads: {
@@ -334,7 +339,10 @@ describe("task thread lifecycle", () => {
   });
 
   it("ignores lifecycle events for non-tracked threads", async () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "tasks" });
+    const { bb, harness } = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
+      pluginId: "tasks",
+    });
     const store = createStore(bb);
     await registerLifecycle(bb, store);
 

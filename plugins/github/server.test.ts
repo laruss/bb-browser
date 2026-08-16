@@ -1,7 +1,10 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 import { defineRpcContract } from "@bb/plugin-sdk";
 import type { PluginRpcClient, PluginRpcHandlers } from "@bb/plugin-sdk";
-import { createFakePluginHost } from "@bb/plugin-sdk/testing";
+import {
+  createFakePluginHost,
+  pluginPermissionsFromManifest,
+} from "@bb/plugin-sdk/testing";
 import {
   fetchRepoItems,
   githubRpcContract,
@@ -154,6 +157,7 @@ describe("GitHub RPC contract", () => {
 
   it("rejects invalid method inputs and outputs at runtime", async () => {
     const { bb, harness } = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "github-contract",
     });
     const contract = defineRpcContract({

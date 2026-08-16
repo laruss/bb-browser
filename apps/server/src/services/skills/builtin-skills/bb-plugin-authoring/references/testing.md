@@ -18,17 +18,26 @@ semantics: real better-sqlite3 temporary storage (never mock the db), the kv
 keyed registration failures, atomic reload, conditional agent configuration,
 request input, and `threads.spawn` plugin attribution.
 
+`bb.permissions` is enforced too, and it defaults to the host's default —
+**declared nothing, reaches nothing gated**. Pass
+`pluginPermissionsFromManifest(import.meta.url)`, which reads your own
+`package.json`: a hand-written list would be a second declaration, free to
+drift from the one that ships, and a suite that grants itself more than the
+manifest does is a suite that passes where the install fails.
+
 Backend (`server.ts`) — `createFakePluginHost()`:
 
 ```ts
 import {
   createFakePluginHost,
   makeThreadResponse,
+  pluginPermissionsFromManifest,
 } from "@bb/plugin-sdk/testing";
 import plugin from "./server";
 
 const { bb, harness } = createFakePluginHost({
   pluginId: "my-plugin",
+  permissions: pluginPermissionsFromManifest(import.meta.url), // what ships
   settings: { apiToken: "tok" }, // pre-seeded stored values (secrets included)
   sdk: { threads: { spawn: async () => ({ id: "th_1" }) } },
 });

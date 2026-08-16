@@ -275,7 +275,9 @@ provider's tool list.
 
 **Everything else** — the plan's Phase 6 (a coding agent creating a browser
 plugin from a natural-language request) now has the browser API it would target.
-The honest follow-ups from this milestone are the plugin permission model
-(plan §9, still absent) and moving the ~9 direct `getDesktopBrowserApi()` call
-sites in the renderer behind the executor's boundary, which Phase 2 asked for and
-which this milestone deliberately did not touch.
+The plugin permission model this milestone listed as absent has since landed —
+see [plugin-permissions.md](plugin-permissions.md), which also explains why it
+specifies Phase 7's boundary rather than replacing it. What remains from here is
+moving the direct `getDesktopBrowserApi()` call sites in the renderer behind the
+executor's boundary, which Phase 2 asked for and which this milestone
+deliberately did not touch.

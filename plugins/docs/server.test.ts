@@ -5,7 +5,10 @@ import path from "node:path";
 import { afterEach, describe, expect, expectTypeOf, it } from "vitest";
 import { defineRpcContract } from "@bb/plugin-sdk";
 import type { PluginRpcClient, PluginRpcHandlers } from "@bb/plugin-sdk";
-import { createFakePluginHost } from "@bb/plugin-sdk/testing";
+import {
+  createFakePluginHost,
+  pluginPermissionsFromManifest,
+} from "@bb/plugin-sdk/testing";
 import simpleNotes, { docsRpcContract } from "./server";
 
 const temporaryDirectories: string[] = [];
@@ -31,6 +34,7 @@ async function loadNotebook(notes: Record<string, string>) {
     ),
   );
   const host = createFakePluginHost({
+    permissions: pluginPermissionsFromManifest(import.meta.url),
     pluginId: "simple-notes",
     sdk: {
       files: {
@@ -114,6 +118,7 @@ async function loadVirtualSyncVault(initial: Record<string, VirtualFile>) {
     });
   };
   const host = createFakePluginHost({
+    permissions: pluginPermissionsFromManifest(import.meta.url),
     pluginId: "simple-notes-sync",
     sdk: {
       files: {
@@ -282,7 +287,10 @@ describe("Docs RPC contract", () => {
   });
 
   it("rejects invalid method inputs and outputs at runtime", async () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "docs-contract" });
+    const { bb, harness } = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
+      pluginId: "docs-contract",
+    });
     const contract = defineRpcContract({
       saveNote: docsRpcContract.saveNote,
     });
@@ -515,6 +523,7 @@ describe("Docs mention provider", () => {
 describe("Docs vault operations", () => {
   it("creates the initial Personal vault without exposing a folder setting", async () => {
     const host = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "simple-notes",
       sdk: {
         files: { mkdir: async () => ({ ok: true as const }) },

@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createFakePluginHost } from "@bb/plugin-sdk/testing";
+import {
+  createFakePluginHost,
+  pluginPermissionsFromManifest,
+} from "@bb/plugin-sdk/testing";
 import { ShareHostResolver } from "./hosts.js";
 import { ShareRegistry } from "./shares.js";
 
@@ -36,6 +39,7 @@ import { DEFAULT_CONNECT_BASE_URL } from "./redeem.js";
 
 function createTunnelFixture() {
   const fakeHost = createFakePluginHost({
+    permissions: pluginPermissionsFromManifest(import.meta.url),
     pluginId: "connect",
     sdk: {
       system: {

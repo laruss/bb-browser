@@ -7,6 +7,71 @@
 
 import { BbPluginApi, PluginSettingValue, PluginSharedPortTunnelIdentity, PluginAgentToolExperimentalStatusLabels, PluginAgentToolContext, PluginAgentToolResult, PluginCliCommandInfo, PluginCliContext, PluginCliResult, PluginHttpAuthMode, PluginHttpHandler, PluginMentionTrigger, PluginMentionSearchContext, PluginMentionItem, PluginBrowserConsoleEntry, PluginBrowserNetworkEntry, PluginBrowserCookie, PluginBrowserStorageItem, PluginBrowserErrorCode, JsonValue, PluginCliExecutionResult, PluginThreadEventName, PluginThreadEventPayloads, PluginAgentConfigurationContext, PluginSettingDescriptors, PluginAgentConfiguration, PluginOmniboxSuggestContext, PluginOmniboxSuggestion, PluginOmniboxRunContext, PluginOmniboxRunResult, PluginKeybinding, PluginBrowserDownloadHandler, PluginBrowserContextMenuItemRegistration, PluginBrowserFindActionRegistration, PluginBrowserAuthProvider, PluginBrowserPdfTextProvider, PluginInteractionRequest } from '@bb/plugin-sdk';
 
+/**
+ * What a plugin declares it will use, and what the host lets it reach.
+ *
+ * Read this before adding one: **in-process, these are not a security boundary
+ * and cannot be.** A plugin's `server.ts` is a Node module loaded into the bb
+ * server, so it can `import("node:child_process")`, read another plugin's
+ * secrets off disk, or skip `bb.sdk` entirely and call the loopback API it is
+ * handed in `bb.server.loopbackBaseUrl`. A gate on the `bb` object stops none
+ * of that. Plan §9 asks for isolation and plan Phase 7 is where it comes from.
+ *
+ * What these are for until then, in the order the value actually arrives:
+ *
+ * 1. **The specification of the Phase 7 RPC surface.** Every entry names an
+ *    operation that must cross a process boundary once plugins move out. A
+ *    plugin host built without this list would isolate the plugin and then hand
+ *    it back everything over RPC.
+ * 2. **A legible contract.** An agent-generated plugin that reaches for
+ *    something it did not declare fails at the call with the permission named,
+ *    which is a fixable message rather than silent extra behaviour.
+ * 3. **Something to show the user** at install time, and in the plugin's detail.
+ *
+ * Undeclared means denied. A plugin with no `bb.permissions` reaches nothing
+ * gated — there is no legacy "everything" mode, because a default of "all"
+ * would leave the list describing intentions instead of the boundary.
+ */
+/**
+ * Every permission, grouped by what it opens. The array is the source of truth:
+ * the zod schema, the manifest validator and the docs guard all read it.
+ */
+declare const PLUGIN_PERMISSIONS: readonly ["tabs.read", "page.read", "network.observe", "tabs.modify", "page.interact", "page.inject", "network.intercept", "page.credentials", "page.record", "omnibox.register", "contextMenu.register", "find.register", "downloads.handle", "auth.provide", "pdf.provide", "threads", "filesystem", "shell", "workspace", "plugins"];
+type PluginPermission = (typeof PLUGIN_PERMISSIONS)[number];
+
+/**
+ * The fake host's half of `bb.permissions`.
+ *
+ * It exists so a plugin's unit tests cannot pass on a manifest the real host
+ * would refuse. The default is the host's default — **declared nothing,
+ * reaches nothing gated** — so a suite that exercises `bb.browser` or
+ * `bb.sdk` must say what the plugin asks for, and saying it wrong fails here
+ * instead of on someone's machine.
+ *
+ * Say it by reading the plugin's own manifest, so the test cannot drift from
+ * what ships — see {@link pluginPermissionsFromManifest}.
+ *
+ * Refusals mirror the server's by `name`, not by class — no runtime class
+ * crosses that boundary, and tests match on the name.
+ */
+/**
+ * The `bb.permissions` of the plugin owning `from`, read off disk.
+ *
+ * Pass `import.meta.url` from the test. Reading the real manifest is the whole
+ * point: a hand-written list in the test would be a second declaration, free
+ * to say the plugin needs something it does not, or — worse — to keep passing
+ * after the manifest drops an entry the code still uses.
+ *
+ * Walks up to the nearest `package.json` that declares `bb.server`, so tests
+ * in subdirectories work without naming a path.
+ */
+declare function pluginPermissionsFromManifest(from: string): readonly PluginPermission[];
+interface FakePermissionGate {
+    has(permission: PluginPermission): boolean;
+    assert(permission: PluginPermission, what: string): void;
+    readonly granted: readonly PluginPermission[];
+}
+
 type BbSdk = BbPluginApi["sdk"];
 /**
  * Recordable `bb.sdk` stand-in for {@link createFakePluginHost}. Every call
@@ -44,6 +109,7 @@ interface FakeSdkHarness {
 declare function createFakeSdk(options: {
     pluginId: string;
     overrides?: FakeSdkOverrides;
+    permissions: FakePermissionGate;
 }): {
     sdk: BbSdk;
     harness: FakeSdkHarness;
@@ -374,6 +440,15 @@ interface CreateFakePluginHostOptions {
     agentSkillIds?: readonly string[];
     /** Read-only identities returned by bb.hosts.ensureSharedPortTunnel. */
     sharedPortTunnelIdentities?: Record<string, PluginSharedPortTunnelIdentity>;
+    /**
+     * What `bb.permissions` declares. Defaults to none, like the host — so a
+     * suite touching `bb.browser` or `bb.sdk` must say what the plugin asks
+     * for, and cannot pass on a manifest an install would refuse.
+     *
+     * Read it from the plugin's own manifest so the two cannot drift:
+     * `permissions: pluginPermissionsFromManifest(import.meta.url)`.
+     */
+    permissions?: readonly PluginPermission[];
 }
 interface FakePluginHost {
     bb: BbPluginApi;
@@ -390,5 +465,5 @@ type ThreadResponse = PluginThreadEventPayloads["thread.created"]["thread"];
  */
 declare function makeThreadResponse(overrides?: Partial<ThreadResponse>): ThreadResponse;
 
-export { PluginContextStaleError, createFakePluginHost, createFakeSdk, makeThreadResponse };
-export type { CreateFakePluginHostOptions, FakeAgentToolRecord, FakeCliRecord, FakeHttpRouteRecord, FakeLogEntry, FakeLogLevel, FakeMentionProviderRecord, FakePluginBehaviorDrivers, FakePluginHarness, FakePluginHost, FakePluginInspectionState, FakePluginLifecycleControls, FakePluginRegistrations, FakeRealtimeSignal, FakeScheduleRecord, FakeSdkCall, FakeSdkHarness, FakeSdkOverrides, FakeServiceRecord };
+export { PluginContextStaleError, createFakePluginHost, createFakeSdk, makeThreadResponse, pluginPermissionsFromManifest };
+export type { CreateFakePluginHostOptions, FakeAgentToolRecord, FakeCliRecord, FakeHttpRouteRecord, FakeLogEntry, FakeLogLevel, FakeMentionProviderRecord, FakePermissionGate, FakePluginBehaviorDrivers, FakePluginHarness, FakePluginHost, FakePluginInspectionState, FakePluginLifecycleControls, FakePluginRegistrations, FakeRealtimeSignal, FakeScheduleRecord, FakeSdkCall, FakeSdkHarness, FakeSdkOverrides, FakeServiceRecord };

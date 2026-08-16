@@ -17,6 +17,7 @@ The complete manifest, with the optional fields SKILL.md leaves out:
     "branding": { "icon": "Zap" },
     "server": "./server.ts",
     "app": "./app.tsx",
+    "permissions": ["tabs.read", "threads"],
     "skills": ["skills"]
   }
 }
@@ -45,6 +46,59 @@ The complete manifest, with the optional fields SKILL.md leaves out:
   `bb plugin build` needs no server, and depending on `bb-app@X` builds
   against exactly that release's shim configuration. bb downloads its build
   toolchain on first use, so cache `<dataDir>/plugins/toolchain-*` in CI.
+- `bb.permissions` (optional, but **undeclared means denied**) — what this
+  plugin may reach through `bb.browser` and `bb.sdk`. Absent or `[]` reaches
+  nothing gated; the first call to a surface you did not declare throws with
+  the permission named, and registering a browser contribution you did not
+  declare fails the factory, so the plugin loads in `error`. Add entries as
+  you need them, then `bb plugin reload <id>`. An unknown string is rejected
+  at install, so a typo cannot silently grant nothing.
+
+  | Permission             | Opens                                                                                                                                 |
+  | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+  | `tabs.read`            | `browser.tabs.list`, `page.url`, `page.title`                                                                                         |
+  | `tabs.modify`          | opening, closing, activating tabs and `browser.navigation.*`                                                                          |
+  | `page.read`            | page text, selection, snapshot, screenshot, PDF, console                                                                              |
+  | `page.interact`        | `page.act`, answering page dialogs, mouse input                                                                                       |
+  | `page.inject`          | `browser.control.evaluate` — arbitrary JavaScript in the page                                                                         |
+  | `network.observe`      | the page's network log, including headers                                                                                             |
+  | `network.intercept`    | route mocking, unrouting, forcing a tab offline                                                                                       |
+  | `page.credentials`     | `browser.storage.*` — the user's cookies and site storage                                                                             |
+  | `page.record`          | `browser.recording.*` — traces and video                                                                                              |
+  | `omnibox.register`     | `browser.registerOmniboxProvider` (sees everything typed in the address bar)                                                          |
+  | `contextMenu.register` | `browser.registerContextMenuItem` (receives the selection or link clicked)                                                            |
+  | `find.register`        | `browser.registerFindAction` (receives the find query)                                                                                |
+  | `downloads.handle`     | `browser.registerDownloadHandler`                                                                                                     |
+  | `auth.provide`         | `browser.registerAuthProvider`                                                                                                        |
+  | `pdf.provide`          | `browser.registerPdfTextProvider`                                                                                                     |
+  | `threads`              | `sdk.threads`, `sdk.threadSections`, `sdk.subscribe({event:"thread:changed"})`                                                        |
+  | `filesystem`           | `sdk.files`                                                                                                                           |
+  | `shell`                | `sdk.terminals`                                                                                                                       |
+  | `workspace`            | `sdk.projects`, `environments`, `hosts`, `providers`, `skills`, `system`, `theme`, `status`, `guide`, and the other `subscribe` feeds |
+  | `plugins`              | `sdk.plugins`                                                                                                                         |
+
+  The same list applies to the loopback API, not only to the `bb.sdk` object:
+  your plugin's SDK client identifies itself, so calling
+  `bb.server.loopbackBaseUrl` with `fetch` is checked exactly like the
+  equivalent `bb.sdk` call and answers 403 the same way. Three calls cost more
+  than their area suggests, because of what they reach:
+  `sdk.environments.archiveThreads` and `sdk.status.get` also need `threads`,
+  and `sdk.threadSections.list` also needs `workspace` (it reads a route that
+  answers with every project).
+
+  These gate the bb API, not the process. A plugin is full-trust code in the
+  bb server and can still use `node:fs` or spawn a shell. Declaring less does
+  not sandbox a plugin — it records what the plugin uses, shows it to whoever
+  installs it, and refuses calls it did not ask for. `bb.log`, `bb.settings`,
+  `bb.storage`, `bb.http`, `bb.rpc`, `bb.realtime`, `bb.background`,
+  `bb.cli`, `bb.agents`, `bb.ui`, `bb.events`, `bb.hosts` and
+  `bb.browser.getStatus()` are ungated: they reach the plugin's own resources
+  or report only whether a browser window is connected.
+
+  `@bb/plugin-sdk/testing` enforces the same list, so a suite that exercises
+  a surface the manifest omits fails in the test rather than on install — pass
+  `pluginPermissionsFromManifest(import.meta.url)` and it reads this file.
+
 - `bb.skills` (optional) — relocates the auto-imported skills directories
   (default `skills/`; `[]` opts out). Every `skills/<name>/SKILL.md` is
   injected into agent threads as the plugin skills tier.

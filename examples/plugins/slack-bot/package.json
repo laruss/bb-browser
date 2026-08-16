@@ -13,7 +13,10 @@
     "branding": {
       "icon": "Zap"
     },
-    "server": "./server.ts"
+    "server": "./server.ts",
+    "permissions": [
+      "threads"
+    ]
   },
   "keywords": [
     "bb-plugin"

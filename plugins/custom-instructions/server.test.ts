@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { createFakePluginHost } from "@bb/plugin-sdk/testing";
+import {
+  createFakePluginHost,
+  pluginPermissionsFromManifest,
+} from "@bb/plugin-sdk/testing";
 import plugin, { MAX_CUSTOM_INSTRUCTIONS_LENGTH } from "./server";
 
 describe("custom instructions plugin", () => {
   it("loads persisted instructions and contributes them to agent tasks", async () => {
     const { bb, harness } = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "custom-instructions",
     });
     await bb.storage.kv.set("customInstructions", "Use concise answers.");
@@ -25,6 +29,7 @@ describe("custom instructions plugin", () => {
 
   it("persists saves and applies them immediately", async () => {
     const { bb, harness } = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "custom-instructions",
     });
     await plugin(bb);
@@ -50,6 +55,7 @@ describe("custom instructions plugin", () => {
 
   it("provides CLI parity for reading and updating instructions", async () => {
     const { bb, harness } = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "custom-instructions",
     });
     await plugin(bb);
@@ -71,6 +77,7 @@ describe("custom instructions plugin", () => {
 
   it("contributes nothing for blank text and rejects malformed or oversized saves", async () => {
     const { bb, harness } = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "custom-instructions",
     });
     await plugin(bb);

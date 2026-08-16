@@ -215,6 +215,7 @@ function serverPlugin(
     schedules: [],
     cliCommand: null,
     capabilities: [],
+    permissions: [],
     hasSettings: true,
     app: { hasApp: false, bundle: null },
     logoUrl: null,
@@ -489,9 +490,9 @@ describe("PluginSettingsDetail settings gating", () => {
       expect(requests.some((request) => request.init?.method === "POST")).toBe(
         true,
       );
-      expect(
-        requests.some((request) => request.init?.method !== "POST"),
-      ).toBe(true);
+      expect(requests.some((request) => request.init?.method !== "POST")).toBe(
+        true,
+      );
     });
 
     const pendingSwitch = screen.getByRole("switch", {

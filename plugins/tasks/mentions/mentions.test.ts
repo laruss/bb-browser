@@ -1,11 +1,17 @@
-import { createFakePluginHost } from "@bb/plugin-sdk/testing";
+import {
+  createFakePluginHost,
+  pluginPermissionsFromManifest,
+} from "@bb/plugin-sdk/testing";
 import { describe, expect, it } from "vitest";
 
 import { createStore } from "../api";
 import { registerMentions } from ".";
 
 function setup() {
-  const { bb, harness } = createFakePluginHost({ pluginId: "tasks" });
+  const { bb, harness } = createFakePluginHost({
+    permissions: pluginPermissionsFromManifest(import.meta.url),
+    pluginId: "tasks",
+  });
   const store = createStore(bb);
   registerMentions(bb, store);
   const provider = harness.registrations.mentionProviders[0];

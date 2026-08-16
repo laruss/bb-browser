@@ -33,6 +33,11 @@
     },
     "server": "./server.ts",
     "app": "./app.tsx",
+    "permissions": [
+      "filesystem",
+      "threads",
+      "workspace"
+    ],
     "skills": [
       "skills"
     ]

@@ -8,6 +8,7 @@ import {
 } from "@testing-library/react";
 import {
   createFakePluginHost,
+  pluginPermissionsFromManifest,
   makeThreadResponse,
 } from "@bb/plugin-sdk/testing";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -116,7 +117,9 @@ describe("AttachmentTracks", () => {
   it("keeps each caption inside its own image figure", () => {
     const screen = render(
       <AttachmentTracks
-        attachments={[attachment("01HZZZZZZZZZZZZZZZZZZZZ1I1", "shot.png", true)]}
+        attachments={[
+          attachment("01HZZZZZZZZZZZZZZZZZZZZ1I1", "shot.png", true),
+        ]}
         onOpenImage={() => {}}
       />,
     );
@@ -260,6 +263,7 @@ async function renderComposerWithTask(options?: {
     releaseSend = () => {};
   }
   const { bb, harness } = createFakePluginHost({
+    permissions: pluginPermissionsFromManifest(import.meta.url),
     pluginId: "tasks",
     sdk: {
       threads: {
@@ -424,9 +428,8 @@ describe("CommentComposer", () => {
       });
       expect(rpcCall).not.toHaveBeenCalled();
       expect(
-        (
-          screen.getByRole("button", { name: "Comment" }) as HTMLButtonElement
-        ).disabled,
+        (screen.getByRole("button", { name: "Comment" }) as HTMLButtonElement)
+          .disabled,
       ).toBe(true);
     } finally {
       releaseSend();

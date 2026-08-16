@@ -1,11 +1,15 @@
 import { describe, expect, it, vi } from "vitest";
-import { createFakePluginHost } from "@bb/plugin-sdk/testing";
+import {
+  createFakePluginHost,
+  pluginPermissionsFromManifest,
+} from "@bb/plugin-sdk/testing";
 import plugin from "./server.js";
 
 describe("secrets plugin server", () => {
   it("requests multiple values once and writes them without returning them", async () => {
     let writtenContent = "";
     const host = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "secrets",
       sdk: {
         threads: {
@@ -84,6 +88,7 @@ describe("secrets plugin server", () => {
 
   it("preserves an absolute dotenv destination outside the CLI working directory", async () => {
     const host = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "secrets",
       sdk: {
         threads: {
@@ -135,7 +140,10 @@ describe("secrets plugin server", () => {
   ])(
     "reports a usage error for missing option values",
     async ({ argv, message }) => {
-      const host = createFakePluginHost({ pluginId: "secrets" });
+      const host = createFakePluginHost({
+        permissions: pluginPermissionsFromManifest(import.meta.url),
+        pluginId: "secrets",
+      });
       plugin(host.bb as unknown as Parameters<typeof plugin>[0]);
 
       const result = await host.harness.runCli(argv, {

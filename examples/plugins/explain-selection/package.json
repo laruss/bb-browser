@@ -13,7 +13,12 @@
     "branding": {
       "icon": "Puzzle"
     },
-    "server": "./server.ts"
+    "server": "./server.ts",
+    "permissions": [
+      "contextMenu.register",
+      "tabs.modify",
+      "threads"
+    ]
   },
   "keywords": [
     "bb-plugin"

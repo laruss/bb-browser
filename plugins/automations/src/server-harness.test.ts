@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   createFakePluginHost,
+  pluginPermissionsFromManifest,
   makeThreadResponse,
   PluginContextStaleError,
   type FakePluginHost,
@@ -48,6 +49,7 @@ async function bootAutomationsPlugin(
   routedPermissionModes?: Array<"accept-edits" | "auto" | "full">,
 ): Promise<FakePluginHost> {
   const host = createFakePluginHost({
+    permissions: pluginPermissionsFromManifest(import.meta.url),
     pluginId: "automations",
     sdk: {
       projects: {
@@ -749,10 +751,7 @@ describe("automations server plugin harness", () => {
   });
 
   it("validates permission updates against the automation target environment", async () => {
-    const { harness } = await bootAutomationsPlugin(
-      ["accept-edits"],
-      ["full"],
-    );
+    const { harness } = await bootAutomationsPlugin(["accept-edits"], ["full"]);
     const created = await createAgentAutomation(harness);
 
     await expect(

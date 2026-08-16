@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createFakePluginHost,
+  pluginPermissionsFromManifest,
   makeThreadResponse,
 } from "@bb/plugin-sdk/testing";
 import plugin from "./server.js";
@@ -95,7 +96,10 @@ afterEach(() => {
 
 describe("provider retry scheduler", () => {
   it("exposes only the maximum wait setting and retry management commands", async () => {
-    const host = createFakePluginHost({ pluginId: "provider-retry" });
+    const host = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
+      pluginId: "provider-retry",
+    });
     await plugin(host.bb);
 
     expect(host.harness.registrations.settingsDescriptors).toEqual({
@@ -116,6 +120,7 @@ describe("provider retry scheduler", () => {
 
   it("does not create an unhandled rejection when reconciliation fails", async () => {
     const host = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "provider-retry",
       sdk: {
         threads: {
@@ -141,6 +146,7 @@ describe("provider retry scheduler", () => {
       requestId: "continuation-request",
     }));
     const host = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "provider-retry",
       sdk: {
         threads: {
@@ -183,6 +189,7 @@ describe("provider retry scheduler", () => {
   it("cancels pending retries through RPC and CLI", async () => {
     const continueAfterRateLimit = vi.fn();
     const host = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "provider-retry",
       sdk: {
         threads: {
@@ -224,6 +231,7 @@ describe("provider retry scheduler", () => {
   it("drops the retry when the user starts another turn", async () => {
     const continueAfterRateLimit = vi.fn();
     const host = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "provider-retry",
       sdk: {
         threads: {
@@ -256,6 +264,7 @@ describe("provider retry scheduler", () => {
     const resetAtMs = NOW_MS + 7 * 60 * 60 * 1_000;
     const continueAfterRateLimit = vi.fn();
     const host = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "provider-retry",
       sdk: {
         threads: {
@@ -303,6 +312,7 @@ describe("provider retry scheduler", () => {
   it("ignores limits that cannot be retried automatically", async () => {
     const continueAfterRateLimit = vi.fn();
     const host = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "provider-retry",
       sdk: {
         threads: {
@@ -342,6 +352,7 @@ describe("provider retry scheduler", () => {
         | null,
     };
     const host = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "provider-retry",
       sdk: {
         subscribe: ({ event, callback }) => {
@@ -389,6 +400,7 @@ describe("provider retry scheduler", () => {
       throw new Error("This thread is awaiting user interaction");
     });
     const host = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "provider-retry",
       sdk: {
         threads: {
@@ -426,6 +438,7 @@ describe("provider retry scheduler", () => {
   it("clears in-memory timers when the plugin is disposed", async () => {
     const continueAfterRateLimit = vi.fn();
     const host = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "provider-retry",
       sdk: {
         threads: {

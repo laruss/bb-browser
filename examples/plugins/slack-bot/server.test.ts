@@ -4,6 +4,7 @@ import { createHmac } from "node:crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   createFakePluginHost,
+  pluginPermissionsFromManifest,
   makeThreadResponse,
   type FakePluginHost,
 } from "@bb/plugin-sdk/testing";
@@ -40,6 +41,7 @@ function mentionEvent(args: { text: string; ts: string; threadTs?: string }) {
 
 async function loadConfigured(): Promise<FakePluginHost> {
   const host = createFakePluginHost({
+    permissions: pluginPermissionsFromManifest(import.meta.url),
     pluginId: "slack-bot",
     settings: {
       botToken: "xoxb-test",
@@ -147,7 +149,10 @@ describe("slack-bot webhook", () => {
   });
 
   it("reports needs-configuration and serves 503 when unconfigured", async () => {
-    const host = createFakePluginHost({ pluginId: "slack-bot" });
+    const host = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
+      pluginId: "slack-bot",
+    });
     await slackBot(host.bb);
     expect(host.harness.needsConfigurationMessages).toHaveLength(1);
 

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   createFakePluginHost,
+  pluginPermissionsFromManifest,
   type FakePluginHost,
 } from "@bb/plugin-sdk/testing";
 import type { PluginAgentConfigurationContext } from "@bb/plugin-sdk";
@@ -9,7 +10,10 @@ import { TOOL_INPUT_JSON_SCHEMA } from "./tool-definition.js";
 import type { InteractionPayload, ToolResult } from "./contracts.js";
 
 function createHost(): FakePluginHost {
-  const host = createFakePluginHost({ pluginId: "ask-user-question" });
+  const host = createFakePluginHost({
+    permissions: pluginPermissionsFromManifest(import.meta.url),
+    pluginId: "ask-user-question",
+  });
   plugin(host.bb as unknown as Parameters<typeof plugin>[0]);
   return host;
 }
@@ -184,7 +188,10 @@ describe("asking a question", () => {
     // A thread holds one interaction at a time; the server rejects the second
     // with this error. The fake host queues instead of rejecting, so the
     // server's failure is injected directly.
-    const host = createFakePluginHost({ pluginId: "ask-user-question" });
+    const host = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
+      pluginId: "ask-user-question",
+    });
     host.bb.ui.requestInput = () =>
       Promise.reject(
         new Error("Thread thr-test is already awaiting user interaction"),

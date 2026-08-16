@@ -15,6 +15,11 @@
     },
     "server": "./src/server.ts",
     "app": "./src/app.tsx",
+    "permissions": [
+      "filesystem",
+      "threads",
+      "workspace"
+    ],
     "skills": [
       "skills"
     ]

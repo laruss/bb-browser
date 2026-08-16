@@ -191,6 +191,92 @@ describe("bb.agents.registerTool", () => {
     expect(service.findAgentTool("missing_tool")).toBeUndefined();
   });
 
+  /**
+   * The signal a tool receives is derived from a cancel message rather than
+   * forwarded (see plugin-cancellation.ts), so the property that matters is
+   * that an abort still arrives — through the relay, in the real call path.
+   */
+  it("cancels a running tool through the relay", async () => {
+    const rootDir = await writePlugin(workDir, {
+      name: "bb-plugin-cancellable",
+      serverSource: `
+        export default function plugin(bb: any) {
+          bb.agents.registerTool({
+            name: "waits_for_abort",
+            description: "Resolves when its call is cancelled",
+            parameters: { type: "object" },
+            execute: (_params: any, ctx: any) =>
+              new Promise((resolve) => {
+                if (ctx.signal.aborted) return resolve("already aborted");
+                ctx.signal.addEventListener(
+                  "abort",
+                  () => resolve("aborted: " + ctx.signal.reason.name),
+                  { once: true },
+                );
+              }),
+          });
+        }
+      `,
+    });
+    await service.installPath(rootDir);
+    const found = service.findAgentTool("waits_for_abort")!;
+
+    const controller = new AbortController();
+    const running = service.invokeAgentTool({
+      ...found,
+      input: {},
+      ctx: {
+        threadId: "thr_1",
+        projectId: "proj_1",
+        signal: controller.signal,
+      },
+    });
+    controller.abort();
+
+    // The rebuilt reason keeps the name callers branch on, which is the one
+    // observable difference a derived signal could have introduced.
+    await expect(running).resolves.toEqual({
+      success: true,
+      contentItems: [{ type: "inputText", text: "aborted: AbortError" }],
+    });
+  });
+
+  it("cancels a tool whose call was aborted before it started", async () => {
+    const rootDir = await writePlugin(workDir, {
+      name: "bb-plugin-late",
+      serverSource: `
+        export default function plugin(bb: any) {
+          bb.agents.registerTool({
+            name: "reads_abort",
+            description: "Reports whether it was already cancelled",
+            parameters: { type: "object" },
+            execute: (_params: any, ctx: any) =>
+              "aborted=" + String(ctx.signal.aborted),
+          });
+        }
+      `,
+    });
+    await service.installPath(rootDir);
+    const found = service.findAgentTool("reads_abort")!;
+
+    // An abort that already happened fires no event: waiting for one would
+    // start a call that can never be cancelled.
+    await expect(
+      service.invokeAgentTool({
+        ...found,
+        input: {},
+        ctx: {
+          threadId: "thr_1",
+          projectId: "proj_1",
+          signal: AbortSignal.abort(),
+        },
+      }),
+    ).resolves.toEqual({
+      success: true,
+      contentItems: [{ type: "inputText", text: "aborted=true" }],
+    });
+  });
+
   it("zod parameters: converted to JSON schema, validated per call, bad input is not a plugin error", async () => {
     const rootDir = await writePlugin(workDir, {
       name: "bb-plugin-zodded",

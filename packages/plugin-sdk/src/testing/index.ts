@@ -28,6 +28,10 @@ export {
   type FakeServiceRecord,
 } from "./fake-plugin-host.js";
 export {
+  pluginPermissionsFromManifest,
+  type FakePermissionGate,
+} from "./fake-permissions.js";
+export {
   createFakeSdk,
   type FakeSdkCall,
   type FakeSdkHarness,

@@ -12,6 +12,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import {
   createFakePluginHost,
+  pluginPermissionsFromManifest,
   makeThreadResponse,
 } from "@bb/plugin-sdk/testing";
 import { describe, expect, it, vi } from "vitest";
@@ -90,7 +91,10 @@ function stdout(result: {
 
 describe("bb tasks CLI", () => {
   it("lists seed-demo in help while retaining the explicit confirmation guard", async () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "tasks" });
+    const { bb, harness } = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
+      pluginId: "tasks",
+    });
     await plugin(bb);
 
     expect(stdout(await harness.runCli(["--help"]))).toContain(
@@ -106,6 +110,7 @@ describe("bb tasks CLI", () => {
 
   it("runs create, list, show, update, and comment through case-insensitive key addressing", async () => {
     const { bb, harness } = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
       sdk: {
         threads: {
@@ -269,7 +274,10 @@ describe("bb tasks CLI", () => {
   });
 
   it("assigns and promotes task parents by key or ID with stable JSON output", async () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "tasks" });
+    const { bb, harness } = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
+      pluginId: "tasks",
+    });
     await plugin(bb);
 
     stdout(
@@ -359,7 +367,10 @@ describe("bb tasks CLI", () => {
   });
 
   it("rejects conflicting or invalid parent updates without mutation", async () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "tasks" });
+    const { bb, harness } = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
+      pluginId: "tasks",
+    });
     await plugin(bb);
 
     for (const project of [
@@ -460,7 +471,10 @@ describe("bb tasks CLI", () => {
   });
 
   it("sorts list output by priority or due date and rejects unknown sorts", async () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "tasks" });
+    const { bb, harness } = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
+      pluginId: "tasks",
+    });
     await plugin(bb);
 
     stdout(
@@ -543,7 +557,10 @@ describe("bb tasks CLI", () => {
   });
 
   it("traverses a project whose former single JSON response exceeds 64 KiB", async () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "tasks" });
+    const { bb, harness } = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
+      pluginId: "tasks",
+    });
     await plugin(bb);
     const store = createStore(bb);
     const project = store.tasks.createProject({
@@ -624,7 +641,10 @@ describe("bb tasks CLI", () => {
   });
 
   it("defaults create and list to the tracker project linked to CLI project context", async () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "tasks" });
+    const { bb, harness } = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
+      pluginId: "tasks",
+    });
     await plugin(bb);
     const context = { projectId: "proj_linked" };
 
@@ -674,7 +694,10 @@ describe("bb tasks CLI", () => {
   });
 
   it("returns single-line friendly errors for invalid statuses and unknown keys", async () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "tasks" });
+    const { bb, harness } = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
+      pluginId: "tasks",
+    });
     await plugin(bb);
     stdout(
       await harness.runCli([
@@ -717,7 +740,10 @@ describe("bb tasks CLI", () => {
   });
 
   it("validates combined project and folder updates before mutating", async () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "tasks" });
+    const { bb, harness } = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
+      pluginId: "tasks",
+    });
     await plugin(bb);
     stdout(
       await harness.runCli([
@@ -778,6 +804,7 @@ describe("bb tasks CLI", () => {
 
   it("creates, updates, lists, and deletes delegation presets", async () => {
     const { bb, harness } = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
       sdk: {
         hosts: {
@@ -882,7 +909,10 @@ describe("bb tasks CLI", () => {
   });
 
   it("reports friendly preset target validation errors", async () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "tasks" });
+    const { bb, harness } = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
+      pluginId: "tasks",
+    });
     await plugin(bb);
     const required = [
       "preset",
@@ -924,6 +954,7 @@ describe("bb tasks CLI", () => {
 
   it("self-attaches through BB_THREAD_ID and lists the live thread status", async () => {
     const { bb, harness } = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
       sdk: {
         threads: {
@@ -1041,6 +1072,7 @@ describe("bb tasks CLI", () => {
       new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
     );
     const { bb, harness } = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
       sdk: { files: localFilesSdk() },
     });
@@ -1153,6 +1185,7 @@ describe("bb tasks CLI", () => {
     await writeFile(boomPath, "will fail at blob write", "utf8");
     await writeFile(lastPath, "last", "utf8");
     const { bb, harness } = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
       sdk: { files: localFilesSdk() },
     });
@@ -1232,6 +1265,7 @@ describe("bb tasks CLI", () => {
 
   it("shows attached-thread pull requests in show output and JSON", async () => {
     const { bb, harness } = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
       sdk: {
         threads: {
@@ -1339,6 +1373,7 @@ describe("bb tasks CLI", () => {
 
   it("flags threads whose PR lookup failed in show output", async () => {
     const { bb, harness } = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
       sdk: {
         threads: {
@@ -1399,6 +1434,7 @@ describe("bb tasks CLI", () => {
       new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
     );
     const { bb, harness } = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
       sdk: { files: localFilesSdk() },
     });
@@ -1632,6 +1668,7 @@ describe("bb tasks CLI", () => {
       ],
     ]);
     const { bb, harness } = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
       sdk: {
         threads: {
@@ -1763,7 +1800,10 @@ describe("bb tasks CLI", () => {
   });
 
   it("returns a friendly dispatch error when the task project is not linked", async () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "tasks" });
+    const { bb, harness } = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
+      pluginId: "tasks",
+    });
     await plugin(bb);
     stdout(
       await harness.runCli([

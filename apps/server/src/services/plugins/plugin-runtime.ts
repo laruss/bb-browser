@@ -1,4 +1,9 @@
-import { existsSync, readFileSync, realpathSync, type FSWatcher } from "node:fs";
+import {
+  existsSync,
+  readFileSync,
+  realpathSync,
+  type FSWatcher,
+} from "node:fs";
 import { readFile, stat } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -9,7 +14,24 @@ import semver from "semver";
 import { PLUGIN_SDK_MAJOR, PLUGIN_SDK_VERSION, type Thread } from "@bb/domain";
 import { buildPluginApp, PLUGIN_SERVER_EXTERNALS } from "@bb/plugin-build";
 import { getPluginBuildToolchain } from "./build-toolchain.js";
-import { createNodeBbSdk, type BbSdk } from "@bb/sdk";
+import {
+  createNodeBbSdk,
+  createNodeWebsocketFactory,
+  createRequestTimeoutFetch,
+  DEFAULT_BB_REQUEST_TIMEOUT_MS,
+  type BbSdk,
+} from "@bb/sdk";
+import {
+  createPluginApiFetch,
+  createPluginApiIdentities,
+  pluginApiHeaders,
+} from "./plugin-api-identity.js";
+import { linkCancellation } from "./plugin-cancellation.js";
+import {
+  assertCallbackCrosses,
+  describeCallback,
+  type PluginCallback,
+} from "./plugin-callbacks.js";
 import {
   getInstalledPlugin,
   listInstalledPlugins,
@@ -401,12 +423,48 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
   // reload cannot hide cost); removed with the plugin registration.
   const handlerStats = new Map<string, PluginHandlerStats>();
   // Bound once the HTTP listener is up; bb.sdk is gated on it (design §3
-  // two-phase load/bind). One shared instance — plugin-api wraps it per
-  // plugin for spawn attribution.
-  let boundSdk: BbSdk | undefined;
-  // The server's own loopback base URL, bound alongside the SDK; backs the
-  // bind-gated bb.server.loopbackBaseUrl.
+  // two-phase load/bind).
+  //
+  // One client per plugin rather than one shared: each carries that plugin's
+  // identity headers, so the API can apply its permissions to traffic that
+  // arrives as HTTP — which is what `bb.sdk` is. See plugin-api-identity.ts.
   let boundLoopbackBaseUrl: string | undefined;
+  const pluginSdks = new Map<string, BbSdk>();
+  // Owned here rather than injected: it is the loader that knows which plugins
+  // exist, and a dep would have to be threaded through every hand-built test
+  // deps object for something none of them exercise.
+  const apiIdentities = createPluginApiIdentities();
+  /** Correlates a cancel message with the call it cancels. */
+  let callSequence = 0;
+
+  function sdkFor(pluginId: string): BbSdk | undefined {
+    if (boundLoopbackBaseUrl === undefined) return undefined;
+    let sdk = pluginSdks.get(pluginId);
+    if (sdk === undefined) {
+      const key = apiIdentities.keyFor(pluginId);
+      sdk = createNodeBbSdk({
+        baseUrl: boundLoopbackBaseUrl,
+        // Wrapped around the timeout fetch, not instead of it: supplying
+        // `fetch` opts out of the one createNodeTransport would have added,
+        // and a hung route would leave the plugin's promise pending forever.
+        fetch: createPluginApiFetch({
+          pluginId,
+          key,
+          fetch: createRequestTimeoutFetch({
+            timeoutMs: DEFAULT_BB_REQUEST_TIMEOUT_MS,
+          }),
+        }),
+        // The realtime socket identifies itself too. `/ws` is not under
+        // `/api/v1`, so the request gate never sees it — without this, a
+        // plugin's subscriptions would be the one unpoliced way in.
+        websocket: createNodeWebsocketFactory({
+          headers: pluginApiHeaders({ pluginId, key }),
+        }),
+      });
+      pluginSdks.set(pluginId, sdk);
+    }
+    return sdk;
+  }
 
   function publishStatus(
     id: string,
@@ -664,6 +722,55 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
   }
 
   /**
+   * `invokeWrapped` with the call described instead of anonymous.
+   *
+   * The closure still runs in-process — this changes nothing about how a call
+   * executes. What it changes is that every server→plugin call now says what
+   * it is sending, in a vocabulary a transport could carry, which is what plan
+   * Phase 7 has to replace the closure with.
+   *
+   * `run` receives the declared payload rather than closing over its own copy.
+   * That is the whole reason this is not just a nicer label: the description
+   * and the argument are one value, so they cannot disagree — and under test
+   * the value is checked against what the description claims about it.
+   *
+   * Its second argument is the cancellation signal, which is deliberately not
+   * in the payload: a signal is a capability, so it travels as its own message
+   * (./plugin-cancellation.ts) and the far side builds a signal from it. Today
+   * that far side is this same process, which is what makes the relay
+   * exercised by every cancellable call in the suite rather than described.
+   */
+  async function invokeCallback<TPayload, TResult>(
+    id: string,
+    call: PluginCallback<TPayload>,
+    run: (
+      payload: TPayload,
+      signal: AbortSignal | undefined,
+    ) => TResult | Promise<TResult>,
+    cancellation?: { source: AbortSignal | undefined },
+  ): Promise<
+    { ok: true; value: TResult } | { ok: false; error: string; cause: unknown }
+  > {
+    assertCallbackCrosses(call, "payload", call.payload);
+    callSequence += 1;
+    const { signal, detach } = linkCancellation({
+      callId: `${id}:${callSequence}`,
+      source: cancellation?.source,
+    });
+    try {
+      const outcome = await invokeWrapped(id, describeCallback(call), () =>
+        run(call.payload, signal),
+      );
+      if (outcome.ok) assertCallbackCrosses(call, "result", outcome.value);
+      return outcome;
+    } finally {
+      // A source signal outlives the calls made under it — one CLI request,
+      // many calls — so the listener has to come off when this one settles.
+      detach();
+    }
+  }
+
+  /**
    * Reload sequence step 3 (design §3): bounded wait for in-flight handler
    * invocations so dispose does not close database handles or invalidate the
    * API under a still-running rpc/http/event handler.
@@ -694,7 +801,11 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
     handler: (payload: PluginThreadEventPayloads[E]) => void | Promise<void>,
     payload: PluginThreadEventPayloads[E],
   ): Promise<void> {
-    await invokeWrapped(id, `${event} handler`, () => handler(payload));
+    await invokeCallback(
+      id,
+      { kind: "threadEvent", target: event, payload },
+      (delivered) => handler(delivered),
+    );
   }
 
   /**
@@ -1067,10 +1178,11 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
     );
     const handle = createPluginApi({
       pluginId: row.id,
+      permissions: manifest.permissions,
       logger: deps.logger,
       db: deps.db,
       dataDir: deps.dataDir,
-      getSdk: () => boundSdk,
+      getSdk: () => sdkFor(row.id),
       getLoopbackBaseUrl: () => boundLoopbackBaseUrl,
       publishSignal: (channel, payload) => {
         deps.hub.notifyPluginSignal(row.id, channel, payload);
@@ -1150,7 +1262,9 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
       // Fresh instance per load: guarantees re-imports see current sources.
       const jiti = createJiti(import.meta.url, {
         moduleCache: false,
-        ...(pluginExternalsAlias === undefined ? {} : { alias: pluginExternalsAlias }),
+        ...(pluginExternalsAlias === undefined
+          ? {}
+          : { alias: pluginExternalsAlias }),
       });
       // Same jiti instance for source and prebuilt dist/server.js, so the
       // @bb/plugin-sdk resolution applies identically to both.
@@ -1332,6 +1446,19 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
     deps.sharedPorts?.clearDeclarationsForOwner(id);
   }
 
+  /**
+   * A plugin is gone for good, not reloading.
+   *
+   * Kept out of `disposeOne`, which also runs on every reload: dropping the
+   * client there minted a new one — and a new realtime socket — per reload,
+   * while the previous socket stayed open on the hub with no owner. The client
+   * and the key belong to the plugin id, which a reload does not change.
+   */
+  function forgetPluginApiClient(id: string): void {
+    pluginSdks.delete(id);
+    apiIdentities.forget(id);
+  }
+
   async function disposeAll(): Promise<void> {
     for (const id of [...loaded.keys()]) {
       await withLifecycleLock(id, () => disposeOne(id));
@@ -1388,14 +1515,18 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
   }
 
   function bindSdk(args: { baseUrl: string }): void {
-    boundSdk = createNodeBbSdk({ baseUrl: args.baseUrl });
     boundLoopbackBaseUrl = args.baseUrl;
+    // Any clients built before the bind pointed nowhere useful; drop them so
+    // the next `bb.sdk` read builds one against the URL that is now real.
+    pluginSdks.clear();
   }
 
   return {
     REGISTRATION_MUTATION_KEY,
     agentToolProblems,
+    apiIdentities,
     appBundles,
+    forgetPluginApiClient,
     bindSdk,
     buildThreadDto,
     builtinSourceWatchers,
@@ -1407,7 +1538,7 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
     emitThreadEvent,
     handlerStats,
     hungServices,
-    invokeWrapped,
+    invokeCallback,
     isBuiltinPluginId,
     identities,
     isPackagedBuiltinAppEntry,

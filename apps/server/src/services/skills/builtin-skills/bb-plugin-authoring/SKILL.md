@@ -38,10 +38,19 @@ The manifest is `package.json`. The required shape:
     "description": "A friendly example plugin.",
     "branding": { "icon": "Zap" },
     "server": "./server.ts",
-    "app": "./app.tsx"
+    "app": "./app.tsx",
+    "permissions": []
   }
 }
 ```
+
+`bb.permissions` is what the plugin may reach through `bb.browser` and
+`bb.sdk`, and **undeclared means denied**: a scaffold reaches nothing gated
+until you add entries. Everything else — settings, storage, http, rpc,
+realtime, background, cli, agents, ui, events — is ungated, because it reaches
+the plugin's own resources. The full table is in
+[references/manifest.md](references/manifest.md); read it the moment a call
+throws about a permission.
 
 The plugin id is the final package-name component minus the `bb-plugin-`
 prefix (`hello`); it namespaces routes, storage, settings, and CLI commands.
@@ -111,7 +120,7 @@ bundled by `bb plugin build`).
 
 | Read                                                             | When the task involves                                                                                                                                                                                  |
 | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [references/manifest.md](references/manifest.md)                 | `package.json`, branding/logos, engines, dependencies, `bb plugin build` artifacts, install/update/distribution                                                                                         |
+| [references/manifest.md](references/manifest.md)                 | `package.json`, `bb.permissions`, branding/logos, engines, dependencies, `bb plugin build` artifacts, install/update/distribution                                                                       |
 | [references/backend-core.md](references/backend-core.md)         | `bb.log`, `bb.settings`, `bb.storage` (kv + SQLite + migrations), `bb.server`, `bb.hosts`, `bb.events.on` thread lifecycle, `bb.status`, `bb.onDispose` and the reload lifecycle                        |
 | [references/backend-sdk.md](references/backend-sdk.md)           | `bb.sdk` — reading or changing bb's own threads, projects, environments, hosts, files, terminals, providers, skills                                                                                     |
 | [references/backend-surfaces.md](references/backend-surfaces.md) | `bb.http`, `bb.rpc`, `bb.realtime`, `bb.background` services/schedules, `bb.cli` commands, `bb.ui.requestInput`, `bb.agents` tools and session configuration, `bb.ui` mention providers and keybindings |
@@ -125,6 +134,12 @@ bundled by `bb plugin build`).
 - `bb.sdk` is bind-gated: the real server binds it before plugins load, so
   factories can use it there, but isolated harnesses may not — prefer
   handlers, services, and timers.
+- Undeclared permissions are denied, and the two halves fail differently: a
+  browser contribution you did not declare throws inside the factory, so the
+  plugin loads in `error`; a `bb.sdk` area or browser command throws where it
+  is called. The fake host enforces the same list when you pass
+  `pluginPermissionsFromManifest(import.meta.url)`, which is how a test stays
+  honest about what ships.
 - kv values cap at 256KB; put caches and datasets in `storage.database()`.
 - `storage.migrate` is append-only by statement index.
 - Settings saves do not reload healthy or degraded plugins; live `onChange`

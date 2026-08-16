@@ -75,6 +75,8 @@ import type {
   StandardSchemaV1Result,
   JsonValue,
 } from "@bb/plugin-sdk";
+import type { PluginPermission } from "@bb/domain";
+import { createFakePermissionGate } from "./fake-permissions.js";
 import {
   createFakeSdk,
   type FakeSdkHarness,
@@ -618,6 +620,15 @@ export interface CreateFakePluginHostOptions {
   agentSkillIds?: readonly string[];
   /** Read-only identities returned by bb.hosts.ensureSharedPortTunnel. */
   sharedPortTunnelIdentities?: Record<string, PluginSharedPortTunnelIdentity>;
+  /**
+   * What `bb.permissions` declares. Defaults to none, like the host — so a
+   * suite touching `bb.browser` or `bb.sdk` must say what the plugin asks
+   * for, and cannot pass on a manifest an install would refuse.
+   *
+   * Read it from the plugin's own manifest so the two cannot drift:
+   * `permissions: pluginPermissionsFromManifest(import.meta.url)`.
+   */
+  permissions?: readonly PluginPermission[];
 }
 
 export interface FakePluginHost {
@@ -1207,6 +1218,10 @@ function createFakePluginHostInternal(
       ),
     } satisfies FakePluginPersistentState);
   const pluginId = options.pluginId ?? "test-plugin";
+  const permissionGate = createFakePermissionGate(
+    pluginId,
+    options.permissions,
+  );
   const agentSkillIds = [...(options.agentSkillIds ?? [])];
   if (new Set(agentSkillIds).size !== agentSkillIds.length) {
     throw new Error("agentSkillIds must not contain duplicates");
@@ -1847,11 +1862,22 @@ function createFakePluginHostInternal(
     return error;
   }
 
+  /**
+   * `permission` is spelled out at each call site rather than looked up from a
+   * table keyed by these labels. The labels are the SDK's vocabulary and the
+   * host charges the *command* the SDK builds, so a table here would be a
+   * second set of decisions free to disagree with the first. At the call site
+   * the decision sits beside the method it belongs to, and a new fake method
+   * cannot be added without making one. `fake-browser-permissions.test.ts`
+   * pins these against `permissionForBrowserCommand`.
+   */
   function beginBrowserCall(
     type: string,
+    permission: PluginPermission,
     args: Record<string, unknown> = {},
   ): void {
     assertLive();
+    permissionGate.assert(permission, `bb.browser ${type}`);
     browserCalls.push({ type, args });
     if (!browserConnected) {
       throw Object.assign(new Error("No browser window is connected"), {
@@ -1971,6 +1997,10 @@ function createFakePluginHostInternal(
   const browser: PluginBrowser = {
     registerOmniboxProvider(provider) {
       assertLive();
+      permissionGate.assert(
+        "omnibox.register",
+        "bb.browser.registerOmniboxProvider",
+      );
       const id = provider?.id;
       if (typeof id !== "string" || !OMNIBOX_PROVIDER_ID_PATTERN.test(id)) {
         throw new Error(
@@ -2005,6 +2035,10 @@ function createFakePluginHostInternal(
     },
     registerContextMenuItem(item) {
       assertLive();
+      permissionGate.assert(
+        "contextMenu.register",
+        "bb.browser.registerContextMenuItem",
+      );
       if (typeof item?.id !== "string" || item.id.length === 0) {
         throw new Error("registerContextMenuItem needs an id");
       }
@@ -2017,6 +2051,7 @@ function createFakePluginHostInternal(
     },
     registerFindAction(action) {
       assertLive();
+      permissionGate.assert("find.register", "bb.browser.registerFindAction");
       if (typeof action?.id !== "string" || action.id.length === 0) {
         throw new Error("registerFindAction needs an id");
       }
@@ -2029,6 +2064,7 @@ function createFakePluginHostInternal(
     },
     registerAuthProvider(provider) {
       assertLive();
+      permissionGate.assert("auth.provide", "bb.browser.registerAuthProvider");
       if (typeof provider !== "function") {
         throw new Error(
           "registerAuthProvider(provider) needs a function taking one challenge",
@@ -2038,6 +2074,10 @@ function createFakePluginHostInternal(
     },
     registerPdfTextProvider(provider) {
       assertLive();
+      permissionGate.assert(
+        "pdf.provide",
+        "bb.browser.registerPdfTextProvider",
+      );
       if (typeof provider !== "function") {
         throw new Error(
           "registerPdfTextProvider(provider) needs a function taking one document",
@@ -2047,6 +2087,10 @@ function createFakePluginHostInternal(
     },
     registerDownloadHandler(handler) {
       assertLive();
+      permissionGate.assert(
+        "downloads.handle",
+        "bb.browser.registerDownloadHandler",
+      );
       if (typeof handler !== "function") {
         throw new Error(
           "registerDownloadHandler(handler) needs a function taking one download",
@@ -2056,11 +2100,11 @@ function createFakePluginHostInternal(
     },
     tabs: {
       list() {
-        beginBrowserCall("tabs.list");
+        beginBrowserCall("tabs.list", "tabs.read");
         return Promise.resolve(browserTabs.map((tab) => ({ ...tab })));
       },
       open(args) {
-        beginBrowserCall("tabs.open", { ...args });
+        beginBrowserCall("tabs.open", "tabs.modify", { ...args });
         const tabId = `fake-tab-${browserTabs.length + 1}`;
         const activate = args?.activate ?? true;
         const tab: PluginBrowserTab = {
@@ -2080,7 +2124,7 @@ function createFakePluginHostInternal(
         return Promise.resolve({ ...tab });
       },
       close(args) {
-        beginBrowserCall("tabs.close", { ...args });
+        beginBrowserCall("tabs.close", "tabs.modify", { ...args });
         const tab = resolveBrowserTab(args.tabId);
         browserTabs = browserTabs.filter((each) => each.tabId !== tab.tabId);
         if (tab.active && browserTabs.length > 0) {
@@ -2095,14 +2139,14 @@ function createFakePluginHostInternal(
         });
       },
       activate(args) {
-        beginBrowserCall("tabs.activate", { ...args });
+        beginBrowserCall("tabs.activate", "tabs.modify", { ...args });
         resolveBrowserTab(args.tabId);
         return Promise.resolve({ ...activateBrowserTab(args.tabId) });
       },
     },
     page: {
       snapshot(args) {
-        beginBrowserCall("page.snapshot", { ...args });
+        beginBrowserCall("page.snapshot", "page.read", { ...args });
         const tab = requireLiveBrowserTab(args?.tabId);
         // A fake has no DOM to query, so a selector is recorded and not
         // resolved — what a plugin test can check is that the selector it meant
@@ -2120,7 +2164,7 @@ function createFakePluginHostInternal(
         });
       },
       act(args) {
-        beginBrowserCall("page.act", { ...args });
+        beginBrowserCall("page.act", "page.interact", { ...args });
         const tab = requireLiveBrowserTab(args?.tabId);
         if (
           args?.generation !== undefined &&
@@ -2153,7 +2197,7 @@ function createFakePluginHostInternal(
         });
       },
       screenshot(args) {
-        beginBrowserCall("page.screenshot", { ...args });
+        beginBrowserCall("page.screenshot", "page.read", { ...args });
         const tab = requireLiveBrowserTab(args?.tabId);
         const fullPage = args?.fullPage === true;
         return Promise.resolve({
@@ -2172,7 +2216,7 @@ function createFakePluginHostInternal(
         });
       },
       pdf(args) {
-        beginBrowserCall("page.pdf", { ...args });
+        beginBrowserCall("page.pdf", "page.read", { ...args });
         const tab = requireLiveBrowserTab(args?.tabId);
         return Promise.resolve({
           tabId: tab.tabId,
@@ -2183,7 +2227,7 @@ function createFakePluginHostInternal(
         });
       },
       console(args) {
-        beginBrowserCall("page.console", { ...args });
+        beginBrowserCall("page.console", "page.read", { ...args });
         const tab = requireLiveBrowserTab(args?.tabId);
         const all = browserPageContent.get(tab.tabId)?.console ?? [];
         return Promise.resolve({
@@ -2194,7 +2238,7 @@ function createFakePluginHostInternal(
         });
       },
       network(args) {
-        beginBrowserCall("page.network", { ...args });
+        beginBrowserCall("page.network", "network.observe", { ...args });
         const tab = requireLiveBrowserTab(args?.tabId);
         const all = browserPageContent.get(tab.tabId)?.network ?? [];
         return Promise.resolve({
@@ -2205,22 +2249,22 @@ function createFakePluginHostInternal(
         });
       },
       handleDialog(args) {
-        beginBrowserCall("page.handle_dialog", { ...args });
+        beginBrowserCall("page.handle_dialog", "page.interact", { ...args });
         resolveBrowserTab(args?.tabId);
         const answered = browserPendingDialog;
         browserPendingDialog = false;
         return Promise.resolve(answered);
       },
       getUrl(args) {
-        beginBrowserCall("page.get_url", { ...args });
+        beginBrowserCall("page.get_url", "tabs.read", { ...args });
         return Promise.resolve(resolveBrowserTab(args?.tabId).url);
       },
       getTitle(args) {
-        beginBrowserCall("page.get_title", { ...args });
+        beginBrowserCall("page.get_title", "tabs.read", { ...args });
         return Promise.resolve(resolveBrowserTab(args?.tabId).title);
       },
       getText(args) {
-        beginBrowserCall("page.get_text", { ...args });
+        beginBrowserCall("page.get_text", "page.read", { ...args });
         const tab = requireLiveBrowserTab(args?.tabId);
         const text = browserPageContent.get(tab.tabId)?.text ?? "";
         const maxLength = args?.maxLength;
@@ -2233,7 +2277,7 @@ function createFakePluginHostInternal(
         return Promise.resolve({ text, truncated: false });
       },
       getSelection(args) {
-        beginBrowserCall("page.get_selection", { ...args });
+        beginBrowserCall("page.get_selection", "page.read", { ...args });
         const tab = requireLiveBrowserTab(args?.tabId);
         return Promise.resolve({
           text: browserPageContent.get(tab.tabId)?.selection ?? "",
@@ -2242,7 +2286,7 @@ function createFakePluginHostInternal(
     },
     navigation: {
       open(args) {
-        beginBrowserCall("navigation.open", { ...args });
+        beginBrowserCall("navigation.open", "tabs.modify", { ...args });
         if (args.newTab === true) {
           return browser.tabs.open({ url: args.url, activate: true });
         }
@@ -2255,21 +2299,21 @@ function createFakePluginHostInternal(
         return Promise.resolve(resolveBrowserTab(tab.tabId));
       },
       back(args) {
-        beginBrowserCall("navigation.back", { ...args });
+        beginBrowserCall("navigation.back", "tabs.modify", { ...args });
         return Promise.resolve({ ...requireLiveBrowserTab(args?.tabId) });
       },
       forward(args) {
-        beginBrowserCall("navigation.forward", { ...args });
+        beginBrowserCall("navigation.forward", "tabs.modify", { ...args });
         return Promise.resolve({ ...requireLiveBrowserTab(args?.tabId) });
       },
       reload(args) {
-        beginBrowserCall("navigation.reload", { ...args });
+        beginBrowserCall("navigation.reload", "tabs.modify", { ...args });
         return Promise.resolve({ ...requireLiveBrowserTab(args?.tabId) });
       },
     },
     storage: {
       cookies(args) {
-        beginBrowserCall("storage.cookies", { ...args });
+        beginBrowserCall("storage.cookies", "page.credentials", { ...args });
         const tab = requireLiveBrowserTab(args?.tabId);
         return Promise.resolve({
           tabId: tab.tabId,
@@ -2279,7 +2323,7 @@ function createFakePluginHostInternal(
         });
       },
       setCookies(args) {
-        beginBrowserCall("storage.setCookies", { ...args });
+        beginBrowserCall("storage.setCookies", "page.credentials", { ...args });
         const tab = requireLiveBrowserTab(args?.tabId);
         const existing = readBrowserPageContent(tab.tabId).cookies;
         const written = args.cookies.map((cookie) => ({
@@ -2303,7 +2347,9 @@ function createFakePluginHostInternal(
         return Promise.resolve({ applied: written.length, rejected: 0 });
       },
       clearCookies(args) {
-        beginBrowserCall("storage.clearCookies", { ...args });
+        beginBrowserCall("storage.clearCookies", "page.credentials", {
+          ...args,
+        });
         const tab = requireLiveBrowserTab(args?.tabId);
         const existing = readBrowserPageContent(tab.tabId).cookies;
         const kept =
@@ -2314,7 +2360,7 @@ function createFakePluginHostInternal(
         return Promise.resolve({ removed: existing.length - kept.length });
       },
       items(args) {
-        beginBrowserCall("storage.items", { ...args });
+        beginBrowserCall("storage.items", "page.credentials", { ...args });
         const tab = requireLiveBrowserTab(args?.tabId);
         return Promise.resolve({
           tabId: tab.tabId,
@@ -2326,7 +2372,7 @@ function createFakePluginHostInternal(
         });
       },
       setItems(args) {
-        beginBrowserCall("storage.setItems", { ...args });
+        beginBrowserCall("storage.setItems", "page.credentials", { ...args });
         const tab = requireLiveBrowserTab(args?.tabId);
         const existing = readBrowserStorageArea(tab.tabId, args.area);
         writeBrowserStorageArea(tab.tabId, args.area, [
@@ -2338,7 +2384,7 @@ function createFakePluginHostInternal(
         return Promise.resolve({ applied: args.items.length, rejected: 0 });
       },
       clearItems(args) {
-        beginBrowserCall("storage.clearItems", { ...args });
+        beginBrowserCall("storage.clearItems", "page.credentials", { ...args });
         const tab = requireLiveBrowserTab(args?.tabId);
         const existing = readBrowserStorageArea(tab.tabId, args.area);
         const kept =
@@ -2351,7 +2397,7 @@ function createFakePluginHostInternal(
     },
     control: {
       evaluate(args) {
-        beginBrowserCall("control.evaluate", { ...args });
+        beginBrowserCall("control.evaluate", "page.inject", { ...args });
         const tab = requireLiveBrowserTab(args?.tabId);
         return Promise.resolve({
           tabId: tab.tabId,
@@ -2362,19 +2408,19 @@ function createFakePluginHostInternal(
         });
       },
       mouseMove(args) {
-        beginBrowserCall("control.mouseMove", { ...args });
+        beginBrowserCall("control.mouseMove", "page.interact", { ...args });
         return Promise.resolve(browserPageStateOf(args?.tabId));
       },
       mouseButton(args) {
-        beginBrowserCall("control.mouseButton", { ...args });
+        beginBrowserCall("control.mouseButton", "page.interact", { ...args });
         return Promise.resolve(browserPageStateOf(args?.tabId));
       },
       mouseWheel(args) {
-        beginBrowserCall("control.mouseWheel", { ...args });
+        beginBrowserCall("control.mouseWheel", "page.interact", { ...args });
         return Promise.resolve(browserPageStateOf(args?.tabId));
       },
       route(args) {
-        beginBrowserCall("control.route", { ...args });
+        beginBrowserCall("control.route", "network.intercept", { ...args });
         const tab = requireLiveBrowserTab(args?.tabId);
         const body = args?.body ?? "";
         // Newest first and one route per pattern, as the shell keeps them, so a
@@ -2399,13 +2445,13 @@ function createFakePluginHostInternal(
         return Promise.resolve(browserRoutesOf(tab));
       },
       routes(args) {
-        beginBrowserCall("control.routes", { ...args });
+        beginBrowserCall("control.routes", "network.intercept", { ...args });
         return Promise.resolve(
           browserRoutesOf(requireLiveBrowserTab(args?.tabId)),
         );
       },
       unroute(args) {
-        beginBrowserCall("control.unroute", { ...args });
+        beginBrowserCall("control.unroute", "network.intercept", { ...args });
         const tab = requireLiveBrowserTab(args?.tabId);
         const pattern = args?.pattern;
         writeBrowserPageContent(tab.tabId, {
@@ -2419,7 +2465,9 @@ function createFakePluginHostInternal(
         return Promise.resolve(browserRoutesOf(tab));
       },
       setOffline(args) {
-        beginBrowserCall("control.setOffline", { ...args });
+        beginBrowserCall("control.setOffline", "network.intercept", {
+          ...args,
+        });
         const tab = requireLiveBrowserTab(args?.tabId);
         writeBrowserPageContent(tab.tabId, { offline: args.offline });
         return Promise.resolve(browserPageStateOf(tab.tabId));
@@ -2427,7 +2475,7 @@ function createFakePluginHostInternal(
     },
     recording: {
       traceStart(args) {
-        beginBrowserCall("recording.traceStart", { ...args });
+        beginBrowserCall("recording.traceStart", "page.record", { ...args });
         if (browserTraceFrom !== null) {
           throw browserError("already_recording", "A trace is already running");
         }
@@ -2437,7 +2485,7 @@ function createFakePluginHostInternal(
         return Promise.resolve();
       },
       traceStop() {
-        beginBrowserCall("recording.traceStop");
+        beginBrowserCall("recording.traceStop", "page.record");
         const from = browserTraceFrom;
         if (from === null) {
           throw browserError("not_recording", "No trace is running");
@@ -2462,7 +2510,7 @@ function createFakePluginHostInternal(
         });
       },
       videoStart(args) {
-        beginBrowserCall("recording.videoStart", { ...args });
+        beginBrowserCall("recording.videoStart", "page.record", { ...args });
         const tab = requireLiveBrowserTab(args?.tabId);
         if (browserVideos.has(tab.tabId)) {
           throw browserError(
@@ -2474,7 +2522,7 @@ function createFakePluginHostInternal(
         return Promise.resolve();
       },
       videoChapter(args) {
-        beginBrowserCall("recording.videoChapter", { ...args });
+        beginBrowserCall("recording.videoChapter", "page.record", { ...args });
         const tab = requireLiveBrowserTab(args?.tabId);
         const chapters = browserVideos.get(tab.tabId);
         if (chapters === undefined) {
@@ -2487,7 +2535,7 @@ function createFakePluginHostInternal(
         return Promise.resolve();
       },
       videoStop(args) {
-        beginBrowserCall("recording.videoStop", { ...args });
+        beginBrowserCall("recording.videoStop", "page.record", { ...args });
         const tab = requireLiveBrowserTab(args?.tabId);
         const chapters = browserVideos.get(tab.tabId);
         if (chapters === undefined) {
@@ -2587,6 +2635,7 @@ function createFakePluginHostInternal(
   const { sdk, harness: sdkHarness } = createFakeSdk({
     pluginId,
     overrides: options.sdk,
+    permissions: permissionGate,
   });
 
   // --- thread events / dispose ---

@@ -5,11 +5,13 @@ import { homedir } from "node:os";
 import { CronExpressionParser } from "cron-parser";
 import type { Context } from "hono";
 import {
+  canonicalPermissions,
   CUSTOM_THEME_CSS_MAX_LENGTH,
   formatPluginThemeId,
   type AppKeybindingOverride,
   type AppKeybindingOverrides,
   type JsonValue,
+  type PluginPermission,
   type PluginThemeMeta,
   type ToolCallResponse,
 } from "@bb/domain";
@@ -93,6 +95,7 @@ import {
 } from "./managed-plugin-artifacts.js";
 import { createPluginRegistration } from "./plugin-registration.js";
 import { createPluginRuntime, forgetMutableRoot } from "./plugin-runtime.js";
+import type { PluginApiIdentities } from "./plugin-api-identity.js";
 import { createPluginUpdates } from "./plugin-updates.js";
 
 import { pluginUpdateCheckEntrySchema } from "./plugin-service-internal.js";
@@ -268,6 +271,24 @@ export interface PluginService {
     id: string,
     options?: { rotate?: boolean },
   ): Promise<string | undefined>;
+  /**
+   * Which plugin an `/api/v1` request belongs to, for the permission gate on
+   * that traffic. Separate from {@link httpToken}, which is the credential
+   * *inbound* callers present to reach a plugin's own routes — one identifies
+   * bb to the plugin's callers, this identifies the plugin to bb.
+   */
+  readonly apiIdentities: PluginApiIdentities;
+  /**
+   * Why this plugin may not reach an `/api/v1` path, or null when it may.
+   *
+   * `required` comes from {@link permissionsForApiPath}; `null` there means the
+   * path is not classified, which is refused rather than allowed — an
+   * unclassified route is one nobody decided about.
+   */
+  apiPermissionProblem(
+    pluginId: string,
+    required: readonly PluginPermission[] | null,
+  ): string | null;
   /**
    * CLI command metadata for GET /plugins/contributions: fast, no plugin
    * code execution. Sorted by plugin id.
@@ -950,7 +971,15 @@ const PLUGIN_AGENT_TOOL_PARAMETERS_MAX_BYTES = 128 * 1024;
 
 interface NormalizedPluginAgentConfiguration {
   toolIds: string[];
-  toolParameterOverrides: Map<string, Record<string, unknown>>;
+  /**
+   * Keyed by tool name. A null-prototype object rather than a Map, because
+   * this value crosses to the plugin host in Phase 7 and `JSON.stringify` of
+   * a Map is `{}` — silent loss rather than a failure. Null-prototype rather
+   * than a literal because tool names match `[a-zA-Z0-9_-]+`, which admits
+   * `__proto__`: on a normal object that key sets the prototype instead of an
+   * entry, and reading it back would answer `Object.prototype`.
+   */
+  toolParameterOverrides: Record<string, Record<string, unknown>>;
   skillIds: string[];
   instructions: string | null;
 }
@@ -1001,7 +1030,7 @@ function normalizePluginAgentToolSelections(args: {
   value: unknown;
 }): {
   toolIds: string[];
-  parameterOverrides: Map<string, Record<string, unknown>>;
+  parameterOverrides: Record<string, Record<string, unknown>>;
 } {
   if (!Array.isArray(args.value)) {
     throw new Error("configure() output.tools must be an array");
@@ -1012,7 +1041,10 @@ function normalizePluginAgentToolSelections(args: {
     );
   }
   const toolIds: string[] = [];
-  const parameterOverrides = new Map<string, Record<string, unknown>>();
+  const parameterOverrides = Object.create(null) as Record<
+    string,
+    Record<string, unknown>
+  >;
   const seen = new Set<string>();
   for (let index = 0; index < args.value.length; index += 1) {
     const entry = args.value[index];
@@ -1061,7 +1093,7 @@ function normalizePluginAgentToolSelections(args: {
     }
     seen.add(name);
     toolIds.push(name);
-    if (parameters !== null) parameterOverrides.set(name, parameters);
+    if (parameters !== null) parameterOverrides[name] = parameters;
   }
   return { toolIds, parameterOverrides };
 }
@@ -1199,7 +1231,9 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
   const {
     REGISTRATION_MUTATION_KEY,
     agentToolProblems,
+    apiIdentities,
     appBundles,
+    forgetPluginApiClient,
     bindSdk: bindRuntimeSdk,
     buildThreadDto,
     builtinSourceWatchers,
@@ -1211,7 +1245,7 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
     handlerStats,
     hungServices,
     identities,
-    invokeWrapped,
+    invokeCallback,
     isBuiltinPluginId,
     isPackagedBuiltinAppEntry,
     loadAll,
@@ -1572,6 +1606,11 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
             loadedPlugin?.manifest ?? identity?.manifest,
             loadedPlugin,
           ),
+          permissions: [
+            ...canonicalPermissions(
+              (loadedPlugin?.manifest ?? identity?.manifest)?.permissions,
+            ),
+          ],
           hasSettings:
             loadedPlugin !== undefined &&
             Object.keys(loadedPlugin.handle.settings.descriptors).length > 0,
@@ -1778,6 +1817,7 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
         appBundles.delete(id);
         brandingAssets.delete(id);
         identities.delete(id);
+        forgetPluginApiClient(id);
         const removed = row
           ? row.sourceKind === "builtin"
             ? markInstalledPluginRemoved(deps.db, id)
@@ -1972,11 +2012,15 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
     },
 
     async invokeHttpRoute(id, route, context) {
-      const outcome = await invokeWrapped(
+      const outcome = await invokeCallback(
         id,
-        `http ${route.method} ${route.path}`,
-        async () => {
-          const response = await route.handler(context);
+        {
+          kind: "http",
+          target: `${route.method} ${route.path}`,
+          payload: context,
+        },
+        async (payload) => {
+          const response = await route.handler(payload);
           if (!(response instanceof Response)) {
             throw new Error("http route handler must return a Response");
           }
@@ -1991,20 +2035,24 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
     },
 
     async invokeRpcHandler(id, method, handler, input) {
-      const outcome = await invokeWrapped(id, `rpc ${method}`, async () => {
-        const parsedInput = await validateRpcValue(
-          handler.inputSchema,
-          input,
-          "input",
-        );
-        const result = await handler.handler(parsedInput as never);
-        const parsedOutput = await validateRpcValue(
-          handler.outputSchema,
-          result,
-          "output",
-        );
-        return normalizeRpcJsonResult(parsedOutput);
-      });
+      const outcome = await invokeCallback(
+        id,
+        { kind: "rpc", target: method, payload: input },
+        async (payload) => {
+          const parsedInput = await validateRpcValue(
+            handler.inputSchema,
+            payload,
+            "input",
+          );
+          const result = await handler.handler(parsedInput as never);
+          const parsedOutput = await validateRpcValue(
+            handler.outputSchema,
+            result,
+            "output",
+          );
+          return normalizeRpcJsonResult(parsedOutput);
+        },
+      );
       if (outcome.ok) return { ok: true, result: outcome.value };
       if (outcome.cause instanceof PluginRpcBoundaryError) {
         return { ok: false, error: outcome.cause.rpcError };
@@ -2015,6 +2063,24 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
       };
     },
 
+    apiIdentities,
+    apiPermissionProblem(pluginId, required) {
+      if (required === null) {
+        return `plugin "${pluginId}" may not reach this path: it carries no permission classification`;
+      }
+      const granted = new Set(
+        loaded.get(pluginId)?.manifest.permissions ??
+          identities.get(pluginId)?.manifest.permissions ??
+          [],
+      );
+      const missing = required.filter((permission) => !granted.has(permission));
+      if (missing.length === 0) return null;
+      return (
+        `${missing.map((permission) => `"${permission}"`).join(" and ")} ` +
+        `${missing.length === 1 ? "is" : "are"} required, which plugin ` +
+        `"${pluginId}" does not declare in "bb.permissions"`
+      );
+    },
     async httpToken(id, options) {
       if (!getInstalledPlugin(deps.db, id)) return undefined;
       const dir = pluginSecretsDir(deps.dataDir, id);
@@ -2054,11 +2120,26 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
       if (!registration) {
         return fail(`plugin "${id}" registers no CLI command`);
       }
-      const outcome = await invokeWrapped(
+      const outcome = await invokeCallback(
         id,
-        `cli ${registration.name}`,
-        async () => {
-          const result = await registration.run(argv, ctx);
+        {
+          kind: "cli",
+          target: registration.name,
+          // Same split as agentTool: everything but the signal is data.
+          payload: {
+            argv,
+            ctx: {
+              cwd: ctx.cwd,
+              threadId: ctx.threadId,
+              projectId: ctx.projectId,
+            },
+          },
+        },
+        async (payload, signal) => {
+          const result = await registration.run(payload.argv, {
+            ...payload.ctx,
+            ...(signal === undefined ? {} : { signal }),
+          });
           if (typeof result?.exitCode !== "number") {
             throw new Error(
               "cli run() must return { exitCode: number, stdout?, stderr? }",
@@ -2073,6 +2154,7 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
             argv.includes("--json"),
           );
         },
+        { source: ctx.signal },
       );
       if (outcome.ok) return outcome.value;
       return fail(`bb ${registration.name} failed: ${outcome.error}`);
@@ -2133,13 +2215,16 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
         const knownToolIds = new Set(
           pluginTools.map(({ record }) => record.name),
         );
-        const outcome = await invokeWrapped(pluginId, "agent configure", () =>
-          normalizePluginAgentConfiguration({
-            knownSkillIds,
-            knownToolIds,
-            pluginId,
-            value: provider(context),
-          }),
+        const outcome = await invokeCallback(
+          pluginId,
+          { kind: "agentConfigure", payload: context },
+          (payload) =>
+            normalizePluginAgentConfiguration({
+              knownSkillIds,
+              knownToolIds,
+              pluginId,
+              value: provider(payload),
+            }),
         );
         if (!outcome.ok) {
           selectedSkillIdsByPlugin.set(pluginId, new Set());
@@ -2157,7 +2242,7 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
                 name: record.name,
                 description: record.description,
                 inputSchema:
-                  parameterOverrides.get(record.name) ?? record.inputSchema,
+                  parameterOverrides[record.name] ?? record.inputSchema,
               },
               instructions: record.instructions,
             })),
@@ -2205,13 +2290,29 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
           ],
         };
       }
-      const outcome = await invokeWrapped(
+      const outcome = await invokeCallback(
         pluginId,
-        `tool ${record.name}`,
-        async () => {
-          const result = await record.execute(parsed.value, ctx);
+        {
+          kind: "agentTool",
+          target: record.name,
+          // The signal is left out on purpose: it is a channel, not a value.
+          // A transport carries cancellation as its own message and builds a
+          // signal on the far side; here that far side is this closure.
+          payload: {
+            input: parsed.value,
+            ctx: { threadId: ctx.threadId, projectId: ctx.projectId },
+          },
+        },
+        async (payload, signal) => {
+          const result = await record.execute(payload.input, {
+            ...payload.ctx,
+            // Rebuilt from the cancel message, not forwarded; the far side is
+            // this process today and the plugin host tomorrow.
+            signal: signal ?? ctx.signal,
+          });
           return normalizeAgentToolResult(record.name, result);
         },
+        { source: ctx.signal },
       );
       if (outcome.ok) return outcome.value;
       return {
@@ -2253,9 +2354,18 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
           if (!record.triggers.includes(args.trigger)) continue;
           tasks.push(
             (async () => {
-              const outcome = await invokeWrapped(
+              const outcome = await invokeCallback(
                 id,
-                `mention search ${record.id}`,
+                {
+                  kind: "mentionSearch",
+                  target: record.id,
+                  payload: {
+                    trigger: args.trigger,
+                    query: args.query,
+                    projectId: args.projectId,
+                    threadId: args.threadId,
+                  },
+                },
                 async () => {
                   const searchPromise = (async () =>
                     record.search({
@@ -2341,12 +2451,16 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
         };
       }
       const provider = lookup.value;
-      const outcome = await invokeWrapped(
+      const outcome = await invokeCallback(
         pluginId,
-        `mention resolve ${providerId}`,
-        async () => {
+        {
+          kind: "mentionResolve",
+          target: providerId,
+          payload: { itemId: providerItemId },
+        },
+        async (payload) => {
           const resolvePromise = (async () =>
-            provider.resolve(providerItemId))();
+            provider.resolve(payload.itemId))();
           // The race abandons a timed-out resolve; keep its eventual
           // rejection observed so it cannot surface as an unhandled
           // rejection later.
@@ -2411,12 +2525,12 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
           error: `plugin "${pluginId}" has no context menu item "${itemId}"`,
         };
       }
-      const outcome = await invokeWrapped(
+      const outcome = await invokeCallback(
         pluginId,
-        `context menu ${itemId}`,
-        async () =>
+        { kind: "browserContextMenu", target: itemId, payload: context },
+        async (payload) =>
           withPluginTimeout({
-            run: async () => record.run(context),
+            run: async () => record.run(payload),
             timeoutMs: contextMenuRunTimeoutMs,
           }),
       );
@@ -2450,12 +2564,12 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
           error: `plugin "${pluginId}" has no find action "${itemId}"`,
         };
       }
-      const outcome = await invokeWrapped(
+      const outcome = await invokeCallback(
         pluginId,
-        `find action ${itemId}`,
-        async () =>
+        { kind: "browserFindAction", target: itemId, payload: context },
+        async (payload) =>
           withPluginTimeout({
-            run: async () => record.run(context),
+            run: async () => record.run(payload),
             // The same box a picked menu item gets: both are one deliberate
             // click on a browser surface.
             timeoutMs: contextMenuRunTimeoutMs,
@@ -2469,12 +2583,12 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
         a.localeCompare(b),
       )) {
         for (const provider of plugin.handle.authProviders) {
-          const outcome = await invokeWrapped(
+          const outcome = await invokeCallback(
             pluginId,
-            "browser auth provider",
-            async () =>
+            { kind: "browserAuth", payload: challenge },
+            async (payload) =>
               withPluginTimeout({
-                run: async () => provider(challenge),
+                run: async () => provider(payload),
                 timeoutMs: browserAuthTimeoutMs,
               }),
           );
@@ -2506,12 +2620,12 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
         a.localeCompare(b),
       )) {
         for (const provider of plugin.handle.pdfTextProviders) {
-          const outcome = await invokeWrapped(
+          const outcome = await invokeCallback(
             pluginId,
-            "browser pdf text provider",
-            async () =>
+            { kind: "browserPdfText", payload: document },
+            async (payload) =>
               withPluginTimeout({
-                run: async () => provider(document),
+                run: async () => provider(payload),
                 timeoutMs: browserPdfTextTimeoutMs,
               }),
           );
@@ -2578,15 +2692,19 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
         for (const record of [...plugin.handle.omniboxProviders]) {
           tasks.push(
             (async () => {
-              const outcome = await invokeWrapped(
+              const outcome = await invokeCallback(
                 id,
-                `omnibox suggest ${record.id}`,
-                async () =>
+                {
+                  kind: "browserOmniboxSuggest",
+                  target: record.id,
+                  payload: { query },
+                },
+                async (payload) =>
                   normalizeOmniboxSuggestItems({
                     hasRun: record.run !== null,
                     providerId: record.id,
                     result: await withPluginTimeout({
-                      run: async () => record.suggest({ query }),
+                      run: async () => record.suggest(payload),
                       timeoutMs: omniboxSuggestTimeoutMs,
                     }),
                   }),
@@ -2614,11 +2732,14 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
       )) {
         for (const handler of [...plugin.handle.downloadHandlers]) {
           tasks.push(
-            invokeWrapped(id, "browser download handler", async () =>
-              withPluginTimeout({
-                run: async () => handler(download),
-                timeoutMs: browserDownloadTimeoutMs,
-              }),
+            invokeCallback(
+              id,
+              { kind: "browserDownload", payload: download },
+              async (payload) =>
+                withPluginTimeout({
+                  run: async () => handler(payload),
+                  timeoutMs: browserDownloadTimeoutMs,
+                }),
             ),
           );
         }
@@ -2656,12 +2777,16 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
           error: `omnibox provider "${providerId}" has no run(itemId)`,
         };
       }
-      const outcome = await invokeWrapped(
+      const outcome = await invokeCallback(
         pluginId,
-        `omnibox run ${providerId}`,
-        async () => {
+        {
+          kind: "browserOmniboxRun",
+          target: providerId,
+          payload: { itemId: providerItemId, query },
+        },
+        async (payload) => {
           const result = await withPluginTimeout({
-            run: async () => run(providerItemId, { query }),
+            run: async () => run(payload.itemId, { query: payload.query }),
             timeoutMs: omniboxRunTimeoutMs,
           });
           if (result === undefined || result === null) return null;
@@ -2718,9 +2843,9 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
           now,
         });
         if (!claimed) continue;
-        const outcome = await invokeWrapped(
+        const outcome = await invokeCallback(
           row.pluginId,
-          `schedule ${row.name}`,
+          { kind: "schedule", target: row.name, payload: null },
           () => schedule.fn(),
         );
         recordPluginScheduleResult(deps.db, {

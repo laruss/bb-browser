@@ -520,6 +520,7 @@ describe("sdk", () => {
   it("records calls with plugin spawn attribution and runs stubs", async () => {
     const { bb, harness } = createFakePluginHost({
       pluginId: "slack-bot",
+      permissions: ["threads"],
       sdk: {
         threads: { spawn: async () => ({ id: "th_1" }) },
       },
@@ -546,6 +547,7 @@ describe("sdk", () => {
   it("keeps nested plugin administration available through the backend SDK", async () => {
     const catalog = { pluginCount: 1 };
     const { bb, harness } = createFakePluginHost({
+      permissions: ["plugins"],
       sdk: {
         plugins: {
           catalog: {
@@ -560,7 +562,9 @@ describe("sdk", () => {
   });
 
   it("throws a stub-naming error for unstubbed methods and accepts late stubs", async () => {
-    const { bb, harness } = createFakePluginHost();
+    const { bb, harness } = createFakePluginHost({
+      permissions: ["workspace"],
+    });
     expect(() => bb.sdk.projects.list({})).toThrow(
       "bb.sdk.projects.list is not stubbed",
     );

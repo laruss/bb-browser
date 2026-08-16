@@ -42,6 +42,7 @@ async function writePlugin(
         name: "SDK fixture",
         description: "Plugin SDK fixture.",
         branding: { icon: "Zap" },
+        permissions: ["threads", "workspace"],
         server: "./server.ts",
       },
     }),

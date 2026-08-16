@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { WebSocket as NodeWebSocket, WebSocketServer } from "ws";
 import {
   createFakePluginHost,
+  pluginPermissionsFromManifest,
   type FakePluginHost,
 } from "@bb/plugin-sdk/testing";
 import { decodeFrame, encodeFrame, type Frame } from "@bb/tunnel-contract";
@@ -41,6 +42,7 @@ function createConnectFakeHost(options?: {
   remoteIdentity?: { label: string; baseDomain: string };
 }): FakePluginHost {
   return createFakePluginHost({
+    permissions: pluginPermissionsFromManifest(import.meta.url),
     pluginId: "connect",
     sdk: {
       system: {
@@ -252,6 +254,7 @@ describe("ShareRegistry", () => {
       credential: "bbcred_x",
     };
     const fakeHost = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       sdk: {
         system: {
           config: async () => ({ primaryHostId: "host-server" }) as never,
@@ -675,6 +678,7 @@ describe("ConnectTunnel share activation", () => {
       markLookupStarted = resolve;
     });
     const fakeHost = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "connect",
       sdk: {
         system: {

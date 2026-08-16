@@ -189,6 +189,12 @@ export class BrowserHostUnavailableError extends Error {
 
 export class NotificationHub implements DbNotifier {
   private readonly clientKeysBySocket = new Map<HubSocket, Set<string>>();
+  /**
+   * Which plugin owns a socket, for sockets that said. Absent means the app,
+   * the CLI, or anything else local — the same reading the request gate gives
+   * an unidentified call.
+   */
+  private readonly pluginIdBySocket = new WeakMap<HubSocket, string>();
   private readonly clientSocketsByKey = new Map<string, Set<HubSocket>>();
   private readonly daemonSessions = new Map<
     string,
@@ -248,10 +254,18 @@ export class NotificationHub implements DbNotifier {
     Set<ThreadEventWaiter>
   >();
 
-  registerClient(socket: HubSocket): void {
+  registerClient(socket: HubSocket, pluginId?: string): void {
     if (!this.clientKeysBySocket.has(socket)) {
       this.clientKeysBySocket.set(socket, new Set());
     }
+    if (pluginId !== undefined) {
+      this.pluginIdBySocket.set(socket, pluginId);
+    }
+  }
+
+  /** The plugin that opened this socket, or null for everyone else. */
+  pluginIdForSocket(socket: HubSocket): string | null {
+    return this.pluginIdBySocket.get(socket) ?? null;
   }
 
   unregisterClient(socket: HubSocket): void {

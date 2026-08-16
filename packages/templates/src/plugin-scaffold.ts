@@ -484,6 +484,17 @@ ${componentsSection}
   is for types and tooling only (BB shims React, the portal primitives, and
   \`@bb/plugin-sdk\` at runtime — never bundle them).
 
+## Permissions
+
+\`bb.permissions\` in \`package.json\` lists what this plugin may reach through
+\`bb.browser\` and \`bb.sdk\`. It starts empty, and **undeclared means denied** —
+the first call to something missing throws with the permission named, so add
+entries as you need them and \`bb plugin reload ${id}\` after.
+
+They gate the bb API, not the process: a plugin is full-trust code and can
+still reach the machine directly. They exist so what a plugin uses is written
+down, shown to whoever installs it, and refused when it was not asked for.
+
 Run \`bb plugin build\` before publishing git/npm installs. It writes
 \`dist/server.js\` + \`server.meta.json\` (and, with \`bb.app\`, \`app.js\` /
 \`app.css\` / \`app.meta.json\`). Each \`*.meta.json\` stamps SDK major/version,
@@ -568,6 +579,10 @@ export async function scaffoldPlugin(args: ScaffoldPluginArgs): Promise<void> {
           branding: { icon: "Zap" },
           server: "./server.ts",
           ...(app ? { app: "./app.tsx" } : {}),
+          // Empty on purpose: undeclared means denied, so a new plugin starts
+          // reaching nothing and adds each entry as it needs it. The generated
+          // server.ts uses no gated surface, so this scaffold loads as-is.
+          permissions: [],
         },
         // A package belongs here when generated source imports it AND the
         // build neither externalizes nor shims it — those imports are inlined

@@ -13,7 +13,18 @@
     "branding": {
       "icon": "Globe02"
     },
-    "server": "./src/server.ts"
+    "server": "./src/server.ts",
+    "permissions": [
+      "network.intercept",
+      "network.observe",
+      "page.credentials",
+      "page.inject",
+      "page.interact",
+      "page.read",
+      "page.record",
+      "tabs.modify",
+      "tabs.read"
+    ]
   },
   "keywords": [
     "bb-plugin"

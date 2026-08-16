@@ -44,6 +44,7 @@ const installedPlugin = {
   schedules: [],
   cliCommand: null,
   capabilities: [],
+  permissions: [],
   hasSettings: false,
   app: { hasApp: false, bundle: null },
   logoUrl: null,
@@ -187,6 +188,39 @@ describe("bb plugin catalog", () => {
     expect(error).toContain("path:<path>");
     expect(error).toContain("npm:<package>");
     expect(error).toContain("Git repository URL");
+  });
+
+  // The permission list is the half of the model a user actually sees, so it
+  // is printed for every plugin — including the ones that reach nothing, where
+  // a missing line would read as "not checked" rather than "nothing".
+  it("prints declared permissions in the plugin list", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      json({
+        plugins: [
+          { ...installedPlugin, permissions: ["tabs.read", "threads"] },
+          { ...installedPlugin, id: "quiet", permissions: [] },
+        ],
+      }),
+    );
+
+    await runCommand(["plugin", "list"], register);
+
+    const output = collectLogPayloads(vi.mocked(console.log)).join("\n");
+    expect(output).toContain("permissions: tabs.read, threads");
+    expect(output).toContain("permissions: none");
+  });
+
+  it("says what a local plugin asks for before installing it", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      json({ ok: true, plugin: installedPlugin }),
+    );
+
+    await runCommand(["plugin", "install", "path:/linear", "--yes"], register);
+
+    const output = collectLogPayloads(vi.mocked(console.log)).join("\n");
+    // No manifest on disk in this test, so the declaration line is absent —
+    // what must survive is the statement that the gate is not the process.
+    expect(output).toContain("Declared permissions gate the bb API");
   });
 
   it("no longer advertises the remote catalog command group", async () => {

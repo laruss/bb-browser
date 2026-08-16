@@ -5,6 +5,7 @@ import {
   derivePluginId,
   isPluginOwnedIconPath,
   pluginPackageJsonSchema,
+  type PluginPermission,
 } from "@bb/domain";
 import { assertValidPluginCompactIconSvg } from "@bb/plugin-build";
 
@@ -29,6 +30,12 @@ export interface PluginManifest {
       darkPath?: string;
     };
   };
+  /**
+   * `bb.permissions` — what this plugin may reach through `bb.browser` and
+   * `bb.sdk`. Undeclared means denied; see `@bb/domain`'s plugin-permissions
+   * for what that does and does not enforce.
+   */
+  permissions: readonly PluginPermission[] | undefined;
   /** semver range from engines.bb, when declared. */
   bbEngineRange: string | undefined;
   /** semver range from engines.bbPluginSdk; absent manifests are legacy. */
@@ -249,6 +256,7 @@ export async function readPluginManifest(
         : { compactIconPath: brandingCompactIconPath }),
       ...(brandingLogo === undefined ? {} : { logo: brandingLogo }),
     },
+    permissions: bb.permissions,
     bbEngineRange: engines?.bb,
     bbPluginSdkRange: engines?.bbPluginSdk,
     serverEntry,

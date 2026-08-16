@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { createFakePluginHost } from "@bb/plugin-sdk/testing";
+import {
+  createFakePluginHost,
+  pluginPermissionsFromManifest,
+} from "@bb/plugin-sdk/testing";
 import type {
   PluginAgentConfigurationContext,
   PluginAgentToolResult,
@@ -42,7 +45,10 @@ function configurationContext(): PluginAgentConfigurationContext {
 }
 
 function createHost() {
-  const host = createFakePluginHost({ pluginId: "browser-tools" });
+  const host = createFakePluginHost({
+    permissions: pluginPermissionsFromManifest(import.meta.url),
+    pluginId: "browser-tools",
+  });
   plugin(host.bb);
   host.harness.behavior.browser.setTabs([
     { tabId: "tab-1", url: "https://example.com/", title: "Example" },
@@ -86,8 +92,9 @@ describe("browser-tools registration", () => {
 
   it("offers all of them, with instructions, on every thread", async () => {
     const host = createHost();
-    const configuration =
-      await host.harness.resolveAgentConfiguration(configurationContext());
+    const configuration = await host.harness.resolveAgentConfiguration(
+      configurationContext(),
+    );
 
     expect(configuration.tools.map((tool) => tool.name).sort()).toEqual(
       [...BROWSER_TOOL_NAMES].sort(),

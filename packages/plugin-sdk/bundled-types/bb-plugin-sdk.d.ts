@@ -721,8 +721,8 @@ declare const threadEventSchema: z$1.ZodPipe<z$1.ZodUnknown, z$1.ZodUnion<readon
     providerThreadId: z$1.ZodString;
     objective: z$1.ZodString;
     status: z$1.ZodEnum<{
-        active: "active";
         paused: "paused";
+        active: "active";
         budgetLimited: "budgetLimited";
         complete: "complete";
     }>;
@@ -910,10 +910,10 @@ declare const threadEventSchema: z$1.ZodPipe<z$1.ZodUnknown, z$1.ZodUnion<readon
         }>;
         taskStatus: z$1.ZodEnum<{
             pending: "pending";
+            running: "running";
+            paused: "paused";
             completed: "completed";
             failed: "failed";
-            paused: "paused";
-            running: "running";
             killed: "killed";
             stopped: "stopped";
         }>;
@@ -929,8 +929,8 @@ declare const threadEventSchema: z$1.ZodPipe<z$1.ZodUnknown, z$1.ZodUnion<readon
                 index: z$1.ZodNumber;
                 label: z$1.ZodString;
                 state: z$1.ZodEnum<{
-                    failed: "failed";
                     running: "running";
+                    failed: "failed";
                     queued: "queued";
                     done: "done";
                     skipped: "skipped";
@@ -1142,10 +1142,10 @@ declare const threadEventSchema: z$1.ZodPipe<z$1.ZodUnknown, z$1.ZodUnion<readon
         }>;
         taskStatus: z$1.ZodEnum<{
             pending: "pending";
+            running: "running";
+            paused: "paused";
             completed: "completed";
             failed: "failed";
-            paused: "paused";
-            running: "running";
             killed: "killed";
             stopped: "stopped";
         }>;
@@ -1161,8 +1161,8 @@ declare const threadEventSchema: z$1.ZodPipe<z$1.ZodUnknown, z$1.ZodUnion<readon
                 index: z$1.ZodNumber;
                 label: z$1.ZodString;
                 state: z$1.ZodEnum<{
-                    failed: "failed";
                     running: "running";
+                    failed: "failed";
                     queued: "queued";
                     done: "done";
                     skipped: "skipped";
@@ -1271,10 +1271,10 @@ declare const threadEventSchema: z$1.ZodPipe<z$1.ZodUnknown, z$1.ZodUnion<readon
         }>;
         taskStatus: z$1.ZodEnum<{
             pending: "pending";
+            running: "running";
+            paused: "paused";
             completed: "completed";
             failed: "failed";
-            paused: "paused";
-            running: "running";
             killed: "killed";
             stopped: "stopped";
         }>;
@@ -1290,8 +1290,8 @@ declare const threadEventSchema: z$1.ZodPipe<z$1.ZodUnknown, z$1.ZodUnion<readon
                 index: z$1.ZodNumber;
                 label: z$1.ZodString;
                 state: z$1.ZodEnum<{
-                    failed: "failed";
                     running: "running";
+                    failed: "failed";
                     queued: "queued";
                     done: "done";
                     skipped: "skipped";
@@ -1343,10 +1343,10 @@ declare const threadEventSchema: z$1.ZodPipe<z$1.ZodUnknown, z$1.ZodUnion<readon
         }>;
         taskStatus: z$1.ZodEnum<{
             pending: "pending";
+            running: "running";
+            paused: "paused";
             completed: "completed";
             failed: "failed";
-            paused: "paused";
-            running: "running";
             killed: "killed";
             stopped: "stopped";
         }>;
@@ -1362,8 +1362,8 @@ declare const threadEventSchema: z$1.ZodPipe<z$1.ZodUnknown, z$1.ZodUnion<readon
                 index: z$1.ZodNumber;
                 label: z$1.ZodString;
                 state: z$1.ZodEnum<{
-                    failed: "failed";
                     running: "running";
+                    failed: "failed";
                     queued: "queued";
                     done: "done";
                     skipped: "skipped";
@@ -1437,8 +1437,8 @@ declare const threadEventSchema: z$1.ZodPipe<z$1.ZodUnknown, z$1.ZodUnion<readon
         status: z$1.ZodOptional<z$1.ZodEnum<{
             pending: "pending";
             completed: "completed";
-            active: "active";
             failed: "failed";
+            active: "active";
         }>>;
     }, z$1.core.$strip>>;
     explanation: z$1.ZodOptional<z$1.ZodString>;
@@ -1966,8 +1966,8 @@ declare const threadEventSchema: z$1.ZodPipe<z$1.ZodUnknown, z$1.ZodUnion<readon
     provisioningId: z$1.ZodString;
     status: z$1.ZodEnum<{
         completed: "completed";
-        active: "active";
         failed: "failed";
+        active: "active";
         cancelled: "cancelled";
     }>;
     environmentId: z$1.ZodString;
@@ -2089,8 +2089,8 @@ type ThreadEventRow = {
 declare const threadStatusSchema: z$1.ZodEnum<{
     error: "error";
     active: "active";
-    starting: "starting";
     idle: "idle";
+    starting: "starting";
     stopping: "stopping";
 }>;
 type ThreadStatus = z$1.infer<typeof threadStatusSchema>;
@@ -2103,8 +2103,8 @@ declare const threadTimelinePendingTodosSchema: z$1.ZodObject<{
         text: z$1.ZodString;
         status: z$1.ZodEnum<{
             pending: "pending";
-            in_progress: "in_progress";
             completed: "completed";
+            in_progress: "in_progress";
         }>;
     }, z$1.core.$strip>>;
 }, z$1.core.$strip>;
@@ -2908,8 +2908,8 @@ declare const environmentDiffFileResponseSchema: z$1.ZodObject<{
     path: z$1.ZodString;
     content: z$1.ZodString;
     contentEncoding: z$1.ZodEnum<{
-        utf8: "utf8";
         base64: "base64";
+        utf8: "utf8";
     }>;
     mimeType: z$1.ZodOptional<z$1.ZodString>;
     sizeBytes: z$1.ZodNumber;
@@ -2922,8 +2922,8 @@ declare const environmentArchiveThreadsResponseSchema: z$1.ZodObject<{
 type EnvironmentArchiveThreadsResponse = z$1.infer<typeof environmentArchiveThreadsResponseSchema>;
 declare const pullRequestMergeMethodSchema: z$1.ZodEnum<{
     merge: "merge";
-    rebase: "rebase";
     squash: "squash";
+    rebase: "rebase";
 }>;
 type PullRequestMergeMethod = z$1.infer<typeof pullRequestMergeMethodSchema>;
 declare const commitActionResponseSchema: z$1.ZodObject<{
@@ -2954,8 +2954,8 @@ declare const pullRequestMergeActionResponseSchema: z$1.ZodObject<{
     action: z$1.ZodLiteral<"pull_request_merge">;
     method: z$1.ZodEnum<{
         merge: "merge";
-        rebase: "rebase";
         squash: "squash";
+        rebase: "rebase";
     }>;
     message: z$1.ZodString;
 }, z$1.core.$strip>;
@@ -6403,6 +6403,28 @@ declare const installedPluginSchema: z$1.ZodObject<{
         label: z$1.ZodString;
         detail: z$1.ZodNullable<z$1.ZodString>;
     }, z$1.core.$strip>>>;
+    permissions: z$1.ZodDefault<z$1.ZodArray<z$1.ZodEnum<{
+        workspace: "workspace";
+        "page.interact": "page.interact";
+        "page.record": "page.record";
+        threads: "threads";
+        shell: "shell";
+        "tabs.read": "tabs.read";
+        "page.read": "page.read";
+        "network.observe": "network.observe";
+        "tabs.modify": "tabs.modify";
+        "page.inject": "page.inject";
+        "network.intercept": "network.intercept";
+        "page.credentials": "page.credentials";
+        "omnibox.register": "omnibox.register";
+        "contextMenu.register": "contextMenu.register";
+        "find.register": "find.register";
+        "downloads.handle": "downloads.handle";
+        "auth.provide": "auth.provide";
+        "pdf.provide": "pdf.provide";
+        filesystem: "filesystem";
+        plugins: "plugins";
+    }>>>;
     hasSettings: z$1.ZodBoolean;
     app: z$1.ZodObject<{
         hasApp: z$1.ZodBoolean;
@@ -6507,6 +6529,28 @@ declare const pluginListResponseSchema: z$1.ZodObject<{
             label: z$1.ZodString;
             detail: z$1.ZodNullable<z$1.ZodString>;
         }, z$1.core.$strip>>>;
+        permissions: z$1.ZodDefault<z$1.ZodArray<z$1.ZodEnum<{
+            workspace: "workspace";
+            "page.interact": "page.interact";
+            "page.record": "page.record";
+            threads: "threads";
+            shell: "shell";
+            "tabs.read": "tabs.read";
+            "page.read": "page.read";
+            "network.observe": "network.observe";
+            "tabs.modify": "tabs.modify";
+            "page.inject": "page.inject";
+            "network.intercept": "network.intercept";
+            "page.credentials": "page.credentials";
+            "omnibox.register": "omnibox.register";
+            "contextMenu.register": "contextMenu.register";
+            "find.register": "find.register";
+            "downloads.handle": "downloads.handle";
+            "auth.provide": "auth.provide";
+            "pdf.provide": "pdf.provide";
+            filesystem: "filesystem";
+            plugins: "plugins";
+        }>>>;
         hasSettings: z$1.ZodBoolean;
         app: z$1.ZodObject<{
             hasApp: z$1.ZodBoolean;
@@ -6613,6 +6657,28 @@ declare const pluginReloadResponseSchema: z$1.ZodObject<{
             label: z$1.ZodString;
             detail: z$1.ZodNullable<z$1.ZodString>;
         }, z$1.core.$strip>>>;
+        permissions: z$1.ZodDefault<z$1.ZodArray<z$1.ZodEnum<{
+            workspace: "workspace";
+            "page.interact": "page.interact";
+            "page.record": "page.record";
+            threads: "threads";
+            shell: "shell";
+            "tabs.read": "tabs.read";
+            "page.read": "page.read";
+            "network.observe": "network.observe";
+            "tabs.modify": "tabs.modify";
+            "page.inject": "page.inject";
+            "network.intercept": "network.intercept";
+            "page.credentials": "page.credentials";
+            "omnibox.register": "omnibox.register";
+            "contextMenu.register": "contextMenu.register";
+            "find.register": "find.register";
+            "downloads.handle": "downloads.handle";
+            "auth.provide": "auth.provide";
+            "pdf.provide": "pdf.provide";
+            filesystem: "filesystem";
+            plugins: "plugins";
+        }>>>;
         hasSettings: z$1.ZodBoolean;
         app: z$1.ZodObject<{
             hasApp: z$1.ZodBoolean;

@@ -14,7 +14,11 @@
       "icon": "Smartphone"
     },
     "server": "./src/server.ts",
-    "app": "./app.tsx"
+    "app": "./app.tsx",
+    "permissions": [
+      "threads",
+      "workspace"
+    ]
   },
   "keywords": [
     "bb-plugin"

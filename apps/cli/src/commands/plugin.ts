@@ -130,6 +130,10 @@ const pluginLogsResultSchema = z.object({
 const pluginPackageSummarySchema = z.object({
   name: z.string().optional(),
   version: z.string().optional(),
+  bb: z
+    .object({ permissions: z.array(z.string()).optional() })
+    .partial()
+    .optional(),
 });
 const pluginManifestSchema = z.object({
   bb: z
@@ -460,6 +464,13 @@ function printPlugin(plugin: PluginEntry): void {
   const detail = plugin.statusDetail ? `  (${plugin.statusDetail})` : "";
   console.log(`${plugin.id}@${plugin.version}  ${state}${detail}`);
   console.log(`  source: ${plugin.source}`);
+  // Printed even when empty: "reaches nothing gated" is the informative case,
+  // and a missing line would read as "this was not checked".
+  console.log(
+    `  permissions: ${
+      plugin.permissions?.length ? plugin.permissions.join(", ") : "none"
+    }`,
+  );
   const stats = plugin.handlerStats;
   if (stats && stats.count > 0) {
     const errors = stats.errorCount > 0 ? `, ${stats.errorCount} errors` : "";
@@ -670,6 +681,12 @@ export function registerPluginCommands(
             intent.kind === "source"
               ? intent.summary
               : `Installing ${intent.entry.displayName}, bundled with BB (${intent.entry.source})`;
+          // Only a path source has its manifest on this machine before the
+          // install runs, so only a path source can be described before it is
+          // confirmed. That is also the agent-generated case, which is the one
+          // plan §9 is about; every other source shows its permissions in the
+          // entry printed straight after.
+          let declared: readonly string[] | undefined;
           if (intent.kind === "source" && intent.source.startsWith("path:")) {
             const path = intent.source.slice(5);
             // Best effort — a missing/invalid manifest is the server's
@@ -682,15 +699,22 @@ export function registerPluginCommands(
               if (pkg.name !== undefined) {
                 summary = `Installing ${pkg.name}@${pkg.version ?? "?"} from ${path}`;
               }
+              declared = pkg.bb?.permissions ?? [];
             } catch {
               // fall through to the bare path summary
             }
           }
           if (!opts.json) {
             console.log(summary);
+            if (declared !== undefined) {
+              console.log(
+                `It declares: ${declared.length > 0 ? declared.join(", ") : "no permissions"}.`,
+              );
+            }
             console.log(
               "Plugins are full-trust code running inside the BB server. " +
-                "They can read all local BB data, including other plugins' secrets.",
+                "They can read all local BB data, including other plugins' secrets. " +
+                "Declared permissions gate the bb API, not the process.",
             );
           }
           if (!opts.yes) {

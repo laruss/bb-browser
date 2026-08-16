@@ -1,4 +1,7 @@
-import { createFakePluginHost } from "@bb/plugin-sdk/testing";
+import {
+  createFakePluginHost,
+  pluginPermissionsFromManifest,
+} from "@bb/plugin-sdk/testing";
 import { readdirSync, readFileSync } from "node:fs";
 import { extname, relative, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -72,6 +75,7 @@ describe("workflows CLI argument validation", () => {
 
   beforeEach(async () => {
     const host = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "workflows",
       agentSkillIds: ["workflows"],
     });
@@ -227,6 +231,7 @@ describe("workflows agent-tool boundary schemas", () => {
     ["bb_workflow_result", { value: null, extra: true }],
   ])("rejects extra fields for %s", async (tool, input) => {
     const { bb, harness } = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "workflows",
       agentSkillIds: ["workflows"],
     });

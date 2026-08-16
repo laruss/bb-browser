@@ -5,6 +5,11 @@ import { extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Hono } from "hono";
 import { terminalWebSocketQuerySchema } from "@bb/server-contract";
+import { permissionsForApiPath } from "@bb/domain";
+import {
+  PLUGIN_API_ID_HEADER,
+  PLUGIN_API_KEY_HEADER,
+} from "./services/plugins/plugin-api-identity.js";
 import { compress } from "hono/compress";
 import { cors } from "hono/cors";
 import {
@@ -411,6 +416,24 @@ export function createApp(
   setPluginThreadEventEmitter(pluginService.events);
   // Bridge runtime-config assembly to plugin skills + context (§4.4).
   setPluginAgentContributions(pluginService);
+  // Plugin traffic is gated where it actually arrives. `bb.sdk` is an HTTP
+  // client for this API and every plugin holds the loopback URL, so a gate on
+  // the SDK object alone covers only the polite way in — and this is the check
+  // that keeps working once plugins run in their own process.
+  app.use("/api/v1/*", async (context, next) => {
+    const pluginId = pluginService.apiIdentities.resolve({
+      id: context.req.header(PLUGIN_API_ID_HEADER),
+      key: context.req.header(PLUGIN_API_KEY_HEADER),
+    });
+    // No identity is the app, the CLI, or anything else local — unchanged.
+    if (pluginId === null) return next();
+    const required = permissionsForApiPath(context.req.path);
+    const problem = pluginService.apiPermissionProblem(pluginId, required);
+    if (problem !== null) {
+      throw new ApiError(403, "forbidden", problem);
+    }
+    return next();
+  });
   const publicApi = new Hono();
   const pluginCatalogService = createPluginCatalogService({
     db: deps.db,
@@ -455,10 +478,21 @@ export function createApp(
           false,
         );
       }
+      // Read once at the upgrade: the socket outlives the request, and this
+      // is the only moment its headers exist.
+      const pluginId = pluginService.apiIdentities.resolve({
+        id: context.req.header(PLUGIN_API_ID_HEADER),
+        key: context.req.header(PLUGIN_API_KEY_HEADER),
+      });
       return {
-        onOpen: (_event, socket) => onClientSocketOpen(deps.hub, socket),
+        onOpen: (_event, socket) =>
+          onClientSocketOpen(deps.hub, socket, pluginId ?? undefined),
         onMessage: (event, socket) =>
-          onClientSocketMessage(deps, socket, event.data),
+          onClientSocketMessage(
+            { ...deps, plugins: pluginService },
+            socket,
+            event.data,
+          ),
         onClose: (_event, socket) => onClientSocketClose(deps, socket),
       };
     }),

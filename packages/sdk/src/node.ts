@@ -90,6 +90,7 @@ export async function fetchLocalHostId(
 export {
   createBbSdk,
   createHttpTransport,
+  createNodeWebsocketFactory,
   createRequestTimeoutFetch,
   DEFAULT_BB_REQUEST_TIMEOUT_MS,
 };

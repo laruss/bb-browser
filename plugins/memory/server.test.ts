@@ -1,12 +1,16 @@
 import { describe, expect, it } from "vitest";
 import {
   createFakePluginHost,
+  pluginPermissionsFromManifest,
   type FakePluginHost,
 } from "@bb/plugin-sdk/testing";
 import memoryPlugin from "./server";
 
 async function loadPlugin(): Promise<FakePluginHost> {
-  const host = createFakePluginHost({ pluginId: "memory" });
+  const host = createFakePluginHost({
+    permissions: pluginPermissionsFromManifest(import.meta.url),
+    pluginId: "memory",
+  });
   await memoryPlugin(host.bb);
   return host;
 }

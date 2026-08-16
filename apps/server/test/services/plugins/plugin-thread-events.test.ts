@@ -49,6 +49,7 @@ async function setUpPluginHarness(serverSource: string): Promise<{
         name: "Observer fixture",
         description: "Thread events plugin fixture.",
         branding: { icon: "Zap" },
+        permissions: ["threads"],
         server: "./server.ts",
       },
     }),

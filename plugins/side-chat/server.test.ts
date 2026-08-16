@@ -2,6 +2,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   createFakePluginHost,
+  pluginPermissionsFromManifest,
   makeThreadResponse,
 } from "@bb/plugin-sdk/testing";
 import plugin, {
@@ -30,6 +31,7 @@ function timelineResult(rows: SideChatTimelineRowLike[]) {
 
 async function loadPlugin(sdkThreads: Record<string, unknown>) {
   const host = createFakePluginHost({
+    permissions: pluginPermissionsFromManifest(import.meta.url),
     pluginId: PLUGIN_ID,
     sdk: { threads: sdkThreads },
   });

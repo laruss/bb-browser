@@ -1,4 +1,4 @@
-import { jsonValueSchema } from "@bb/domain";
+import { jsonValueSchema, pluginPermissionSchema } from "@bb/domain";
 import { z } from "zod";
 
 export const pluginRuntimeStatusSchema = z.enum([
@@ -191,6 +191,12 @@ export const installedPluginSchema = z.object({
   schedules: z.array(pluginScheduleEntrySchema),
   cliCommand: z.object({ name: z.string(), summary: z.string() }).nullable(),
   capabilities: pluginCapabilitySummarySchema.default([]),
+  /**
+   * What the manifest's `bb.permissions` declared, sorted. Manifest-declared,
+   * so it stays accurate while the plugin is disabled — unlike `capabilities`,
+   * whose runtime half needs a loaded plugin.
+   */
+  permissions: z.array(pluginPermissionSchema).default([]),
   hasSettings: z.boolean(),
   app: pluginAppStateSchema,
   logoUrl: z.string().nullable(),

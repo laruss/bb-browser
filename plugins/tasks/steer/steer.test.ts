@@ -1,5 +1,6 @@
 import {
   createFakePluginHost,
+  pluginPermissionsFromManifest,
   makeThreadResponse,
 } from "@bb/plugin-sdk/testing";
 import { describe, expect, it } from "vitest";
@@ -12,6 +13,7 @@ function setup(
   ) => makeThreadResponse({ id: threadId, status: "active" }),
 ) {
   const host = createFakePluginHost({
+    permissions: pluginPermissionsFromManifest(import.meta.url),
     pluginId: "tasks",
     sdk: {
       threads: {

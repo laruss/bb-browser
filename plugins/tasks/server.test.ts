@@ -1,10 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { createFakePluginHost } from "@bb/plugin-sdk/testing";
+import {
+  createFakePluginHost,
+  pluginPermissionsFromManifest,
+} from "@bb/plugin-sdk/testing";
 import plugin, { TASKS_PLUGIN_VERSION } from "./server";
 
 describe("Tasks plugin scaffold", () => {
   it("registers the CLI and RPC surfaces after opening plugin storage", async () => {
-    const { bb, harness } = createFakePluginHost({ pluginId: "tasks" });
+    const { bb, harness } = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
+      pluginId: "tasks",
+    });
 
     await plugin(bb);
 

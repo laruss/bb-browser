@@ -1,7 +1,10 @@
 // Backend tests for inline-vis path confinement and bb.sdk.files reads.
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { createFakePluginHost } from "@bb/plugin-sdk/testing";
+import {
+  createFakePluginHost,
+  pluginPermissionsFromManifest,
+} from "@bb/plugin-sdk/testing";
 import plugin, {
   MAX_HTML_BYTES,
   requireWorkspaceHtmlFile,
@@ -27,6 +30,7 @@ async function load(sdk: {
   files?: { read: (args: unknown) => unknown };
 }) {
   const host = createFakePluginHost({
+    permissions: pluginPermissionsFromManifest(import.meta.url),
     pluginId: "inline-vis",
     sdk,
   });

@@ -96,6 +96,7 @@ async function writePlugin(
         name: "Omnibox provider fixture",
         description: "Omnibox provider plugin fixture.",
         branding: { icon: "Zap" },
+        permissions: ["omnibox.register"],
         server: "./server.ts",
       },
     }),

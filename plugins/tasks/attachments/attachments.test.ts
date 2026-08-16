@@ -1,6 +1,9 @@
 import { readFile, stat } from "node:fs/promises";
 import { dirname, join } from "node:path";
-import { createFakePluginHost } from "@bb/plugin-sdk/testing";
+import {
+  createFakePluginHost,
+  pluginPermissionsFromManifest,
+} from "@bb/plugin-sdk/testing";
 import { describe, expect, it } from "vitest";
 import { createTasksStore } from "../db";
 import {
@@ -11,7 +14,10 @@ import {
 } from ".";
 
 function setup(options?: Parameters<typeof registerAttachments>[2]) {
-  const { bb, harness } = createFakePluginHost({ pluginId: "tasks" });
+  const { bb, harness } = createFakePluginHost({
+    permissions: pluginPermissionsFromManifest(import.meta.url),
+    pluginId: "tasks",
+  });
   const db = bb.storage.database();
   const store = createTasksStore(db);
   const project = store.createProject({

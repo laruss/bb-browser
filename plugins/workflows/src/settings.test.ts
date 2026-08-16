@@ -1,4 +1,7 @@
-import { createFakePluginHost } from "@bb/plugin-sdk/testing";
+import {
+  createFakePluginHost,
+  pluginPermissionsFromManifest,
+} from "@bb/plugin-sdk/testing";
 import { describe, expect, it } from "vitest";
 import {
   DEFAULT_WORKFLOW_SETTINGS,
@@ -107,6 +110,7 @@ describe("workflow settings policy", () => {
 
   it("registers descriptors and returns parsed fake-host values", async () => {
     const { bb, harness } = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "workflows",
       settings: {
         maxActiveRuns: " 6 ",
@@ -138,6 +142,7 @@ describe("workflow settings policy", () => {
 
   it("surfaces a field-specific error for an invalid fake-host value", async () => {
     const { bb } = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "workflows",
       settings: { retentionDays: "forever" },
     });
@@ -149,6 +154,7 @@ describe("workflow settings policy", () => {
 
   it("accepts a valid update after replacing invalid persisted settings", async () => {
     const { bb, harness } = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "workflows",
       settings: { retentionDays: "forever" },
     });

@@ -2,7 +2,10 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { createFakePluginHost } from "@bb/plugin-sdk/testing";
+import {
+  createFakePluginHost,
+  pluginPermissionsFromManifest,
+} from "@bb/plugin-sdk/testing";
 import plugin from "./server.js";
 
 /**
@@ -13,7 +16,10 @@ import plugin from "./server.js";
  */
 
 function createHost() {
-  const host = createFakePluginHost({ pluginId: "browser-tools" });
+  const host = createFakePluginHost({
+    permissions: pluginPermissionsFromManifest(import.meta.url),
+    pluginId: "browser-tools",
+  });
   plugin(host.bb);
   host.harness.behavior.browser.setTabs([
     { tabId: "tab-1", url: "https://example.com/", title: "Example" },
@@ -206,7 +212,14 @@ describe("bb browser CLI interaction", () => {
 
     await host.harness.runCli(["click", "e1", "--tab", "tab-1"]);
     await host.harness.runCli(["hover", "e1", "--tab", "tab-1"]);
-    await host.harness.runCli(["fill", "e2", "Ada", "Lovelace", "--tab", "tab-1"]);
+    await host.harness.runCli([
+      "fill",
+      "e2",
+      "Ada",
+      "Lovelace",
+      "--tab",
+      "tab-1",
+    ]);
     await host.harness.runCli(["press", "Enter", "e2", "--tab", "tab-1"]);
     await host.harness.runCli(["uncheck", "e1", "--tab", "tab-1"]);
 
@@ -263,7 +276,14 @@ describe("bb browser CLI interaction", () => {
   it("takes the rest of the line as values or paths", async () => {
     const host = interactionHost();
 
-    await host.harness.runCli(["select", "e1", "Red", "Blue", "--tab", "tab-1"]);
+    await host.harness.runCli([
+      "select",
+      "e1",
+      "Red",
+      "Blue",
+      "--tab",
+      "tab-1",
+    ]);
     await host.harness.runCli(["upload", "e1", "/tmp/a.png", "--tab", "tab-1"]);
     await host.harness.runCli(["drag", "e1", "e2", "--tab", "tab-1"]);
 
@@ -355,7 +375,12 @@ describe("bb browser CLI interaction", () => {
   it("rejects an option value it does not recognize", async () => {
     const host = interactionHost();
 
-    const badButton = await host.harness.runCli(["click", "e1", "--button", "up"]);
+    const badButton = await host.harness.runCli([
+      "click",
+      "e1",
+      "--button",
+      "up",
+    ]);
     expect(badButton.exitCode).toBe(2);
     expect(badButton.stderr).toContain("left, middle or right");
 
@@ -626,7 +651,11 @@ describe("bb browser storage commands", () => {
       "tab-1",
     ]);
     expect(deleted.stdout).toContain("Removed 1 cookie");
-    const cleared = await host.harness.runCli(["cookie-clear", "--tab", "tab-1"]);
+    const cleared = await host.harness.runCli([
+      "cookie-clear",
+      "--tab",
+      "tab-1",
+    ]);
     expect(cleared.stdout).toContain("Removed 0 cookies");
   });
 
@@ -685,9 +714,12 @@ describe("bb browser storage commands", () => {
     const host = storageHost();
     const directory = await mkdtemp(join(tmpdir(), "bb-browser-cli-"));
 
-    const printed = await host.harness.runCli(["state-save", "--tab", "tab-1"], {
-      cwd: directory,
-    });
+    const printed = await host.harness.runCli(
+      ["state-save", "--tab", "tab-1"],
+      {
+        cwd: directory,
+      },
+    );
     expect(JSON.parse(printed.stdout)).toEqual({
       cookies: [COOKIE],
       origins: [
@@ -851,7 +883,9 @@ describe("bb browser direct control commands", () => {
   it("refuses a coordinate command with nothing to act on", async () => {
     const host = createHost();
 
-    await expect(host.harness.runCli(["mousemove", "120"])).resolves.toMatchObject({
+    await expect(
+      host.harness.runCli(["mousemove", "120"]),
+    ).resolves.toMatchObject({
       exitCode: 2,
     });
     await expect(
@@ -1006,7 +1040,10 @@ describe("bb browser direct control commands", () => {
     expect(
       await readFile(join(directory, "film", "frame-00001.jpg"), "utf8"),
     ).toBe("first");
-    const playlist = await readFile(join(directory, "film", "frames.txt"), "utf8");
+    const playlist = await readFile(
+      join(directory, "film", "frames.txt"),
+      "utf8",
+    );
     // The timings are the whole point of the playlist: frames arrive when the
     // page repaints, so a numbered sequence would play back at the wrong speed.
     expect(playlist).toContain("file frame-00001.jpg");
@@ -1044,7 +1081,7 @@ describe("bb browser direct control commands", () => {
         "#!/bin/sh",
         'if [ "$1" = "-version" ]; then echo "fake ffmpeg"; exit 0; fi',
         `printf '%s\\n' "$@" > ${argvLog}`,
-        'for out; do :; done',
+        "for out; do :; done",
         'printf "fake video" > "$out"',
       ].join("\n"),
       { mode: 0o755 },
@@ -1063,9 +1100,9 @@ describe("bb browser direct control commands", () => {
       expect(argv).toContain("concat");
       expect(argv).toContain(join(directory, "film", "frames.txt"));
       expect(argv.at(-1)).toBe(join(directory, "film", "video.mp4"));
-      expect(
-        await readFile(join(directory, "film", "video.mp4"), "utf8"),
-      ).toBe("fake video");
+      expect(await readFile(join(directory, "film", "video.mp4"), "utf8")).toBe(
+        "fake video",
+      );
       // The frames stay: they are the recording, and the video is a rendering
       // of them that anything can redo.
       expect(

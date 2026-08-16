@@ -1,5 +1,6 @@
 import {
   createFakePluginHost,
+  pluginPermissionsFromManifest,
   makeThreadResponse,
 } from "@bb/plugin-sdk/testing";
 import { describe, expect, it } from "vitest";
@@ -33,6 +34,7 @@ function createTestPreset(
 describe("task delegation", () => {
   it("spawns from a preset, attaches the thread, advances status, comments, and invalidates", async () => {
     const { bb, harness } = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
       sdk: {
         threads: {
@@ -127,6 +129,7 @@ describe("task delegation", () => {
 
   it("corrects the attached row when a delegated thread becomes active immediately", async () => {
     const { bb, harness } = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
       sdk: {
         threads: {
@@ -170,6 +173,7 @@ describe("task delegation", () => {
 
   it("spawns a new worktree from the configured branch on the configured machine", async () => {
     const { bb, harness } = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
       sdk: {
         threads: {
@@ -223,6 +227,7 @@ describe("task delegation", () => {
 
   it("resolves the default machine and default branch for a worktree preset", async () => {
     const { bb, harness } = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
       sdk: {
         system: {
@@ -284,6 +289,7 @@ describe("task delegation", () => {
       status: 404,
     });
     const { bb, harness } = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
       sdk: {
         threads: {
@@ -327,6 +333,7 @@ describe("task delegation", () => {
 
   it("fails before spawning when the task project is not linked to bb", async () => {
     const { bb, harness } = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
       sdk: { threads: { spawn: async () => ({ id: "thr_never" }) } },
     });
@@ -356,6 +363,7 @@ describe("task delegation", () => {
 
   it("self-attaches an existing thread through taskThreadsAttach", async () => {
     const { bb, harness } = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
       sdk: {
         threads: {

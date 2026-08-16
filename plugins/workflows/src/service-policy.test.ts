@@ -1,4 +1,7 @@
-import { createFakePluginHost } from "@bb/plugin-sdk/testing";
+import {
+  createFakePluginHost,
+  pluginPermissionsFromManifest,
+} from "@bb/plugin-sdk/testing";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   deleteExpiredTerminalRuns,
@@ -71,6 +74,7 @@ function setup(
   let originDeleted = false;
   const workers = new Map<string, WorkerState>();
   const { bb, harness } = createFakePluginHost({
+    permissions: pluginPermissionsFromManifest(import.meta.url),
     pluginId: "workflows",
     sdk: {
       threads: {
@@ -216,6 +220,7 @@ describe("workflow service policy integration", () => {
       maxNotificationBytes: "2048",
     };
     const { bb, harness } = createFakePluginHost({
+      permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "workflows",
       agentSkillIds: ["workflows"],
       settings: initial,

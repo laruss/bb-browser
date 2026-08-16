@@ -46,6 +46,7 @@ const INSTALLED_PLUGIN_RESPONSE = {
     schedules: [],
     cliCommand: null,
     capabilities: [],
+    permissions: [],
     hasSettings: false,
     app: { hasApp: false, bundle: null },
     logoUrl: null,

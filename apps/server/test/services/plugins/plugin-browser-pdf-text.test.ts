@@ -76,6 +76,7 @@ async function writePlugin(
         name: "PDF fixture",
         description: "PDF text provider fixture.",
         branding: { icon: "Zap" },
+        permissions: ["pdf.provide"],
         server: "./server.ts",
       },
     }),
@@ -139,8 +140,9 @@ describe("plugin PDF text providers (bb.browser.registerPdfTextProvider)", () =>
 
     await install("bb-plugin-ocr", answeringSource());
 
-    expect(await resolve({ ...DOCUMENT, pageUrl: "https://example.com/a.pdf" }))
-      .toEqual({ status: 200, body: { ok: true, text: "" } });
+    expect(
+      await resolve({ ...DOCUMENT, pageUrl: "https://example.com/a.pdf" }),
+    ).toEqual({ status: 200, body: { ok: true, text: "" } });
   });
 
   // Declining, answering with the wrong shape, answering with nothing, and

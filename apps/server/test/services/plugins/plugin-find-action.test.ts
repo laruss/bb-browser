@@ -53,6 +53,7 @@ async function writePlugin(
         name: "Find action fixture",
         description: "Find action plugin fixture.",
         branding: { icon: "Zap" },
+        permissions: ["find.register"],
         server: "./server.ts",
       },
     }),
