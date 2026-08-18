@@ -202,20 +202,20 @@ from measuring rather than arguing:
 
 |                                                | resident |
 | ---------------------------------------------- | -------- |
-| bare Node process                              | 48 MB    |
-| bundled plugin host, before loading any plugin | 84 MB    |
-| the same host before this was attacked         | 204 MB   |
-| × 13 bundled plugins, one process each         | ~1.1 GB  |
+| bare Node process                              | 50 MB    |
+| bundled plugin host, before loading any plugin | 67 MB    |
+| the same host, first pass                      | 84 MB    |
+| the same host before any of this               | 204 MB   |
+| × 13 bundled plugins, one process each         | ~870 MB  |
 
 So **plugins share a process by default.** Process-per-plugin is the better
 failure model and only cost rules it out, which made the 204 MB worth
-attacking — and it turned out to be almost entirely two imports that nothing
-needed at startup. `apps/server/scripts/measure-plugin-host.mjs` reproduces all
-of these numbers: it builds the host the way the release does, forks it, and
+attacking — twice. `apps/server/scripts/measure-plugin-host.mjs` reproduces
+every number here: it builds the host the way the release does, forks it, and
 reads resident memory from the outside, because what a package costs is what it
 _runs_, not how many bytes of it were bundled. (A bundle-size breakdown says
 zod is 551 KB and luxon 258 KB; the memory says `@bb/sdk` is 149 MB and hono is
-0.3 MB.)
+0.5 MB.)
 
 ### What the 120 MB was
 
@@ -273,6 +273,39 @@ and the escalation test caught it immediately: a process that bootstraps fine
 and dies a moment later resets the counter every time, which is a crashloop
 with the backoff switched off.
 
+### And what the next 17 MB was
+
+The first pass took out the two biggest imports. The second took out the idea
+that a plugin process should load an area of `bb` the plugin never calls, and
+it is worth stating as a rule because it is what the numbers kept saying:
+
+> Nothing in `plugin-api.ts`'s startup path should be there for a corner of
+> `bb` this plugin has not touched.
+
+- **cron-parser (luxon), ~11 MB** — one call, validating a cron expression at
+  `bb.background.schedule`. A plugin with no schedules paid for a date library.
+- **The browser-control schemas, ~23 MB** — argument checks for `bb.browser.*`,
+  of which ~9 MB is zod itself. A plugin that never drives a tab paid for all
+  of it.
+- **zod, ~9 MB, three more ways in.** The interesting ones were not deferrals
+  but splits: `@bb/domain/plugin-permissions` is in every process (the gate
+  reads its tables) and needed zod for a single `z.enum(PLUGIN_PERMISSIONS)`,
+  and `plugin-api.ts` imported one number out of `pending-interactions.ts`'s 500
+  lines of schemas. Both are now their own module — `plugin-permission-schema.ts`
+  and `plugin-interaction-limits.ts` — and the file the host loads is zod-free.
+  What was left (the settings-descriptor schema, `z.toJSONSchema` for agent
+  tools, the keybinding id) is built on first use.
+- **better-sqlite3, ~2 MB and a dlopen** — deferred to `bb.storage.database()`.
+  This one is the exception to the mechanism: natives are external to the
+  bundle, so it resolves from disk in both branches rather than out of the
+  bundle. `plugin-host-bundle.test.ts` opens a database in the real bundle,
+  because that difference is invisible under tsx.
+
+What is left is ~17 MB over a bare Node process, and most of it is the bundle
+itself — the deferred packages are still _in_ it, and V8 parses what it loads.
+Getting past that means making the host not self-contained, which is a worse
+trade than the megabytes are worth.
+
 ## The host's half
 
 `plugin-host-call-server.ts` receives a `PluginHostCallPath` and performs it
@@ -299,10 +332,42 @@ a notification as a request.
 
 ## The loader swap
 
-`runPluginOutOfProcess(pluginId)` decides where a plugin loads, and it is off
-by default. Everything after the branch is shared: services, schedules and the
-registration commit read one `PluginApiHandle` and cannot tell the two
-placements apart.
+`runPluginOutOfProcess(row)` decides where a plugin loads. Everything after the
+branch is shared: services, schedules and the registration commit read one
+`PluginApiHandle` and cannot tell the two placements apart.
+
+### Which plugins actually move
+
+Every mechanism above shipped while nothing turned it on: the hook was supplied
+by tests and by nobody else, so a released server still loaded a plugin an agent
+had just written into the process that holds the database handle, the machine
+keys and the host daemon's credentials. `plugin-placement.ts` is the file that
+ends that, and the rule is one line:
+
+> A plugin we did not ship runs in a plugin process.
+
+That is `provenance !== "builtin"` — installed and generated plugins move,
+builtins stay. Builtins stay not because they are more trustworthy in some
+abstract sense but because they _are_ the server: same release, same review. So
+moving them would buy isolation from ourselves and cost the one thing the
+boundary cannot carry (a streaming HTTP response). Catalog plugins are the
+opposite case on both counts and move like any other install.
+
+`BB_PLUGIN_PROCESS=false` loads everything in the server again. It exists as a
+way back if the boundary breaks something in the field, not as a per-plugin
+knob; deciding placement per plugin would need somewhere to keep the decision,
+and no one has asked for that yet.
+
+The hook takes the plugin's row rather than its id because the policy reads
+`provenance` and the loader has the row in hand. Omitting the hook still means
+"load everything here", which is what the plugin tests want.
+
+Where a plugin ended up is then **reported, not inferred**: `placement` on the
+list entry is `"process"`, `"server"`, or null for a plugin that is not loaded,
+and `bb plugin list` prints it. Intent and outcome differ here — the move is
+best effort — so a policy that says "process" and a plugin that fell back to the
+server is a state an operator has to be able to see. The reason for the fallback
+is already in `statusDetail`.
 
 ### Placement is best effort; the server is the floor
 
@@ -434,8 +499,29 @@ here, and `pluginProcessEligibility` is gone rather than left returning
 "eligible" forever. The parity suite loads one fixture both ways and compares
 the two on the same zod schemas, valid and invalid, down to the issue lists.
 
+### Host facts have to be pushed, because a copy goes stale
+
+Two things a plugin reads are the server's to know: whether a browser window is
+connected, and which plugin owns each agent-tool name. In the server they are a
+function call away and always current. One process out they are a **copy**, sent
+with the bootstrap — and a copy is wrong the moment the thing it copied changes.
+
+So the hub took a listener (`onBrowserHostsChanged`), the bridge exposes it
+(`onStatusChange`), and the loader subscribes when it first spawns a process,
+pushing `host.browserStatus` and `host.agentToolOwners` to every live instance.
+The subscription is dropped in `disposeAll` — the hub outlives the runtime, and
+a listener left behind pushes into a supervisor that is gone.
+
+The listener carries no payload on purpose: it says "read it again", and the
+snapshot stays the single answer rather than being copied into an event that
+could disagree with it.
+
 ## Next
 
-- **The last ~34 MB** — browser-control's schemas and cron-parser's luxon —
-  which is what stands between a plugin process and being as cheap as a bare
-  Node one. Worth doing when process-per-plugin becomes the goal, not before.
+- **Nothing in this file's own path.** The remaining ~17 MB of a host process is
+  mostly V8 parsing the bundle, which is the price of the host being
+  self-contained.
+- **Process-per-plugin** is now ~870 MB for thirteen rather than ~2.7 GB, which
+  makes `ISOLATED_PLACEMENT` a policy question rather than an affordability
+  one. What it needs before it becomes the default is somewhere to keep a
+  per-plugin decision.

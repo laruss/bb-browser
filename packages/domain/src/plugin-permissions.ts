@@ -1,4 +1,3 @@
-import { z } from "zod";
 import type {
   BrowserCommand,
   BrowserControlOperation,
@@ -86,8 +85,6 @@ export const PLUGIN_PERMISSIONS = [
 ] as const;
 
 export type PluginPermission = (typeof PLUGIN_PERMISSIONS)[number];
-
-export const pluginPermissionSchema = z.enum(PLUGIN_PERMISSIONS);
 
 /**
  * A declared set in {@link PLUGIN_PERMISSIONS} order, de-duplicated.

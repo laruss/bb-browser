@@ -1,4 +1,7 @@
 import { z } from "zod";
+import { PLUGIN_INTERACTION_MAX_TITLE_LENGTH } from "./plugin-interaction-limits.js";
+
+export { PLUGIN_INTERACTION_MAX_TITLE_LENGTH };
 import { jsonValueSchema } from "./json-value.js";
 
 export const pendingInteractionStatusSchema = z.enum([
@@ -190,7 +193,6 @@ export const USER_QUESTION_MAX_QUESTIONS = 4;
 export const USER_QUESTION_MAX_OPTIONS = 4;
 export const USER_QUESTION_MAX_SELECTED = 4;
 export const USER_QUESTION_MAX_FREE_TEXT_LENGTH = 4096;
-export const PLUGIN_INTERACTION_MAX_TITLE_LENGTH = 160;
 
 const pendingInteractionUserQuestionIdSchema = z
   .string()

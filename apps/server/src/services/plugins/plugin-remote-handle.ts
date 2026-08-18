@@ -37,8 +37,12 @@ type HostChannel = PluginChannel<PluginCallbackKind, PluginHostCallPath>;
  * The cost `plugin-http-message.ts` warned about lands here and nowhere else:
  * the request body is read and the response body is buffered, so **a plugin's
  * streaming response stops streaming** once its route runs out of process.
- * Nothing in-tree streams one, and a plugin that does keeps working in-process
- * — but it is a real difference between the two placements, not a detail.
+ * Nothing in-tree streams one, and builtins — which are the in-tree ones — stay
+ * in the server under `plugin-placement.ts`. An *installed* plugin no longer
+ * gets that escape: the shipped policy moves it out, so a route that never ends
+ * its body (SSE, say) buffers forever here rather than streaming. That is a
+ * real difference between the two placements, not a detail; `BB_PLUGIN_PROCESS`
+ * is the way back for a deployment that hits it.
  */
 export function remoteHttpRoute(args: {
   channel: HostChannel;

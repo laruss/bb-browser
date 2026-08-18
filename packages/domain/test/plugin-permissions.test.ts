@@ -8,8 +8,8 @@ import {
   permissionForBrowserCommand,
   permissionForRealtimeEvent,
   permissionForRealtimeTarget,
-  pluginPermissionSchema,
 } from "../src/plugin-permissions.js";
+import { pluginPermissionSchema } from "../src/plugin-permission-schema.js";
 import { pluginPackageJsonSchema } from "../src/plugin-manifest.js";
 
 /** One valid command per type, so the map can be exercised on all of them. */

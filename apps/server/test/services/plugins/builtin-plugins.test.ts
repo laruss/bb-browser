@@ -24,6 +24,8 @@ import {
   type PluginService,
 } from "../../../src/services/plugins/plugin-service.js";
 import { readPluginManifest } from "../../../src/services/plugins/manifest.js";
+import { pluginProcessPolicy } from "../../../src/services/plugins/plugin-placement.js";
+import type { PluginServiceDeps } from "../../../src/services/plugins/plugin-service-internal.js";
 import {
   BUILTIN_PLUGIN_NAMES,
   BUILTIN_PLUGINS,
@@ -142,10 +144,14 @@ function createService(args: {
   includeBuiltin?: boolean;
   pluginId?: string;
   rootDir?: string;
+  runPluginOutOfProcess?: PluginServiceDeps["runPluginOutOfProcess"];
   watchBuiltinPluginSources?: boolean;
 }): PluginService {
   return createPluginService({
     db: args.db,
+    ...(args.runPluginOutOfProcess === undefined
+      ? {}
+      : { runPluginOutOfProcess: args.runPluginOutOfProcess }),
     hub: {
       getDaemonSessionIdForHost: () => null,
       notifyPluginSignal: () => 0,
@@ -253,6 +259,23 @@ describe("builtin plugin reconciliation", () => {
         normalizationVersion: 1,
       },
     );
+  });
+
+  // The other half of the shipped placement policy: what the app releases
+  // stays where the server can hand back its `bb` object, and a plugin that
+  // left would fail this by throwing "runs in its own process".
+  it("keeps a builtin in the server under the shipped placement policy", async () => {
+    service = createService({
+      db,
+      dataDir: join(workDir, "data"),
+      runPluginOutOfProcess: pluginProcessPolicy({ enabled: true }),
+    });
+
+    await service.start();
+
+    const [entry] = service.list();
+    expect(entry?.status).toBe("running");
+    expect(service.getApi(entry?.id ?? "")).toBeDefined();
   });
 
   it("marks a persisted builtin as orphaned after it leaves the registry", async () => {

@@ -6,6 +6,7 @@ import {
   createTestAppHarness,
   type TestAppHarness,
 } from "../../helpers/test-app.js";
+import { pluginProcessPolicy } from "../../../src/services/plugins/plugin-placement.js";
 
 /**
  * The loader actually placing a plugin in a plugin process.
@@ -100,9 +101,7 @@ describe("loading a plugin into a plugin process", () => {
     await harness.cleanup();
   });
 
-  async function start(
-    runPluginOutOfProcess: (pluginId: string) => boolean,
-  ): Promise<void> {
+  async function start(runPluginOutOfProcess: () => boolean): Promise<void> {
     harness = await createTestAppHarness({ runPluginOutOfProcess });
   }
 
@@ -159,7 +158,34 @@ describe("loading a plugin into a plugin process", () => {
     const entry = await harness.pluginService.installPath(rootDir);
 
     expect(entry.status).toBe("running");
+    expect(entry.placement).toBe("server");
     expect(harness.pluginService.getApi("remote")).toBeDefined();
+  }, 30_000);
+
+  // With the shipped policy rather than a test predicate: an installed plugin
+  // is provenance "direct", and that is the whole of the rule that moves it.
+  // The rest of this file proves the seam works; this proves it is armed.
+  it("moves an installed plugin out under the shipped placement policy", async () => {
+    harness = await createTestAppHarness({
+      runPluginOutOfProcess: pluginProcessPolicy({ enabled: true }),
+    });
+    const rootDir = await writePlugin(
+      join(harness.config.dataDir, "fixtures"),
+      {
+        name: "bb-plugin-remote",
+        permissions: ["contextMenu.register"],
+        source: CONTEXT_MENU_PLUGIN,
+      },
+    );
+
+    const entry = await harness.pluginService.installPath(rootDir);
+
+    expect([entry.status, entry.statusDetail]).toEqual(["running", null]);
+    expect(() => harness.pluginService.getApi("remote")).toThrow(
+      /runs in its own process/,
+    );
+    // And it says so where an operator looks, not only in the server's log.
+    expect(entry.placement).toBe("process");
   }, 30_000);
 
   it("serves an rpc method from the plugin's process, contract and all", async () => {

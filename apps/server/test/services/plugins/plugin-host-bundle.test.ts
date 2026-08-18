@@ -114,15 +114,26 @@ describe("the plugin host, bundled", () => {
         payload: {},
       }),
     ).resolves.toBe("function function");
+
+    // And the other deferral, which the bundler must *not* resolve: a native
+    // module stays external, and esbuild's `__require` shim throws for one.
+    await expect(
+      channel.request({
+        method: "browserContextMenu",
+        target: "database_probe",
+        payload: {},
+      }),
+    ).resolves.toBe("1");
   }, 60_000);
 
   // The number the placement policy is argued from, asserted loosely: what
-  // matters is that a host process is tens of megabytes rather than hundreds,
-  // and a regression that puts `@bb/sdk` or `@bb/domain`'s index back into the
-  // startup path shows up here as roughly a doubling.
+  // matters is that a host process is tens of megabytes rather than hundreds.
+  // Measured at ~67MB, so the bound catches a regression that puts any of the
+  // deferred packages — `@bb/sdk`, zod, cron-parser, the browser-control
+  // schemas — back into the startup path, without failing on noise.
   //
   // See apps/server/scripts/measure-plugin-host.mjs for the breakdown.
-  it("costs well under 150MB before it loads anything", async () => {
+  it("costs well under 90MB before it loads anything", async () => {
     const { pid } = startHost();
     await new Promise((resolve_) => setTimeout(resolve_, 2_000));
 
@@ -134,6 +145,6 @@ describe("the plugin host, bundled", () => {
       ) / 1024;
 
     expect(rss).toBeGreaterThan(20);
-    expect(rss).toBeLessThan(150);
+    expect(rss).toBeLessThan(90);
   }, 60_000);
 });

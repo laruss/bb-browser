@@ -10,6 +10,7 @@ import { initDb } from "./db.js";
 import { createApp } from "./server.js";
 import { PendingInteractionLifecycle } from "./services/interactions/pending-interactions.js";
 import { createMachineAuthService } from "./services/machine-auth.js";
+import { pluginProcessPolicy } from "./services/plugins/plugin-placement.js";
 import { resolveBuiltinSkillsRootPath } from "./services/skills/builtin-skills-copy.js";
 import { SkillTreeRegistry } from "./services/skills/injected-skills.js";
 import { createAppVersionService } from "./services/system/app-version.js";
@@ -157,7 +158,14 @@ export async function runServer(serverConfig: ServerConfig): Promise<void> {
       watchInterests,
       sharedPorts,
     },
-    { staticDir },
+    {
+      // Where installed plugins run. Without this the server loads every
+      // plugin into itself, which is what it did until the policy existed.
+      runPluginOutOfProcess: pluginProcessPolicy({
+        enabled: serverConfig.BB_PLUGIN_PROCESS,
+      }),
+      staticDir,
+    },
   );
   const eventLoopStallMonitor = startEventLoopStallMonitor({ logger });
 

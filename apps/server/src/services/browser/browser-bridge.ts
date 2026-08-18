@@ -57,13 +57,20 @@ export interface BrowserBridgeCallArgs {
 
 export interface BrowserBridge {
   status(): BrowserHostSnapshot;
+  /**
+   * Watch for the status changing. Returns the unsubscribe.
+   *
+   * A caller in this process can read `status()` whenever it likes; one in
+   * another process holds a pushed copy and needs to be told.
+   */
+  onStatusChange(listener: () => void): () => void;
   call(args: BrowserBridgeCallArgs): Promise<BrowserCommandValue>;
 }
 
 export interface CreateBrowserBridgeArgs {
   hub: Pick<
     NotificationHub,
-    "requestBrowserCommand" | "getBrowserHostSnapshot"
+    "requestBrowserCommand" | "getBrowserHostSnapshot" | "onBrowserHostsChanged"
   >;
 }
 
@@ -80,6 +87,9 @@ export function createBrowserBridge(
   return {
     status() {
       return args.hub.getBrowserHostSnapshot();
+    },
+    onStatusChange(listener) {
+      return args.hub.onBrowserHostsChanged(listener);
     },
     async call({ command, signal, timeoutMs }) {
       if (signal?.aborted === true) {

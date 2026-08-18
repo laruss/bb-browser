@@ -186,6 +186,18 @@ export const installedPluginSchema = z.object({
   iconUrl: z.string().nullable(),
   status: pluginRuntimeStatusSchema,
   statusDetail: z.string().nullable(),
+  /**
+   * Which process this plugin's backend runs in, or null when it is not
+   * loaded at all.
+   *
+   * Worth surfacing rather than leaving in the server's logs: placement is a
+   * policy plus a best-effort move (`plugin-placement.ts`), so "where did it
+   * actually end up" is a question with a real answer that differs from the
+   * intent. A move that failed also names its reason in `statusDetail`.
+   *
+   * Defaulted for old servers, which answer without the field.
+   */
+  placement: z.enum(["server", "process"]).nullable().default(null),
   handlerStats: pluginHandlerStatsSchema,
   services: z.array(pluginServiceEntrySchema),
   schedules: z.array(pluginScheduleEntrySchema),

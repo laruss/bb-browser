@@ -8,12 +8,10 @@
  * plugin id.
  *
  * It exists because of a measurement, not a preference. A bundled plugin-host
- * process costs ~206MB resident before it loads any plugin at all, against
- * ~48MB for a bare Node process — the difference being the server contract
- * surface that `plugin-api.ts` and `@bb/sdk` drag in. Thirteen bundled plugins
- * at one process each is ~2.7GB, which is not a thing a desktop browser can
- * spend. So plugins share a process by default, and sharing a process means
- * sharing a pipe.
+ * process costs ~67MB resident before it loads any plugin at all, against
+ * ~50MB for a bare Node process. Thirteen at one process each is ~870MB, which
+ * is more than a desktop browser should spend on idle plugin hosts. So plugins
+ * share a process by default, and sharing a process means sharing a pipe.
  *
  * Nothing above this layer changes: each plugin still gets a `PluginPort` that
  * behaves exactly like a dedicated one.

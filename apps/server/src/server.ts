@@ -33,6 +33,7 @@ import {
   createPluginService,
   type PluginService,
 } from "./services/plugins/plugin-service.js";
+import type { PluginPlacementInput } from "./services/plugins/plugin-placement.js";
 import { createBrowserBridge } from "./services/browser/browser-bridge.js";
 import { setPluginAgentContributions } from "./services/plugins/plugin-agent-contributions.js";
 import { setPluginThreadEventEmitter } from "./services/plugins/plugin-thread-events.js";
@@ -119,10 +120,11 @@ function normalizeInternalAuthPath(path: string): string {
 interface CreateAppOptions {
   bbAppArtifactService?: BbAppArtifactService;
   /**
-   * Which plugins run in a plugin process rather than in the server. Opt-in
-   * and off by default; see `PluginServiceDeps.runPluginOutOfProcess`.
+   * Which plugins run in a plugin process rather than in the server. Omitted
+   * loads every plugin here; the shipped policy is `pluginProcessPolicy` and
+   * `runServer` passes it. See `PluginServiceDeps.runPluginOutOfProcess`.
    */
-  runPluginOutOfProcess?: (pluginId: string) => boolean;
+  runPluginOutOfProcess?: (plugin: PluginPlacementInput) => boolean;
   slowApiRequestLogThresholdMs?: number;
   staticDir?: string;
 }

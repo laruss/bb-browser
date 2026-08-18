@@ -33,6 +33,11 @@
       "types": "./src/plugin-permissions.ts",
       "default": "./src/plugin-permissions.ts"
     },
+    "./plugin-interaction-limits": {
+      "source": "./src/plugin-interaction-limits.ts",
+      "types": "./src/plugin-interaction-limits.ts",
+      "default": "./src/plugin-interaction-limits.ts"
+    },
     "./app-keybindings": {
       "source": "./src/app-keybindings.ts",
       "types": "./src/app-keybindings.ts",

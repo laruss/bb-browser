@@ -464,6 +464,15 @@ function printPlugin(plugin: PluginEntry): void {
   const detail = plugin.statusDetail ? `  (${plugin.statusDetail})` : "";
   console.log(`${plugin.id}@${plugin.version}  ${state}${detail}`);
   console.log(`  source: ${plugin.source}`);
+  // Only for a loaded plugin: null means it is not running anywhere, which the
+  // status above already says.
+  if (plugin.placement !== null && plugin.placement !== undefined) {
+    console.log(
+      `  runs in: ${
+        plugin.placement === "process" ? "its own process" : "the server"
+      }`,
+    );
+  }
   // Printed even when empty: "reaches nothing gated" is the informative case,
   // and a missing line would read as "this was not checked".
   console.log(

@@ -210,6 +210,7 @@ function serverPlugin(
     iconUrl: null,
     status: "running",
     statusDetail: null,
+    placement: "server",
     handlerStats: { count: 0, totalMs: 0, maxMs: 0, errorCount: 0 },
     services: [],
     schedules: [],

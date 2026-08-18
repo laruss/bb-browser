@@ -1,11 +1,21 @@
 /**
- * A plugin that reaches for `bb.sdk`, and only when asked to.
+ * A plugin that reaches for the things a plugin process loads on demand, and
+ * only when asked to.
  *
- * `@bb/sdk` is loaded on demand in a plugin process — it costs ~100MB of
- * resident memory, and most plugins never touch it — so something has to prove
- * that a plugin which *does* touch it still gets a working SDK. Reaching for
- * it from a callback rather than the factory is also how a plugin is supposed
- * to use it: `bb.sdk` is bind-gated until the server is listening.
+ * Most of what `plugin-api.ts` can pull in is deferred, because a plugin that
+ * never touches an area should not pay for it — `@bb/sdk` alone costs ~100MB
+ * resident. So something has to prove that a plugin which *does* touch one
+ * still gets a working object, in the form the host actually ships: bundled.
+ *
+ * `bb.storage.database()` earns its probe here specifically. Natives stay
+ * external to the bundle, and for an external specifier esbuild leaves a
+ * `__require` shim that throws in an ES module — so the deferral that works for
+ * every bundled package is exactly wrong for this one, and only a test against
+ * the real bundle can tell the difference.
+ *
+ * Reaching for the SDK from a callback rather than the factory is also how a
+ * plugin is supposed to use it: `bb.sdk` is bind-gated until the server is
+ * listening.
  */
 export default function plugin(bb: {
   browser: {
@@ -16,6 +26,8 @@ export default function plugin(bb: {
     }): void;
   };
   sdk: { threads: { list(): unknown }; guide: { render(): unknown } };
+  storage: { database(): { prepare(sql: string): { get(): unknown } } };
+  background: { schedule(name: string, cron: string, fn: () => void): void };
 }): void {
   bb.browser.registerContextMenuItem({
     id: "sdk_probe",
@@ -24,4 +36,20 @@ export default function plugin(bb: {
     // and `guide.render`, which answers without awaiting anything.
     run: () => `${typeof bb.sdk.threads.list} ${typeof bb.sdk.guide.render}`,
   });
+  bb.browser.registerContextMenuItem({
+    id: "database_probe",
+    title: "Probe the database",
+    // The native driver, resolved from disk rather than from the bundle.
+    run: () =>
+      String(
+        (
+          bb.storage.database().prepare("select 1 as one").get() as {
+            one: number;
+          }
+        ).one,
+      ),
+  });
+  // Cron parsing is deferred too, and a bad expression must still be refused
+  // at registration — which is what makes the deferral have to be synchronous.
+  bb.background.schedule("nightly", "0 3 * * *", () => {});
 }

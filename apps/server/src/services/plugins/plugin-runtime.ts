@@ -1263,7 +1263,7 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
     let handle: PluginApiHandle | undefined;
     let remoteInstanceId: string | null = null;
     placementFallbacks.delete(row.id);
-    if (deps.runPluginOutOfProcess?.(row.id) === true) {
+    if (deps.runPluginOutOfProcess?.(row) === true) {
       const quarantined = placementQuarantine.get(row.id);
       if (quarantined !== undefined) {
         // Trying again is what turns one crashloop into a permanent one.
@@ -1615,6 +1615,8 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
     for (const id of [...loaded.keys()]) {
       await withLifecycleLock(id, () => disposeOne(id));
     }
+    unwatchBrowserHosts?.();
+    unwatchBrowserHosts = undefined;
     // This runtime is going away, so hand its roots back. The resolve hook is
     // process-wide and is torn down once the last runtime releases its own.
     releaseMutableRoots(ownedRootUrls);
@@ -1683,6 +1685,11 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
    */
   let supervisor: PluginSupervisor | null = null;
   /**
+   * Kept so `disposeAll` can drop it: the hub outlives this runtime, and a
+   * listener left behind would push facts into a supervisor that is gone.
+   */
+  let unwatchBrowserHosts: (() => void) | undefined;
+  /**
    * Capabilities per *instance*, so the supervisor's handlers can find them.
    * Per instance because a reload's two instances close over different rows:
    * until the old one is disposed it must keep calling the host it was loaded
@@ -1706,6 +1713,11 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
   const placementQuarantine = new Map<string, string>();
 
   function pluginSupervisor(): PluginSupervisor {
+    // On the first plugin that leaves, not at construction: a server whose
+    // plugins all run here has nobody to tell.
+    unwatchBrowserHosts ??= deps.browserBridge?.onStatusChange(() => {
+      pushHostFacts();
+    });
     supervisor ??= createPluginSupervisor({
       shared: () => ({
         dataDir: deps.dataDir,

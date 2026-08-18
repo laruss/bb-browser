@@ -253,6 +253,13 @@ export const BB_TELEMETRY_ENV = defineEnvVar<boolean>({
   parse: parseBooleanEnvValue,
 });
 
+export const BB_PLUGIN_PROCESS_ENV = defineEnvVar<boolean>({
+  description:
+    "Run installed plugins in a separate plugin host process instead of the server's. Set to false to load every plugin in the server, as releases before this flag did.",
+  name: "BB_PLUGIN_PROCESS",
+  parse: parseBooleanEnvValue,
+});
+
 export const BB_FF_PLACEHOLDER_ENV = defineEnvVar<boolean>({
   description:
     "Permanent placeholder feature flag. Non-functional keep-alive so the flag system has at least one entry; do not gate behavior on it.",
@@ -369,6 +376,7 @@ export const DEFAULT_OPENAI_API_KEY = "";
 export const DEFAULT_BB_POSTHOG_API_KEY =
   "phc_tejoYoNLV6vG8QAd5eYXXvcsENFYnP4brpZDGqG7zvpy";
 export const DEFAULT_BB_TELEMETRY = true;
+export const DEFAULT_BB_PLUGIN_PROCESS = true;
 export const DEFAULT_BB_DEV_APP_HOST = "";
 export const DEFAULT_BB_INFERENCE = DEFAULTS.inferenceModel;
 export const DEFAULT_BB_INFERENCE_FALLBACK = DEFAULTS.inferenceFallbackModel;

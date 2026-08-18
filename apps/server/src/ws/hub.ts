@@ -53,6 +53,14 @@ interface TerminalSocketSendQueue {
 
 type ChangedMessageListener = (message: ChangedMessage) => void;
 
+/**
+ * Something changed about which app windows can serve browser commands.
+ *
+ * No payload: a listener that cares reads `getBrowserHostSnapshot()`, which is
+ * the one answer, rather than being handed a copy that could disagree with it.
+ */
+type BrowserHostsChangedListener = () => void;
+
 function subscriptionKeysForMessage(message: ChangedMessage): string[] {
   switch (message.entity) {
     case "thread":
@@ -228,6 +236,8 @@ export class NotificationHub implements DbNotifier {
   >();
   private readonly hostProtocolUpdateRetryRequests = new Set<string>();
   private readonly changedMessageListeners = new Set<ChangedMessageListener>();
+  private readonly browserHostsChangedListeners =
+    new Set<BrowserHostsChangedListener>();
   private readonly pendingDaemonDisconnects = new Map<
     string,
     ReturnType<typeof setTimeout>
@@ -777,6 +787,7 @@ export class NotificationHub implements DbNotifier {
       browserHostId: args.browserHostId,
       socket,
     });
+    this.notifyBrowserHostsChangedListeners();
   }
 
   unregisterBrowserHost(socket: HubSocket): void {
@@ -784,6 +795,22 @@ export class NotificationHub implements DbNotifier {
       return;
     }
     this.rejectBrowserCommandWaitersForSocket(socket);
+    this.notifyBrowserHostsChangedListeners();
+  }
+
+  /**
+   * Watch browser-host arrivals and departures.
+   *
+   * Everything else on this side reads the snapshot when it needs it, which is
+   * enough while the reader is in this process. A plugin in its own process is
+   * not: it holds a copy pushed to it, and without this it would hold the copy
+   * from the moment it loaded forever.
+   */
+  onBrowserHostsChanged(listener: BrowserHostsChangedListener): () => void {
+    this.browserHostsChangedListeners.add(listener);
+    return () => {
+      this.browserHostsChangedListeners.delete(listener);
+    };
   }
 
   getBrowserHostSnapshot(): BrowserHostSnapshot {
@@ -1168,6 +1195,12 @@ export class NotificationHub implements DbNotifier {
   private notifyChangedMessageListeners(message: ChangedMessage): void {
     for (const listener of this.changedMessageListeners) {
       listener(message);
+    }
+  }
+
+  private notifyBrowserHostsChangedListeners(): void {
+    for (const listener of this.browserHostsChangedListeners) {
+      listener();
     }
   }
 

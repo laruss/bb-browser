@@ -1,8 +1,8 @@
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
-import Database from "better-sqlite3";
-import { CronExpressionParser } from "cron-parser";
-import { z } from "zod";
+import { createRequire } from "node:module";
+import type Database from "better-sqlite3";
+import type { z } from "zod";
 /**
  * The two host-owned stores `bb` reads through, injected rather than reached.
  *
@@ -31,29 +31,19 @@ export type PluginSettingsReader = (
 // schema in the package at import time — ~57MB resident, against ~25MB for the
 // three files anything here actually uses.
 // See apps/server/scripts/measure-plugin-host.mjs.
-import {
-  BROWSER_COMMAND_MAX_OBSERVATION_ENTRIES,
-  BROWSER_COMMAND_MAX_PAGE_TEXT_LENGTH,
-  BROWSER_COMMAND_MAX_URL_LENGTH,
-  BROWSER_COMMAND_MAX_SELECTOR_LENGTH,
-  browserControlOperationSchema,
-  browserRecordOperationSchema,
-  browserCookieSchema,
-  browserInteractionSchema,
-  browserStorageItemSchema,
-  type BrowserCommand,
-  type BrowserCommandValue,
-  type BrowserControlOperation,
-  type BrowserRecordOperation,
-  type BrowserCookie,
-  type BrowserInteraction,
-  type BrowserStorageItem,
+import type {
+  BrowserCommand,
+  BrowserCommandValue,
+  BrowserControlOperation,
+  BrowserRecordOperation,
+  BrowserCookie,
+  BrowserInteraction,
+  BrowserStorageItem,
 } from "@bb/domain/browser-control";
-import { PLUGIN_INTERACTION_MAX_TITLE_LENGTH } from "@bb/domain/pending-interactions";
-import {
-  appCommandIdSchema,
-  type AppKeybindingOverride,
-  type AppKeybindingOverrides,
+import { PLUGIN_INTERACTION_MAX_TITLE_LENGTH } from "@bb/domain/plugin-interaction-limits";
+import type {
+  AppKeybindingOverride,
+  AppKeybindingOverrides,
 } from "@bb/domain/app-keybindings";
 import {
   permissionForBrowserCommand,
@@ -865,7 +855,7 @@ export function createPluginApi(options: {
       assertLive();
       const dir = join(dataDir, "plugins", pluginId);
       mkdirSync(dir, { recursive: true });
-      const database = new Database(join(dir, "data.db"));
+      const database = new (loadBetterSqlite3())(join(dir, "data.db"));
       database.pragma("journal_mode = WAL");
       database.pragma("busy_timeout = 5000");
       databaseHandles.push(database);
@@ -1075,7 +1065,7 @@ export function createPluginApi(options: {
         throw new Error(`schedule "${name}" is already registered`);
       }
       try {
-        CronExpressionParser.parse(String(cron));
+        loadCronParser().CronExpressionParser.parse(String(cron));
       } catch (error) {
         throw new Error(
           `invalid cron ${JSON.stringify(cron)} for schedule "${name}": ${
@@ -1200,7 +1190,7 @@ export function createPluginApi(options: {
         // incompatible zod copy inside the plugin fails here with a clear
         // registration error instead of a broken wire schema later.
         try {
-          inputSchema = z.toJSONSchema(parameters as z.ZodType, {
+          inputSchema = loadZod().toJSONSchema(parameters as z.ZodType, {
             io: "input",
           });
         } catch (error) {
@@ -1314,7 +1304,9 @@ export function createPluginApi(options: {
     },
     registerKeybinding(keybinding) {
       assertLive();
-      const command = appCommandIdSchema.safeParse(keybinding?.command);
+      const command = loadAppKeybindings().appCommandIdSchema.safeParse(
+        keybinding?.command,
+      );
       if (!command.success) {
         // Named rather than ignored: a plugin binding a command that does not
         // exist has made a typo, and a silent no-op is the worst way to find
@@ -1375,6 +1367,7 @@ export function createPluginApi(options: {
   }
 
   function assertBrowserUrlLength(url: string, method: string): string {
+    const { BROWSER_COMMAND_MAX_URL_LENGTH } = loadBrowserControl();
     if (url.length > BROWSER_COMMAND_MAX_URL_LENGTH) {
       throw new Error(
         `browser.${method} url exceeds ${BROWSER_COMMAND_MAX_URL_LENGTH} characters`,
@@ -1423,6 +1416,7 @@ export function createPluginApi(options: {
     }
     // Whether it is a *valid* selector only the browser can say, and it does:
     // what is checked here is that it is a string of a sane size.
+    const { BROWSER_COMMAND_MAX_SELECTOR_LENGTH } = loadBrowserControl();
     if (
       typeof selector !== "string" ||
       selector.length === 0 ||
@@ -1436,6 +1430,7 @@ export function createPluginApi(options: {
   }
 
   function normalizePageTextMaxLength(maxLength: unknown): number {
+    const { BROWSER_COMMAND_MAX_PAGE_TEXT_LENGTH } = loadBrowserControl();
     if (maxLength === undefined) {
       return BROWSER_COMMAND_MAX_PAGE_TEXT_LENGTH;
     }
@@ -1481,7 +1476,8 @@ export function createPluginApi(options: {
         ref: record.ref ?? null,
       };
     }
-    const parsed = browserInteractionSchema.safeParse(candidate);
+    const parsed =
+      loadBrowserControl().browserInteractionSchema.safeParse(candidate);
     if (!parsed.success) {
       const issue = parsed.error.issues[0];
       const path = issue?.path.join(".") ?? "";
@@ -1503,6 +1499,7 @@ export function createPluginApi(options: {
     if (limit === undefined) {
       return DEFAULT_BROWSER_LOG_LIMIT;
     }
+    const { BROWSER_COMMAND_MAX_OBSERVATION_ENTRIES } = loadBrowserControl();
     if (
       typeof limit !== "number" ||
       !Number.isInteger(limit) ||
@@ -1598,7 +1595,7 @@ export function createPluginApi(options: {
         );
       }
       const record = cookie as Record<string, unknown>;
-      const parsed = browserCookieSchema.safeParse({
+      const parsed = loadBrowserControl().browserCookieSchema.safeParse({
         name: record.name,
         value: record.value,
         domain: record.domain ?? "",
@@ -1627,7 +1624,8 @@ export function createPluginApi(options: {
       throw new Error("browser.storage.setItems requires at least one item");
     }
     return items.map((item, index) => {
-      const parsed = browserStorageItemSchema.safeParse(item);
+      const parsed =
+        loadBrowserControl().browserStorageItemSchema.safeParse(item);
       if (!parsed.success) {
         throw new Error(
           `browser.storage.setItems item ${index} must be { name, value } strings within the size limits`,
@@ -1671,7 +1669,8 @@ export function createPluginApi(options: {
     candidate: unknown,
     method: string,
   ): BrowserControlOperation {
-    const parsed = browserControlOperationSchema.safeParse(candidate);
+    const parsed =
+      loadBrowserControl().browserControlOperationSchema.safeParse(candidate);
     if (!parsed.success) {
       const issue = parsed.error.issues[0];
       const path = issue?.path.join(".") ?? "";
@@ -1689,7 +1688,8 @@ export function createPluginApi(options: {
     candidate: unknown,
     method: string,
   ): BrowserRecordOperation {
-    const parsed = browserRecordOperationSchema.safeParse(candidate);
+    const parsed =
+      loadBrowserControl().browserRecordOperationSchema.safeParse(candidate);
     if (!parsed.success) {
       const issue = parsed.error.issues[0];
       const path = issue?.path.join(".") ?? "";
@@ -2730,4 +2730,97 @@ export function createPluginApi(options: {
       invalidated = true;
     },
   };
+}
+
+/**
+ * Two packages this module needs for one corner of `bb` each, loaded on the
+ * first call rather than at import.
+ *
+ * This file is the one every plugin process loads, and most of what it drags in
+ * is for a part of `bb` a given plugin never touches: cron parsing costs
+ * ~11MB resident and matters only to a plugin with a schedule, the browser
+ * control schemas cost ~23MB (~9MB of it zod itself) and matter only to a
+ * plugin that drives a tab. Deferring both takes a host process from ~84MB to
+ * ~58MB — see apps/server/scripts/measure-plugin-host.mjs.
+ *
+ * Why `require` and not `await import`: both call sites are synchronous by
+ * contract — `bb.background.schedule()` rejects a bad cron expression before it
+ * returns, and the browser argument checks answer inside functions that must
+ * not become async. The mechanics, and why a literal specifier is required for
+ * this to survive bundling, are written out once at `loadBbSdk` in
+ * plugin-child-runtime.ts.
+ */
+let cronParserModule: typeof import("cron-parser") | undefined;
+
+function loadCronParser(): typeof import("cron-parser") {
+  cronParserModule ??=
+    typeof require === "function"
+      ? (require("cron-parser") as typeof import("cron-parser"))
+      : (createRequire(import.meta.url)(
+          "cron-parser",
+        ) as typeof import("cron-parser"));
+  return cronParserModule;
+}
+
+let browserControlModule:
+  | typeof import("@bb/domain/browser-control")
+  | undefined;
+
+function loadBrowserControl(): typeof import("@bb/domain/browser-control") {
+  browserControlModule ??=
+    typeof require === "function"
+      ? (require("@bb/domain/browser-control") as typeof import("@bb/domain/browser-control"))
+      : (createRequire(import.meta.url)(
+          "@bb/domain/browser-control",
+        ) as typeof import("@bb/domain/browser-control"));
+  return browserControlModule;
+}
+
+let zodModule: typeof import("zod") | undefined;
+
+function loadZod(): typeof import("zod") {
+  zodModule ??=
+    typeof require === "function"
+      ? (require("zod") as typeof import("zod"))
+      : (createRequire(import.meta.url)("zod") as typeof import("zod"));
+  return zodModule;
+}
+
+let appKeybindingsModule:
+  | typeof import("@bb/domain/app-keybindings")
+  | undefined;
+
+function loadAppKeybindings(): typeof import("@bb/domain/app-keybindings") {
+  appKeybindingsModule ??=
+    typeof require === "function"
+      ? (require("@bb/domain/app-keybindings") as typeof import("@bb/domain/app-keybindings"))
+      : (createRequire(import.meta.url)(
+          "@bb/domain/app-keybindings",
+        ) as typeof import("@bb/domain/app-keybindings"));
+  return appKeybindingsModule;
+}
+
+let betterSqlite3Module: typeof import("better-sqlite3") | undefined;
+
+/**
+ * The native database driver, loaded when a plugin opens a database.
+ *
+ * It is a native module, so this is not only ~2MB resident but a dlopen in
+ * every plugin process — for an API most plugins never call.
+ *
+ * Unlike the loaders above, this one resolves from **disk** in both branches
+ * rather than out of the bundle: natives are deliberately external, and the
+ * bundle's `require` is the one `scripts/build-utils.mjs` puts in its banner
+ * (`createRequire(import.meta.url)`), which resolves `better-sqlite3` from
+ * `node_modules` next to the bundle — the same copy, and the same ABI, the
+ * server itself loads.
+ */
+function loadBetterSqlite3(): typeof import("better-sqlite3") {
+  betterSqlite3Module ??=
+    typeof require === "function"
+      ? (require("better-sqlite3") as typeof import("better-sqlite3"))
+      : (createRequire(import.meta.url)(
+          "better-sqlite3",
+        ) as typeof import("better-sqlite3"));
+  return betterSqlite3Module;
 }

@@ -42,6 +42,7 @@ function createHub(): {
         browserHostId: "window-a",
         hostCount: 1,
       }),
+      onBrowserHostsChanged: () => () => {},
       requestBrowserCommand: (args) => {
         requests.push(args);
         return new Promise((resolve, reject) => {

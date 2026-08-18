@@ -3,17 +3,18 @@
  *
  * The topology question the transport deliberately left open is answered here,
  * and by a measurement rather than a preference. A bundled plugin-host process
- * costs **~206MB resident before it loads a single plugin**, against ~48MB for
- * a bare Node process; the difference is the server contract surface that
- * `plugin-api.ts` and `@bb/sdk` pull in (luxon via cron-parser, the generated
- * templates via the SDK's guide area, every zod schema in server-contract).
- * Thirteen bundled plugins at one process each is ~2.7GB.
+ * costs **~67MB resident before it loads a single plugin**, against ~50MB for a
+ * bare Node process — down from ~204MB once everything a given plugin does not
+ * use stopped being imported at startup. Thirteen at one process each is
+ * ~870MB.
  *
  * So: **plugins share a process by default**, and `placement` decides which.
  * That keeps the expensive decision a one-line policy instead of a shape the
- * rest of the code is built around — and it is a policy worth revisiting once
- * that 206MB is trimmed, because process-per-plugin is the better failure
- * model and only cost rules it out.
+ * rest of the code is built around — and it stays worth revisiting, because
+ * process-per-plugin is the better failure model and only cost rules it out.
+ *
+ * Which plugins get a process at all is `plugin-placement.ts`; this file only
+ * asks where to put the ones it is handed.
  *
  * What sharing costs is honest and bounded: plugins in one process die
  * together. The channel already makes that survivable — every in-flight

@@ -314,6 +314,17 @@ describe("consumer-specific config", () => {
     });
   });
 
+  it("runs plugins in their own process unless told otherwise", () => {
+    expect(
+      loadServerConfig({ env: createServerRuntimeEnv() }).BB_PLUGIN_PROCESS,
+    ).toBe(true);
+    expect(
+      loadServerConfig({
+        env: createServerRuntimeEnv({ BB_PLUGIN_PROCESS: "false" }),
+      }).BB_PLUGIN_PROCESS,
+    ).toBe(false);
+  });
+
   it("defaults the server bind host to loopback", () => {
     const serverConfig = loadServerConfig({
       env: createServerRuntimeEnv({

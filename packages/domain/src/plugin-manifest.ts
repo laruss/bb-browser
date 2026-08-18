@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { pluginPermissionSchema } from "./plugin-permissions.js";
+import { pluginPermissionSchema } from "./plugin-permission-schema.js";
 
 const requiredManifestString = z.string().trim().min(1);
 

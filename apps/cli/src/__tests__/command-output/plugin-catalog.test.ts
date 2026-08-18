@@ -39,6 +39,7 @@ const installedPlugin = {
   iconUrl: null,
   status: "running",
   statusDetail: null,
+  placement: "server",
   handlerStats: { count: 0, totalMs: 0, maxMs: 0, errorCount: 0 },
   services: [],
   schedules: [],
@@ -208,6 +209,28 @@ describe("bb plugin catalog", () => {
     const output = collectLogPayloads(vi.mocked(console.log)).join("\n");
     expect(output).toContain("permissions: tabs.read, threads");
     expect(output).toContain("permissions: none");
+  });
+
+  // Where a plugin runs is now a policy plus a best-effort move, so "it went
+  // where I asked" is a question the list has to be able to answer.
+  it("says which process each loaded plugin runs in", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      json({
+        plugins: [
+          { ...installedPlugin, placement: "process" },
+          { ...installedPlugin, id: "here", placement: "server" },
+          { ...installedPlugin, id: "off", enabled: false, placement: null },
+        ],
+      }),
+    );
+
+    await runCommand(["plugin", "list"], register);
+
+    const output = collectLogPayloads(vi.mocked(console.log)).join("\n");
+    expect(output).toContain("runs in: its own process");
+    expect(output).toContain("runs in: the server");
+    // The disabled one is not running anywhere, and its status says so.
+    expect(output.match(/runs in:/gu)).toHaveLength(2);
   });
 
   it("says what a local plugin asks for before installing it", async () => {

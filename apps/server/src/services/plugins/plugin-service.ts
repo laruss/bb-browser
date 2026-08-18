@@ -1441,6 +1441,12 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
             : row.enabled
               ? "not loaded"
               : null,
+          placement:
+            loadedPlugin === undefined
+              ? null
+              : loadedPlugin.remoteInstanceId === null
+                ? "server"
+                : "process",
           handlerStats: stats
             ? { ...stats }
             : { count: 0, totalMs: 0, maxMs: 0, errorCount: 0 },

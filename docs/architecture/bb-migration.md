@@ -789,11 +789,10 @@ on Node and 3/8 on Bun. Bun issue 4290 is the one to watch.
   The protocol does not depend on the choice — it is one logical channel per
   plugin either way — so `placement` in `plugin-supervisor.ts` keeps it a
   one-line policy, and `ISOLATED_PLACEMENT` is there for a plugin that has
-  earned its own process. Thirteen at ~84MB is ~1.1GB, which is a different
-  conversation from ~2.7GB but not yet a reason to change the default; the
-  remaining ~34MB over bare Node is browser-control's schemas (~22MB) and
-  cron-parser's luxon (~11MB), both deferrable by the same means if
-  process-per-plugin becomes worth it.
+  earned its own process. Thirteen at ~67MB is ~870MB, which is a different
+  conversation from ~2.7GB; the remaining ~17MB over bare Node is mostly V8
+  parsing the bundle, so what stands between here and process-per-plugin is a
+  place to keep a per-plugin decision rather than the memory.
   The two directions of that wire are catalogued before it exists:
   `plugin-callbacks.ts` (server→plugin) and `plugin-host-calls.ts`
   (plugin→host), each checked against the real objects by its own test.

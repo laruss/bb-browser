@@ -9,6 +9,7 @@ import { initDb } from "../../src/db.js";
 import { createApp } from "../../src/server.js";
 import { PendingInteractionLifecycle } from "../../src/services/interactions/pending-interactions.js";
 import { createMachineAuthService } from "../../src/services/machine-auth.js";
+import type { PluginPlacementInput } from "../../src/services/plugins/plugin-placement.js";
 import { SkillTreeRegistry } from "../../src/services/skills/injected-skills.js";
 import {
   createAppVersionService,
@@ -47,7 +48,7 @@ export interface RunningTestServer extends TestAppHarness {
 
 export type TestAppHarnessConfigOverrides = Partial<ServerRuntimeConfig> & {
   appVersionService?: AppVersionService;
-  runPluginOutOfProcess?: (pluginId: string) => boolean;
+  runPluginOutOfProcess?: (plugin: PluginPlacementInput) => boolean;
   terminalCloseTimeoutMs?: number;
 };
 

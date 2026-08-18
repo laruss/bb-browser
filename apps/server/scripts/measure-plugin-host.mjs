@@ -51,12 +51,40 @@ const PARTS = [
     `import {CronExpressionParser as C} from "cron-parser"; console.error(typeof C.parse("0 3 * * *"));`,
   ],
   [
+    "zod, used",
+    `import {z} from "zod"; console.error(typeof z.object({a: z.string()}).safeParse({a: "b"}));`,
+  ],
+  [
     "@bb/domain/browser-control",
     `import {browserCookieSchema} from "@bb/domain/browser-control"; console.error(typeof browserCookieSchema);`,
   ],
   [
+    "@bb/domain/plugin-permissions",
+    `import {PLUGIN_PERMISSIONS} from "@bb/domain/plugin-permissions"; console.error(PLUGIN_PERMISSIONS.length);`,
+  ],
+  [
+    "@bb/domain/app-keybindings",
+    `import {appCommandIdSchema} from "@bb/domain/app-keybindings"; console.error(typeof appCommandIdSchema.safeParse("x"));`,
+  ],
+  [
+    "@bb/domain/pending-interactions",
+    `import {PLUGIN_INTERACTION_MAX_TITLE_LENGTH as L} from "@bb/domain/pending-interactions"; console.error(L);`,
+  ],
+  [
     "@bb/domain (whole index)",
     `import {PLUGIN_PERMISSIONS} from "@bb/domain"; console.error(PLUGIN_PERMISSIONS.length);`,
+  ],
+  [
+    "plugin-channel.ts (transport only)",
+    `import {createPluginChannel} from "${PACKAGE_ROOT}src/services/plugins/plugin-channel.ts"; console.error(typeof createPluginChannel);`,
+  ],
+  [
+    "plugin-api.ts (the whole bb builder)",
+    `import {createPluginApi} from "${PACKAGE_ROOT}src/services/plugins/plugin-api.ts"; console.error(typeof createPluginApi);`,
+  ],
+  [
+    "plugin-child-runtime.ts (the host's own graph)",
+    `import {createPluginChildRuntime} from "${PACKAGE_ROOT}src/services/plugins/plugin-child-runtime.ts"; console.error(typeof createPluginChildRuntime);`,
   ],
   [
     "@bb/sdk (pulls the API client)",

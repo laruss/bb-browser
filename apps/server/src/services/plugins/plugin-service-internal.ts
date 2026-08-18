@@ -12,6 +12,7 @@ import type { ServerLogger } from "../../types.js";
 import type { NotificationHub } from "../../ws/hub.js";
 import type { BundledPluginRegistration } from "./builtin-registry.js";
 import type { PluginManifest } from "./manifest.js";
+import type { PluginPlacementInput } from "./plugin-placement.js";
 import type {
   PluginApiHandle,
   PluginBackgroundServiceRecord,
@@ -76,12 +77,17 @@ export interface PluginServiceDeps {
   /**
    * Whether this plugin runs in a plugin process instead of the server's.
    *
-   * Opt-in and off by default: the in-process path is the one every plugin has
-   * always taken, and moving one is a decision an operator makes per plugin.
-   * A plugin that turns out to be ineligible (see `pluginProcessEligibility`)
-   * falls back to in-process with a warning rather than failing to load.
+   * Omitted means "no, load everything here", which is what the plugin tests
+   * want and what a caller assembling a server without a placement policy
+   * gets. The shipped answer is `pluginProcessPolicy` in plugin-placement.ts,
+   * wired in start-server.ts.
+   *
+   * Handed the plugin's row rather than its id: the policy decides on
+   * provenance, and the loader has the row in hand already. A plugin whose
+   * process will not start falls back to the server with a warning and a
+   * status detail rather than failing to load.
    */
-  runPluginOutOfProcess?: (pluginId: string) => boolean;
+  runPluginOutOfProcess?: (plugin: PluginPlacementInput) => boolean;
   /**
    * How a plugin host process is spawned. Test seam: the supervisor's own
    * default forks the real entry, and a test that needs the spawn to fail (or
