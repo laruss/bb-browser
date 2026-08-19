@@ -9,6 +9,8 @@ import {
   bbDesktopBrowserNavigateRequestSchema,
   bbDesktopBrowserSetBoundsRequestSchema,
   bbDesktopBrowserSetVisibleRequestSchema,
+  bbDesktopBrowserSetMutedRequestSchema,
+  bbDesktopBrowserSetZoomRequestSchema,
   bbDesktopBrowserDialogRespondRequestSchema,
   bbDesktopBrowserPagePromptAnswerSchema,
   bbDesktopBrowserPopupTabsSchema,
@@ -61,6 +63,9 @@ import {
   BB_DESKTOP_BROWSER_RELOAD_CHANNEL,
   BB_DESKTOP_BROWSER_SET_BOUNDS_CHANNEL,
   BB_DESKTOP_BROWSER_SET_VISIBLE_CHANNEL,
+  BB_DESKTOP_BROWSER_PRINT_CHANNEL,
+  BB_DESKTOP_BROWSER_SET_MUTED_CHANNEL,
+  BB_DESKTOP_BROWSER_SET_ZOOM_CHANNEL,
   BB_DESKTOP_BROWSER_STOP_CHANNEL,
 } from "./desktop-browser-ipc.js";
 import type { DesktopBrowserViewManager } from "./desktop-browser-view.js";
@@ -158,9 +163,40 @@ export function registerDesktopBrowserIpc(
     },
   );
 
+  ipcMain.on(BB_DESKTOP_BROWSER_SET_ZOOM_CHANNEL, (event, payload: unknown) => {
+    const hostWindow = hostWindowFromBrowserIpcEvent(event);
+    if (hostWindow === null) {
+      return;
+    }
+    const parsed = bbDesktopBrowserSetZoomRequestSchema.safeParse(payload);
+    if (!parsed.success) {
+      return;
+    }
+    manager.setZoom({ hostWindow, request: parsed.data });
+  });
+
+  ipcMain.on(
+    BB_DESKTOP_BROWSER_SET_MUTED_CHANNEL,
+    (event, payload: unknown) => {
+      const hostWindow = hostWindowFromBrowserIpcEvent(event);
+      if (hostWindow === null) {
+        return;
+      }
+      const parsed = bbDesktopBrowserSetMutedRequestSchema.safeParse(payload);
+      if (!parsed.success) {
+        return;
+      }
+      manager.setMuted({ hostWindow, request: parsed.data });
+    },
+  );
+
   registerTabCommand({
     channel: BB_DESKTOP_BROWSER_DETACH_CHANNEL,
     run: (args) => manager.detach(args),
+  });
+  registerTabCommand({
+    channel: BB_DESKTOP_BROWSER_PRINT_CHANNEL,
+    run: (args) => manager.print(args),
   });
   registerTabCommand({
     channel: BB_DESKTOP_BROWSER_GO_BACK_CHANNEL,

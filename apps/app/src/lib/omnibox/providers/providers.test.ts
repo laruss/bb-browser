@@ -14,8 +14,15 @@ import {
   type OmniboxOpenTab,
 } from "./open-tabs";
 import { createOmniboxSearchProvider } from "./search";
+import { BROWSER_SEARCH_ENGINE_QUERY_PLACEHOLDER } from "@bb/domain/browser-search-engine";
 
-/** The built-in providers are synchronous, so tests can read results directly. */
+/** Named rather than assumed: the provider has no default engine any more. */
+const GOOGLE_TEMPLATE = `https://www.google.com/search?q=${BROWSER_SEARCH_ENGINE_QUERY_PLACEHOLDER}`;
+
+/**
+ * Every built-in provider but history answers synchronously, so tests read
+ * their results directly; history reads a store, so it is awaited.
+ */
 function suggest(
   provider: OmniboxProvider,
   query: string,
@@ -29,28 +36,50 @@ function suggest(
   return result;
 }
 
+async function suggestAsync(
+  provider: OmniboxProvider,
+  query: string,
+): Promise<readonly OmniboxProviderSuggestion[]> {
+  return provider.suggest(query, { signal: new AbortController().signal });
+}
+
 function tab(id: string, url: string, title: string | null): OmniboxOpenTab {
   return { id, title, url };
 }
 
 function visit(url: string, title: string | null): BrowserHistoryEntry {
-  return { title, url, visitedAt: 0 };
+  return {
+    id: `bhist_${url}`,
+    scopeId: "browser-surface",
+    title,
+    url,
+    visitCount: 1,
+    lastVisitedAt: 0,
+  };
+}
+
+/** A store answering with fixed rows, in the order the server would. */
+function historyStore(entries: readonly BrowserHistoryEntry[]) {
+  return async () => entries;
 }
 
 /** Rank exactly as the controller does, to assert cross-provider ordering. */
-function rankAcross(
+async function rankAcross(
   providers: readonly OmniboxProvider[],
   query: string,
-): readonly OmniboxSuggestion[] {
-  return rankOmniboxSuggestions({
-    maxPerProvider: 4,
-    maxSuggestions: 8,
-    suggestions: providers.flatMap((provider) =>
-      suggest(provider, query).map((suggestion) => ({
+): Promise<readonly OmniboxSuggestion[]> {
+  const perProvider = await Promise.all(
+    providers.map(async (provider) =>
+      (await suggestAsync(provider, query)).map((suggestion) => ({
         ...suggestion,
         providerId: provider.id,
       })),
     ),
+  );
+  return rankOmniboxSuggestions({
+    maxPerProvider: 4,
+    maxSuggestions: 8,
+    suggestions: perProvider.flat(),
   });
 }
 
@@ -82,7 +111,9 @@ describe("navigation provider", () => {
 });
 
 describe("search provider", () => {
-  const provider = createOmniboxSearchProvider();
+  const provider = createOmniboxSearchProvider({
+    searchUrlTemplate: GOOGLE_TEMPLATE,
+  });
 
   it("searches the typed text", () => {
     expect(suggest(provider, "best headphones")).toEqual([
@@ -156,15 +187,15 @@ describe("open tabs provider", () => {
 
 describe("history provider", () => {
   const provider = createOmniboxHistoryProvider({
-    entries: [
+    search: historyStore([
       visit("https://newer.test/page", "Newer"),
       visit("https://older.test/page", "Older"),
       visit("https://untitled.test/page", null),
-    ],
+    ]),
   });
 
-  it("offers a visited page as a navigation", () => {
-    expect(suggest(provider, "newer")).toEqual([
+  it("offers a visited page as a navigation", async () => {
+    expect(await suggestAsync(provider, "newer")).toEqual([
       expect.objectContaining({
         action: { type: "navigate", url: "https://newer.test/page" },
         kind: "history",
@@ -174,16 +205,27 @@ describe("history provider", () => {
     ]);
   });
 
-  it("falls back to the URL when a visit has no title", () => {
-    expect(suggest(provider, "untitled")[0]?.title).toBe(
+  it("falls back to the URL when a visit has no title", async () => {
+    expect((await suggestAsync(provider, "untitled"))[0]?.title).toBe(
       "https://untitled.test/page",
     );
   });
 
+  // The store matched a substring; the provider still scores, and a row whose
+  // match was somewhere the ranking does not count is dropped rather than shown
+  // with a zero score.
+  it("drops a row the store returned but the ranking cannot place", async () => {
+    const noisy = createOmniboxHistoryProvider({
+      search: historyStore([visit("https://elsewhere.test/", "Elsewhere")]),
+    });
+
+    expect(await suggestAsync(noisy, "newer")).toEqual([]);
+  });
+
   // Recency is carried by input order, not by a score term: equal matches tie,
   // and the tie breaks towards the more recent visit.
-  it("keeps equally matching visits in most-recent-first order", () => {
-    const ranked = rankAcross([provider], "page");
+  it("keeps equally matching visits in most-recent-first order", async () => {
+    const ranked = await rankAcross([provider], "page");
 
     expect(ranked.map((row) => row.action)).toEqual([
       { type: "navigate", url: "https://newer.test/page" },
@@ -199,18 +241,20 @@ describe("history provider", () => {
 describe("built-in provider ordering", () => {
   const builtIns = [
     createOmniboxNavigationProvider(),
-    createOmniboxSearchProvider(),
+    createOmniboxSearchProvider({ searchUrlTemplate: GOOGLE_TEMPLATE }),
     createOmniboxOpenTabsProvider({
       activeTabId: null,
       tabs: [tab("tab-gh", "https://github.com/get-bb/bb", "get-bb/bb")],
     }),
     createOmniboxHistoryProvider({
-      entries: [visit("https://github.com/get-bb/bb/issues", "Issues")],
+      search: historyStore([
+        visit("https://github.com/get-bb/bb/issues", "Issues"),
+      ]),
     }),
   ];
 
-  it("puts the address first for address-like input", () => {
-    const ranked = rankAcross(builtIns, "github.com");
+  it("puts the address first for address-like input", async () => {
+    const ranked = await rankAcross(builtIns, "github.com");
 
     expect(ranked[0]?.kind).toBe("navigate");
     expect(ranked[0]?.action).toEqual({
@@ -219,15 +263,15 @@ describe("built-in provider ordering", () => {
     });
   });
 
-  it("puts the search first for a query, with the matches under it", () => {
-    const ranked = rankAcross(builtIns, "github");
+  it("puts the search first for a query, with the matches under it", async () => {
+    const ranked = await rankAcross(builtIns, "github");
 
     expect(ranked.map((row) => row.kind)).toEqual(["search", "tab", "history"]);
   });
 
   // What the plan's vertical slice asks for: sources mixed in one list.
-  it("mixes an open tab and a history entry under the default row", () => {
-    const ranked = rankAcross(builtIns, "get-bb");
+  it("mixes an open tab and a history entry under the default row", async () => {
+    const ranked = await rankAcross(builtIns, "get-bb");
 
     expect(ranked.map((row) => row.providerId)).toEqual([
       "search",
@@ -264,8 +308,8 @@ describe("app routes provider", () => {
     expect(suggestion?.sourceLabel).toBe("bb");
   });
 
-  it("stays out of the way of a real address", () => {
-    const ranked = rankAcross(
+  it("stays out of the way of a real address", async () => {
+    const ranked = await rankAcross(
       [createOmniboxNavigationProvider(), provider],
       "extensions.example.com",
     );

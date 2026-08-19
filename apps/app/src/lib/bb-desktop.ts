@@ -119,6 +119,34 @@ export function shouldReserveMacosTrafficLights({
 }
 
 /**
+ * Which window this renderer is, or null when nothing says — the web build, or
+ * a desktop shell older than the argument that carries it.
+ *
+ * Null means per-window state falls back to one shared store, which is what
+ * every build did before windows could differ. Read it rather than caching it:
+ * callers use it while modules initialise, before any provider exists.
+ */
+export function getDesktopWindowKey(): string | null {
+  return getBbDesktopInfo()?.windowKey ?? null;
+}
+
+/**
+ * Ask the shell to close this window, and say whether anything heard.
+ *
+ * False on the web build and on a shell older than the call, where the caller
+ * has to keep whatever it would otherwise have done — an empty window is worse
+ * than a window that ignored the request.
+ */
+export function closeDesktopWindow(): boolean {
+  const closeWindow = getBbDesktopInfo()?.closeWindow;
+  if (closeWindow === undefined) {
+    return false;
+  }
+  closeWindow();
+  return true;
+}
+
+/**
  * The desktop browser control surface, or `null` on the web build (where
  * `window.bbDesktop` is undefined). Also tolerates a desktop build whose
  * preload predates the browser surface. This is the single gate for the

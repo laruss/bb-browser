@@ -45,15 +45,37 @@ describe("app keybindings", () => {
             key: binding.shortcut.key,
             shift: binding.shortcut.shift,
           })),
-      ).toEqual([
-        { desktopOnly: false, key: "o", shift: true },
-        { desktopOnly: true, key: "n", shift: false },
-      ]);
+      ).toEqual([{ desktopOnly: false, key: "o", shift: true }]);
+      // Mod+N belongs to the browser: bb is one, and that chord opens a window
+      // in every other. Mod+Shift+N stays unassigned on purpose — it is the
+      // incognito window everywhere else, and bb has yet to build one.
       expect(
         config.keybindings.find((binding) => binding.command === "window.new"),
       ).toMatchObject({
         desktopOnly: true,
-        shortcut: { key: "n", mod: true, shift: true },
+        shortcut: { key: "n", mod: true, shift: false },
+      });
+      expect(
+        config.keybindings.filter(
+          (binding) =>
+            binding.shortcut !== null &&
+            binding.shortcut.key === "n" &&
+            binding.shortcut.mod &&
+            binding.shortcut.shift,
+        ),
+      ).toEqual([]);
+      // Mod+P is print and nothing else. It used to be a second chord for the
+      // panel's new tab, which already has Mod+T, so nothing shares it now.
+      const modP = config.keybindings.filter(
+        (binding) =>
+          binding.shortcut !== null &&
+          binding.shortcut.key === "p" &&
+          binding.shortcut.mod &&
+          !binding.shortcut.shift,
+      );
+      expect(modP.map((binding) => binding.command)).toEqual(["browser.print"]);
+      expect(modP[0]?.when).toMatchObject({
+        all: expect.arrayContaining(["browserFocus"]),
       });
       expect(
         assignedDefaultKeybindings
@@ -329,7 +351,6 @@ describe("app keybindings", () => {
           .filter((binding) => binding.desktopOnly)
           .map((binding) => binding.command),
       ).toEqual([
-        "thread.new",
         "thread.previous",
         "thread.next",
         ...THREAD_JUMP_APP_COMMAND_IDS,
@@ -349,6 +370,10 @@ describe("app keybindings", () => {
         "browser.recentTab.previous",
         "browser.goBack",
         "browser.goForward",
+        "browser.zoomIn",
+        "browser.zoomOut",
+        "browser.zoomReset",
+        "browser.print",
         "window.new",
       ]);
     });

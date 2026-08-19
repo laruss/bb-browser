@@ -1331,11 +1331,6 @@ function ThreadDetailViewInternal(props: ThreadDetailViewInternalProps) {
     handleOpenNewTab();
     return true;
   });
-  useAppCommandHandler("file.quickOpen", () => {
-    if (!isFocused) return false;
-    handleOpenNewTab();
-    return true;
-  });
   useEffect(() => {
     if (!isFocused) {
       return;

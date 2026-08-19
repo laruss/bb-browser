@@ -43,6 +43,19 @@ export type {
 } from "./thread-sections.js";
 
 export {
+  clearBrowserHistory,
+  deleteBrowserHistoryEntry,
+  listBrowserHistoryEntries,
+  recordBrowserHistoryVisit,
+} from "./browser-history.js";
+export type {
+  BrowserHistoryEntryRow,
+  ClearBrowserHistoryArgs,
+  ListBrowserHistoryEntriesArgs,
+  RecordBrowserHistoryVisitInput,
+} from "./browser-history.js";
+
+export {
   createPromptHistoryEntry,
   listStoredProjectPromptHistoryRows,
   listStoredThreadPromptHistoryRows,

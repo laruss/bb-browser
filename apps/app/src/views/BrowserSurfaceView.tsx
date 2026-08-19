@@ -26,19 +26,36 @@ import {
 import {
   runPluginContextMenuItem,
   runPluginFindAction,
+  runPluginTabAction,
   usePluginContributions,
 } from "@/hooks/queries/plugin-contribution-queries";
-import { getDesktopBrowserApi } from "@/lib/bb-desktop";
+import { closeDesktopWindow, getDesktopBrowserApi } from "@/lib/bb-desktop";
 import { browserFaviconsAtom, setBrowserFavicon } from "@/lib/browser-favicons";
+import {
+  browserMutedTabsAtom,
+  withBrowserTabMuted,
+} from "@/lib/browser-tab-mute";
+import {
+  forgetPluginBrowserTabStatuses,
+  usePluginBrowserTabStatuses,
+} from "@/lib/plugin-browser-tab-status";
 import { useDesktopWindowState } from "@/hooks/useDesktopWindowState";
-import { buildBrowserSearchUrl } from "@/lib/browser-url";
+import { buildBrowserSearchUrl } from "@bb/domain/browser-search-engine";
+import { useBrowserSearchEngine } from "@/lib/browser-search-engine";
 import { useBrowserFind } from "@/lib/browser-find";
-import { useBrowserHistory } from "@/lib/browser-history";
+import { useBrowserHistorySearch } from "@/lib/browser-history";
+import {
+  BROWSER_ZOOM_DEFAULT_FACTOR,
+  clampBrowserZoomFactor,
+  stepBrowserZoomFactor,
+} from "@/lib/browser-zoom";
 import { useBrowserTabCycling } from "@/lib/browser-tab-mru";
 import {
   BROWSER_SURFACE_SCOPE_ID,
   closeBrowserSurfaceTab,
   getActiveBrowserSurfaceTab,
+  isPinnedSurfaceTab,
+  isWebSurfaceTab,
   useBrowserSurfaceTabs,
   type BrowserSurfaceTab,
 } from "@/lib/browser-surface-tabs";
@@ -99,13 +116,20 @@ export function BrowserSurfaceView({
     activeWebTab,
     adoptTab,
     closeTab,
+    duplicateTab,
+    ensureWebTab,
+    moveTab,
     openTab,
     reopenClosedTab,
+    setTabPinned,
     state,
     updateTab,
     webTabs,
   } = useBrowserSurfaceTabs();
-  const { entries: history } = useBrowserHistory(BROWSER_SURFACE_SCOPE_ID);
+  const searchBrowserHistory = useBrowserHistorySearch();
+  // The chosen search engine: what the omnibox's own search row and the page
+  // menu's "Search for …" both send a query to.
+  const searchEngine = useBrowserSearchEngine();
   const navigate = useNavigate();
   const showsAppScreen = appScreen !== null;
   const webTabCount = webTabs.length;
@@ -120,9 +144,9 @@ export function BrowserSurfaceView({
     // not throw the user out of Settings: the replacement is a page to come
     // back to, not one being asked for.
     if (webTabCount === 0) {
-      openTab(undefined, { activate: false });
+      ensureWebTab();
     }
-  }, [openTab, webTabCount]);
+  }, [ensureWebTab, webTabCount]);
 
   const location = useLocation();
   const currentPath = `${location.pathname}${location.search}`;
@@ -170,6 +194,9 @@ export function BrowserSurfaceView({
   // mounts only the active tab, so the strip shows an icon for every tab visited
   // since the app started and its generic mark for the rest.
   const [favicons, setFavicons] = useAtom(browserFaviconsAtom);
+  // Which tabs the user silenced — window session state, for the reasons in
+  // `browser-tab-mute.ts`.
+  const [mutedTabIds, setMutedTabIds] = useAtom(browserMutedTabsAtom);
 
   const dropFavicon = useCallback(
     (tabId: string) => {
@@ -182,16 +209,54 @@ export function BrowserSurfaceView({
 
   const closeSurfaceTab = useCallback(
     (tabId: string) => {
-      closeTab(tabId);
-      dropFavicon(tabId);
       // Whoever inherits the strip decides where the window goes; the reducer is
       // pure, so asking it here costs nothing and keeps the successor rule in
       // one place.
-      goToTabRoute(
-        getActiveBrowserSurfaceTab(closeBrowserSurfaceTab(state, tabId)),
+      const remaining = closeBrowserSurfaceTab(state, tabId);
+      // An empty strip is a window with nothing to show, so it goes — which is
+      // what closing the last tab does in every other browser. Decided here
+      // rather than from an effect watching the count, because the effect that
+      // guarantees a page would race it and reopen one.
+      if (remaining.tabs.length === 0 && closeDesktopWindow()) {
+        return;
+      }
+      closeTab(tabId);
+      dropFavicon(tabId);
+      // A tab id is never reused, so its mute and any plugin mark on it would
+      // otherwise sit in window state for nothing.
+      setMutedTabIds((current) =>
+        withBrowserTabMuted(current, { muted: false, tabId }),
       );
+      forgetPluginBrowserTabStatuses(tabId);
+      goToTabRoute(getActiveBrowserSurfaceTab(remaining));
     },
-    [closeTab, dropFavicon, goToTabRoute, state],
+    [closeTab, dropFavicon, goToTabRoute, setMutedTabIds, state],
+  );
+
+  // Duplicating focuses the copy, so the window has to follow it — same rule as
+  // opening one.
+  const duplicateSurfaceTab = useCallback(
+    (tabId: string) => {
+      goToTabRoute(duplicateTab(tabId));
+    },
+    [duplicateTab, goToTabRoute],
+  );
+
+  /**
+   * Silence a tab's page.
+   *
+   * The record is the renderer's and the effect is the shell's, so both are set
+   * here; a tab whose view does not exist yet keeps the record and gets the call
+   * when it does (see the effect below).
+   */
+  const setSurfaceTabMuted = useCallback(
+    ({ muted, tabId }: { muted: boolean; tabId: string }) => {
+      setMutedTabIds((current) =>
+        withBrowserTabMuted(current, { muted, tabId }),
+      );
+      getDesktopBrowserApi()?.setMuted?.({ muted, tabId });
+    },
+    [setMutedTabIds],
   );
 
   const handleUpdate = useCallback(
@@ -251,6 +316,50 @@ export function BrowserSurfaceView({
     browserApi.setPopupTabs({ tabIds: [...surfaceTabIds] });
   }, [surfaceTabIds]);
 
+  // What each tab's zoom actually is, as the shell reports it. Kept rather than
+  // derived because zoom changes from both ends: the user steps it, and
+  // Chromium restores a site's remembered zoom when a tab navigates there.
+  const [zoomFactors, setZoomFactors] = useState<Record<string, number>>({});
+  useEffect(() => {
+    const browserApi = getDesktopBrowserApi();
+    if (browserApi?.onZoom === undefined) {
+      return;
+    }
+    return browserApi.onZoom(({ tabId, factor }) => {
+      setZoomFactors((current) =>
+        current[tabId] === factor ? current : { ...current, [tabId]: factor },
+      );
+    });
+  }, []);
+
+  // Which tabs are on a certificate a human waved through, as the shell reports
+  // it. Kept per tab rather than read at mount for the reason the zoom record is:
+  // the push comes once per navigation, and a tab switched back to must not
+  // re-earn a claim the browser already knows is false.
+  const [certificateTrustedTabIds, setCertificateTrustedTabIds] = useState<
+    ReadonlySet<string>
+  >(() => new Set());
+  useEffect(() => {
+    const browserApi = getDesktopBrowserApi();
+    if (browserApi?.onPageSecurity === undefined) {
+      return;
+    }
+    return browserApi.onPageSecurity(({ certificateTrustedByUser, tabId }) => {
+      setCertificateTrustedTabIds((current) => {
+        if (current.has(tabId) === certificateTrustedByUser) {
+          return current;
+        }
+        const next = new Set(current);
+        if (certificateTrustedByUser) {
+          next.add(tabId);
+        } else {
+          next.delete(tabId);
+        }
+        return next;
+      });
+    });
+  }, []);
+
   useEffect(() => {
     const browserApi = getDesktopBrowserApi();
     if (browserApi?.onPopup === undefined) {
@@ -279,10 +388,10 @@ export function BrowserSurfaceView({
     }
     return browserApi.onSearchSelection(({ query, tabId }) => {
       if (surfaceTabIds.has(tabId)) {
-        openSurfaceTab(buildBrowserSearchUrl(query));
+        openSurfaceTab(buildBrowserSearchUrl(query, searchEngine.urlTemplate));
       }
     });
-  }, [openSurfaceTab, surfaceTabIds]);
+  }, [openSurfaceTab, searchEngine.urlTemplate, surfaceTabIds]);
 
   // Plugin context-menu entries. Declared up front and handed to the shell, so
   // a right-click composes its menu without waiting on the server; the click is
@@ -316,6 +425,59 @@ export function BrowserSurfaceView({
       void runPluginContextMenuItem(invoke);
     });
   }, [surfaceTabIds]);
+
+  // Plugin entries on a tab's own menu, and plugin marks on the tabs themselves —
+  // the two halves of Phase 8's tab surface. The entries are declared and come
+  // from the server; the marks are set live by a plugin's frontend, so they are
+  // read from the renderer store rather than fetched.
+  const contributedTabActions =
+    usePluginContributions().data?.browserTabActions;
+  const pluginTabStatuses = usePluginBrowserTabStatuses();
+
+  // Re-assert every mute whenever the strip's active tab changes.
+  //
+  // Mute lives on a `webContents`, and the deck creates one only when its tab is
+  // first shown — so a tab muted before it was ever opened has nothing to
+  // silence at the time. The deck is a child of this view, and React runs child
+  // effects first, so by the time this runs the newly-active tab's view exists.
+  // Every other call in the loop is a no-op the shell drops.
+  useEffect(() => {
+    const setMuted = getDesktopBrowserApi()?.setMuted;
+    if (setMuted === undefined) {
+      return;
+    }
+    for (const tabId of mutedTabIds) {
+      setMuted({ muted: true, tabId });
+    }
+  }, [mutedTabIds, state.activeTabId]);
+
+  const runTabAction = useCallback(
+    ({
+      action,
+      tabId,
+    }: {
+      action: { itemId: string; pluginId: string };
+      tabId: string;
+    }) => {
+      const tab = state.tabs.find((one) => one.id === tabId);
+      if (tab === undefined) {
+        return;
+      }
+      void runPluginTabAction({
+        active: state.activeTabId === tabId,
+        itemId: action.itemId,
+        muted: mutedTabIds.has(tabId),
+        pinned: isPinnedSurfaceTab(tab),
+        pluginId: action.pluginId,
+        tabId,
+        // Null says "a bb screen" — a tab with no page at all, which is what an
+        // action has to be able to tell apart from a tab with no page *yet*.
+        title: tab.title,
+        url: isWebSurfaceTab(tab) ? tab.url : null,
+      });
+    },
+    [mutedTabIds, state.activeTabId, state.tabs],
+  );
 
   // Which tabs are loading, so the strip can spin in place of the icon. Only the
   // mounted (active) tab reports, and it reports "not loading" on unmount.
@@ -397,12 +559,14 @@ export function BrowserSurfaceView({
   const omniboxProviders = useMemo(
     () => [
       createOmniboxNavigationProvider(),
-      createOmniboxSearchProvider(),
+      createOmniboxSearchProvider({
+        searchUrlTemplate: searchEngine.urlTemplate,
+      }),
       createOmniboxOpenTabsProvider({
         activeTabId: state.activeTabId,
         tabs: webTabs,
       }),
-      createOmniboxHistoryProvider({ entries: history }),
+      createOmniboxHistoryProvider({ search: searchBrowserHistory }),
       createOmniboxAppRouteProvider({ routes: appRoutes }),
       ...createOmniboxPluginProviders({
         contributions: contributedOmniboxProviders ?? [],
@@ -412,8 +576,9 @@ export function BrowserSurfaceView({
     [
       appRoutes,
       contributedOmniboxProviders,
-      history,
       pluginSuggestionSource,
+      searchBrowserHistory,
+      searchEngine.urlTemplate,
       state.activeTabId,
       webTabs,
     ],
@@ -431,16 +596,23 @@ export function BrowserSurfaceView({
 
   const isSwitcherOpen = switcher !== null;
   const activeWebTabId = activeWebTab?.id ?? null;
+  // Everything the surface draws over the page area goes through one overlay,
+  // because there is one page to freeze: two owners writing `setOverlay` for the
+  // same tab would have the second one's close thaw the first one's panel. Which
+  // is why the chrome's own panels arrive here as a flag instead of a call.
+  const [isTabMenuOpen, setIsTabMenuOpen] = useState(false);
+  const [isChromePanelOpen, setIsChromePanelOpen] = useState(false);
+  const needsPageOverlay = isSwitcherOpen || isTabMenuOpen || isChromePanelOpen;
   useEffect(() => {
     const browserApi = getDesktopBrowserApi();
     if (browserApi?.setOverlay === undefined || activeWebTabId === null) {
       return;
     }
-    browserApi.setOverlay({ tabId: activeWebTabId, active: isSwitcherOpen });
+    browserApi.setOverlay({ tabId: activeWebTabId, active: needsPageOverlay });
     return () => {
       browserApi.setOverlay?.({ tabId: activeWebTabId, active: false });
     };
-  }, [activeWebTabId, isSwitcherOpen]);
+  }, [activeWebTabId, needsPageOverlay]);
 
   // Find in page. Owned here rather than by the chrome because the bar takes a
   // strip of layout of its own — the page below it shrinks while it is open.
@@ -585,6 +757,48 @@ export function BrowserSurfaceView({
     closeSurfaceTab(state.activeTabId);
     return true;
   });
+  // Zoom belongs to the tab, and its current value belongs to the shell: a site
+  // the user zoomed before comes back zoomed without anyone asking, so the
+  // steps walk from what the shell last reported rather than from a count kept
+  // here.
+  const stepZoom = useCallback(
+    (next: (current: number) => number) => {
+      const tabId = activeWebTab?.id;
+      const setZoom = getDesktopBrowserApi()?.setZoom;
+      if (tabId === undefined || setZoom === undefined) {
+        return false;
+      }
+      setZoom({
+        tabId,
+        factor: clampBrowserZoomFactor(
+          next(zoomFactors[tabId] ?? BROWSER_ZOOM_DEFAULT_FACTOR),
+        ),
+      });
+      return true;
+    },
+    [activeWebTab?.id, zoomFactors],
+  );
+
+  useAppCommandHandler("browser.zoomIn", () =>
+    stepZoom((current) => stepBrowserZoomFactor(current, "in")),
+  );
+  useAppCommandHandler("browser.zoomOut", () =>
+    stepZoom((current) => stepBrowserZoomFactor(current, "out")),
+  );
+  useAppCommandHandler("browser.zoomReset", () =>
+    stepZoom(() => BROWSER_ZOOM_DEFAULT_FACTOR),
+  );
+
+  useAppCommandHandler("browser.print", () => {
+    const tabId = activeWebTab?.id;
+    const print = getDesktopBrowserApi()?.print;
+    if (tabId === undefined || print === undefined) {
+      return false;
+    }
+    print({ tabId });
+    return true;
+  });
+
   useAppCommandHandler("browser.reopenClosedTab", () => {
     reopenClosedTab();
     return true;
@@ -642,9 +856,18 @@ export function BrowserSurfaceView({
         activeTabId={state.activeTabId}
         favicons={favicons}
         loadingTabIds={loadingTabIds}
+        mutedTabIds={mutedTabIds}
         onActivate={activateSurfaceTab}
         onClose={closeSurfaceTab}
+        onDuplicate={duplicateSurfaceTab}
+        onMenuOpenChange={setIsTabMenuOpen}
+        onMove={moveTab}
         onOpen={handleOpen}
+        onRunTabAction={runTabAction}
+        onSetMuted={setSurfaceTabMuted}
+        onSetPinned={setTabPinned}
+        pluginStatuses={pluginTabStatuses}
+        tabActions={contributedTabActions}
         tabs={state.tabs}
       />
       {/* No address bar over an app screen: bb's own screens are not pages to
@@ -653,8 +876,12 @@ export function BrowserSurfaceView({
       {showsAppScreen || activeWebTab === null ? null : (
         <BrowserSurfaceChrome
           key={activeWebTab.id}
+          certificateTrustedByUser={certificateTrustedTabIds.has(
+            activeWebTab.id,
+          )}
           onActivateTab={activateSurfaceTab}
           onOpenAppRoute={openAppRoute}
+          onPageOverlayChange={setIsChromePanelOpen}
           providers={omniboxProviders}
           tabId={activeWebTab.id}
           url={activeWebTab.url}

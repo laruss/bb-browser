@@ -125,18 +125,11 @@ const splitWithoutModal = {
 } as const;
 
 export const DEFAULT_APP_KEYBINDINGS: AppDefaultKeybindings = [
-  // Browsers reserve Mod+N before the page receives a key event. Keep the
-  // t3code-style alias available in web clients while desktop retains Mod+N.
+  // Mod+N is the browser's, not the thread's: bb is one, and in every other
+  // browser that chord opens a window. So the t3code-style alias is the whole
+  // of this binding now, on desktop as well as on the web, where browsers
+  // reserve Mod+N before the page ever sees the key.
   binding("thread.new", "o", { mod: true, shift: true }, mainWithoutModal),
-  binding(
-    "thread.new",
-    "n",
-    { mod: true },
-    {
-      ...mainWithoutModal,
-      desktopOnly: true,
-    },
-  ),
   binding("thread.search", "k", { mod: true }, mainWithoutModal),
   unassignedBinding("thread.rename", mainWithoutModal),
   unassignedBinding("thread.archive", mainWithoutModal),
@@ -199,7 +192,6 @@ export const DEFAULT_APP_KEYBINDINGS: AppDefaultKeybindings = [
   binding("panel.newTab", "t", { mod: true }, mainWithoutModal),
   binding("panel.close", "w", { mod: true }, mainWithoutModal),
   binding("panel.toggle", "j", { mod: true }, mainWithoutModal),
-  binding("file.quickOpen", "p", { mod: true }, mainWithoutModal),
   binding(
     "diff.toggle",
     "d",
@@ -402,10 +394,22 @@ export const DEFAULT_APP_KEYBINDINGS: AppDefaultKeybindings = [
       },
     ),
   ),
+  // Page zoom, on the chords every browser uses. `=` rather than `+` because
+  // that is the unshifted key the user presses; the shell's menu accelerator
+  // spells the same chord its own way.
+  binding("browser.zoomIn", "=", { mod: true }, browserWithoutModal),
+  binding("browser.zoomOut", "-", { mod: true }, browserWithoutModal),
+  binding("browser.zoomReset", "0", { mod: true }, browserWithoutModal),
+  // Mod+P is print and nothing else. It used to be a second chord for the
+  // panel's new tab (`panel.newTab` already had Mod+T), so this took the chord
+  // rather than sharing it.
+  binding("browser.print", "p", { mod: true }, browserWithoutModal),
+  // Mod+Shift+N is deliberately left alone: it is the incognito window
+  // everywhere else, and bb has not built one yet (see browser-gaps.md).
   binding(
     "window.new",
     "n",
-    { mod: true, shift: true },
+    { mod: true },
     {
       ...mainWithoutModal,
       desktopOnly: true,

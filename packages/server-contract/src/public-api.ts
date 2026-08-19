@@ -38,6 +38,19 @@ import {
   type ApiSchemaFromRouteDescriptors,
 } from "@bb/hono-typed-routes";
 import type {
+  BrowserHistoryQuery,
+  BrowserHistoryResponse,
+  ClearBrowserHistoryRequest,
+  ClearBrowserHistoryResponse,
+  RecordBrowserHistoryVisitRequest,
+  RecordBrowserHistoryVisitResponse,
+} from "./api/browser-history.js";
+import {
+  browserHistoryQuerySchema,
+  clearBrowserHistoryRequestSchema,
+  recordBrowserHistoryVisitRequestSchema,
+} from "./api/browser-history.js";
+import type {
   EmptyInput,
   PathId,
   PathProjectId,
@@ -1462,6 +1475,43 @@ export const publicApiRoutes = {
         systemVersionQuerySchema,
       ),
       response: jsonResponse<SystemVersionResponse>(),
+    }),
+  },
+  /**
+   * The browser's history store. Global rather than hung off a thread: the
+   * omnibox and the history page read every scope, and `scopeId` narrows the
+   * read to one surface rather than owning the rows.
+   */
+  browserHistory: {
+    list: defineRoute({
+      path: "/browser-history",
+      method: "get",
+      request: optionalQueryRequest<EmptyInput, BrowserHistoryQuery>(
+        browserHistoryQuerySchema,
+      ),
+      response: jsonResponse<BrowserHistoryResponse>(),
+    }),
+    record: defineRoute({
+      path: "/browser-history",
+      method: "post",
+      request: jsonRequest<EmptyInput, RecordBrowserHistoryVisitRequest>(
+        recordBrowserHistoryVisitRequestSchema,
+      ),
+      response: jsonResponse<RecordBrowserHistoryVisitResponse>(),
+    }),
+    remove: defineRoute({
+      path: "/browser-history/:id",
+      method: "delete",
+      request: noRequest<PathId>(),
+      response: jsonResponse<{ ok: true }>(),
+    }),
+    clear: defineRoute({
+      path: "/browser-history",
+      method: "delete",
+      request: jsonRequest<EmptyInput, ClearBrowserHistoryRequest>(
+        clearBrowserHistoryRequestSchema,
+      ),
+      response: jsonResponse<ClearBrowserHistoryResponse>(),
     }),
   },
 };

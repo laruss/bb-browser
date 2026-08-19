@@ -21,6 +21,8 @@ import {
   type PluginBrowserPdfDocument,
   type PluginBrowserAuthCredentials,
   type PluginBrowserContextMenuContext,
+  type PluginBrowserSiteInfoContext,
+  type PluginBrowserTabActionContext,
   type PluginBrowserDownload,
   type PluginBrowserFindContext,
   type PluginCliExecutionResult,
@@ -65,6 +67,7 @@ import {
   type PluginAgentConfigurationContext,
   type PluginAgentToolContext,
   type PluginAgentToolRecord,
+  type PluginBrowserHistoryVisit,
   type PluginCliContext,
   type PluginHttpRouteRecord,
   type PluginMentionTrigger,
@@ -74,6 +77,10 @@ import {
   syncPluginCommandsSkill,
   type PluginCliContribution,
 } from "./plugin-commands-skill.js";
+import {
+  applyBrowserHistoryRewrite,
+  normalizeBrowserHistoryDecision,
+} from "./plugin-history-filter.js";
 import { isResponseLike } from "./plugin-http-message.js";
 import { rpcBoundaryError, runRpcCall } from "./plugin-rpc-call.js";
 import { readPluginLogTail } from "./plugin-log.js";
@@ -108,6 +115,9 @@ import type {
   PluginMentionSearchGroup,
   PluginMentionSearchItem,
   PluginContextMenuItemContribution,
+  PluginSearchEngineContribution,
+  PluginSiteInfoSection,
+  PluginTabActionContribution,
   PluginFindActionContribution,
   PluginOmniboxProviderContribution,
   PluginOmniboxRunOutcome,
@@ -133,6 +143,9 @@ export type {
   PluginMentionSearchGroup,
   PluginMentionSearchItem,
   PluginContextMenuItemContribution,
+  PluginSearchEngineContribution,
+  PluginSiteInfoSection,
+  PluginTabActionContribution,
   PluginFindActionContribution,
   PluginOmniboxProviderContribution,
   PluginOmniboxRunOutcome,
@@ -429,6 +442,40 @@ export interface PluginService {
     context: PluginBrowserFindContext;
   }): Promise<{ ok: true } | { ok: false; error: string }>;
   /**
+   * Ask every registered site-info provider what it knows about the page whose
+   * padlock was clicked (`browser.siteInfo.sections`).
+   *
+   * Concurrent, like omnibox suggestions and for the same reason: the sections
+   * are independent and the panel is already open. Each is time-boxed and
+   * failure-isolated, and a provider with nothing to say drops out of the result
+   * rather than showing an empty heading.
+   */
+  describeSiteInfo(args: {
+    context: PluginBrowserSiteInfoContext;
+  }): Promise<PluginSiteInfoSection[]>;
+  /**
+   * Search engines plugins offered (`browser.searchEngines`), for the app to list
+   * beside bb's own. Ordered by plugin id, then registration order. No plugin
+   * code runs — the rows were declared at load.
+   */
+  listSearchEngineContributions(): PluginSearchEngineContribution[];
+  /**
+   * Tab-menu entries plugins contributed (`browser.tab.actions`), for the
+   * browser's tab strip to render after its own entries. Ordered by plugin id,
+   * then registration order. No plugin code runs.
+   */
+  listTabActionContributions(): PluginTabActionContribution[];
+  /**
+   * Run a picked tab-menu entry, on the same terms as a picked context-menu
+   * item: one deliberate click, time-boxed, failure-isolated, and nothing waits
+   * on it.
+   */
+  runTabAction(args: {
+    pluginId: string;
+    itemId: string;
+    context: PluginBrowserTabActionContext;
+  }): Promise<{ ok: true } | { ok: false; error: string }>;
+  /**
    * Ask every registered auth provider (`browser.auth.providers`) for the
    * credentials a browsed page was challenged for, in plugin id order, and stop
    * at the first that answers.
@@ -479,6 +526,22 @@ export interface PluginService {
     download: PluginBrowserDownload,
   ): Promise<{ handlerCount: number }>;
   /**
+   * Show one page to every registered history filter before it is stored
+   * (`browser.history.filters`).
+   *
+   * Sequential rather than concurrent, unlike the contributions above: each
+   * filter decides from what the previous one left, so a plugin that strips
+   * tracking parameters and a plugin that drops private hosts compose instead
+   * of racing. Plugin id order, then registration order.
+   *
+   * Resolves to the visit as it should be recorded, or null when a filter
+   * dropped it. Never rejects: a filter that throws or times out is skipped,
+   * because a broken plugin must not cost the user their history.
+   */
+  applyBrowserHistoryFilters(
+    visit: PluginBrowserHistoryVisit,
+  ): Promise<PluginBrowserHistoryVisit | null>;
+  /**
    * Perform one picked `{ type: "run" }` suggestion. `itemId` is the
    * wire-composed "<providerId>:<item id>" from suggestOmnibox. Dispatch and
    * handler problems map to `{ ok: false, error }` so the browser can report
@@ -513,6 +576,21 @@ const DEFAULT_MENTION_RESOLVE_TIMEOUT_MS = 10_000;
 /** Same 2s box as mention search: the omnibox must stay responsive per keystroke. */
 const DEFAULT_OMNIBOX_SUGGEST_TIMEOUT_MS = 2_000;
 /**
+ * The site-info popover is open while this runs, so the box is the omnibox's
+ * rather than a menu action's: a provider that hangs must not leave a section
+ * spinning under the user's cursor.
+ */
+const DEFAULT_SITE_INFO_TIMEOUT_MS = 2_000;
+/**
+ * What one provider may put in the popover. It is a small panel anchored to the
+ * address bar, and a provider that returns a hundred rows is not describing a
+ * site — so the rows are capped here rather than trusted, like every other
+ * plugin-supplied string that reaches the app.
+ */
+const SITE_INFO_MAX_ROWS = 8;
+const SITE_INFO_MAX_ROW_LABEL_LENGTH = 60;
+const SITE_INFO_MAX_ROW_VALUE_LENGTH = 200;
+/**
  * A picked `run` action is a deliberate user action, not a keystroke, and may
  * spawn a thread — so it gets the same longer box as mention resolve.
  */
@@ -524,6 +602,12 @@ const DEFAULT_OMNIBOX_RUN_TIMEOUT_MS = 10_000;
  * waits on it: the file is written and the user has already been told.
  */
 const DEFAULT_BROWSER_DOWNLOAD_TIMEOUT_MS = 30_000;
+/**
+ * A history filter runs on the write path of an ordinary page load, so it gets
+ * the tightest box of any contribution: the visit is not recorded until every
+ * filter has answered, and a wedged one must not be able to hold that up.
+ */
+const DEFAULT_BROWSER_HISTORY_FILTER_TIMEOUT_MS = 1_000;
 /** A picked menu item is a deliberate user action, like an omnibox `run`. */
 const DEFAULT_CONTEXT_MENU_RUN_TIMEOUT_MS = 10_000;
 /**
@@ -725,6 +809,40 @@ function normalizeMentionSearchItems(
  * `hasRun` gates `run` actions: a row whose action the provider cannot perform
  * would fail only once the user picked it, so it is rejected here instead.
  */
+/**
+ * Turn what a provider returned into rows the popover can render, refusing what
+ * is not rows at all and trimming the rest to the caps above.
+ */
+function normalizeSiteInfoRows(args: {
+  providerId: string;
+  result: unknown;
+}): { label: string; value: string }[] {
+  if (args.result === null || args.result === undefined) {
+    return [];
+  }
+  if (!Array.isArray(args.result)) {
+    throw new Error(
+      `site info provider "${args.providerId}" describe() must return an array of rows or null`,
+    );
+  }
+  return args.result.slice(0, SITE_INFO_MAX_ROWS).map((row, index) => {
+    const typed = row as { label?: unknown; value?: unknown } | null;
+    if (
+      typeof typed?.label !== "string" ||
+      typed.label.trim().length === 0 ||
+      typeof typed.value !== "string"
+    ) {
+      throw new Error(
+        `site info provider "${args.providerId}" rows[${index}] must be { label: string, value: string }`,
+      );
+    }
+    return {
+      label: typed.label.trim().slice(0, SITE_INFO_MAX_ROW_LABEL_LENGTH),
+      value: typed.value.trim().slice(0, SITE_INFO_MAX_ROW_VALUE_LENGTH),
+    };
+  });
+}
+
 function normalizeOmniboxSuggestItems(args: {
   hasRun: boolean;
   providerId: string;
@@ -1065,6 +1183,11 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
     deps.omniboxRunTimeoutMs ?? DEFAULT_OMNIBOX_RUN_TIMEOUT_MS;
   const browserDownloadTimeoutMs =
     deps.browserDownloadTimeoutMs ?? DEFAULT_BROWSER_DOWNLOAD_TIMEOUT_MS;
+  const browserHistoryFilterTimeoutMs =
+    deps.browserHistoryFilterTimeoutMs ??
+    DEFAULT_BROWSER_HISTORY_FILTER_TIMEOUT_MS;
+  const siteInfoTimeoutMs =
+    deps.siteInfoTimeoutMs ?? DEFAULT_SITE_INFO_TIMEOUT_MS;
   const contextMenuRunTimeoutMs =
     deps.contextMenuRunTimeoutMs ?? DEFAULT_CONTEXT_MENU_RUN_TIMEOUT_MS;
   const browserAuthTimeoutMs = DEFAULT_BROWSER_AUTH_TIMEOUT_MS;
@@ -2439,6 +2562,104 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
       return outcome.ok ? { ok: true } : { ok: false, error: outcome.error };
     },
 
+    listSearchEngineContributions() {
+      const contributions: PluginSearchEngineContribution[] = [];
+      for (const [id, plugin] of [...loaded.entries()].sort(([a], [b]) =>
+        a.localeCompare(b),
+      )) {
+        for (const engine of plugin.handle.searchEngines) {
+          contributions.push({
+            pluginId: id,
+            id: engine.id,
+            name: engine.name,
+            urlTemplate: engine.urlTemplate,
+          });
+        }
+      }
+      return contributions;
+    },
+
+    listTabActionContributions() {
+      const contributions: PluginTabActionContribution[] = [];
+      for (const [id, plugin] of [...loaded.entries()].sort(([a], [b]) =>
+        a.localeCompare(b),
+      )) {
+        for (const record of plugin.handle.tabActions) {
+          contributions.push({
+            pluginId: id,
+            itemId: record.id,
+            title: record.title,
+          });
+        }
+      }
+      return contributions;
+    },
+
+    async runTabAction({ context, itemId, pluginId }) {
+      const plugin = loaded.get(pluginId);
+      const record = plugin?.handle.tabActions.find(
+        (candidate) => candidate.id === itemId,
+      );
+      if (!plugin || record === undefined) {
+        return {
+          ok: false,
+          error: `plugin "${pluginId}" has no tab action "${itemId}"`,
+        };
+      }
+      const outcome = await invokeCallback(
+        pluginId,
+        { kind: "browserTabAction", target: itemId, payload: context },
+        async (payload) =>
+          withPluginTimeout({
+            run: async () => record.run(payload),
+            // The same box a picked menu item gets, because that is what it is.
+            timeoutMs: contextMenuRunTimeoutMs,
+          }),
+      );
+      return outcome.ok ? { ok: true } : { ok: false, error: outcome.error };
+    },
+
+    async describeSiteInfo({ context }) {
+      const entries = [...loaded.entries()].sort(([a], [b]) =>
+        a.localeCompare(b),
+      );
+      const tasks: Array<Promise<PluginSiteInfoSection | null>> = [];
+      for (const [id, plugin] of entries) {
+        for (const record of [...plugin.handle.siteInfoProviders]) {
+          tasks.push(
+            (async () => {
+              const outcome = await invokeCallback(
+                id,
+                {
+                  kind: "browserSiteInfo",
+                  target: record.id,
+                  payload: context,
+                },
+                async (payload) =>
+                  normalizeSiteInfoRows({
+                    providerId: record.id,
+                    result: await withPluginTimeout({
+                      run: async () => record.describe(payload),
+                      timeoutMs: siteInfoTimeoutMs,
+                    }),
+                  }),
+              );
+              if (!outcome.ok || outcome.value.length === 0) return null;
+              return {
+                pluginId: id,
+                providerId: record.id,
+                label: record.label,
+                rows: outcome.value,
+              };
+            })(),
+          );
+        }
+      }
+      return (await Promise.all(tasks)).filter(
+        (section): section is PluginSiteInfoSection => section !== null,
+      );
+    },
+
     async resolveBrowserAuth({ challenge }) {
       for (const [pluginId, plugin] of [...loaded.entries()].sort(([a], [b]) =>
         a.localeCompare(b),
@@ -2607,6 +2828,35 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
       }
       await Promise.all(tasks);
       return { handlerCount: tasks.length };
+    },
+
+    async applyBrowserHistoryFilters(visit) {
+      let current = visit;
+      for (const [id, plugin] of [...loaded.entries()].sort(([a], [b]) =>
+        a.localeCompare(b),
+      )) {
+        for (const [index, filter] of plugin.handle.historyFilters.entries()) {
+          const outcome = await invokeCallback(
+            id,
+            {
+              kind: "browserHistoryFilter",
+              target: String(index),
+              payload: current,
+            },
+            async (payload) =>
+              withPluginTimeout({
+                run: async () =>
+                  normalizeBrowserHistoryDecision(await filter(payload)),
+                timeoutMs: browserHistoryFilterTimeoutMs,
+              }),
+          );
+          if (!outcome.ok) continue;
+          const decision = outcome.value;
+          if ("drop" in decision) return null;
+          current = applyBrowserHistoryRewrite(current, decision.rewrite);
+        }
+      }
+      return current;
     },
 
     async runOmniboxAction({ itemId, pluginId, query }) {

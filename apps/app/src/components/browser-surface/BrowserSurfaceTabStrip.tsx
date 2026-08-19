@@ -1,6 +1,37 @@
-import { useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type MouseEventHandler,
+} from "react";
+import {
+  DndContext,
+  MouseSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type Modifier,
+} from "@dnd-kit/core";
+import {
+  horizontalListSortingStrategy,
+  SortableContext,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { Icon, type IconName } from "@bb/shared-ui/icon";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "@bb/shared-ui/context-menu";
 import { cn } from "@bb/shared-ui/lib/utils";
+import { useDragClickSuppression } from "@/components/ui/use-drag-click-suppression";
+import type { PluginBrowserTabStatus } from "@bb/plugin-sdk";
+import { pluginIconName } from "@/components/plugin/PluginIcon";
 import { useDesktopWindowState } from "@/hooks/useDesktopWindowState";
 import { useIsCompactViewport } from "@bb/shared-ui/hooks/use-compact-viewport";
 import { useOptionalIsSidebarShowing } from "@/components/ui/sidebar.js";
@@ -17,10 +48,18 @@ import {
 import { resolveAppTabIconName } from "@/lib/app-surface-tabs";
 import {
   isAppSurfaceTab,
+  isPinnedSurfaceTab,
   type BrowserSurfaceTab,
 } from "@/lib/browser-surface-tabs";
 import { getBrowserUrlHost } from "@/lib/browser-url";
 import { useIsLeadingPanelShowing } from "@/components/layout/PluginLeadingPanel";
+
+/** A plugin's entry on the tab menu (`browser.tab.actions`). */
+export interface BrowserSurfaceTabAction {
+  pluginId: string;
+  itemId: string;
+  title: string;
+}
 
 export interface BrowserSurfaceTabStripProps {
   activeTabId: string | null;
@@ -33,9 +72,33 @@ export interface BrowserSurfaceTabStripProps {
   favicons?: Readonly<Record<string, string>>;
   /** Tabs currently loading a page; they spin in place of their icon. */
   loadingTabIds?: ReadonlySet<string>;
+  /** Tabs the user silenced; they carry a muted mark. */
+  mutedTabIds?: ReadonlySet<string>;
+  /** Plugin marks on tabs, by tab id — see `plugin-browser-tab-status.ts`. */
+  pluginStatuses?: ReadonlyMap<string, PluginBrowserTabStatus>;
+  /** Plugin entries appended to every tab's menu, in plugin id order. */
+  tabActions?: readonly BrowserSurfaceTabAction[];
   onActivate: (tabId: string) => void;
   onClose: (tabId: string) => void;
+  onDuplicate: (tabId: string) => void;
+  /** Drop a dragged tab at a position in the strip. */
+  onMove: (args: { tabId: string; toIndex: number }) => void;
+  /**
+   * Called as a tab's menu opens and closes.
+   *
+   * The menu hangs over the page area, and a page is a native `WebContentsView`
+   * that composites above the DOM — so it has to be frozen and hidden while the
+   * menu is up. The surface owns that (`setOverlay`), because several panels
+   * compete for one window's page; the strip only says when it needs it.
+   */
+  onMenuOpenChange?: (open: boolean) => void;
   onOpen: () => void;
+  onRunTabAction: (args: {
+    action: BrowserSurfaceTabAction;
+    tabId: string;
+  }) => void;
+  onSetMuted: (args: { muted: boolean; tabId: string }) => void;
+  onSetPinned: (args: { pinned: boolean; tabId: string }) => void;
   tabs: readonly BrowserSurfaceTab[];
 }
 
@@ -101,6 +164,11 @@ export function resolveTabStripChromeReserveClassName({
  * reserved for the close control = 58px, rounded to 60), so changing any of those
  * paddings means recomputing it. Below the floor the strip clips instead of
  * scrolling (see the list container).
+ *
+ * Marks — a mute, a plugin's status — ride inside the same row and never shrink,
+ * so they take from the title rather than from the floor. A tab squeezed all the
+ * way down *and* carrying a mark clips it, which is the trade the floor already
+ * makes for the title.
  */
 const TAB_WIDTH_CLASS = "min-w-15 w-60 shrink";
 
@@ -168,18 +236,347 @@ function BrowserSurfaceTabIcon({
   return <img src={dataUrl} alt="" className="size-4 shrink-0 rounded-sm" />;
 }
 
+/**
+ * A pinned tab, Chromium's shape: the page icon and nothing else, at the width
+ * that holds it. No title (the strip is where the user keeps what they always
+ * have open, and they know these by their marks) and no close control — the
+ * chord and the menu still close it, but a pin the pointer can undo by accident
+ * is not pinned.
+ *
+ * Sized by its content rather than by a number, unlike {@link TAB_WIDTH_CLASS}:
+ * what a pinned tab holds is bounded — an icon and at most two marks — so there
+ * is nothing here for a page title to inflate, and `shrink-0` keeps the pinned
+ * block out of the shrink pool the unpinned tabs share.
+ */
+const PINNED_TAB_WIDTH_CLASS = "w-auto shrink-0";
+
+/** A tab moves along the strip and nowhere else. */
+const restrictTabDragToHorizontalAxis: Modifier = ({ transform }) => ({
+  ...transform,
+  y: 0,
+});
+
+const TAB_DRAG_MODIFIERS: Modifier[] = [restrictTabDragToHorizontalAxis];
+
+/** Marks after the title: what the user did to the tab, then what a plugin said. */
+function BrowserSurfaceTabMarks({
+  isMuted,
+  pluginStatus,
+}: {
+  isMuted: boolean;
+  pluginStatus: PluginBrowserTabStatus | null;
+}) {
+  return (
+    <>
+      {isMuted ? (
+        <Icon
+          name="VolumeOff"
+          className="size-3.5 shrink-0 opacity-70"
+          aria-label="Muted"
+        />
+      ) : null}
+      {pluginStatus === null ? null : (
+        <Icon
+          name={pluginIconName(pluginStatus.icon)}
+          className={cn(
+            "size-3.5 shrink-0",
+            pluginStatus.tone === "running" &&
+              "animate-shine-icon text-success motion-safe:[animation-duration:1.5s]",
+            pluginStatus.tone === "success" && "text-success",
+            pluginStatus.tone === "error" && "text-destructive",
+          )}
+          aria-label={pluginStatus.label}
+        />
+      )}
+    </>
+  );
+}
+
+interface BrowserSurfaceTabStripTabProps {
+  faviconDataUrl: string | null;
+  isActive: boolean;
+  isLoading: boolean;
+  isMuted: boolean;
+  /** Null outside desktop chrome, where the strip is not a drag handle. */
+  noDragClassName: string | null;
+  onActivate: (tabId: string) => void;
+  onClose: (tabId: string) => void;
+  /** False while there is nothing to reorder — a strip holding one tab. */
+  isDraggable: boolean;
+  onDuplicate: (tabId: string) => void;
+  onMenuOpenChange: (args: { open: boolean; tabId: string }) => void;
+  onRunTabAction: (args: {
+    action: BrowserSurfaceTabAction;
+    tabId: string;
+  }) => void;
+  onSetMuted: (args: { muted: boolean; tabId: string }) => void;
+  onSetPinned: (args: { pinned: boolean; tabId: string }) => void;
+  pluginStatus: PluginBrowserTabStatus | null;
+  showsDivider: boolean;
+  tab: BrowserSurfaceTab;
+  tabActions: readonly BrowserSurfaceTabAction[];
+}
+
+function BrowserSurfaceTabStripTab({
+  faviconDataUrl,
+  isActive,
+  isDraggable,
+  isLoading,
+  isMuted,
+  noDragClassName,
+  onActivate,
+  onClose,
+  onDuplicate,
+  onMenuOpenChange,
+  onRunTabAction,
+  onSetMuted,
+  onSetPinned,
+  pluginStatus,
+  showsDivider,
+  tab,
+  tabActions,
+}: BrowserSurfaceTabStripTabProps) {
+  const label = browserSurfaceTabLabel(tab);
+  const isApp = isAppSurfaceTab(tab);
+  const isPinned = isPinnedSurfaceTab(tab);
+  const { isDragging, listeners, setNodeRef, transform, transition } =
+    useSortable({ id: tab.id, disabled: !isDraggable });
+  // An app tab is a remembered route rather than a live page, so two of the
+  // browser's own entries do not apply to one: duplicating it would leave two
+  // tabs claiming one route, and there is no page of its own to silence — a bb
+  // screen shares the app's `webContents`, so muting it would mute bb.
+  const canDuplicate = !isApp;
+  const canMute = !isApp && tab.url.length > 0;
+  return (
+    <ContextMenu
+      onOpenChange={(open) => {
+        onMenuOpenChange({ open, tabId: tab.id });
+      }}
+    >
+      <ContextMenuTrigger asChild>
+        {/* The tab's fill lives on this box, the same box the close control is
+            positioned inside, so the control cannot land off the tab. Painting
+            the inner button instead is what put it outside. */}
+        <div
+          ref={setNodeRef}
+          style={{ transform: CSS.Translate.toString(transform), transition }}
+          className={cn(
+            "group relative flex items-stretch rounded-md transition-colors",
+            isActive
+              ? "bg-background text-foreground"
+              : "text-muted-foreground hover:bg-state-hover hover:text-foreground",
+            isPinned ? PINNED_TAB_WIDTH_CLASS : TAB_WIDTH_CLASS,
+            // The tab being carried draws above its neighbours, and its own
+            // transform must not animate while the pointer is driving it.
+            isDragging && "z-10 transition-none",
+            noDragClassName,
+          )}
+          {...listeners}
+        >
+          {showsDivider ? (
+            <span
+              aria-hidden
+              className="absolute inset-y-1.5 left-0 w-px bg-border"
+            />
+          ) : null}
+          {/* The tab is one control filling the box: the padding above and
+              below the title activates it too. Room for the close control is
+              reserved rather than overlapped, at every width — the floor is
+              sized to hold it. A pinned tab reserves nothing, having none. */}
+          <button
+            type="button"
+            role="tab"
+            aria-selected={isActive}
+            // The name a pinned tab does not show still has to be reachable —
+            // by a screen reader, and by hovering.
+            {...(isPinned ? { "aria-label": label, title: label } : {})}
+            onClick={() => {
+              onActivate(tab.id);
+            }}
+            className={cn(
+              "flex min-w-0 flex-1 items-center gap-1.5 rounded-md text-left text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+              isPinned ? "justify-center px-2" : "pl-2 pr-7",
+            )}
+          >
+            <BrowserSurfaceTabIcon
+              appIcon={isApp ? resolveAppTabIconName(tab.path) : null}
+              dataUrl={faviconDataUrl}
+              isLoading={isLoading}
+            />
+            {isPinned ? null : (
+              <span className="min-w-0 truncate">{label}</span>
+            )}
+            <BrowserSurfaceTabMarks
+              isMuted={isMuted}
+              pluginStatus={pluginStatus}
+            />
+          </button>
+          {isPinned ? null : (
+            <button
+              type="button"
+              aria-label={`Close ${label}`}
+              onClick={() => {
+                onClose(tab.id);
+              }}
+              // No `noDragClassName` here: the whole tab is already carved out
+              // of the drag region by its box, and that class carries
+              // `relative`, which tailwind-merge would apply *over* the
+              // `absolute` below — which is what threw this control out of the
+              // tab in desktop chrome.
+              className="absolute inset-y-1 right-1 flex items-center rounded px-0.5 opacity-0 transition-opacity hover:bg-state-active group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              {/* Same size bb's other tab close affordance uses (see
+                  TAB_PILL_AFFORDANCE_ICON_CLASS): the control reads as a
+                  secondary mark on the tab rather than a second glyph
+                  competing with the title. */}
+              <Icon name="X" className="size-3.5" aria-hidden />
+            </button>
+          )}
+        </div>
+      </ContextMenuTrigger>
+      {/* bb's own entries first, then whatever plugins added — the same order
+          the page's context menu uses, so a plugin cannot displace the entry a
+          user is reaching for. */}
+      <ContextMenuContent className="w-52">
+        {canDuplicate ? (
+          <ContextMenuItem
+            onSelect={() => {
+              onDuplicate(tab.id);
+            }}
+          >
+            <Icon name="Copy" aria-hidden />
+            Duplicate
+          </ContextMenuItem>
+        ) : null}
+        <ContextMenuItem
+          onSelect={() => {
+            onSetPinned({ pinned: !isPinned, tabId: tab.id });
+          }}
+        >
+          <Icon name={isPinned ? "PinOff" : "Pin"} aria-hidden />
+          {isPinned ? "Unpin tab" : "Pin tab"}
+        </ContextMenuItem>
+        {canMute ? (
+          <ContextMenuItem
+            onSelect={() => {
+              onSetMuted({ muted: !isMuted, tabId: tab.id });
+            }}
+          >
+            <Icon name={isMuted ? "VolumeHigh" : "VolumeOff"} aria-hidden />
+            {isMuted ? "Unmute tab" : "Mute tab"}
+          </ContextMenuItem>
+        ) : null}
+        <ContextMenuSeparator />
+        <ContextMenuItem
+          onSelect={() => {
+            onClose(tab.id);
+          }}
+        >
+          <Icon name="X" aria-hidden />
+          Close tab
+        </ContextMenuItem>
+        {tabActions.length === 0 ? null : <ContextMenuSeparator />}
+        {tabActions.map((action) => (
+          <ContextMenuItem
+            key={`${action.pluginId}:${action.itemId}`}
+            onSelect={() => {
+              onRunTabAction({ action, tabId: tab.id });
+            }}
+          >
+            <Icon name="Zap" aria-hidden />
+            {action.title}
+          </ContextMenuItem>
+        ))}
+      </ContextMenuContent>
+    </ContextMenu>
+  );
+}
+
 const NO_LOADING_TAB_IDS: ReadonlySet<string> = new Set();
+const NO_MUTED_TAB_IDS: ReadonlySet<string> = new Set();
+const NO_PLUGIN_TAB_STATUSES: ReadonlyMap<string, PluginBrowserTabStatus> =
+  new Map();
+const NO_TAB_ACTIONS: readonly BrowserSurfaceTabAction[] = [];
 
 export function BrowserSurfaceTabStrip({
   activeTabId,
   favicons = {},
   loadingTabIds = NO_LOADING_TAB_IDS,
+  mutedTabIds = NO_MUTED_TAB_IDS,
+  pluginStatuses = NO_PLUGIN_TAB_STATUSES,
+  tabActions = NO_TAB_ACTIONS,
   onActivate,
   onClose,
+  onDuplicate,
+  onMenuOpenChange,
+  onMove,
   onOpen,
+  onRunTabAction,
+  onSetMuted,
+  onSetPinned,
   tabs,
 }: BrowserSurfaceTabStripProps) {
   const [desktopInfo] = useState(getBbDesktopInfo);
+  // Which tab's menu is open, rather than a plain boolean: right-clicking a
+  // second tab opens its menu and closes the first one's, and the two callbacks
+  // can arrive in either order. Keyed by id, a stale close cannot cancel a live
+  // open.
+  const [menuTabId, setMenuTabId] = useState<string | null>(null);
+  const handleMenuOpenChange = useCallback(
+    ({ open, tabId }: { open: boolean; tabId: string }) => {
+      setMenuTabId((current) =>
+        open ? tabId : current === tabId ? null : current,
+      );
+    },
+    [],
+  );
+  const isTabMenuOpen = menuTabId !== null;
+  useEffect(() => {
+    onMenuOpenChange?.(isTabMenuOpen);
+  }, [isTabMenuOpen, onMenuOpenChange]);
+  const {
+    beginDragClickSuppression,
+    clearDragClickSuppressionSoon,
+    consumeDragClickSuppression,
+  } = useDragClickSuppression();
+  // The same activation constraints the thread panel's tab strip uses: a few
+  // pixels of travel before a press becomes a drag, so a click still selects the
+  // tab, and a hold on touch, where there is no hover to distinguish the two.
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 200, tolerance: 6 },
+    }),
+  );
+  const tabIds = useMemo(() => tabs.map((tab) => tab.id), [tabs]);
+  const handleClickCapture = useCallback<MouseEventHandler<HTMLDivElement>>(
+    (event) => {
+      if (!consumeDragClickSuppression()) {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+    },
+    [consumeDragClickSuppression],
+  );
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      // A drop is not a click on the tab it landed on, and the pointer sequence
+      // ends with one — so the click is swallowed rather than activating a tab
+      // the user was only carrying.
+      clearDragClickSuppressionSoon();
+      const over = event.over;
+      if (over === null) {
+        return;
+      }
+      const toIndex = tabIds.indexOf(String(over.id));
+      if (toIndex === -1) {
+        return;
+      }
+      onMove({ tabId: String(event.active.id), toIndex });
+    },
+    [clearDragClickSuppressionSoon, onMove, tabIds],
+  );
   const desktopWindowState = useDesktopWindowState();
   const isCompactViewport = useIsCompactViewport();
   const isSidebarShowing = useOptionalIsSidebarShowing();
@@ -221,88 +618,62 @@ export function BrowserSurfaceTabStrip({
           contribution (see TAB_WIDTH_CLASS); `min-w-0` still lets it be squeezed
           below its content, and then it clips. No scrolling: past the width floor
           the strip clips, which is the cost of the floor being a floor. */}
-      <div
-        className="flex min-w-0 items-stretch overflow-hidden"
-        role="tablist"
-        aria-label="Browser tabs"
+      {/* Reordering is a drag within this one row, so the carried tab never
+          leaves the box and needs no lifted clone portaled past the `overflow`
+          — unlike the thread panel's strip, which scrolls. The axis is
+          restricted for the same reason: a tab dragged upwards would only be
+          able to come back down. */}
+      <DndContext
+        sensors={sensors}
+        modifiers={TAB_DRAG_MODIFIERS}
+        onDragStart={beginDragClickSuppression}
+        onDragCancel={clearDragClickSuppressionSoon}
+        onDragEnd={handleDragEnd}
       >
-        {tabs.map((tab, index) => {
-          const isActive = tab.id === activeTabId;
-          const label = browserSurfaceTabLabel(tab);
-          // Chromium's separator rule: a hairline on the edge two plain tabs
-          // share, and none touching the selected tab, which is already bounded
-          // by its own fill. Tabs sit flush, so "the edge they share" is one
-          // edge — hence a divider drawn on it rather than a gap between them.
-          const showsDivider =
-            index > 0 && !isActive && tabs[index - 1]?.id !== activeTabId;
-          return (
-            // The tab's fill lives on this box, the same box the close control is
-            // positioned inside, so the control cannot land off the tab. Painting
-            // the inner button instead is what put it outside.
-            <div
-              key={tab.id}
-              className={cn(
-                "group relative flex items-stretch rounded-md transition-colors",
-                isActive
-                  ? "bg-background text-foreground"
-                  : "text-muted-foreground hover:bg-state-hover hover:text-foreground",
-                TAB_WIDTH_CLASS,
-                noDragClassName,
-              )}
-            >
-              {showsDivider ? (
-                <span
-                  aria-hidden
-                  className="absolute inset-y-1.5 left-0 w-px bg-border"
-                />
-              ) : null}
-              {/* The tab is one control filling the box: the padding above and
-                  below the title activates it too. Room for the close control is
-                  reserved rather than overlapped, at every width — the floor is
-                  sized to hold it. */}
-              <button
-                type="button"
-                role="tab"
-                aria-selected={isActive}
-                onClick={() => {
-                  onActivate(tab.id);
-                }}
-                className="flex min-w-0 flex-1 items-center gap-1.5 rounded-md pl-2 pr-7 text-left text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              >
-                <BrowserSurfaceTabIcon
-                  appIcon={
-                    isAppSurfaceTab(tab)
-                      ? resolveAppTabIconName(tab.path)
-                      : null
-                  }
-                  dataUrl={favicons[tab.id] ?? null}
-                  isLoading={loadingTabIds.has(tab.id)}
-                />
-                <span className="min-w-0 truncate">{label}</span>
-              </button>
-              <button
-                type="button"
-                aria-label={`Close ${label}`}
-                onClick={() => {
-                  onClose(tab.id);
-                }}
-                // No `noDragClassName` here: the whole tab is already carved out
-                // of the drag region by its box, and that class carries
-                // `relative`, which tailwind-merge would apply *over* the
-                // `absolute` below — which is what threw this control out of the
-                // tab in desktop chrome.
-                className="absolute inset-y-1 right-1 flex items-center rounded px-0.5 opacity-0 transition-opacity hover:bg-state-active group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              >
-                {/* Same size bb's other tab close affordance uses (see
-                    TAB_PILL_AFFORDANCE_ICON_CLASS): the control reads as a
-                    secondary mark on the tab rather than a second glyph
-                    competing with the title. */}
-                <Icon name="X" className="size-3.5" aria-hidden />
-              </button>
-            </div>
-          );
-        })}
-      </div>
+        <SortableContext
+          items={tabIds}
+          strategy={horizontalListSortingStrategy}
+        >
+          <div
+            className="flex min-w-0 items-stretch overflow-hidden"
+            role="tablist"
+            aria-label="Browser tabs"
+            onClickCapture={handleClickCapture}
+          >
+            {tabs.map((tab, index) => (
+              <BrowserSurfaceTabStripTab
+                key={tab.id}
+                faviconDataUrl={favicons[tab.id] ?? null}
+                isActive={tab.id === activeTabId}
+                isDraggable={tabs.length > 1}
+                isLoading={loadingTabIds.has(tab.id)}
+                isMuted={mutedTabIds.has(tab.id)}
+                noDragClassName={noDragClassName}
+                onActivate={onActivate}
+                onClose={onClose}
+                onDuplicate={onDuplicate}
+                onMenuOpenChange={handleMenuOpenChange}
+                onRunTabAction={onRunTabAction}
+                onSetMuted={onSetMuted}
+                onSetPinned={onSetPinned}
+                pluginStatus={pluginStatuses.get(tab.id) ?? null}
+                // Chromium's separator rule: a hairline on the edge two plain tabs
+                // share, and none touching the selected tab, which is already
+                // bounded by its own fill. Tabs sit flush, so "the edge they share"
+                // is one edge — hence a divider drawn on it rather than a gap
+                // between them.
+                showsDivider={
+                  index > 0 &&
+                  tab.id !== activeTabId &&
+                  tabs[index - 1]?.id !== activeTabId
+                }
+                tab={tab}
+                tabActions={tabActions}
+              />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
       <button
         type="button"
         aria-label="New tab"

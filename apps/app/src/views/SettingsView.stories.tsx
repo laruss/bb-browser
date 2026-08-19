@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { DEFAULT_BROWSER_SEARCH_ENGINE_ID } from "@bb/domain/browser-search-engine";
 import {
   defaultAppTheme,
   defaultExperiments,
@@ -187,6 +188,9 @@ function useSettingsStoryState() {
   const [steerActiveThreadOnEnter, setSteerActiveThreadOnEnter] =
     useState(false);
   const [caffeinate, setCaffeinate] = useState(false);
+  const [browserSearchEngineId, setBrowserSearchEngineId] = useState(
+    DEFAULT_BROWSER_SEARCH_ENGINE_ID,
+  );
   const [showUnhandledProviderEvents, setShowUnhandledProviderEvents] =
     useState(false);
   const [preferredAudioInputDeviceId, setPreferredAudioInputDeviceId] =
@@ -200,6 +204,8 @@ function useSettingsStoryState() {
 
   return {
     appearance,
+    browserSearchEngineId,
+    setBrowserSearchEngineId,
     caffeinate,
     directoryTargetId,
     experiments,
@@ -256,6 +262,8 @@ function GeneralSettingsStory({
   return (
     <>
       <GeneralSettingsSection
+        browserSearchEngineId={state.browserSearchEngineId}
+        onBrowserSearchEngineChange={state.setBrowserSearchEngineId}
         caffeinateAvailable={caffeinateAvailable}
         caffeinateDisabled={false}
         caffeinateEnabled={state.caffeinate}

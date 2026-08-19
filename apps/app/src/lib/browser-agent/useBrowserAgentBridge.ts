@@ -3,6 +3,7 @@ import { useStore } from "jotai";
 import { resolvePluginBrowserPdfText } from "@/hooks/queries/plugin-contribution-queries";
 import { getDesktopBrowserApi } from "../bb-desktop";
 import { browserSurfaceTabsAtom } from "../browser-surface-tabs";
+import { browserMutedTabsAtom, withBrowserTabMuted } from "../browser-tab-mute";
 import { destroyPersistedBrowserView } from "@/components/secondary-panel/browserViewVisibilityCoordinator";
 import { wsManager } from "../ws";
 import { executeBrowserCommand } from "./execute";
@@ -54,6 +55,11 @@ export function useBrowserAgentBridge(): void {
         getLiveState: getBrowserLiveState,
         waitForSettled: (tabId) => waitForBrowserTabSettled(tabId),
         destroyView: destroyPersistedBrowserView,
+        recordMuted: ({ muted, tabId }) => {
+          store.set(browserMutedTabsAtom, (current) =>
+            withBrowserTabMuted(current, { muted, tabId }),
+          );
+        },
         resolvePdfText: resolvePluginBrowserPdfText,
         trace,
       })

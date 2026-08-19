@@ -38,8 +38,12 @@ import type {
   PluginBrowser,
   PluginBrowserContextMenuItemRegistration,
   PluginBrowserAuthProvider,
+  PluginBrowserHistoryFilter,
   PluginBrowserPdfTextProvider,
   PluginBrowserFindActionRegistration,
+  PluginBrowserSearchEngineRegistration,
+  PluginBrowserSiteInfoProviderRegistration,
+  PluginBrowserTabActionRegistration,
   PluginBrowserDownloadHandler,
   PluginBrowserConsoleEntry,
   PluginBrowserCookie,
@@ -76,6 +80,10 @@ import type {
   JsonValue,
 } from "@bb/plugin-sdk";
 import type { PluginPermission } from "@bb/domain";
+import {
+  BROWSER_SEARCH_ENGINE_QUERY_PLACEHOLDER,
+  normalizeBrowserSearchEngineTemplate,
+} from "@bb/domain/browser-search-engine";
 import { createFakePermissionGate } from "./fake-permissions.js";
 import {
   createFakeSdk,
@@ -455,10 +463,18 @@ export interface FakePluginRegistrations {
   contextMenuItems: PluginBrowserContextMenuItemRegistration[];
   /** Buttons from `bb.browser.registerFindAction`, in registration order. */
   findActions: PluginBrowserFindActionRegistration[];
+  /** Entries from `bb.browser.registerTabAction`, in registration order. */
+  tabActions: PluginBrowserTabActionRegistration[];
+  /** Providers from `bb.browser.registerSiteInfoProvider`, in order. */
+  siteInfoProviders: PluginBrowserSiteInfoProviderRegistration[];
+  /** Engines from `bb.browser.registerSearchEngine`, in registration order. */
+  searchEngines: PluginBrowserSearchEngineRegistration[];
   /** Providers from `bb.browser.registerAuthProvider`, in registration order. */
   authProviders: PluginBrowserAuthProvider[];
   /** Providers from `bb.browser.registerPdfTextProvider`, in order. */
   pdfTextProviders: PluginBrowserPdfTextProvider[];
+  /** Filters from `bb.browser.registerHistoryFilter`, in registration order. */
+  historyFilters: PluginBrowserHistoryFilter[];
 }
 
 /** Read-only state for assertions after a plugin registers or handles work. */
@@ -2004,8 +2020,12 @@ function createFakePluginHostInternal(
   const downloadHandlers: PluginBrowserDownloadHandler[] = [];
   const contextMenuItems: PluginBrowserContextMenuItemRegistration[] = [];
   const findActions: PluginBrowserFindActionRegistration[] = [];
+  const tabActions: PluginBrowserTabActionRegistration[] = [];
+  const siteInfoProviders: PluginBrowserSiteInfoProviderRegistration[] = [];
+  const searchEngines: PluginBrowserSearchEngineRegistration[] = [];
   const authProviders: PluginBrowserAuthProvider[] = [];
   const pdfTextProviders: PluginBrowserPdfTextProvider[] = [];
+  const historyFilters: PluginBrowserHistoryFilter[] = [];
   const browser: PluginBrowser = {
     registerOmniboxProvider(provider) {
       assertLive();
@@ -2074,6 +2094,52 @@ function createFakePluginHostInternal(
       }
       findActions.push(action);
     },
+    registerTabAction(action) {
+      assertLive();
+      permissionGate.assert("tabMenu.register", "bb.browser.registerTabAction");
+      if (typeof action?.id !== "string" || action.id.length === 0) {
+        throw new Error("registerTabAction needs an id");
+      }
+      if (typeof action.run !== "function") {
+        throw new Error(
+          `tab action "${action.id}" must provide a run(context) function`,
+        );
+      }
+      tabActions.push(action);
+    },
+    registerSiteInfoProvider(provider) {
+      assertLive();
+      permissionGate.assert(
+        "siteInfo.register",
+        "bb.browser.registerSiteInfoProvider",
+      );
+      if (typeof provider?.id !== "string" || provider.id.length === 0) {
+        throw new Error("registerSiteInfoProvider needs an id");
+      }
+      if (typeof provider.describe !== "function") {
+        throw new Error(
+          `site info provider "${provider.id}" must provide a describe(context) function`,
+        );
+      }
+      siteInfoProviders.push(provider);
+    },
+    registerSearchEngine(engine) {
+      assertLive();
+      permissionGate.assert(
+        "searchEngine.register",
+        "bb.browser.registerSearchEngine",
+      );
+      if (typeof engine?.id !== "string" || engine.id.length === 0) {
+        throw new Error("registerSearchEngine needs an id");
+      }
+      // The same refusal the host makes, so a plugin's test sees it too.
+      if (normalizeBrowserSearchEngineTemplate(engine.urlTemplate) === null) {
+        throw new Error(
+          `search engine "${engine.id}" needs an https (or loopback) urlTemplate containing ${BROWSER_SEARCH_ENGINE_QUERY_PLACEHOLDER}`,
+        );
+      }
+      searchEngines.push(engine);
+    },
     registerAuthProvider(provider) {
       assertLive();
       permissionGate.assert("auth.provide", "bb.browser.registerAuthProvider");
@@ -2096,6 +2162,16 @@ function createFakePluginHostInternal(
         );
       }
       pdfTextProviders.push(provider);
+    },
+    registerHistoryFilter(filter) {
+      assertLive();
+      permissionGate.assert("history", "bb.browser.registerHistoryFilter");
+      if (typeof filter !== "function") {
+        throw new Error(
+          "registerHistoryFilter(filter) needs a function taking one visit",
+        );
+      }
+      historyFilters.push(filter);
     },
     registerDownloadHandler(handler) {
       assertLive();
@@ -2154,6 +2230,49 @@ function createFakePluginHostInternal(
         beginBrowserCall("tabs.activate", "tabs.modify", { ...args });
         resolveBrowserTab(args.tabId);
         return Promise.resolve({ ...activateBrowserTab(args.tabId) });
+      },
+      // Pinning and muting are strip state the real browser holds and a
+      // `PluginBrowserTab` does not carry, so the fake records the call — which
+      // is what a plugin test can assert — and answers with the tab unchanged.
+      pin(args) {
+        beginBrowserCall("tabs.pin", "tabs.modify", { ...args });
+        return Promise.resolve({ ...resolveBrowserTab(args.tabId) });
+      },
+      mute(args) {
+        beginBrowserCall("tabs.mute", "tabs.modify", { ...args });
+        return Promise.resolve({ ...resolveBrowserTab(args.tabId) });
+      },
+      move(args) {
+        beginBrowserCall("tabs.move", "tabs.modify", { ...args });
+        const moved = resolveBrowserTab(args.tabId);
+        const rest = browserTabs.filter((each) => each.tabId !== moved.tabId);
+        const toIndex = Math.min(Math.max(args.toIndex, 0), rest.length);
+        browserTabs = [
+          ...rest.slice(0, toIndex),
+          moved,
+          ...rest.slice(toIndex),
+        ];
+        return Promise.resolve({ ...moved });
+      },
+      duplicate(args) {
+        beginBrowserCall("tabs.duplicate", "tabs.modify", { ...args });
+        const source = resolveBrowserTab(args.tabId);
+        const duplicate: PluginBrowserTab = {
+          ...source,
+          tabId: `fake-tab-${browserTabs.length + 1}`,
+          active: true,
+        };
+        // Beside its source, where the real one puts it.
+        const index = browserTabs.findIndex(
+          (each) => each.tabId === source.tabId,
+        );
+        const rest = browserTabs.map((each) => ({ ...each, active: false }));
+        browserTabs = [
+          ...rest.slice(0, index + 1),
+          duplicate,
+          ...rest.slice(index + 1),
+        ];
+        return Promise.resolve({ ...duplicate });
       },
     },
     page: {
@@ -2266,6 +2385,20 @@ function createFakePluginHostInternal(
         const answered = browserPendingDialog;
         browserPendingDialog = false;
         return Promise.resolve(answered);
+      },
+      zoom(args) {
+        beginBrowserCall("page.zoom", "page.interact", { ...args });
+        resolveBrowserTab(args.tabId);
+        // Refused rather than clamped, because that is what the host does: the
+        // command schema rejects a factor outside Chrome's range before anything
+        // applies it. A double that clamped would let a plugin ship a call that
+        // passes its own tests and fails in the app.
+        if (args.factor < 0.25 || args.factor > 5) {
+          throw new Error(
+            `page.zoom factor ${args.factor} is outside the accepted 0.25-5`,
+          );
+        }
+        return Promise.resolve(args.factor);
       },
       getUrl(args) {
         beginBrowserCall("page.get_url", "tabs.read", { ...args });
@@ -2922,8 +3055,12 @@ function createFakePluginHostInternal(
       keybindings,
       contextMenuItems,
       findActions,
+      tabActions,
+      siteInfoProviders,
+      searchEngines,
       authProviders,
       pdfTextProviders,
+      historyFilters,
     },
     get pendingInteractions() {
       return [...pendingInteractions].map(([id, pending]) => ({

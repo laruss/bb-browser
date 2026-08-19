@@ -14,13 +14,15 @@ export const OMNIBOX_DEFAULT_ACTION_SCORE = 1;
  *
  * Resolved synchronously from the query — never from the suggestion list — so
  * pressing Enter before the debounce elapses does the same thing as pressing it
- * after. A default read off the list would depend on whether providers had
+ * after. That is also why the engine arrives as a **template** rather than as a
+ * provider: the chosen engine has to be data the app already holds. A default read off the list would depend on whether providers had
  * answered yet, which is the kind of timing-dependent behaviour a user
  * experiences as the address bar losing keystrokes.
  */
 export function resolveOmniboxDefaultAction(
   query: string,
+  searchUrlTemplate: string,
 ): OmniboxAction | null {
-  const url = resolveBrowserAddressInput(query);
+  const url = resolveBrowserAddressInput(query, searchUrlTemplate);
   return url === null ? null : { type: "navigate", url };
 }

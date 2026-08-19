@@ -21,6 +21,7 @@ export const PROJECT_SOURCE_BRANCHES_QUERY_KEY = "projectSourceBranches";
 export const PROJECT_DEFAULT_EXECUTION_OPTIONS_QUERY_KEY =
   "projectDefaultExecutionOptions";
 export const PROJECT_PROMPT_HISTORY_QUERY_KEY = "projectPromptHistory";
+export const BROWSER_HISTORY_QUERY_KEY = "browserHistory";
 export const SIDEBAR_NAVIGATION_QUERY_KEY = "sidebarNavigation";
 export const THREADS_QUERY_KEY = "threads";
 export const THREAD_SEARCH_QUERY_KEY = "threadSearch";
@@ -124,6 +125,13 @@ export type ProjectDefaultExecutionOptionsQueryKey = readonly [
 ];
 export type ProjectPromptHistoryQueryKeyPrefix = readonly [
   typeof PROJECT_PROMPT_HISTORY_QUERY_KEY,
+];
+export type BrowserHistoryQueryKeyPrefix = readonly [
+  typeof BROWSER_HISTORY_QUERY_KEY,
+];
+export type BrowserHistoryQueryKey = readonly [
+  typeof BROWSER_HISTORY_QUERY_KEY,
+  string,
 ];
 export type ProjectPromptHistoryQueryKey = readonly [
   typeof PROJECT_PROMPT_HISTORY_QUERY_KEY,
@@ -590,6 +598,16 @@ export function projectDefaultExecutionOptionsQueryKey({
 
 export function projectPromptHistoryQueryKeyPrefix(): ProjectPromptHistoryQueryKeyPrefix {
   return [PROJECT_PROMPT_HISTORY_QUERY_KEY];
+}
+
+export function browserHistoryQueryKey(
+  scopeId: string,
+): BrowserHistoryQueryKey {
+  return [BROWSER_HISTORY_QUERY_KEY, scopeId];
+}
+
+export function browserHistoryQueryKeyPrefix(): BrowserHistoryQueryKeyPrefix {
+  return [BROWSER_HISTORY_QUERY_KEY];
 }
 
 export function projectPathsQueryKeyPrefix(

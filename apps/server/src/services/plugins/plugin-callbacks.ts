@@ -157,6 +157,18 @@ export const PLUGIN_CALLBACKS = {
     resultCrosses: true,
     label: (target) => (target ? `context menu ${target}` : "context menu"),
   },
+  browserTabAction: {
+    category: "call",
+    payloadCrosses: true,
+    resultCrosses: true,
+    label: (target) => (target ? `tab action ${target}` : "tab action"),
+  },
+  browserSiteInfo: {
+    category: "call",
+    payloadCrosses: true,
+    resultCrosses: true,
+    label: (target) => (target ? `site info ${target}` : "site info"),
+  },
   browserFindAction: {
     category: "call",
     payloadCrosses: true,
@@ -193,6 +205,12 @@ export const PLUGIN_CALLBACKS = {
     payloadCrosses: true,
     resultCrosses: true,
     label: (target) => "browser download handler",
+  },
+  browserHistoryFilter: {
+    category: "call",
+    payloadCrosses: true,
+    resultCrosses: true,
+    label: (target) => "browser history filter",
   },
 
   // -- Pushes ---------------------------------------------------------------

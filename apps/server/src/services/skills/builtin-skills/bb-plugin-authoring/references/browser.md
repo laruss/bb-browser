@@ -1,9 +1,9 @@
 # bb.browser — the BB desktop browser surface
 
 Hooks the browser asks a plugin about (omnibox, context menu, find bar, HTTP
-auth, PDF text, downloads) and the API that drives tabs and pages. Every hook
-runs server-side; the driving calls need a connected browser window, so call
-them from handlers, tools, and services, never at load time.
+auth, PDF text, downloads, history) and the API that drives tabs and pages.
+Every hook runs server-side; the driving calls need a connected browser window,
+so call them from handlers, tools, and services, never at load time.
 
 - [Omnibox suggestions](#bbbrowser--omnibox-suggestions-in-the-browser-surface)
 - [Page context menu](#bbbrowser--adding-to-a-pages-context-menu)
@@ -11,6 +11,7 @@ them from handlers, tools, and services, never at load time.
 - [HTTP auth provider](#bbbrowser--answering-a-sites-login-prompt)
 - [PDF text provider](#bbbrowser--reading-a-pdf-the-browser-cannot)
 - [Download handler](#bbbrowser--taking-over-downloads)
+- [History filter](#bbbrowser--deciding-what-the-browser-remembers)
 - [Driving tabs and pages](#bbbrowser--driving-the-browser-surface)
 
 ## bb.browser — omnibox suggestions in the browser surface
@@ -71,6 +72,140 @@ clicked.
 to an agent — including what to do when an item needs configuration it does not
 have, and how to quote page text into a prompt as data rather than as
 instructions.
+
+## bb.browser — adding an entry to a tab's menu
+
+Right-clicking a tab in the browser surface's strip shows bb's own entries
+(Duplicate, Pin, Mute, Close) and then whatever plugins added, in plugin id
+order. This is where "do something with _this_ tab" belongs.
+
+Needs `tabMenu.register` — a separate permission from `contextMenu.register`,
+because a tab entry sees a tab rather than what was clicked.
+
+```ts
+bb.browser.registerTabAction({
+  id: "file-tab",
+  title: "File this tab",
+  async run(context) {
+    // context: { tabId, url, title, pinned, muted, active }
+    // url is "" for a tab with no page yet, and null for a bb screen
+    // (Settings, a plugin panel) — a tab with no page at all.
+    if (context.url === null || context.url.length === 0) return;
+    await bb.storage.kv.set(`filed:${context.tabId}`, context.url);
+  },
+});
+```
+
+Declared like context-menu items, with the same consequence: `title` is fixed at
+registration, so an entry cannot rename itself from the tab it appears on. `run`
+is time-boxed (10s) and failure-isolated, and nothing waits on it.
+
+To **mark** a tab rather than act on one, use the frontend half —
+`contentScript.experimental_setBrowserTabStatus`, in
+[frontend-runtime.md](frontend-runtime.md).
+
+## bb.browser — pinning, muting, duplicating and moving a tab
+
+The same things the tab menu and a drag do, driveable. All of them cost
+`tabs.modify`, and each states the end result rather than toggling, so asking
+twice lands where asking once did.
+
+```ts
+const tabs = await bb.browser.tabs.list();
+const first = tabs[0];
+if (first !== undefined) {
+  await bb.browser.tabs.pin({ tabId: first.tabId, pinned: true });
+  await bb.browser.tabs.mute({ tabId: first.tabId, muted: true });
+  const copy = await bb.browser.tabs.duplicate({ tabId: first.tabId });
+  // Counting from 0, and clamped into the tab's own block: pinned tabs lead the
+  // strip, so an unpinned tab asked for 0 goes first among the unpinned ones.
+  await bb.browser.tabs.move({ tabId: copy.tabId, toIndex: 0 });
+}
+```
+
+Two limits worth knowing. `tabs.list()` does **not** report which tabs are
+pinned or muted — a tab action's context is where you are told. And a mute lives
+on the page's own view, so it lasts as long as that page does: a restarted
+browser comes back audible.
+
+## bb.browser — offering a search engine
+
+What the address bar does with text that is not an address. bb ships a few
+engines; a plugin can offer more, and the user picks one in Settings.
+
+Needs `searchEngine.register`.
+
+```ts
+bb.browser.registerSearchEngine({
+  id: "kagi",
+  name: "Kagi",
+  // `%s` is where the browser puts the escaped query.
+  urlTemplate: "https://kagi.com/search?q=%s",
+});
+```
+
+A **template, not a callback**, and that is the constraint worth knowing: the
+browser resolves what Enter does synchronously from the typed text — so that
+pressing Enter before the omnibox's debounce elapses does the same thing as
+pressing it after — and nothing can be awaited in that path. `https` only, with
+one exception: **loopback**, so a plugin's own route can be an engine.
+
+That exception is the interesting one, because an engine then need not search:
+
+```ts
+bb.http.route("GET", "/ask", async (context) => {
+  const query = (context.req.query("q") ?? "").trim();
+  const thread = await bb.sdk.threads.spawn({ /* … */ prompt: query });
+  return new Response(null, {
+    status: 302,
+    headers: { location: `${bb.server.loopbackBaseUrl}/threads/${thread.id}` },
+  });
+});
+
+bb.browser.registerSearchEngine({
+  id: "ask-agent",
+  name: "Ask an agent",
+  urlTemplate: `${bb.server.loopbackBaseUrl}/api/v1/plugins/<your-id>/http/ask?q=%s`,
+});
+```
+
+Offering is not choosing: the engine appears in the setting's list, labelled with
+your plugin id, and is used only once the user selects it. A template the host
+cannot use is refused **at load** — an engine that silently searches nowhere would
+be worse than a plugin that fails to install. `examples/plugins/omnibox-agent`
+ships both halves.
+
+## bb.browser — adding a section to the site-info panel
+
+Clicking the padlock in the address bar opens what the browser can honestly say
+about the connection, and then whatever plugins know about the site. This is the
+one surface that is about the _site_ rather than the page.
+
+Needs `siteInfo.register`.
+
+```ts
+bb.browser.registerSiteInfoProvider({
+  id: "logins",
+  label: "Passwords",
+  async describe(context) {
+    // context: { tabId, url, host } — host is "example.com[:port]"
+    const saved = await bb.storage.kv.get(`logins:${context.host}`);
+    if (!saved) return null; // nothing to say about this site: no heading shown
+    return [{ label: "Saved logins", value: String(saved.length) }];
+  },
+});
+```
+
+Asked each time the panel opens, concurrently with every other provider,
+time-boxed to 2s and failure-isolated — a provider that throws or hangs drops out
+and the rest of the panel still renders. At most 8 rows per section; labels and
+values are trimmed to 60 and 200 characters.
+
+Rows are text, deliberately. A section **reports**; anything to _do_ belongs on
+the tab menu or the page's context menu, where a click has somewhere to go.
+
+`examples/plugins/private-history` has a worked one: how many pages the store kept
+for this site, and whether recording is off for it.
 
 ## bb.browser — adding a button to the find bar
 
@@ -173,6 +308,33 @@ moves or deletes the finished file instead. Handlers are additive, time-boxed
 (30s) and failure-isolated: throwing changes nothing for the other handlers or
 for the browser.
 
+## bb.browser — deciding what the browser remembers
+
+Every page the browser visits passes through the registered history filters on
+its way to the history store. A filter returns nothing to accept the visit, a
+rewrite to record something else, or `null` to drop it.
+
+```ts
+bb.browser.registerHistoryFilter((visit) => {
+  // visit: { scopeId, url, title, visitedAt }
+  const url = new URL(visit.url);
+  if (url.hostname.endsWith(".internal.example")) return null; // never recorded
+  for (const key of [...url.searchParams.keys()]) {
+    if (key.startsWith("utm_")) url.searchParams.delete(key);
+  }
+  return { url: url.toString() };
+});
+```
+
+Needs the `history` permission. Filters are additive across plugins, run in
+plugin id order with each seeing the previous one's result, and the first `null`
+ends it. A filter that throws or exceeds its 1s box is skipped, so a broken
+plugin loses its own say rather than the user's history.
+
+Reading and editing the store afterwards is `bb.sdk.browserHistory` (see
+[bb.sdk](backend-sdk.md)); this hook is the only place a plugin sees a visit as
+it happens.
+
 ## bb.browser — driving the browser surface
 
 Tabs, pages and navigation of the BB desktop app's browser. Needs a connected
@@ -221,6 +383,14 @@ const log = await bb.browser.page.console({ limit: 50 });
 const requests = await bb.browser.page.network({ limit: 50 });
 // Each log: { entries, droppedCount } — read droppedCount before concluding a
 // page was quiet; the buffers are fixed-size rings.
+
+// Scaling the page. `factor` is a multiplier where 1 is 100%; one outside
+// Chrome's own 0.25-5 is refused rather than clamped, and the answer is what
+// Chromium settled on rather than what was asked for. Costs `page.interact`: it
+// is less than a click, and anyone who can click can already do it.
+const applied = await bb.browser.page.zoom({ factor: 1.25 });
+// Chromium remembers zoom **per site**, so this also decides what that site
+// looks like the next time any tab opens it — including for the user.
 
 // Stored state. Scoped to the tab: cookies for the URL it is on, web storage
 // for its origin. Read the warning below before using any of it.

@@ -16,6 +16,7 @@ import {
   createBbDesktopApi,
   createNoopDesktopBrowserApi,
 } from "@/test/bb-desktop-test-utils";
+import { createQueryClientTestHarness } from "@/test/queryClientTestHarness";
 import { BrowserTabContent } from "./BrowserTabContent";
 
 const desktopInfo = {
@@ -75,6 +76,9 @@ function browserState(
 
 function renderBrowserChrome(harness: BrowserChromeHarness, initialUrl = "") {
   window.bbDesktop = createBbDesktopApi(desktopInfo, harness.api);
+  // The tab records what it visits in the server-backed history store, so it
+  // needs a query client even when the test is only about its chrome.
+  const { wrapper } = createQueryClientTestHarness();
   return render(
     <>
       <BrowserTabContent
@@ -89,6 +93,7 @@ function renderBrowserChrome(harness: BrowserChromeHarness, initialUrl = "") {
       />
       <button type="button">Outside browser</button>
     </>,
+    { wrapper },
   );
 }
 

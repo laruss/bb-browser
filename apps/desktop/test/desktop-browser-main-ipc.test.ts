@@ -30,6 +30,7 @@ import {
   BB_DESKTOP_BROWSER_RELOAD_CHANNEL,
   BB_DESKTOP_BROWSER_SET_BOUNDS_CHANNEL,
   BB_DESKTOP_BROWSER_SET_DEV_TOOLS_VISIBLE_CHANNEL,
+  BB_DESKTOP_BROWSER_SET_MUTED_CHANNEL,
   BB_DESKTOP_BROWSER_SET_VISIBLE_CHANNEL,
   BB_DESKTOP_BROWSER_STOP_CHANNEL,
   BB_DESKTOP_BROWSER_CONTROL_CHANNEL,
@@ -93,6 +94,8 @@ type DetachCall = Parameters<DesktopBrowserViewManager["detach"]>[0];
 type NavigateCall = Parameters<DesktopBrowserViewManager["navigate"]>[0];
 type SetBoundsCall = Parameters<DesktopBrowserViewManager["setBounds"]>[0];
 type SetVisibleCall = Parameters<DesktopBrowserViewManager["setVisible"]>[0];
+type SetZoomCall = Parameters<DesktopBrowserViewManager["setZoom"]>[0];
+type SetMutedCall = Parameters<DesktopBrowserViewManager["setMuted"]>[0];
 type TabCommandCall = Parameters<DesktopBrowserViewManager["reload"]>[0];
 type ReadPageCall = Parameters<DesktopBrowserViewManager["readPage"]>[0];
 type DownloadActionCall = Parameters<
@@ -165,6 +168,9 @@ class RecordingDesktopBrowserViewManager implements DesktopBrowserViewManager {
   public readonly reloadCalls: TabCommandCall[] = [];
   public readonly setBoundsCalls: SetBoundsCall[] = [];
   public readonly setVisibleCalls: SetVisibleCall[] = [];
+  public readonly setZoomCalls: SetZoomCall[] = [];
+  public readonly setMutedCalls: SetMutedCall[] = [];
+  public readonly printCalls: TabCommandCall[] = [];
   public readonly stopCalls: TabCommandCall[] = [];
   public readonly readPageCalls: ReadPageCall[] = [];
   public readonly downloadActionCalls: DownloadActionCall[] = [];
@@ -274,6 +280,18 @@ class RecordingDesktopBrowserViewManager implements DesktopBrowserViewManager {
 
   setBounds(args: SetBoundsCall): void {
     this.setBoundsCalls.push(args);
+  }
+
+  setZoom(args: SetZoomCall): void {
+    this.setZoomCalls.push(args);
+  }
+
+  setMuted(args: SetMutedCall): void {
+    this.setMutedCalls.push(args);
+  }
+
+  print(args: TabCommandCall): void {
+    this.printCalls.push(args);
   }
 
   setVisible(args: SetVisibleCall): void {
@@ -635,6 +653,36 @@ describe("registerDesktopBrowserIpc", () => {
     ]);
     expect(manager.stopCalls).toEqual([
       { hostWindow: renderer.hostWindow, tabId: "browser:a" },
+    ]);
+  });
+
+  it("routes a mute and refuses a payload that is not one", () => {
+    const manager = new RecordingDesktopBrowserViewManager();
+    registerDesktopBrowserIpc(manager);
+    const renderer = createTrustedRenderer("main-window");
+
+    for (const payload of [
+      { tabId: "browser:a", muted: "yes" },
+      { tabId: "", muted: true },
+      { tabId: "browser:a", muted: true, extra: true },
+    ]) {
+      sendBrowserIpc({
+        channel: BB_DESKTOP_BROWSER_SET_MUTED_CHANNEL,
+        payload,
+        sender: renderer.sender,
+      });
+    }
+    sendBrowserIpc({
+      channel: BB_DESKTOP_BROWSER_SET_MUTED_CHANNEL,
+      payload: { tabId: "browser:a", muted: true },
+      sender: renderer.sender,
+    });
+
+    expect(manager.setMutedCalls).toEqual([
+      {
+        hostWindow: renderer.hostWindow,
+        request: { tabId: "browser:a", muted: true },
+      },
     ]);
   });
 

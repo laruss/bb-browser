@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { DEFAULT_BROWSER_SEARCH_ENGINE_ID } from "./browser-search-engine.js";
 
 /**
  * App-wide server-backed preferences.
@@ -40,6 +41,15 @@ export const appSettingsSchema = z
      * the machine is configured. Setting this back to null re-triggers the flow.
      */
     onboardingCompletedAt: z.string().nullable(),
+    /**
+     * Which search engine the browser's address bar uses, by id — bb's own or
+     * one a plugin declared (`bb.browser.registerSearchEngine`).
+     *
+     * An id rather than the template itself, so removing the plugin that
+     * declared it leaves a setting that resolves back to bb's default instead of
+     * a URL nothing can serve. See `browser-search-engine.ts`.
+     */
+    browserSearchEngineId: z.string(),
   })
   .strict();
 export type AppSettings = z.infer<typeof appSettingsSchema>;
@@ -55,4 +65,5 @@ export const defaultAppSettings: AppSettings = {
   claudeCodeSubagentsDisabled: false,
   claudeCodeWorkflowsDisabled: false,
   onboardingCompletedAt: null,
+  browserSearchEngineId: DEFAULT_BROWSER_SEARCH_ENGINE_ID,
 };

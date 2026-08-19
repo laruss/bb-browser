@@ -1,4 +1,5 @@
-import { buildBrowserSearchUrl, normalizeBrowserUrl } from "@/lib/browser-url";
+import { buildBrowserSearchUrl } from "@bb/domain/browser-search-engine";
+import { normalizeBrowserUrl } from "@/lib/browser-url";
 import { OMNIBOX_DEFAULT_ACTION_SCORE } from "../default-action";
 import type { OmniboxProvider, OmniboxProviderSuggestion } from "../types";
 
@@ -23,13 +24,19 @@ const OMNIBOX_SEARCH_FALLBACK_SCORE = 0.4;
  * provider interface is what makes adding it later a new file rather than an
  * edit to this one.
  */
-export function createOmniboxSearchProvider(): OmniboxProvider {
+export function createOmniboxSearchProvider(args: {
+  /** The chosen engine's template — bb's own or one a plugin declared. */
+  searchUrlTemplate: string;
+}): OmniboxProvider {
   return {
     id: OMNIBOX_SEARCH_PROVIDER_ID,
     suggest(query): readonly OmniboxProviderSuggestion[] {
       return [
         {
-          action: { type: "navigate", url: buildBrowserSearchUrl(query) },
+          action: {
+            type: "navigate",
+            url: buildBrowserSearchUrl(query, args.searchUrlTemplate),
+          },
           id: "query",
           kind: "search",
           score:

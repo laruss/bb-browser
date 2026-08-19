@@ -503,7 +503,9 @@ export function NewTabFileSearch({
   recentItemsThreadId,
   showFileSearch = true,
 }: NewTabFileSearchProps) {
-  const quickOpenShortcut = useAppCommandShortcut("file.quickOpen");
+  // The chord that opens this launcher. It used to name `file.quickOpen`, which
+  // was a second binding for the same command.
+  const launcherShortcut = useAppCommandShortcut("panel.newTab");
   const inputRef = useRef<HTMLInputElement>(null);
   const focusFrameRef = useRef<number | null>(null);
   const listboxId = useId();
@@ -724,11 +726,11 @@ export function NewTabFileSearch({
           // combobox's active descendant within that controlled listbox.
           role="combobox"
           aria-label={
-            quickOpenShortcut
-              ? `Search files (${quickOpenShortcut.label})`
+            launcherShortcut
+              ? `Search files (${launcherShortcut.label})`
               : "Search files"
           }
-          aria-keyshortcuts={quickOpenShortcut?.ariaKeyshortcuts}
+          aria-keyshortcuts={launcherShortcut?.ariaKeyshortcuts}
           aria-autocomplete="list"
           aria-expanded={hasListbox}
           aria-controls={hasListbox ? listboxId : undefined}

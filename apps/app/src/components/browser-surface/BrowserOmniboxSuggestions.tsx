@@ -54,7 +54,10 @@ export function BrowserOmniboxSuggestions({
       // `WebContentsView` composites above the DOM, so anything drawn over the
       // page area would be invisible in the desktop app. See
       // docs/architecture/browser-surface.md.
-      className="max-h-[45vh] shrink-0 overflow-y-auto border-b border-border bg-sidebar px-1 pb-1"
+      // Its width comes from the column it sits in — the address bar's — rather
+      // than from the chrome, because a list spanning the window over a 400px
+      // input reads as a different control than the one being typed into.
+      className="max-h-[45vh] shrink-0 overflow-y-auto rounded-md border border-border bg-sidebar p-1"
       id={listboxId}
       role="listbox"
       aria-label="Address and search suggestions"
@@ -87,7 +90,15 @@ export function BrowserOmniboxSuggestions({
                   : "text-muted-foreground hover:bg-state-hover hover:text-foreground",
               )}
             >
-              <span className="flex w-14 shrink-0 items-center gap-1.5 text-subtle-foreground">
+              {/* Wide enough for the longest built-in label ("History") with
+                  its icon: this column exists to be scanned down, and the
+                  clipped "His…" it used to show is unscannable. A plugin's own
+                  label can be any length, so the truncation stays as the cap for
+                  that case.
+
+                  Not covered by a test on purpose: CSS truncation is invisible
+                  to jsdom, so a test asserting it would pass at any width. */}
+              <span className="flex w-20 shrink-0 items-center gap-1.5 text-subtle-foreground">
                 <Icon name={presentation.icon} aria-hidden />
                 <span className="truncate">
                   {suggestion.sourceLabel ?? presentation.label}

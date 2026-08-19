@@ -27,6 +27,7 @@ declare const appSettingsSchema: z$1.ZodObject<{
     claudeCodeSubagentsDisabled: z$1.ZodBoolean;
     claudeCodeWorkflowsDisabled: z$1.ZodBoolean;
     onboardingCompletedAt: z$1.ZodNullable<z$1.ZodString>;
+    browserSearchEngineId: z$1.ZodString;
 }, z$1.core.$strict>;
 type AppSettings = z$1.infer<typeof appSettingsSchema>;
 
@@ -83,7 +84,6 @@ declare const appKeybindingOverridesSchema: z$1.ZodArray<z$1.ZodObject<{
         "panel.newTab": "panel.newTab";
         "panel.close": "panel.close";
         "panel.toggle": "panel.toggle";
-        "file.quickOpen": "file.quickOpen";
         "diff.toggle": "diff.toggle";
         "terminal.open": "terminal.open";
         "composer.focus": "composer.focus";
@@ -103,6 +103,10 @@ declare const appKeybindingOverridesSchema: z$1.ZodArray<z$1.ZodObject<{
         "browser.recentTab.previous": "browser.recentTab.previous";
         "browser.goBack": "browser.goBack";
         "browser.goForward": "browser.goForward";
+        "browser.zoomIn": "browser.zoomIn";
+        "browser.zoomOut": "browser.zoomOut";
+        "browser.zoomReset": "browser.zoomReset";
+        "browser.print": "browser.print";
         "workspace.openPreferred": "workspace.openPreferred";
     }>;
     shortcut: z$1.ZodNullable<z$1.ZodObject<{
@@ -219,6 +223,7 @@ declare const changedMessageSchema: z$1.ZodDiscriminatedUnion<[z$1.ZodObject<{
     type: z$1.ZodLiteral<"changed">;
     entity: z$1.ZodLiteral<"system">;
     changes: z$1.ZodReadonly<z$1.ZodArray<z$1.ZodEnum<{
+        "browser-history-changed": "browser-history-changed";
         "config-changed": "config-changed";
         "plugins-changed": "plugins-changed";
     }>>>;
@@ -2908,8 +2913,8 @@ declare const environmentDiffFileResponseSchema: z$1.ZodObject<{
     path: z$1.ZodString;
     content: z$1.ZodString;
     contentEncoding: z$1.ZodEnum<{
-        base64: "base64";
         utf8: "utf8";
+        base64: "base64";
     }>;
     mimeType: z$1.ZodOptional<z$1.ZodString>;
     sizeBytes: z$1.ZodNumber;
@@ -2922,8 +2927,8 @@ declare const environmentArchiveThreadsResponseSchema: z$1.ZodObject<{
 type EnvironmentArchiveThreadsResponse = z$1.infer<typeof environmentArchiveThreadsResponseSchema>;
 declare const pullRequestMergeMethodSchema: z$1.ZodEnum<{
     merge: "merge";
-    squash: "squash";
     rebase: "rebase";
+    squash: "squash";
 }>;
 type PullRequestMergeMethod = z$1.infer<typeof pullRequestMergeMethodSchema>;
 declare const commitActionResponseSchema: z$1.ZodObject<{
@@ -2954,8 +2959,8 @@ declare const pullRequestMergeActionResponseSchema: z$1.ZodObject<{
     action: z$1.ZodLiteral<"pull_request_merge">;
     method: z$1.ZodEnum<{
         merge: "merge";
-        squash: "squash";
         rebase: "rebase";
+        squash: "squash";
     }>;
     message: z$1.ZodString;
 }, z$1.core.$strip>;
@@ -3602,8 +3607,8 @@ declare const hostDaemonCommandRegistry: {
         }, z$1.core.$strict>], "kind">>;
         disallowedTools: z$1.ZodOptional<z$1.ZodArray<z$1.ZodString>>;
         instructionMode: z$1.ZodEnum<{
-            replace: "replace";
             append: "append";
+            replace: "replace";
         }>;
         type: z$1.ZodLiteral<"thread.rewind.prepare">;
         leaseId: z$1.ZodString;
@@ -3803,8 +3808,8 @@ declare const hostDaemonCommandRegistry: {
         }, z$1.core.$strict>], "kind">>;
         disallowedTools: z$1.ZodOptional<z$1.ZodArray<z$1.ZodString>>;
         instructionMode: z$1.ZodEnum<{
-            replace: "replace";
             append: "append";
+            replace: "replace";
         }>;
         type: z$1.ZodLiteral<"thread.start">;
         requestId: z$1.ZodString;
@@ -4296,8 +4301,8 @@ declare const hostDaemonCommandRegistry: {
                 }>;
             }, z$1.core.$strip>;
             instructionMode: z$1.ZodEnum<{
-                replace: "replace";
                 append: "append";
+                replace: "replace";
             }>;
             projectId: z$1.ZodString;
             providerId: z$1.ZodString;
@@ -4610,8 +4615,8 @@ declare const hostDaemonCommandRegistry: {
                 }>;
             }, z$1.core.$strip>;
             instructionMode: z$1.ZodEnum<{
-                replace: "replace";
                 append: "append";
+                replace: "replace";
             }>;
             projectId: z$1.ZodString;
             providerId: z$1.ZodString;
@@ -5647,9 +5652,9 @@ declare const hostDaemonCommandRegistry: {
         executablePath: z$1.ZodNullable<z$1.ZodString>;
         installed: z$1.ZodBoolean;
         installSource: z$1.ZodEnum<{
+            external: "external";
             notInstalled: "notInstalled";
             npmGlobal: "npmGlobal";
-            external: "external";
         }>;
         currentVersion: z$1.ZodNullable<z$1.ZodString>;
         latestVersion: z$1.ZodNullable<z$1.ZodString>;
@@ -5822,13 +5827,13 @@ declare const hostDaemonCommandRegistry: {
         outcome: z$1.ZodLiteral<"unavailable">;
         failure: z$1.ZodObject<{
             code: z$1.ZodEnum<{
-                unknown: "unknown";
                 path_not_found: "path_not_found";
                 not_git_repo: "not_git_repo";
                 not_worktree: "not_worktree";
                 workspace_type_mismatch: "workspace_type_mismatch";
                 permission_denied: "permission_denied";
                 unknown_environment: "unknown_environment";
+                unknown: "unknown";
             }>;
             workspacePath: z$1.ZodString;
             message: z$1.ZodString;
@@ -5872,13 +5877,13 @@ declare const hostDaemonCommandRegistry: {
         outcome: z$1.ZodLiteral<"unavailable">;
         failure: z$1.ZodObject<{
             code: z$1.ZodEnum<{
-                unknown: "unknown";
                 path_not_found: "path_not_found";
                 not_git_repo: "not_git_repo";
                 not_worktree: "not_worktree";
                 workspace_type_mismatch: "workspace_type_mismatch";
                 permission_denied: "permission_denied";
                 unknown_environment: "unknown_environment";
+                unknown: "unknown";
             }>;
             workspacePath: z$1.ZodString;
             message: z$1.ZodString;
@@ -5934,13 +5939,13 @@ declare const hostDaemonCommandRegistry: {
         outcome: z$1.ZodLiteral<"unavailable">;
         failure: z$1.ZodObject<{
             code: z$1.ZodEnum<{
-                unknown: "unknown";
                 path_not_found: "path_not_found";
                 not_git_repo: "not_git_repo";
                 not_worktree: "not_worktree";
                 workspace_type_mismatch: "workspace_type_mismatch";
                 permission_denied: "permission_denied";
                 unknown_environment: "unknown_environment";
+                unknown: "unknown";
             }>;
             workspacePath: z$1.ZodString;
             message: z$1.ZodString;
@@ -5982,13 +5987,13 @@ declare const hostDaemonCommandRegistry: {
         outcome: z$1.ZodLiteral<"unavailable">;
         failure: z$1.ZodObject<{
             code: z$1.ZodEnum<{
-                unknown: "unknown";
                 path_not_found: "path_not_found";
                 not_git_repo: "not_git_repo";
                 not_worktree: "not_worktree";
                 workspace_type_mismatch: "workspace_type_mismatch";
                 permission_denied: "permission_denied";
                 unknown_environment: "unknown_environment";
+                unknown: "unknown";
             }>;
             workspacePath: z$1.ZodString;
             message: z$1.ZodString;
@@ -6107,9 +6112,9 @@ declare const providerCliStatusResponseSchema: z$1.ZodRecord<z$1.ZodEnum<{
     executablePath: z$1.ZodNullable<z$1.ZodString>;
     installed: z$1.ZodBoolean;
     installSource: z$1.ZodEnum<{
+        external: "external";
         notInstalled: "notInstalled";
         npmGlobal: "npmGlobal";
-        external: "external";
     }>;
     currentVersion: z$1.ZodNullable<z$1.ZodString>;
     latestVersion: z$1.ZodNullable<z$1.ZodString>;
@@ -6261,10 +6266,10 @@ declare const pluginUpdateCheckEntrySchema: z$1.ZodObject<{
     id: z$1.ZodString;
     outcome: z$1.ZodEnum<{
         unavailable: "unavailable";
+        pinned: "pinned";
         incompatible: "incompatible";
         current: "current";
         "update-available": "update-available";
-        pinned: "pinned";
     }>;
     devMode: z$1.ZodOptional<z$1.ZodLiteral<true>>;
     installed: z$1.ZodObject<{
@@ -6332,10 +6337,10 @@ declare const installedPluginSchema: z$1.ZodObject<{
     updateState: z$1.ZodObject<{
         outcome: z$1.ZodOptional<z$1.ZodEnum<{
             unavailable: "unavailable";
+            pinned: "pinned";
             incompatible: "incompatible";
             current: "current";
             "update-available": "update-available";
-            pinned: "pinned";
         }>>;
         availableVersion: z$1.ZodOptional<z$1.ZodString>;
         blockedVersion: z$1.ZodOptional<z$1.ZodString>;
@@ -6412,6 +6417,8 @@ declare const installedPluginSchema: z$1.ZodObject<{
         "page.interact": "page.interact";
         "page.record": "page.record";
         threads: "threads";
+        shell: "shell";
+        history: "history";
         "tabs.read": "tabs.read";
         "page.read": "page.read";
         "network.observe": "network.observe";
@@ -6421,12 +6428,14 @@ declare const installedPluginSchema: z$1.ZodObject<{
         "page.credentials": "page.credentials";
         "omnibox.register": "omnibox.register";
         "contextMenu.register": "contextMenu.register";
+        "tabMenu.register": "tabMenu.register";
         "find.register": "find.register";
+        "siteInfo.register": "siteInfo.register";
+        "searchEngine.register": "searchEngine.register";
         "downloads.handle": "downloads.handle";
         "auth.provide": "auth.provide";
         "pdf.provide": "pdf.provide";
         filesystem: "filesystem";
-        shell: "shell";
         plugins: "plugins";
     }>>>;
     hasSettings: z$1.ZodBoolean;
@@ -6462,10 +6471,10 @@ declare const pluginListResponseSchema: z$1.ZodObject<{
         updateState: z$1.ZodObject<{
             outcome: z$1.ZodOptional<z$1.ZodEnum<{
                 unavailable: "unavailable";
+                pinned: "pinned";
                 incompatible: "incompatible";
                 current: "current";
                 "update-available": "update-available";
-                pinned: "pinned";
             }>>;
             availableVersion: z$1.ZodOptional<z$1.ZodString>;
             blockedVersion: z$1.ZodOptional<z$1.ZodString>;
@@ -6542,6 +6551,8 @@ declare const pluginListResponseSchema: z$1.ZodObject<{
             "page.interact": "page.interact";
             "page.record": "page.record";
             threads: "threads";
+            shell: "shell";
+            history: "history";
             "tabs.read": "tabs.read";
             "page.read": "page.read";
             "network.observe": "network.observe";
@@ -6551,12 +6562,14 @@ declare const pluginListResponseSchema: z$1.ZodObject<{
             "page.credentials": "page.credentials";
             "omnibox.register": "omnibox.register";
             "contextMenu.register": "contextMenu.register";
+            "tabMenu.register": "tabMenu.register";
             "find.register": "find.register";
+            "siteInfo.register": "siteInfo.register";
+            "searchEngine.register": "searchEngine.register";
             "downloads.handle": "downloads.handle";
             "auth.provide": "auth.provide";
             "pdf.provide": "pdf.provide";
             filesystem: "filesystem";
-            shell: "shell";
             plugins: "plugins";
         }>>>;
         hasSettings: z$1.ZodBoolean;
@@ -6594,10 +6607,10 @@ declare const pluginReloadResponseSchema: z$1.ZodObject<{
         updateState: z$1.ZodObject<{
             outcome: z$1.ZodOptional<z$1.ZodEnum<{
                 unavailable: "unavailable";
+                pinned: "pinned";
                 incompatible: "incompatible";
                 current: "current";
                 "update-available": "update-available";
-                pinned: "pinned";
             }>>;
             availableVersion: z$1.ZodOptional<z$1.ZodString>;
             blockedVersion: z$1.ZodOptional<z$1.ZodString>;
@@ -6674,6 +6687,8 @@ declare const pluginReloadResponseSchema: z$1.ZodObject<{
             "page.interact": "page.interact";
             "page.record": "page.record";
             threads: "threads";
+            shell: "shell";
+            history: "history";
             "tabs.read": "tabs.read";
             "page.read": "page.read";
             "network.observe": "network.observe";
@@ -6683,12 +6698,14 @@ declare const pluginReloadResponseSchema: z$1.ZodObject<{
             "page.credentials": "page.credentials";
             "omnibox.register": "omnibox.register";
             "contextMenu.register": "contextMenu.register";
+            "tabMenu.register": "tabMenu.register";
             "find.register": "find.register";
+            "siteInfo.register": "siteInfo.register";
+            "searchEngine.register": "searchEngine.register";
             "downloads.handle": "downloads.handle";
             "auth.provide": "auth.provide";
             "pdf.provide": "pdf.provide";
             filesystem: "filesystem";
-            shell: "shell";
             plugins: "plugins";
         }>>>;
         hasSettings: z$1.ZodBoolean;
@@ -6986,6 +7003,7 @@ declare const systemConfigResponseSchema: z$1.ZodObject<{
         claudeCodeSubagentsDisabled: z$1.ZodBoolean;
         claudeCodeWorkflowsDisabled: z$1.ZodBoolean;
         onboardingCompletedAt: z$1.ZodNullable<z$1.ZodString>;
+        browserSearchEngineId: z$1.ZodString;
     }, z$1.core.$strict>;
     keybindings: z$1.ZodArray<z$1.ZodObject<{
         command: z$1.ZodEnum<{
@@ -7023,7 +7041,6 @@ declare const systemConfigResponseSchema: z$1.ZodObject<{
             "panel.newTab": "panel.newTab";
             "panel.close": "panel.close";
             "panel.toggle": "panel.toggle";
-            "file.quickOpen": "file.quickOpen";
             "diff.toggle": "diff.toggle";
             "terminal.open": "terminal.open";
             "composer.focus": "composer.focus";
@@ -7051,6 +7068,10 @@ declare const systemConfigResponseSchema: z$1.ZodObject<{
             "browser.recentTab.previous": "browser.recentTab.previous";
             "browser.goBack": "browser.goBack";
             "browser.goForward": "browser.goForward";
+            "browser.zoomIn": "browser.zoomIn";
+            "browser.zoomOut": "browser.zoomOut";
+            "browser.zoomReset": "browser.zoomReset";
+            "browser.print": "browser.print";
             "workspace.openPreferred": "workspace.openPreferred";
             "question.select.1": "question.select.1";
             "question.select.2": "question.select.2";
@@ -7136,7 +7157,6 @@ declare const systemConfigResponseSchema: z$1.ZodObject<{
             "panel.newTab": "panel.newTab";
             "panel.close": "panel.close";
             "panel.toggle": "panel.toggle";
-            "file.quickOpen": "file.quickOpen";
             "diff.toggle": "diff.toggle";
             "terminal.open": "terminal.open";
             "composer.focus": "composer.focus";
@@ -7164,6 +7184,10 @@ declare const systemConfigResponseSchema: z$1.ZodObject<{
             "browser.recentTab.previous": "browser.recentTab.previous";
             "browser.goBack": "browser.goBack";
             "browser.goForward": "browser.goForward";
+            "browser.zoomIn": "browser.zoomIn";
+            "browser.zoomOut": "browser.zoomOut";
+            "browser.zoomReset": "browser.zoomReset";
+            "browser.print": "browser.print";
             "workspace.openPreferred": "workspace.openPreferred";
             "question.select.1": "question.select.1";
             "question.select.2": "question.select.2";
@@ -7249,7 +7273,6 @@ declare const systemConfigResponseSchema: z$1.ZodObject<{
             "panel.newTab": "panel.newTab";
             "panel.close": "panel.close";
             "panel.toggle": "panel.toggle";
-            "file.quickOpen": "file.quickOpen";
             "diff.toggle": "diff.toggle";
             "terminal.open": "terminal.open";
             "composer.focus": "composer.focus";
@@ -7277,6 +7300,10 @@ declare const systemConfigResponseSchema: z$1.ZodObject<{
             "browser.recentTab.previous": "browser.recentTab.previous";
             "browser.goBack": "browser.goBack";
             "browser.goForward": "browser.goForward";
+            "browser.zoomIn": "browser.zoomIn";
+            "browser.zoomOut": "browser.zoomOut";
+            "browser.zoomReset": "browser.zoomReset";
+            "browser.print": "browser.print";
             "workspace.openPreferred": "workspace.openPreferred";
             "question.select.1": "question.select.1";
             "question.select.2": "question.select.2";
@@ -10382,6 +10409,16 @@ declare const threadStoragePathListResponseSchema: z$1.ZodObject<{
 }, z$1.core.$strip>;
 type ThreadStoragePathListResponse = z$1.infer<typeof threadStoragePathListResponseSchema>;
 
+declare const browserHistoryEntrySchema: z$1.ZodObject<{
+    id: z$1.ZodString;
+    scopeId: z$1.ZodString;
+    url: z$1.ZodString;
+    title: z$1.ZodNullable<z$1.ZodString>;
+    visitCount: z$1.ZodNumber;
+    lastVisitedAt: z$1.ZodNumber;
+}, z$1.core.$strict>;
+type BrowserHistoryEntry = z$1.infer<typeof browserHistoryEntrySchema>;
+
 declare const threadTabsResponseSchema: z$1.ZodObject<{
     revision: z$1.ZodNumber;
     tabs: z$1.ZodArray<z$1.ZodDiscriminatedUnion<[z$1.ZodObject<{
@@ -11368,6 +11405,22 @@ interface PluginContentScriptContext {
      * surface rolls out across 0.x clients.
      */
     readonly experimental_setThreadRowStatus?: (threadId: string, status: PluginComposerThreadRowStatus | null) => void;
+    /**
+     * Mark a browser tab for this plugin generation — the tab **decorator** point.
+     *
+     * The mark rides on the tab in the browser surface's strip, beside its page
+     * icon and title, for as long as this generation lives; `null` clears it, and
+     * the host clears everything this generation set when it deactivates. Marking
+     * a tab id the strip does not hold is not an error — the tab may not be open
+     * yet, or may be in another window — it simply shows nowhere.
+     *
+     * Which tabs exist is `bb.browser.tabs.list()` on the backend side; a decorator
+     * is what a plugin does once it knows.
+     *
+     * Optional so bundles can feature-detect support while this experimental
+     * surface rolls out across 0.x clients.
+     */
+    readonly experimental_setBrowserTabStatus?: (tabId: string, status: PluginBrowserTabStatus | null) => void;
 }
 /** Cleanup returned by a frontend content script. */
 type PluginContentScriptDisposer = () => void | Promise<void>;
@@ -11516,6 +11569,24 @@ interface ComposerStructuredDraft {
 /** Host-rendered paint applied to the editable composer text. */
 interface PluginComposerTextEffect {
     className: string;
+}
+/**
+ * Host-rendered mark on a browser tab, shown beside its page icon and title.
+ *
+ * Deliberately the same three fields as {@link PluginComposerThreadRowStatus}
+ * rather than a richer badge: what the strip can honestly show on a tab that may
+ * be squeezed to its icon is one glyph with a label behind it.
+ */
+interface PluginBrowserTabStatus {
+    /** BB icon-name hint; unknown names fall back to the generic plugin icon. */
+    icon: string;
+    /** Accessible label for the mark, and its tooltip. */
+    label: string;
+    /**
+     * Semantic host treatment. `running` shimmers, `success` and `error` are
+     * static tones, and the default is neutral.
+     */
+    tone?: "default" | "running" | "success" | "error";
 }
 /** Host-rendered status that temporarily replaces a thread's draft glyph. */
 interface PluginComposerThreadRowStatus {
@@ -11908,6 +11979,47 @@ interface PluginSdkApp {
      */
     experimental_NewThreadComposer: ComponentType<NewThreadComposerProps>;
     useComposerView(): ComposerView;
+}
+
+interface BrowserHistoryListArgs {
+    /** How many entries, newest first. Defaults to the server's own limit. */
+    limit?: number;
+    /** Substring of the URL or title, matched case-insensitively. */
+    query?: string;
+    /** One surface's history — a thread id, or the browser surface's own id. */
+    scopeId?: string;
+    signal?: AbortSignal;
+}
+interface BrowserHistoryRecordArgs {
+    scopeId: string;
+    url: string;
+    title: string | null;
+    /** When the visit happened. Defaults to now; set it to import old visits. */
+    visitedAt?: number;
+}
+interface BrowserHistoryRemoveArgs {
+    id: string;
+}
+interface BrowserHistoryClearArgs {
+    /** One surface's history; omit to clear all of it. */
+    scopeId?: string;
+}
+/**
+ * The browser's history store.
+ *
+ * A real store rather than the browser's private state: a plugin can read what
+ * was visited, add visits it imported from somewhere else, and delete what the
+ * user should not have kept. What it cannot do from here is see a visit as it
+ * happens — that is `bb.browser.registerHistoryFilter`, which runs before the
+ * write and can rewrite or drop it.
+ */
+interface BrowserHistoryArea {
+    list(args?: BrowserHistoryListArgs): Promise<BrowserHistoryEntry[]>;
+    /** Null when a history filter dropped the visit. */
+    record(args: BrowserHistoryRecordArgs): Promise<BrowserHistoryEntry | null>;
+    remove(args: BrowserHistoryRemoveArgs): Promise<void>;
+    /** How many entries were removed. */
+    clear(args?: BrowserHistoryClearArgs): Promise<number>;
 }
 
 interface EnvironmentActionArgs {
@@ -13134,6 +13246,7 @@ interface ThreadSectionsArea {
 }
 
 interface BbSdk extends BbRealtime {
+    browserHistory: BrowserHistoryArea;
     environments: EnvironmentsArea;
     files: FilesArea;
     guide: GuideArea;
@@ -13842,6 +13955,87 @@ interface PluginBrowserAuthCredentials {
  * the first answer was wrong, and repeating it would spin.
  */
 type PluginBrowserAuthProvider = (challenge: PluginBrowserAuthChallenge) => PluginBrowserAuthCredentials | null | Promise<PluginBrowserAuthCredentials | null>;
+/** What a tab action was run on — one tab in the browser surface's strip. */
+interface PluginBrowserTabActionContext {
+    tabId: string;
+    /**
+     * The page's address, empty for a tab that has no page yet — and **null** for
+     * a bb screen (Settings, a plugin's own panel), which is a tab with no page at
+     * all. Null is therefore how an action tells the two kinds apart.
+     */
+    url: string | null;
+    title: string | null;
+    pinned: boolean;
+    /** Web tabs only: a bb screen has no page of its own to silence. */
+    muted: boolean;
+    /** Whether this is the tab the window is currently showing. */
+    active: boolean;
+}
+interface PluginBrowserTabActionRegistration {
+    /** Unique within this plugin: [a-zA-Z0-9_-]+. */
+    id: string;
+    /** The menu label, shown under the browser's own tab entries. */
+    title: string;
+    /**
+     * Runs server-side when the user picks the entry. Fire-and-forget, like a
+     * context-menu item: the menu has already closed, so report progress through
+     * your own surfaces rather than by returning something.
+     */
+    run(context: PluginBrowserTabActionContext): void | Promise<void>;
+}
+/**
+ * A search engine the user can pick for the browser's address bar.
+ *
+ * Data only — the browser holds the template and formats it, so nothing is asked
+ * of the plugin when the user presses Enter. That is what makes this possible at
+ * all: what Enter does is resolved synchronously from the typed text, and a
+ * provider that had to be awaited could never own it.
+ *
+ * The consequence worth knowing: an engine need not search. Any `https` address
+ * with `%s` in it is one, and so is a **loopback** address — including your own
+ * `bb.http.route`, which is how "Enter asks an agent" is built.
+ */
+interface PluginBrowserSearchEngineRegistration {
+    /** Unique within this plugin: [a-zA-Z0-9_-]+. Stored in the user's setting. */
+    id: string;
+    /** Shown in the setting's list. */
+    name: string;
+    /**
+     * Absolute URL with `%s` where the query goes, escaped by the browser. `https`
+     * only, apart from loopback: a search is every word typed into the address bar,
+     * and sending that in the clear to another machine is not a plugin's call.
+     */
+    urlTemplate: string;
+}
+/** The page the site-info popover is describing. */
+interface PluginBrowserSiteInfoContext {
+    /** The browser tab whose padlock was clicked. */
+    tabId: string;
+    /** The page's address. Never empty — a tab with no page asks nobody. */
+    url: string;
+    /** `example.com`, or `example.com:8443` when the port is not the default. */
+    host: string;
+}
+/** One line in a provider's section: a name and what it says. */
+interface PluginBrowserSiteInfoRow {
+    label: string;
+    value: string;
+}
+interface PluginBrowserSiteInfoProviderRegistration {
+    /** Unique within this plugin: [a-zA-Z0-9_-]+. */
+    id: string;
+    /** The section heading, e.g. "Passwords". */
+    label: string;
+    /**
+     * What this plugin knows about the site, asked each time the popover opens.
+     *
+     * Return `null` — or no rows — to show nothing, which is what a provider with
+     * nothing to say about *this* site should do rather than a row reading "none".
+     * Time-boxed like an omnibox suggestion: the popover is already open, so a
+     * provider that hangs is dropped rather than waited for.
+     */
+    describe(context: PluginBrowserSiteInfoContext): PluginBrowserSiteInfoRow[] | null | Promise<PluginBrowserSiteInfoRow[] | null>;
+}
 /** What a find action was run with. */
 interface PluginBrowserFindContext {
     /** The browser tab whose find bar the button was pressed in. */
@@ -13884,6 +14078,38 @@ interface PluginBrowserFindActionRegistration {
      */
     run(context: PluginBrowserFindContext): void | Promise<void>;
 }
+/** A page about to be written to the browser's history store. */
+interface PluginBrowserHistoryVisit {
+    /**
+     * The surface the visit happened on — an agent thread's id, or the browser
+     * surface's own. History is stored per scope, which is why the new-tab screen
+     * of one thread shows that thread's pages.
+     */
+    scopeId: string;
+    url: string;
+    title: string | null;
+    visitedAt: number;
+}
+/** What to record instead. Omitted fields keep what the visit carried. */
+interface PluginBrowserHistoryRewrite {
+    url?: string;
+    title?: string | null;
+}
+/**
+ * Decide what the browser remembers about a page — see
+ * `bb.browser.registerHistoryFilter`.
+ *
+ * Return nothing to accept the visit as it stands, a rewrite to change what is
+ * stored (strip tracking parameters, retitle a page whose own title is
+ * useless), or `null` to drop it, which is how "never record this site" is
+ * built without the browser knowing what a private site is.
+ *
+ * Filters run before the write, in plugin id order, each seeing the previous
+ * one's result; the first `null` ends it. A filter that throws or runs out of
+ * time is skipped, so a broken plugin loses its say rather than the user's
+ * history.
+ */
+type PluginBrowserHistoryFilter = (visit: PluginBrowserHistoryVisit) => PluginBrowserHistoryRewrite | null | void | Promise<PluginBrowserHistoryRewrite | null | void>;
 /**
  * One tab of the browser surface.
  *
@@ -13928,6 +14154,44 @@ interface PluginBrowserTabs {
     }>;
     activate(args: {
         tabId: string;
+    }, options?: PluginBrowserCallOptions): Promise<PluginBrowserTab>;
+    /**
+     * Pin a tab into the strip's leading block, or take it out again.
+     *
+     * Stated rather than toggled, so asking twice lands where asking once did.
+     * Which tabs are pinned is not in {@link PluginBrowserTabs.list} — a tab
+     * action's context is where a plugin is told (see
+     * `PluginBrowserTabActionContext`).
+     */
+    pin(args: {
+        tabId: string;
+        pinned: boolean;
+    }, options?: PluginBrowserCallOptions): Promise<PluginBrowserTab>;
+    /**
+     * Silence a tab's page, or let it speak again. Stated rather than toggled,
+     * like pinning.
+     *
+     * Holds for as long as the page's view does: it is set on the `webContents`,
+     * so a browser that restarts comes back audible.
+     */
+    mute(args: {
+        tabId: string;
+        muted: boolean;
+    }, options?: PluginBrowserCallOptions): Promise<PluginBrowserTab>;
+    /** Copy a tab beside itself, and answer with the copy. */
+    duplicate(args: {
+        tabId: string;
+    }, options?: PluginBrowserCallOptions): Promise<PluginBrowserTab>;
+    /**
+     * Move a tab along the strip, counting from 0 — what a drag does, driven.
+     *
+     * The index is clamped into the tab's own block, since pinned tabs lead the
+     * strip: asking an unpinned tab for 0 puts it first among the unpinned ones
+     * rather than failing.
+     */
+    move(args: {
+        tabId: string;
+        toIndex: number;
     }, options?: PluginBrowserCallOptions): Promise<PluginBrowserTab>;
 }
 /**
@@ -14187,6 +14451,20 @@ interface PluginBrowserPage {
         tabId?: string;
         promptText?: string;
     }, options?: PluginBrowserCallOptions): Promise<boolean>;
+    /**
+     * Scale the page, and resolve with what it became.
+     *
+     * `factor` is a multiplier where 1 is 100%, and one outside Chrome's own
+     * 0.25–5 is **refused** rather than quietly clamped — a call that reported a
+     * factor nobody asked for would be worse than an error. The answer is read
+     * back rather than echoed, because Chromium is the one that decides — and it
+     * remembers zoom **per site**, so this also sets what that site looks like the
+     * next time any tab opens it.
+     */
+    zoom(args: {
+        factor: number;
+        tabId?: string;
+    }, options?: PluginBrowserCallOptions): Promise<number>;
     getUrl(args?: {
         tabId?: string;
     }, options?: PluginBrowserCallOptions): Promise<string>;
@@ -14579,6 +14857,46 @@ interface PluginBrowser {
      */
     registerFindAction(action: PluginBrowserFindActionRegistration): void;
     /**
+     * Add an entry to a browser tab's context menu (`browser.tab.actions`) — the
+     * tab **action** point.
+     *
+     * The tab strip is where a browser keeps what the user is holding open, so
+     * this is the place for what a plugin does *to one of them*: send it to an
+     * agent, file it, sync it, open it somewhere else. bb's own entries — pin,
+     * duplicate, mute, close — come first and contributed entries follow, in
+     * plugin id order.
+     *
+     * Declared like context-menu items, and with the same consequence: `title` is
+     * fixed at registration, so an entry cannot rename itself from the tab it is
+     * shown on. To *mark* a tab instead of acting on one, see
+     * `contentScript.experimental_setBrowserTabStatus`.
+     */
+    registerTabAction(action: PluginBrowserTabActionRegistration): void;
+    /**
+     * Add a section to the browser's site-info popover — what opens when the user
+     * clicks the padlock in the address bar (`browser.siteInfo.sections`).
+     *
+     * The popover is the one place in the browser that is *about the site* rather
+     * than about the page, which is what makes it worth extending: saved logins for
+     * this host, trackers blocked on it, whether it is on the user's own allowlist.
+     *
+     * bb's own section — what it can honestly say about the connection — comes
+     * first; contributed sections follow in plugin id order. Rows are text, not
+     * controls: a section reports, and anything to *do* belongs on the tab or page
+     * menu where a click has somewhere to go.
+     */
+    registerSiteInfoProvider(provider: PluginBrowserSiteInfoProviderRegistration): void;
+    /**
+     * Offer a search engine for the browser's address bar
+     * (`browser.searchEngines`) — see
+     * {@link PluginBrowserSearchEngineRegistration}.
+     *
+     * Offering is not choosing: the engine appears in the setting's list, and it is
+     * used only once the user picks it. bb's own engines come first, then
+     * contributed ones in plugin id order.
+     */
+    registerSearchEngine(engine: PluginBrowserSearchEngineRegistration): void;
+    /**
      * Answer HTTP authentication challenges for browsed pages
      * (`browser.auth.providers`) — see {@link PluginBrowserAuthProvider}.
      *
@@ -14596,6 +14914,16 @@ interface PluginBrowser {
      * Additive: providers are asked in plugin id order until one answers.
      */
     registerPdfTextProvider(provider: PluginBrowserPdfTextProvider): void;
+    /**
+     * See every page before it enters the browser's history, and rewrite or drop
+     * it (`browser.history.filters`) — see {@link PluginBrowserHistoryFilter}.
+     *
+     * Reading and editing the store afterwards is `bb.sdk.browserHistory`; this
+     * is the only place a plugin sees a visit as it happens.
+     *
+     * Additive: every registered filter runs, across plugins, in plugin id order.
+     */
+    registerHistoryFilter(filter: PluginBrowserHistoryFilter): void;
     /**
      * Drive the browser surface's tabs, pages and navigation.
      *
@@ -14717,4 +15045,4 @@ interface BbPluginApi {
 }
 
 export { PLUGIN_CLI_OUTPUT_MAX_BYTES, defineRpcContract };
-export type { BbContext, BbNavigate, BbPluginApi, ComposerCustomization, ComposerPlusMenuItem, ComposerRichTextSpec, ComposerStructuredDraft, ComposerView, JsonValue, MarkdownProps, NewThreadComposerProps, NewThreadRequest, PluginAgentConfiguration, PluginAgentConfigurationContext, PluginAgentToolContentPart, PluginAgentToolContext, PluginAgentToolExperimentalStatusLabels, PluginAgentToolRegistrationBase, PluginAgentToolResult, PluginAgentToolSelection, PluginAgents, PluginAppBuilder, PluginAppComposer, PluginAppContentScripts, PluginAppDefinition, PluginAppSetup, PluginAppSlots, PluginBackground, PluginBrowser, PluginBrowserAction, PluginBrowserAuthChallenge, PluginBrowserAuthCredentials, PluginBrowserAuthProvider, PluginBrowserCallOptions, PluginBrowserConsoleEntry, PluginBrowserContextMenuContext, PluginBrowserContextMenuItemRegistration, PluginBrowserContextMenuWhen, PluginBrowserControl, PluginBrowserCookie, PluginBrowserCookieInput, PluginBrowserCookies, PluginBrowserDownload, PluginBrowserDownloadHandler, PluginBrowserDownloadState, PluginBrowserErrorCode, PluginBrowserEvaluated, PluginBrowserFindActionRegistration, PluginBrowserFindContext, PluginBrowserKeyModifier, PluginBrowserLog, PluginBrowserNavigation, PluginBrowserNetworkEntry, PluginBrowserPage, PluginBrowserPageSnapshot, PluginBrowserPageState, PluginBrowserPdf, PluginBrowserPdfDocument, PluginBrowserPdfTextProvider, PluginBrowserRecording, PluginBrowserRoute, PluginBrowserRouteState, PluginBrowserRoutes, PluginBrowserScreenshot, PluginBrowserStatus, PluginBrowserStorage, PluginBrowserStorageArea, PluginBrowserStorageItem, PluginBrowserStorageItems, PluginBrowserStorageWrite, PluginBrowserTab, PluginBrowserTabs, PluginBrowserTrace, PluginBrowserTraceStep, PluginBrowserVideo, PluginCli, PluginCliCommandInfo, PluginCliContext, PluginCliExecutionResult, PluginCliOutputLimitError, PluginCliRegistration, PluginCliResult, PluginComposerApi, PluginComposerMention, PluginComposerScope, PluginComposerTextEffect, PluginComposerThreadRowStatus, PluginContentScriptContext, PluginContentScriptDisposer, PluginContentScriptRegistration, PluginEvents, PluginFileOpenerProps, PluginFileOpenerRegistration, PluginFileOpenerSource, PluginHomepageSectionProps, PluginHomepageSectionRegistration, PluginHosts, PluginHttp, PluginHttpAuthMode, PluginHttpHandler, PluginInteractionCancelReason, PluginInteractionRequest, PluginInteractionResult, PluginKeybinding, PluginKeybindingShortcut, PluginKvStorage, PluginLeadingPanelProps, PluginLeadingPanelRegistration, PluginLogger, PluginMentionItem, PluginMentionProviderRegistration, PluginMentionSearchContext, PluginMentionTrigger, PluginMessageActionContext, PluginMessageActionRegistration, PluginMessageActionThreadPanelOptions, PluginMessageDirectiveMessage, PluginMessageDirectiveOpenWorkspaceFile, PluginMessageDirectiveProps, PluginMessageDirectiveRegistration, PluginNavPanelProps, PluginNavPanelRegistration, PluginNewThreadPanelActionContext, PluginNewThreadPanelActionRegistration, PluginNewThreadPanelProps, PluginOmniboxAction, PluginOmniboxProviderRegistration, PluginOmniboxRunContext, PluginOmniboxRunResult, PluginOmniboxSuggestContext, PluginOmniboxSuggestion, PluginPendingInteractionProps, PluginPendingInteractionRegistration, PluginPendingInteractionView, PluginRealtime, PluginRealtimeConnectionState, PluginRpc, PluginRpcCallArgs, PluginRpcClient, PluginRpcContract, PluginRpcError, PluginRpcErrorCode, PluginRpcHandlers, PluginRpcIssuePathSegment, PluginRpcMethodContract, PluginRpcResult, PluginRpcValidationIssue, PluginSdkApp, PluginServerApi, PluginSettingDescriptor, PluginSettingDescriptors, PluginSettingValue, PluginSettings, PluginSettingsHandle, PluginSettingsSectionProps, PluginSettingsSectionRegistration, PluginSettingsState, PluginSettingsValues, PluginSharedPortTunnelIdentity, PluginSidebarFooterActionContext, PluginSidebarFooterActionProps, PluginSidebarFooterActionRegistration, PluginSidebarProject, PluginSidebarPullRequest, PluginSidebarSplitPane, PluginSidebarThread, PluginSidebarThreadActions, PluginSidebarThreadActivity, PluginSidebarThreadIndicator, PluginSidebarThreadPullRequestState, PluginSidebarThreadSplit, PluginSidebarThreadsState, PluginSidebarWorkspaceKind, PluginStatusApi, PluginStorage, PluginThreadEventHandler, PluginThreadEventName, PluginThreadEventPayloads, PluginThreadHeaderActionProps, PluginThreadHeaderActionRegistration, PluginThreadListProps, PluginThreadListRegistration, PluginThreadPanelActionContext, PluginThreadPanelActionRegistration, PluginThreadPanelProps, PluginUi, StandardSchemaV1, StandardSchemaV1InferInput, StandardSchemaV1InferOutput, StandardSchemaV1Issue, StandardSchemaV1Result, ThreadChatMessageAction, ThreadChatMessageReference, ThreadChatProps };
+export type { BbContext, BbNavigate, BbPluginApi, ComposerCustomization, ComposerPlusMenuItem, ComposerRichTextSpec, ComposerStructuredDraft, ComposerView, JsonValue, MarkdownProps, NewThreadComposerProps, NewThreadRequest, PluginAgentConfiguration, PluginAgentConfigurationContext, PluginAgentToolContentPart, PluginAgentToolContext, PluginAgentToolExperimentalStatusLabels, PluginAgentToolRegistrationBase, PluginAgentToolResult, PluginAgentToolSelection, PluginAgents, PluginAppBuilder, PluginAppComposer, PluginAppContentScripts, PluginAppDefinition, PluginAppSetup, PluginAppSlots, PluginBackground, PluginBrowser, PluginBrowserAction, PluginBrowserAuthChallenge, PluginBrowserAuthCredentials, PluginBrowserAuthProvider, PluginBrowserCallOptions, PluginBrowserConsoleEntry, PluginBrowserContextMenuContext, PluginBrowserContextMenuItemRegistration, PluginBrowserContextMenuWhen, PluginBrowserControl, PluginBrowserCookie, PluginBrowserCookieInput, PluginBrowserCookies, PluginBrowserDownload, PluginBrowserDownloadHandler, PluginBrowserDownloadState, PluginBrowserErrorCode, PluginBrowserEvaluated, PluginBrowserFindActionRegistration, PluginBrowserFindContext, PluginBrowserHistoryFilter, PluginBrowserHistoryRewrite, PluginBrowserHistoryVisit, PluginBrowserKeyModifier, PluginBrowserLog, PluginBrowserNavigation, PluginBrowserNetworkEntry, PluginBrowserPage, PluginBrowserPageSnapshot, PluginBrowserPageState, PluginBrowserPdf, PluginBrowserPdfDocument, PluginBrowserPdfTextProvider, PluginBrowserRecording, PluginBrowserRoute, PluginBrowserRouteState, PluginBrowserRoutes, PluginBrowserScreenshot, PluginBrowserSearchEngineRegistration, PluginBrowserSiteInfoContext, PluginBrowserSiteInfoProviderRegistration, PluginBrowserSiteInfoRow, PluginBrowserStatus, PluginBrowserStorage, PluginBrowserStorageArea, PluginBrowserStorageItem, PluginBrowserStorageItems, PluginBrowserStorageWrite, PluginBrowserTab, PluginBrowserTabActionContext, PluginBrowserTabActionRegistration, PluginBrowserTabStatus, PluginBrowserTabs, PluginBrowserTrace, PluginBrowserTraceStep, PluginBrowserVideo, PluginCli, PluginCliCommandInfo, PluginCliContext, PluginCliExecutionResult, PluginCliOutputLimitError, PluginCliRegistration, PluginCliResult, PluginComposerApi, PluginComposerMention, PluginComposerScope, PluginComposerTextEffect, PluginComposerThreadRowStatus, PluginContentScriptContext, PluginContentScriptDisposer, PluginContentScriptRegistration, PluginEvents, PluginFileOpenerProps, PluginFileOpenerRegistration, PluginFileOpenerSource, PluginHomepageSectionProps, PluginHomepageSectionRegistration, PluginHosts, PluginHttp, PluginHttpAuthMode, PluginHttpHandler, PluginInteractionCancelReason, PluginInteractionRequest, PluginInteractionResult, PluginKeybinding, PluginKeybindingShortcut, PluginKvStorage, PluginLeadingPanelProps, PluginLeadingPanelRegistration, PluginLogger, PluginMentionItem, PluginMentionProviderRegistration, PluginMentionSearchContext, PluginMentionTrigger, PluginMessageActionContext, PluginMessageActionRegistration, PluginMessageActionThreadPanelOptions, PluginMessageDirectiveMessage, PluginMessageDirectiveOpenWorkspaceFile, PluginMessageDirectiveProps, PluginMessageDirectiveRegistration, PluginNavPanelProps, PluginNavPanelRegistration, PluginNewThreadPanelActionContext, PluginNewThreadPanelActionRegistration, PluginNewThreadPanelProps, PluginOmniboxAction, PluginOmniboxProviderRegistration, PluginOmniboxRunContext, PluginOmniboxRunResult, PluginOmniboxSuggestContext, PluginOmniboxSuggestion, PluginPendingInteractionProps, PluginPendingInteractionRegistration, PluginPendingInteractionView, PluginRealtime, PluginRealtimeConnectionState, PluginRpc, PluginRpcCallArgs, PluginRpcClient, PluginRpcContract, PluginRpcError, PluginRpcErrorCode, PluginRpcHandlers, PluginRpcIssuePathSegment, PluginRpcMethodContract, PluginRpcResult, PluginRpcValidationIssue, PluginSdkApp, PluginServerApi, PluginSettingDescriptor, PluginSettingDescriptors, PluginSettingValue, PluginSettings, PluginSettingsHandle, PluginSettingsSectionProps, PluginSettingsSectionRegistration, PluginSettingsState, PluginSettingsValues, PluginSharedPortTunnelIdentity, PluginSidebarFooterActionContext, PluginSidebarFooterActionProps, PluginSidebarFooterActionRegistration, PluginSidebarProject, PluginSidebarPullRequest, PluginSidebarSplitPane, PluginSidebarThread, PluginSidebarThreadActions, PluginSidebarThreadActivity, PluginSidebarThreadIndicator, PluginSidebarThreadPullRequestState, PluginSidebarThreadSplit, PluginSidebarThreadsState, PluginSidebarWorkspaceKind, PluginStatusApi, PluginStorage, PluginThreadEventHandler, PluginThreadEventName, PluginThreadEventPayloads, PluginThreadHeaderActionProps, PluginThreadHeaderActionRegistration, PluginThreadListProps, PluginThreadListRegistration, PluginThreadPanelActionContext, PluginThreadPanelActionRegistration, PluginThreadPanelProps, PluginUi, StandardSchemaV1, StandardSchemaV1InferInput, StandardSchemaV1InferOutput, StandardSchemaV1Issue, StandardSchemaV1Result, ThreadChatMessageAction, ThreadChatMessageReference, ThreadChatProps };

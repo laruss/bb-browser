@@ -1249,6 +1249,7 @@ describe("@bb/sdk", () => {
       rootDir: "/plugins/notes",
       version: "1.2.0",
       provenance: "catalog" as const,
+      placement: null,
       isOrphanedBuiltin: false,
       catalogEntryId: "notes",
       sourceDisplay: "npm · @bb/notes · tracks compatible",

@@ -28,6 +28,16 @@
       "types": "./src/browser-control.ts",
       "default": "./src/browser-control.ts"
     },
+    "./browser-history": {
+      "source": "./src/browser-history.ts",
+      "types": "./src/browser-history.ts",
+      "default": "./src/browser-history.ts"
+    },
+    "./browser-search-engine": {
+      "source": "./src/browser-search-engine.ts",
+      "types": "./src/browser-search-engine.ts",
+      "default": "./src/browser-search-engine.ts"
+    },
     "./plugin-permissions": {
       "source": "./src/plugin-permissions.ts",
       "types": "./src/plugin-permissions.ts",

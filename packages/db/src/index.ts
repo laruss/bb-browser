@@ -11,6 +11,7 @@ export type {
 
 export * from "./schema.js";
 export {
+  createBrowserHistoryEntryId,
   createQueuedThreadMessageClaimToken,
   createQueuedThreadMessageId,
   createEnvironmentId,

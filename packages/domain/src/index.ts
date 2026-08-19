@@ -9,6 +9,8 @@ export * from "./app-keybindings.js";
 export * from "./app-theme.js";
 export * from "./background-task.js";
 export * from "./browser-control.js";
+export * from "./browser-history.js";
+export * from "./browser-search-engine.js";
 export * from "./change-kinds.js";
 export * from "./claude-task-tools.js";
 export * from "./debounced-callback-scheduler.js";

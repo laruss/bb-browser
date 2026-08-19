@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { BrowserWindowConstructorOptions } from "electron";
 import { afterEach, describe, expect, it } from "vitest";
+import { BB_DESKTOP_WINDOW_KEY_ARGUMENT_PREFIX } from "@bb/desktop-contract";
 import {
   createDesktopWindowFactory,
   type DesktopBrowserWindow,
@@ -316,6 +317,53 @@ describe("desktop window factory", () => {
         isMaximized: false,
         stateKey: "window-second",
       },
+    ]);
+  });
+
+  // Each renderer has to know which window it is before it can await anything:
+  // the browser surface picks its tab-storage key while modules initialise, and
+  // sharing one key is what made two windows show two live copies of one page.
+  it("tells each renderer which window it is, under the key its geometry uses", async () => {
+    const tempDir = await createTempDir();
+    const createdWindows: FakeDesktopWindow[] = [];
+    const generatedStateKeys: WindowStateKey[] = ["window-second"];
+    const factory = createDesktopWindowFactory({
+      browserWindowCreator: {
+        create(options) {
+          const browserWindow = new FakeDesktopWindow({ options });
+          createdWindows.push(browserWindow);
+          return browserWindow;
+        },
+      },
+      createWindowStateKey() {
+        return generatedStateKeys.shift() ?? "window-fallback";
+      },
+      displayWorkAreas: [{ height: 900, width: 1440, x: 0, y: 0 }],
+      icon: undefined,
+      isQuitting() {
+        return false;
+      },
+      openExternalUrl() {},
+      preloadPath: "/tmp/preload.cjs",
+      userDataPath: tempDir.path,
+    });
+
+    await factory.createWindow({
+      initialUrl: "http://127.0.0.1:38886",
+      stateKey: null,
+    });
+    await factory.createWindow({
+      initialUrl: "http://127.0.0.1:38886",
+      stateKey: null,
+    });
+
+    expect(
+      createdWindows.map(
+        (window) => window.options.webPreferences?.additionalArguments,
+      ),
+    ).toEqual([
+      [`${BB_DESKTOP_WINDOW_KEY_ARGUMENT_PREFIX}main`],
+      [`${BB_DESKTOP_WINDOW_KEY_ARGUMENT_PREFIX}window-second`],
     ]);
   });
 

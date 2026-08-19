@@ -30,6 +30,7 @@ import {
   getBrowserUrlHost,
   resolveBrowserAddressInput,
 } from "@/lib/browser-url";
+import { useBrowserSearchEngine } from "@/lib/browser-search-engine";
 import { useBrowserHistory } from "@/lib/browser-history";
 import { BROWSER_VIEW_BOUNDS_SYNC_EVENT } from "@/lib/browser-view-bounds-sync";
 import { useIsBrowserDimmingModalOpen } from "@/hooks/useBrowserDimmingModal";
@@ -857,9 +858,15 @@ export function BrowserTabContent({
     tabId,
   ]);
 
+  // The panel's address bar honours the same setting the surface does — one
+  // browser, one search engine.
+  const searchEngine = useBrowserSearchEngine();
   const navigateToInput = useCallback(
     (rawInput: string) => {
-      const url = resolveBrowserAddressInput(rawInput);
+      const url = resolveBrowserAddressInput(
+        rawInput,
+        searchEngine.urlTemplate,
+      );
       if (url === null) {
         return;
       }
@@ -867,7 +874,7 @@ export function BrowserTabContent({
       setIsEditing(false);
       desktopBrowser?.navigate({ tabId, url });
     },
-    [desktopBrowser, tabId],
+    [desktopBrowser, searchEngine.urlTemplate, tabId],
   );
 
   const handleAddressSubmit = useCallback(

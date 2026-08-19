@@ -268,14 +268,42 @@ compatible ESM bundle.
 
 The host mounts scripts in registration order after the bundle loads and
 `definePluginApp` setup validates. `mount` receives
-`{ pluginId, generation, signal, experimental_setThreadRowStatus? }`:
+`{ pluginId, generation, signal, experimental_setThreadRowStatus?, experimental_setBrowserTabStatus? }`:
 `generation` is a monotonic per-window mount attempt number, and `signal`
-aborts before cleanup starts. The optional experimental setter targets an
-explicit thread row with `{ icon, label, tone? }` or clears it with `null`.
+aborts before cleanup starts. The two optional experimental setters are the
+host's decorator points, and both take `{ icon, label, tone? }` or `null` to
+clear:
+
+- `experimental_setThreadRowStatus(threadId, status)` marks a thread row in the
+  sidebar.
+- `experimental_setBrowserTabStatus(tabId, status)` marks a **browser tab** in
+  the browser surface's strip, beside its page icon and title. Tab ids come from
+  the backend side (`bb.browser.tabs.list()`, or a tab action's context — see
+  [browser.md](browser.md)); marking an id the strip does not hold is not an
+  error, it simply shows nowhere.
+
 Use `tone: "running"` for the host's animated running treatment. The host
 scopes statuses to the calling plugin and automatically clears them when that
-frontend generation deactivates; feature-detect the setter for compatibility
+frontend generation deactivates; feature-detect the setters for compatibility
 with older bb clients.
+
+```ts
+app.contentScripts.register({
+  id: "mark-tabs",
+  mount({ signal, experimental_setBrowserTabStatus }) {
+    experimental_setBrowserTabStatus?.("browser:abc123", {
+      icon: "Zap",
+      label: "Syncing this tab",
+      tone: "running",
+    });
+    signal.addEventListener("abort", () => {
+      // Not required — the host clears this generation's marks itself — but
+      // clearing early is how a mark stops meaning something that is over.
+      experimental_setBrowserTabStatus?.("browser:abc123", null);
+    });
+  },
+});
+```
 
 A script may return nothing, a disposer, or a promise of either; async mount
 setup is time-boxed to 10 seconds. Keep long-running work outside the returned

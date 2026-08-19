@@ -18,6 +18,7 @@ import {
   createNoopDesktopBrowserApi,
 } from "@/test/bb-desktop-test-utils";
 import { useBrowserDownloadNotifications } from "@/lib/browser-downloads";
+import { createQueryClientTestHarness } from "@/test/queryClientTestHarness";
 import { BrowserSurfaceChrome } from "./BrowserSurfaceChrome";
 
 const desktopInfo = {
@@ -50,12 +51,17 @@ function completedDownload(
  * the running app — the reporter is mounted above the router so downloads keep
  * arriving after the user leaves `/browser`.
  */
-function DownloadsHarness() {
+function DownloadsHarness({
+  onPageOverlayChange,
+}: {
+  onPageOverlayChange: (active: boolean) => void;
+}) {
   useBrowserDownloadNotifications();
   return (
     <BrowserSurfaceChrome
       onActivateTab={() => undefined}
       onOpenAppRoute={() => {}}
+      onPageOverlayChange={onPageOverlayChange}
       providers={[]}
       tabId="tab-active"
       url="https://current.test/page"
@@ -65,12 +71,11 @@ function DownloadsHarness() {
 
 function renderChrome() {
   const downloadAction = vi.fn(async () => ({ ok: true }) as const);
-  const setOverlay = vi.fn();
+  const onPageOverlayChange = vi.fn();
   const listeners: Array<(download: BbDesktopBrowserDownload) => void> = [];
   window.bbDesktop = createBbDesktopApi(desktopInfo, {
     ...createNoopDesktopBrowserApi(),
     downloadAction,
-    setOverlay,
     onDownload(listener) {
       listeners.push(listener);
       return () => {};
@@ -79,15 +84,18 @@ function renderChrome() {
 
   // A fresh jotai store per test: the downloads atom is module-scoped, so
   // without one the previous test's downloads leak into the next.
+  const { wrapper: Wrapper } = createQueryClientTestHarness();
   const view = render(
-    <Provider>
-      <DownloadsHarness />
-    </Provider>,
+    <Wrapper>
+      <Provider>
+        <DownloadsHarness onPageOverlayChange={onPageOverlayChange} />
+      </Provider>
+    </Wrapper>,
   );
 
   return {
     downloadAction,
-    setOverlay,
+    onPageOverlayChange,
     unmount: view.unmount,
     emit(download: BbDesktopBrowserDownload) {
       act(() => {
@@ -225,40 +233,32 @@ describe("browser downloads chrome", () => {
   });
 
   // The dropdown floats over the page, which React cannot do while a native
-  // view is composited above the DOM — so the shell freezes the page to a
-  // bitmap and hides it for as long as the list is open.
-  it("freezes the page while the list is open, and reveals it after", () => {
-    const { emit, setOverlay } = renderChrome();
+  // view is composited above the DOM — so the page is frozen to a bitmap and
+  // hidden for as long as the list is open. The freeze itself belongs to the
+  // surface, which is why this asks rather than calls.
+  it("asks for the freeze while the list is open, and for the thaw after", () => {
+    const { emit, onPageOverlayChange } = renderChrome();
     emit(completedDownload());
-    setOverlay.mockClear();
+    onPageOverlayChange.mockClear();
 
     fireEvent.click(downloadsButton() as HTMLElement);
-    expect(setOverlay).toHaveBeenCalledWith({
-      tabId: "tab-active",
-      active: true,
-    });
+    expect(onPageOverlayChange).toHaveBeenLastCalledWith(true);
 
     fireEvent.click(downloadsButton() as HTMLElement);
-    expect(setOverlay).toHaveBeenLastCalledWith({
-      tabId: "tab-active",
-      active: false,
-    });
+    expect(onPageOverlayChange).toHaveBeenLastCalledWith(false);
   });
 
   // Leaving a tab frozen behind a panel that no longer exists would look like
   // a hung page.
-  it("reveals the page if the chrome goes away while the list is open", () => {
-    const { emit, setOverlay, unmount } = renderChrome();
+  it("asks for the thaw if the chrome goes away while the list is open", () => {
+    const { emit, onPageOverlayChange, unmount } = renderChrome();
     emit(completedDownload());
     fireEvent.click(downloadsButton() as HTMLElement);
-    setOverlay.mockClear();
+    onPageOverlayChange.mockClear();
 
     unmount();
 
-    expect(setOverlay).toHaveBeenCalledWith({
-      tabId: "tab-active",
-      active: false,
-    });
+    expect(onPageOverlayChange).toHaveBeenLastCalledWith(false);
   });
 
   // The page area is DOM while the list is open (that is what the freeze buys),

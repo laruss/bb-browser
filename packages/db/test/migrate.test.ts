@@ -336,6 +336,7 @@ function dropRewindAddedTables(db: DbConnection): void {
   dropNewOnboardingExperimentColumn(db);
   dropSteerActiveThreadOnEnterColumn(db);
   dropOnboardingCompletedAtColumn(db);
+  dropBrowserSearchEngineIdColumn(db);
   // Thread visibility was added after the legacy checkpoints these tests
   // replay, so remove it before applying the forward migration chain again.
   db.$client.prepare("ALTER TABLE threads DROP COLUMN visibility").run();
@@ -563,6 +564,23 @@ const onboardingMigrationWhen = 1785947206119;
 // Migration 0085 adds the onboarding completion timestamp. Rewind scenarios
 // that clear its migration row must drop the column before replay, for the same
 // reason as the preference column above: ALTER TABLE ADD is not re-appliable.
+/**
+ * The browser's search-engine setting arrived after every checkpoint these tests
+ * replay, so a rewind has to take its column with it — SQLite has no
+ * `ADD COLUMN IF NOT EXISTS`, and replaying 0094 onto a table that still has the
+ * column fails with "duplicate column name".
+ */
+function dropBrowserSearchEngineIdColumn(db: DbConnection): void {
+  const columns = db.$client
+    .prepare<[], TableInfoRow>("PRAGMA table_info(app_settings)")
+    .all();
+  if (columns.some((column) => column.name === "browser_search_engine_id")) {
+    db.$client
+      .prepare("ALTER TABLE app_settings DROP COLUMN browser_search_engine_id")
+      .run();
+  }
+}
+
 function dropOnboardingCompletedAtColumn(db: DbConnection): void {
   const columns = db.$client
     .prepare<[], TableInfoRow>("PRAGMA table_info(app_settings)")
@@ -1367,6 +1385,7 @@ describe("migrate", () => {
     // exactly what an upgrading user's database looks like.
     restoreWideExperimentsTable(db);
     dropOnboardingCompletedAtColumn(db);
+    dropBrowserSearchEngineIdColumn(db);
     dropNewOnboardingExperimentColumn(db);
     dropEnvironmentRetireRequestedAtColumn(db);
     // Delete by the journal timestamp, not a hash substring: migration hashes
@@ -1655,6 +1674,7 @@ describe("migrate", () => {
       restorePluginsExperimentColumn(db);
       dropSteerActiveThreadOnEnterColumn(db);
       dropOnboardingCompletedAtColumn(db);
+      dropBrowserSearchEngineIdColumn(db);
       dropNewOnboardingExperimentColumn(db);
       dropHostMaxPermissionModeColumn(db);
       dropEnvironmentRetireRequestedAtColumn(db);
@@ -2054,6 +2074,7 @@ describe("migrate", () => {
       restorePluginsExperimentColumn(db);
       dropSteerActiveThreadOnEnterColumn(db);
       dropOnboardingCompletedAtColumn(db);
+      dropBrowserSearchEngineIdColumn(db);
       dropNewOnboardingExperimentColumn(db);
       dropHostMaxPermissionModeColumn(db);
       dropEnvironmentRetireRequestedAtColumn(db);
@@ -2150,6 +2171,7 @@ describe("migrate", () => {
       restorePluginsExperimentColumn(db);
       dropSteerActiveThreadOnEnterColumn(db);
       dropOnboardingCompletedAtColumn(db);
+      dropBrowserSearchEngineIdColumn(db);
       dropNewOnboardingExperimentColumn(db);
       dropHostMaxPermissionModeColumn(db);
       dropEnvironmentRetireRequestedAtColumn(db);

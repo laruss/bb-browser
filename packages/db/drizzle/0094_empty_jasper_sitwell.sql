@@ -1,0 +1,1 @@
+ALTER TABLE `app_settings` ADD `browser_search_engine_id` text DEFAULT 'google' NOT NULL;

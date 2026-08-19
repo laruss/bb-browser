@@ -124,6 +124,7 @@ vi.mock("@/lib/bb-desktop", () => ({
   MACOS_WINDOW_DRAG_CLASS: "",
   MACOS_WINDOW_NO_DRAG_CLASS: "",
   getBbDesktopInfo: () => null,
+  getDesktopWindowKey: () => null,
   isDesktopBrowserAvailable: () => desktopState.browserAvailable,
   shouldReserveMacosTrafficLights: () => false,
   shouldUseMacosDesktopChrome: () => false,

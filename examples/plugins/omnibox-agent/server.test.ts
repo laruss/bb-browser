@@ -95,6 +95,61 @@ describe("omnibox-agent", () => {
     ).rejects.toThrow(/not configured/u);
   });
 
+  // The same idea as the "Ask an agent" row, one step further: Enter itself goes
+  // to the agent, because a search engine is a template the browser formats.
+  it("offers itself as a search engine, and an ordinary one too", async () => {
+    const host = await load({ project: PROJECT_ID });
+
+    expect(host.harness.registrations.searchEngines).toEqual([
+      {
+        id: "ask-agent",
+        name: "Ask an agent",
+        urlTemplate:
+          "http://127.0.0.1:38886/api/v1/plugins/omnibox-agent/http/ask?q=%s",
+      },
+      {
+        id: "kagi",
+        name: "Kagi",
+        urlTemplate: "https://kagi.com/search?q=%s",
+      },
+    ]);
+  });
+
+  it("turns a query the engine sent into a thread, and redirects to it", async () => {
+    const host = await load({ project: PROJECT_ID });
+
+    const response = await host.harness.fetchHttp(
+      "GET",
+      "/ask?q=why%20is%20the%20build%20slow",
+    );
+
+    expect(response.status).toBe(302);
+    expect(response.headers.get("location")).toBe(
+      "http://127.0.0.1:38886/threads/th_1",
+    );
+    expect(host.harness.sdk.callsTo("threads.spawn")).toEqual([
+      [
+        expect.objectContaining({
+          projectId: PROJECT_ID,
+          prompt: "why is the build slow",
+        }),
+      ],
+    ]);
+  });
+
+  it("says so rather than spawning when the engine sends nothing useful", async () => {
+    const configured = await load({ project: PROJECT_ID });
+    expect(
+      (await configured.harness.fetchHttp("GET", "/ask?q=%20")).status,
+    ).toBe(400);
+    expect(configured.harness.sdk.callsTo("threads.spawn")).toEqual([]);
+
+    const unconfigured = await load();
+    expect(
+      (await unconfigured.harness.fetchHttp("GET", "/ask?q=anything")).status,
+    ).toBe(503);
+  });
+
   it("rejects an unknown item id", async () => {
     const host = await load({ project: PROJECT_ID });
 

@@ -59,6 +59,7 @@ import {
 import { useSystemConfig } from "@/hooks/queries/system-queries";
 import { useWorkspaceOpenTargets } from "@/hooks/useWorkspaceOpenTargets";
 import { isDesktopBrowserAvailable } from "@/lib/bb-desktop";
+import { useBrowserSearchEngineOptions } from "@/lib/browser-search-engine";
 import {
   FAVICON_COLOR_VALUES,
   getFaviconGlyphHref,
@@ -172,6 +173,9 @@ export interface AppearanceSettingsSectionProps {
 }
 
 export interface GeneralSettingsSectionProps {
+  /** The stored engine id, bb's own or a plugin's. */
+  browserSearchEngineId: string;
+  onBrowserSearchEngineChange: (engineId: string) => void;
   caffeinateAvailable: boolean;
   caffeinateDisabled: boolean;
   caffeinateEnabled: boolean;
@@ -566,6 +570,76 @@ export function InAppBrowserLinkSettingsControl({
   );
 }
 
+/**
+ * The address bar's search engine: bb's own, plus whatever plugins declared
+ * (`bb.browser.registerSearchEngine`). A plugin's row says which plugin it came
+ * from, the way the palette list does for plugin themes — the user is picking who
+ * receives everything they type.
+ */
+export function BrowserSearchEngineSettingsControl({
+  engineId,
+  onEngineChange,
+}: {
+  engineId: string;
+  onEngineChange: (engineId: string) => void;
+}) {
+  const options = useBrowserSearchEngineOptions();
+  const selected = options.find((option) => option.id === engineId);
+  return (
+    <SettingsWithControl
+      label="Search engine"
+      description="Where the address bar sends text that is not an address."
+    >
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            className={SETTINGS_DROPDOWN_TRIGGER_CLASS}
+            aria-label="Search engine"
+          >
+            <span className="min-w-0 truncate">
+              {/* An id whose plugin is gone still resolves to bb's default when
+                  searching, and says so here rather than showing a blank. */}
+              {selected?.name ?? "Google"}
+            </span>
+            <Icon
+              name="ChevronDown"
+              className="size-3.5 text-muted-foreground"
+            />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          align="end"
+          className={SETTINGS_DROPDOWN_CONTENT_CLASS}
+        >
+          {options.map((option) => (
+            <DropdownMenuItem
+              key={option.id}
+              onSelect={() => onEngineChange(option.id)}
+            >
+              {option.name}
+              {option.pluginId === null ? null : (
+                <span className="text-muted-foreground">
+                  ({option.pluginId})
+                </span>
+              )}
+              <Icon
+                name="Check"
+                className={cn(
+                  "ml-auto",
+                  option.id !== engineId && "opacity-0",
+                  COARSE_POINTER_ICON_SIZE_CLASS,
+                )}
+              />
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </SettingsWithControl>
+  );
+}
+
 export function RewriteLocalhostLinksSettingsControl({
   enabled,
   onEnabledChange,
@@ -772,6 +846,8 @@ export function AppearanceSettingsSection({
 }
 
 export function GeneralSettingsSection({
+  browserSearchEngineId,
+  onBrowserSearchEngineChange,
   caffeinateAvailable,
   caffeinateDisabled,
   caffeinateEnabled,
@@ -824,6 +900,13 @@ export function GeneralSettingsSection({
           <InAppBrowserLinkSettingsControl
             enabled={openLinksInAppBrowser}
             onEnabledChange={onOpenLinksInAppBrowserChange}
+          />
+        ) : null}
+
+        {desktopBrowserAvailable ? (
+          <BrowserSearchEngineSettingsControl
+            engineId={browserSearchEngineId}
+            onEngineChange={onBrowserSearchEngineChange}
           />
         ) : null}
 
@@ -1221,6 +1304,7 @@ export function SettingsView() {
             updateGeneralSettingsMutation.isPending
           }
           caffeinateEnabled={generalSettings.caffeinate}
+          browserSearchEngineId={generalSettings.browserSearchEngineId}
           desktopBrowserAvailable={desktopBrowserAvailable}
           navigateToThreadAfterCreate={navigateToThreadAfterCreate}
           openLinksInAppBrowser={openLinksInAppBrowser}
@@ -1231,6 +1315,12 @@ export function SettingsView() {
           steerActiveThreadOnEnterDisabled={
             systemConfigQuery.data === undefined ||
             updateGeneralSettingsMutation.isPending
+          }
+          onBrowserSearchEngineChange={(engineId) =>
+            updateGeneralSettingsMutation.mutate({
+              ...generalSettings,
+              browserSearchEngineId: engineId,
+            })
           }
           onCaffeinateChange={(enabled) =>
             updateGeneralSettingsMutation.mutate({

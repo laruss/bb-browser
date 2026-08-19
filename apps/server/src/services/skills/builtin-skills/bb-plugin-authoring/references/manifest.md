@@ -54,28 +54,32 @@ The complete manifest, with the optional fields SKILL.md leaves out:
   you need them, then `bb plugin reload <id>`. An unknown string is rejected
   at install, so a typo cannot silently grant nothing.
 
-  | Permission             | Opens                                                                                                                                 |
-  | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-  | `tabs.read`            | `browser.tabs.list`, `page.url`, `page.title`                                                                                         |
-  | `tabs.modify`          | opening, closing, activating tabs and `browser.navigation.*`                                                                          |
-  | `page.read`            | page text, selection, snapshot, screenshot, PDF, console                                                                              |
-  | `page.interact`        | `page.act`, answering page dialogs, mouse input                                                                                       |
-  | `page.inject`          | `browser.control.evaluate` — arbitrary JavaScript in the page                                                                         |
-  | `network.observe`      | the page's network log, including headers                                                                                             |
-  | `network.intercept`    | route mocking, unrouting, forcing a tab offline                                                                                       |
-  | `page.credentials`     | `browser.storage.*` — the user's cookies and site storage                                                                             |
-  | `page.record`          | `browser.recording.*` — traces and video                                                                                              |
-  | `omnibox.register`     | `browser.registerOmniboxProvider` (sees everything typed in the address bar)                                                          |
-  | `contextMenu.register` | `browser.registerContextMenuItem` (receives the selection or link clicked)                                                            |
-  | `find.register`        | `browser.registerFindAction` (receives the find query)                                                                                |
-  | `downloads.handle`     | `browser.registerDownloadHandler`                                                                                                     |
-  | `auth.provide`         | `browser.registerAuthProvider`                                                                                                        |
-  | `pdf.provide`          | `browser.registerPdfTextProvider`                                                                                                     |
-  | `threads`              | `sdk.threads`, `sdk.threadSections`, `sdk.subscribe({event:"thread:changed"})`                                                        |
-  | `filesystem`           | `sdk.files`                                                                                                                           |
-  | `shell`                | `sdk.terminals`                                                                                                                       |
-  | `workspace`            | `sdk.projects`, `environments`, `hosts`, `providers`, `skills`, `system`, `theme`, `status`, `guide`, and the other `subscribe` feeds |
-  | `plugins`              | `sdk.plugins`                                                                                                                         |
+  | Permission              | Opens                                                                                                                                 |
+  | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+  | `tabs.read`             | `browser.tabs.list`, `page.url`, `page.title`                                                                                         |
+  | `tabs.modify`           | opening, closing, activating tabs, `browser.tabs.pin/mute/duplicate/move`, `browser.navigation.*`                                     |
+  | `page.read`             | page text, selection, snapshot, screenshot, PDF, console                                                                              |
+  | `page.interact`         | `page.act`, answering page dialogs, mouse input, `page.zoom`                                                                          |
+  | `page.inject`           | `browser.control.evaluate` — arbitrary JavaScript in the page                                                                         |
+  | `network.observe`       | the page's network log, including headers                                                                                             |
+  | `network.intercept`     | route mocking, unrouting, forcing a tab offline                                                                                       |
+  | `page.credentials`      | `browser.storage.*` — the user's cookies and site storage                                                                             |
+  | `page.record`           | `browser.recording.*` — traces and video                                                                                              |
+  | `omnibox.register`      | `browser.registerOmniboxProvider` (sees everything typed in the address bar)                                                          |
+  | `contextMenu.register`  | `browser.registerContextMenuItem` (receives the selection or link clicked)                                                            |
+  | `tabMenu.register`      | `browser.registerTabAction` (receives the tab the entry was picked on)                                                                |
+  | `siteInfo.register`     | `browser.registerSiteInfoProvider` (receives the page's address and host)                                                             |
+  | `searchEngine.register` | `browser.registerSearchEngine` (a chosen engine receives everything typed in the address bar)                                         |
+  | `find.register`         | `browser.registerFindAction` (receives the find query)                                                                                |
+  | `downloads.handle`      | `browser.registerDownloadHandler`                                                                                                     |
+  | `auth.provide`          | `browser.registerAuthProvider`                                                                                                        |
+  | `pdf.provide`           | `browser.registerPdfTextProvider`                                                                                                     |
+  | `history`               | `browser.registerHistoryFilter` and `sdk.browserHistory` — the browsing history, read and write                                       |
+  | `threads`               | `sdk.threads`, `sdk.threadSections`, `sdk.subscribe({event:"thread:changed"})`                                                        |
+  | `filesystem`            | `sdk.files`                                                                                                                           |
+  | `shell`                 | `sdk.terminals`                                                                                                                       |
+  | `workspace`             | `sdk.projects`, `environments`, `hosts`, `providers`, `skills`, `system`, `theme`, `status`, `guide`, and the other `subscribe` feeds |
+  | `plugins`               | `sdk.plugins`                                                                                                                         |
 
   The same list applies to the loopback API, not only to the `bb.sdk` object:
   your plugin's SDK client identifies itself, so calling

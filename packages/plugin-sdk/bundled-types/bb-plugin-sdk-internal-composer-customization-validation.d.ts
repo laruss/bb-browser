@@ -5,7 +5,7 @@
 // Confused by the API, or need a symbol that isn't here? Clone the BB repo
 // and read the real source: https://github.com/get-bb/bb
 
-import { ComposerCustomization, PluginComposerThreadRowStatus } from '@bb/plugin-sdk';
+import { ComposerCustomization, PluginBrowserTabStatus, PluginComposerThreadRowStatus } from '@bb/plugin-sdk';
 
 declare const PLUGIN_SLOT_ID_PATTERN: RegExp;
 type RejectionReporter = (reason: string) => void;
@@ -15,6 +15,12 @@ type RejectionReporter = (reason: string) => void;
  * means the value was rejected; `null` remains the explicit clear operation.
  */
 declare function normalizePluginThreadRowStatus(value: unknown, onRejected: RejectionReporter): PluginComposerThreadRowStatus | null | undefined;
+/**
+ * Parse the runtime value handed to
+ * `PluginContentScriptContext.experimental_setBrowserTabStatus`, on the same
+ * terms as {@link normalizePluginThreadRowStatus}.
+ */
+declare function normalizePluginBrowserTabStatus(value: unknown, onRejected: RejectionReporter): PluginBrowserTabStatus | null | undefined;
 declare function requireSlotId(kind: string, value: unknown): string;
 declare function requireMessageDirectiveId(kind: string, value: unknown): string;
 declare function requireNonEmptyString(kind: string, field: string, value: unknown): string;
@@ -27,4 +33,4 @@ declare function requireUniqueId(kind: string, seen: Set<string>, id: string): v
  */
 declare function collectComposerCustomization(registration: unknown, seenIds: Set<string>, onRejected: RejectionReporter): ComposerCustomization | null;
 
-export { PLUGIN_SLOT_ID_PATTERN, collectComposerCustomization, normalizePluginThreadRowStatus, requireComponent, requireMessageDirectiveId, requireNonEmptyString, requireOptionalString, requireSlotId, requireUniqueId };
+export { PLUGIN_SLOT_ID_PATTERN, collectComposerCustomization, normalizePluginBrowserTabStatus, normalizePluginThreadRowStatus, requireComponent, requireMessageDirectiveId, requireNonEmptyString, requireOptionalString, requireSlotId, requireUniqueId };

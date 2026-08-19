@@ -41,6 +41,14 @@ import type {
   BrowserStorageItem,
 } from "@bb/domain/browser-control";
 import { PLUGIN_INTERACTION_MAX_TITLE_LENGTH } from "@bb/domain/plugin-interaction-limits";
+import {
+  BROWSER_SEARCH_ENGINE_ID_PATTERN,
+  BROWSER_SEARCH_ENGINE_MAX_ID_LENGTH,
+  BROWSER_SEARCH_ENGINE_MAX_NAME_LENGTH,
+  BROWSER_SEARCH_ENGINE_QUERY_PLACEHOLDER,
+  normalizeBrowserSearchEngineTemplate,
+  type BrowserSearchEngine,
+} from "@bb/domain/browser-search-engine";
 import type {
   AppKeybindingOverride,
   AppKeybindingOverrides,
@@ -81,7 +89,11 @@ import type {
   PluginBrowserPdfTextProvider,
   PluginBrowserContextMenuContext,
   PluginBrowserFindContext,
+  PluginBrowserSiteInfoContext,
+  PluginBrowserSiteInfoRow,
+  PluginBrowserTabActionContext,
   PluginBrowserDownloadHandler,
+  PluginBrowserHistoryFilter,
   PluginOmniboxRunContext,
   PluginOmniboxRunResult,
   PluginOmniboxSuggestContext,
@@ -146,6 +158,9 @@ export type {
   PluginMentionSearchContext,
   PluginMentionTrigger,
   PluginBrowserDownloadHandler,
+  PluginBrowserHistoryFilter,
+  PluginBrowserHistoryRewrite,
+  PluginBrowserHistoryVisit,
   PluginOmniboxProviderRegistration,
   PluginOmniboxRunContext,
   PluginOmniboxRunResult,
@@ -524,10 +539,18 @@ export interface PluginApiHandle {
   contextMenuItems: PluginBrowserContextMenuItemRecord[];
   /** Find-bar buttons recorded by `bb.browser.registerFindAction`. */
   findActions: PluginBrowserFindActionRecord[];
+  /** Tab-menu entries recorded by `bb.browser.registerTabAction`. */
+  tabActions: PluginBrowserTabActionRecord[];
+  /** Site-info sections recorded by `bb.browser.registerSiteInfoProvider`. */
+  siteInfoProviders: PluginBrowserSiteInfoProviderRecord[];
+  /** Search engines recorded by `bb.browser.registerSearchEngine`. */
+  searchEngines: BrowserSearchEngine[];
   /** Auth providers recorded by `bb.browser.registerAuthProvider`. */
   authProviders: PluginBrowserAuthProvider[];
   /** PDF text providers recorded by `bb.browser.registerPdfTextProvider`. */
   pdfTextProviders: PluginBrowserPdfTextProvider[];
+  /** History filters recorded by `bb.browser.registerHistoryFilter`. */
+  historyFilters: PluginBrowserHistoryFilter[];
   /** Publish factory-time host declarations and status only after commit. */
   activate(): void;
   /** Poison every method on the handle. */
@@ -547,6 +570,25 @@ export interface PluginBrowserFindActionRecord {
   id: string;
   title: string;
   run: (context: PluginBrowserFindContext) => void | Promise<void>;
+}
+
+/** Runtime shape of a `bb.browser.registerTabAction` registration. */
+export interface PluginBrowserTabActionRecord {
+  id: string;
+  title: string;
+  run: (context: PluginBrowserTabActionContext) => void | Promise<void>;
+}
+
+/** Runtime shape of a `bb.browser.registerSiteInfoProvider` registration. */
+export interface PluginBrowserSiteInfoProviderRecord {
+  id: string;
+  label: string;
+  describe: (
+    context: PluginBrowserSiteInfoContext,
+  ) =>
+    | PluginBrowserSiteInfoRow[]
+    | null
+    | Promise<PluginBrowserSiteInfoRow[] | null>;
 }
 
 /** Provider registered by `bb.agents.contributeInstructions`. */
@@ -1778,8 +1820,12 @@ export function createPluginApi(options: {
   const downloadHandlers: PluginBrowserDownloadHandler[] = [];
   const contextMenuItems: PluginBrowserContextMenuItemRecord[] = [];
   const findActions: PluginBrowserFindActionRecord[] = [];
+  const tabActions: PluginBrowserTabActionRecord[] = [];
+  const siteInfoProviders: PluginBrowserSiteInfoProviderRecord[] = [];
+  const searchEngines: BrowserSearchEngine[] = [];
   const authProviders: PluginBrowserAuthProvider[] = [];
   const pdfTextProviders: PluginBrowserPdfTextProvider[] = [];
+  const historyFilters: PluginBrowserHistoryFilter[] = [];
   const keybindings: AppKeybindingOverride[] = [];
   const browser: PluginBrowser = {
     registerOmniboxProvider(provider) {
@@ -1884,6 +1930,106 @@ export function createPluginApi(options: {
         run: action.run.bind(action),
       });
     },
+    registerTabAction(action) {
+      assertLive();
+      permissionGate.assert("tabMenu.register", "bb.browser.registerTabAction");
+      const id = action?.id;
+      if (typeof id !== "string" || !OMNIBOX_PROVIDER_ID_PATTERN.test(id)) {
+        throw new Error(
+          `invalid tab action id ${JSON.stringify(id)} — use letters, digits, "-" and "_"`,
+        );
+      }
+      if (tabActions.some((record) => record.id === id)) {
+        throw new Error(`tab action "${id}" is already registered`);
+      }
+      if (
+        typeof action.title !== "string" ||
+        action.title.trim().length === 0
+      ) {
+        throw new Error(`tab action "${id}" must provide a title`);
+      }
+      if (typeof action.run !== "function") {
+        throw new Error(
+          `tab action "${id}" must provide a run(context) function`,
+        );
+      }
+      tabActions.push({
+        id,
+        title: action.title.trim(),
+        run: action.run.bind(action),
+      });
+    },
+    registerSiteInfoProvider(provider) {
+      assertLive();
+      permissionGate.assert(
+        "siteInfo.register",
+        "bb.browser.registerSiteInfoProvider",
+      );
+      const id = provider?.id;
+      if (typeof id !== "string" || !OMNIBOX_PROVIDER_ID_PATTERN.test(id)) {
+        throw new Error(
+          `invalid site info provider id ${JSON.stringify(id)} — use letters, digits, "-" and "_"`,
+        );
+      }
+      if (siteInfoProviders.some((record) => record.id === id)) {
+        throw new Error(`site info provider "${id}" is already registered`);
+      }
+      if (
+        typeof provider.label !== "string" ||
+        provider.label.trim().length === 0
+      ) {
+        throw new Error(`site info provider "${id}" must provide a label`);
+      }
+      if (typeof provider.describe !== "function") {
+        throw new Error(
+          `site info provider "${id}" must provide a describe(context) function`,
+        );
+      }
+      siteInfoProviders.push({
+        id,
+        label: provider.label.trim(),
+        describe: provider.describe.bind(provider),
+      });
+    },
+    registerSearchEngine(engine) {
+      assertLive();
+      permissionGate.assert(
+        "searchEngine.register",
+        "bb.browser.registerSearchEngine",
+      );
+      const id = engine?.id;
+      if (
+        typeof id !== "string" ||
+        id.length > BROWSER_SEARCH_ENGINE_MAX_ID_LENGTH ||
+        !BROWSER_SEARCH_ENGINE_ID_PATTERN.test(id)
+      ) {
+        throw new Error(
+          `invalid search engine id ${JSON.stringify(id)} — use letters, digits, "-" and "_"`,
+        );
+      }
+      if (searchEngines.some((record) => record.id === id)) {
+        throw new Error(`search engine "${id}" is already registered`);
+      }
+      const name = engine.name;
+      if (
+        typeof name !== "string" ||
+        name.trim().length === 0 ||
+        name.length > BROWSER_SEARCH_ENGINE_MAX_NAME_LENGTH
+      ) {
+        throw new Error(`search engine "${id}" must provide a name`);
+      }
+      // Refused at registration rather than at Enter: an engine that cannot be
+      // used is a row in the user's setting that silently does nothing.
+      const urlTemplate = normalizeBrowserSearchEngineTemplate(
+        engine.urlTemplate,
+      );
+      if (urlTemplate === null) {
+        throw new Error(
+          `search engine "${id}" needs an https (or loopback) urlTemplate containing ${BROWSER_SEARCH_ENGINE_QUERY_PLACEHOLDER}`,
+        );
+      }
+      searchEngines.push({ id, name: name.trim(), urlTemplate });
+    },
     registerAuthProvider(provider) {
       assertLive();
       permissionGate.assert("auth.provide", "bb.browser.registerAuthProvider");
@@ -1906,6 +2052,16 @@ export function createPluginApi(options: {
         );
       }
       pdfTextProviders.push(provider);
+    },
+    registerHistoryFilter(filter) {
+      assertLive();
+      permissionGate.assert("history", "bb.browser.registerHistoryFilter");
+      if (typeof filter !== "function") {
+        throw new Error(
+          "registerHistoryFilter(filter) needs a function taking one visit",
+        );
+      }
+      historyFilters.push(filter);
     },
     registerDownloadHandler(handler) {
       assertLive();
@@ -1954,6 +2110,57 @@ export function createPluginApi(options: {
             {
               type: "tabs.activate",
               tabId: requireTabId(args?.tabId, "tabs.activate"),
+            },
+            options,
+            "tab",
+          )
+        ).tab;
+      },
+      async pin(args, options) {
+        return (
+          await callBrowser(
+            {
+              type: "tabs.pin",
+              tabId: requireTabId(args?.tabId, "tabs.pin"),
+              pinned: args?.pinned ?? true,
+            },
+            options,
+            "tab",
+          )
+        ).tab;
+      },
+      async mute(args, options) {
+        return (
+          await callBrowser(
+            {
+              type: "tabs.mute",
+              tabId: requireTabId(args?.tabId, "tabs.mute"),
+              muted: args?.muted ?? true,
+            },
+            options,
+            "tab",
+          )
+        ).tab;
+      },
+      async duplicate(args, options) {
+        return (
+          await callBrowser(
+            {
+              type: "tabs.duplicate",
+              tabId: requireTabId(args?.tabId, "tabs.duplicate"),
+            },
+            options,
+            "tab",
+          )
+        ).tab;
+      },
+      async move(args, options) {
+        return (
+          await callBrowser(
+            {
+              type: "tabs.move",
+              tabId: requireTabId(args?.tabId, "tabs.move"),
+              toIndex: args?.toIndex ?? 0,
             },
             options,
             "tab",
@@ -2105,6 +2312,19 @@ export function createPluginApi(options: {
           "answered",
         );
         return value.answered;
+      },
+      async zoom(args, options) {
+        return (
+          await callBrowser(
+            {
+              type: "page.zoom",
+              tabId: optionalTabId(args.tabId),
+              factor: args.factor,
+            },
+            options,
+            "zoom",
+          )
+        ).factor;
       },
       async getUrl(args, options) {
         return (
@@ -2707,8 +2927,12 @@ export function createPluginApi(options: {
     keybindings,
     contextMenuItems,
     findActions,
+    tabActions,
+    siteInfoProviders,
+    searchEngines,
     authProviders,
     pdfTextProviders,
+    historyFilters,
     activate() {
       if (activated) return;
       assertLive();

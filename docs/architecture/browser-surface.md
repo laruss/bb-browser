@@ -677,6 +677,254 @@ than a table entry.
 There is no switcher popup listing the tabs. It would now be possible — the
 overlay machinery below is exactly what it needs — but it is a separate feature.
 
+## The tab menu: pin, duplicate, mute
+
+Right-clicking a tab opens bb's own entries — Duplicate, Pin / Unpin, Mute /
+Unmute, Close — followed by whatever plugins contributed. The menu is
+renderer-drawn (Radix), unlike the page's, which is Chromium's: the strip is bb's
+own DOM, so there is no native menu to extend here.
+
+Two entries do not apply to every tab, and both refusals are reasons rather than
+taste:
+
+- **Duplicate is web-only.** An app tab is a _remembered route_ (see
+  `AppSurfaceTab`), and two tabs holding one route cannot both be the one the
+  window's router is rendering.
+- **Mute is web-only, and only with a page.** A bb screen shares the app's own
+  `webContents`, so "mute this tab" would mute bb. A tab with no page yet has
+  nothing to silence.
+
+### Pinning is a block, not a flag
+
+Pinned tabs are a block at the leading end of the strip, Chromium's rule.
+`orderPinnedFirst` enforces it in one stable pass, and pin, unpin and reopen all
+go through it — otherwise each would need its own idea of where a tab belongs.
+Unpinning therefore lands a tab at the head of the unpinned block, which is also
+Chromium's behaviour. Duplicating a pinned tab produces a pinned copy: the same
+rule, and the thing that keeps a copy from splitting the block it was made in.
+
+The flag is `pinned?: boolean` on the surface's own tab record — **absent**
+rather than `false` when a tab is not pinned, so every strip an older build wrote
+still parses, and unpinning writes the record back the way that build would have.
+It is the surface's rather than the shared `BrowserFixedPanelTab`'s, because the
+thread panel's strip has no pinned block.
+
+A pinned tab renders as its page icon alone: no title, and no close control. The
+chord and the menu still close it — what is removed is the affordance a stray
+click can hit, which is the point of pinning. Its name moves to `aria-label` and
+`title`, so it stays reachable by a screen reader and by hovering. It is also
+sized by its content and `shrink-0`, unlike the equal-width unpinned tabs, which
+keeps the pinned block out of the shrink pool the rest share.
+
+### Mute lives exactly as long as the page does
+
+`setMuted` is a new channel and a new optional method (invariant 2's rule for
+extending the browser IPC), one-way: nothing but this renderer mutes a page, so
+there is nothing to hear back. The shell calls `webContents.setAudioMuted`, and a
+tab whose view does not exist yet finds no entry and does nothing.
+
+That last part is why the record is the renderer's. The deck creates a view only
+when its tab is first shown, so a mute set on an unvisited tab has nothing to
+apply to yet; the surface re-asserts every mute whenever the active tab changes,
+by which time the deck (a child, so its effects run first) has built the view.
+
+The record lives in `sessionStorage` — for the reason page icons do
+(`browser-favicons.ts`): a renderer reload throws React state away while the
+shell's views survive, and a strip that stopped marking a page that is still
+silent would be lying. It dies with the window, which is exactly as long as the
+`webContents` it describes. The consequence, stated rather than hidden: a restart
+brings restored tabs back audible. Chromium remembers mute per site; bb does not,
+because a mute stored against a page that has not loaded is a promise about
+something that does not exist.
+
+**No "playing audio" indicator.** Chromium shows one, and it needs the shell to
+report a `webContents` deciding on its own that it is making noise — a push
+channel this deliberately does not add. What the strip marks is what the user
+asked for.
+
+### The menu has to freeze the page to be seen
+
+The first thing the menu did in a real window was open **behind** the page. That
+is not a z-index to raise: a browsed page is a native `WebContentsView` and
+composites above the DOM, so the only way to draw over it is the one this repo
+already has — freeze it to a bitmap, hide the view, draw on the DOM that is left
+(`setOverlay`, see "Drawing over a page is possible" below). The downloads
+dropdown and the tab switcher pay the same cost for the same reason.
+
+One owner per window: the surface. Everything that draws over the page area only
+_reports_ that it needs the freeze — the strip that a menu is open
+(`onMenuOpenChange`), the chrome that the downloads list or the site panel is
+(`onPageOverlayChange`) — and the surface ORs those with the switcher and makes
+the single call. Two owners writing `setOverlay` for one tab have the second
+one's close thaw the first one's panel: the page composites back over a panel
+that is still open, and it is there but invisible and unclickable. The switcher
+is what reaches that, because it is driven by keys, and a list that closes on a
+click outside does not close on a keypress. The strip tracks _which_ tab's menu is open rather than a boolean —
+right-clicking a second tab opens its menu and closes the first one's, and those
+two callbacks can arrive in either order, so a stale close must not cancel a live
+open.
+
+Freezing also buys the thing that makes the menu usable at all: with the page
+hidden, the whole window is DOM again, so a click outside the menu lands where
+Radix can see it and dismisses it.
+
+### Dragging a tab to reorder it
+
+Tabs reorder by drag, with `@dnd-kit` — the same library, sensors and click
+suppression the thread panel's tab strip uses (`SecondaryPanelTabStrip`), so the
+two strips behave the same under the pointer: a few pixels of travel before a
+press becomes a drag, a hold on touch, and the click that ends a drag swallowed
+rather than selecting the tab it landed on.
+
+Two differences from that strip, both because this one is simpler: the drag is
+restricted to the horizontal axis and there is **no lifted clone** portaled out
+to `document.body`. The panel's strip scrolls, so a translated tab would be
+clipped by its viewport; this one is a single row that clips rather than scrolls,
+and the sort happens inside it, so the tab never leaves the box.
+
+The drop resolves to an index and goes through `moveBrowserSurfaceTab`, which is
+also what `tabs.move` calls. The index is **clamped into the tab's own block**
+rather than refused when it names the other one: pinned tabs lead the strip, so a
+drag that crossed the boundary lands at the near edge of where it is allowed —
+as far as it can go, rather than snapping back and saying nothing.
+
+Right-clicking a tab must not start a drag, or aiming at the menu would carry the
+tab behind it. dnd-kit's `MouseSensor` ignores the secondary button, and a test
+pins that as a property of the strip rather than trusting the default — swap in a
+sensor that accepts every button and it fails.
+
+No drag between windows. Chromium tears a tab out into a new window; here a
+window's tabs are its own (see the multi-window keying), and moving one across
+would mean moving its `WebContentsView` between hosts.
+
+### The two plugin points, and why they land on different sides
+
+Phase 8 names _tab actions_ and _tab decorators_. They are both here, and they
+are built on opposite sides of the boundary — the same split the surrounding code
+already makes:
+
+- **Tab actions** are declared on the backend
+  (`bb.browser.registerTabAction`) and run there when picked, exactly like page
+  context-menu items: the shell (here, the strip) holds the list so a right-click
+  opens without waiting on a server, and only the click travels. The context an
+  action receives carries the tab's id, url, title, `pinned`, `muted` and
+  `active`. A **null** url means a bb screen — a tab with no page at all, which
+  an action has to be able to tell from a tab with no page _yet_ (empty string).
+  New permission: `tabMenu.register`, beside `contextMenu.register` rather than
+  folded into it, because the house rule here is one permission per contributed
+  surface and folding would silently widen what already-granted plugins can do.
+- **Tab decorators** are the frontend's
+  (`contentScript.experimental_setBrowserTabStatus`), mirroring
+  `experimental_setThreadRowStatus` down to the shape of the store: a mark is
+  owned by the plugin generation that set it, and the host clears everything that
+  generation set when it deactivates. Live paint belongs on the side that can
+  paint without a round trip; an invoked action belongs where the plugin's logic
+  is.
+
+The strip reads the marks as one whole-store snapshot rather than a subscription
+per tab (which is what `plugin-thread-row-status.ts` does): a window has a
+handful of tabs in one component, where the sidebar has hundreds of independent
+rows.
+
+### Driveable, not only clickable
+
+`tabs.pin`, `tabs.mute`, `tabs.duplicate` and `tabs.move` are browser commands,
+so a plugin (`bb.browser.tabs.pin/mute/duplicate/move`) or an agent can do what
+the menu and the drag do. All four cost `tabs.modify`: none of them reaches into what a page contains, and all
+three are things the user does from the tab's own menu. Each states the end
+result rather than toggling, so asking twice lands where asking once did — a
+caller that cannot see the strip has no way to check first.
+
+What they deliberately do **not** come with is pin/mute state in `tabs.list`.
+`browserTabSnapshotSchema` is wire-frozen, and a plugin that wants to know is
+told by a tab action's context. There is no agent _tool_ wrapping the three
+either, for the same reason `page.zoom` has none: the plugin API is the surface
+that asked for them.
+
+### Still missing
+
+No "Close others" or "Close to the right". No audio indicator, as above. No test
+covers the drag itself: dnd-kit's own swallow-the-click-after-a-drag listener
+outlives the component in jsdom (nothing generates the click that would consume
+it), so a test that dragged poisoned whatever ran next. The reducer underneath it
+is tested; the gesture is verified by hand.
+
+## The padlock, and what it is allowed to claim
+
+The padlock was a decoration: `getBrowserUrlSecurity` read the scheme out of the
+address bar, so anything `https` got a green lock and anything `http` got a
+warning triangle. Both halves were wrong in a way that mattered.
+
+- **A certificate the user waved through still got the lock.** bb asks before
+  proceeding past a certificate error and remembers the answer for the session
+  (`acceptedCertificates`, keyed `host|fingerprint`) — so a page can be encrypted
+  and completely unidentified, and the omnibox called it secure. Worse, the
+  exception is the _manager's_: a second tab reaching the same host is let
+  through without being asked, and its padlock claimed the same thing.
+- **Loopback got the warning.** `http://localhost:5173` never touches a network,
+  and bb's own pages are served exactly that way, so the triangle warned about the
+  one class of page with nothing to warn about.
+
+So the padlock now has one source (`browser-page-security.ts`) that combines what
+the URL settles with the single fact only the shell knows, pushed on every
+committed navigation over its own channel (`onPageSecurity`):
+
+| State                   | Glyph   | What it says                                    |
+| ----------------------- | ------- | ----------------------------------------------- |
+| `encrypted`             | lock    | others on this network cannot read it           |
+| `certificate-untrusted` | warning | encrypted, but nobody vouched for the other end |
+| `plain`                 | warning | travels in the clear                            |
+| `local`                 | laptop  | never leaves this machine                       |
+| `none`                  | search  | no page, so no claim                            |
+
+The wording lives beside the states rather than in the component, so the glyph and
+the sentence cannot drift apart and a test can hold the browser to what it says.
+
+**What the padlock deliberately does not check**: mixed content, cipher age,
+revocation — Chromium's own security state. That lives behind the DevTools
+protocol, and a tab may have only one protocol client (the same constraint that
+makes automation refuse a tab whose developer panel is open). A padlock that
+needed it would go blank exactly when a developer was looking at the page, so the
+popover says what it knows rather than implying a check that did not happen.
+
+### Clicking it opens the site panel
+
+A claim nobody can inspect is a claim nobody can check, so the padlock **is** the
+trigger: it opens a popover with the state, the host, what it means in the user's
+terms, and then whatever plugins know about the site. Like the tab menu, the panel
+hangs over the page area and therefore freezes the page while it is open — see
+the tab menu's section for why, and for the one-owner rule. Within the chrome the
+two panels (this and downloads) close each other, so one page never has two
+things claiming its freeze.
+
+### The plugin point: sections, not controls
+
+`bb.browser.registerSiteInfoProvider` adds a section — a label and rows of
+`{ label, value }` — asked each time the panel opens, concurrently, time-boxed at
+2s and failure-isolated, exactly like an omnibox provider. A provider with nothing
+to say about _this_ site returns null and no heading appears.
+
+Rows are **text**. A section reports; anything to _do_ belongs on the tab menu or
+the page's context menu, where a click already has somewhere to go. That keeps the
+panel from becoming a second settings screen with no state behind it.
+
+The request happens inside the popover's own content rather than behind an
+`enabled` flag, which is structural rather than clever: a closed Radix popover
+renders no content, so a provider that does real work to answer is not asked while
+nobody is looking. Permission: `siteInfo.register`, its own for the reason
+`tabMenu.register` is its own.
+
+**Not built, and named rather than implied**: per-site permission toggles (bb's
+permission policy is fixed in the shell, so there is nothing per-site to toggle
+yet), a cookie count, and "clear data for this site". The panel says what is true
+today.
+
+The **thread panel's** browser chrome keeps its own three-way glyph and gained no
+panel: it is a preview surface, and the shell pushes page security to whoever asked
+for the surface's tab. It does inherit the loopback fix — a `local` page falls
+through to its neutral glyph instead of the warning — so the one lie it could tell
+is gone even though it makes no new claim.
+
 ## The page context menu
 
 Right-clicking a browsed page used to offer cut, copy, paste and select-all —

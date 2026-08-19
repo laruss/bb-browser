@@ -823,6 +823,98 @@ export type PluginBrowserAuthProvider = (
   | null
   | Promise<PluginBrowserAuthCredentials | null>;
 
+/** What a tab action was run on — one tab in the browser surface's strip. */
+export interface PluginBrowserTabActionContext {
+  tabId: string;
+  /**
+   * The page's address, empty for a tab that has no page yet — and **null** for
+   * a bb screen (Settings, a plugin's own panel), which is a tab with no page at
+   * all. Null is therefore how an action tells the two kinds apart.
+   */
+  url: string | null;
+  title: string | null;
+  pinned: boolean;
+  /** Web tabs only: a bb screen has no page of its own to silence. */
+  muted: boolean;
+  /** Whether this is the tab the window is currently showing. */
+  active: boolean;
+}
+
+export interface PluginBrowserTabActionRegistration {
+  /** Unique within this plugin: [a-zA-Z0-9_-]+. */
+  id: string;
+  /** The menu label, shown under the browser's own tab entries. */
+  title: string;
+  /**
+   * Runs server-side when the user picks the entry. Fire-and-forget, like a
+   * context-menu item: the menu has already closed, so report progress through
+   * your own surfaces rather than by returning something.
+   */
+  run(context: PluginBrowserTabActionContext): void | Promise<void>;
+}
+
+/**
+ * A search engine the user can pick for the browser's address bar.
+ *
+ * Data only — the browser holds the template and formats it, so nothing is asked
+ * of the plugin when the user presses Enter. That is what makes this possible at
+ * all: what Enter does is resolved synchronously from the typed text, and a
+ * provider that had to be awaited could never own it.
+ *
+ * The consequence worth knowing: an engine need not search. Any `https` address
+ * with `%s` in it is one, and so is a **loopback** address — including your own
+ * `bb.http.route`, which is how "Enter asks an agent" is built.
+ */
+export interface PluginBrowserSearchEngineRegistration {
+  /** Unique within this plugin: [a-zA-Z0-9_-]+. Stored in the user's setting. */
+  id: string;
+  /** Shown in the setting's list. */
+  name: string;
+  /**
+   * Absolute URL with `%s` where the query goes, escaped by the browser. `https`
+   * only, apart from loopback: a search is every word typed into the address bar,
+   * and sending that in the clear to another machine is not a plugin's call.
+   */
+  urlTemplate: string;
+}
+
+/** The page the site-info popover is describing. */
+export interface PluginBrowserSiteInfoContext {
+  /** The browser tab whose padlock was clicked. */
+  tabId: string;
+  /** The page's address. Never empty — a tab with no page asks nobody. */
+  url: string;
+  /** `example.com`, or `example.com:8443` when the port is not the default. */
+  host: string;
+}
+
+/** One line in a provider's section: a name and what it says. */
+export interface PluginBrowserSiteInfoRow {
+  label: string;
+  value: string;
+}
+
+export interface PluginBrowserSiteInfoProviderRegistration {
+  /** Unique within this plugin: [a-zA-Z0-9_-]+. */
+  id: string;
+  /** The section heading, e.g. "Passwords". */
+  label: string;
+  /**
+   * What this plugin knows about the site, asked each time the popover opens.
+   *
+   * Return `null` — or no rows — to show nothing, which is what a provider with
+   * nothing to say about *this* site should do rather than a row reading "none".
+   * Time-boxed like an omnibox suggestion: the popover is already open, so a
+   * provider that hangs is dropped rather than waited for.
+   */
+  describe(
+    context: PluginBrowserSiteInfoContext,
+  ):
+    | PluginBrowserSiteInfoRow[]
+    | null
+    | Promise<PluginBrowserSiteInfoRow[] | null>;
+}
+
 /** What a find action was run with. */
 export interface PluginBrowserFindContext {
   /** The browser tab whose find bar the button was pressed in. */
@@ -870,6 +962,47 @@ export interface PluginBrowserFindActionRegistration {
    */
   run(context: PluginBrowserFindContext): void | Promise<void>;
 }
+
+/** A page about to be written to the browser's history store. */
+export interface PluginBrowserHistoryVisit {
+  /**
+   * The surface the visit happened on — an agent thread's id, or the browser
+   * surface's own. History is stored per scope, which is why the new-tab screen
+   * of one thread shows that thread's pages.
+   */
+  scopeId: string;
+  url: string;
+  title: string | null;
+  visitedAt: number;
+}
+
+/** What to record instead. Omitted fields keep what the visit carried. */
+export interface PluginBrowserHistoryRewrite {
+  url?: string;
+  title?: string | null;
+}
+
+/**
+ * Decide what the browser remembers about a page — see
+ * `bb.browser.registerHistoryFilter`.
+ *
+ * Return nothing to accept the visit as it stands, a rewrite to change what is
+ * stored (strip tracking parameters, retitle a page whose own title is
+ * useless), or `null` to drop it, which is how "never record this site" is
+ * built without the browser knowing what a private site is.
+ *
+ * Filters run before the write, in plugin id order, each seeing the previous
+ * one's result; the first `null` ends it. A filter that throws or runs out of
+ * time is skipped, so a broken plugin loses its say rather than the user's
+ * history.
+ */
+export type PluginBrowserHistoryFilter = (
+  visit: PluginBrowserHistoryVisit,
+) =>
+  | PluginBrowserHistoryRewrite
+  | null
+  | void
+  | Promise<PluginBrowserHistoryRewrite | null | void>;
 
 // ---------------------------------------------------------------------------
 // Browser control: browser.tabs.*, browser.page.*, browser.navigation.*.
@@ -919,6 +1052,45 @@ export interface PluginBrowserTabs {
   ): Promise<{ closedTabId: string; tabs: PluginBrowserTab[] }>;
   activate(
     args: { tabId: string },
+    options?: PluginBrowserCallOptions,
+  ): Promise<PluginBrowserTab>;
+  /**
+   * Pin a tab into the strip's leading block, or take it out again.
+   *
+   * Stated rather than toggled, so asking twice lands where asking once did.
+   * Which tabs are pinned is not in {@link PluginBrowserTabs.list} — a tab
+   * action's context is where a plugin is told (see
+   * `PluginBrowserTabActionContext`).
+   */
+  pin(
+    args: { tabId: string; pinned: boolean },
+    options?: PluginBrowserCallOptions,
+  ): Promise<PluginBrowserTab>;
+  /**
+   * Silence a tab's page, or let it speak again. Stated rather than toggled,
+   * like pinning.
+   *
+   * Holds for as long as the page's view does: it is set on the `webContents`,
+   * so a browser that restarts comes back audible.
+   */
+  mute(
+    args: { tabId: string; muted: boolean },
+    options?: PluginBrowserCallOptions,
+  ): Promise<PluginBrowserTab>;
+  /** Copy a tab beside itself, and answer with the copy. */
+  duplicate(
+    args: { tabId: string },
+    options?: PluginBrowserCallOptions,
+  ): Promise<PluginBrowserTab>;
+  /**
+   * Move a tab along the strip, counting from 0 — what a drag does, driven.
+   *
+   * The index is clamped into the tab's own block, since pinned tabs lead the
+   * strip: asking an unpinned tab for 0 puts it first among the unpinned ones
+   * rather than failing.
+   */
+  move(
+    args: { tabId: string; toIndex: number },
     options?: PluginBrowserCallOptions,
   ): Promise<PluginBrowserTab>;
 }
@@ -1164,6 +1336,20 @@ export interface PluginBrowserPage {
     args: { accept: boolean; tabId?: string; promptText?: string },
     options?: PluginBrowserCallOptions,
   ): Promise<boolean>;
+  /**
+   * Scale the page, and resolve with what it became.
+   *
+   * `factor` is a multiplier where 1 is 100%, and one outside Chrome's own
+   * 0.25–5 is **refused** rather than quietly clamped — a call that reported a
+   * factor nobody asked for would be worse than an error. The answer is read
+   * back rather than echoed, because Chromium is the one that decides — and it
+   * remembers zoom **per site**, so this also sets what that site looks like the
+   * next time any tab opens it.
+   */
+  zoom(
+    args: { factor: number; tabId?: string },
+    options?: PluginBrowserCallOptions,
+  ): Promise<number>;
   getUrl(
     args?: { tabId?: string },
     options?: PluginBrowserCallOptions,
@@ -1593,6 +1779,48 @@ export interface PluginBrowser {
    */
   registerFindAction(action: PluginBrowserFindActionRegistration): void;
   /**
+   * Add an entry to a browser tab's context menu (`browser.tab.actions`) — the
+   * tab **action** point.
+   *
+   * The tab strip is where a browser keeps what the user is holding open, so
+   * this is the place for what a plugin does *to one of them*: send it to an
+   * agent, file it, sync it, open it somewhere else. bb's own entries — pin,
+   * duplicate, mute, close — come first and contributed entries follow, in
+   * plugin id order.
+   *
+   * Declared like context-menu items, and with the same consequence: `title` is
+   * fixed at registration, so an entry cannot rename itself from the tab it is
+   * shown on. To *mark* a tab instead of acting on one, see
+   * `contentScript.experimental_setBrowserTabStatus`.
+   */
+  registerTabAction(action: PluginBrowserTabActionRegistration): void;
+  /**
+   * Add a section to the browser's site-info popover — what opens when the user
+   * clicks the padlock in the address bar (`browser.siteInfo.sections`).
+   *
+   * The popover is the one place in the browser that is *about the site* rather
+   * than about the page, which is what makes it worth extending: saved logins for
+   * this host, trackers blocked on it, whether it is on the user's own allowlist.
+   *
+   * bb's own section — what it can honestly say about the connection — comes
+   * first; contributed sections follow in plugin id order. Rows are text, not
+   * controls: a section reports, and anything to *do* belongs on the tab or page
+   * menu where a click has somewhere to go.
+   */
+  registerSiteInfoProvider(
+    provider: PluginBrowserSiteInfoProviderRegistration,
+  ): void;
+  /**
+   * Offer a search engine for the browser's address bar
+   * (`browser.searchEngines`) — see
+   * {@link PluginBrowserSearchEngineRegistration}.
+   *
+   * Offering is not choosing: the engine appears in the setting's list, and it is
+   * used only once the user picks it. bb's own engines come first, then
+   * contributed ones in plugin id order.
+   */
+  registerSearchEngine(engine: PluginBrowserSearchEngineRegistration): void;
+  /**
    * Answer HTTP authentication challenges for browsed pages
    * (`browser.auth.providers`) — see {@link PluginBrowserAuthProvider}.
    *
@@ -1610,6 +1838,16 @@ export interface PluginBrowser {
    * Additive: providers are asked in plugin id order until one answers.
    */
   registerPdfTextProvider(provider: PluginBrowserPdfTextProvider): void;
+  /**
+   * See every page before it enters the browser's history, and rewrite or drop
+   * it (`browser.history.filters`) — see {@link PluginBrowserHistoryFilter}.
+   *
+   * Reading and editing the store afterwards is `bb.sdk.browserHistory`; this
+   * is the only place a plugin sees a visit as it happens.
+   *
+   * Additive: every registered filter runs, across plugins, in plugin id order.
+   */
+  registerHistoryFilter(filter: PluginBrowserHistoryFilter): void;
   /**
    * Drive the browser surface's tabs, pages and navigation.
    *

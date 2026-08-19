@@ -1,3 +1,4 @@
+import { BROWSER_SEARCH_ENGINE_QUERY_PLACEHOLDER } from "@bb/domain/browser-search-engine";
 import { describe, expect, it } from "vitest";
 import {
   getBrowserUrlHost,
@@ -5,6 +6,13 @@ import {
   looksLikeUrl,
   resolveBrowserAddressInput,
 } from "./browser-url";
+
+/**
+ * The engine these assertions were written against, now named rather than
+ * assumed: the module no longer has a default, so a test says which engine it
+ * means the same way a caller does.
+ */
+const GOOGLE = `https://www.google.com/search?q=${BROWSER_SEARCH_ENGINE_QUERY_PLACEHOLDER}`;
 
 describe("looksLikeUrl", () => {
   it("treats explicit http(s) schemes as URLs", () => {
@@ -50,113 +58,123 @@ describe("looksLikeUrl", () => {
 
 describe("resolveBrowserAddressInput", () => {
   it("returns null for blank input", () => {
-    expect(resolveBrowserAddressInput("")).toBeNull();
-    expect(resolveBrowserAddressInput("   ")).toBeNull();
+    expect(resolveBrowserAddressInput("", GOOGLE)).toBeNull();
+    expect(resolveBrowserAddressInput("   ", GOOGLE)).toBeNull();
   });
 
   it("preserves an explicit http(s) URL", () => {
-    expect(resolveBrowserAddressInput("https://example.com")).toBe(
+    expect(resolveBrowserAddressInput("https://example.com", GOOGLE)).toBe(
       "https://example.com",
     );
-    expect(resolveBrowserAddressInput("  http://example.com/x  ")).toBe(
+    expect(resolveBrowserAddressInput("  http://example.com/x  ", GOOGLE)).toBe(
       "http://example.com/x",
     );
   });
 
   it("prepends https:// to a public bare host", () => {
-    expect(resolveBrowserAddressInput("example.com")).toBe(
+    expect(resolveBrowserAddressInput("example.com", GOOGLE)).toBe(
       "https://example.com",
     );
-    expect(resolveBrowserAddressInput("example.com:8080/path")).toBe(
+    expect(resolveBrowserAddressInput("example.com:8080/path", GOOGLE)).toBe(
       "https://example.com:8080/path",
     );
-    expect(resolveBrowserAddressInput("8.8.8.8")).toBe("https://8.8.8.8");
-    expect(resolveBrowserAddressInput("1.1.1.1/dns-query")).toBe(
+    expect(resolveBrowserAddressInput("8.8.8.8", GOOGLE)).toBe(
+      "https://8.8.8.8",
+    );
+    expect(resolveBrowserAddressInput("1.1.1.1/dns-query", GOOGLE)).toBe(
       "https://1.1.1.1/dns-query",
     );
   });
 
   it("prepends http:// to bare localhost inputs", () => {
-    expect(resolveBrowserAddressInput("localhost:5173")).toBe(
+    expect(resolveBrowserAddressInput("localhost:5173", GOOGLE)).toBe(
       "http://localhost:5173",
     );
-    expect(resolveBrowserAddressInput("localhost:5173?debug=1")).toBe(
+    expect(resolveBrowserAddressInput("localhost:5173?debug=1", GOOGLE)).toBe(
       "http://localhost:5173?debug=1",
     );
-    expect(resolveBrowserAddressInput("localhost:5173/#/route")).toBe(
+    expect(resolveBrowserAddressInput("localhost:5173/#/route", GOOGLE)).toBe(
       "http://localhost:5173/#/route",
     );
   });
 
   it("prepends http:// to bare localhost subdomains", () => {
-    expect(resolveBrowserAddressInput("foo.localhost")).toBe(
+    expect(resolveBrowserAddressInput("foo.localhost", GOOGLE)).toBe(
       "http://foo.localhost",
     );
-    expect(resolveBrowserAddressInput("foo.localhost:5173/path")).toBe(
+    expect(resolveBrowserAddressInput("foo.localhost:5173/path", GOOGLE)).toBe(
       "http://foo.localhost:5173/path",
     );
   });
 
   it("prepends http:// to bare loopback IP literals", () => {
-    expect(resolveBrowserAddressInput("127.0.0.1:3000/path")).toBe(
+    expect(resolveBrowserAddressInput("127.0.0.1:3000/path", GOOGLE)).toBe(
       "http://127.0.0.1:3000/path",
     );
-    expect(resolveBrowserAddressInput("[::1]:5173")).toBe("http://[::1]:5173");
-    expect(resolveBrowserAddressInput("[::1]:5173/#/route")).toBe(
+    expect(resolveBrowserAddressInput("[::1]:5173", GOOGLE)).toBe(
+      "http://[::1]:5173",
+    );
+    expect(resolveBrowserAddressInput("[::1]:5173/#/route", GOOGLE)).toBe(
       "http://[::1]:5173/#/route",
     );
   });
 
   it("builds a search URL for non-URL input", () => {
-    expect(resolveBrowserAddressInput("hello world")).toBe(
+    expect(resolveBrowserAddressInput("hello world", GOOGLE)).toBe(
       "https://www.google.com/search?q=hello%20world",
     );
   });
 
   it("routes a non-http scheme to search rather than navigating to it", () => {
-    expect(resolveBrowserAddressInput("javascript:alert(1)")).toBe(
+    expect(resolveBrowserAddressInput("javascript:alert(1)", GOOGLE)).toBe(
       "https://www.google.com/search?q=javascript%3Aalert(1)",
     );
-    expect(resolveBrowserAddressInput("file:///etc/passwd")).toBe(
+    expect(resolveBrowserAddressInput("file:///etc/passwd", GOOGLE)).toBe(
       "https://www.google.com/search?q=file%3A%2F%2F%2Fetc%2Fpasswd",
     );
   });
 
   it("routes explicit http(s) inputs with embedded whitespace to search", () => {
-    expect(resolveBrowserAddressInput("https://example.com\t@evil.com")).toBe(
+    expect(
+      resolveBrowserAddressInput("https://example.com\t@evil.com", GOOGLE),
+    ).toBe(
       "https://www.google.com/search?q=https%3A%2F%2Fexample.com%09%40evil.com",
     );
-    expect(resolveBrowserAddressInput("https://example.com @evil.com")).toBe(
+    expect(
+      resolveBrowserAddressInput("https://example.com @evil.com", GOOGLE),
+    ).toBe(
       "https://www.google.com/search?q=https%3A%2F%2Fexample.com%20%40evil.com",
     );
-    expect(resolveBrowserAddressInput("https://example.com\n@evil.com")).toBe(
+    expect(
+      resolveBrowserAddressInput("https://example.com\n@evil.com", GOOGLE),
+    ).toBe(
       "https://www.google.com/search?q=https%3A%2F%2Fexample.com%0A%40evil.com",
     );
   });
 
   it("routes blocked local hosts to search rather than navigating to them", () => {
-    expect(resolveBrowserAddressInput("0.0.0.0:5173")).toBe(
+    expect(resolveBrowserAddressInput("0.0.0.0:5173", GOOGLE)).toBe(
       "https://www.google.com/search?q=0.0.0.0%3A5173",
     );
-    expect(resolveBrowserAddressInput("192.168.1.12:3000")).toBe(
+    expect(resolveBrowserAddressInput("192.168.1.12:3000", GOOGLE)).toBe(
       "https://www.google.com/search?q=192.168.1.12%3A3000",
     );
-    expect(resolveBrowserAddressInput("127.1:3000")).toBe(
+    expect(resolveBrowserAddressInput("127.1:3000", GOOGLE)).toBe(
       "https://www.google.com/search?q=127.1%3A3000",
     );
-    expect(resolveBrowserAddressInput("192.168.1:3000")).toBe(
+    expect(resolveBrowserAddressInput("192.168.1:3000", GOOGLE)).toBe(
       "https://www.google.com/search?q=192.168.1%3A3000",
     );
-    expect(resolveBrowserAddressInput("0xc0.0xa8.1.12:3000")).toBe(
+    expect(resolveBrowserAddressInput("0xc0.0xa8.1.12:3000", GOOGLE)).toBe(
       "https://www.google.com/search?q=0xc0.0xa8.1.12%3A3000",
     );
-    expect(resolveBrowserAddressInput("192.168.0x1.12:3000")).toBe(
+    expect(resolveBrowserAddressInput("192.168.0x1.12:3000", GOOGLE)).toBe(
       "https://www.google.com/search?q=192.168.0x1.12%3A3000",
     );
-    expect(resolveBrowserAddressInput("0127.0.0.1:5173")).toBe(
+    expect(resolveBrowserAddressInput("0127.0.0.1:5173", GOOGLE)).toBe(
       "https://www.google.com/search?q=0127.0.0.1%3A5173",
     );
-    expect(resolveBrowserAddressInput("0x7f.0.0.1:5173")).toBe(
+    expect(resolveBrowserAddressInput("0x7f.0.0.1:5173", GOOGLE)).toBe(
       "https://www.google.com/search?q=0x7f.0.0.1%3A5173",
     );
   });
@@ -168,6 +186,24 @@ describe("getBrowserUrlSecurity", () => {
     expect(getBrowserUrlSecurity("http://example.com")).toBe("insecure");
     expect(getBrowserUrlSecurity("")).toBe("none");
     expect(getBrowserUrlSecurity("not a url")).toBe("none");
+  });
+
+  // Plain http that never leaves the machine. Warning about it was the same kind
+  // of lie as a padlock on an unverified certificate, pointed the other way — and
+  // bb's own pages are served exactly like this.
+  it("does not warn about loopback", () => {
+    for (const url of [
+      "http://localhost:5173/",
+      "http://127.0.0.1:38886/threads/th_1",
+      "http://dev.localhost/",
+      "http://[::1]:3000/",
+    ]) {
+      expect(getBrowserUrlSecurity(url)).toBe("local");
+    }
+    // A public host that merely looks like one is not loopback.
+    expect(getBrowserUrlSecurity("http://localhost.example.com/")).toBe(
+      "insecure",
+    );
   });
 });
 

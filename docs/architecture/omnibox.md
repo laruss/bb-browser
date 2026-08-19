@@ -44,6 +44,23 @@ to navigation, everything else to search), and every other provider stays below.
 The controller clamps provider scores into [0, 1], so a provider cannot outbid
 the default action by returning 99 — which matters once scores come from plugins.
 
+### Which is why the search engine is a template
+
+That synchronous resolution is also what decided the shape of the search-engine
+setting. A plugin **cannot** own Enter by being asked for it — every provider is
+asynchronous, and the whole point above is that Enter does not wait. So an engine
+is a _declared URL template_ (`bb.browser.registerSearchEngine`, permission
+`searchEngine.register`) that the app holds and formats itself, the same way the
+shell holds declared context-menu items: bb ships a few, plugins declare more, and
+the setting picks among them by id.
+
+Two consequences worth stating. An id whose plugin has been removed resolves back
+to bb's default rather than failing on Enter. And an engine need not search — any
+`https` or **loopback** template qualifies, so a plugin route that spawns an agent
+thread is a legal engine, which is the thing an agent-first browser wants from its
+address bar (`examples/plugins/omnibox-agent` ships one). Plain http to another
+machine is refused at registration: a search is every word the user types here.
+
 ## Ranking order of operations
 
 1. **Per-provider cap** first, so a provider returning fifty rows cannot crowd
@@ -107,6 +124,12 @@ URL candidates are matched host-first and scheme-stripped, because users type
 History carries no recency term: entries arrive most-recent-first and equal
 scores tie towards the earlier one, so recency is already in the order.
 
+`history` is the one built-in provider that does I/O. Its corpus is a server
+table rather than a per-window list, so it asks the server for candidates on
+each (debounced) run and forwards the run's `AbortSignal` — see
+[browser-history.md](browser-history.md). The server does the substring match;
+the scoring above is unchanged and still happens here.
+
 There are no _search completions_ (Google's suggest endpoint). That would make
 the browser call out on every keystroke — a network and privacy decision, not an
 omnibox one. The provider interface means adding it later is a new file, not an
@@ -129,6 +152,13 @@ shrinks while the list is open and the bounds sync follows it, which is correct
 by construction and needs no main-process change. Drawing the list over the page
 requires a native overlay view above the page view; that is a later main-process
 step, not a Milestone B one.
+
+Its **width** comes from the address bar rather than from the chrome: the list is
+a sibling of the input's `<form>` inside the same flex column, so it cannot be
+wider than the control being typed into. It began as a sibling of the whole
+toolbar row, which made a window-wide list hang under a much narrower input — two
+controls, visually. Sharing the column makes the alignment structural, with
+nothing measured and no magic insets to keep in step with the toolbar's buttons.
 
 `Cmd+L` reaches the surface because the surface root carries `data-app-browser`
 (the browser command context), and because `BrowserTabContent`'s handler now

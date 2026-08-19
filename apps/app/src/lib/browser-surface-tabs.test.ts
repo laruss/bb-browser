@@ -4,12 +4,16 @@ import {
   activateBrowserSurfaceTab,
   addBrowserSurfaceTab,
   closeBrowserSurfaceTab,
+  duplicateBrowserSurfaceTab,
   EMPTY_BROWSER_SURFACE_TABS_STATE,
   getActiveBrowserSurfaceTab,
+  isPinnedSurfaceTab,
   MAX_CLOSED_BROWSER_SURFACE_TABS,
+  moveBrowserSurfaceTab,
   parseBrowserSurfaceTabsState,
   pushClosedBrowserSurfaceTab,
   reopenBrowserSurfaceTab,
+  setBrowserSurfaceTabPinned,
   updateBrowserSurfaceTab,
   type BrowserSurfaceTabsState,
   type ClosedBrowserSurfaceTab,
@@ -135,6 +139,157 @@ describe("browser surface tabs", () => {
   });
 });
 
+describe("pinned browser surface tabs", () => {
+  it("moves a pinned tab to the leading block", () => {
+    const pinned = setBrowserSurfaceTabPinned(stateWith(["a", "b", "c"], "a"), {
+      pinned: true,
+      tabId: "c",
+    });
+
+    expect(pinned.tabs.map((entry) => entry.id)).toEqual(["c", "a", "b"]);
+    expect(
+      pinned.tabs.filter(isPinnedSurfaceTab).map((entry) => entry.id),
+    ).toEqual(["c"]);
+    // Pinning is not selecting: the strip reorders under whatever was active.
+    expect(pinned.activeTabId).toBe("a");
+  });
+
+  it("keeps pinned tabs together as more are pinned", () => {
+    const first = setBrowserSurfaceTabPinned(stateWith(["a", "b", "c"], "a"), {
+      pinned: true,
+      tabId: "b",
+    });
+    const second = setBrowserSurfaceTabPinned(first, {
+      pinned: true,
+      tabId: "c",
+    });
+
+    expect(second.tabs.map((entry) => entry.id)).toEqual(["b", "c", "a"]);
+  });
+
+  // Chromium's rule: an unpinned tab lands at the head of the unpinned block,
+  // which is where it already is once the pinned ones are ahead of it.
+  it("returns an unpinned tab to the unpinned block", () => {
+    const pinned = setBrowserSurfaceTabPinned(stateWith(["a", "b", "c"], "a"), {
+      pinned: true,
+      tabId: "b",
+    });
+    const unpinned = setBrowserSurfaceTabPinned(pinned, {
+      pinned: false,
+      tabId: "b",
+    });
+
+    expect(unpinned.tabs.map((entry) => entry.id)).toEqual(["b", "a", "c"]);
+    expect(unpinned.tabs.some(isPinnedSurfaceTab)).toBe(false);
+    // Written the way a build without pinning would have written it, so the flag
+    // does not travel to storage as `false`.
+    expect(Object.hasOwn(unpinned.tabs[0] ?? {}, "pinned")).toBe(false);
+  });
+
+  it("ignores a flag that already matches, and an unknown tab", () => {
+    const state = stateWith(["a", "b"], "a");
+
+    expect(
+      setBrowserSurfaceTabPinned(state, { pinned: false, tabId: "a" }),
+    ).toBe(state);
+    expect(
+      setBrowserSurfaceTabPinned(state, { pinned: true, tabId: "gone" }),
+    ).toBe(state);
+  });
+});
+
+describe("moved browser surface tabs", () => {
+  it("moves a tab right and left, leaving focus alone", () => {
+    const state = stateWith(["a", "b", "c"], "a");
+
+    const right = moveBrowserSurfaceTab(state, { tabId: "a", toIndex: 2 });
+    expect(right.tabs.map((tab) => tab.id)).toEqual(["b", "c", "a"]);
+    expect(right.activeTabId).toBe("a");
+
+    const left = moveBrowserSurfaceTab(right, { tabId: "a", toIndex: 0 });
+    expect(left.tabs.map((tab) => tab.id)).toEqual(["a", "b", "c"]);
+  });
+
+  // The pinned block is a prefix, so an unpinned tab asked for position 0 goes as
+  // far left as it can — the head of its own block — rather than into the pinned
+  // one.
+  it("clamps a move into the tab's own block", () => {
+    const pinned = setBrowserSurfaceTabPinned(stateWith(["a", "b", "c"], "a"), {
+      pinned: true,
+      tabId: "a",
+    });
+
+    const up = moveBrowserSurfaceTab(pinned, { tabId: "c", toIndex: 0 });
+    expect(up.tabs.map((tab) => tab.id)).toEqual(["a", "c", "b"]);
+
+    // And the pinned tab cannot be pushed out of the block it leads.
+    const down = moveBrowserSurfaceTab(up, { tabId: "a", toIndex: 2 });
+    expect(down).toBe(up);
+  });
+
+  it("ignores a move that changes nothing, and an unknown tab", () => {
+    const state = stateWith(["a", "b"], "a");
+
+    expect(moveBrowserSurfaceTab(state, { tabId: "a", toIndex: 0 })).toBe(
+      state,
+    );
+    expect(moveBrowserSurfaceTab(state, { tabId: "gone", toIndex: 1 })).toBe(
+      state,
+    );
+  });
+});
+
+describe("duplicated browser surface tabs", () => {
+  it("puts the copy beside its source and focuses it", () => {
+    const state = stateWith(["a", "b"], "a");
+
+    const duplicated = duplicateBrowserSurfaceTab(state, {
+      sourceTabId: "a",
+      tab: tab("copy", "https://example.test/"),
+    });
+
+    expect(duplicated.tabs.map((entry) => entry.id)).toEqual([
+      "a",
+      "copy",
+      "b",
+    ]);
+    expect(duplicated.activeTabId).toBe("copy");
+  });
+
+  it("pins the copy of a pinned tab, so the pinned block stays whole", () => {
+    const pinned = setBrowserSurfaceTabPinned(stateWith(["a", "b"], "a"), {
+      pinned: true,
+      tabId: "a",
+    });
+
+    const duplicated = duplicateBrowserSurfaceTab(pinned, {
+      sourceTabId: "a",
+      tab: tab("copy"),
+    });
+
+    expect(duplicated.tabs.map((entry) => entry.id)).toEqual([
+      "a",
+      "copy",
+      "b",
+    ]);
+    expect(isPinnedSurfaceTab(duplicated.tabs[1] as never)).toBe(true);
+  });
+
+  it("ignores an unknown source and an id already in the strip", () => {
+    const state = stateWith(["a", "b"], "a");
+
+    expect(
+      duplicateBrowserSurfaceTab(state, {
+        sourceTabId: "gone",
+        tab: tab("copy"),
+      }),
+    ).toBe(state);
+    expect(
+      duplicateBrowserSurfaceTab(state, { sourceTabId: "a", tab: tab("b") }),
+    ).toBe(state);
+  });
+});
+
 describe("browser surface tab persistence", () => {
   const fallback = { activeTabId: "fallback", tabs: [tab("fallback")] };
 
@@ -145,6 +300,22 @@ describe("browser surface tab persistence", () => {
 
     expect(parsed.tabs.map((entry) => entry.id)).toEqual(["a", "b"]);
     expect(parsed.activeTabId).toBe("b");
+  });
+
+  it("restores which tabs were pinned", () => {
+    const stored = JSON.stringify(
+      setBrowserSurfaceTabPinned(stateWith(["a", "b"], "b"), {
+        pinned: true,
+        tabId: "b",
+      }),
+    );
+
+    const parsed = parseBrowserSurfaceTabsState(stored, fallback);
+
+    expect(parsed.tabs.map((entry) => entry.id)).toEqual(["b", "a"]);
+    expect(
+      parsed.tabs.filter(isPinnedSurfaceTab).map((entry) => entry.id),
+    ).toEqual(["b"]);
   });
 
   it("falls back for missing, malformed and schema-invalid values", () => {

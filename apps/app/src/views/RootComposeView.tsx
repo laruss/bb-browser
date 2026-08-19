@@ -2336,11 +2336,6 @@ export function RootComposeView() {
     handleOpenNewTab();
     return true;
   });
-  useAppCommandHandler("file.quickOpen", () => {
-    if (!isFocusedPane) return false;
-    handleOpenNewTab();
-    return true;
-  });
   const handleToggleSecondaryPanel = useCallback(() => {
     if (isSecondaryPanelOpen) {
       closeSecondaryPanel();

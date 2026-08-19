@@ -44,7 +44,10 @@ export const PLUGIN_PERMISSIONS = [
   "network.observe",
 
   // -- Browser: acting ------------------------------------------------------
-  /** Open, close, activate and navigate tabs. */
+  /**
+   * Open, close, activate and navigate tabs, and change a tab's own state —
+   * pin it, mute it, duplicate it, move it along the strip.
+   */
   "tabs.modify",
   /** Drive a page as a user would: click, type, scroll, answer its dialogs. */
   "page.interact",
@@ -62,14 +65,36 @@ export const PLUGIN_PERMISSIONS = [
   "omnibox.register",
   /** Add page context-menu entries, which receive the selection or link clicked. */
   "contextMenu.register",
+  /** Add tab context-menu entries, which receive the tab they were picked on. */
+  "tabMenu.register",
   /** Add find-bar buttons, which receive what the user is searching for. */
   "find.register",
+  /** Add sections to the site-info popover, which receive the page's address. */
+  "siteInfo.register",
+  /**
+   * Offer a search engine for the address bar. Offering is not choosing — the
+   * user picks one — but a chosen engine receives every word typed there.
+   */
+  "searchEngine.register",
   /** Handle files the browser downloaded, after they are written. */
   "downloads.handle",
   /** Supply credentials for a site's HTTP authentication challenge. */
   "auth.provide",
   /** Supply the text of a PDF the browser could not read. */
   "pdf.provide",
+
+  // -- Browser: history -----------------------------------------------------
+  /**
+   * The browsing history store: read it, search it, add to it, delete from it,
+   * and see every visit before it is recorded
+   * (`browser.registerHistoryFilter`).
+   *
+   * One permission rather than a read/write pair because neither gate that
+   * enforces it sees the HTTP method — one keys on the `bb.sdk` area, the other
+   * on the URL prefix — so a read-only variant would be a boundary on paper
+   * that `DELETE /browser-history/:id` walks straight through.
+   */
+  "history",
 
   // -- Host: bb.sdk areas ---------------------------------------------------
   /** Read and drive agent threads (`sdk.threads`, `sdk.threadSections`). */
@@ -118,6 +143,7 @@ export function canonicalPermissions(
  * `@bb/domain` cannot see that type.
  */
 export const PLUGIN_SDK_AREA_PERMISSIONS = {
+  browserHistory: "history",
   environments: "workspace",
   files: "filesystem",
   guide: "workspace",
@@ -184,6 +210,7 @@ export const PLUGIN_SDK_METHOD_EXTRA_PERMISSIONS = {
 const API_PATH_PERMISSIONS: ReadonlyArray<
   readonly [prefix: string, permissions: readonly PluginPermission[]]
 > = [
+  ["/browser-history", ["history"]],
   ["/threads", ["threads"]],
   ["/thread-sections", ["threads"]],
   // A plugin reaching another plugin's own routes is ordinary HTTP, not
@@ -341,6 +368,13 @@ export function permissionForBrowserCommand(
     case "tabs.open":
     case "tabs.close":
     case "tabs.activate":
+    // Pinning, muting and duplicating are the strip's own doing rather than the
+    // page's: none of them reaches into what a page contains, and all three are
+    // things the user does from the tab's menu. Same permission as opening one.
+    case "tabs.pin":
+    case "tabs.mute":
+    case "tabs.duplicate":
+    case "tabs.move":
     case "navigation.open":
     case "navigation.back":
     case "navigation.forward":
@@ -352,6 +386,12 @@ export function permissionForBrowserCommand(
       return "page.read";
     case "page.interact":
     case "page.handle_dialog":
+    // Zoom is a user-level change to how the page is presented — less than a
+    // click, and reachable by anyone who can already click. Charging it to the
+    // same permission keeps it from being a cheaper way to change what the user
+    // sees. It is not free: Chromium remembers zoom per site, so a plugin
+    // setting it here decides what that site looks like next time.
+    case "page.zoom":
       return "page.interact";
     case "page.observe":
       return permissionForObservation(command.observation.kind);

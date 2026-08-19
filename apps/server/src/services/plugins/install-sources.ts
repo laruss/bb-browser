@@ -175,7 +175,11 @@ export function npmInstallPrefix(
   return join(dataDir, "plugins", "npm", ...`${name}@${version}`.split("/"));
 }
 
-function resolveInside(root: string, segments: string[], label: string): string {
+function resolveInside(
+  root: string,
+  segments: string[],
+  label: string,
+): string {
   for (const segment of segments) assertSafeSegments(segment, label);
   const absoluteRoot = resolve(root);
   const target = resolve(absoluteRoot, ...segments);
@@ -312,13 +316,20 @@ export async function promoteImmutableDir(args: {
   try {
     await rename(args.stagingDir, args.targetDir);
   } catch (error) {
-    if (!(error instanceof Error) || !("code" in error) || error.code !== "EXDEV") {
+    if (
+      !(error instanceof Error) ||
+      !("code" in error) ||
+      error.code !== "EXDEV"
+    ) {
       if (movedCorruptTarget) await rename(corruptDir, args.targetDir);
       throw error;
     }
     const copyDir = `${args.targetDir}.promoting`;
     try {
-      await cp(args.stagingDir, copyDir, { recursive: true, preserveTimestamps: true });
+      await cp(args.stagingDir, copyDir, {
+        recursive: true,
+        preserveTimestamps: true,
+      });
       await fsyncTree(copyDir);
       await rename(copyDir, args.targetDir);
       const parent = await open(dirname(args.targetDir), constants.O_RDONLY);

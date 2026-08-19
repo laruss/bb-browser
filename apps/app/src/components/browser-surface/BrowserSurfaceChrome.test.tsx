@@ -21,7 +21,12 @@ import {
   OMNIBOX_DEBOUNCE_MS,
   type OmniboxProvider,
 } from "@/lib/omnibox";
+import { createQueryClientTestHarness } from "@/test/queryClientTestHarness";
+import { BROWSER_SEARCH_ENGINE_QUERY_PLACEHOLDER } from "@bb/domain/browser-search-engine";
 import { BrowserSurfaceChrome } from "./BrowserSurfaceChrome";
+
+/** Named rather than assumed: the provider has no default engine any more. */
+const GOOGLE_TEMPLATE = `https://www.google.com/search?q=${BROWSER_SEARCH_ENGINE_QUERY_PLACEHOLDER}`;
 
 const ACTIVE_TAB_ID = "tab-active";
 const CURRENT_URL = "https://current.test/page";
@@ -43,7 +48,7 @@ const desktopInfo = {
 function builtInProviders(): readonly OmniboxProvider[] {
   return [
     createOmniboxNavigationProvider(),
-    createOmniboxSearchProvider(),
+    createOmniboxSearchProvider({ searchUrlTemplate: GOOGLE_TEMPLATE }),
     createOmniboxOpenTabsProvider({
       activeTabId: ACTIVE_TAB_ID,
       tabs: [
@@ -51,11 +56,14 @@ function builtInProviders(): readonly OmniboxProvider[] {
       ],
     }),
     createOmniboxHistoryProvider({
-      entries: [
+      search: async () => [
         {
+          id: "bhist_docs",
+          scopeId: "browser-surface",
           title: "Docs archive",
           url: "https://archive.test/docs",
-          visitedAt: 0,
+          visitCount: 1,
+          lastVisitedAt: 0,
         },
       ],
     }),
@@ -67,22 +75,36 @@ interface RenderChromeResult {
   input: HTMLInputElement;
   navigate: ReturnType<typeof vi.fn>;
   onActivateTab: ReturnType<typeof vi.fn>;
+  onPageOverlayChange: ReturnType<typeof vi.fn>;
 }
 
-function renderChrome(): RenderChromeResult {
+function renderChrome(
+  url = CURRENT_URL,
+  {
+    certificateTrustedByUser = false,
+  }: { certificateTrustedByUser?: boolean } = {},
+): RenderChromeResult {
   const navigate = vi.fn();
   const onActivateTab = vi.fn();
+  const onPageOverlayChange = vi.fn();
   const browser = { ...createNoopDesktopBrowserApi(), navigate };
   window.bbDesktop = createBbDesktopApi(desktopInfo, browser);
 
+  // A query client because the site-info panel fetches what plugins know about
+  // the site when it opens; the rest of the chrome needs none.
+  const { wrapper: Wrapper } = createQueryClientTestHarness();
   render(
-    <BrowserSurfaceChrome
-      onActivateTab={onActivateTab}
-      onOpenAppRoute={() => {}}
-      providers={builtInProviders()}
-      tabId={ACTIVE_TAB_ID}
-      url={CURRENT_URL}
-    />,
+    <Wrapper>
+      <BrowserSurfaceChrome
+        certificateTrustedByUser={certificateTrustedByUser}
+        onActivateTab={onActivateTab}
+        onOpenAppRoute={() => {}}
+        onPageOverlayChange={onPageOverlayChange}
+        providers={builtInProviders()}
+        tabId={ACTIVE_TAB_ID}
+        url={url}
+      />
+    </Wrapper>,
   );
 
   return {
@@ -90,6 +112,7 @@ function renderChrome(): RenderChromeResult {
     input: screen.getByRole("combobox") as HTMLInputElement,
     navigate,
     onActivateTab,
+    onPageOverlayChange,
   };
 }
 
@@ -115,6 +138,18 @@ function optionLabels(): string[] {
 
 beforeEach(() => {
   vi.useFakeTimers();
+  // The site-info panel asks the server what plugins know about the site as soon
+  // as it opens. Nothing here asserts on that, but an unstubbed fetch rejects
+  // into an unhandled promise.
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ ok: true, sections: [] }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    ),
+  );
 });
 
 afterEach(() => {
@@ -225,6 +260,36 @@ describe("BrowserSurfaceChrome", () => {
     });
   });
 
+  // A tab with no page has nothing to read and one thing to do. Chrome focuses
+  // its omnibox on the new-tab page too, and for the same reason.
+  it("takes focus on a tab with no page, and leaves a loaded one alone", () => {
+    const empty = renderChrome("");
+    expect(document.activeElement).toBe(empty.input);
+
+    cleanup();
+
+    const loaded = renderChrome();
+    expect(document.activeElement).not.toBe(loaded.input);
+  });
+
+  // The list belongs to the address bar, not to the window: it shares the input's
+  // column so it cannot be wider than the control being typed into.
+  it("puts the suggestion list in the address bar's own column", async () => {
+    const { input } = renderChrome();
+
+    await typeQuery(input, "docs");
+
+    const listbox = screen.getByRole("listbox");
+    const column = input.closest("form")?.parentElement;
+    expect(column).not.toBeNull();
+    expect(column?.contains(listbox)).toBe(true);
+    // And the column is not the whole chrome: the toolbar's buttons sit outside
+    // it, which is what keeps the list narrower than the window.
+    expect(
+      column?.contains(screen.getByRole("button", { name: "Go back" })),
+    ).toBe(false);
+  });
+
   it("closes the list and restores the URL on Escape", async () => {
     const { input } = renderChrome();
 
@@ -255,6 +320,41 @@ describe("BrowserSurfaceChrome", () => {
     expect(screen.queryByRole("listbox")).toBeNull();
   });
 
+  // The padlock's name is the claim it makes, and it used to make one the
+  // browser could not back: `https` in the address bar said "secure" even for a
+  // certificate Chromium had refused.
+  it("names the connection on the padlock rather than promising security", () => {
+    renderChrome();
+
+    expect(screen.getByLabelText("Connection is encrypted")).not.toBeNull();
+
+    cleanup();
+    renderChrome("https://dev.box.test/", { certificateTrustedByUser: true });
+
+    expect(screen.getByLabelText("Certificate is not trusted")).not.toBeNull();
+    expect(screen.queryByLabelText("Connection is encrypted")).toBeNull();
+  });
+
+  // A page served from this machine has no network to be insecure on, and the
+  // old glyph warned about bb's own pages.
+  it("does not warn about a loopback page", () => {
+    renderChrome("http://localhost:5173/");
+
+    expect(screen.getByLabelText("Page from this machine")).not.toBeNull();
+  });
+
+  // The panel hangs over the page area, which is a native view compositing above
+  // the DOM — so opening it has to freeze the page or it draws behind it. Asked
+  // for rather than done here: the surface owns the one call that freezes.
+  it("asks for the page to be frozen while the site panel is open", () => {
+    const { onPageOverlayChange } = renderChrome();
+    onPageOverlayChange.mockClear();
+
+    fireEvent.click(screen.getByLabelText("Connection is encrypted"));
+
+    expect(onPageOverlayChange).toHaveBeenLastCalledWith(true);
+  });
+
   it("enables back and forward from the native view's own state", () => {
     const listeners: ((state: unknown) => void)[] = [];
     const browser: BbDesktopBrowserApi = {
@@ -265,14 +365,18 @@ describe("BrowserSurfaceChrome", () => {
       },
     };
     window.bbDesktop = createBbDesktopApi(desktopInfo, browser);
+    const { wrapper: Wrapper } = createQueryClientTestHarness();
     render(
-      <BrowserSurfaceChrome
-        onActivateTab={() => {}}
-        onOpenAppRoute={() => {}}
-        providers={builtInProviders()}
-        tabId={ACTIVE_TAB_ID}
-        url={CURRENT_URL}
-      />,
+      <Wrapper>
+        <BrowserSurfaceChrome
+          onActivateTab={() => {}}
+          onOpenAppRoute={() => {}}
+          onPageOverlayChange={() => {}}
+          providers={builtInProviders()}
+          tabId={ACTIVE_TAB_ID}
+          url={CURRENT_URL}
+        />
+      </Wrapper>,
     );
 
     expect(
@@ -309,14 +413,18 @@ describe("BrowserSurfaceChrome", () => {
         return () => {};
       },
     });
+    const { wrapper: Wrapper } = createQueryClientTestHarness();
     render(
-      <BrowserSurfaceChrome
-        onActivateTab={() => {}}
-        onOpenAppRoute={() => {}}
-        providers={builtInProviders()}
-        tabId={ACTIVE_TAB_ID}
-        url={CURRENT_URL}
-      />,
+      <Wrapper>
+        <BrowserSurfaceChrome
+          onActivateTab={() => {}}
+          onOpenAppRoute={() => {}}
+          onPageOverlayChange={() => {}}
+          providers={builtInProviders()}
+          tabId={ACTIVE_TAB_ID}
+          url={CURRENT_URL}
+        />
+      </Wrapper>,
     );
 
     act(() => {

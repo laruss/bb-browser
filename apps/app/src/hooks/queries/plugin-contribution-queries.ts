@@ -1,4 +1,5 @@
 import { useQuery, type QueryKey } from "@tanstack/react-query";
+import { normalizeBrowserSearchEngineTemplate } from "@bb/domain/browser-search-engine";
 import {
   normalizePluginMentionTriggers,
   type PluginMentionTrigger,
@@ -41,9 +42,26 @@ export interface PluginBrowserFindActionContribution {
   title: string;
 }
 
+/** One tab-menu entry contributed by a plugin (`browser.tab.actions`). */
+export interface PluginBrowserTabActionContribution {
+  pluginId: string;
+  itemId: string;
+  title: string;
+}
+
+/** One search engine a plugin offered (`browser.searchEngines`). */
+export interface PluginBrowserSearchEngineContribution {
+  pluginId: string;
+  id: string;
+  name: string;
+  urlTemplate: string;
+}
+
 export interface PluginContributions {
   browserContextMenuItems: PluginBrowserContextMenuItemContribution[];
   browserFindActions: PluginBrowserFindActionContribution[];
+  browserSearchEngines: PluginBrowserSearchEngineContribution[];
+  browserTabActions: PluginBrowserTabActionContribution[];
   mentionProviders: PluginMentionProviderContribution[];
   omniboxProviders: PluginOmniboxProviderContribution[];
 }
@@ -51,6 +69,8 @@ export interface PluginContributions {
 const EMPTY_CONTRIBUTIONS: PluginContributions = {
   browserContextMenuItems: [],
   browserFindActions: [],
+  browserSearchEngines: [],
+  browserTabActions: [],
   mentionProviders: [],
   omniboxProviders: [],
 };
@@ -99,6 +119,33 @@ function toFindActionContribution(
     pluginId: action.pluginId,
     itemId: action.itemId,
     title: action.title,
+  };
+}
+
+/**
+ * An engine whose template the app cannot use is dropped here rather than
+ * offered: the server validated it at registration, so a bad one means a build
+ * mismatch, and a row that searches nowhere is worse than no row.
+ */
+function toSearchEngineContribution(
+  value: unknown,
+): PluginBrowserSearchEngineContribution | null {
+  if (typeof value !== "object" || value === null) return null;
+  const engine = value as Record<string, unknown>;
+  if (
+    typeof engine.pluginId !== "string" ||
+    typeof engine.id !== "string" ||
+    typeof engine.name !== "string" ||
+    typeof engine.urlTemplate !== "string" ||
+    normalizeBrowserSearchEngineTemplate(engine.urlTemplate) === null
+  ) {
+    return null;
+  }
+  return {
+    pluginId: engine.pluginId,
+    id: engine.id,
+    name: engine.name,
+    urlTemplate: engine.urlTemplate,
   };
 }
 
@@ -153,6 +200,8 @@ async function fetchPluginContributions(
   const body = (await response.json()) as {
     browserContextMenuItems?: unknown;
     browserFindActions?: unknown;
+    browserSearchEngines?: unknown;
+    browserTabActions?: unknown;
     mentionProviders?: unknown;
     omniboxProviders?: unknown;
   };
@@ -170,6 +219,23 @@ async function fetchPluginContributions(
           .map(toFindActionContribution)
           .filter(
             (action): action is PluginBrowserFindActionContribution =>
+              action !== null,
+          )
+      : [],
+    browserSearchEngines: Array.isArray(body.browserSearchEngines)
+      ? body.browserSearchEngines
+          .map(toSearchEngineContribution)
+          .filter(
+            (engine): engine is PluginBrowserSearchEngineContribution =>
+              engine !== null,
+          )
+      : [],
+    browserTabActions: Array.isArray(body.browserTabActions)
+      ? // The same three fields a find-bar button has, so the same normaliser.
+        body.browserTabActions
+          .map(toFindActionContribution)
+          .filter(
+            (action): action is PluginBrowserTabActionContribution =>
               action !== null,
           )
       : [],
@@ -475,6 +541,93 @@ export async function runPluginFindAction(
   args: RunPluginFindActionArgs,
 ): Promise<void> {
   await fetch("/api/v1/plugins/browser/find-action", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(args),
+  }).catch(() => undefined);
+}
+
+/** One plugin's section of the site-info popover (`browser.siteInfo.sections`). */
+export interface PluginSiteInfoSection {
+  pluginId: string;
+  providerId: string;
+  label: string;
+  rows: { label: string; value: string }[];
+}
+
+function isSiteInfoSection(value: unknown): value is PluginSiteInfoSection {
+  if (typeof value !== "object" || value === null) return false;
+  const section = value as Record<string, unknown>;
+  return (
+    typeof section.pluginId === "string" &&
+    typeof section.providerId === "string" &&
+    typeof section.label === "string" &&
+    Array.isArray(section.rows) &&
+    section.rows.every((row) => {
+      if (typeof row !== "object" || row === null) return false;
+      const typed = row as Record<string, unknown>;
+      return typeof typed.label === "string" && typeof typed.value === "string";
+    })
+  );
+}
+
+async function fetchPluginSiteInfo(
+  args: { tabId: string; url: string },
+  signal: AbortSignal,
+): Promise<PluginSiteInfoSection[]> {
+  const params = new URLSearchParams({ tabId: args.tabId, url: args.url });
+  const response = await fetch(
+    `/api/v1/plugins/browser/site-info?${params.toString()}`,
+    { signal },
+  );
+  // Nothing to add rather than an error: an older server or a disabled
+  // experiment both mean "no plugin has anything to say about this site".
+  if (!response.ok) return [];
+  const body = (await response.json()) as { sections?: unknown };
+  return Array.isArray(body.sections)
+    ? body.sections.filter(isSiteInfoSection)
+    : [];
+}
+
+/**
+ * What plugins know about the page in this tab, for the site-info popover.
+ *
+ * Asked when the popover opens rather than on every navigation — `enabled` is the
+ * popover's own open state — because a provider may do real work to answer, and
+ * nobody is reading it while it is closed.
+ */
+export function usePluginSiteInfo(
+  args: { tabId: string; url: string },
+  options: { enabled: boolean },
+) {
+  return useQuery({
+    queryKey: ["plugin-site-info", args.tabId, args.url],
+    queryFn: ({ signal }) => fetchPluginSiteInfo(args, signal),
+    enabled: options.enabled,
+    staleTime: 5_000,
+  });
+}
+
+export interface RunPluginTabActionArgs {
+  itemId: string;
+  pluginId: string;
+  tabId: string;
+  /** Null for a bb screen, which is a tab with no page. */
+  url: string | null;
+  title: string | null;
+  pinned: boolean;
+  muted: boolean;
+  active: boolean;
+}
+
+/**
+ * Pick a plugin's tab-menu entry. Fire-and-forget, like a context-menu entry:
+ * the menu has closed, and the plugin reports through its own surfaces.
+ */
+export async function runPluginTabAction(
+  args: RunPluginTabActionArgs,
+): Promise<void> {
+  await fetch("/api/v1/plugins/browser/tab-action", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(args),

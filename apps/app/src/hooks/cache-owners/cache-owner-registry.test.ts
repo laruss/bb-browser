@@ -64,6 +64,9 @@ const CACHE_OWNER_QUERY_KEY_IMPORTS: CacheOwnerQueryKeyImportRegistry = {
     "threadQueuedMessagesQueryKey",
     "threadTimelineQueryKey",
   ],
+  "hooks/cache-owners/browser-history-cache-owner.ts": [
+    "browserHistoryQueryKey",
+  ],
   "hooks/cache-owners/cache-invalidation-groups.ts": [
     "allProjectPathsQueryKeyPrefix",
     "allProjectSourceBranchesQueryKeyPrefix",
@@ -158,6 +161,7 @@ const CACHE_OWNER_QUERY_KEY_IMPORTS: CacheOwnerQueryKeyImportRegistry = {
     "allThreadStoragePathsQueryKeyPrefix",
     "allThreadQueryKeyPrefix",
     "allTerminalsQueryKeyPrefix",
+    "browserHistoryQueryKeyPrefix",
     "environmentDiffFilesQueryKeyPrefix",
     "environmentFilePreviewQueryKeyPrefix",
     "environmentPullRequestQueryKey",

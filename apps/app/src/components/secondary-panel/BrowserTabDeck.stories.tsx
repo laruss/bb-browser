@@ -1,9 +1,8 @@
-import type { ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import type { BbDesktopBrowserState } from "@bb/desktop-contract";
-import {
-  getBrowserHistoryStorageKey,
-  type BrowserHistoryEntry,
-} from "@/lib/browser-history";
+import type { BrowserHistoryEntry } from "@/lib/browser-history";
+import { browserHistoryQueryKey } from "@/hooks/queries/query-keys";
 import type { BrowserFixedPanelTab } from "@/lib/fixed-panel-tabs-state";
 import { StoryCard, StoryRow } from "../../../.ladle/story-card";
 import { WithDesktopBrowser } from "../../../.ladle/story-desktop";
@@ -46,45 +45,58 @@ const LOADING_BROWSER_STATE: BbDesktopBrowserState = {
   errorText: null,
 };
 
+function storyVisit(
+  url: string,
+  title: string | null,
+  minutesAgo: number,
+): BrowserHistoryEntry {
+  return {
+    id: `bhist_${url}`,
+    scopeId: RECENTS_TAB_THREAD_ID,
+    url,
+    title,
+    visitCount: 1,
+    lastVisitedAt: Date.now() - minutesAgo * 60 * 1000,
+  };
+}
+
 const RECENT_VISITS: readonly BrowserHistoryEntry[] = [
-  {
-    url: "https://react.dev/reference/react/useLayoutEffect",
-    title: "useLayoutEffect – React",
-    visitedAt: Date.now() - 4 * 60 * 1000,
-  },
-  {
-    url: "https://github.com/anthropics/anthropic-sdk-typescript",
-    title: "anthropics/anthropic-sdk-typescript",
-    visitedAt: Date.now() - 90 * 60 * 1000,
-  },
-  {
-    url: "https://developer.mozilla.org/en-US/docs/Web/API/ResizeObserver",
-    title: "ResizeObserver - Web APIs | MDN",
-    visitedAt: Date.now() - 6 * 60 * 60 * 1000,
-  },
-  {
-    url: "https://localhost:38886/",
-    title: null,
-    visitedAt: Date.now() - 26 * 60 * 60 * 1000,
-  },
+  storyVisit(
+    "https://react.dev/reference/react/useLayoutEffect",
+    "useLayoutEffect – React",
+    4,
+  ),
+  storyVisit(
+    "https://github.com/anthropics/anthropic-sdk-typescript",
+    "anthropics/anthropic-sdk-typescript",
+    90,
+  ),
+  storyVisit(
+    "https://developer.mozilla.org/en-US/docs/Web/API/ResizeObserver",
+    "ResizeObserver - Web APIs | MDN",
+    6 * 60,
+  ),
+  storyVisit("https://localhost:38886/", null, 26 * 60),
 ];
 
-// Story-only: seed the per-thread browser history before the tab mounts so the
-// new-tab screen's "Recently visited" list reads fixtures (atomWithStorage uses
-// getOnInit). Mirrors the New tab story's recent-items seeding.
-function seedBrowserHistory(
-  threadId: string,
+/**
+ * Story-only: seed the history query before the tab mounts so the new-tab
+ * screen's "Recently visited" list reads fixtures. History is server-backed
+ * now, and there is no server behind a story — the query's refetch fails and
+ * react-query keeps what was seeded, which is exactly what the story wants.
+ */
+function useSeededBrowserHistory(
+  scopeId: string,
   entries: readonly BrowserHistoryEntry[],
 ): void {
-  if (typeof window === "undefined") {
-    return;
+  const queryClient = useQueryClient();
+  const seeded = useRef(false);
+  // Before the first render rather than in an effect: the deck's query runs on
+  // mount, and an effect would seed after it had already answered empty.
+  if (!seeded.current) {
+    seeded.current = true;
+    queryClient.setQueryData(browserHistoryQueryKey(scopeId), entries);
   }
-  const storageKey = getBrowserHistoryStorageKey(threadId);
-  if (entries.length === 0) {
-    window.localStorage.removeItem(storageKey);
-    return;
-  }
-  window.localStorage.setItem(storageKey, JSON.stringify(entries));
 }
 
 function PanelStage({
@@ -108,12 +120,19 @@ function PanelStage({
 }
 
 interface BrowserTabStageProps {
+  history?: readonly BrowserHistoryEntry[];
   tab: BrowserFixedPanelTab;
   threadId: string;
   width?: "narrow" | "wide";
 }
 
-function BrowserTabStage({ tab, threadId, width }: BrowserTabStageProps) {
+function BrowserTabStage({
+  history = [],
+  tab,
+  threadId,
+  width,
+}: BrowserTabStageProps) {
+  useSeededBrowserHistory(threadId, history);
   // A bare box, not a thread's secondary panel: the deck's only host is the
   // browser surface now. A thread that wants to show a page opens a tab there
   // rather than a browser of its own, so a story composing the two would
@@ -134,9 +153,6 @@ function BrowserTabStage({ tab, threadId, width }: BrowserTabStageProps) {
 }
 
 export function Overview() {
-  seedBrowserHistory(EMPTY_TAB_THREAD_ID, []);
-  seedBrowserHistory(NARROW_TAB_THREAD_ID, []);
-  seedBrowserHistory(RECENTS_TAB_THREAD_ID, RECENT_VISITS);
   return (
     <WithDesktopBrowser browserState={LOADING_BROWSER_STATE}>
       <StoryCard>
@@ -160,7 +176,11 @@ export function Overview() {
           label="recently visited"
           hint="start page with seeded per-thread history, styled like the New tab page rows"
         >
-          <BrowserTabStage tab={RECENTS_TAB} threadId={RECENTS_TAB_THREAD_ID} />
+          <BrowserTabStage
+            history={RECENT_VISITS}
+            tab={RECENTS_TAB}
+            threadId={RECENTS_TAB_THREAD_ID}
+          />
         </StoryRow>
         <StoryRow
           label="loading page"

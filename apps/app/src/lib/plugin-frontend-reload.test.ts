@@ -19,6 +19,10 @@ import {
   setPluginSlotRegistrations,
 } from "./plugin-slots";
 import {
+  getPluginBrowserTabStatuses,
+  resetPluginBrowserTabStatusesForTest,
+} from "./plugin-browser-tab-status";
+import {
   getPluginThreadRowStatus,
   resetPluginThreadRowStatusesForTest,
 } from "./plugin-thread-row-status";
@@ -63,6 +67,7 @@ function contentScriptModule(
 
 afterEach(() => {
   resetPluginThreadRowStatusesForTest();
+  resetPluginBrowserTabStatusesForTest();
 });
 
 function makeDeps(initial: PluginFrontendCandidate[] = []) {
@@ -286,6 +291,44 @@ describe("reconcilePluginFrontends", () => {
     deps.fetchCandidates.mockResolvedValue([]);
     await reconcilePluginFrontends(state, deps);
     expect(getPluginThreadRowStatus("thr_source")).toBeNull();
+  });
+
+  // The tab decorator half of the same lifecycle: a mark belongs to the
+  // generation that set it, and goes when that generation does.
+  it("keeps content-script tab marks until the generation deactivates", async () => {
+    const state = createPluginFrontendReconcileState();
+    const deps = makeDeps([candidate("prompt-shaper", "v1")]);
+    deps.importModule.mockResolvedValue(
+      contentScriptModule((app) => {
+        app.contentScripts.register({
+          id: "tab-status",
+          mount({ experimental_setBrowserTabStatus }) {
+            experimental_setBrowserTabStatus?.("browser:a", {
+              icon: "AiContentGenerator01",
+              label: "Reading this tab",
+              tone: "running",
+            });
+            // A blank id is a bug in the plugin, not a mark on some tab.
+            experimental_setBrowserTabStatus?.("  ", {
+              icon: "Zap",
+              label: "Nowhere",
+            });
+          },
+        });
+      }),
+    );
+
+    await reconcilePluginFrontends(state, deps);
+    expect(getPluginBrowserTabStatuses().get("browser:a")).toEqual({
+      icon: "AiContentGenerator01",
+      label: "Reading this tab",
+      tone: "running",
+    });
+    expect(getPluginBrowserTabStatuses().size).toBe(1);
+
+    deps.fetchCandidates.mockResolvedValue([]);
+    await reconcilePluginFrontends(state, deps);
+    expect(getPluginBrowserTabStatuses().size).toBe(0);
   });
 
   it("rolls back a status from a partially mounted generation and rejects its retained setter", async () => {

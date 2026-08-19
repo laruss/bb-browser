@@ -1,8 +1,10 @@
 # bb-plugin-omnibox-agent
 
-The `browser.omnibox.providers` example — no frontend entry, no dependencies.
-Type in the browser surface's omnibox and this plugin adds rows to the same
-ranked list the browser fills with address, search, open-tab and history rows.
+The `browser.omnibox.providers` and `browser.searchEngines` example — no frontend
+entry, no dependencies. Type in the browser surface's omnibox and this plugin adds
+rows to the same ranked list the browser fills with address, search, open-tab and
+history rows — and, if you choose it in Settings, it becomes the thing **Enter**
+does.
 
 What it demonstrates:
 
@@ -19,11 +21,22 @@ What it demonstrates:
   `{ navigate: "<server>/threads/<id>" }`, so the browser opens the new thread in
   the tab the omnibox was used from: the plugin points the browser at the BB app
   it is itself running inside.
+- **`bb.browser.registerSearchEngine`** — two engines, and the pair is the point.
+  `kagi` is an ordinary template. `ask-agent` points at the plugin's **own
+  loopback route**, which spawns a thread and redirects the tab to it: an engine
+  that is not a search engine. The address bar resolves what Enter does
+  synchronously, so an engine is a URL template rather than a callback — which is
+  exactly why a route is how a plugin does work on the way.
+- **`bb.http.route`** — that route (`GET /ask?q=…` → 302 to the new thread),
+  refusing an empty query and saying so when no project is configured.
 - **`bb.status.needsConfiguration`** — the agent row needs a project, so it is
   offered only once one is set. The GitHub row works unconfigured, which is why
   the plugin is useful before anyone opens its settings.
 
 ## Try it
+
+Pick the engine in **Settings → General → Search engine** to make Enter go to the
+agent; the omnibox row works without changing anything.
 
 ```bash
 bb plugin install ./examples/plugins/omnibox-agent

@@ -1,4 +1,5 @@
 import type { BrowserWindowConstructorOptions } from "electron";
+import { BB_DESKTOP_WINDOW_KEY_ARGUMENT_PREFIX } from "@bb/desktop-contract";
 import {
   MIN_WINDOW_HEIGHT,
   MIN_WINDOW_WIDTH,
@@ -137,6 +138,7 @@ interface CreateWindowOptionsArgs {
   bounds: WindowBounds;
   icon: DesktopWindowIcon;
   preloadPath: string;
+  stateKey: WindowStateKey;
 }
 
 function resolveWindowStateKey(
@@ -176,6 +178,13 @@ function createWindowOptions(
     titleBarStyle: "hiddenInset",
     trafficLightPosition: MACOS_TRAFFIC_LIGHT_POSITION,
     webPreferences: {
+      // The renderer needs to know which window it is *before* it can await
+      // anything — module-scoped per-window state (the browser surface's tab
+      // list) picks its storage key as it initialises. An argument is the only
+      // channel that has already arrived by then.
+      additionalArguments: [
+        `${BB_DESKTOP_WINDOW_KEY_ARGUMENT_PREFIX}${args.stateKey}`,
+      ],
       contextIsolation: true,
       nodeIntegration: false,
       preload: args.preloadPath,
@@ -232,6 +241,7 @@ export function createDesktopWindowFactory(
           bounds: restoredState.bounds,
           icon: args.icon,
           preloadPath: args.preloadPath,
+          stateKey,
         }),
       );
       browserWindow.webContents.session.setSpellCheckerEnabled(true);

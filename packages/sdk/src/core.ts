@@ -1,5 +1,9 @@
 import type { BbSdkContext, BbSdkTransport } from "./transport.js";
 import {
+  createBrowserHistoryArea,
+  type BrowserHistoryArea,
+} from "./areas/browser-history.js";
+import {
   createEnvironmentsArea,
   type EnvironmentsArea,
 } from "./areas/environments.js";
@@ -30,6 +34,7 @@ export interface CreateBbSdkArgs {
 }
 
 export interface BbSdk extends BbRealtime {
+  browserHistory: BrowserHistoryArea;
   environments: EnvironmentsArea;
   files: FilesArea;
   guide: GuideArea;
@@ -53,6 +58,7 @@ export function createBbSdk(args: CreateBbSdkArgs): BbSdk {
     transport: args.transport,
   });
   return {
+    browserHistory: createBrowserHistoryArea(sdkContext),
     environments: createEnvironmentsArea(sdkContext),
     files: createFilesArea(sdkContext),
     guide: createGuideArea(),

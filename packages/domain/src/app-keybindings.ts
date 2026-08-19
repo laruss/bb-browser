@@ -71,7 +71,6 @@ export const APP_COMMAND_IDS = [
   "panel.newTab",
   "panel.close",
   "panel.toggle",
-  "file.quickOpen",
   "diff.toggle",
   "terminal.open",
   "composer.focus",
@@ -92,6 +91,10 @@ export const APP_COMMAND_IDS = [
   "browser.recentTab.previous",
   "browser.goBack",
   "browser.goForward",
+  "browser.zoomIn",
+  "browser.zoomOut",
+  "browser.zoomReset",
+  "browser.print",
   "workspace.openPreferred",
   ...QUESTION_SELECT_APP_COMMAND_IDS,
 ] as const;

@@ -69,6 +69,7 @@ import {
   allSystemExecutionOptionsQueryKeyPrefix,
   allThreadQueryKeyPrefix,
   allTerminalsQueryKeyPrefix,
+  browserHistoryQueryKeyPrefix,
   environmentDiffFilesQueryKeyPrefix,
   environmentFilePreviewQueryKeyPrefix,
   environmentPullRequestQueryKey,
@@ -465,6 +466,12 @@ export const REALTIME_HOST_CHANGE_REGISTRY = {
 } satisfies HostChangeRegistry;
 
 export const REALTIME_SYSTEM_CHANGE_REGISTRY = {
+  // Broadcast only when history is removed, never on a visit: the window that
+  // browsed refreshes its own recents, but a window still showing what another
+  // one just cleared is showing something the user asked to be gone.
+  "browser-history-changed": {
+    dirty: [dirtyBrowserHistoryQueries],
+  },
   "config-changed": {
     dirty: [
       dirtySystemConfigQueries, // Experiments gate UI surfaces; other windows re-read after a settings write.
@@ -954,6 +961,10 @@ function dirtySystemProviderQueries(): QueryKey[] {
 
 function dirtySystemExecutionOptionQueries(): QueryKey[] {
   return [allSystemExecutionOptionsQueryKeyPrefix()];
+}
+
+function dirtyBrowserHistoryQueries(): QueryKey[] {
+  return [browserHistoryQueryKeyPrefix()];
 }
 
 function dirtyPluginContributionQueries(): QueryKey[] {

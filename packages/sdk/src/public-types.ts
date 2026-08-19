@@ -22,6 +22,7 @@ export type {
 } from "@bb/server-contract";
 
 export type * from "./realtime.js";
+export type * from "./areas/browser-history.js";
 export type * from "./areas/environments.js";
 export type * from "./areas/files.js";
 export type * from "./areas/guide.js";

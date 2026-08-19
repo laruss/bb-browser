@@ -96,6 +96,24 @@ export default function plugin(bb: any): void {
     run: (ctx: { query: string }) => `looking for ${ctx.query}`,
   });
 
+  bb.browser.registerTabAction({
+    id: "file",
+    title: "File this tab",
+    run: (ctx: { url: string | null }) => `filing ${ctx.url ?? "a bb screen"}`,
+  });
+
+  bb.browser.registerSiteInfoProvider({
+    id: "facts",
+    label: "Facts",
+    describe: (ctx: { host: string }) => [{ label: "Host", value: ctx.host }],
+  });
+
+  bb.browser.registerSearchEngine({
+    id: "kagi",
+    name: "Kagi",
+    urlTemplate: "https://kagi.com/search?q=%s",
+  });
+
   bb.browser.registerAuthProvider(() => null);
   bb.browser.registerAuthProvider((challenge: { host: string }) => ({
     username: "u",

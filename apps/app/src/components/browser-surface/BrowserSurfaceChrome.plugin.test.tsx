@@ -20,7 +20,12 @@ import {
   createPluginOmniboxSuggestionSource,
   OMNIBOX_DEBOUNCE_MS,
 } from "@/lib/omnibox";
+import { BROWSER_SEARCH_ENGINE_QUERY_PLACEHOLDER } from "@bb/domain/browser-search-engine";
+import { createQueryClientTestHarness } from "@/test/queryClientTestHarness";
 import { BrowserSurfaceChrome } from "./BrowserSurfaceChrome";
+
+/** Named rather than assumed: the provider has no default engine any more. */
+const GOOGLE_TEMPLATE = `https://www.google.com/search?q=${BROWSER_SEARCH_ENGINE_QUERY_PLACEHOLDER}`;
 
 // The end of the Milestone C chain: a plugin's rows reach the same ranked list
 // as the browser's own, and picking one calls the plugin back.
@@ -89,24 +94,30 @@ function renderChrome() {
     ...createNoopDesktopBrowserApi(),
     navigate,
   });
+  // The chrome reads the chosen search engine from the query cache, so it needs a
+  // client — the app has one at the root.
+  const { wrapper: Wrapper } = createQueryClientTestHarness();
   render(
-    <BrowserSurfaceChrome
-      onActivateTab={() => {}}
-      onOpenAppRoute={() => {}}
-      providers={[
-        createOmniboxNavigationProvider(),
-        createOmniboxSearchProvider(),
-        // Plugins come last, so they lose score ties to the built-ins.
-        ...createOmniboxPluginProviders({
-          contributions: [
-            { id: "agent", label: "Agent", pluginId: "omnibox-agent" },
-          ],
-          source: createPluginOmniboxSuggestionSource(),
-        }),
-      ]}
-      tabId={ACTIVE_TAB_ID}
-      url={CURRENT_URL}
-    />,
+    <Wrapper>
+      <BrowserSurfaceChrome
+        onActivateTab={() => {}}
+        onOpenAppRoute={() => {}}
+        onPageOverlayChange={() => {}}
+        providers={[
+          createOmniboxNavigationProvider(),
+          createOmniboxSearchProvider({ searchUrlTemplate: GOOGLE_TEMPLATE }),
+          // Plugins come last, so they lose score ties to the built-ins.
+          ...createOmniboxPluginProviders({
+            contributions: [
+              { id: "agent", label: "Agent", pluginId: "omnibox-agent" },
+            ],
+            source: createPluginOmniboxSuggestionSource(),
+          }),
+        ]}
+        tabId={ACTIVE_TAB_ID}
+        url={CURRENT_URL}
+      />
+    </Wrapper>,
   );
   return { input: screen.getByRole("combobox") as HTMLInputElement, navigate };
 }

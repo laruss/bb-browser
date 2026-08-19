@@ -1,7 +1,13 @@
-// Address-bar / new-tab search input parsing for the browser surface. Pure and
-// dependency-free so the URL-vs-search heuristic can be unit tested directly.
+// Address-bar / new-tab search input parsing for the browser surface. Pure so the
+// URL-vs-search heuristic can be unit tested directly.
+//
+// Which search engine an input becomes is **not** decided here: the template is
+// passed in, because it is the user's choice and a plugin may have declared it
+// (`@bb/domain/browser-search-engine`). A default here would be a call site that
+// silently keeps searching with Google, which is the bug this parameter exists to
+// make impossible.
+import { buildBrowserSearchUrl } from "@bb/domain/browser-search-engine";
 
-const SEARCH_ENGINE_URL = "https://www.google.com/search";
 const HTTP_SCHEME_PATTERN = /^https?:\/\//i;
 const WHITESPACE_PATTERN = /\s/u;
 const BARE_ADDRESS_PATTERN =
@@ -138,11 +144,6 @@ export function looksLikeUrl(input: string): boolean {
   return normalizeBrowserUrl(trimmed) !== null;
 }
 
-/** The default search engine's URL for `query`. */
-export function buildBrowserSearchUrl(query: string): string {
-  return `${SEARCH_ENGINE_URL}?q=${encodeURIComponent(query)}`;
-}
-
 /**
  * The navigable `http(s)` URL an input denotes, or null when it is not an
  * address at all (and therefore a search query). Exported for the omnibox,
@@ -187,28 +188,48 @@ export function normalizeBrowserUrl(input: string): string | null {
  * search-engine query URL when it does not look like a URL. Returns `null` for
  * blank input (nothing to navigate to).
  */
-export function resolveBrowserAddressInput(rawInput: string): string | null {
+export function resolveBrowserAddressInput(
+  rawInput: string,
+  searchUrlTemplate: string,
+): string | null {
   const input = rawInput.trim();
   if (input.length === 0) {
     return null;
   }
-  return normalizeBrowserUrl(input) ?? buildBrowserSearchUrl(input);
+  return (
+    normalizeBrowserUrl(input) ??
+    buildBrowserSearchUrl(input, searchUrlTemplate)
+  );
 }
 
-/** Security posture of a loaded URL, for the address-bar indicator. */
-export type BrowserUrlSecurity = "secure" | "insecure" | "none";
+/**
+ * What a URL alone says about the connection.
+ *
+ * "Alone" is the whole caveat, and why `browser-page-security.ts` exists on top
+ * of this: a scheme cannot say whether the certificate behind it was ever
+ * trusted. What is decided here is only what the address itself settles.
+ *
+ * `local` is plain http that never leaves this machine — loopback. Calling that
+ * "insecure" was a lie in the other direction: there is no network for anyone to
+ * listen on, and bb's own pages are served exactly this way.
+ */
+export type BrowserUrlSecurity = "secure" | "insecure" | "local" | "none";
 
 export function getBrowserUrlSecurity(url: string): BrowserUrlSecurity {
   if (url.length === 0) {
     return "none";
   }
   try {
-    const protocol = new URL(url).protocol;
-    if (protocol === "https:") {
+    const parsed = new URL(url);
+    if (parsed.protocol === "https:") {
       return "secure";
     }
-    if (protocol === "http:") {
-      return "insecure";
+    if (parsed.protocol === "http:") {
+      // Through the module's own host normaliser, so `[::1]` is the loopback it
+      // is rather than a name with brackets in it.
+      return isBareLoopbackHost(normalizeParsedHost(parsed.hostname))
+        ? "local"
+        : "insecure";
     }
   } catch {
     return "none";

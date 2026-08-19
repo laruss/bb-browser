@@ -32,8 +32,11 @@ import {
   addBrowserSurfaceTab,
   closeBrowserSurfaceTab,
   createBrowserSurfaceTab,
+  duplicateBrowserSurfaceTab,
   getActiveBrowserSurfaceWebTab,
   getBrowserSurfaceWebTabs,
+  moveBrowserSurfaceTab,
+  setBrowserSurfaceTabPinned,
   updateBrowserSurfaceTab,
   type BrowserSurfaceTabsState,
 } from "../browser-surface-tabs";
@@ -65,6 +68,13 @@ export interface BrowserCommandDeps {
   waitForSettled: (tabId: string) => Promise<{ timedOut: boolean }>;
   /** Seam so tests get predictable tab ids. */
   createTab?: (url: string) => BrowserFixedPanelTab;
+  /**
+   * Record which tabs are muted, so the strip marks them and the mute outlives a
+   * renderer reload (see `browser-tab-mute.ts`). A seam like
+   * {@link BrowserCommandDeps.destroyView}: absent means only the shell is told,
+   * which is what tests want.
+   */
+  recordMuted?: (args: { muted: boolean; tabId: string }) => void;
   /** Called when a tab is closed, so its native view is torn down too. */
   destroyView?: (args: {
     desktopBrowser: BbDesktopBrowserApi;
@@ -692,6 +702,86 @@ async function runBrowserCommand(
       });
     }
 
+    case "tabs.pin": {
+      const resolution = resolveTab(command.tabId, deps);
+      if (!resolution.ok) {
+        return resolution.outcome;
+      }
+      const { tab } = resolution.resolved;
+      deps.applyState((current) =>
+        setBrowserSurfaceTabPinned(current, {
+          pinned: command.pinned,
+          tabId: tab.id,
+        }),
+      );
+      const state = deps.getState();
+      return success({
+        type: "tab",
+        tab: toSnapshot(tab, state, deps.getLiveState(tab.id)),
+      });
+    }
+
+    case "tabs.mute": {
+      const resolution = resolveTab(command.tabId, deps);
+      if (!resolution.ok) {
+        return resolution.outcome;
+      }
+      const { tab } = resolution.resolved;
+      const setMuted = desktopBrowser.setMuted;
+      if (setMuted === undefined) {
+        return failure(
+          "desktop_unavailable",
+          "This BB desktop build cannot mute a tab.",
+        );
+      }
+      setMuted({ muted: command.muted, tabId: tab.id });
+      deps.recordMuted?.({ muted: command.muted, tabId: tab.id });
+      const state = deps.getState();
+      return success({
+        type: "tab",
+        tab: toSnapshot(tab, state, deps.getLiveState(tab.id)),
+      });
+    }
+
+    case "tabs.duplicate": {
+      const resolution = resolveTab(command.tabId, deps);
+      if (!resolution.ok) {
+        return resolution.outcome;
+      }
+      const { tab } = resolution.resolved;
+      const duplicate = (deps.createTab ?? createBrowserSurfaceTab)(tab.url);
+      deps.applyState((current) =>
+        duplicateBrowserSurfaceTab(current, {
+          sourceTabId: tab.id,
+          tab: duplicate,
+        }),
+      );
+      const state = deps.getState();
+      return success({
+        type: "tab",
+        tab: toSnapshot(duplicate, state, deps.getLiveState(duplicate.id)),
+      });
+    }
+
+    case "tabs.move": {
+      const resolution = resolveTab(command.tabId, deps);
+      if (!resolution.ok) {
+        return resolution.outcome;
+      }
+      const { tab } = resolution.resolved;
+      deps.applyState((current) =>
+        moveBrowserSurfaceTab(current, {
+          tabId: tab.id,
+          toIndex: command.toIndex,
+        }),
+      );
+      const state = deps.getState();
+      return success({
+        type: "tab",
+        tab: toSnapshot(tab, state, deps.getLiveState(tab.id)),
+      });
+    }
+
     case "page.get_text": {
       const resolution = resolveTab(command.tabId, deps);
       if (!resolution.ok) {
@@ -1211,6 +1301,26 @@ async function runBrowserCommand(
         type: "tab",
         tab: toSnapshot(updated, state, deps.getLiveState(tab.id)),
       });
+    }
+
+    case "page.zoom": {
+      const resolution = resolveTab(command.tabId, deps);
+      if (!resolution.ok) {
+        return resolution.outcome;
+      }
+      const { tab } = resolution.resolved;
+      const setZoom = desktopBrowser.setZoom;
+      if (setZoom === undefined) {
+        return failure(
+          "desktop_unavailable",
+          "This BB desktop build cannot zoom a page.",
+        );
+      }
+      // No clamping here: the command schema already refuses a factor outside
+      // Chrome's range, and refusing with a message beats quietly applying
+      // something else.
+      setZoom({ tabId: tab.id, factor: command.factor });
+      return success({ type: "zoom", factor: command.factor });
     }
 
     default: {

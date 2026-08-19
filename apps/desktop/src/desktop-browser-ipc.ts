@@ -38,6 +38,29 @@ export const BB_DESKTOP_BROWSER_DOWNLOAD_CHANNEL =
 // instead of a tab.
 export const BB_DESKTOP_BROWSER_DOWNLOAD_ACTION_CHANNEL =
   "bb-desktop:browser:download-action";
+// The user asked to print the page. Its own channel because it is the one
+// browser command whose whole effect is an OS dialog: nothing comes back, and
+// the window is blocked until the user answers it.
+export const BB_DESKTOP_BROWSER_PRINT_CHANNEL = "bb-desktop:browser:print";
+// Page zoom, and what it became. Two channels because zoom changes from both
+// ends: the user asks for a step, and Chromium restores a site's remembered
+// zoom on its own when a tab navigates there. Their own channels rather than a
+// field on the wire-frozen state payload, for the reason favicons got one.
+export const BB_DESKTOP_BROWSER_SET_ZOOM_CHANNEL =
+  "bb-desktop:browser:set-zoom";
+export const BB_DESKTOP_BROWSER_ZOOM_CHANNEL = "bb-desktop:browser:zoom";
+// The user silenced a tab. One direction only, unlike zoom: nothing but this
+// renderer mutes a page, so there is nothing to hear back — and its own channel
+// rather than a field on the wire-frozen state payload, for the reason favicons
+// got one.
+export const BB_DESKTOP_BROWSER_SET_MUTED_CHANNEL =
+  "bb-desktop:browser:set-muted";
+// What the shell knows about the page's connection that the renderer cannot see
+// in the URL: whether it is riding a certificate a human waved through. Its own
+// channel rather than a field on the wire-frozen state payload, for the reason
+// favicons got one.
+export const BB_DESKTOP_BROWSER_PAGE_SECURITY_CHANNEL =
+  "bb-desktop:browser:page-security";
 // The app is drawing over the page area, so the page has to become a bitmap the
 // app can draw on. Its own channel rather than a flag on `set-visible`: that
 // one is the renderer's layout intent, while this one is a freeze the shell has

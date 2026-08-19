@@ -76,6 +76,8 @@ interface HarnessArgs {
   omitControl?: boolean;
   record?: BbDesktopBrowserRecordResult;
   omitRecord?: boolean;
+  omitSetZoom?: boolean;
+  omitSetMuted?: boolean;
   trace?: BrowserTraceRecorder;
   noDesktop?: boolean;
 }
@@ -98,12 +100,29 @@ function createHarness(args: HarnessArgs = {}) {
     storage: [] as unknown[],
     control: [] as unknown[],
     record: [] as unknown[],
+    zoom: [] as unknown[],
+    muted: [] as unknown[],
+    mutedRecords: [] as unknown[],
   };
   let nextTabId = 0;
 
   const desktopBrowser = {
     attach: vi.fn(),
     detach: vi.fn(),
+    ...(args.omitSetZoom === true
+      ? {}
+      : {
+          setZoom: (request: { tabId: string; factor: number }) => {
+            calls.zoom.push(request);
+          },
+        }),
+    ...(args.omitSetMuted === true
+      ? {}
+      : {
+          setMuted: (request: { tabId: string; muted: boolean }) => {
+            calls.muted.push(request);
+          },
+        }),
     navigate: (request: { tabId: string; url: string }) => {
       calls.navigate.push(request);
     },
@@ -286,6 +305,9 @@ function createHarness(args: HarnessArgs = {}) {
     destroyView: ({ tabId }) => {
       calls.destroyed.push(tabId);
     },
+    recordMuted: (request) => {
+      calls.mutedRecords.push(request);
+    },
     ...(args.resolvePdfText === undefined
       ? {}
       : { resolvePdfText: args.resolvePdfText }),
@@ -438,6 +460,107 @@ describe("executeBrowserCommand — tabs", () => {
       ),
       "unknown_tab",
     );
+  });
+
+  // The strip's own three, driveable so a plugin can arrange tabs the way the
+  // user can. Pin and duplicate are renderer state; mute is the shell's.
+  it("pins and unpins a tab, moving it into the strip's leading block", async () => {
+    const harness = createHarness({
+      state: { activeTabId: "a", tabs: [tab("a"), tab("b")] },
+    });
+
+    const pinned = await executeBrowserCommand(
+      { type: "tabs.pin", tabId: "b", pinned: true },
+      harness.deps,
+    );
+
+    expect(harness.state.tabs.map((each) => each.id)).toEqual(["b", "a"]);
+    expect(pinned.ok && pinned.value.type === "tab").toBe(true);
+
+    await executeBrowserCommand(
+      { type: "tabs.pin", tabId: "b", pinned: false },
+      harness.deps,
+    );
+
+    expect(harness.state.tabs.some((each) => each.pinned === true)).toBe(false);
+  });
+
+  it("mutes a tab through the shell and records it for the strip", async () => {
+    const harness = createHarness({
+      state: { activeTabId: "a", tabs: [tab("a")] },
+    });
+
+    const outcome = await executeBrowserCommand(
+      { type: "tabs.mute", tabId: "a", muted: true },
+      harness.deps,
+    );
+
+    expect(harness.calls.muted).toEqual([{ muted: true, tabId: "a" }]);
+    expect(harness.calls.mutedRecords).toEqual([{ muted: true, tabId: "a" }]);
+    expect(outcome.ok).toBe(true);
+  });
+
+  // An older shell has no channel for it, and saying so beats recording a mute
+  // that never reached a page.
+  it("refuses to mute on a shell that cannot", async () => {
+    const harness = createHarness({
+      state: { activeTabId: "a", tabs: [tab("a")] },
+      omitSetMuted: true,
+    });
+
+    expectFailure(
+      await executeBrowserCommand(
+        { type: "tabs.mute", tabId: "a", muted: true },
+        harness.deps,
+      ),
+      "desktop_unavailable",
+    );
+    expect(harness.calls.mutedRecords).toEqual([]);
+  });
+
+  it("duplicates a tab beside its source and answers with the copy", async () => {
+    const harness = createHarness({
+      state: {
+        activeTabId: "a",
+        tabs: [tab("a", "https://a.test/"), tab("b")],
+      },
+    });
+
+    const outcome = await executeBrowserCommand(
+      { type: "tabs.duplicate", tabId: "a" },
+      harness.deps,
+    );
+
+    expect(harness.state.tabs.map((each) => each.id)).toEqual([
+      "a",
+      "new-1",
+      "b",
+    ]);
+    expect(
+      outcome.ok && outcome.value.type === "tab" && outcome.value.tab,
+    ).toEqual(
+      expect.objectContaining({ tabId: "new-1", url: "https://a.test/" }),
+    );
+  });
+
+  it("moves a tab along the strip, clamped into its own block", async () => {
+    const harness = createHarness({
+      state: { activeTabId: "a", tabs: [tab("a"), tab("b"), tab("c")] },
+    });
+
+    await executeBrowserCommand(
+      { type: "tabs.move", tabId: "a", toIndex: 2 },
+      harness.deps,
+    );
+    expect(harness.state.tabs.map((each) => each.id)).toEqual(["b", "c", "a"]);
+
+    // Past the end is as far as it goes, not an error — the strip has three tabs.
+    const outcome = await executeBrowserCommand(
+      { type: "tabs.move", tabId: "b", toIndex: 99 },
+      harness.deps,
+    );
+    expect(harness.state.tabs.map((each) => each.id)).toEqual(["c", "a", "b"]);
+    expect(outcome.ok).toBe(true);
   });
 
   it("says so when there is no active tab to default to", async () => {
@@ -2290,5 +2413,53 @@ describe("executeBrowserCommand — recording", () => {
         harness.deps,
       ),
     ).resolves.toMatchObject({ ok: false, code: "unsupported_command" });
+  });
+});
+
+describe("page.zoom", () => {
+  const state = {
+    activeTabId: "t1",
+    tabs: [tab("t1", "https://example.com/")],
+  } satisfies BrowserSurfaceTabsState;
+
+  it("asks the shell to scale the active tab and reports the factor", async () => {
+    const harness = createHarness({ state });
+
+    await expect(
+      executeBrowserCommand(
+        { type: "page.zoom", tabId: null, factor: 1.25 },
+        harness.deps,
+      ),
+    ).resolves.toEqual({ ok: true, value: { type: "zoom", factor: 1.25 } });
+    expect(harness.calls.zoom).toEqual([{ tabId: "t1", factor: 1.25 }]);
+  });
+
+  // A plugin can ask for anything, and the wire refuses it before the executor
+  // ever sees it. Refusing with a message beats quietly applying something else
+  // and reporting that as if it had been asked for.
+  it("refuses a factor outside the range rather than clamping it", async () => {
+    const harness = createHarness({ state });
+
+    await expect(
+      executeBrowserCommand(
+        { type: "page.zoom", tabId: null, factor: 99 },
+        harness.deps,
+      ),
+    ).resolves.toMatchObject({ ok: false, code: "invalid_command" });
+    expect(harness.calls.zoom).toEqual([]);
+  });
+
+  // Version skew: a shell that predates the zoom channel. Saying so beats
+  // reporting a factor that nothing applied.
+  it("says the desktop build cannot zoom rather than pretending", async () => {
+    const harness = createHarness({ state, omitSetZoom: true });
+
+    expectFailure(
+      await executeBrowserCommand(
+        { type: "page.zoom", tabId: null, factor: 1.5 },
+        harness.deps,
+      ),
+      "desktop_unavailable",
+    );
   });
 });

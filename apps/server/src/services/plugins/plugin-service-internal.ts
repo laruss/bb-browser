@@ -152,8 +152,11 @@ export interface PluginServiceDeps {
   omniboxRunTimeoutMs?: number;
   /** Time box per browser download handler; tests shrink it. */
   browserDownloadTimeoutMs?: number;
+  /** Time box per browser history filter; tests shrink it. */
+  browserHistoryFilterTimeoutMs?: number;
   /** Time box per picked context-menu item; tests shrink it. */
   contextMenuRunTimeoutMs?: number;
+  siteInfoTimeoutMs?: number;
   /** Failed candidates must remain healthy for this long before activation commits. */
   stabilizationWindowMs?: number;
   /** Previous artifacts and activation snapshots remain rollbackable for this long. */
@@ -241,6 +244,36 @@ export interface PluginContextMenuItemContribution {
 
 /** A plugin button on the browser's find bar (`browser.find.actions`). */
 export interface PluginFindActionContribution {
+  pluginId: string;
+  itemId: string;
+  title: string;
+}
+
+/**
+ * One provider's section of the site-info popover
+ * (`browser.siteInfo.sections`), grouped so the popover renders the rows under
+ * the provider's label.
+ */
+export interface PluginSiteInfoSection {
+  pluginId: string;
+  providerId: string;
+  label: string;
+  rows: { label: string; value: string }[];
+}
+
+/**
+ * A search engine a plugin offered (`browser.searchEngines`), for the app to put
+ * in the setting's list beside bb's own.
+ */
+export interface PluginSearchEngineContribution {
+  pluginId: string;
+  id: string;
+  name: string;
+  urlTemplate: string;
+}
+
+/** A plugin entry on a browser tab's context menu (`browser.tab.actions`). */
+export interface PluginTabActionContribution {
   pluginId: string;
   itemId: string;
   title: string;

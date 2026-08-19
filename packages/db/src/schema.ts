@@ -15,6 +15,7 @@ import {
   threadOriginKindValues,
 } from "@bb/domain/thread-child-origin";
 import { threadVisibilityValues } from "@bb/domain/thread-visibility";
+import { DEFAULT_BROWSER_SEARCH_ENGINE_ID } from "@bb/domain/browser-search-engine";
 import type {
   EnvironmentStatus,
   FaviconColorPreference,
@@ -155,6 +156,9 @@ export const systemExperiments = sqliteTable("system_experiments", {
 
 export const appSettings = sqliteTable("app_settings", {
   id: text("id").primaryKey(),
+  browserSearchEngineId: text("browser_search_engine_id")
+    .notNull()
+    .default(DEFAULT_BROWSER_SEARCH_ENGINE_ID),
   caffeinate: integer("caffeinate", { mode: "boolean" })
     .notNull()
     .default(false),
@@ -767,6 +771,52 @@ export const promptHistoryEntries = sqliteTable(
       table.createdAt,
       table.requestSequence,
       table.id,
+    ),
+  ],
+);
+
+/**
+ * Pages the browser has visited, one row per URL per scope.
+ *
+ * "Scope" is the surface the visit happened on — a thread id, or the standalone
+ * browser surface's own id — because the new-tab screen shows the recents of
+ * the context you are in. Deliberately not a foreign key to `threads`: the
+ * browser surface is not a thread, and a scope that outlives its thread leaves
+ * history readable rather than silently cascading it away.
+ *
+ * A revisit updates `last_visited_at` and bumps `visit_count` instead of adding
+ * a row, so the store is "distinct pages" and stays small enough to search
+ * without an FTS index.
+ */
+export const browserHistoryEntries = sqliteTable(
+  "browser_history_entries",
+  {
+    id: text("id").primaryKey(),
+    scopeId: text("scope_id").notNull(),
+    url: text("url").notNull(),
+    title: text("title"),
+    /**
+     * `url` and `title` lowercased by JavaScript, which is the only case
+     * folding here that knows about non-ASCII: SQLite's own `lower()` and
+     * `LIKE` fold ASCII only, so a Cyrillic or Greek title would never match a
+     * query typed in the other case.
+     */
+    searchText: text("search_text").notNull(),
+    visitCount: integer("visit_count").notNull(),
+    lastVisitedAt: integer("last_visited_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("browser_history_entries_scope_url_idx").on(
+      table.scopeId,
+      table.url,
+    ),
+    // Reads come in two shapes and neither can use the other's index: the
+    // omnibox and the history page read every scope by recency, the new-tab
+    // screen reads one scope by recency.
+    index("browser_history_entries_visited_idx").on(table.lastVisitedAt),
+    index("browser_history_entries_scope_visited_idx").on(
+      table.scopeId,
+      table.lastVisitedAt,
     ),
   ],
 );

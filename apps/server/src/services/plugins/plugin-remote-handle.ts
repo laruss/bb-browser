@@ -19,6 +19,7 @@ import {
 } from "./plugin-http-message.js";
 import type { PluginServiceCommand } from "./plugin-service-message.js";
 import { alreadyValidatedElsewhere } from "./plugin-rpc-call.js";
+import { readBrowserHistoryDecision } from "./plugin-history-filter.js";
 import type {
   BbPluginApi,
   PluginAgentToolContext,
@@ -285,6 +286,18 @@ export function createRemotePluginApiHandle(args: {
       run: (context) =>
         call("browserFindAction", action.id, context) as Promise<void>,
     })),
+    siteInfoProviders: snapshot.siteInfoProviders.map((provider) => ({
+      id: provider.id,
+      label: provider.label,
+      describe: (context) =>
+        call("browserSiteInfo", provider.id, context) as never,
+    })),
+    tabActions: snapshot.tabActions.map((action) => ({
+      id: action.id,
+      title: action.title,
+      run: (context) =>
+        call("browserTabAction", action.id, context) as Promise<void>,
+    })),
     // Anonymous on both sides, so the index is the name. Rebuilding the same
     // number of them keeps the host's own rules — first answer wins for auth
     // and PDF text, every one runs for downloads — where they already are.
@@ -299,7 +312,15 @@ export function createRemotePluginApiHandle(args: {
       snapshot.pdfTextProviderCount,
       (index, document) => call("browserPdfText", String(index), document),
     ) as PluginApiHandle["pdfTextProviders"],
+    historyFilters: byIndex(snapshot.historyFilterCount, (index, visit) =>
+      call("browserHistoryFilter", String(index), visit).then(
+        readBrowserHistoryDecision,
+      ),
+    ) as PluginApiHandle["historyFilters"],
     keybindings: snapshot.keybindings,
+    // Data, like the keybindings above: nothing calls back into the plugin, so
+    // the remote handle carries the rows rather than proxies.
+    searchEngines: snapshot.searchEngines,
     activate: () => {},
     invalidate: () => {},
   };

@@ -127,11 +127,6 @@ export const APP_COMMAND_GROUPS: readonly AppCommandGroup[] = [
     label: "Workspace",
     commands: [
       command(
-        "file.quickOpen",
-        "Quick open file",
-        "Search workspace files in a new panel tab.",
-      ),
-      command(
         "diff.toggle",
         "Toggle diff",
         "Open or close the environment diff.",
@@ -236,6 +231,10 @@ export const APP_COMMAND_GROUPS: readonly AppCommandGroup[] = [
       ),
       command("browser.goBack", "Back", "Go back in the browser tab."),
       command("browser.goForward", "Forward", "Go forward in the browser tab."),
+      command("browser.zoomIn", "Zoom in", "Make the page larger."),
+      command("browser.zoomOut", "Zoom out", "Make the page smaller."),
+      command("browser.zoomReset", "Actual size", "Return the page to 100%."),
+      command("browser.print", "Print", "Print the page."),
     ],
   },
   {

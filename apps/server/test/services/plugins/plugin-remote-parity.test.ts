@@ -166,6 +166,13 @@ describe("a remote handle against the in-process one", () => {
         (i) => `${i.id} ${i.title} ${JSON.stringify(i.when)}`,
       ),
       findActions: handle.findActions.map((a) => `${a.id} ${a.title}`),
+      tabActions: handle.tabActions.map((a) => `${a.id} ${a.title}`),
+      siteInfoProviders: handle.siteInfoProviders.map(
+        (p) => `${p.id} ${p.label}`,
+      ),
+      searchEngines: handle.searchEngines.map(
+        (e) => `${e.id} ${e.name} ${e.urlTemplate}`,
+      ),
       downloadHandlers: handle.downloadHandlers.length,
       authProviders: handle.authProviders.length,
       pdfTextProviders: handle.pdfTextProviders.length,
@@ -189,6 +196,12 @@ describe("a remote handle against the in-process one", () => {
         selectionText: "тихо",
       } as never),
       findAction: await handle.findActions[0]?.run({ query: "иглу" } as never),
+      tabAction: await handle.tabActions[0]?.run({
+        url: "https://example.test/",
+      } as never),
+      siteInfo: await handle.siteInfoProviders[0]?.describe({
+        host: "example.test",
+      } as never),
       mentionSearch: await handle.mentionProviders[0]?.search({
         query: "ann",
       } as never),

@@ -37,6 +37,7 @@ import {
   BB_DESKTOP_BROWSER_SCOPED_OPEN_TAB_CHANNEL,
   BB_DESKTOP_BROWSER_SET_BOUNDS_CHANNEL,
   BB_DESKTOP_BROWSER_SET_POPUP_TABS_CHANNEL,
+  BB_DESKTOP_BROWSER_SET_MUTED_CHANNEL,
   BB_DESKTOP_BROWSER_SET_VISIBLE_CHANNEL,
   BB_DESKTOP_BROWSER_SNAPSHOT_CHANNEL,
   BB_DESKTOP_BROWSER_SNAPSHOT_TREE_CHANNEL,
@@ -277,11 +278,14 @@ describe("desktop preload browser API", () => {
       "onFindResult",
       "onOpenTab",
       "onPagePrompt",
+      "onPageSecurity",
       "onPopup",
       "onScopedOpenTab",
       "onSearchSelection",
       "onSnapshot",
       "onState",
+      "onZoom",
+      "print",
       "readPage",
       "record",
       "reload",
@@ -292,9 +296,11 @@ describe("desktop preload browser API", () => {
       "setDevTools",
       "setDevToolsVisible",
       "setFullscreen",
+      "setMuted",
       "setOverlay",
       "setPopupTabs",
       "setVisible",
+      "setZoom",
       "snapshot",
       "snapshotIn",
       "stop",
@@ -312,6 +318,7 @@ describe("desktop preload browser API", () => {
     api.browser.stop("browser:a");
     api.browser.setBounds(boundsRequest);
     api.browser.setVisible(visibleRequest);
+    api.browser.setMuted?.({ tabId: "browser:a", muted: true });
     api.setTheme("dark");
     await api.checkForUpdates();
     await expect(api.getWindowState?.()).resolves.toEqual({
@@ -352,6 +359,10 @@ describe("desktop preload browser API", () => {
       {
         channel: BB_DESKTOP_BROWSER_SET_VISIBLE_CHANNEL,
         payload: visibleRequest,
+      },
+      {
+        channel: BB_DESKTOP_BROWSER_SET_MUTED_CHANNEL,
+        payload: { tabId: "browser:a", muted: true },
       },
       { channel: BB_DESKTOP_SET_THEME_CHANNEL, payload: "dark" },
     ]);

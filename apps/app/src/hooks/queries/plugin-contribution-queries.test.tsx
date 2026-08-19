@@ -94,6 +94,26 @@ describe("usePluginContributions", () => {
         { pluginId: "notes", itemId: "save-search", title: "Save this search" },
         { pluginId: "broken", itemId: "no-title" }, // dropped at the boundary
       ],
+      browserTabActions: [
+        { pluginId: "notes", itemId: "file-tab", title: "File this tab" },
+        { pluginId: "broken", itemId: "no-title" }, // dropped at the boundary
+      ],
+      browserSearchEngines: [
+        {
+          pluginId: "notes",
+          id: "kagi",
+          name: "Kagi",
+          urlTemplate: "https://kagi.com/search?q=%s",
+        },
+        // Dropped at the boundary: plain http to another machine is refused, so
+        // an engine the server would never have registered cannot slip in here.
+        {
+          pluginId: "broken",
+          id: "evil",
+          name: "Evil",
+          urlTemplate: "http://evil.test/?q=%s",
+        },
+      ],
     });
 
     const { wrapper } = createQueryClientTestHarness();
@@ -107,6 +127,17 @@ describe("usePluginContributions", () => {
             pluginId: "notes",
             itemId: "save-search",
             title: "Save this search",
+          },
+        ],
+        browserTabActions: [
+          { pluginId: "notes", itemId: "file-tab", title: "File this tab" },
+        ],
+        browserSearchEngines: [
+          {
+            pluginId: "notes",
+            id: "kagi",
+            name: "Kagi",
+            urlTemplate: "https://kagi.com/search?q=%s",
           },
         ],
         mentionProviders: [
@@ -143,6 +174,8 @@ describe("usePluginContributions", () => {
       expect(result.current.data).toEqual({
         browserContextMenuItems: [],
         browserFindActions: [],
+        browserSearchEngines: [],
+        browserTabActions: [],
         mentionProviders: [],
         omniboxProviders: [],
       });

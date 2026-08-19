@@ -14,6 +14,7 @@ import {
   BB_DESKTOP_BROWSER_FAVICON_CHANNEL,
   BB_DESKTOP_BROWSER_FIND_RESULT_CHANNEL,
   BB_DESKTOP_BROWSER_PAGE_PROMPT_CHANNEL,
+  BB_DESKTOP_BROWSER_PAGE_SECURITY_CHANNEL,
   BB_DESKTOP_BROWSER_POPUP_CHANNEL,
   BB_DESKTOP_BROWSER_DEV_TOOLS_STATE_CHANNEL,
   BB_DESKTOP_BROWSER_SNAPSHOT_CHANNEL,
@@ -712,6 +713,13 @@ const electronMock = vi.hoisted(() => {
       });
     }
 
+    /** Every OS print dialog this view was asked to open. */
+    printCalls = 0;
+
+    print(): void {
+      this.printCalls += 1;
+    }
+
     printToPDF(): Promise<Buffer> {
       return this.pdfResult instanceof Error
         ? Promise.reject(this.pdfResult)
@@ -820,8 +828,35 @@ const electronMock = vi.hoisted(() => {
       this.url = url;
     }
 
+    /**
+     * Chromium keeps zoom per origin inside the session, so a real one answers
+     * with whatever the site was last left at rather than with 1. Held here so
+     * the manager's echo — it reads the factor back rather than trusting the
+     * request — is exercised instead of stubbed.
+     */
+    zoomFactor = 1;
+
+    getZoomFactor(): number {
+      return this.zoomFactor;
+    }
+
+    setZoomFactor(factor: number): void {
+      this.zoomFactor = factor;
+    }
+
+    audioMuted = false;
+
+    setAudioMuted(muted: boolean): void {
+      this.audioMuted = muted;
+    }
+
+    /**
+     * Fires `destroyed` like Electron's does. Setting the flag alone left the
+     * whole teardown path — the handler the manager installs for a popup
+     * closing itself — unexercised by every test that closes a view.
+     */
     close(): void {
-      this.destroyed = true;
+      this.emitDestroyed();
     }
 
     focus(): void {
@@ -1203,10 +1238,22 @@ class FakeHostWebContents implements DesktopBrowserHostWebContents {
     channel: string;
     payload: DesktopBrowserHostWebContentsPayload;
   }> = [];
-  public readonly id: number;
+  readonly #id: number;
 
   constructor(id: number) {
-    this.id = id;
+    this.#id = id;
+  }
+
+  /**
+   * Throws once destroyed, the way Electron's does — a plain field here is a
+   * lie, and it is the lie that let a crash on window close reach a user: the
+   * host's `webContents` is already gone when its child views finish closing.
+   */
+  get id(): number {
+    if (this.destroyed) {
+      throw new TypeError("Object has been destroyed");
+    }
+    return this.#id;
   }
 
   isDestroyed(): boolean {
@@ -2321,6 +2368,36 @@ describe("DesktopBrowserViewManager", () => {
     ]);
   });
 
+  // The crash a second window produced: closing a window tore down its
+  // `webContents` first, and the views it owned then asked the gone window for
+  // its id while computing their own key.
+  it("releases the views of a window that is already destroyed", () => {
+    const manager = createDesktopBrowserViewManager({
+      partition: "persist:test",
+    });
+    const hostWindow = new FakeHostWindow({
+      contentBounds: { width: 700, height: 450 },
+      webContentsId: 77,
+    });
+    attachBrowserTab({
+      manager,
+      hostWindow,
+      tabId: "browser:a",
+      url: "https://example.com/",
+    });
+    const view = requireFakeView(0);
+    const hostWebContentsId = hostWindow.webContents.id;
+
+    // Electron's order on window close: the window and its webContents are
+    // already gone when `closed` fires, which is where releaseWindow is called
+    // from — and it is handed the id for exactly that reason.
+    hostWindow.destroyed = true;
+    hostWindow.webContents.destroyed = true;
+
+    expect(() => manager.releaseWindow(hostWebContentsId)).not.toThrow();
+    expect(view.webContents.destroyed).toBe(true);
+  });
+
   it("clears local subresource attribution on release and destroy", () => {
     const manager = createDesktopBrowserViewManager({
       partition: "persist:test",
@@ -2662,6 +2739,62 @@ describe("DesktopBrowserViewManager", () => {
 
     expect(view.boundsCalls).toHaveLength(1);
     expect(view.visible).toBe(false);
+  });
+
+  it("silences the tab's own webContents, and no other", () => {
+    const manager = createDesktopBrowserViewManager({
+      partition: "persist:test",
+    });
+    const hostWindow = new FakeHostWindow({
+      contentBounds: { width: 700, height: 450 },
+      webContentsId: 71,
+    });
+    for (const tabId of ["browser:a", "browser:b"]) {
+      manager.attach({
+        hostWindow,
+        request: {
+          tabId,
+          url: "",
+          bounds: { x: 0, y: 0, width: 500, height: 350 },
+          visible: false,
+        },
+      });
+    }
+
+    manager.setMuted({
+      hostWindow,
+      request: { tabId: "browser:a", muted: true },
+    });
+
+    expect(requireFakeView(0).webContents.audioMuted).toBe(true);
+    expect(requireFakeView(1).webContents.audioMuted).toBe(false);
+
+    manager.setMuted({
+      hostWindow,
+      request: { tabId: "browser:a", muted: false },
+    });
+
+    expect(requireFakeView(0).webContents.audioMuted).toBe(false);
+  });
+
+  // A tab the user has never opened has no view to silence. The renderer keeps
+  // the mute and re-applies it when the view exists, so the shell only has to
+  // not throw.
+  it("ignores a mute for a tab with no view", () => {
+    const manager = createDesktopBrowserViewManager({
+      partition: "persist:test",
+    });
+    const hostWindow = new FakeHostWindow({
+      contentBounds: { width: 700, height: 450 },
+      webContentsId: 72,
+    });
+
+    expect(() => {
+      manager.setMuted({
+        hostWindow,
+        request: { tabId: "browser:none", muted: true },
+      });
+    }).not.toThrow();
   });
 
   it("focuses a freshly-attached active tab so Cmd+C targets its webContents", () => {
@@ -3974,6 +4107,25 @@ describe("DesktopBrowserViewManager observations", () => {
       mimeType: "image/png",
       base64: Buffer.from("png-bytes").toString("base64"),
     });
+  });
+
+  // The user's Cmd+P, which is a different thing from rendering a PDF for a
+  // program: it opens the OS dialog and reports nothing back.
+  it("opens the print dialog for a page, and not for an empty tab", () => {
+    const { hostWindow, manager, webContents } = attachTabForObservations();
+
+    manager.print({ hostWindow, tabId: "browser:a" });
+    expect(webContents.printCalls).toBe(1);
+
+    // A tab showing nothing would print a blank sheet — a worse answer than
+    // leaving the dialog closed.
+    webContents.setUrl("");
+    manager.print({ hostWindow, tabId: "browser:a" });
+    expect(webContents.printCalls).toBe(1);
+
+    // And a tab nobody has heard of is not an error, just nothing to print.
+    manager.print({ hostWindow, tabId: "browser:missing" });
+    expect(webContents.printCalls).toBe(1);
   });
 
   it("prints the page to a PDF", async () => {
@@ -6069,6 +6221,15 @@ describe("questions the network asks", () => {
       .map((message) => message.payload);
   }
 
+  function pageSecurityPushes(hostWindow: FakeHostWindow): unknown[] {
+    return hostWindow.webContents.sentMessages
+      .filter(
+        (message) =>
+          message.channel === BB_DESKTOP_BROWSER_PAGE_SECURITY_CHANNEL,
+      )
+      .map((message) => message.payload);
+  }
+
   function openPrompt(hostWindow: FakeHostWindow): { id: string } | null {
     const pushed = promptPushes(hostWindow).at(-1) as
       | { prompt: { id: string } | null }
@@ -6398,6 +6559,57 @@ describe("questions the network asks", () => {
 
       expect(login.credentials).toBeNull();
       expect(login.called).toBe(true);
+    });
+
+    // The padlock's whole reason to exist: a page under a certificate the user
+    // waved through is encrypted and unverified, and the renderer cannot tell —
+    // it never sees the error, and the exception applies to every later tab on
+    // the same host without asking again.
+    it("reports a hand-trusted certificate to the renderer on the next navigation", async () => {
+      const { hostWindow, manager, view } = attachVisibleTab();
+
+      view.webContents.emitDidNavigate("https://example.com/");
+      expect(pageSecurityPushes(hostWindow).at(-1)).toEqual({
+        tabId: "browser:a",
+        certificateTrustedByUser: false,
+      });
+
+      view.webContents.emitCertificateError({});
+      await manager.respondToPagePrompt({
+        hostWindow,
+        request: {
+          tabId: "browser:a",
+          id: openPrompt(hostWindow)?.id ?? "",
+          answer: { kind: "proceed" },
+        },
+      });
+      view.webContents.emitDidNavigate("https://example.com/");
+
+      expect(pageSecurityPushes(hostWindow).at(-1)).toEqual({
+        tabId: "browser:a",
+        certificateTrustedByUser: true,
+      });
+    });
+
+    // The exception is the host's, not the page's, so leaving it clears the claim.
+    it("stops reporting it once the tab leaves that host", async () => {
+      const { hostWindow, manager, view } = attachVisibleTab();
+      view.webContents.emitCertificateError({});
+      await manager.respondToPagePrompt({
+        hostWindow,
+        request: {
+          tabId: "browser:a",
+          id: openPrompt(hostWindow)?.id ?? "",
+          answer: { kind: "proceed" },
+        },
+      });
+
+      view.webContents.emitDidNavigate("https://other.test/");
+
+      expect(pageSecurityPushes(hostWindow).at(-1)).toEqual({
+        tabId: "browser:a",
+        certificateTrustedByUser: false,
+      });
     });
 
     it("refuses a second question while one is open", () => {

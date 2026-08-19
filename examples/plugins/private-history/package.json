@@ -1,0 +1,35 @@
+{
+  "name": "bb-plugin-private-history",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "bb": ">=0.0",
+    "bbPluginSdk": "^0.4.1"
+  },
+  "bb": {
+    "name": "Private history",
+    "description": "Keep chosen hosts out of the browser's history, and strip tracking parameters from what is kept.",
+    "branding": {
+      "icon": "EyeOff"
+    },
+    "server": "./server.ts",
+    "permissions": [
+      "history",
+      "siteInfo.register"
+    ]
+  },
+  "keywords": [
+    "bb-plugin"
+  ],
+  "scripts": {
+    "test": "vitest run --config vitest.config.ts"
+  },
+  "devDependencies": {
+    "@bb/plugin-sdk": "workspace:*",
+    "@types/node": "^22.0.0",
+    "typescript": "^6.0.2",
+    "typescript-7": "npm:typescript@^7.0.2",
+    "vitest": "^4.1.1"
+  }
+}

@@ -64,6 +64,7 @@ export type ThreadWaitUnreachableErrorConstructor =
  * `@bb/sdk` so the packaged SDK cannot drift behind the CLI or web app.
  */
 export class BBSdk implements BbSdk {
+  readonly browserHistory: BbSdk["browserHistory"];
   readonly environments: BbSdk["environments"];
   readonly files: BbSdk["files"];
   readonly guide: BbSdk["guide"];
@@ -82,6 +83,7 @@ export class BBSdk implements BbSdk {
 
   constructor(options: BBSdkOptions = {}) {
     const sdk = createNodeBbSdk(options);
+    this.browserHistory = sdk.browserHistory;
     this.environments = sdk.environments;
     this.files = sdk.files;
     this.guide = sdk.guide;

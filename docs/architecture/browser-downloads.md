@@ -172,7 +172,9 @@ Two things follow, and the second is the point:
 - **The page is a still image while the list is open.** Video stops, animation
   stops. Acceptable for something opened and closed in seconds; not something to
   leave on, which is why the overlay is released when the panel closes _and_
-  when the chrome unmounts.
+  when the chrome unmounts. The chrome asks for both (`onPageOverlayChange`) and
+  the surface makes the call — one owner per window, for the reason in
+  [browser-surface.md](browser-surface.md).
 - **The whole window is DOM again, so clicks land.** That is what makes
   close-on-outside-click work over the page area — the thing that is impossible
   while a live view is composited there.

@@ -20,7 +20,7 @@ import { createRequire } from "node:module";
 import { Hono } from "hono";
 import type { PluginPermission } from "@bb/domain";
 import type { BbSdk } from "@bb/sdk";
-import type { AppKeybindingOverrides } from "@bb/domain";
+import type { AppKeybindingOverrides, BrowserSearchEngine } from "@bb/domain";
 import type { PluginSettingDescriptors } from "@bb/plugin-sdk";
 import type {
   BbPluginApi,
@@ -31,6 +31,7 @@ import type {
   PluginMentionTrigger,
 } from "./plugin-api.js";
 import { createPluginApi } from "./plugin-api.js";
+import { normalizeBrowserHistoryDecision } from "./plugin-history-filter.js";
 import type { PluginCallbackKind } from "./plugin-callbacks.js";
 import {
   createPluginChannel,
@@ -138,10 +139,14 @@ export interface PluginRegistrationSnapshot {
     when: { image: boolean; link: boolean; page: boolean; selection: boolean };
   }[];
   findActions: { id: string; title: string }[];
+  tabActions: { id: string; title: string }[];
+  siteInfoProviders: { id: string; label: string }[];
   downloadHandlerCount: number;
+  historyFilterCount: number;
   authProviderCount: number;
   pdfTextProviderCount: number;
   keybindings: AppKeybindingOverrides;
+  searchEngines: BrowserSearchEngine[];
   /** Only the events the plugin actually subscribed to. */
   threadEvents: string[];
   settingsDescriptors: PluginSettingDescriptors;
@@ -595,6 +600,16 @@ async function dispatchToRegistration(args: {
       if (record === undefined) return missing("find action");
       return record.run(payload as never);
     }
+    case "browserSiteInfo": {
+      const record = handle.siteInfoProviders.find((one) => one.id === target);
+      if (record === undefined) return missing("site info provider");
+      return record.describe(payload as never);
+    }
+    case "browserTabAction": {
+      const record = handle.tabActions.find((one) => one.id === target);
+      if (record === undefined) return missing("tab action");
+      return record.run(payload as never);
+    }
     // The three anonymous kinds are addressed by index, not iterated here.
     // "first one to answer wins" and "all of them run" are the host's rules,
     // applied across plugins as well as within one — so the host keeps its
@@ -626,6 +641,11 @@ async function dispatchToRegistration(args: {
       if (download === undefined) return missing("download handler");
       await download(payload as never);
       return null;
+    }
+    case "browserHistoryFilter": {
+      const filter = handle.historyFilters[Number(target)];
+      if (filter === undefined) return missing("history filter");
+      return normalizeBrowserHistoryDecision(await filter(payload as never));
     }
     case "threadEvent": {
       // Within one plugin these are additive and run in registration order,
@@ -765,10 +785,20 @@ function snapshot(handle: PluginApiHandle): PluginRegistrationSnapshot {
       id: one.id,
       title: one.title,
     })),
+    tabActions: handle.tabActions.map((one) => ({
+      id: one.id,
+      title: one.title,
+    })),
+    siteInfoProviders: handle.siteInfoProviders.map((one) => ({
+      id: one.id,
+      label: one.label,
+    })),
     downloadHandlerCount: handle.downloadHandlers.length,
+    historyFilterCount: handle.historyFilters.length,
     authProviderCount: handle.authProviders.length,
     pdfTextProviderCount: handle.pdfTextProviders.length,
     keybindings: handle.keybindings,
+    searchEngines: handle.searchEngines,
     threadEvents: Object.entries(handle.threadEventHandlers)
       .filter(([, handlers]) => (handlers as unknown[]).length > 0)
       .map(([event]) => event),

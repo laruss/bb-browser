@@ -50,6 +50,15 @@ export type BbDesktopOpenNewTabHandler = () => void;
 export type BbDesktopAppCommandHandler = (command: AppCommandId) => void;
 export type BbDesktopCloseWindowRequestHandler = () => boolean;
 
+/**
+ * How the shell tells a renderer which window it is: a `--bb-window-key=...`
+ * entry in `additionalArguments`, read out of `process.argv` by the preload.
+ *
+ * An argument rather than an IPC call because the answer has to exist before
+ * the first module runs — see {@link BbDesktopApi.windowKey}.
+ */
+export const BB_DESKTOP_WINDOW_KEY_ARGUMENT_PREFIX = "--bb-window-key=";
+
 export interface BbDesktopApi extends BbDesktopInfo {
   /**
    * Control surface for the desktop-only web browser tab. The renderer drives
@@ -58,6 +67,18 @@ export interface BbDesktopApi extends BbDesktopInfo {
    * construction.
    */
   browser: BbDesktopBrowserApi;
+  /**
+   * Which window this renderer is, stable across a reload and across an app
+   * restart — it is the same key the shell already persists this window's
+   * geometry under, so a window that comes back where it was comes back with
+   * what it had open.
+   *
+   * A plain property rather than a method because it is read while modules
+   * initialise, before anything can await. Optional for version skew: a shell
+   * that predates it leaves per-window state unscoped, which is what every
+   * build did before.
+   */
+  windowKey?: string;
   checkForUpdates(): Promise<BbDesktopInfo>;
   getInfo(): Promise<BbDesktopInfo>;
   /**
@@ -91,6 +112,16 @@ export interface BbDesktopApi extends BbDesktopInfo {
   onCloseWindowRequest?(
     listener: BbDesktopCloseWindowRequestHandler,
   ): BbDesktopInfoUnsubscribe;
+  /**
+   * Close this window.
+   *
+   * The browser surface calls it when its last tab goes: a window whose strip
+   * is empty has nothing left to show, which is what closing the last tab means
+   * in every other browser. Optional for version skew — a shell that predates
+   * it leaves the window open on an empty new-tab screen, which is what bb did
+   * before.
+   */
+  closeWindow?(): void;
   /**
    * Open a URL in the user's default system browser, leaving the in-app
    * browser tab. The main process only honors `http(s)` URLs — the address

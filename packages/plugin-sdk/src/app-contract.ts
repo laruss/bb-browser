@@ -856,6 +856,25 @@ export interface PluginContentScriptContext {
     threadId: string,
     status: PluginComposerThreadRowStatus | null,
   ) => void;
+  /**
+   * Mark a browser tab for this plugin generation — the tab **decorator** point.
+   *
+   * The mark rides on the tab in the browser surface's strip, beside its page
+   * icon and title, for as long as this generation lives; `null` clears it, and
+   * the host clears everything this generation set when it deactivates. Marking
+   * a tab id the strip does not hold is not an error — the tab may not be open
+   * yet, or may be in another window — it simply shows nowhere.
+   *
+   * Which tabs exist is `bb.browser.tabs.list()` on the backend side; a decorator
+   * is what a plugin does once it knows.
+   *
+   * Optional so bundles can feature-detect support while this experimental
+   * surface rolls out across 0.x clients.
+   */
+  readonly experimental_setBrowserTabStatus?: (
+    tabId: string,
+    status: PluginBrowserTabStatus | null,
+  ) => void;
 }
 
 /** Cleanup returned by a frontend content script. */
@@ -1025,6 +1044,25 @@ export interface ComposerStructuredDraft {
 /** Host-rendered paint applied to the editable composer text. */
 export interface PluginComposerTextEffect {
   className: string;
+}
+
+/**
+ * Host-rendered mark on a browser tab, shown beside its page icon and title.
+ *
+ * Deliberately the same three fields as {@link PluginComposerThreadRowStatus}
+ * rather than a richer badge: what the strip can honestly show on a tab that may
+ * be squeezed to its icon is one glyph with a label behind it.
+ */
+export interface PluginBrowserTabStatus {
+  /** BB icon-name hint; unknown names fall back to the generic plugin icon. */
+  icon: string;
+  /** Accessible label for the mark, and its tooltip. */
+  label: string;
+  /**
+   * Semantic host treatment. `running` shimmers, `success` and `error` are
+   * static tones, and the default is neutral.
+   */
+  tone?: "default" | "running" | "success" | "error";
 }
 
 /** Host-rendered status that temporarily replaces a thread's draft glyph. */

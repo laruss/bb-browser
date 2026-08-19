@@ -68,6 +68,14 @@ import {
   type BbDesktopTheme,
   type BbDesktopWindowState,
   type BbDesktopWindowStateChangeHandler,
+  bbDesktopBrowserPageSecuritySchema,
+  type BbDesktopBrowserPageSecurityHandler,
+  type BbDesktopBrowserSetMutedRequest,
+  type BbDesktopBrowserSetZoomRequest,
+  type BbDesktopBrowserTabRef,
+  type BbDesktopBrowserZoomHandler,
+  bbDesktopBrowserZoomSchema,
+  BB_DESKTOP_WINDOW_KEY_ARGUMENT_PREFIX,
 } from "@bb/desktop-contract";
 import {
   BB_DESKTOP_CHECK_FOR_UPDATES_CHANNEL,
@@ -116,12 +124,18 @@ import {
   BB_DESKTOP_BROWSER_SNAPSHOT_TREE_CHANNEL,
   BB_DESKTOP_BROWSER_SET_BOUNDS_CHANNEL,
   BB_DESKTOP_BROWSER_SET_VISIBLE_CHANNEL,
+  BB_DESKTOP_BROWSER_PRINT_CHANNEL,
+  BB_DESKTOP_BROWSER_PAGE_SECURITY_CHANNEL,
+  BB_DESKTOP_BROWSER_SET_MUTED_CHANNEL,
+  BB_DESKTOP_BROWSER_SET_ZOOM_CHANNEL,
+  BB_DESKTOP_BROWSER_ZOOM_CHANNEL,
   BB_DESKTOP_BROWSER_SNAPSHOT_CHANNEL,
   BB_DESKTOP_BROWSER_STATE_CHANNEL,
   BB_DESKTOP_BROWSER_STOP_CHANNEL,
 } from "./desktop-browser-ipc.js";
 import {
   BB_DESKTOP_APP_COMMAND_CHANNEL,
+  BB_DESKTOP_CLOSE_WINDOW_CHANNEL,
   BB_DESKTOP_CLOSE_WINDOW_REQUEST_CHANNEL,
   BB_DESKTOP_CLOSE_WINDOW_RESPONSE_CHANNEL,
   BB_DESKTOP_GET_WINDOW_STATE_CHANNEL,
@@ -233,6 +247,9 @@ const browserScopedOpenTabListeners =
   new Set<BbDesktopBrowserScopedOpenTabHandler>();
 const browserSnapshotListeners = new Set<BbDesktopBrowserSnapshotHandler>();
 const browserFaviconListeners = new Set<BbDesktopBrowserFaviconHandler>();
+const browserZoomListeners = new Set<BbDesktopBrowserZoomHandler>();
+const browserPageSecurityListeners =
+  new Set<BbDesktopBrowserPageSecurityHandler>();
 const browserDownloadListeners = new Set<BbDesktopBrowserDownloadHandler>();
 const browserFindResultListeners = new Set<BbDesktopBrowserFindResultHandler>();
 const browserSearchSelectionListeners =
@@ -356,6 +373,27 @@ const bbBrowserApi: BbDesktopBrowserApi = {
     return () => {
       browserFaviconListeners.delete(listener);
     };
+  },
+  onZoom(listener): BbDesktopBrowserUnsubscribe {
+    browserZoomListeners.add(listener);
+    return () => {
+      browserZoomListeners.delete(listener);
+    };
+  },
+  setZoom(request: BbDesktopBrowserSetZoomRequest): void {
+    ipcRenderer.send(BB_DESKTOP_BROWSER_SET_ZOOM_CHANNEL, request);
+  },
+  onPageSecurity(listener): BbDesktopBrowserUnsubscribe {
+    browserPageSecurityListeners.add(listener);
+    return () => {
+      browserPageSecurityListeners.delete(listener);
+    };
+  },
+  setMuted(request: BbDesktopBrowserSetMutedRequest): void {
+    ipcRenderer.send(BB_DESKTOP_BROWSER_SET_MUTED_CHANNEL, request);
+  },
+  print(request: BbDesktopBrowserTabRef): void {
+    ipcRenderer.send(BB_DESKTOP_BROWSER_PRINT_CHANNEL, request);
   },
   onDownload(listener): BbDesktopBrowserUnsubscribe {
     browserDownloadListeners.add(listener);
@@ -591,8 +629,20 @@ const bbBrowserApi: BbDesktopBrowserApi = {
   },
 };
 
+/**
+ * Which window this renderer is, handed over as a launch argument because the
+ * app reads it while its modules initialise — see `BbDesktopApi.windowKey`.
+ * Absent only if the shell and the preload came from different builds.
+ */
+const windowKey = process.argv
+  .find((argument) =>
+    argument.startsWith(BB_DESKTOP_WINDOW_KEY_ARGUMENT_PREFIX),
+  )
+  ?.slice(BB_DESKTOP_WINDOW_KEY_ARGUMENT_PREFIX.length);
+
 const bbDesktopApi: BbDesktopApi = {
   browser: bbBrowserApi,
+  ...(windowKey === undefined || windowKey.length === 0 ? {} : { windowKey }),
   get lastCheckedAt() {
     return currentInfo.lastCheckedAt;
   },
@@ -612,6 +662,9 @@ const bbDesktopApi: BbDesktopApi = {
   version: currentInfo.version,
   checkForUpdates() {
     return invokeDesktopInfo(BB_DESKTOP_CHECK_FOR_UPDATES_CHANNEL);
+  },
+  closeWindow() {
+    ipcRenderer.send(BB_DESKTOP_CLOSE_WINDOW_CHANNEL);
   },
   getInfo() {
     return invokeDesktopInfo(BB_DESKTOP_GET_INFO_CHANNEL);
@@ -759,6 +812,29 @@ ipcRenderer.on(
     }
   },
 );
+
+ipcRenderer.on(
+  BB_DESKTOP_BROWSER_PAGE_SECURITY_CHANNEL,
+  (_event, payload: unknown) => {
+    const parsed = bbDesktopBrowserPageSecuritySchema.safeParse(payload);
+    if (!parsed.success) {
+      return;
+    }
+    for (const listener of browserPageSecurityListeners) {
+      listener(parsed.data);
+    }
+  },
+);
+
+ipcRenderer.on(BB_DESKTOP_BROWSER_ZOOM_CHANNEL, (_event, payload: unknown) => {
+  const parsed = bbDesktopBrowserZoomSchema.safeParse(payload);
+  if (!parsed.success) {
+    return;
+  }
+  for (const listener of browserZoomListeners) {
+    listener(parsed.data);
+  }
+});
 
 ipcRenderer.on(
   BB_DESKTOP_BROWSER_CONTEXT_MENU_INVOKE_CHANNEL,

@@ -38,7 +38,10 @@ function BrowserRecentRow({ entry, now, onNavigate }: BrowserRecentRowProps) {
   const host = getBrowserUrlHost(entry.url);
   const title = entry.title?.trim();
   const primary = title && title.length > 0 ? title : host;
-  const relativeTime = formatRelativeTime({ timestamp: entry.visitedAt, now });
+  const relativeTime = formatRelativeTime({
+    timestamp: entry.lastVisitedAt,
+    now,
+  });
 
   return (
     <button

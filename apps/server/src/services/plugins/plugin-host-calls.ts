@@ -245,11 +245,36 @@ export const PLUGIN_HOST_CALLS = {
     resultCrosses: true,
     callbacks: ["browserDownload"],
   },
+  "browser.registerHistoryFilter": {
+    category: "register",
+    argsCross: true,
+    resultCrosses: true,
+    callbacks: ["browserHistoryFilter"],
+  },
   "browser.registerContextMenuItem": {
     category: "register",
     argsCross: true,
     resultCrosses: true,
     callbacks: ["browserContextMenu"],
+  },
+  "browser.registerTabAction": {
+    category: "register",
+    argsCross: true,
+    resultCrosses: true,
+    callbacks: ["browserTabAction"],
+  },
+  "browser.registerSearchEngine": {
+    category: "register",
+    argsCross: true,
+    resultCrosses: true,
+    callbacks: [],
+    note: "Data only — an id, a name and a URL template. The browser formats the template itself, which is what keeps Enter synchronous.",
+  },
+  "browser.registerSiteInfoProvider": {
+    category: "register",
+    argsCross: true,
+    resultCrosses: true,
+    callbacks: ["browserSiteInfo"],
   },
   "browser.registerFindAction": {
     category: "register",

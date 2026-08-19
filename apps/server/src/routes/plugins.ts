@@ -47,6 +47,37 @@ const pluginContextMenuInvokeSchema = z
   .strict();
 
 /**
+ * The host of a page whose site info was asked for. Derived here rather than
+ * taken from the client: the app already has it, but a route that trusts a
+ * caller's idea of which host a URL belongs to hands plugins a mismatched pair.
+ */
+function pluginSiteInfoHost(url: string): string {
+  try {
+    return new URL(url).host;
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * A picked tab-menu entry. The URL and title came from a page, so both are
+ * capped; a null url is a bb screen rather than a web page, which is what tells
+ * an action the two kinds apart.
+ */
+const pluginTabActionInvokeSchema = z
+  .object({
+    pluginId: z.string().min(1).max(128),
+    itemId: z.string().min(1).max(128),
+    tabId: z.string().min(1).max(256),
+    url: z.string().max(4096).nullable(),
+    title: z.string().max(1024).nullable(),
+    pinned: z.boolean(),
+    muted: z.boolean(),
+    active: z.boolean(),
+  })
+  .strict();
+
+/**
  * A pressed find-bar button. The query is what the user typed and the page URL
  * is the page's own, so both are capped rather than trusted; the cap on the
  * query matches the find bar's own.
@@ -282,6 +313,8 @@ export function registerPluginRoutes(
       omniboxProviders: plugins.listOmniboxProviderContributions(),
       browserContextMenuItems: plugins.listContextMenuItemContributions(),
       browserFindActions: plugins.listFindActionContributions(),
+      browserTabActions: plugins.listTabActionContributions(),
+      browserSearchEngines: plugins.listSearchEngineContributions(),
     }),
   );
 
@@ -400,6 +433,60 @@ export function registerPluginRoutes(
     const { itemId, pluginId, ...menuContext } = parsed.data;
     const outcome = await plugins.runContextMenuItem({
       context: menuContext,
+      itemId,
+      pluginId,
+    });
+    return outcome.ok
+      ? context.json({ ok: true })
+      : context.json({ ok: false, error: outcome.error }, 422);
+  });
+
+  // What plugins know about the site whose padlock the user clicked. A GET like
+  // omnibox suggest — it reads rather than acts — but it does run plugin code, so
+  // it takes the same local-origin guard, and the same ordering rule keeps
+  // "browser" from being captured as a plugin id.
+  app.get("/plugins/browser/site-info", async (context) => {
+    const problem = localAuthProblem(context, deps);
+    if (problem) {
+      return context.json({ ok: false, error: problem.error }, problem.status);
+    }
+    const tabId = (context.req.query("tabId") ?? "").trim();
+    const url = (context.req.query("url") ?? "").trim();
+    // A tab with no page has no site to describe, and nothing is asked about it.
+    if (tabId.length === 0 || url.length === 0 || url.length > 4096) {
+      return context.json({ ok: true, sections: [] });
+    }
+    return context.json({
+      ok: true,
+      sections: await plugins.describeSiteInfo({
+        context: { tabId, url, host: pluginSiteInfoHost(url) },
+      }),
+    });
+  });
+
+  // A plugin entry the user picked on a browser tab's context menu. Same guard,
+  // same ordering rule and the same fire-and-forget contract as the
+  // context-menu route above.
+  app.post("/plugins/browser/tab-action", async (context) => {
+    const problem = localAuthProblem(context, deps);
+    if (problem) {
+      return context.json({ ok: false, error: problem.error }, problem.status);
+    }
+    const body = await context.req.json().catch(() => null);
+    const parsed = pluginTabActionInvokeSchema.safeParse(body);
+    if (!parsed.success) {
+      return context.json(
+        {
+          ok: false,
+          error:
+            "expected { pluginId, itemId, tabId, url, title, pinned, muted, active }",
+        },
+        400,
+      );
+    }
+    const { itemId, pluginId, ...tabContext } = parsed.data;
+    const outcome = await plugins.runTabAction({
+      context: tabContext,
       itemId,
       pluginId,
     });

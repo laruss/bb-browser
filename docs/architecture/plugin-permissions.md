@@ -93,6 +93,36 @@ excludes `undefined` — so adding a browser command or a control operation
 without deciding what it costs fails to compile (TS2366). That is the only
 place the decision can be forgotten, and it is closed.
 
+### And one split that was deliberately not made
+
+`history` covers reading the browsing history, writing to it, deleting from it
+and seeing every visit before it is recorded — where the rest of the browser
+set splits reading from acting.
+
+A `history.read` / `history.modify` pair would read better and enforce nothing.
+Neither gate sees the HTTP method: one keys on the `bb.sdk` area, the other on
+the URL prefix. A plugin holding a read-only variant would be refused
+`sdk.browserHistory.remove` and then reach `DELETE /browser-history/:id` with
+`fetch` and the same identity headers. A permission that names a boundary the
+enforcement cannot draw is worse than a blunt one, because the manifest is what
+the user is shown.
+
+### And one split that was made rather than folded
+
+`tabMenu.register` is its own permission beside `contextMenu.register`, where
+folding the tab menu into "the browser's context menus" would have been shorter.
+`siteInfo.register` is its own on the same terms.
+
+Two reasons, and the second is the load-bearing one. A tab entry receives a tab —
+its url, title, whether it is pinned, muted or active — where a page entry
+receives what was clicked; those are different disclosures, and the manifest is
+what the user reads. And every plugin already granted `contextMenu.register`
+would have silently gained the ability to put entries in the tab strip, which is
+a widening nobody re-consented to. The house rule the browser set holds: one
+permission per contributed surface, the same way `omnibox.register` and
+`find.register` are separate — five surfaces, five permissions, each naming what
+its holder gets to see.
+
 ## What is ungated, and why
 
 `log`, `settings`, `storage`, `http`, `rpc`, `realtime`, `background`, `cli`,

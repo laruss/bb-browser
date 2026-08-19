@@ -48,6 +48,10 @@ export function createEventId(): string {
   return createId("evt");
 }
 
+export function createBrowserHistoryEntryId(): string {
+  return createId("bhist");
+}
+
 export function createPromptHistoryEntryId(): string {
   return createId("phist");
 }

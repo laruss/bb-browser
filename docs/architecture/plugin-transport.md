@@ -234,9 +234,15 @@ one by a forked `plugin-host-entry.ts`, the bundled one by
 **`@bb/domain`'s index: ~57 MB.** Importing one constant from it runs every
 schema in the package. `plugin-api.ts` and `plugin-permission-gate.ts` take
 subpaths now (`@bb/domain/browser-control`, `/plugin-permissions`,
-`/app-keybindings`, `/pending-interactions`, `/json-value`) — the same files,
-without the rest of the package. Same file means one copy in a process that
-also loads the index, so nothing is duplicated.
+`/app-keybindings`, `/pending-interactions`, `/json-value`, `/browser-history`)
+— the same files, without the rest of the package. Same file means one copy in a
+process that also loads the index, so nothing is duplicated.
+
+The budget in `plugin-host-bundle.test.ts` is what keeps this honest, and it has
+already caught a barrel import walking back in: a history filter took one length
+cap from `@bb/domain`, and every host process went from ~67 MB to ~105 MB. A file
+this list does not mention can still be in the graph — check before importing
+into anything `plugin-child-runtime.ts` reaches.
 
 **`@bb/db`: gone from the graph.** `plugin-api.ts` imported
 `registerSettingDescriptors` from `plugin-settings.ts`, and that module also

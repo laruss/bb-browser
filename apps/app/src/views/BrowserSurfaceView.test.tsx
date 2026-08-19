@@ -18,6 +18,7 @@ import {
 import { createQueryClientTestHarness } from "@/test/queryClientTestHarness";
 import { getBrowserSurfaceTabsStorageKey } from "@/lib/browser-surface-tabs";
 import { getBrowserFaviconsStorageKey } from "@/lib/browser-favicons";
+import { getBrowserMutedTabsStorageKey } from "@/lib/browser-tab-mute";
 import { BrowserSurfaceView } from "./BrowserSurfaceView";
 
 const desktopInfo = {
@@ -32,9 +33,17 @@ const desktopInfo = {
 
 function renderSurface(
   browserApi = createNoopDesktopBrowserApi(),
-  { appScreen = null }: { appScreen?: ReactNode } = {},
+  {
+    appScreen = null,
+    closeWindow,
+  }: { appScreen?: ReactNode; closeWindow?: () => void } = {},
 ) {
-  window.bbDesktop = createBbDesktopApi(desktopInfo, browserApi);
+  window.bbDesktop = {
+    ...createBbDesktopApi(desktopInfo, browserApi),
+    // Absent by default, which is a shell older than the call and the web
+    // build — both of which must keep the older behaviour.
+    ...(closeWindow === undefined ? {} : { closeWindow }),
+  };
   // A fresh jotai store per test (the tab atom is module-scoped, so without one
   // the previous test's tabs leak into the next) plus a query client, which the
   // surface needs to read its plugin omnibox contributions.
@@ -70,11 +79,31 @@ function tabButtons(): HTMLElement[] {
   return screen.getAllByRole("tab");
 }
 
+/**
+ * Put a strip with a loaded page in storage, the way a restored window has one.
+ *
+ * The surface's own tabs start empty (`url: ""`), and some of what the tab menu
+ * offers applies only to a tab with a page — muting a page that does not exist
+ * is the entry this is here to reach.
+ */
+function seedLoadedTab(tabId: string, url: string): void {
+  window.localStorage.setItem(
+    getBrowserSurfaceTabsStorageKey(),
+    JSON.stringify({
+      activeTabId: tabId,
+      tabs: [
+        { environmentId: null, id: tabId, kind: "browser", title: null, url },
+      ],
+    }),
+  );
+}
+
 function clearSurfaceStorage(): void {
   window.localStorage.removeItem(getBrowserSurfaceTabsStorageKey());
   // Page icons are session-scoped rather than React state, so they outlive a
-  // test's unmount the same way they outlive a reload.
+  // test's unmount the same way they outlive a reload. So do mutes.
   window.sessionStorage.removeItem(getBrowserFaviconsStorageKey());
+  window.sessionStorage.removeItem(getBrowserMutedTabsStorageKey());
 }
 
 beforeEach(clearSurfaceStorage);
@@ -211,14 +240,135 @@ describe("BrowserSurfaceView", () => {
     expect(tabs[0]?.getAttribute("aria-selected")).toBe("true");
   });
 
-  // Closing the last tab must leave the new-tab screen, not an empty surface.
-  it("reopens an empty tab after the last one closes", () => {
+  // The fallback, and what the web build always gets: with no shell to ask,
+  // closing the last tab must leave the new-tab screen rather than an empty
+  // surface. `createBbDesktopApi` has no `closeWindow`, which is the shape of a
+  // shell that predates it.
+  it("reopens an empty tab after the last one closes, with no shell to close", () => {
     renderSurface();
 
     fireEvent.click(screen.getByRole("button", { name: /^Close / }));
 
     expect(tabButtons()).toHaveLength(1);
     expect(tabButtons()[0]?.textContent).toBe("New tab");
+  });
+
+  // What every other browser does, and what a second window made obvious: a
+  // strip with nothing left in it is a window with nothing to show.
+  it("closes the window when the last tab goes", () => {
+    const closeWindow = vi.fn();
+    renderSurface(createNoopDesktopBrowserApi(), { closeWindow });
+
+    fireEvent.click(screen.getByRole("button", { name: /^Close / }));
+
+    expect(closeWindow).toHaveBeenCalledTimes(1);
+    // The tab is left standing on purpose: the window is going, and if the
+    // shell somehow does not close it, the user is left with the tab rather
+    // than with nothing.
+    expect(tabButtons()).toHaveLength(1);
+  });
+
+  // Only when the strip empties. Anything left in it is something to show, so
+  // the window stays and the survivor takes over.
+  it("keeps the window while any tab remains", () => {
+    const closeWindow = vi.fn();
+    renderSurface(createNoopDesktopBrowserApi(), { closeWindow });
+    fireEvent.click(screen.getByRole("button", { name: "New tab" }));
+
+    fireEvent.click(screen.getAllByRole("button", { name: /^Close / })[1]);
+
+    expect(closeWindow).not.toHaveBeenCalled();
+    expect(tabButtons()).toHaveLength(1);
+  });
+
+  // The tab menu, end to end: the strip asks, the surface records it and tells
+  // the shell, and the tab comes back marked.
+  it("mutes a tab from its menu and marks it", () => {
+    const setMuted = vi.fn();
+    seedLoadedTab("browser:loud", "https://example.test/");
+    renderSurface({ ...createNoopDesktopBrowserApi(), setMuted });
+
+    fireEvent.contextMenu(tabButtons()[0]?.parentElement as HTMLElement);
+    fireEvent.click(screen.getByText("Mute tab"));
+
+    expect(setMuted).toHaveBeenCalledWith({
+      muted: true,
+      tabId: "browser:loud",
+    });
+    expect(screen.getAllByLabelText("Muted")).toHaveLength(1);
+  });
+
+  // A mute is set on a `webContents`, and a tab that has never been shown does
+  // not have one yet — so the surface re-asserts it when the strip's active tab
+  // changes, by which time the deck has built the view.
+  it("re-asserts a mute when the active tab changes", () => {
+    const setMuted = vi.fn();
+    seedLoadedTab("browser:loud", "https://example.test/");
+    renderSurface({ ...createNoopDesktopBrowserApi(), setMuted });
+    fireEvent.contextMenu(tabButtons()[0]?.parentElement as HTMLElement);
+    fireEvent.click(screen.getByText("Mute tab"));
+    setMuted.mockClear();
+
+    fireEvent.click(screen.getByRole("button", { name: "New tab" }));
+
+    expect(setMuted).toHaveBeenCalledWith({
+      muted: true,
+      tabId: "browser:loud",
+    });
+  });
+
+  it("duplicates a tab beside the one it came from", () => {
+    renderSurface();
+    fireEvent.click(screen.getByRole("button", { name: "New tab" }));
+
+    fireEvent.contextMenu(tabButtons()[0]?.parentElement as HTMLElement);
+    fireEvent.click(screen.getByText("Duplicate"));
+
+    const tabs = tabButtons();
+    expect(tabs).toHaveLength(3);
+    // Beside its source, and focused.
+    expect(tabs[1]?.getAttribute("aria-selected")).toBe("true");
+  });
+
+  // The menu hangs over the page area, and a page is a native view that
+  // composites above the DOM — so it has to be frozen and hidden while the menu
+  // is up, or the menu is drawn behind the page.
+  it("freezes the page while a tab's menu is open, and thaws it after", () => {
+    const setOverlay = vi.fn();
+    seedLoadedTab("browser:loud", "https://example.test/");
+    renderSurface({ ...createNoopDesktopBrowserApi(), setOverlay });
+    setOverlay.mockClear();
+
+    fireEvent.contextMenu(tabButtons()[0]?.parentElement as HTMLElement);
+
+    expect(setOverlay).toHaveBeenCalledWith({
+      tabId: "browser:loud",
+      active: true,
+    });
+
+    setOverlay.mockClear();
+    fireEvent.click(screen.getByText("Pin tab"));
+
+    expect(setOverlay).toHaveBeenCalledWith({
+      tabId: "browser:loud",
+      active: false,
+    });
+  });
+
+  // Pinning reorders the strip rather than flagging a tab in place.
+  it("pins a tab into the leading block", () => {
+    renderSurface();
+    fireEvent.click(screen.getByRole("button", { name: "New tab" }));
+    const pinnedId = tabButtons()[1]?.getAttribute("aria-label");
+
+    fireEvent.contextMenu(tabButtons()[1]?.parentElement as HTMLElement);
+    fireEvent.click(screen.getByText("Pin tab"));
+
+    // A pinned tab shows its icon alone, so its name moves to `aria-label`.
+    expect(tabButtons()[0]?.getAttribute("aria-label")).toBe(
+      pinnedId ?? "New tab",
+    );
+    expect(screen.getAllByRole("button", { name: /^Close / })).toHaveLength(1);
   });
 
   // The surface owns the omnibox chrome, so the tab content must not render its

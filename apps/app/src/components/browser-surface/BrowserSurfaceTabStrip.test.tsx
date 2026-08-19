@@ -11,9 +11,11 @@ import {
   SIDEBAR_TRIGGER_TRAILING_RESERVE_CLASS,
 } from "@/lib/bb-desktop";
 import type { BrowserSurfaceTab } from "@/lib/browser-surface-tabs";
+import type { PluginBrowserTabStatus } from "@bb/plugin-sdk";
 import {
   BrowserSurfaceTabStrip,
   resolveTabStripChromeReserveClassName,
+  type BrowserSurfaceTabAction,
 } from "./BrowserSurfaceTabStrip";
 
 function browserTab(
@@ -28,21 +30,57 @@ function renderStrip(
   tabs: readonly BrowserSurfaceTab[],
   favicons: Readonly<Record<string, string>> = {},
   loadingTabIds: ReadonlySet<string> = new Set(),
+  extra: {
+    mutedTabIds?: ReadonlySet<string>;
+    pluginStatuses?: ReadonlyMap<string, PluginBrowserTabStatus>;
+    tabActions?: readonly BrowserSurfaceTabAction[];
+  } = {},
 ) {
   const onActivate = vi.fn();
   const onClose = vi.fn();
+  const onDuplicate = vi.fn();
+  const onMove = vi.fn();
+  const onRunTabAction = vi.fn();
+  const onSetMuted = vi.fn();
+  const onSetPinned = vi.fn();
   render(
     <BrowserSurfaceTabStrip
       activeTabId={tabs[0]?.id ?? null}
       favicons={favicons}
       loadingTabIds={loadingTabIds}
+      mutedTabIds={extra.mutedTabIds}
       onActivate={onActivate}
       onClose={onClose}
+      onDuplicate={onDuplicate}
+      onMove={onMove}
       onOpen={() => {}}
+      onRunTabAction={onRunTabAction}
+      onSetMuted={onSetMuted}
+      onSetPinned={onSetPinned}
+      pluginStatuses={extra.pluginStatuses}
+      tabActions={extra.tabActions}
       tabs={tabs}
     />,
   );
-  return { onActivate, onClose };
+  return {
+    onActivate,
+    onClose,
+    onDuplicate,
+    onMove,
+    onRunTabAction,
+    onSetMuted,
+    onSetPinned,
+  };
+}
+
+/** The tab's own box — the one the context menu is opened on. */
+function tabBox(name: string | RegExp): HTMLElement {
+  const tab = screen.getByRole("tab", { name });
+  const box = tab.parentElement;
+  if (box === null) {
+    throw new Error("a tab always sits in its own box");
+  }
+  return box;
 }
 
 const MACOS_DESKTOP_INFO: BbDesktopInfo = {
@@ -185,11 +223,24 @@ describe("browser surface tab strip sizing", () => {
     const list = screen.getByRole("tablist");
     expect(list.className).not.toContain("flex-1");
     expect(list.className).not.toContain("w-full");
-    // The next sibling is the button, so nothing sits between them but the strip's
-    // own gap.
-    expect(list.nextElementSibling).toBe(
-      screen.getByRole("button", { name: "New tab" }),
-    );
+    // The button follows the list in the same row, so nothing sits between them
+    // but the strip's own gap. Reordering put two nodes between the two — the
+    // drag context's hidden description and its live region — and each is
+    // asserted to be out of the row rather than assumed to be.
+    const button = screen.getByRole("button", { name: "New tab" });
+    expect(button.parentElement).toBe(list.parentElement);
+    for (
+      let between = list.nextElementSibling;
+      between !== null && between !== button;
+      between = between.nextElementSibling
+    ) {
+      const style = window.getComputedStyle(between);
+      expect(
+        style.display === "none" ||
+          style.position === "fixed" ||
+          style.position === "absolute",
+      ).toBe(true);
+    }
   });
 });
 
@@ -368,5 +419,207 @@ describe("app tabs in the strip", () => {
     fireEvent.click(screen.getByRole("button", { name: "Close Settings" }));
 
     expect(onClose).toHaveBeenCalledWith(settings.id);
+  });
+});
+
+// Everything the strip now does *to* a tab hangs off one menu, so the menu is
+// where the rules are asserted: which entries a kind of tab gets, and what
+// picking one asks for.
+describe("browser surface tab menu", () => {
+  it("offers duplicate, pin, mute and close on a page", () => {
+    renderStrip([browserTab("tab-1", "A")]);
+
+    fireEvent.contextMenu(tabBox(/A/));
+
+    expect(screen.getByText("Duplicate")).not.toBeNull();
+    expect(screen.getByText("Pin tab")).not.toBeNull();
+    expect(screen.getByText("Mute tab")).not.toBeNull();
+    expect(screen.getByText("Close tab")).not.toBeNull();
+  });
+
+  // A bb screen is a remembered route with no page of its own: duplicating it
+  // would leave two tabs claiming one route, and its audio is the app's.
+  it("leaves duplicate and mute off a bb screen", () => {
+    renderStrip([
+      createAppSurfaceTab({ path: "/settings", title: "Settings" }),
+    ]);
+
+    fireEvent.contextMenu(tabBox(/Settings/));
+
+    expect(screen.queryByText("Duplicate")).toBeNull();
+    expect(screen.queryByText("Mute tab")).toBeNull();
+    expect(screen.getByText("Pin tab")).not.toBeNull();
+    expect(screen.getByText("Close tab")).not.toBeNull();
+  });
+
+  it("leaves mute off a tab with no page yet", () => {
+    renderStrip([browserTab("tab-1", null, "")]);
+
+    fireEvent.contextMenu(tabBox(/New tab/));
+
+    expect(screen.queryByText("Mute tab")).toBeNull();
+    expect(screen.getByText("Duplicate")).not.toBeNull();
+  });
+
+  it("asks to pin a plain tab and to unpin a pinned one", () => {
+    const plain = renderStrip([browserTab("tab-1", "A")]);
+    fireEvent.contextMenu(tabBox(/A/));
+    fireEvent.click(screen.getByText("Pin tab"));
+
+    expect(plain.onSetPinned).toHaveBeenCalledWith({
+      pinned: true,
+      tabId: "tab-1",
+    });
+
+    cleanup();
+    const pinned = renderStrip([{ ...browserTab("tab-2", "B"), pinned: true }]);
+    fireEvent.contextMenu(tabBox(/B/));
+    fireEvent.click(screen.getByText("Unpin tab"));
+
+    expect(pinned.onSetPinned).toHaveBeenCalledWith({
+      pinned: false,
+      tabId: "tab-2",
+    });
+  });
+
+  it("asks to mute an audible tab and to unmute a silenced one", () => {
+    const audible = renderStrip([browserTab("tab-1", "A")]);
+    fireEvent.contextMenu(tabBox(/A/));
+    fireEvent.click(screen.getByText("Mute tab"));
+
+    expect(audible.onSetMuted).toHaveBeenCalledWith({
+      muted: true,
+      tabId: "tab-1",
+    });
+
+    cleanup();
+    const muted = renderStrip([browserTab("tab-1", "A")], {}, new Set(), {
+      mutedTabIds: new Set(["tab-1"]),
+    });
+    fireEvent.contextMenu(tabBox(/A/));
+    fireEvent.click(screen.getByText("Unmute tab"));
+
+    expect(muted.onSetMuted).toHaveBeenCalledWith({
+      muted: false,
+      tabId: "tab-1",
+    });
+  });
+
+  it("duplicates and closes the tab the menu was opened on", () => {
+    const strip = renderStrip([
+      browserTab("tab-1", "A"),
+      browserTab("tab-2", "B"),
+    ]);
+
+    fireEvent.contextMenu(tabBox(/B/));
+    fireEvent.click(screen.getByText("Duplicate"));
+    fireEvent.contextMenu(tabBox(/B/));
+    fireEvent.click(screen.getByText("Close tab"));
+
+    expect(strip.onDuplicate).toHaveBeenCalledWith("tab-2");
+    expect(strip.onClose).toHaveBeenCalledWith("tab-2");
+  });
+
+  // Contributed entries come last, so a plugin cannot displace the entry the
+  // user is reaching for.
+  it("appends plugin entries after its own, and runs the one picked", () => {
+    const action: BrowserSurfaceTabAction = {
+      pluginId: "notes",
+      itemId: "file",
+      title: "File this tab",
+    };
+    const strip = renderStrip([browserTab("tab-1", "A")], {}, new Set(), {
+      tabActions: [action],
+    });
+
+    fireEvent.contextMenu(tabBox(/A/));
+    const labels = screen
+      .getAllByRole("menuitem")
+      .map((item) => item.textContent);
+    expect(labels.at(-1)).toBe("File this tab");
+
+    fireEvent.click(screen.getByText("File this tab"));
+
+    expect(strip.onRunTabAction).toHaveBeenCalledWith({
+      action,
+      tabId: "tab-1",
+    });
+  });
+});
+
+describe("browser surface tab drag", () => {
+  // A right-click must not be a drag, or aiming at the menu would start carrying
+  // the tab behind it.
+  //
+  // Its opposite — that a real drag's concluding click does not also select the
+  // tab it landed on — is deliberately not tested here: the drag layer swallows
+  // that click itself, with a document-level listener that outlives the
+  // component in jsdom (no pointer generates the click that would consume it),
+  // so the test poisoned whatever ran next. It is verified by hand instead.
+  it("leaves a right-click alone", () => {
+    const { onActivate } = renderStrip([
+      browserTab("tab-1", "One"),
+      browserTab("tab-2", "Two"),
+    ]);
+    const tab = screen.getByRole("tab", { name: /Two/ });
+
+    fireEvent.mouseDown(tab, { button: 2, clientX: 0, clientY: 0 });
+    fireEvent.mouseMove(document, { clientX: 40, clientY: 0 });
+    fireEvent.mouseUp(document, { clientX: 40, clientY: 0 });
+    fireEvent.click(tab);
+
+    expect(onActivate).toHaveBeenCalledWith("tab-2");
+  });
+});
+
+describe("browser surface tab marks", () => {
+  // Pinned tabs are the block the user keeps open, so they read as marks rather
+  // than as titles — and nothing on them can close one by accident.
+  it("shows a pinned tab as its icon alone, with no close control", () => {
+    renderStrip([
+      { ...browserTab("tab-1", "Pinned page"), pinned: true },
+      browserTab("tab-2", "Plain page"),
+    ]);
+
+    const pinned = screen.getByRole("tab", { name: "Pinned page" });
+    expect(pinned.textContent).toBe("");
+    expect(pinned.getAttribute("title")).toBe("Pinned page");
+    expect(screen.queryByLabelText("Close Pinned page")).toBeNull();
+    expect(screen.getByLabelText("Close Plain page")).not.toBeNull();
+  });
+
+  it("marks a muted tab", () => {
+    renderStrip(
+      [browserTab("tab-1", "A"), browserTab("tab-2", "B")],
+      {},
+      new Set(),
+      {
+        mutedTabIds: new Set(["tab-2"]),
+      },
+    );
+
+    expect(screen.getAllByLabelText("Muted")).toHaveLength(1);
+    expect(
+      screen
+        .getByRole("tab", { name: /B/ })
+        .querySelector("[aria-label=Muted]"),
+    ).not.toBeNull();
+  });
+
+  // The decorator half of the tab surface: a plugin marks a tab, the strip shows
+  // it, and the label it gave is what a screen reader reads.
+  it("shows a plugin's mark on the tab it was set on", () => {
+    renderStrip(
+      [browserTab("tab-1", "A"), browserTab("tab-2", "B")],
+      {},
+      new Set(),
+      {
+        pluginStatuses: new Map<string, PluginBrowserTabStatus>([
+          ["tab-2", { icon: "Zap", label: "Syncing", tone: "running" }],
+        ]),
+      },
+    );
+
+    expect(screen.getAllByLabelText("Syncing")).toHaveLength(1);
   });
 });

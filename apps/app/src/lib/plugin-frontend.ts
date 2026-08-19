@@ -29,7 +29,10 @@ import type {
   PluginContentScriptRegistration,
   PluginSdkApp,
 } from "@bb/plugin-sdk";
-import { normalizePluginThreadRowStatus } from "@bb/plugin-sdk/internal/composer-customization-validation";
+import {
+  normalizePluginBrowserTabStatus,
+  normalizePluginThreadRowStatus,
+} from "@bb/plugin-sdk/internal/composer-customization-validation";
 import { resetCrashedPluginSlots } from "@/components/plugin/PluginSlotMount";
 import {
   collectPluginAppRegistrations,
@@ -42,6 +45,11 @@ import {
   setPluginSlotRegistrations,
   type PluginRegistrationSet,
 } from "./plugin-slots";
+import {
+  clearPluginBrowserTabStatuses,
+  clearPluginBrowserTabStatusesByOwner,
+  setPluginBrowserTabStatus,
+} from "./plugin-browser-tab-status";
 import {
   clearPluginThreadRowStatuses,
   clearPluginThreadRowStatusesByOwner,
@@ -473,6 +481,7 @@ async function disposeGeneration(
     if (failure !== null) failures.push(failure);
   }
   clearPluginThreadRowStatusesByOwner(activation.statusOwner);
+  clearPluginBrowserTabStatusesByOwner(activation.statusOwner);
   return failures;
 }
 
@@ -484,10 +493,12 @@ async function deactivateCommittedGeneration(
   const active = state.activeGenerations.get(pluginId);
   if (active === undefined) {
     clearPluginThreadRowStatuses(pluginId);
+    clearPluginBrowserTabStatuses(pluginId);
     return [];
   }
   const failures = await disposeGeneration(pluginId, active, deps);
   clearPluginThreadRowStatuses(pluginId);
+  clearPluginBrowserTabStatuses(pluginId);
   state.activeGenerations.delete(pluginId);
   state.appliedHashes.delete(pluginId);
   deps.removeRegistrations(pluginId);
@@ -532,6 +543,27 @@ async function mountWithTimeout(
         if (normalizedStatus === undefined) return;
         setPluginThreadRowStatus(
           normalizedThreadId,
+          pluginId,
+          normalizedStatus,
+          statusOwner,
+        );
+      },
+      experimental_setBrowserTabStatus: (tabId: unknown, status: unknown) => {
+        if (controller.signal.aborted) return;
+        const normalizedTabId = typeof tabId === "string" ? tabId.trim() : "";
+        if (normalizedTabId.length === 0) {
+          deps.warn(
+            `bb plugin "${pluginId}": contentScript.experimental_setBrowserTabStatus: "tabId" must be a non-empty string`,
+          );
+          return;
+        }
+        const normalizedStatus = normalizePluginBrowserTabStatus(
+          status,
+          (reason) => deps.warn(`bb plugin "${pluginId}": ${reason}`),
+        );
+        if (normalizedStatus === undefined) return;
+        setPluginBrowserTabStatus(
+          normalizedTabId,
           pluginId,
           normalizedStatus,
           statusOwner,

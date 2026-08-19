@@ -16,6 +16,7 @@
     "server": "./server.ts",
     "permissions": [
       "omnibox.register",
+      "searchEngine.register",
       "threads"
     ]
   },

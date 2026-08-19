@@ -23,6 +23,7 @@ export function getAppSettings(db: DbConnection): AppSettings {
       claudeCodeSubagentsDisabled: appSettings.claudeCodeSubagentsDisabled,
       claudeCodeWorkflowsDisabled: appSettings.claudeCodeWorkflowsDisabled,
       onboardingCompletedAt: appSettings.onboardingCompletedAt,
+      browserSearchEngineId: appSettings.browserSearchEngineId,
     })
     .from(appSettings)
     .where(eq(appSettings.id, APP_SETTINGS_ROW_ID))
@@ -49,6 +50,7 @@ export function setAppSettings(
       claudeCodeSubagentsDisabled: settings.claudeCodeSubagentsDisabled,
       claudeCodeWorkflowsDisabled: settings.claudeCodeWorkflowsDisabled,
       onboardingCompletedAt: settings.onboardingCompletedAt,
+      browserSearchEngineId: settings.browserSearchEngineId,
       updatedAt,
     })
     .onConflictDoUpdate({
@@ -64,6 +66,7 @@ export function setAppSettings(
         claudeCodeSubagentsDisabled: settings.claudeCodeSubagentsDisabled,
         claudeCodeWorkflowsDisabled: settings.claudeCodeWorkflowsDisabled,
         onboardingCompletedAt: settings.onboardingCompletedAt,
+        browserSearchEngineId: settings.browserSearchEngineId,
         updatedAt,
       },
     })

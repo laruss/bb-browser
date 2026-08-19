@@ -10,10 +10,17 @@
 //   - "Search GitHub for <query>" → a `navigate` action, resolved by the browser
 //                                   without calling back into the plugin.
 //
+// It also registers itself as a **search engine**, which is the same idea taken
+// one step further: instead of a row you have to pick, Enter itself goes to the
+// agent. A search engine is a URL template the browser formats, so the engine
+// points at this plugin's own loopback route — which spawns the thread and
+// redirects the tab to it.
+//
 // Surfaces demonstrated: bb.browser.registerOmniboxProvider (both action kinds),
-// a `project` setting with bb.status.needsConfiguration, bb.sdk.threads.spawn
-// with plugin attribution, and bb.server.loopbackBaseUrl to point the browser at
-// the BB app the plugin itself runs inside.
+// bb.browser.registerSearchEngine (including an engine that is not a search
+// engine), bb.http.route, a `project` setting with bb.status.needsConfiguration,
+// bb.sdk.threads.spawn with plugin attribution, and bb.server.loopbackBaseUrl to
+// point the browser at the BB app the plugin itself runs inside.
 //
 // The type-only import is erased at load time; this file runs as-is.
 import type { BbPluginApi } from "@bb/plugin-sdk";
@@ -44,6 +51,57 @@ export default async function plugin(bb: BbPluginApi) {
   if (!initial.project) {
     bb.status.needsConfiguration(CONFIGURE_HINT);
   }
+
+  // The engine's other half: the browser navigates here with the query, and this
+  // turns it into a thread. A plain `https` engine needs none of this — see the
+  // Kagi registration below — but an engine that *does* something needs somewhere
+  // to do it.
+  bb.http.route("GET", "/ask", async (context) => {
+    // A Hono context, so the query comes off the request rather than a parsed URL.
+    const query = (context.req.query("q") ?? "").trim();
+    if (query.length === 0) {
+      return new Response("Nothing to ask.", { status: 400 });
+    }
+    const current = await settings.get();
+    if (!current.project) {
+      return new Response(
+        `omnibox-agent is not configured. ${CONFIGURE_HINT}`,
+        {
+          status: 503,
+        },
+      );
+    }
+    const thread = await bb.sdk.threads.spawn({
+      projectId: current.project,
+      prompt: query,
+      environment: { type: "project-default" },
+      title: `Omnibox: ${query.slice(0, 60)}`,
+    });
+    bb.log.info(`search engine ask → thread ${thread.id}`);
+    // A redirect rather than a page: the tab should end up on the thread, the way
+    // a search engine leaves you on its results.
+    return new Response(null, {
+      status: 302,
+      headers: {
+        location: `${bb.server.loopbackBaseUrl}/threads/${thread.id}`,
+      },
+    });
+  });
+
+  bb.browser.registerSearchEngine({
+    id: "ask-agent",
+    name: "Ask an agent",
+    // Loopback is admitted for exactly this: an engine served by the machine the
+    // browser is running on. `%s` is where the browser puts the escaped query.
+    urlTemplate: `${bb.server.loopbackBaseUrl}/api/v1/plugins/omnibox-agent/http/ask?q=%s`,
+  });
+
+  // And an ordinary one, to show that most engines are just a template.
+  bb.browser.registerSearchEngine({
+    id: "kagi",
+    name: "Kagi",
+    urlTemplate: "https://kagi.com/search?q=%s",
+  });
 
   bb.browser.registerOmniboxProvider({
     // Wire item ids are "<providerId>:<item id>", so rows read as

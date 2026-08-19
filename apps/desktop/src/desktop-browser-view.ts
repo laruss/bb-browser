@@ -30,6 +30,10 @@ import {
   type BbDesktopBrowserSetOverlayRequest,
   type BbDesktopBrowserSetFullscreenRequest,
   type BbDesktopBrowserFavicon,
+  type BbDesktopBrowserPageSecurity,
+  type BbDesktopBrowserSetMutedRequest,
+  type BbDesktopBrowserSetZoomRequest,
+  type BbDesktopBrowserZoom,
   type BbDesktopBrowserFindRequest,
   type BbDesktopBrowserFindResult,
   BB_DESKTOP_BROWSER_MAX_SNAPSHOT_LENGTH,
@@ -83,8 +87,10 @@ import {
   BB_DESKTOP_BROWSER_DIALOG_CHANNEL,
   BB_DESKTOP_BROWSER_DOWNLOAD_CHANNEL,
   BB_DESKTOP_BROWSER_FAVICON_CHANNEL,
+  BB_DESKTOP_BROWSER_ZOOM_CHANNEL,
   BB_DESKTOP_BROWSER_FIND_RESULT_CHANNEL,
   BB_DESKTOP_BROWSER_PAGE_PROMPT_CHANNEL,
+  BB_DESKTOP_BROWSER_PAGE_SECURITY_CHANNEL,
   BB_DESKTOP_BROWSER_POPUP_CHANNEL,
   BB_DESKTOP_BROWSER_DEV_TOOLS_STATE_CHANNEL,
   BB_DESKTOP_BROWSER_OPEN_TAB_CHANNEL,
@@ -507,6 +513,8 @@ export type DesktopBrowserHostWebContentsPayload =
   | BbDesktopBrowserDialog
   | BbDesktopBrowserDownload
   | BbDesktopBrowserFavicon
+  | BbDesktopBrowserZoom
+  | BbDesktopBrowserPageSecurity
   | BbDesktopBrowserFindResult
   | BbDesktopBrowserPagePrompt
   | BbDesktopBrowserPopup
@@ -626,6 +634,15 @@ interface SetEntryDesiredBoundsArgs {
 export interface DesktopBrowserViewManager {
   attach(args: HostScopedRequestArgs<BbDesktopBrowserAttachRequest>): void;
   detach(args: HostScopedTabArgs): void;
+  /**
+   * Print a tab's page through the OS dialog.
+   *
+   * Fire and forget: the dialog's outcome — printed, saved as PDF, cancelled —
+   * is the user's, and none of the three is a result this side should report as
+   * success or failure. What it *is* is blocking, which is why nothing but a
+   * user action may reach it (see the call site's comment).
+   */
+  print(args: HostScopedTabArgs): void;
   navigate(args: HostScopedRequestArgs<BbDesktopBrowserNavigateRequest>): void;
   goBack(args: HostScopedTabArgs): void;
   goForward(args: HostScopedTabArgs): void;
@@ -764,6 +781,23 @@ export interface DesktopBrowserViewManager {
     args: HostScopedRequestArgs<BbDesktopBrowserSetVisibleRequest>,
   ): void;
   /**
+   * Scale a tab's page.
+   *
+   * Chromium persists zoom per origin inside the browsing session, so this is
+   * not only a property of the tab: setting it here is also what a *later* tab
+   * on the same site will come up with.
+   */
+  setZoom(args: HostScopedRequestArgs<BbDesktopBrowserSetZoomRequest>): void;
+  /**
+   * Silence a tab's page, or let it speak again.
+   *
+   * Mute is a property of the `webContents`, so it holds for as long as the view
+   * does and no longer — a tab whose view has not been created yet has nothing
+   * to silence, and this call finds no entry and does nothing. The renderer
+   * re-applies it once the view exists; see `browser-tab-mute.ts` there.
+   */
+  setMuted(args: HostScopedRequestArgs<BbDesktopBrowserSetMutedRequest>): void;
+  /**
    * Hide every visible view owned by the window for the duration of a native
    * resize burst. During an interactive window resize the host chrome
    * repaints at its own (much slower) cadence while the native views
@@ -796,11 +830,27 @@ export interface DesktopBrowserViewManager {
   destroyAll(): void;
 }
 
+/**
+ * The key from the host's id alone.
+ *
+ * Needed because the teardown path cannot read the id off the window any more:
+ * Electron destroys a `BrowserWindow`'s `webContents` before the child views it
+ * owned finish closing, and touching any property of a destroyed one throws
+ * `TypeError: Object has been destroyed`. `releaseWindow` already takes the id
+ * as a number for exactly that reason.
+ */
+function browserViewKeyForHost(
+  hostWebContentsId: number,
+  tabId: string,
+): string {
+  return `${hostWebContentsId}:${tabId}`;
+}
+
 function browserViewKey(
   hostWindow: DesktopBrowserHostWindow,
   tabId: string,
 ): string {
-  return `${hostWindow.webContents.id}:${tabId}`;
+  return browserViewKeyForHost(hostWindow.webContents.id, tabId);
 }
 
 function send(
@@ -2421,6 +2471,22 @@ export function createDesktopBrowserViewManager(
    * Per manager and per session: never written down, gone on restart.
    */
   const acceptedCertificates = new Set<string>();
+
+  /**
+   * Whether any certificate was accepted for this host. Keyed by
+   * `host|fingerprint`, so this asks about the host and ignores which
+   * certificate — a page on a hand-trusted host is a page whose identity nobody
+   * verified, whichever of its certificates is being served today.
+   */
+  function hasAcceptedCertificateForHost(host: string): boolean {
+    const prefix = `${host}|`;
+    for (const key of acceptedCertificates) {
+      if (key.startsWith(prefix)) {
+        return true;
+      }
+    }
+    return false;
+  }
   /** Distinguishes one prompt from the next, so a late answer is droppable. */
   let pagePromptSequence = 0;
   /**
@@ -2766,6 +2832,50 @@ export function createDesktopBrowserViewManager(
   }
 
   /**
+   * Report a tab's zoom, reading it back off the view rather than trusting what
+   * was asked for — Chromium clamps, and a site's remembered zoom arrives here
+   * without anyone asking at all.
+   */
+  function pushZoom(
+    hostWindow: DesktopBrowserHostWindow,
+    tabId: string,
+    entry: BrowserViewEntry,
+  ): void {
+    if (entry.view.webContents.isDestroyed()) {
+      return;
+    }
+    send(hostWindow, BB_DESKTOP_BROWSER_ZOOM_CHANNEL, {
+      tabId,
+      factor: entry.view.webContents.getZoomFactor(),
+    });
+  }
+
+  /**
+   * Tell the renderer what the shell knows about this page's connection.
+   *
+   * One fact: whether the page's host is being served under a certificate a human
+   * accepted after Chromium refused it. The renderer cannot know — it never sees
+   * the error, and the exception outlives the prompt for the whole session and
+   * applies to *every* tab that reaches the same host, including ones that were
+   * never asked.
+   */
+  function pushPageSecurity(
+    hostWindow: DesktopBrowserHostWindow,
+    tabId: string,
+    entry: BrowserViewEntry,
+  ): void {
+    if (entry.view.webContents.isDestroyed()) {
+      return;
+    }
+    const host = browserUrlHost(entry.view.webContents.getURL());
+    send(hostWindow, BB_DESKTOP_BROWSER_PAGE_SECURITY_CHANNEL, {
+      tabId,
+      certificateTrustedByUser:
+        host.length > 0 && hasAcceptedCertificateForHost(host),
+    });
+  }
+
+  /**
    * Drop an icon that belongs to a page the tab has left, once loading settles.
    *
    * The icon is keyed to the page URL it was resolved for, and this runs at
@@ -2873,6 +2983,9 @@ export function createDesktopBrowserViewManager(
     entry: BrowserViewEntry,
   ): void {
     const webContents = entry.view.webContents;
+    // Captured while the window is alive: the `destroyed` handler below runs
+    // during teardown, when reading it off `hostWindow` would throw.
+    const hostWebContentsId = hostWindow.webContents.id;
 
     webContents.on("before-input-event", (event, input) => {
       if (input.type !== "keyDown" || input.isAutoRepeat || input.isComposing) {
@@ -3009,7 +3122,7 @@ export function createDesktopBrowserViewManager(
     // fires for a page's own close and not for the renderer's.
     const entryWebContentsId = webContents.id;
     webContents.on("destroyed", () => {
-      const key = browserViewKey(hostWindow, tabId);
+      const key = browserViewKeyForHost(hostWebContentsId, tabId);
       if (entries.get(key) !== entry) {
         return;
       }
@@ -3413,6 +3526,14 @@ export function createDesktopBrowserViewManager(
       // here is what stops a straggling result from the old page being pushed
       // as if it described the new one.
       entry.findRequestId = null;
+      // A site the user zoomed before comes back zoomed, decided by Chromium's
+      // per-origin memory rather than by anything here — so the renderer is
+      // told what the tab became rather than left showing the last tab's
+      // percentage.
+      pushZoom(hostWindow, tabId, entry);
+      // Same moment, same reason: what the tab *became* is the shell's to report,
+      // and the omnibox must not describe the page the user just left.
+      pushPageSecurity(hostWindow, tabId, entry);
       refresh();
     });
     webContents.on("did-navigate-in-page", (_event, url, isMainFrame) => {
@@ -4162,6 +4283,26 @@ export function createDesktopBrowserViewManager(
       }
       pushState(hostWindow, request.tabId);
     },
+    print({ hostWindow, tabId }) {
+      withEntry({ hostWindow, tabId }, (entry) => {
+        // A tab showing nothing would print a blank sheet, which is a worse
+        // answer than not opening the dialog at all.
+        if (entry.view.webContents.getURL().length === 0) {
+          return;
+        }
+        // The dialog is owned by the app window, so it blocks bb while it is up
+        // — including an agent waiting on a browser command. That is the right
+        // trade for a chord the user just pressed and the wrong one for
+        // anything else, which is why this is reachable only from
+        // `browser.print` and never from a plugin or a page.
+        // No callback: printed, saved as PDF and cancelled are the same answer
+        // from here, and the one real failure mode — a printer Chromium cannot
+        // drive — is one the OS dialog reports to the user itself. This module
+        // has no logger and no error channel, and inventing one for that would
+        // be the wrong place to put it.
+        entry.view.webContents.print({});
+      });
+    },
     detach({ hostWindow, tabId }) {
       destroyEntry(hostWindow, browserViewKey(hostWindow, tabId));
     },
@@ -4703,6 +4844,19 @@ export function createDesktopBrowserViewManager(
     setBounds({ hostWindow, request }) {
       withEntry({ hostWindow, tabId: request.tabId }, (entry) => {
         setEntryDesiredBounds({ bounds: request.bounds, entry, hostWindow });
+      });
+    },
+    setZoom({ hostWindow, request }) {
+      withEntry({ hostWindow, tabId: request.tabId }, (entry) => {
+        entry.view.webContents.setZoomFactor(request.factor);
+        // Echoed rather than assumed: Chromium is free to clamp, and the
+        // renderer has to show what happened, not what was asked for.
+        pushZoom(hostWindow, request.tabId, entry);
+      });
+    },
+    setMuted({ hostWindow, request }) {
+      withEntry({ hostWindow, tabId: request.tabId }, (entry) => {
+        entry.view.webContents.setAudioMuted(request.muted);
       });
     },
     setVisible({ hostWindow, request }) {

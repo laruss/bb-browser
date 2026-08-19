@@ -16,6 +16,7 @@
     "server": "./server.ts",
     "permissions": [
       "contextMenu.register",
+      "tabMenu.register",
       "tabs.modify",
       "threads"
     ]

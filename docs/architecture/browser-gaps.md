@@ -128,15 +128,15 @@ missing is part of why it ended up shaped the way it is.
 
 **Page**
 
-| Feature                           | State                                                                                                                                 |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| Find in page (`Cmd+F`)            | **Done** — a find bar in the chrome, plus a plugin contribution point ([browser-surface.md](browser-surface.md))                      |
-| Zoom (`Cmd +/-/0`), per-site zoom | `setZoomFactor` exists only for the app window, never for a browsed view                                                              |
-| Print (`Cmd+P`)                   | `printToPDF` exists for agents only; no user-facing print                                                                             |
-| Page context menu                 | **Done** — link, image, selection and navigation entries, plus a plugin contribution point ([browser-surface.md](browser-surface.md)) |
-| View source                       | **Done** — Chromium's own DevTools, opened in the panel ([browser-surface.md](browser-surface.md))                                    |
-| Reading a PDF as text             | **Done** — refetched through the browsing session and parsed out of process ([browser-surface.md](browser-surface.md))                |
-| Spellcheck corrections            | Underlining is Chromium's default; the browsed view's menu offers no suggestions                                                      |
+| Feature                               | State                                                                                                                                                                                                     |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Find in page (`Cmd+F`)                | **Done** — a find bar in the chrome, plus a plugin contribution point ([browser-surface.md](browser-surface.md))                                                                                          |
+| ~~Zoom (`Cmd +/-/0`), per-site zoom~~ | **Done.** The shell scales the browsed view and reports back what Chromium settled on; per-site is Chromium's own memory, which is why the report is needed. `bb.browser.page.zoom` costs `page.interact` |
+| Print (`Cmd+P`)                       | `printToPDF` exists for agents only; no user-facing print                                                                                                                                                 |
+| Page context menu                     | **Done** — link, image, selection and navigation entries, plus a plugin contribution point ([browser-surface.md](browser-surface.md))                                                                     |
+| View source                           | **Done** — Chromium's own DevTools, opened in the panel ([browser-surface.md](browser-surface.md))                                                                                                        |
+| Reading a PDF as text                 | **Done** — refetched through the browsing session and parsed out of process ([browser-surface.md](browser-surface.md))                                                                                    |
+| Spellcheck corrections                | Underlining is Chromium's default; the browsed view's menu offers no suggestions                                                                                                                          |
 
 The context menu is now built (open link in new tab or the default browser,
 copy link address, copy/save image, search for the selection, back/forward/
@@ -180,10 +180,24 @@ rather than failing obscurely.
 
 **Tabs**
 
-No tab context menu, no drag reorder, no pin / duplicate / mute. Reopening a
-closed tab is done, with its page state
-([browser-surface.md](browser-surface.md)). Tab overflow is covered: the strip
-clips at a width floor rather than scrolling, which is a
+~~No tab context menu, no pin / duplicate / mute.~~ Done: right-clicking a tab
+offers Duplicate, Pin / Unpin, Mute / Unmute and Close, and both of Phase 8's tab
+surfaces arrived with it — plugin **actions** on the menu
+(`bb.browser.registerTabAction`, permission `tabMenu.register`) and plugin
+**decorators** on the tabs themselves
+(`contentScript.experimental_setBrowserTabStatus`). All three are driveable too
+(`tabs.pin`, `tabs.mute`, `tabs.duplicate` under `tabs.modify`). See
+[browser-surface.md](browser-surface.md) for the rules that turned out to matter:
+pinned tabs are a block rather than a flag, mute lives exactly as long as the
+page's `webContents`, and duplicate and mute do not apply to a bb screen.
+
+~~Still open: no drag reorder~~ — done: tabs reorder by drag (`@dnd-kit`, as the
+thread panel's strip does), and `tabs.move` drives the same reducer for a plugin
+or an agent. Still open: no audio indicator for a tab that is playing
+on its own — that one needs the shell to report what Chromium noticed, which the
+mute channel deliberately does not. Reopening a closed tab is done, with its page
+state ([browser-surface.md](browser-surface.md)). Tab overflow is covered: the
+strip clips at a width floor rather than scrolling, which is a
 [decided](browser-surface.md) trade rather than a gap.
 
 **Keyboard** — mostly closed
@@ -197,41 +211,201 @@ on a timer.
 
 `Cmd+F` is in too, and arrived with the find bar rather than as a binding; so
 did `Cmd+Shift+F` with fullscreen and `Cmd+Alt+I` with the developer panel —
-see [browser-surface.md](browser-surface.md). Still missing, and each blocked on
-a capability rather than on a binding: `Cmd+P` (needs a user-facing print) and
-the zoom trio (needs `setZoomLevel` on a browsed view). Those belong with their
-features, not with the keyboard.
+see [browser-surface.md](browser-surface.md). The zoom trio is in too, and it
+arrived the same way — with the capability rather than as a binding, because a
+chord that scales bb's own chrome instead of the page is not the binding being
+missing. `Cmd+P` is in too, and it needed the same thing — a
+user-facing print, not a chord.
 
 **Data**
 
-- **Bookmarks do not exist.** No manifest, no store, no UI, nothing in the
-  repository.
-- **History is 24 entries of localStorage.** `browser-history.ts:14` caps at
-  `BROWSER_HISTORY_MAX_ENTRIES = 24` per scope. That is a recents list, and it is
-  also everything the omnibox's history provider can ever see — the ranking work
-  in [omnibox.md](omnibox.md) is running against a 24-row corpus. No history
-  page, no search, no per-day view.
+- **Bookmarks do not exist**, and after a design pass on 2026-08-19 they are
+  **deliberately deferred** rather than pending. Not because they are expensive —
+  because they are the best available proof of what this browser claims. A plugin
+  can already own the whole feature: its own SQLite (`bb.storage.database`), an
+  entry on the tab menu and the page menu to save a page, an omnibox provider to
+  get it back, a site-info section for "this page is saved", and a panel for the
+  list. Building that in the core would spend the demonstration on the one
+  feature that could have made it.
+
+  What a plugin cannot do yet is exactly two named Phase 8 surfaces plus one
+  smaller thing: put a **star in the address bar** (toolbar items), put a section
+  on the **new-tab screen** (new-tab widgets), and own a chord —
+  `bb.ui.registerKeybinding` rebinds bb's _existing_ commands and refuses an
+  unknown id (`appCommandIdSchema`). So the order is: those surfaces first,
+  bookmarks as an example plugin on top of them. This is only the right call if
+  that example actually ships; a plugin nobody installs is not a feature.
+
+- ~~**History is 24 entries of localStorage.**~~ Done: it is a server table with
+  an API in front of it, searchable, capped at 10,000 distinct pages, and
+  readable and writable by plugins — see
+  [browser-history.md](browser-history.md). The omnibox now searches the store
+  per keystroke instead of ranking a 24-row corpus. Still missing, and named in
+  that document's Next section: a history **page** (no per-day view, no search
+  UI, no bulk delete).
 - No download **progress** and no history across restarts (downloads and their
-  list now work — see [browser-downloads.md](browser-downloads.md)), no
-  clear-browsing-data UI, and
-  no site-info popover — the padlock in the omnibox is decorative, computed from
-  the URL by `getBrowserUrlSecurity`.
+  list now work — see [browser-downloads.md](browser-downloads.md)), and no
+  clear-browsing-data UI. ~~No site-info popover — the padlock in the omnibox is
+  decorative, computed from the URL by `getBrowserUrlSecurity`.~~ Done: the
+  padlock is a button that opens what the browser can honestly say about the
+  connection, and it stopped lying in both directions — a certificate the user
+  waved through no longer gets a lock, and loopback no longer gets a warning.
+  Plugins add sections to the panel (`bb.browser.registerSiteInfoProvider`,
+  permission `siteInfo.register`). See
+  [browser-surface.md](browser-surface.md).
 
 **Everything else**
 
-Search engine is hardcoded (`SEARCH_ENGINE_URL`, `browser-url.ts:4` — Google,
-no setting). No incognito or profiles: one fixed `persist:bb-browser` partition.
-No autofill or password manager. No audio indicator, per-tab mute, picture-in-
-picture or media keys, and no Widevine in Electron, so DRM streaming will not
-play. Session restore carries URLs only — no scroll position, no form state.
+Search engine **was** hardcoded (`SEARCH_ENGINE_URL`, `browser-url.ts:4` — Google,
+no setting), and it was reshaped rather than deferred, for the reason bookmarks
+were deferred: a plugin cannot close it. `resolveOmniboxDefaultAction` resolves
+what Enter does **synchronously** from the query — deliberately, so pressing Enter
+before the debounce elapses does the same thing as after — while every plugin
+provider is asynchronous. The most a plugin could offer was a row the user picks
+with an arrow key.
 
-**Multiple windows** is the one structural item in this tier. Browser views are
-keyed `${hostWindow.webContents.id}:${tabId}`
-(`browserViewKey` in `desktop-browser-view.ts`), while surface tabs live in one module-scoped
-`atomWithStorage` over localStorage. Two app windows on `/browser` would
-therefore share a single tab list while each built its **own** `WebContentsView`
-for every tab in it — the same page loaded twice, and a tab list mutating under
-both. Not run; the keying and the storage are what imply it.
+So the engine is now a _declared_ choice: bb ships a few, plugins declare more
+(`bb.browser.registerSearchEngine`, permission `searchEngine.register`), and the
+setting picks among them. Declared rather than asked, like context-menu items, is
+what keeps Enter synchronous. The payoff beyond the setting is that an engine need
+not be a search engine — a plugin route that spawns an agent thread is a legal
+one, which is the thing an agent-first browser wants from its address bar. No incognito or profiles: one fixed `persist:bb-browser` partition.
+No autofill or password manager. ~~No per-tab mute~~ — done, from the tab's menu
+and over `tabs.mute`; still no audio _indicator_, no picture-in-picture and no
+media keys, and no Widevine in Electron, so DRM streaming will not play. Session restore carries URLs only — no scroll position, no form state.
+
+**Multiple windows** is the one structural item in this tier, and it is now
+**observed rather than inferred** — run by hand on 2026-08-19, and it behaves as
+the keying predicted. Browser views are keyed
+`${hostWindow.webContents.id}:${tabId}` (`browserViewKey` in
+`desktop-browser-view.ts`), while surface tabs live in one module-scoped
+`atomWithStorage` over localStorage under a key with no window in it
+(`getBrowserSurfaceTabsStorageKey`), whose sync storage subscribes to the
+`storage` event. So two app windows on `/browser` share one tab list — including
+`activeTabId`, which is why activating a tab in one window activates it in the
+other — while each builds its **own** `WebContentsView` for every tab in it.
+The result is not one tab shown twice but _two live copies of the page_: two sets
+of timers, two media elements, two form states.
+
+The same run turned up a crash that had nothing to do with the tab list and was
+fixed on the spot: closing a window threw `TypeError: Object has been destroyed`
+out of `browserViewKey`. Electron tears a `BrowserWindow`'s `webContents` down
+before the child views it owned finish closing, so the views were asking a gone
+window for its id while computing their own key. `releaseWindow` already took the
+id as a number for exactly that reason; the `destroyed` handler did not, and now
+captures it at wiring time. Two lies in the test fake are why it shipped — a
+plain `id` field that never threw, and a `close()` that set a flag without firing
+`destroyed`. Both now behave as Electron does.
+
+**Done**: each window gets its own tabs, the way a browser's windows do. The
+cost is not the storage key, it is that **the renderer has no window identity at
+all** — neither `desktop-contract` nor `bb-desktop.ts` carries one. Since browser
+IPC schemas are wire-frozen ([bb-migration.md](bb-migration.md), Invariant 2),
+that identity arrives as a new channel plus an optional method on
+`BbDesktopBrowserApi`, feature-detected — the shape already used for scoped popup
+requests and tab favicons. Scoping the tab store then follows, and two things
+have to be decided rather than derived: which window the agent's `browser_tabs_*`
+addresses (the focused one), and what session restore does with more than one
+list. History stays shared across windows — it is the user's, not the window's
+(see [browser-history.md](browser-history.md)).
+
+What it took was smaller than that reads, because two of the three pieces were
+already there. The server has modelled several browser hosts all along —
+`registerBrowserHost` keeps a map, `getBrowserHostSnapshot` reports `hostCount`,
+and the most recently registered window is the primary one an agent's commands
+reach — so nothing changed there. And the shell already assigns every window a
+`WindowStateKey` and persists its geometry under it, so the tab list needed no
+identity of its own: it hangs off the same key, and a window that reopens where
+it was reopens with what it had.
+
+The one new thing is how that key reaches the renderer. It cannot be a method,
+because the answer is needed while modules initialise — the tabs atom picks its
+storage key before anything can await — so it rides in as
+`--bb-window-key=<stateKey>` in the window's `additionalArguments` and lands as
+an optional `windowKey` on `BbDesktopApi`. Optional is the negotiation: a web
+build or an older shell has none, and per-window state falls back to the single
+shared store, which is exactly what every build did before. One migration comes
+with it: whichever window opens first adopts the pre-split list and deletes it,
+so upgrading does not lose the tabs the user had open and the _second_ window
+does not inherit them.
+
+Three things the first run of two real windows turned up, all fixed with it:
+
+- **A new window opened with two empty tabs.** The effect that guarantees the
+  surface a page read "no tabs" from a render it had already left, and React's
+  development double-invoke ran it twice — each run opening one. Invisible while
+  the store was shared, because it was never empty. The decision now happens
+  inside the state update, so whoever arrives second sees the first one's tab.
+- **Closing the last tab left an empty window.** It now closes, the way it does
+  in every other browser. That needed a renderer→shell call, which did not
+  exist: the only close plumbing ran the other way (the shell asking the
+  renderer whether Cmd+W may proceed). `closeWindow?()` is optional like the
+  rest, so a web build or an older shell keeps the empty new-tab screen.
+- **`window.new` moved from Mod+Shift+N to Mod+N**, and `thread.new` gave the
+  chord up — it keeps its existing Mod+Shift+O. Mod+N opens a window in every
+  other browser, and bb is one. Mod+Shift+N is now deliberately unassigned: it
+  is incognito everywhere else, and that window is still on this list.
+
+**Zoom** arrived with the same shape as the rest of this list's closed items:
+the capability was missing, not the chord. `setZoomFactor` existed only for the
+app window, and the View menu's Electron zoom roles act on that window's own
+`webContents` — so `Cmd+=` scaled bb's chrome while the page underneath stood
+still, and the window factory's `setZoomFactor(1)` on every load threw even that
+away. Now the shell scales the browsed view, and **reports back what Chromium
+settled on** rather than echoing the request: it clamps, and it also remembers
+zoom per site, so a tab that navigates to a site the user zoomed before arrives
+already scaled by a decision nobody made here. That is why zoom needed a push
+channel and not just a setter. The steps are Chrome's table (…90, 100, 110,
+125…) rather than a ratio, because those are the notches a user recognises.
+
+Plugins and agents reach it as `page.zoom`, charged to `page.interact` — it is
+less than a click, and anyone who can click can already do it. Out-of-range
+factors are refused by the command schema rather than clamped, because reporting
+a factor that was quietly changed reads to a model as a browser that lies. Two
+things are deliberately not in: the View menu still holds the Electron roles
+(pointing them at the surface would make the item inert on a thread, which is a
+separate trade to make), and no agent _tool_ wraps `page.zoom` — an agent reads
+the DOM, so the plugin API is the surface that was owed, not a tool nobody
+asked for.
+
+**Print** is `Cmd+P` on the browser surface, and the interesting part is that the
+chord was already taken: `file.quickOpen` held Mod+P everywhere in bb while being
+a second binding for what `panel.newTab` already did on Mod+T. So the command
+went rather than the chord being shared — see the note further down — and the
+test pins that Mod+P now resolves to `browser.print` alone.
+
+What the shell does is `webContents.print()` on the browsed view, and what it
+reports is nothing. Printed, saved-as-PDF and cancelled are one answer from
+here, and the dialog is the user's conversation, not this browser's. It is also
+**blocking** — owned by the app window, so bb is frozen while it is up, an agent
+waiting on a browser command included. That is the right trade for a chord the
+user just pressed and the wrong one for anything else, which is why nothing but
+`browser.print` can reach it: no plugin method, and no path from a page.
+
+Print therefore ships **without** a new plugin surface, deliberately. The
+programmatic half already exists and is better: `bb.browser.page.pdf()` renders
+the document with no dialog at all, which is what a plugin that files invoices or
+drives a label printer actually wants. A plugin-triggered modal would be a
+footgun wearing a contribution point's clothes.
+
+The chord is Mod+P alone now. It had been a _second_ binding for the panel's new
+tab — `panel.newTab` already owned Mod+T and both handlers called the same
+function — so print took it rather than shadowing it, and `file.quickOpen` is
+gone from the command list, its two duplicate handlers, and the launcher label
+that named it (which now names the chord that actually opens the launcher).
+
+Two things the first run of print and zoom turned up in the omnibox, both fixed:
+the source column was `w-14`, which clipped "History" and "Search" to "His…" and
+"Se…" — a column whose whole job is being scanned down; and the suggestion list
+spanned the chrome rather than the address bar, so a window-wide list hung under
+a much narrower input. The list now lives _inside_ the address bar's own flex
+column, which makes the width structural rather than measured, and it still takes
+layout height rather than overlaying the page — the constraint that has shaped
+this chrome from the start.
+
+An empty tab also focuses its address bar now: nothing to read, one thing to do,
+and Chrome's new-tab page does the same. Once per tab rather than on every URL
+push, or it would take focus back from a user who had already moved on.
 
 ## Tier 3 — decided, and worth not re-litigating
 
@@ -260,6 +434,12 @@ reasoning already written down somewhere in this directory or in a code comment:
 Changing any of these is legitimate — but as a reversal with a stated reason,
 the way favicons were reversed, not as filling in a blank.
 
+## Where the deferred work is listed
+
+Everything this document decided _not_ to do is collected in
+[../TODO.md](../TODO.md), with the reason and the test that sorted it ("can a
+plugin close this gap today?"). The arguments stay here; that file is the index.
+
 ## What the gaps have in common
 
 Three patterns, and each suggests a different kind of fix:
@@ -285,7 +465,8 @@ Three patterns, and each suggests a different kind of fix:
    and were missing only a command table, menu entries, a UI — which is why
    those items closed cheaply and downloads and popups did not. The asymmetry
    still predicts cost in what is left: a tab context menu is renderer work,
-   zoom and print are not.
+   zoom and print are not. Both halves of that held — the menu needed no shell
+   work at all beyond the one channel mute required.
 
 ## Ordering
 
@@ -318,9 +499,38 @@ By value against cost, not by tier:
    imitation. It did argue with the CDP decision as predicted, and the argument
    was already settled — see [browser-surface.md](browser-surface.md).
 
-History's 24-entry cap sits outside this list: it is cheap to raise and it
-changes what the omnibox can do, so it belongs with whatever omnibox work comes
-next rather than with browser features.
+9. ~~**The tab menu, with pin / duplicate / mute**~~ — done, and the prediction
+   above held: it was renderer work, apart from the one channel muting needed.
+   One thing it did _not_ predict: a renderer-drawn menu over the page area opens
+   **behind** it, because the page is a native view — so the menu had to take the
+   freeze-and-overlay path the downloads dropdown already used. Drag reorder
+   landed with it.
+   It also carried both of Phase 8's tab surfaces, which is where the cost
+   actually was — a plugin's entry on the menu runs on the backend like a
+   context-menu item, while a plugin's mark on a tab is the frontend's, like a
+   thread row's status. See [browser-surface.md](browser-surface.md).
+
+10. ~~**Site-info popover**~~ — done, and the interesting part was not the
+    panel. The padlock was a decoration derived from the address bar, which made
+    it wrong for the two cases bb can actually distinguish: a certificate a human
+    accepted after Chromium refused it (encrypted, unidentified — and the
+    exception applies to every later tab on that host) and loopback (no network to
+    listen on, which is how bb serves its own pages). The shell now reports the
+    one fact only it knows, on its own channel, and the panel says what is _not_
+    checked instead of implying it was.
+
+11. ~~**Search engine**~~ — done, and reshaped on the way: not a setting with a
+    list of presets, but a declared plugin point with a setting that picks among
+    what is declared. The test that decided it is the one that deferred bookmarks,
+    run the other way — a plugin _cannot_ close this gap, because Enter resolves
+    synchronously and every provider is asynchronous. See
+    [omnibox.md](omnibox.md) for the shape and [../TODO.md](../TODO.md) for the
+    test.
+
+History's 24-entry cap sat outside this list — cheap to raise, and it changed
+what the omnibox could do rather than what the browser could do. It is done:
+[browser-history.md](browser-history.md). What it left behind is a UI item (a
+history page) rather than a capability.
 
 ## Not verified
 

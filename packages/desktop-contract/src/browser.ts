@@ -142,12 +142,99 @@ export type BbDesktopBrowserSetVisibleRequest = z.infer<
   typeof bbDesktopBrowserSetVisibleRequestSchema
 >;
 
+/**
+ * Page zoom as a factor, where 1 is 100%.
+ *
+ * A factor rather than Chromium's zoom *level* (a log scale where each step is
+ * a factor of 1.2) because everything that reads this is showing a percentage
+ * to a user or being handed one by a plugin. The shell converts.
+ *
+ * The range is Chrome's own, and it is enforced on both sides: the renderer
+ * clamps so its steps cannot walk out, and the shell clamps because a plugin
+ * can ask for anything.
+ */
+export const BB_DESKTOP_BROWSER_MIN_ZOOM_FACTOR = 0.25;
+export const BB_DESKTOP_BROWSER_MAX_ZOOM_FACTOR = 5;
+
+const bbDesktopBrowserZoomFactorSchema = z
+  .number()
+  .min(BB_DESKTOP_BROWSER_MIN_ZOOM_FACTOR)
+  .max(BB_DESKTOP_BROWSER_MAX_ZOOM_FACTOR);
+
+export const bbDesktopBrowserSetZoomRequestSchema = z
+  .object({
+    tabId: z.string().min(1),
+    factor: bbDesktopBrowserZoomFactorSchema,
+  })
+  .strict();
+export type BbDesktopBrowserSetZoomRequest = z.infer<
+  typeof bbDesktopBrowserSetZoomRequestSchema
+>;
+
+/** What a tab's zoom became, whoever changed it. */
+export const bbDesktopBrowserZoomSchema = z
+  .object({
+    tabId: z.string().min(1),
+    factor: bbDesktopBrowserZoomFactorSchema,
+  })
+  .strict();
+export type BbDesktopBrowserZoom = z.infer<typeof bbDesktopBrowserZoomSchema>;
+
+export type BbDesktopBrowserZoomHandler = (zoom: BbDesktopBrowserZoom) => void;
+
+/**
+ * Silence a tab's page, or let it speak again.
+ *
+ * Mute belongs to the `webContents`, so it lasts exactly as long as the view
+ * does — see `browser-tab-mute.ts` in the app for what the renderer promises on
+ * top of that.
+ */
+export const bbDesktopBrowserSetMutedRequestSchema = z
+  .object({
+    tabId: z.string().min(1),
+    muted: z.boolean(),
+  })
+  .strict();
+export type BbDesktopBrowserSetMutedRequest = z.infer<
+  typeof bbDesktopBrowserSetMutedRequestSchema
+>;
+
+/**
+ * What the shell knows about a page's connection that its URL does not say.
+ *
+ * Exactly one thing, deliberately: whether the page is being served under a
+ * certificate a human chose to trust after Chromium refused it. Encryption
+ * itself is readable from the scheme, and the renderer derives it there rather
+ * than being told twice.
+ *
+ * What this does **not** carry is Chromium's own security state — mixed content,
+ * an obsolete cipher, a revoked certificate. That lives behind the DevTools
+ * protocol, and a tab may have only one protocol client: making the padlock
+ * depend on it would break it whenever the developer panel is open.
+ */
+export const bbDesktopBrowserPageSecuritySchema = z
+  .object({
+    tabId: z.string().min(1),
+    certificateTrustedByUser: z.boolean(),
+  })
+  .strict();
+export type BbDesktopBrowserPageSecurity = z.infer<
+  typeof bbDesktopBrowserPageSecuritySchema
+>;
+
+export type BbDesktopBrowserPageSecurityHandler = (
+  security: BbDesktopBrowserPageSecurity,
+) => void;
+
 /** Ref for tab-scoped commands with no other payload (detach/back/forward/reload/stop). */
 export const bbDesktopBrowserTabRefSchema = z
   .object({
     tabId: z.string().min(1),
   })
   .strict();
+export type BbDesktopBrowserTabRef = z.infer<
+  typeof bbDesktopBrowserTabRefSchema
+>;
 
 /**
  * Current navigation state of a browser view, pushed main → renderer on every
@@ -2123,6 +2210,53 @@ export interface BbDesktopBrowserApi {
   onFavicon?(
     listener: BbDesktopBrowserFaviconHandler,
   ): BbDesktopBrowserUnsubscribe;
+  /**
+   * Print a tab's page, which opens the OS print dialog.
+   *
+   * Optional for the same version skew as {@link BbDesktopBrowserApi.onFavicon}.
+   * Nothing comes back: whether the user printed, saved to PDF or cancelled is
+   * between them and the dialog, and none of the three is this browser's
+   * business. For a document a *program* wants, `page.observe` with a `pdf`
+   * observation renders one without a dialog at all.
+   */
+  print?(request: BbDesktopBrowserTabRef): void;
+  /**
+   * Scale a tab's page. Optional for the same version skew as
+   * {@link BbDesktopBrowserApi.onFavicon}; a caller that finds it missing has
+   * an older shell and leaves zoom alone rather than pretending to change it.
+   */
+  setZoom?(request: BbDesktopBrowserSetZoomRequest): void;
+  /**
+   * Silence a tab's page. Optional for the same version skew as
+   * {@link BbDesktopBrowserApi.onFavicon}.
+   *
+   * No push back, unlike zoom: this renderer is the only one who mutes, and
+   * Chromium never decides on its own that a page should be silent. What it does
+   * decide on its own is whether a page is *playing*, and that is a different
+   * question this channel deliberately does not answer.
+   */
+  setMuted?(request: BbDesktopBrowserSetMutedRequest): void;
+  /**
+   * Subscribe to what the shell knows about a tab's connection — see
+   * {@link bbDesktopBrowserPageSecuritySchema}. Pushed on every committed
+   * navigation, so the omnibox never describes the previous page.
+   *
+   * Optional for the same version skew as {@link BbDesktopBrowserApi.onFavicon}:
+   * a renderer that finds it missing knows only what the URL says, which is what
+   * every build knew before.
+   */
+  onPageSecurity?(
+    listener: BbDesktopBrowserPageSecurityHandler,
+  ): BbDesktopBrowserUnsubscribe;
+  /**
+   * Subscribe to what a tab's zoom became.
+   *
+   * Needed as well as {@link BbDesktopBrowserApi.setZoom} because the renderer
+   * is not the only one who changes it: Chromium remembers zoom per site and
+   * restores it when a tab navigates there, so a page can arrive already
+   * scaled by a decision the user made on a different tab.
+   */
+  onZoom?(listener: BbDesktopBrowserZoomHandler): BbDesktopBrowserUnsubscribe;
   /**
    * Subscribe to downloads a browsed page started. Optional for the same
    * version skew as {@link BbDesktopBrowserApi.onFavicon}: a shell that

@@ -464,6 +464,10 @@ const browserVideoChapterSchema = z.object({
   title: z.string().max(BROWSER_COMMAND_MAX_CHAPTER_TITLE_LENGTH),
 });
 
+/** Chrome's own range, and the range the desktop shell enforces. */
+export const BROWSER_COMMAND_MIN_ZOOM_FACTOR = 0.25;
+export const BROWSER_COMMAND_MAX_ZOOM_FACTOR = 5;
+
 export const browserCommandSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("tabs.list") }),
   z.object({
@@ -473,8 +477,53 @@ export const browserCommandSchema = z.discriminatedUnion("type", [
   }),
   z.object({ type: z.literal("tabs.close"), tabId: z.string().min(1) }),
   z.object({ type: z.literal("tabs.activate"), tabId: z.string().min(1) }),
+  /**
+   * Pin or unpin a tab, which moves it into or out of the strip's pinned block.
+   *
+   * Explicit rather than a toggle, so asking twice lands where asking once did —
+   * a caller that cannot see the strip has no way to check first.
+   */
+  z.object({
+    type: z.literal("tabs.pin"),
+    tabId: z.string().min(1),
+    pinned: z.boolean(),
+  }),
+  /** Silence a tab's page, or let it speak again. Explicit, like pinning. */
+  z.object({
+    type: z.literal("tabs.mute"),
+    tabId: z.string().min(1),
+    muted: z.boolean(),
+  }),
+  /** Copy a tab beside itself and answer with the copy. */
+  z.object({ type: z.literal("tabs.duplicate"), tabId: z.string().min(1) }),
+  /**
+   * Move a tab to a position in the strip, counting from 0.
+   *
+   * The index is clamped into the tab's own block — pinned tabs lead the strip —
+   * so a position past either end means "as far as it goes" rather than an error.
+   */
+  z.object({
+    type: z.literal("tabs.move"),
+    tabId: z.string().min(1),
+    toIndex: z.number().int().nonnegative(),
+  }),
   z.object({ type: z.literal("page.get_url"), tabId: optionalTabIdSchema }),
   z.object({ type: z.literal("page.get_title"), tabId: optionalTabIdSchema }),
+  /**
+   * Scale the page, and answer with what it became.
+   *
+   * Set-and-report rather than a separate read: Chromium clamps, and it also
+   * remembers zoom per site, so what a tab ends up at is its answer to give
+   * rather than the caller's to assume.
+   */
+  z.object({
+    type: z.literal("page.zoom"),
+    tabId: optionalTabIdSchema,
+    factor: z
+      .number()
+      .min(BROWSER_COMMAND_MIN_ZOOM_FACTOR)
+      .max(BROWSER_COMMAND_MAX_ZOOM_FACTOR),
+  }),
   z.object({
     type: z.literal("page.get_text"),
     tabId: optionalTabIdSchema,
@@ -505,7 +554,11 @@ export const browserCommandSchema = z.discriminatedUnion("type", [
      * asymmetry version skew buys: this wire ships with the server that serves
      * it, so it can grow a field; that one cannot.
      */
-    selector: z.string().min(1).max(BROWSER_COMMAND_MAX_SELECTOR_LENGTH).nullable(),
+    selector: z
+      .string()
+      .min(1)
+      .max(BROWSER_COMMAND_MAX_SELECTOR_LENGTH)
+      .nullable(),
   }),
   z.object({
     type: z.literal("page.interact"),
@@ -600,6 +653,7 @@ export const browserCommandValueSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("url"), url: z.string() }),
   z.object({ type: z.literal("answered"), answered: z.boolean() }),
   z.object({ type: z.literal("title"), title: z.string().nullable() }),
+  z.object({ type: z.literal("zoom"), factor: z.number() }),
   z.object({
     type: z.literal("text"),
     text: z.string().max(BROWSER_COMMAND_MAX_PAGE_TEXT_LENGTH),

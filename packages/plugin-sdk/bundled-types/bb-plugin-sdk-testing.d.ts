@@ -5,7 +5,7 @@
 // Confused by the API, or need a symbol that isn't here? Clone the BB repo
 // and read the real source: https://github.com/get-bb/bb
 
-import { BbPluginApi, PluginSettingValue, PluginSharedPortTunnelIdentity, PluginAgentToolExperimentalStatusLabels, PluginAgentToolContext, PluginAgentToolResult, PluginCliCommandInfo, PluginCliContext, PluginCliResult, PluginHttpAuthMode, PluginHttpHandler, PluginMentionTrigger, PluginMentionSearchContext, PluginMentionItem, PluginBrowserConsoleEntry, PluginBrowserNetworkEntry, PluginBrowserCookie, PluginBrowserStorageItem, PluginBrowserErrorCode, JsonValue, PluginCliExecutionResult, PluginThreadEventName, PluginThreadEventPayloads, PluginAgentConfigurationContext, PluginSettingDescriptors, PluginAgentConfiguration, PluginOmniboxSuggestContext, PluginOmniboxSuggestion, PluginOmniboxRunContext, PluginOmniboxRunResult, PluginKeybinding, PluginBrowserDownloadHandler, PluginBrowserContextMenuItemRegistration, PluginBrowserFindActionRegistration, PluginBrowserAuthProvider, PluginBrowserPdfTextProvider, PluginInteractionRequest } from '@bb/plugin-sdk';
+import { BbPluginApi, PluginSettingValue, PluginSharedPortTunnelIdentity, PluginAgentToolExperimentalStatusLabels, PluginAgentToolContext, PluginAgentToolResult, PluginCliCommandInfo, PluginCliContext, PluginCliResult, PluginHttpAuthMode, PluginHttpHandler, PluginMentionTrigger, PluginMentionSearchContext, PluginMentionItem, PluginBrowserConsoleEntry, PluginBrowserNetworkEntry, PluginBrowserCookie, PluginBrowserStorageItem, PluginBrowserErrorCode, JsonValue, PluginCliExecutionResult, PluginThreadEventName, PluginThreadEventPayloads, PluginAgentConfigurationContext, PluginSettingDescriptors, PluginAgentConfiguration, PluginOmniboxSuggestContext, PluginOmniboxSuggestion, PluginOmniboxRunContext, PluginOmniboxRunResult, PluginKeybinding, PluginBrowserDownloadHandler, PluginBrowserContextMenuItemRegistration, PluginBrowserFindActionRegistration, PluginBrowserTabActionRegistration, PluginBrowserSiteInfoProviderRegistration, PluginBrowserSearchEngineRegistration, PluginBrowserAuthProvider, PluginBrowserPdfTextProvider, PluginBrowserHistoryFilter, PluginInteractionRequest } from '@bb/plugin-sdk';
 
 /**
  * What a plugin declares it will use, and what the host lets it reach.
@@ -36,7 +36,7 @@ import { BbPluginApi, PluginSettingValue, PluginSharedPortTunnelIdentity, Plugin
  * Every permission, grouped by what it opens. The array is the source of truth:
  * the zod schema, the manifest validator and the docs guard all read it.
  */
-declare const PLUGIN_PERMISSIONS: readonly ["tabs.read", "page.read", "network.observe", "tabs.modify", "page.interact", "page.inject", "network.intercept", "page.credentials", "page.record", "omnibox.register", "contextMenu.register", "find.register", "downloads.handle", "auth.provide", "pdf.provide", "threads", "filesystem", "shell", "workspace", "plugins"];
+declare const PLUGIN_PERMISSIONS: readonly ["tabs.read", "page.read", "network.observe", "tabs.modify", "page.interact", "page.inject", "network.intercept", "page.credentials", "page.record", "omnibox.register", "contextMenu.register", "tabMenu.register", "find.register", "siteInfo.register", "searchEngine.register", "downloads.handle", "auth.provide", "pdf.provide", "history", "threads", "filesystem", "shell", "workspace", "plugins"];
 type PluginPermission = (typeof PLUGIN_PERMISSIONS)[number];
 
 /**
@@ -298,10 +298,18 @@ interface FakePluginRegistrations {
     contextMenuItems: PluginBrowserContextMenuItemRegistration[];
     /** Buttons from `bb.browser.registerFindAction`, in registration order. */
     findActions: PluginBrowserFindActionRegistration[];
+    /** Entries from `bb.browser.registerTabAction`, in registration order. */
+    tabActions: PluginBrowserTabActionRegistration[];
+    /** Providers from `bb.browser.registerSiteInfoProvider`, in order. */
+    siteInfoProviders: PluginBrowserSiteInfoProviderRegistration[];
+    /** Engines from `bb.browser.registerSearchEngine`, in registration order. */
+    searchEngines: PluginBrowserSearchEngineRegistration[];
     /** Providers from `bb.browser.registerAuthProvider`, in registration order. */
     authProviders: PluginBrowserAuthProvider[];
     /** Providers from `bb.browser.registerPdfTextProvider`, in order. */
     pdfTextProviders: PluginBrowserPdfTextProvider[];
+    /** Filters from `bb.browser.registerHistoryFilter`, in registration order. */
+    historyFilters: PluginBrowserHistoryFilter[];
 }
 /** Read-only state for assertions after a plugin registers or handles work. */
 interface FakePluginInspectionState {

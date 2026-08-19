@@ -1,5 +1,6 @@
 import type {
   ComposerCustomization,
+  PluginBrowserTabStatus,
   PluginComposerThreadRowStatus,
 } from "@bb/plugin-sdk";
 
@@ -7,6 +8,17 @@ export const PLUGIN_SLOT_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
 const PLUGIN_MESSAGE_DIRECTIVE_ID_PATTERN = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
 
 type RejectionReporter = (reason: string) => void;
+
+/**
+ * The shape both host-rendered plugin status glyphs share: a thread row's and a
+ * browser tab's. One validator because they are one shape — what differs is the
+ * name in the rejection message, which is what a plugin author needs to see.
+ */
+interface PluginStatusGlyph {
+  icon: string;
+  label: string;
+  tone?: "default" | "running" | "success" | "error";
+}
 
 /**
  * Parse the runtime value handed to
@@ -17,7 +29,34 @@ export function normalizePluginThreadRowStatus(
   value: unknown,
   onRejected: RejectionReporter,
 ): PluginComposerThreadRowStatus | null | undefined {
-  const kind = "contentScript.experimental_setThreadRowStatus";
+  return normalizePluginStatusGlyph(
+    "contentScript.experimental_setThreadRowStatus",
+    value,
+    onRejected,
+  );
+}
+
+/**
+ * Parse the runtime value handed to
+ * `PluginContentScriptContext.experimental_setBrowserTabStatus`, on the same
+ * terms as {@link normalizePluginThreadRowStatus}.
+ */
+export function normalizePluginBrowserTabStatus(
+  value: unknown,
+  onRejected: RejectionReporter,
+): PluginBrowserTabStatus | null | undefined {
+  return normalizePluginStatusGlyph(
+    "contentScript.experimental_setBrowserTabStatus",
+    value,
+    onRejected,
+  );
+}
+
+function normalizePluginStatusGlyph(
+  kind: string,
+  value: unknown,
+  onRejected: RejectionReporter,
+): PluginStatusGlyph | null | undefined {
   if (value === null) return null;
   if (typeof value !== "object" || Array.isArray(value)) {
     onRejected(`${kind}: status must be null or a non-array object`);

@@ -81,6 +81,7 @@ vi.mock("@/lib/bb-desktop", () => ({
   MACOS_WINDOW_DRAG_CLASS: "",
   MACOS_WINDOW_NO_DRAG_CLASS: "",
   getBbDesktopInfo: () => null,
+  getDesktopWindowKey: () => null,
   // No desktop: the layout hosts no browser surface, matching getBbDesktopInfo.
   isDesktopBrowserAvailable: () => false,
   shouldReserveMacosTrafficLights: () => false,

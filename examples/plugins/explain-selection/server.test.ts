@@ -32,10 +32,27 @@ async function load(
   return host;
 }
 
+const TAB_CONTEXT = {
+  tabId: "tab-1",
+  url: "https://example.test/spec",
+  title: "The spec",
+  pinned: false,
+  muted: false,
+  active: true,
+};
+
 function item(host: FakePluginHost) {
   const record = host.harness.registrations.contextMenuItems[0];
   if (record === undefined) {
     throw new Error("no context menu item registered");
+  }
+  return record;
+}
+
+function tabAction(host: FakePluginHost) {
+  const record = host.harness.registrations.tabActions[0];
+  if (record === undefined) {
+    throw new Error("no tab action registered");
   }
   return record;
 }
@@ -126,6 +143,58 @@ describe("explain-selection", () => {
     expect(host.harness.logEntries.at(-1)?.message).toContain(
       "could not open http://127.0.0.1:38886/threads/th_1",
     );
+  });
+
+  it("registers one tab entry too, offered on every tab", async () => {
+    const host = await load({ project: PROJECT_ID });
+
+    expect(host.harness.registrations.tabActions).toHaveLength(1);
+    expect(tabAction(host)).toMatchObject({
+      id: "explain-page",
+      title: "Explain this page",
+    });
+  });
+
+  it("contributes no tab entry until a project is configured", async () => {
+    const host = await load();
+
+    expect(host.harness.registrations.tabActions).toEqual([]);
+  });
+
+  it("spawns a thread for a whole page from the tab menu", async () => {
+    const host = await load({ project: PROJECT_ID });
+
+    await tabAction(host).run(TAB_CONTEXT);
+
+    expect(host.harness.sdk.callsTo("threads.spawn")).toEqual([
+      [
+        expect.objectContaining({
+          projectId: PROJECT_ID,
+          title: "Explain page: The spec",
+        }),
+      ],
+    ]);
+    // The address and the title are both page-supplied, so both sit after the
+    // marker with the rest of the quoted material.
+    const prompt = promptOf(host);
+    const marker = prompt.indexOf("--- quoted page content follows ---");
+    expect(prompt.indexOf("https://example.test/spec")).toBeGreaterThan(marker);
+    expect(prompt.indexOf("The spec")).toBeGreaterThan(marker);
+  });
+
+  // A tab action is offered on every tab, so the entry itself has to refuse the
+  // ones with nothing to explain: a bb screen (null url) and a tab with no page
+  // yet (empty url).
+  it("refuses a tab with no page", async () => {
+    const host = await load({ project: PROJECT_ID });
+
+    await expect(
+      tabAction(host).run({ ...TAB_CONTEXT, url: null }),
+    ).rejects.toThrow(/no page/u);
+    await expect(
+      tabAction(host).run({ ...TAB_CONTEXT, url: "" }),
+    ).rejects.toThrow(/no page/u);
+    expect(host.harness.sdk.callsTo("threads.spawn")).toEqual([]);
   });
 
   it("refuses a selection that is only whitespace", async () => {
