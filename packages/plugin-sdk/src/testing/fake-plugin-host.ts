@@ -43,6 +43,9 @@ import type {
   PluginBrowserFindActionRegistration,
   PluginBrowserSearchEngineRegistration,
   PluginBrowserSiteInfoProviderRegistration,
+  PluginBrowserToolbarItemRegistration,
+  PluginBrowserNewTabWidgetRegistration,
+  PluginCommandRegistration,
   PluginBrowserTabActionRegistration,
   PluginBrowserDownloadHandler,
   PluginBrowserConsoleEntry,
@@ -467,6 +470,12 @@ export interface FakePluginRegistrations {
   tabActions: PluginBrowserTabActionRegistration[];
   /** Providers from `bb.browser.registerSiteInfoProvider`, in order. */
   siteInfoProviders: PluginBrowserSiteInfoProviderRegistration[];
+  /** Controls from `bb.browser.registerToolbarItem` — at most one. */
+  toolbarItems: PluginBrowserToolbarItemRegistration[];
+  /** Sections from `bb.browser.registerNewTabWidget`, in registration order. */
+  newTabWidgets: PluginBrowserNewTabWidgetRegistration[];
+  /** Commands from `bb.ui.registerCommand`, in registration order. */
+  commands: PluginCommandRegistration[];
   /** Engines from `bb.browser.registerSearchEngine`, in registration order. */
   searchEngines: PluginBrowserSearchEngineRegistration[];
   /** Providers from `bb.browser.registerAuthProvider`, in registration order. */
@@ -1835,6 +1844,55 @@ function createFakePluginHostInternal(
       // has no command table, so it records what it was given.
       keybindings.push(keybinding);
     },
+    registerCommand(command) {
+      assertLive();
+      if (typeof command?.id !== "string" || command.id.length === 0) {
+        throw new Error("registerCommand needs an id");
+      }
+      if (typeof command.title !== "string" || command.title.trim() === "") {
+        throw new Error(`command "${command.id}" must provide a title`);
+      }
+      if (typeof command.run !== "function") {
+        throw new Error(
+          `command "${command.id}" must provide a run() function`,
+        );
+      }
+      // The host's own refusal: a command with no chord could not be run, since
+      // there is no palette to find it in.
+      if (
+        typeof command.shortcut?.key !== "string" ||
+        command.shortcut.key.length === 0
+      ) {
+        throw new Error(`command "${command.id}" needs a shortcut with a key`);
+      }
+      if (commands.some((record) => record.id === command.id)) {
+        throw new Error(`command "${command.id}" is already registered`);
+      }
+      // The host's other refusal: one plugin binding one chord twice is a mistake
+      // it can fix, so a plugin's test sees it here rather than at load time.
+      if (
+        commands.some(
+          (record) =>
+            record.shortcut.key.toLowerCase() ===
+              command.shortcut.key.toLowerCase() &&
+            (record.shortcut.alt ?? false) ===
+              (command.shortcut.alt ?? false) &&
+            (record.shortcut.control ?? false) ===
+              (command.shortcut.control ?? false) &&
+            (record.shortcut.meta ?? false) ===
+              (command.shortcut.meta ?? false) &&
+            (record.shortcut.mod ?? false) ===
+              (command.shortcut.mod ?? false) &&
+            (record.shortcut.shift ?? false) ===
+              (command.shortcut.shift ?? false),
+        )
+      ) {
+        throw new Error(
+          `command "${command.id}" wants a shortcut this plugin already bound to another command`,
+        );
+      }
+      commands.push(command);
+    },
   };
 
   // --- browser ---
@@ -2022,6 +2080,9 @@ function createFakePluginHostInternal(
   const findActions: PluginBrowserFindActionRegistration[] = [];
   const tabActions: PluginBrowserTabActionRegistration[] = [];
   const siteInfoProviders: PluginBrowserSiteInfoProviderRegistration[] = [];
+  const toolbarItems: PluginBrowserToolbarItemRegistration[] = [];
+  const newTabWidgets: PluginBrowserNewTabWidgetRegistration[] = [];
+  const commands: PluginCommandRegistration[] = [];
   const searchEngines: PluginBrowserSearchEngineRegistration[] = [];
   const authProviders: PluginBrowserAuthProvider[] = [];
   const pdfTextProviders: PluginBrowserPdfTextProvider[] = [];
@@ -2122,6 +2183,57 @@ function createFakePluginHostInternal(
         );
       }
       siteInfoProviders.push(provider);
+    },
+    registerToolbarItem(item) {
+      assertLive();
+      permissionGate.assert(
+        "toolbar.register",
+        "bb.browser.registerToolbarItem",
+      );
+      if (typeof item?.id !== "string" || item.id.length === 0) {
+        throw new Error("registerToolbarItem needs an id");
+      }
+      if (typeof item.title !== "string" || item.title.trim().length === 0) {
+        throw new Error(`toolbar item "${item.id}" must provide a title`);
+      }
+      if (typeof item.run !== "function") {
+        throw new Error(
+          `toolbar item "${item.id}" must provide a run(context) function`,
+        );
+      }
+      // The host's own refusal, so a plugin that wants two controls finds out
+      // here rather than from a row that never appeared.
+      if (toolbarItems.length > 0) {
+        throw new Error(
+          `toolbar item "${toolbarItems[0]?.id}" is already registered — a plugin may contribute one toolbar control`,
+        );
+      }
+      toolbarItems.push(item);
+    },
+    registerNewTabWidget(widget) {
+      assertLive();
+      permissionGate.assert(
+        "newTab.register",
+        "bb.browser.registerNewTabWidget",
+      );
+      if (typeof widget?.id !== "string" || widget.id.length === 0) {
+        throw new Error("registerNewTabWidget needs an id");
+      }
+      if (
+        typeof widget.label !== "string" ||
+        widget.label.trim().length === 0
+      ) {
+        throw new Error(`new tab widget "${widget.id}" must provide a label`);
+      }
+      if (typeof widget.rows !== "function") {
+        throw new Error(
+          `new tab widget "${widget.id}" must provide a rows(context) function`,
+        );
+      }
+      if (newTabWidgets.some((record) => record.id === widget.id)) {
+        throw new Error(`new tab widget "${widget.id}" is already registered`);
+      }
+      newTabWidgets.push(widget);
     },
     registerSearchEngine(engine) {
       assertLive();
@@ -3057,6 +3169,9 @@ function createFakePluginHostInternal(
       findActions,
       tabActions,
       siteInfoProviders,
+      toolbarItems,
+      newTabWidgets,
+      commands,
       searchEngines,
       authProviders,
       pdfTextProviders,

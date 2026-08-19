@@ -22,6 +22,20 @@ import {
 const testState = vi.hoisted(() => ({
   calls: [] as string[],
   showKeyboardHints: true,
+  pluginCommands: [] as {
+    pluginId: string;
+    commandId: string;
+    title: string;
+    shortcut: {
+      key: string;
+      alt: boolean;
+      control: boolean;
+      meta: boolean;
+      mod: boolean;
+      shift: boolean;
+    };
+  }[],
+  pluginRuns: [] as string[],
   keybindings: [
     {
       command: "thread.new" as const,
@@ -187,6 +201,14 @@ vi.mock("@/hooks/queries/system-queries", () => ({
 vi.mock("@/lib/bb-desktop", () => ({
   getBbDesktopInfo: () => null,
 }));
+vi.mock("@/hooks/queries/plugin-contribution-queries", () => ({
+  usePluginContributions: () => ({
+    data: { commands: testState.pluginCommands },
+  }),
+  runPluginCommand: async (args: { pluginId: string; commandId: string }) => {
+    testState.pluginRuns.push(`${args.pluginId}:${args.commandId}`);
+  },
+}));
 
 interface HandlerProps {
   command?: AppCommandId;
@@ -268,8 +290,30 @@ afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
   testState.calls.length = 0;
+  testState.pluginCommands.length = 0;
+  testState.pluginRuns.length = 0;
   testState.showKeyboardHints = true;
 });
+
+function pluginCommand(shortcut: {
+  key: string;
+  mod?: boolean;
+  shift?: boolean;
+}) {
+  return {
+    pluginId: "notes",
+    commandId: "save-page",
+    title: "Save this page",
+    shortcut: {
+      key: shortcut.key,
+      alt: false,
+      control: false,
+      meta: false,
+      mod: shortcut.mod ?? false,
+      shift: shortcut.shift ?? false,
+    },
+  };
+}
 
 describe("AppCommandProvider", () => {
   it("shares shortcut-hint modifier state after 700ms and clears it on release or blur", () => {
@@ -522,5 +566,69 @@ describe("AppCommandProvider", () => {
     expect(testState.calls).toEqual([]);
     expect(dispatchReload(inside).defaultPrevented).toBe(true);
     expect(testState.calls).toEqual(["browser"]);
+  });
+
+  // Commands plugins added (`app.commands`). They are matched here rather than by
+  // a listener of their own so precedence is decided in one place.
+  describe("plugin commands", () => {
+    /** A main surface with one of bb's own commands handled on it. */
+    function Surface() {
+      useAppCommandContext("mainSurface", true);
+      return <Handler command="thread.new" name="thread.new" result={true} />;
+    }
+
+    function dispatchChord(
+      init: KeyboardEventInit,
+      target: EventTarget = window,
+    ): KeyboardEvent {
+      const event = new KeyboardEvent("keydown", {
+        bubbles: true,
+        cancelable: true,
+        ...init,
+      });
+      target.dispatchEvent(event);
+      return event;
+    }
+
+    it("runs a plugin command when its chord fires", () => {
+      testState.pluginCommands.push(pluginCommand({ key: "d", mod: true }));
+      renderProvider(<Surface />);
+
+      const event = dispatchChord({ ctrlKey: true, key: "d" });
+
+      expect(testState.pluginRuns).toEqual(["notes:save-page"]);
+      expect(event.defaultPrevented).toBe(true);
+    });
+
+    // bb's own binding is matched first and consumes the event, so the plugin's
+    // command never sees a chord the app already uses — the user's shortcut keeps
+    // doing what they expect, and a plugin cannot take it.
+    it("leaves a chord bb already uses to bb", () => {
+      testState.pluginCommands.push(
+        pluginCommand({ key: "o", mod: true, shift: true }),
+      );
+      renderProvider(<Surface />);
+
+      dispatchChord({ ctrlKey: true, shiftKey: true, key: "O" });
+
+      expect(testState.calls).toEqual(["thread.new"]);
+      expect(testState.pluginRuns).toEqual([]);
+    });
+
+    // The one scope rule a plugin command gets, and it is bb's own: a chord that
+    // fired mid-word would be a plugin taking a key from the thing in front of
+    // the user.
+    it("does not fire while the user is typing", () => {
+      testState.pluginCommands.push(pluginCommand({ key: "d", mod: true }));
+      renderProvider(<Surface />);
+      const input = document.createElement("input");
+      document.body.append(input);
+      input.focus();
+
+      dispatchChord({ ctrlKey: true, key: "d" }, input);
+
+      expect(testState.pluginRuns).toEqual([]);
+      input.remove();
+    });
   });
 });

@@ -8,6 +8,14 @@ import { AppCommandProvider } from "@/components/commands/AppCommandProvider";
 import { PaneContext, type PaneContextValue } from "./PaneContext";
 import { ThreadRenameCommandHandler } from "./ThreadRenameCommandHandler";
 
+// The command provider reads plugin commands (`app.commands`); nothing here
+// contributes one, and this keeps the test off a query client it has no use
+// for.
+vi.mock("@/hooks/queries/plugin-contribution-queries", () => ({
+  usePluginContributions: () => ({ data: undefined }),
+  runPluginCommand: async () => {},
+}));
+
 const mocks = vi.hoisted(() => ({
   requestRename: vi.fn(),
 }));

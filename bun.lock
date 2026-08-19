@@ -399,6 +399,18 @@
         "zod": "^4.0.0",
       },
     },
+    "examples/plugins/bookmarks": {
+      "name": "bb-plugin-bookmarks",
+      "version": "0.1.0",
+      "devDependencies": {
+        "@bb/plugin-sdk": "workspace:*",
+        "@types/better-sqlite3": "^7.6.12",
+        "@types/node": "^22.0.0",
+        "typescript": "^6.0.2",
+        "typescript-7": "npm:typescript@^7.0.2",
+        "vitest": "^4.1.1",
+      },
+    },
     "examples/plugins/cascade": {
       "name": "bb-plugin-cascade",
       "version": "0.1.0",
@@ -2994,6 +3006,8 @@
     "bb-plugin-ask-user-question": ["bb-plugin-ask-user-question@workspace:plugins/ask-user-question"],
 
     "bb-plugin-automations": ["bb-plugin-automations@workspace:plugins/automations"],
+
+    "bb-plugin-bookmarks": ["bb-plugin-bookmarks@workspace:examples/plugins/bookmarks"],
 
     "bb-plugin-browser-tools": ["bb-plugin-browser-tools@workspace:plugins/browser-tools"],
 

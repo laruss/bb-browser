@@ -276,6 +276,26 @@ export const PLUGIN_HOST_CALLS = {
     resultCrosses: true,
     callbacks: ["browserSiteInfo"],
   },
+  "ui.registerCommand": {
+    category: "register",
+    argsCross: true,
+    resultCrosses: true,
+    callbacks: ["uiCommand"],
+    note: "A command of the plugin's own rather than a rebinding of one of bb's, so the chord and the title cross with the registration and the press comes back as a callback. Context-free by design — what the command reads, it reads through the gated browser calls.",
+  },
+  "browser.registerNewTabWidget": {
+    category: "register",
+    argsCross: true,
+    resultCrosses: true,
+    callbacks: ["browserNewTabRows"],
+  },
+  "browser.registerToolbarItem": {
+    category: "register",
+    argsCross: true,
+    resultCrosses: true,
+    callbacks: ["browserToolbarState", "browserToolbarRun"],
+    note: "Two callbacks for one registration: what the control looks like for a page, asked as the user navigates, and what pressing it does. `state` is optional, and a registration without one crosses with no state callback at all.",
+  },
   "browser.registerFindAction": {
     category: "register",
     argsCross: true,

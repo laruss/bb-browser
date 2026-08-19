@@ -69,6 +69,8 @@ The complete manifest, with the optional fields SKILL.md leaves out:
   | `contextMenu.register`  | `browser.registerContextMenuItem` (receives the selection or link clicked)                                                            |
   | `tabMenu.register`      | `browser.registerTabAction` (receives the tab the entry was picked on)                                                                |
   | `siteInfo.register`     | `browser.registerSiteInfoProvider` (receives the page's address and host)                                                             |
+  | `toolbar.register`      | `browser.registerToolbarItem` (asked about every page the user opens, on navigation)                                                  |
+  | `newTab.register`       | `browser.registerNewTabWidget` (a section on the new-tab screen; a new tab has no page)                                               |
   | `searchEngine.register` | `browser.registerSearchEngine` (a chosen engine receives everything typed in the address bar)                                         |
   | `find.register`         | `browser.registerFindAction` (receives the find query)                                                                                |
   | `downloads.handle`      | `browser.registerDownloadHandler`                                                                                                     |

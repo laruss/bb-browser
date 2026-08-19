@@ -605,6 +605,15 @@ export interface PluginUi {
    * result does not depend on load order.
    */
   registerKeybinding(keybinding: PluginKeybinding): void;
+  /**
+   * Add a command of your own, with a keyboard shortcut for it
+   * (`app.commands`) — see {@link PluginCommandRegistration}.
+   *
+   * Ungated, like `registerKeybinding` and for the same reason: a chord that runs
+   * your own code discloses nothing. Anything the command then reads is gated
+   * where it already was — the current page costs `tabs.read`.
+   */
+  registerCommand(command: PluginCommandRegistration): void;
 }
 
 /**
@@ -625,6 +634,39 @@ export interface PluginKeybinding {
   command: string;
   /** Null unassigns the command. */
   shortcut: PluginKeybindingShortcut | null;
+}
+
+/**
+ * A command of the plugin's own, with the chord that runs it.
+ *
+ * The difference from {@link PluginUi.registerKeybinding}: that one rebinds a
+ * command **bb** already has, while this one adds a command bb has never heard
+ * of. Which is also why it is a separate list rather than an entry in bb's
+ * keybinding config — bb's command ids are a closed set, and a plugin's are not.
+ *
+ * Deliberately context-free: `run` is handed nothing. A command that needs the
+ * page the user is on reads it (`bb.browser.page.getUrl()`,
+ * `bb.browser.tabs.list()`) and pays `tabs.read` for it — the permission that
+ * already governs seeing where the user is. Handing the address to every chord
+ * would be a disclosure nobody agreed to for a shortcut.
+ */
+export interface PluginCommandRegistration {
+  /** Unique within this plugin: [a-zA-Z0-9_-]+. */
+  id: string;
+  /** What the shortcut is called wherever it is listed — Settings, for now. */
+  title: string;
+  /**
+   * The chord. Required: bb has no command palette yet, so a command without one
+   * would have no way to be run at all.
+   *
+   * bb's own bindings win a contested chord — including one the user rebound —
+   * and between plugins the lowest plugin id wins, so what happens does not
+   * depend on load order. A chord never fires while the user is typing or a
+   * dialog is open, the same rule bb's own shortcuts follow.
+   */
+  shortcut: PluginKeybindingShortcut;
+  /** Runs server-side when the chord fires. Nothing waits on it. */
+  run(): void | Promise<void>;
 }
 
 // ---------------------------------------------------------------------------
@@ -851,6 +893,120 @@ export interface PluginBrowserTabActionRegistration {
    * your own surfaces rather than by returning something.
    */
   run(context: PluginBrowserTabActionContext): void | Promise<void>;
+}
+
+/** The page a toolbar control is being asked about, or was pressed on. */
+export interface PluginBrowserToolbarContext {
+  /** The browser tab whose toolbar this is. */
+  tabId: string;
+  /** The page's address. Never empty — the toolbar is not drawn over bb's own
+   * screens, so there is always a page. */
+  url: string;
+  title: string | null;
+}
+
+/**
+ * How a control should look for the page it was asked about. Every field is
+ * optional because every field has to have a safe default: the control is drawn
+ * before an answer arrives.
+ */
+export interface PluginBrowserToolbarState {
+  /**
+   * Whether the control is *on* for this page — a saved bookmark, a reader mode
+   * that is running. The host renders it as an accent on the declared icon
+   * rather than by swapping the icon, so the button does not change shape as
+   * answers arrive.
+   */
+  active?: boolean;
+  /** Replaces the declared title while this page is open. */
+  title?: string;
+}
+
+/**
+ * A control in the browser's toolbar, and what it says about the page under it.
+ *
+ * The only contribution point that is asked about a page **without the user
+ * doing anything** — which is what makes a star that is already filled possible,
+ * and what makes this cost a permission of its own.
+ */
+export interface PluginBrowserToolbarItemRegistration {
+  /** Unique within this plugin: [a-zA-Z0-9_-]+. */
+  id: string;
+  /** The control's accessible name, and its tooltip. */
+  title: string;
+  /**
+   * Icon hint, resolved like every other plugin icon: your `bb.branding.icon`,
+   * then the manifest's, then this name, then a generic mark. Fixed at
+   * registration — see {@link PluginBrowserToolbarState.active} for why.
+   */
+  icon?: string;
+  /**
+   * What this control looks like for the page in the tab, asked on navigation
+   * and after your own `run` finishes.
+   *
+   * Return `null` to keep what was declared. Time-boxed like a site-info
+   * section: the control is already on screen, so a `state` that hangs leaves
+   * the declared look rather than an empty space. Omit it entirely for a control
+   * that is the same everywhere — nothing is then asked of the plugin as the
+   * user browses, and nothing is spent on it.
+   */
+  state?(
+    context: PluginBrowserToolbarContext,
+  ):
+    | PluginBrowserToolbarState
+    | null
+    | Promise<PluginBrowserToolbarState | null>;
+  /**
+   * Runs server-side when the user presses the control. Fire-and-forget like a
+   * context-menu item — report through your own surfaces — except for one
+   * thing: `state` is asked again once this resolves, so a control that toggles
+   * something shows its new look without doing anything else.
+   */
+  run(context: PluginBrowserToolbarContext): void | Promise<void>;
+}
+
+/** Which tab's new-tab screen is asking. There is no page yet — that is the point. */
+export interface PluginBrowserNewTabContext {
+  tabId: string;
+}
+
+/** One row of a new-tab section: what it says, and where it goes. */
+export interface PluginBrowserNewTabRow {
+  title: string;
+  /** Second line, muted — a host, a note, a date. */
+  subtitle?: string;
+  /**
+   * Opened when the row is clicked, in the tab the screen is on. `http` and
+   * `https` only: a new-tab row is a link, and `javascript:` or `file:` from a
+   * plugin is not a link the browser will follow.
+   */
+  url: string;
+}
+
+/**
+ * A section on the browser's new-tab screen — the empty page a fresh tab shows,
+ * where bb lists recently visited pages.
+ *
+ * Rows are **links**, so clicking one runs no plugin code: the browser navigates
+ * to what the plugin already said. That is what keeps a list of saved pages
+ * feeling like part of the browser instead of a remote call per click.
+ */
+export interface PluginBrowserNewTabWidgetRegistration {
+  /** Unique within this plugin: [a-zA-Z0-9_-]+. */
+  id: string;
+  /** The section heading, e.g. "Bookmarks". */
+  label: string;
+  /**
+   * The rows to show, asked each time a new-tab screen appears.
+   *
+   * Return `null` — or no rows — to show nothing, which is what a section with
+   * nothing saved yet should do rather than a heading over an empty list.
+   * Time-boxed like a site-info section: the screen is already on display, so a
+   * widget that hangs is left out rather than waited for.
+   */
+  rows(
+    context: PluginBrowserNewTabContext,
+  ): PluginBrowserNewTabRow[] | null | Promise<PluginBrowserNewTabRow[] | null>;
 }
 
 /**
@@ -1810,6 +1966,38 @@ export interface PluginBrowser {
   registerSiteInfoProvider(
     provider: PluginBrowserSiteInfoProviderRegistration,
   ): void;
+  /**
+   * Put a control in the browser's toolbar (`browser.toolbar.items`) — the
+   * address row, beside bb's own downloads and open-externally buttons.
+   *
+   * The row is where a browser keeps what applies to *the page you are looking
+   * at right now*, which is what this point is for: a star that knows whether
+   * this page is saved, a reader mode, "open this in the other browser". bb's own
+   * controls keep their places and contributed ones sit between the address bar
+   * and them, in plugin id order.
+   *
+   * **One per plugin**, unlike the menus: a menu grows downwards for free and
+   * this row does not, and a plugin that needs a second control has a panel of
+   * its own to put it in.
+   *
+   * Costs `toolbar.register` rather than sharing a permission with the menus,
+   * because it is not like them: `state` is handed the address of every page the
+   * user opens, without the user asking for anything.
+   */
+  registerToolbarItem(item: PluginBrowserToolbarItemRegistration): void;
+  /**
+   * Add a section to the browser's new-tab screen (`browser.newTab.widgets`) —
+   * see {@link PluginBrowserNewTabWidgetRegistration}.
+   *
+   * A new tab is the one moment the browser has nothing to show, which is what
+   * makes it worth extending: saved pages, a reading list, the tabs you closed
+   * yesterday. bb's own "Recently visited" comes first and contributed sections
+   * follow in plugin id order.
+   *
+   * Costs `newTab.register`. Nothing about the user's browsing is handed over —
+   * a new tab has no page — so what the permission buys is the placement itself.
+   */
+  registerNewTabWidget(widget: PluginBrowserNewTabWidgetRegistration): void;
   /**
    * Offer a search engine for the browser's address bar
    * (`browser.searchEngines`) — see

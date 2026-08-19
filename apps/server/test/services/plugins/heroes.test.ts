@@ -433,6 +433,125 @@ describe("hero plugin: omnibox-agent", () => {
   });
 });
 
+describe("hero plugin: bookmarks", () => {
+  // The Phase 8 chrome surfaces, end to end against the real host: the star's
+  // state, the press that toggles it, and the list a new tab shows. No browser is
+  // involved — these are the three routes the app calls, which is exactly the
+  // seam a plugin can be trusted on without an Electron window.
+  it("saves a page from the star, and the new-tab list shows it", async () => {
+    const server = await startTestServer({ appVersion: APP_VERSION });
+    try {
+      const entry = await server.pluginService.installPath(
+        join(EXAMPLES_DIR, "bookmarks"),
+      );
+      expect(entry.id).toBe("bookmarks");
+      // Nothing to configure: a bookmarks store needs no setting to be useful.
+      expect(entry.status).toBe("running");
+
+      const contributions = (await (
+        await fetch(`${server.baseUrl}/api/v1/plugins/contributions`)
+      ).json()) as {
+        browserNewTabWidgets: { pluginId: string; widgetId: string }[];
+        browserToolbarItems: { itemId: string; hasState: boolean }[];
+        commands: { commandId: string; shortcut: { key: string } }[];
+      };
+      expect(contributions.browserToolbarItems).toEqual([
+        {
+          pluginId: "bookmarks",
+          itemId: "star",
+          title: "Save this page",
+          icon: "Star",
+          hasState: true,
+        },
+      ]);
+      expect(contributions.browserNewTabWidgets).toEqual([
+        { pluginId: "bookmarks", widgetId: "saved" },
+      ]);
+      expect(contributions.commands).toEqual([
+        {
+          pluginId: "bookmarks",
+          commandId: "toggle",
+          title: "Bookmark this page",
+          shortcut: {
+            key: "d",
+            alt: false,
+            control: false,
+            meta: false,
+            mod: true,
+            shift: false,
+          },
+        },
+      ]);
+
+      const url = "https://example.test/docs";
+      const state = async () => {
+        const response = await fetch(
+          `${server.baseUrl}/api/v1/plugins/browser/toolbar-state?tabId=browser:a&url=${encodeURIComponent(url)}`,
+        );
+        return (await response.json()) as {
+          states: { active: boolean; title: string | null }[];
+        };
+      };
+      const newTab = async () => {
+        const response = await fetch(
+          `${server.baseUrl}/api/v1/plugins/browser/new-tab?tabId=browser:a`,
+        );
+        return (await response.json()) as {
+          sections: { label: string; rows: { title: string; url: string }[] }[];
+        };
+      };
+      const press = async () =>
+        fetch(`${server.baseUrl}/api/v1/plugins/browser/toolbar-item`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            pluginId: "bookmarks",
+            itemId: "star",
+            tabId: "browser:a",
+            url,
+            title: "The docs",
+          }),
+        });
+
+      // Nothing saved: an empty star, and a new tab that looks like it always did.
+      expect((await state()).states).toEqual([]);
+      expect((await newTab()).sections).toEqual([]);
+
+      expect((await press()).status).toBe(200);
+
+      expect((await state()).states).toEqual([
+        {
+          pluginId: "bookmarks",
+          itemId: "star",
+          active: true,
+          title: "Remove from bookmarks",
+        },
+      ]);
+      expect((await newTab()).sections).toEqual([
+        {
+          pluginId: "bookmarks",
+          widgetId: "saved",
+          label: "Bookmarks",
+          rows: [{ title: "The docs", subtitle: null, url }],
+        },
+      ]);
+
+      // The same press again is the way back out — one store behind every entrance.
+      expect((await press()).status).toBe(200);
+      expect((await state()).states).toEqual([]);
+      expect((await newTab()).sections).toEqual([]);
+
+      const listed = server.pluginService
+        .list()
+        .find((plugin) => plugin.id === "bookmarks");
+      expect(listed?.handlerStats.errorCount).toBe(0);
+    } finally {
+      await server.pluginService.stop();
+      await server.close();
+    }
+  });
+});
+
 describe("hero plugin: explain-selection", () => {
   // Plan §22's second end-to-end scenario, and §18 Phase 6's deliverable: a
   // plugin is installed, it registers a context-menu item, the user selects text

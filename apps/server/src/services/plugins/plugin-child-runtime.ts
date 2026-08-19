@@ -141,6 +141,27 @@ export interface PluginRegistrationSnapshot {
   findActions: { id: string; title: string }[];
   tabActions: { id: string; title: string }[];
   siteInfoProviders: { id: string; label: string }[];
+  /** `hasState` because a control may be the same on every page — one that is
+   * asks nothing of this process as the user browses. */
+  toolbarItems: {
+    id: string;
+    title: string;
+    icon: string | null;
+    hasState: boolean;
+  }[];
+  newTabWidgets: { id: string; label: string }[];
+  commands: {
+    id: string;
+    title: string;
+    shortcut: {
+      key: string;
+      alt: boolean;
+      control: boolean;
+      meta: boolean;
+      mod: boolean;
+      shift: boolean;
+    };
+  }[];
   downloadHandlerCount: number;
   historyFilterCount: number;
   authProviderCount: number;
@@ -610,6 +631,29 @@ async function dispatchToRegistration(args: {
       if (record === undefined) return missing("tab action");
       return record.run(payload as never);
     }
+    case "browserToolbarState": {
+      const record = handle.toolbarItems.find((one) => one.id === target);
+      if (record === undefined) return missing("toolbar item");
+      // A host that asks about a control with no `state` is a host and a
+      // snapshot that disagree, which is worth saying rather than answering.
+      if (record.state === null) return missing("toolbar item state");
+      return record.state(payload as never);
+    }
+    case "browserToolbarRun": {
+      const record = handle.toolbarItems.find((one) => one.id === target);
+      if (record === undefined) return missing("toolbar item");
+      return record.run(payload as never);
+    }
+    case "browserNewTabRows": {
+      const record = handle.newTabWidgets.find((one) => one.id === target);
+      if (record === undefined) return missing("new tab widget");
+      return record.rows(payload as never);
+    }
+    case "uiCommand": {
+      const record = handle.commands.find((one) => one.id === target);
+      if (record === undefined) return missing("command");
+      return record.run();
+    }
     // The three anonymous kinds are addressed by index, not iterated here.
     // "first one to answer wins" and "all of them run" are the host's rules,
     // applied across plugins as well as within one — so the host keeps its
@@ -792,6 +836,21 @@ function snapshot(handle: PluginApiHandle): PluginRegistrationSnapshot {
     siteInfoProviders: handle.siteInfoProviders.map((one) => ({
       id: one.id,
       label: one.label,
+    })),
+    toolbarItems: handle.toolbarItems.map((one) => ({
+      id: one.id,
+      title: one.title,
+      icon: one.icon,
+      hasState: one.state !== null,
+    })),
+    newTabWidgets: handle.newTabWidgets.map((one) => ({
+      id: one.id,
+      label: one.label,
+    })),
+    commands: handle.commands.map((one) => ({
+      id: one.id,
+      title: one.title,
+      shortcut: { ...one.shortcut },
     })),
     downloadHandlerCount: handle.downloadHandlers.length,
     historyFilterCount: handle.historyFilters.length,

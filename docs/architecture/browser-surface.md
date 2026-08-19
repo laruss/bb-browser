@@ -925,6 +925,138 @@ for the surface's tab. It does inherit the loopback fix — a `local` page falls
 through to its neutral glyph instead of the warning — so the one lie it could tell
 is gone even though it makes no new claim.
 
+## The toolbar: the first surface asked about a page nobody clicked
+
+The address row had bb's own controls and nothing else. `bb.browser.registerToolbarItem`
+puts a plugin's control there — between the address bar and bb's downloads and
+open-externally buttons, which is where a browser keeps other people's things and
+leaves its own where the user learned them.
+
+What made this one different from every browser point before it: the control has
+to be **right before anyone touches it**. A star that only fills in once you press
+it is not a star. So the surface has two halves that are asked for at different
+times:
+
+- the **declaration** — id, title, icon — arrives with every other contribution,
+  once, and is enough to draw a complete control;
+- the **state** — `{ active, title }` — is asked per page, as the user navigates,
+  and only of the controls that offered a `state` at all.
+
+`hasState` therefore rides on the contribution rather than being discovered from
+the first answer. It is what buys the guarantee worth writing down: **a plugin
+whose control looks the same everywhere costs nothing as the user browses.** With
+no `state` declared, the app never issues the request, and the plugin's process is
+never woken.
+
+Every field of a state is optional, and every one has a declared default, because
+the answer arrives after the control is on screen. That is also why the **icon is
+fixed at registration**: a per-state icon would mean the first paint shows the
+wrong glyph and swaps it a moment later. `active` renders as an accent on the
+declared icon instead — bb's own downloads button already tints itself the same way
+— and `aria-pressed` carries it to a screen reader.
+
+Pressing runs server-side, time-boxed like a picked menu entry, with one
+difference from every other run: the app **awaits it and then asks for states
+again**. A control that toggles something therefore stops looking like it did
+before the press without the plugin doing anything else, and what it looks like
+afterwards is still the plugin's answer rather than the app's guess.
+
+### One control per plugin
+
+The menus let a plugin register as many entries as it likes. This point allows
+one, refused at registration rather than dropped at render: a menu grows downwards
+for free, the address row does not, and a plugin that found out at render time
+which of its buttons survived could not do anything about it. A plugin that needs a
+second control has a panel of its own to put it in — see "The leading edge belongs
+to plugins".
+
+### Why it costs a permission of its own
+
+`toolbar.register` rather than sharing with the menus, and the reason is the
+sentence above about state: every other browser point is scoped to something the
+user did — a right-click, a picked entry, an opened panel. This one hands the
+plugin **the address of every page the user opens**, on navigation, unasked. That
+is a different thing to agree to, so it is a different line in the manifest.
+
+The **thread panel's** chrome has no toolbar point: it is a preview surface, and a
+control that appeared beside a preview would be a second place for the same plugin
+to be pressed with no second thing to say.
+
+## The new-tab screen, and the sections plugins add to it
+
+A fresh tab shows what bb knows: recently visited pages. `bb.browser.registerNewTabWidget`
+adds a section under that — saved pages, a reading list, yesterday's closed tabs.
+Permission: `newTab.register`, which is the cheapest of the browser's permissions
+to reason about, because a new tab has no page: nothing about the user's browsing
+is disclosed and what the permission buys is the placement itself.
+
+**Rows are links, not controls.** A row carries `{ title, subtitle?, url }` and
+clicking it navigates — no plugin code runs on the click. That is what makes a
+saved-pages list feel like part of the browser rather than a remote call per row,
+and it is why the URL is checked when the widget answers rather than when the user
+clicks: `http` and `https` only, so a `javascript:` row is refused at the source.
+
+Two things this surface does that the toolbar does not:
+
+- **The screen is asked, not the app.** Rows come from a per-tab request made when
+  a new-tab screen appears, gated on a declaration in the contributions list — with
+  no widget registered, opening a tab issues no request at all. The declaration
+  carries **ids only**; the heading travels with the rows, so no fact is stated on
+  two wires.
+- **It lands on both browsers.** `BrowserTabContent` renders this screen for the
+  browser surface _and_ for the thread panel's browser, so a widget shows up beside
+  an agent as well as on its own tab. The toolbar deliberately went to the surface
+  only, because a control beside a preview would be a second place to press with
+  nothing new to say; a _list_ has the same value in both.
+
+The screen used to render nothing when there were no recents. It now renders
+whenever a section might have something, because an install whose only new-tab
+content comes from a plugin would otherwise never ask for it.
+
+The worked example of all of this is `examples/plugins/bookmarks`: the star, the
+list, `Cmd+D`, an omnibox provider and its own SQLite, with no change to the
+browser. It is what the three surfaces were built for, and reading it is the
+fastest way to see what they cost a plugin author.
+
+## Commands a plugin owns
+
+`bb.ui.registerKeybinding` rebinds a command bb already has. `bb.ui.registerCommand`
+adds one bb has never heard of, with the chord that runs it — the last thing the
+bookmarks-shaped features were waiting on, since `Cmd+D` cannot belong to a plugin
+otherwise.
+
+**The chord is not in bb's keybinding config, deliberately.** bb's command ids are
+a closed enum (`APP_COMMAND_IDS`) that the settings UI, the palette metadata and
+the user's override store all key on, and widening it for ids bb has never seen
+would trade a compile-time guarantee for a string in every one of those places.
+Plugin commands ride the contributions channel instead, where every other plugin
+surface already lives, and the app matches them **after** every one of bb's own
+bindings in the same loop — one place decides precedence, rather than two listeners
+racing on the window.
+
+What follows from that ordering, and is worth stating because it is a limit:
+
+- **bb wins a contested chord**, the user's own rebindings included. A plugin
+  cannot take `Cmd+T` away from the browser.
+- **Between plugins, the lowest plugin id wins**, the same rule contested
+  keybinding overrides already use, so nothing depends on load order.
+- **Settings → Keyboard lists plugin commands** under their own heading, read-only,
+  and names bb's own command when it shares the chord. It says "where both apply,
+  bb's wins" rather than "this will not run", because bb's bindings are _scoped_:
+  `Mod+D` is `diff.toggle` everywhere except a focused browser, which is exactly
+  where the bookmarks example's `Cmd+D` wants to work. A row that claimed the
+  command was dead would be the same kind of lie the padlock used to tell, in the
+  other direction.
+- **A chord never fires while the user is typing or a dialog is open** — bb's own
+  scope rule, applied unchanged.
+
+`run` is handed **no context**, which is the decision worth defending: passing the
+current page would give every chord the address of whatever the user is looking at,
+for a shortcut. A command that needs the page reads it (`bb.browser.page.getUrl()`)
+and pays `tabs.read`, the permission that already governs exactly that. Which is
+also why `registerCommand` itself is ungated — a chord that runs the plugin's own
+code discloses nothing.
+
 ## The page context menu
 
 Right-clicking a browsed page used to offer cut, copy, paste and select-all —

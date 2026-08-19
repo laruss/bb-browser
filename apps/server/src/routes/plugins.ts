@@ -78,6 +78,32 @@ const pluginTabActionInvokeSchema = z
   .strict();
 
 /**
+ * A pressed toolbar control. Unlike a tab action, the url is not nullable: the
+ * toolbar is not drawn over bb's own screens, so a press without a page is a
+ * client that has invented one.
+ */
+const pluginToolbarInvokeSchema = z
+  .object({
+    pluginId: z.string().min(1).max(128),
+    itemId: z.string().min(1).max(128),
+    tabId: z.string().min(1).max(256),
+    url: z.string().min(1).max(4096),
+    title: z.string().max(1024).nullable(),
+  })
+  .strict();
+
+/**
+ * A plugin command whose chord fired. Nothing but the two ids: the command is
+ * handed no context, so there is nothing else for a caller to get wrong.
+ */
+const pluginCommandInvokeSchema = z
+  .object({
+    pluginId: z.string().min(1).max(128),
+    commandId: z.string().min(1).max(128),
+  })
+  .strict();
+
+/**
  * A pressed find-bar button. The query is what the user typed and the page URL
  * is the page's own, so both are capped rather than trusted; the cap on the
  * query matches the find bar's own.
@@ -314,6 +340,9 @@ export function registerPluginRoutes(
       browserContextMenuItems: plugins.listContextMenuItemContributions(),
       browserFindActions: plugins.listFindActionContributions(),
       browserTabActions: plugins.listTabActionContributions(),
+      browserToolbarItems: plugins.listToolbarItemContributions(),
+      browserNewTabWidgets: plugins.listNewTabWidgetContributions(),
+      commands: plugins.listCommandContributions(),
       browserSearchEngines: plugins.listSearchEngineContributions(),
     }),
   );
@@ -490,6 +519,105 @@ export function registerPluginRoutes(
       itemId,
       pluginId,
     });
+    return outcome.ok
+      ? context.json({ ok: true })
+      : context.json({ ok: false, error: outcome.error }, 422);
+  });
+
+  // What plugins' toolbar controls look like for the page in a tab. A GET like
+  // site-info, and the same guard — but asked as the user navigates rather than
+  // when they open something, which is why the app only asks at all when a
+  // control declared a `state` (`hasState` on the contribution).
+  app.get("/plugins/browser/toolbar-state", async (context) => {
+    const problem = localAuthProblem(context, deps);
+    if (problem) {
+      return context.json({ ok: false, error: problem.error }, problem.status);
+    }
+    const tabId = (context.req.query("tabId") ?? "").trim();
+    const url = (context.req.query("url") ?? "").trim();
+    const title = context.req.query("title") ?? null;
+    // A tab with no page has nothing for a control to be about.
+    if (tabId.length === 0 || url.length === 0 || url.length > 4096) {
+      return context.json({ ok: true, states: [] });
+    }
+    return context.json({
+      ok: true,
+      states: await plugins.describeToolbarItemStates({
+        context: {
+          tabId,
+          url,
+          title: title === null ? null : title.slice(0, 1024),
+        },
+      }),
+    });
+  });
+
+  // A plugin's toolbar control the user pressed. Same guard and ordering rule as
+  // the context-menu route; the answer is awaited (unlike a menu entry's) only
+  // so the app knows when to ask for states again — a control that toggles
+  // something has to stop looking like it did before the press.
+  app.post("/plugins/browser/toolbar-item", async (context) => {
+    const problem = localAuthProblem(context, deps);
+    if (problem) {
+      return context.json({ ok: false, error: problem.error }, problem.status);
+    }
+    const body = await context.req.json().catch(() => null);
+    const parsed = pluginToolbarInvokeSchema.safeParse(body);
+    if (!parsed.success) {
+      return context.json(
+        {
+          ok: false,
+          error: "expected { pluginId, itemId, tabId, url, title }",
+        },
+        400,
+      );
+    }
+    const { itemId, pluginId, ...toolbarContext } = parsed.data;
+    const outcome = await plugins.runToolbarItem({
+      context: toolbarContext,
+      itemId,
+      pluginId,
+    });
+    return outcome.ok
+      ? context.json({ ok: true })
+      : context.json({ ok: false, error: outcome.error }, 422);
+  });
+
+  // What plugins want to show on a new tab. A GET like site-info, same guard, and
+  // asked when a new-tab screen appears rather than on a schedule — a widget that
+  // does real work is not asked while nobody is looking at an empty tab.
+  app.get("/plugins/browser/new-tab", async (context) => {
+    const problem = localAuthProblem(context, deps);
+    if (problem) {
+      return context.json({ ok: false, error: problem.error }, problem.status);
+    }
+    const tabId = (context.req.query("tabId") ?? "").trim();
+    if (tabId.length === 0) {
+      return context.json({ ok: true, sections: [] });
+    }
+    return context.json({
+      ok: true,
+      sections: await plugins.describeNewTabSections({ context: { tabId } }),
+    });
+  });
+
+  // A plugin command whose chord the user pressed. Same guard and ordering rule
+  // as the context-menu route; fire-and-forget like one, because a keypress has
+  // already happened and there is nothing to report back to.
+  app.post("/plugins/commands/run", async (context) => {
+    const problem = localAuthProblem(context, deps);
+    if (problem) {
+      return context.json({ ok: false, error: problem.error }, problem.status);
+    }
+    const body = await context.req.json().catch(() => null);
+    const parsed = pluginCommandInvokeSchema.safeParse(body);
+    if (!parsed.success) {
+      return context.json(
+        { ok: false, error: "expected { pluginId, commandId }" },
+        400,
+      );
+    }
+    const outcome = await plugins.runCommand(parsed.data);
     return outcome.ok
       ? context.json({ ok: true })
       : context.json({ ok: false, error: outcome.error }, 422);

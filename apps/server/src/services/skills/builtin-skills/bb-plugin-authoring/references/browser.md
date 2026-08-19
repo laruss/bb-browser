@@ -207,6 +207,99 @@ the tab menu or the page's context menu, where a click has somewhere to go.
 `examples/plugins/private-history` has a worked one: how many pages the store kept
 for this site, and whether recording is off for it.
 
+## bb.browser — putting a control in the toolbar
+
+The address row is where the browser keeps what applies to the page you are
+looking at _right now_: a star that knows whether this page is saved, a reader
+mode, "open this in the other browser". Your control sits between the address bar
+and BB's own buttons.
+
+Needs `toolbar.register` — its own permission because of `state` below: it is
+asked about every page the user opens, on navigation, without the user doing
+anything.
+
+**One control per plugin.** A second `registerToolbarItem` is refused at load, not
+dropped at render: the row cannot grow the way a menu can. If you need more, put
+them in your panel.
+
+```ts
+bb.browser.registerToolbarItem({
+  id: "star",
+  title: "Save this page", // the accessible name and the tooltip
+  icon: "Star", // resolved like every plugin icon: branding → manifest → this
+  async state(context) {
+    // context: { tabId, url, title } — asked on navigation, and again after run
+    const saved = await bb.storage.kv.get(`saved:${context.url}`);
+    if (!saved) return null; // keep what was declared
+    return { active: true, title: "Remove from saved" };
+  },
+  async run(context) {
+    const key = `saved:${context.url}`;
+    const saved = await bb.storage.kv.get(key);
+    if (saved) await bb.storage.kv.delete(key);
+    else await bb.storage.kv.set(key, { title: context.title });
+    // Nothing else to do: BB asks `state` again once this resolves.
+  },
+});
+```
+
+Three things follow from the control being drawn _before_ anyone answers:
+
+- **`state` is optional, and omitting it is the cheap path.** A control that looks
+  the same everywhere is drawn from the declaration alone, and nothing is asked of
+  your plugin as the user browses. Register a `state` only if the answer actually
+  differs per page.
+- **Every field of a state is optional**, and `null` means "keep what was
+  declared". Returning `{ active: false }` and returning `null` look the same on
+  screen; prefer `null` when you have nothing to say.
+- **The icon cannot change per page** — `active` renders as an accent on the icon
+  you declared. A per-state icon would flicker: the first paint would show the
+  wrong glyph and swap it once the answer arrived.
+
+`state` is time-boxed to 1s and failure-isolated (a slow or throwing one leaves the
+declared look), and `run` gets the same 10s box a picked menu entry does. Titles
+are trimmed to 60 characters.
+
+## bb.browser — a section on the new-tab screen
+
+A new tab is the one moment the browser has nothing to show. BB fills it with
+recently visited pages; a widget adds a section under that — saved pages, a
+reading list, the tabs you closed yesterday.
+
+Needs `newTab.register`. A new tab has no page, so nothing about the user's
+browsing is handed over; what the permission buys is the placement.
+
+```ts
+bb.browser.registerNewTabWidget({
+  id: "saved",
+  label: "Bookmarks", // the section heading
+  async rows(context) {
+    // context: { tabId } — there is no page yet, that is the point
+    const saved =
+      await bb.storage.kv.get<{ url: string; title: string }[]>("saved");
+    if (!saved?.length) return null; // no heading over an empty list
+    return saved.map((entry) => ({
+      title: entry.title,
+      subtitle: "saved", // optional second line; the host shows the URL's host without one
+      url: entry.url,
+    }));
+  },
+});
+```
+
+Rows are **links**, and that is the design rather than a limitation: clicking one
+navigates to what you already said, so no plugin code runs on the click and a list
+of saved pages behaves like part of the browser. `http` and `https` only — a
+`javascript:` or `file:` row is refused where it was made, not when it is clicked.
+
+Asked each time a new-tab screen appears, concurrently with every other widget,
+time-boxed to 2s and failure-isolated: one that throws or hangs is left out and
+BB's own recents still render. At most 12 rows; titles and subtitles are trimmed to
+200 characters.
+
+The screen is the same one the thread panel's browser shows, so a widget appears in
+both — a saved-pages list is as useful beside an agent as it is on its own tab.
+
 ## bb.browser — adding a button to the find bar
 
 The browser's `Cmd+F` bar is the one place that knows what the user is looking

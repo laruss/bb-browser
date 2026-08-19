@@ -20,23 +20,30 @@ declared plugin point rather than a setting — see
 [architecture/browser-gaps.md](architecture/browser-gaps.md) for both arguments in
 full.
 
-## A plugin could own these — waiting on Phase 8 surfaces
+## A plugin could own these — and now nothing is in the way
 
-Each of these is a whole feature a plugin can already store, act on and search
+Each of these is a whole feature a plugin can store, act on and search
 (`bb.storage.database`, tab and page menu entries, an omnibox provider, a
-site-info section, its own panel). What none of them can do is put a control in
-bb's chrome.
+site-info section, its own panel). What they used to be missing was a place in bb's
+chrome; as of 2026-08-19 they have all three:
 
-- **Bookmarks.** Blocked on three things: a **star in the address bar** (Phase 8
-  _toolbar items_), a section on the **new-tab screen** (Phase 8 _new-tab
-  widgets_), and a plugin owning a chord — `bb.ui.registerKeybinding` rebinds bb's
-  _existing_ commands and refuses an unknown id (`appCommandIdSchema`). Design
-  notes: [architecture/browser-gaps.md](architecture/browser-gaps.md).
-- **Read-later, per-site notes, link collections.** The same three, for the same
-  reason. Worth naming because they are why the surfaces are worth building once
-  rather than a star being worth building for bookmarks.
+- a **star in the address bar** — `bb.browser.registerToolbarItem`, with the
+  per-page state a star needs;
+- a section on the **new-tab screen** — `bb.browser.registerNewTabWidget`;
+- **a chord of their own** — `bb.ui.registerCommand`.
 
-**So the next core work is those surfaces**, not the features waiting on them.
+See [architecture/browser-surface.md](architecture/browser-surface.md) for all
+three.
+
+- ~~**Bookmarks.**~~ **Done as an example**, which is where the sorting test put
+  it: `examples/plugins/bookmarks` — the star, the new-tab list, `Cmd+D`, an
+  omnibox provider and its own SQLite, with no core change.
+- **Read-later, per-site notes, link collections.** Nothing is in the way; each is
+  the bookmarks example with a different table. They stay unbuilt because one
+  worked example makes the point and three would be three copies of it.
+
+**Nothing here is waiting on core work any more.** What is left in this file is
+either a screen bb has not drawn (below) or a decision nobody has needed yet.
 
 ## Core-only, cheap
 

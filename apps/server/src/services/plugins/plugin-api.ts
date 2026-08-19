@@ -92,6 +92,10 @@ import type {
   PluginBrowserSiteInfoContext,
   PluginBrowserSiteInfoRow,
   PluginBrowserTabActionContext,
+  PluginBrowserToolbarContext,
+  PluginBrowserToolbarState,
+  PluginBrowserNewTabContext,
+  PluginBrowserNewTabRow,
   PluginBrowserDownloadHandler,
   PluginBrowserHistoryFilter,
   PluginOmniboxRunContext,
@@ -543,6 +547,12 @@ export interface PluginApiHandle {
   tabActions: PluginBrowserTabActionRecord[];
   /** Site-info sections recorded by `bb.browser.registerSiteInfoProvider`. */
   siteInfoProviders: PluginBrowserSiteInfoProviderRecord[];
+  /** Toolbar controls recorded by `bb.browser.registerToolbarItem`. */
+  toolbarItems: PluginBrowserToolbarItemRecord[];
+  /** New-tab sections recorded by `bb.browser.registerNewTabWidget`. */
+  newTabWidgets: PluginBrowserNewTabWidgetRecord[];
+  /** Commands recorded by `bb.ui.registerCommand`. */
+  commands: PluginCommandRecord[];
   /** Search engines recorded by `bb.browser.registerSearchEngine`. */
   searchEngines: BrowserSearchEngine[];
   /** Auth providers recorded by `bb.browser.registerAuthProvider`. */
@@ -577,6 +587,57 @@ export interface PluginBrowserTabActionRecord {
   id: string;
   title: string;
   run: (context: PluginBrowserTabActionContext) => void | Promise<void>;
+}
+
+/**
+ * Runtime shape of a `bb.browser.registerToolbarItem` registration. `state` is
+ * null when the plugin did not offer one — the host then asks nothing as the user
+ * browses, which is the difference worth keeping visible on the wire.
+ */
+export interface PluginBrowserToolbarItemRecord {
+  id: string;
+  title: string;
+  icon: string | null;
+  state:
+    | ((
+        context: PluginBrowserToolbarContext,
+      ) =>
+        | PluginBrowserToolbarState
+        | null
+        | Promise<PluginBrowserToolbarState | null>)
+    | null;
+  run: (context: PluginBrowserToolbarContext) => void | Promise<void>;
+}
+
+/** Runtime shape of a `bb.browser.registerNewTabWidget` registration. */
+export interface PluginBrowserNewTabWidgetRecord {
+  id: string;
+  label: string;
+  rows: (
+    context: PluginBrowserNewTabContext,
+  ) =>
+    | PluginBrowserNewTabRow[]
+    | null
+    | Promise<PluginBrowserNewTabRow[] | null>;
+}
+
+/**
+ * Runtime shape of a `bb.ui.registerCommand` registration. The shortcut is
+ * normalised here — every modifier explicit — because the app matches against it
+ * and a missing boolean would read as "chord with no modifier".
+ */
+export interface PluginCommandRecord {
+  id: string;
+  title: string;
+  shortcut: {
+    key: string;
+    alt: boolean;
+    control: boolean;
+    meta: boolean;
+    mod: boolean;
+    shift: boolean;
+  };
+  run: () => void | Promise<void>;
 }
 
 /** Runtime shape of a `bb.browser.registerSiteInfoProvider` registration. */
@@ -1385,6 +1446,65 @@ export function createPluginApi(options: {
         },
       });
     },
+    registerCommand(command) {
+      assertLive();
+      const id = command?.id;
+      if (typeof id !== "string" || !OMNIBOX_PROVIDER_ID_PATTERN.test(id)) {
+        throw new Error(
+          `invalid command id ${JSON.stringify(id)} — use letters, digits, "-" and "_"`,
+        );
+      }
+      if (commands.some((record) => record.id === id)) {
+        throw new Error(`command "${id}" is already registered`);
+      }
+      if (
+        typeof command.title !== "string" ||
+        command.title.trim().length === 0
+      ) {
+        throw new Error(`command "${id}" must provide a title`);
+      }
+      if (typeof command.run !== "function") {
+        throw new Error(`command "${id}" must provide a run() function`);
+      }
+      const key = command.shortcut?.key;
+      if (typeof key !== "string" || key.length === 0) {
+        throw new Error(
+          `command "${id}" needs a shortcut with a non-empty key — bb has no command palette, so a command without one could never run`,
+        );
+      }
+      const shortcut = {
+        key,
+        alt: command.shortcut.alt ?? false,
+        control: command.shortcut.control ?? false,
+        meta: command.shortcut.meta ?? false,
+        mod: command.shortcut.mod ?? false,
+        shift: command.shortcut.shift ?? false,
+      };
+      // Two of this plugin's own commands on one chord is a mistake it can fix,
+      // so it is refused. Two *plugins* claiming one cannot coordinate, so that
+      // is resolved by plugin id order instead of refused.
+      if (
+        commands.some(
+          (record) =>
+            record.shortcut.key.toLowerCase() === shortcut.key.toLowerCase() &&
+            record.shortcut.alt === shortcut.alt &&
+            record.shortcut.control === shortcut.control &&
+            record.shortcut.meta === shortcut.meta &&
+            record.shortcut.mod === shortcut.mod &&
+            record.shortcut.shift === shortcut.shift,
+        )
+      ) {
+        throw new Error(
+          `command "${id}" wants a shortcut this plugin already bound to another command`,
+        );
+      }
+      commands.push({
+        id,
+        title: command.title.trim(),
+        shortcut,
+        run: command.run.bind(command),
+      });
+    },
   };
 
   // Argument validation for bb.browser.*. It happens here rather than on the
@@ -1822,6 +1942,9 @@ export function createPluginApi(options: {
   const findActions: PluginBrowserFindActionRecord[] = [];
   const tabActions: PluginBrowserTabActionRecord[] = [];
   const siteInfoProviders: PluginBrowserSiteInfoProviderRecord[] = [];
+  const toolbarItems: PluginBrowserToolbarItemRecord[] = [];
+  const newTabWidgets: PluginBrowserNewTabWidgetRecord[] = [];
+  const commands: PluginCommandRecord[] = [];
   const searchEngines: BrowserSearchEngine[] = [];
   const authProviders: PluginBrowserAuthProvider[] = [];
   const pdfTextProviders: PluginBrowserPdfTextProvider[] = [];
@@ -1989,6 +2112,80 @@ export function createPluginApi(options: {
         id,
         label: provider.label.trim(),
         describe: provider.describe.bind(provider),
+      });
+    },
+    registerToolbarItem(item) {
+      assertLive();
+      permissionGate.assert(
+        "toolbar.register",
+        "bb.browser.registerToolbarItem",
+      );
+      const id = item?.id;
+      if (typeof id !== "string" || !OMNIBOX_PROVIDER_ID_PATTERN.test(id)) {
+        throw new Error(
+          `invalid toolbar item id ${JSON.stringify(id)} — use letters, digits, "-" and "_"`,
+        );
+      }
+      // One control per plugin, refused here rather than dropped later: the
+      // address row has no room to grow, and a plugin that finds out at render
+      // time which of its buttons survived cannot do anything about it.
+      if (toolbarItems.length > 0) {
+        throw new Error(
+          `toolbar item "${toolbarItems[0]?.id}" is already registered — a plugin may contribute one toolbar control`,
+        );
+      }
+      if (typeof item.title !== "string" || item.title.trim().length === 0) {
+        throw new Error(`toolbar item "${id}" must provide a title`);
+      }
+      if (typeof item.run !== "function") {
+        throw new Error(
+          `toolbar item "${id}" must provide a run(context) function`,
+        );
+      }
+      if (item.state !== undefined && typeof item.state !== "function") {
+        throw new Error(
+          `toolbar item "${id}" state must be a function when provided`,
+        );
+      }
+      const icon = typeof item.icon === "string" ? item.icon.trim() : "";
+      toolbarItems.push({
+        id,
+        title: item.title.trim(),
+        icon: icon.length === 0 ? null : icon,
+        state: item.state === undefined ? null : item.state.bind(item),
+        run: item.run.bind(item),
+      });
+    },
+    registerNewTabWidget(widget) {
+      assertLive();
+      permissionGate.assert(
+        "newTab.register",
+        "bb.browser.registerNewTabWidget",
+      );
+      const id = widget?.id;
+      if (typeof id !== "string" || !OMNIBOX_PROVIDER_ID_PATTERN.test(id)) {
+        throw new Error(
+          `invalid new tab widget id ${JSON.stringify(id)} — use letters, digits, "-" and "_"`,
+        );
+      }
+      if (newTabWidgets.some((record) => record.id === id)) {
+        throw new Error(`new tab widget "${id}" is already registered`);
+      }
+      if (
+        typeof widget.label !== "string" ||
+        widget.label.trim().length === 0
+      ) {
+        throw new Error(`new tab widget "${id}" must provide a label`);
+      }
+      if (typeof widget.rows !== "function") {
+        throw new Error(
+          `new tab widget "${id}" must provide a rows(context) function`,
+        );
+      }
+      newTabWidgets.push({
+        id,
+        label: widget.label.trim(),
+        rows: widget.rows.bind(widget),
       });
     },
     registerSearchEngine(engine) {
@@ -2929,6 +3126,9 @@ export function createPluginApi(options: {
     findActions,
     tabActions,
     siteInfoProviders,
+    toolbarItems,
+    newTabWidgets,
+    commands,
     searchEngines,
     authProviders,
     pdfTextProviders,

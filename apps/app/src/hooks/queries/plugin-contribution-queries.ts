@@ -49,6 +49,54 @@ export interface PluginBrowserTabActionContribution {
   title: string;
 }
 
+/**
+ * One toolbar control contributed by a plugin (`browser.toolbar.items`).
+ *
+ * `hasState` decides whether the app asks anything as the user browses: a control
+ * that looks the same on every page is drawn from this declaration alone.
+ */
+export interface PluginBrowserToolbarItemContribution {
+  pluginId: string;
+  itemId: string;
+  title: string;
+  icon: string | null;
+  hasState: boolean;
+}
+
+/**
+ * That a plugin has a new-tab section at all (`browser.newTab.widgets`).
+ *
+ * Ids only, deliberately: the section's heading and rows arrive together from the
+ * per-tab request, so nothing is duplicated on two wires and nothing can drift
+ * between them. What this buys is the question "is anyone there" — with no widget
+ * declared, opening a tab asks nothing.
+ */
+export interface PluginBrowserNewTabWidgetContribution {
+  pluginId: string;
+  widgetId: string;
+}
+
+/**
+ * One command a plugin added, with the chord that runs it (`app.commands`).
+ *
+ * Not in bb's keybinding config: bb's command ids are a closed enum that the
+ * settings UI and the override store key on. These are matched after every one of
+ * bb's own bindings, so a chord bb uses keeps doing what the user expects.
+ */
+export interface PluginCommandContribution {
+  pluginId: string;
+  commandId: string;
+  title: string;
+  shortcut: {
+    key: string;
+    alt: boolean;
+    control: boolean;
+    meta: boolean;
+    mod: boolean;
+    shift: boolean;
+  };
+}
+
 /** One search engine a plugin offered (`browser.searchEngines`). */
 export interface PluginBrowserSearchEngineContribution {
   pluginId: string;
@@ -62,6 +110,9 @@ export interface PluginContributions {
   browserFindActions: PluginBrowserFindActionContribution[];
   browserSearchEngines: PluginBrowserSearchEngineContribution[];
   browserTabActions: PluginBrowserTabActionContribution[];
+  browserToolbarItems: PluginBrowserToolbarItemContribution[];
+  browserNewTabWidgets: PluginBrowserNewTabWidgetContribution[];
+  commands: PluginCommandContribution[];
   mentionProviders: PluginMentionProviderContribution[];
   omniboxProviders: PluginOmniboxProviderContribution[];
 }
@@ -71,6 +122,9 @@ const EMPTY_CONTRIBUTIONS: PluginContributions = {
   browserFindActions: [],
   browserSearchEngines: [],
   browserTabActions: [],
+  browserToolbarItems: [],
+  browserNewTabWidgets: [],
+  commands: [],
   mentionProviders: [],
   omniboxProviders: [],
 };
@@ -149,6 +203,80 @@ function toSearchEngineContribution(
   };
 }
 
+function toToolbarItemContribution(
+  value: unknown,
+): PluginBrowserToolbarItemContribution | null {
+  if (typeof value !== "object" || value === null) return null;
+  const item = value as Record<string, unknown>;
+  if (
+    typeof item.pluginId !== "string" ||
+    typeof item.itemId !== "string" ||
+    typeof item.title !== "string"
+  ) {
+    return null;
+  }
+  return {
+    pluginId: item.pluginId,
+    itemId: item.itemId,
+    title: item.title,
+    icon: typeof item.icon === "string" ? item.icon : null,
+    // Absent means "asks nothing", which is the safe reading: the alternative is
+    // a request per navigation to a server that never wanted one.
+    hasState: item.hasState === true,
+  };
+}
+
+function toNewTabWidgetContribution(
+  value: unknown,
+): PluginBrowserNewTabWidgetContribution | null {
+  if (typeof value !== "object" || value === null) return null;
+  const widget = value as Record<string, unknown>;
+  if (
+    typeof widget.pluginId !== "string" ||
+    typeof widget.widgetId !== "string"
+  ) {
+    return null;
+  }
+  return { pluginId: widget.pluginId, widgetId: widget.widgetId };
+}
+
+/**
+ * A command whose chord the app could not match is dropped rather than listed: a
+ * shortcut row that never fires is worse than no row, and the server normalised
+ * every modifier before sending it, so a missing one means a build mismatch.
+ */
+function toCommandContribution(
+  value: unknown,
+): PluginCommandContribution | null {
+  if (typeof value !== "object" || value === null) return null;
+  const command = value as Record<string, unknown>;
+  const shortcut = command.shortcut as Record<string, unknown> | undefined;
+  if (
+    typeof command.pluginId !== "string" ||
+    typeof command.commandId !== "string" ||
+    typeof command.title !== "string" ||
+    typeof shortcut !== "object" ||
+    shortcut === null ||
+    typeof shortcut.key !== "string" ||
+    shortcut.key.length === 0
+  ) {
+    return null;
+  }
+  return {
+    pluginId: command.pluginId,
+    commandId: command.commandId,
+    title: command.title,
+    shortcut: {
+      key: shortcut.key,
+      alt: shortcut.alt === true,
+      control: shortcut.control === true,
+      meta: shortcut.meta === true,
+      mod: shortcut.mod === true,
+      shift: shortcut.shift === true,
+    },
+  };
+}
+
 function toOmniboxProviderContribution(
   value: unknown,
 ): PluginOmniboxProviderContribution | null {
@@ -202,6 +330,9 @@ async function fetchPluginContributions(
     browserFindActions?: unknown;
     browserSearchEngines?: unknown;
     browserTabActions?: unknown;
+    browserToolbarItems?: unknown;
+    browserNewTabWidgets?: unknown;
+    commands?: unknown;
     mentionProviders?: unknown;
     omniboxProviders?: unknown;
   };
@@ -237,6 +368,29 @@ async function fetchPluginContributions(
           .filter(
             (action): action is PluginBrowserTabActionContribution =>
               action !== null,
+          )
+      : [],
+    browserToolbarItems: Array.isArray(body.browserToolbarItems)
+      ? body.browserToolbarItems
+          .map(toToolbarItemContribution)
+          .filter(
+            (item): item is PluginBrowserToolbarItemContribution =>
+              item !== null,
+          )
+      : [],
+    browserNewTabWidgets: Array.isArray(body.browserNewTabWidgets)
+      ? body.browserNewTabWidgets
+          .map(toNewTabWidgetContribution)
+          .filter(
+            (widget): widget is PluginBrowserNewTabWidgetContribution =>
+              widget !== null,
+          )
+      : [],
+    commands: Array.isArray(body.commands)
+      ? body.commands
+          .map(toCommandContribution)
+          .filter(
+            (command): command is PluginCommandContribution => command !== null,
           )
       : [],
     mentionProviders: Array.isArray(body.mentionProviders)
@@ -606,6 +760,175 @@ export function usePluginSiteInfo(
     enabled: options.enabled,
     staleTime: 5_000,
   });
+}
+
+/** What one plugin's toolbar control looks like for the page it was asked about. */
+export interface PluginToolbarItemState {
+  pluginId: string;
+  itemId: string;
+  active: boolean;
+  /** Replaces the declared title, or null to keep it. */
+  title: string | null;
+}
+
+function isToolbarItemState(value: unknown): value is PluginToolbarItemState {
+  if (typeof value !== "object" || value === null) return false;
+  const state = value as Record<string, unknown>;
+  return (
+    typeof state.pluginId === "string" &&
+    typeof state.itemId === "string" &&
+    typeof state.active === "boolean" &&
+    (state.title === null || typeof state.title === "string")
+  );
+}
+
+async function fetchPluginToolbarStates(
+  args: { tabId: string; url: string; title: string | null },
+  signal: AbortSignal,
+): Promise<PluginToolbarItemState[]> {
+  const params = new URLSearchParams({ tabId: args.tabId, url: args.url });
+  if (args.title !== null) params.set("title", args.title);
+  const response = await fetch(
+    `/api/v1/plugins/browser/toolbar-state?${params.toString()}`,
+    { signal },
+  );
+  // The declared look rather than an error: an older server or a disabled
+  // experiment both mean "nobody has anything to say about this page".
+  if (!response.ok) return [];
+  const body = (await response.json()) as { states?: unknown };
+  return Array.isArray(body.states)
+    ? body.states.filter(isToolbarItemState)
+    : [];
+}
+
+export function pluginToolbarStatesQueryKeyPrefix(): QueryKey {
+  return ["plugin-toolbar-states"];
+}
+
+/**
+ * What each plugin's toolbar control looks like for the page in this tab.
+ *
+ * Keyed by tab and address, not by title: a title arrives after the page does and
+ * changes nothing about *which* page this is, so re-asking on it would double
+ * every navigation's cost for an answer nobody's control depends on.
+ *
+ * `enabled` is the caller's own "does any control even offer a state" — with none,
+ * this asks nothing at all as the user browses.
+ */
+export function usePluginToolbarStates(
+  args: { tabId: string; url: string; title: string | null },
+  options: { enabled: boolean },
+) {
+  return useQuery({
+    queryKey: ["plugin-toolbar-states", args.tabId, args.url],
+    queryFn: ({ signal }) => fetchPluginToolbarStates(args, signal),
+    enabled: options.enabled,
+    staleTime: 5_000,
+  });
+}
+
+/** One plugin's section of the new-tab screen (`browser.newTab.widgets`). */
+export interface PluginNewTabSection {
+  pluginId: string;
+  widgetId: string;
+  label: string;
+  rows: { title: string; subtitle: string | null; url: string }[];
+}
+
+function isNewTabSection(value: unknown): value is PluginNewTabSection {
+  if (typeof value !== "object" || value === null) return false;
+  const section = value as Record<string, unknown>;
+  return (
+    typeof section.pluginId === "string" &&
+    typeof section.widgetId === "string" &&
+    typeof section.label === "string" &&
+    Array.isArray(section.rows) &&
+    section.rows.every((row) => {
+      if (typeof row !== "object" || row === null) return false;
+      const typed = row as Record<string, unknown>;
+      return (
+        typeof typed.title === "string" &&
+        typeof typed.url === "string" &&
+        (typed.subtitle === null || typeof typed.subtitle === "string")
+      );
+    })
+  );
+}
+
+async function fetchPluginNewTabSections(
+  args: { tabId: string },
+  signal: AbortSignal,
+): Promise<PluginNewTabSection[]> {
+  const params = new URLSearchParams({ tabId: args.tabId });
+  const response = await fetch(
+    `/api/v1/plugins/browser/new-tab?${params.toString()}`,
+    { signal },
+  );
+  // Nothing to add rather than an error: an older server or a disabled
+  // experiment both mean "no plugin has anything for a new tab".
+  if (!response.ok) return [];
+  const body = (await response.json()) as { sections?: unknown };
+  return Array.isArray(body.sections)
+    ? body.sections.filter(isNewTabSection)
+    : [];
+}
+
+/**
+ * What plugins want to show on this tab's new-tab screen.
+ *
+ * `enabled` is the caller's "has anyone declared a widget", so an install with no
+ * such plugin never asks. Asked per tab because the screen is per tab, and kept
+ * briefly stale so returning to an empty tab does not re-ask on every render.
+ */
+export function usePluginNewTabSections(
+  args: { tabId: string },
+  options: { enabled: boolean },
+) {
+  return useQuery({
+    queryKey: ["plugin-new-tab-sections", args.tabId],
+    queryFn: ({ signal }) => fetchPluginNewTabSections(args, signal),
+    enabled: options.enabled,
+    staleTime: 5_000,
+  });
+}
+
+/**
+ * Run a plugin command whose chord fired. Fire-and-forget: a keypress has already
+ * happened, and the plugin reports through its own surfaces.
+ */
+export async function runPluginCommand(args: {
+  pluginId: string;
+  commandId: string;
+}): Promise<void> {
+  await fetch("/api/v1/plugins/commands/run", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(args),
+  }).catch(() => undefined);
+}
+
+export interface RunPluginToolbarItemArgs {
+  itemId: string;
+  pluginId: string;
+  tabId: string;
+  url: string;
+  title: string | null;
+}
+
+/**
+ * Press a plugin's toolbar control, and resolve once the plugin is done.
+ *
+ * Awaited, unlike a menu entry: the caller asks for states again afterwards, and
+ * a control that toggled something has to stop looking like it did before.
+ */
+export async function runPluginToolbarItem(
+  args: RunPluginToolbarItemArgs,
+): Promise<void> {
+  await fetch("/api/v1/plugins/browser/toolbar-item", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(args),
+  }).catch(() => undefined);
 }
 
 export interface RunPluginTabActionArgs {

@@ -120,8 +120,37 @@ what the user reads. And every plugin already granted `contextMenu.register`
 would have silently gained the ability to put entries in the tab strip, which is
 a widening nobody re-consented to. The house rule the browser set holds: one
 permission per contributed surface, the same way `omnibox.register` and
-`find.register` are separate — five surfaces, five permissions, each naming what
-its holder gets to see.
+`find.register` are separate — each naming what its holder gets to see.
+
+`toolbar.register` is the one where that rule stopped being a formality. Every
+other browser surface is scoped to something the user did: a right-click, a picked
+entry, an opened panel, a typed query. A toolbar control is asked what it looks
+like **on navigation**, so its holder is handed the address of every page the user
+opens without the user doing anything — closer to `omnibox.register` (which sees
+everything typed) than to the menus it sits beside. Folding it into
+`contextMenu.register` would have turned a click-scoped grant into a standing one
+for every plugin that already had it.
+
+`newTab.register` is the same rule at the opposite end: a new tab has no page, so
+the section a plugin puts there is asked nothing about the user's browsing. It is
+still its own permission rather than none, because _placement in bb's chrome_ is
+what the user is agreeing to — but it is the cheapest of the browser's permissions
+to reason about, and the manifest should read that way.
+
+### And one that stayed ungated on purpose
+
+`bb.ui.registerCommand` — a command of the plugin's own, with a chord — costs
+nothing, next to `registerKeybinding`, which also costs nothing. The reason is that
+a chord which runs the plugin's own code discloses nothing that was not already the
+plugin's, and the design keeps it that way: `run` receives **no context**. A command
+that wants the page the user is on reads it through `bb.browser.page.*` and pays
+`tabs.read` there.
+
+That is the shape to copy when a surface looks like it needs a new permission:
+first check whether the capability can be _reached_ through a gate that already
+exists. Handing the address to every chord and then inventing `command.register` to
+cover it would have been a permission that exists to excuse a disclosure nobody
+needed.
 
 ## What is ungated, and why
 

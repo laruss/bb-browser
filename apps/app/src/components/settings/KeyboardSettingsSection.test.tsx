@@ -15,6 +15,7 @@ import {
   type AppCommandId,
   type AppDefaultKeybindings,
   type AppKeybindingOverrides,
+  type AppKeybindings,
 } from "@bb/domain";
 import { KeyboardSettingsSection } from "./KeyboardSettingsSection";
 
@@ -128,6 +129,22 @@ const testState = vi.hoisted(() => {
     keybindingOverrides: [] as AppKeybindingOverrides,
     keyboardPending: false,
     metadataCalls: new Map<AppCommandId, number>(),
+    /** What the plugin shortcuts group lists. */
+    pluginCommands: [] as {
+      pluginId: string;
+      commandId: string;
+      title: string;
+      shortcut: {
+        key: string;
+        alt: boolean;
+        control: boolean;
+        meta: boolean;
+        mod: boolean;
+        shift: boolean;
+      };
+    }[],
+    /** bb's *effective* bindings, which is what a plugin chord can collide with. */
+    effectiveKeybindings: [] as AppKeybindings,
     recorderButtonCalls: new Map<string, number>(),
     mutate:
       vi.fn<
@@ -145,7 +162,14 @@ vi.mock("@/hooks/queries/system-queries", () => ({
       defaultKeybindings: testState.defaultKeybindings,
       generalSettings: defaultAppSettings,
       keybindingOverrides: testState.keybindingOverrides,
+      keybindings: testState.effectiveKeybindings,
     },
+  }),
+}));
+
+vi.mock("@/hooks/queries/plugin-contribution-queries", () => ({
+  usePluginContributions: () => ({
+    data: { commands: testState.pluginCommands },
   }),
 }));
 
@@ -211,6 +235,8 @@ afterEach(() => {
   testState.keyboardPending = false;
   testState.metadataCalls.clear();
   testState.recorderButtonCalls.clear();
+  testState.pluginCommands.length = 0;
+  testState.effectiveKeybindings = [];
 });
 
 describe("KeyboardSettingsSection", () => {
@@ -539,5 +565,134 @@ describe("KeyboardSettingsSection", () => {
     expect(within(defaults).getByText("1")).toBeDefined();
     expect(within(defaults).queryByText("Web")).toBeNull();
     expect(within(defaults).queryByText("Desktop")).toBeNull();
+  });
+  // Plugin commands (`app.commands`) are listed here read-only: bb's rows are
+  // editable because their ids are a closed set the override store keys on, and a
+  // plugin's are not. What the group exists for is a chord nobody could otherwise
+  // find.
+  it("lists a plugin's command and its chord", () => {
+    testState.pluginCommands.push({
+      pluginId: "bookmarks",
+      commandId: "save-page",
+      title: "Save this page",
+      shortcut: {
+        key: "d",
+        alt: false,
+        control: false,
+        meta: false,
+        mod: true,
+        shift: false,
+      },
+    });
+
+    render(<KeyboardSettingsSection />);
+
+    expect(screen.getByText("Plugin shortcuts")).toBeDefined();
+    expect(screen.getByText("Save this page")).toBeDefined();
+    expect(screen.getByText("Added by bookmarks")).toBeDefined();
+  });
+
+  // bb's own bindings are matched first, so where both apply bb's wins. The row
+  // says exactly that and no more: bb's bindings are scoped, so "will not run"
+  // would be false for a chord bb only uses outside the browser.
+  it("names bb's own command when it shares a plugin's chord", () => {
+    testState.effectiveKeybindings = [
+      {
+        command: "thread.search",
+        desktopOnly: false,
+        shortcut: {
+          key: "d",
+          mod: true,
+          meta: false,
+          control: false,
+          alt: false,
+          shift: false,
+        },
+        when: { all: ["mainSurface"], none: [] },
+      },
+    ];
+    testState.pluginCommands.push({
+      pluginId: "bookmarks",
+      commandId: "save-page",
+      title: "Save this page",
+      shortcut: {
+        key: "d",
+        alt: false,
+        control: false,
+        meta: false,
+        mod: true,
+        shift: false,
+      },
+    });
+
+    render(<KeyboardSettingsSection />);
+
+    expect(screen.getByText(/Also used by/u)).toBeDefined();
+    expect(screen.getByText(/bb’s own shortcut wins/u)).toBeDefined();
+  });
+
+  // `mod` is Command on a Mac and Control everywhere else, so on this platform a
+  // plugin writing `control: true` has claimed the very chord bb wrote as `mod`.
+  // Comparing the fields literally would miss it and leave the row looking free.
+  it("spots a collision a plugin spelled with an explicit modifier", () => {
+    testState.effectiveKeybindings = [
+      {
+        command: "thread.search",
+        desktopOnly: false,
+        shortcut: {
+          key: "k",
+          mod: true,
+          meta: false,
+          control: false,
+          alt: false,
+          shift: false,
+        },
+        when: { all: ["mainSurface"], none: [] },
+      },
+    ];
+    testState.pluginCommands.push({
+      pluginId: "bookmarks",
+      commandId: "save-page",
+      title: "Save this page",
+      shortcut: {
+        key: "k",
+        alt: false,
+        // The same keystroke as bb's `mod: true` wherever Control is the modifier.
+        control: true,
+        meta: false,
+        mod: false,
+        shift: false,
+      },
+    });
+
+    render(<KeyboardSettingsSection />);
+
+    expect(screen.getByText(/Also used by/u)).toBeDefined();
+  });
+
+  // A plugin's row is a match like any other, so the search must not report
+  // "nothing matches" underneath one.
+  it("does not claim nothing matches when only a plugin's row does", () => {
+    testState.pluginCommands.push({
+      pluginId: "bookmarks",
+      commandId: "save-page",
+      title: "Save this page",
+      shortcut: {
+        key: "d",
+        alt: false,
+        control: false,
+        meta: false,
+        mod: true,
+        shift: false,
+      },
+    });
+
+    render(<KeyboardSettingsSection />);
+    fireEvent.change(screen.getByLabelText("Search keyboard shortcuts"), {
+      target: { value: "bookmarks" },
+    });
+
+    expect(screen.getByText("Save this page")).toBeDefined();
+    expect(screen.queryByText(/No shortcuts match/u)).toBeNull();
   });
 });

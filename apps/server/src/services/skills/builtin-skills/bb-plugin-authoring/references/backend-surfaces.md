@@ -12,6 +12,7 @@ frontend, from an agent, from the CLI, from a timer, or from the outside world.
 - [bb.agents — native tools and session configuration](#bbagents--native-tools-and-conditional-session-configuration)
 - [bb.ui — host-rendered UI](#bbui--host-rendered-ui-no-frontend-bundle-needed)
 - [bb.ui — rebinding keyboard shortcuts](#bbui--rebinding-keyboard-shortcuts)
+- [bb.ui — a command of your own](#bbui--a-command-of-your-own)
 
 ## bb.http — HTTP routes
 
@@ -342,3 +343,44 @@ rather than as something the user changed. Unknown command ids are a load-time
 error — the whole registration is rejected, not half-applied. Between plugins
 the lowest plugin id wins a contested command, so the result never depends on
 load order.
+
+## bb.ui — a command of your own
+
+`registerKeybinding` rebinds a command **BB already has**. This adds one it has
+never heard of, with the chord that runs it:
+
+```ts
+bb.ui.registerCommand({
+  id: "save-page",
+  title: "Save this page", // how the shortcut is listed in Settings → Keyboard
+  shortcut: { key: "d", mod: true }, // required — see below
+  async run() {
+    // No context: ask for what you need, and pay for it where it is already gated.
+    const url = await bb.browser.page.getUrl(); // costs `tabs.read`
+    await bb.storage.kv.set(`saved:${url}`, { at: Date.now() });
+  },
+});
+```
+
+Four rules, each with a reason worth knowing:
+
+- **The chord is required.** BB has no command palette, so a command without one
+  could never be run; a registration with no `shortcut.key` fails at load rather
+  than sitting there doing nothing.
+- **`run` is handed nothing.** A chord that carried the current page would give
+  every command the address of whatever the user is looking at. Read what you need
+  instead — `bb.browser.page.getUrl()`, `bb.browser.tabs.list()` — and the
+  permission that already governs seeing the user's page (`tabs.read`) is the one
+  that applies. This is also why `registerCommand` itself costs no permission.
+- **BB's own bindings win.** Your chord is matched only after every one of BB's has
+  declined, the user's own rebindings included — but BB's bindings are _scoped_, so
+  a chord BB uses outside the browser can still be yours inside it (`Mod+D` is
+  `diff.toggle`, which excludes a focused browser; the bookmarks example takes it
+  from there). Settings → Keyboard lists your command under "Plugin shortcuts" and
+  names BB's command when it shares the chord. Between plugins, the lowest plugin id
+  wins.
+- **It never fires while the user is typing**, or while a dialog is open — the same
+  scope BB's own shortcuts follow.
+
+Two of your own commands on one chord is refused at load: that is a mistake you
+can fix, unlike two plugins wanting the same chord.

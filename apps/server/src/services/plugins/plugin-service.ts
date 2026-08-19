@@ -23,6 +23,8 @@ import {
   type PluginBrowserContextMenuContext,
   type PluginBrowserSiteInfoContext,
   type PluginBrowserTabActionContext,
+  type PluginBrowserToolbarContext,
+  type PluginBrowserNewTabContext,
   type PluginBrowserDownload,
   type PluginBrowserFindContext,
   type PluginCliExecutionResult,
@@ -118,6 +120,11 @@ import type {
   PluginSearchEngineContribution,
   PluginSiteInfoSection,
   PluginTabActionContribution,
+  PluginToolbarItemContribution,
+  PluginToolbarItemState,
+  PluginNewTabSection,
+  PluginNewTabWidgetContribution,
+  PluginCommandContribution,
   PluginFindActionContribution,
   PluginOmniboxProviderContribution,
   PluginOmniboxRunOutcome,
@@ -146,6 +153,11 @@ export type {
   PluginSearchEngineContribution,
   PluginSiteInfoSection,
   PluginTabActionContribution,
+  PluginToolbarItemContribution,
+  PluginToolbarItemState,
+  PluginNewTabSection,
+  PluginNewTabWidgetContribution,
+  PluginCommandContribution,
   PluginFindActionContribution,
   PluginOmniboxProviderContribution,
   PluginOmniboxRunOutcome,
@@ -476,6 +488,66 @@ export interface PluginService {
     context: PluginBrowserTabActionContext;
   }): Promise<{ ok: true } | { ok: false; error: string }>;
   /**
+   * Toolbar controls plugins contributed (`browser.toolbar.items`), for the
+   * address row to render between the address bar and bb's own buttons. Ordered
+   * by plugin id. No plugin code runs — this is the declaration.
+   */
+  listToolbarItemContributions(): PluginToolbarItemContribution[];
+  /**
+   * Ask the controls that offered a `state` what they look like for this page.
+   *
+   * Concurrent and time-boxed like site-info sections, with one difference that
+   * matters: this is asked as the user *navigates* rather than when they open
+   * something, so a control without a `state` is never asked at all and nothing
+   * is spent on it.
+   */
+  describeToolbarItemStates(args: {
+    context: PluginBrowserToolbarContext;
+  }): Promise<PluginToolbarItemState[]>;
+  /**
+   * Run a pressed toolbar control, on the same terms as a picked menu entry:
+   * time-boxed, failure-isolated, nothing waits on the result. The caller asks
+   * for states again once this resolves, which is how a toggle shows its new
+   * look.
+   */
+  runToolbarItem(args: {
+    pluginId: string;
+    itemId: string;
+    context: PluginBrowserToolbarContext;
+  }): Promise<{ ok: true } | { ok: false; error: string }>;
+  /**
+   * Ask every registered new-tab widget for its rows
+   * (`browser.newTab.widgets`).
+   *
+   * Concurrent, time-boxed and failure-isolated like site-info sections. A widget
+   * with nothing to list drops out of the result rather than showing an empty
+   * heading.
+   */
+  describeNewTabSections(args: {
+    context: PluginBrowserNewTabContext;
+  }): Promise<PluginNewTabSection[]>;
+  /**
+   * New-tab sections plugins declared (`browser.newTab.widgets`), so the app can
+   * tell "nobody has one" from "nobody answered" without asking anyone. Ordered
+   * by plugin id, then registration order. No plugin code runs.
+   */
+  listNewTabWidgetContributions(): PluginNewTabWidgetContribution[];
+  /**
+   * Commands plugins added, with their chords (`app.commands`), for the app to
+   * match after every one of bb's own. Ordered by plugin id, then registration
+   * order — which is also the order that resolves a chord two plugins both want.
+   * No plugin code runs.
+   */
+  listCommandContributions(): PluginCommandContribution[];
+  /**
+   * Run a plugin command whose chord fired. A deliberate keypress, so it takes
+   * the same box and isolation a picked menu entry does, and nothing waits on it.
+   */
+  runCommand(args: {
+    pluginId: string;
+    commandId: string;
+  }): Promise<{ ok: true } | { ok: false; error: string }>;
+  /**
    * Ask every registered auth provider (`browser.auth.providers`) for the
    * credentials a browsed page was challenged for, in plugin id order, and stop
    * at the first that answers.
@@ -582,6 +654,12 @@ const DEFAULT_OMNIBOX_SUGGEST_TIMEOUT_MS = 2_000;
  */
 const DEFAULT_SITE_INFO_TIMEOUT_MS = 2_000;
 /**
+ * A toolbar `state` gets less room than a site-info section: the control is
+ * already drawn and correct-by-default, so a slow answer costs nothing but a
+ * late accent, while this runs on every navigation.
+ */
+const DEFAULT_TOOLBAR_STATE_TIMEOUT_MS = 1_000;
+/**
  * What one provider may put in the popover. It is a small panel anchored to the
  * address bar, and a provider that returns a hundred rows is not describing a
  * site — so the rows are capped here rather than trusted, like every other
@@ -590,6 +668,17 @@ const DEFAULT_SITE_INFO_TIMEOUT_MS = 2_000;
 const SITE_INFO_MAX_ROWS = 8;
 const SITE_INFO_MAX_ROW_LABEL_LENGTH = 60;
 const SITE_INFO_MAX_ROW_VALUE_LENGTH = 200;
+/** A tooltip, not a paragraph — and it has to fit a control in a fixed row. */
+const TOOLBAR_ITEM_MAX_TITLE_LENGTH = 60;
+/**
+ * More rows than a site-info section gets: this is a list of places to go — saved
+ * pages, a reading list — where eight would be a teaser rather than a section.
+ */
+const NEW_TAB_MAX_ROWS = 12;
+const NEW_TAB_MAX_ROW_TITLE_LENGTH = 200;
+const NEW_TAB_MAX_ROW_SUBTITLE_LENGTH = 200;
+/** The same cap the address bar and the history store use for a URL. */
+const NEW_TAB_MAX_ROW_URL_LENGTH = 4_096;
 /**
  * A picked `run` action is a deliberate user action, not a keystroke, and may
  * spawn a thread — so it gets the same longer box as mention resolve.
@@ -839,6 +928,123 @@ function normalizeSiteInfoRows(args: {
     return {
       label: typed.label.trim().slice(0, SITE_INFO_MAX_ROW_LABEL_LENGTH),
       value: typed.value.trim().slice(0, SITE_INFO_MAX_ROW_VALUE_LENGTH),
+    };
+  });
+}
+
+/**
+ * Turn what a `state` returned into the two things the control can show, or null
+ * for "keep what was declared". Malformed answers throw: the caller runs this
+ * inside invokeWrapped, so a bad one leaves the declared look rather than a
+ * control that reads as off when nobody said so.
+ */
+function normalizeToolbarItemState(args: {
+  itemId: string;
+  result: unknown;
+}): { active: boolean; title: string | null } | null {
+  if (args.result === null || args.result === undefined) {
+    return null;
+  }
+  if (typeof args.result !== "object" || Array.isArray(args.result)) {
+    throw new Error(
+      `toolbar item "${args.itemId}" state() must return an object or null`,
+    );
+  }
+  const typed = args.result as { active?: unknown; title?: unknown };
+  if (typed.active !== undefined && typeof typed.active !== "boolean") {
+    throw new Error(
+      `toolbar item "${args.itemId}" state().active must be a boolean when present`,
+    );
+  }
+  if (typed.title !== undefined && typeof typed.title !== "string") {
+    throw new Error(
+      `toolbar item "${args.itemId}" state().title must be a string when present`,
+    );
+  }
+  const title = typeof typed.title === "string" ? typed.title.trim() : "";
+  return {
+    active: typed.active === true,
+    title:
+      title.length === 0 ? null : title.slice(0, TOOLBAR_ITEM_MAX_TITLE_LENGTH),
+  };
+}
+
+/**
+ * Turn what a widget returned into rows the new-tab screen can render.
+ *
+ * A row is a link, so the URL is checked here rather than at click time: `http`
+ * and `https` only, because `javascript:` or `file:` from a plugin is not a link
+ * the browser should follow, and a row that fails when clicked is worse than a row
+ * that never appeared. Malformed results throw — the caller runs this inside
+ * invokeWrapped, so a bad widget contributes nothing and the screen still renders
+ * bb's own recents.
+ */
+function normalizeNewTabRows(args: {
+  result: unknown;
+  widgetId: string;
+}): { title: string; subtitle: string | null; url: string }[] {
+  if (args.result === null || args.result === undefined) {
+    return [];
+  }
+  if (!Array.isArray(args.result)) {
+    throw new Error(
+      `new tab widget "${args.widgetId}" rows() must return an array of rows or null`,
+    );
+  }
+  return args.result.slice(0, NEW_TAB_MAX_ROWS).map((row, index) => {
+    const typed = row as {
+      title?: unknown;
+      subtitle?: unknown;
+      url?: unknown;
+    } | null;
+    if (
+      typeof typed?.title !== "string" ||
+      typed.title.trim().length === 0 ||
+      typeof typed.url !== "string"
+    ) {
+      throw new Error(
+        `new tab widget "${args.widgetId}" rows[${index}] must be { title: string, url: string }`,
+      );
+    }
+    if (
+      typed.subtitle !== undefined &&
+      typed.subtitle !== null &&
+      typeof typed.subtitle !== "string"
+    ) {
+      throw new Error(
+        `new tab widget "${args.widgetId}" rows[${index}].subtitle must be a string when present`,
+      );
+    }
+    // Refused rather than truncated: a URL cut at the cap is a different address,
+    // and a row that quietly goes somewhere else is worse than one that never
+    // appeared.
+    if (typed.url.length > NEW_TAB_MAX_ROW_URL_LENGTH) {
+      throw new Error(
+        `new tab widget "${args.widgetId}" rows[${index}].url is longer than ${NEW_TAB_MAX_ROW_URL_LENGTH} characters`,
+      );
+    }
+    let url: URL;
+    try {
+      url = new URL(typed.url);
+    } catch {
+      throw new Error(
+        `new tab widget "${args.widgetId}" rows[${index}].url is not a URL: ${JSON.stringify(typed.url)}`,
+      );
+    }
+    if (url.protocol !== "http:" && url.protocol !== "https:") {
+      throw new Error(
+        `new tab widget "${args.widgetId}" rows[${index}].url must be http or https`,
+      );
+    }
+    const subtitle =
+      typeof typed.subtitle === "string" ? typed.subtitle.trim() : "";
+    return {
+      title: typed.title.trim().slice(0, NEW_TAB_MAX_ROW_TITLE_LENGTH),
+      subtitle:
+        subtitle.length === 0
+          ? null
+          : subtitle.slice(0, NEW_TAB_MAX_ROW_SUBTITLE_LENGTH),
+      url: typed.url,
     };
   });
 }
@@ -1188,6 +1394,10 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
     DEFAULT_BROWSER_HISTORY_FILTER_TIMEOUT_MS;
   const siteInfoTimeoutMs =
     deps.siteInfoTimeoutMs ?? DEFAULT_SITE_INFO_TIMEOUT_MS;
+  const toolbarStateTimeoutMs =
+    deps.toolbarStateTimeoutMs ?? DEFAULT_TOOLBAR_STATE_TIMEOUT_MS;
+  const newTabRowsTimeoutMs =
+    deps.newTabRowsTimeoutMs ?? DEFAULT_SITE_INFO_TIMEOUT_MS;
   const contextMenuRunTimeoutMs =
     deps.contextMenuRunTimeoutMs ?? DEFAULT_CONTEXT_MENU_RUN_TIMEOUT_MS;
   const browserAuthTimeoutMs = DEFAULT_BROWSER_AUTH_TIMEOUT_MS;
@@ -2613,6 +2823,183 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
           withPluginTimeout({
             run: async () => record.run(payload),
             // The same box a picked menu item gets, because that is what it is.
+            timeoutMs: contextMenuRunTimeoutMs,
+          }),
+      );
+      return outcome.ok ? { ok: true } : { ok: false, error: outcome.error };
+    },
+
+    listToolbarItemContributions() {
+      const contributions: PluginToolbarItemContribution[] = [];
+      for (const [id, plugin] of [...loaded.entries()].sort(([a], [b]) =>
+        a.localeCompare(b),
+      )) {
+        for (const record of plugin.handle.toolbarItems) {
+          contributions.push({
+            pluginId: id,
+            itemId: record.id,
+            title: record.title,
+            icon: record.icon,
+            hasState: record.state !== null,
+          });
+        }
+      }
+      return contributions;
+    },
+
+    async describeToolbarItemStates({ context }) {
+      const tasks: Array<Promise<PluginToolbarItemState | null>> = [];
+      for (const [id, plugin] of [...loaded.entries()].sort(([a], [b]) =>
+        a.localeCompare(b),
+      )) {
+        for (const record of [...plugin.handle.toolbarItems]) {
+          const state = record.state;
+          if (state === null) continue;
+          tasks.push(
+            (async () => {
+              const outcome = await invokeCallback(
+                id,
+                {
+                  kind: "browserToolbarState",
+                  target: record.id,
+                  payload: context,
+                },
+                async (payload) =>
+                  normalizeToolbarItemState({
+                    itemId: record.id,
+                    result: await withPluginTimeout({
+                      run: async () => state(payload),
+                      timeoutMs: toolbarStateTimeoutMs,
+                    }),
+                  }),
+              );
+              if (!outcome.ok || outcome.value === null) return null;
+              return {
+                pluginId: id,
+                itemId: record.id,
+                active: outcome.value.active,
+                title: outcome.value.title,
+              };
+            })(),
+          );
+        }
+      }
+      return (await Promise.all(tasks)).filter(
+        (state): state is PluginToolbarItemState => state !== null,
+      );
+    },
+
+    async runToolbarItem({ context, itemId, pluginId }) {
+      const plugin = loaded.get(pluginId);
+      const record = plugin?.handle.toolbarItems.find(
+        (candidate) => candidate.id === itemId,
+      );
+      if (!plugin || record === undefined) {
+        return {
+          ok: false,
+          error: `plugin "${pluginId}" has no toolbar item "${itemId}"`,
+        };
+      }
+      const outcome = await invokeCallback(
+        pluginId,
+        { kind: "browserToolbarRun", target: itemId, payload: context },
+        async (payload) =>
+          withPluginTimeout({
+            run: async () => record.run(payload),
+            // The same box a picked menu item gets: one deliberate click.
+            timeoutMs: contextMenuRunTimeoutMs,
+          }),
+      );
+      return outcome.ok ? { ok: true } : { ok: false, error: outcome.error };
+    },
+
+    listNewTabWidgetContributions() {
+      const contributions: PluginNewTabWidgetContribution[] = [];
+      for (const [id, plugin] of [...loaded.entries()].sort(([a], [b]) =>
+        a.localeCompare(b),
+      )) {
+        for (const record of plugin.handle.newTabWidgets) {
+          contributions.push({ pluginId: id, widgetId: record.id });
+        }
+      }
+      return contributions;
+    },
+
+    async describeNewTabSections({ context }) {
+      const tasks: Array<Promise<PluginNewTabSection | null>> = [];
+      for (const [id, plugin] of [...loaded.entries()].sort(([a], [b]) =>
+        a.localeCompare(b),
+      )) {
+        for (const record of [...plugin.handle.newTabWidgets]) {
+          tasks.push(
+            (async () => {
+              const outcome = await invokeCallback(
+                id,
+                {
+                  kind: "browserNewTabRows",
+                  target: record.id,
+                  payload: context,
+                },
+                async (payload) =>
+                  normalizeNewTabRows({
+                    result: await withPluginTimeout({
+                      run: async () => record.rows(payload),
+                      timeoutMs: newTabRowsTimeoutMs,
+                    }),
+                    widgetId: record.id,
+                  }),
+              );
+              if (!outcome.ok || outcome.value.length === 0) return null;
+              return {
+                pluginId: id,
+                widgetId: record.id,
+                label: record.label,
+                rows: outcome.value,
+              };
+            })(),
+          );
+        }
+      }
+      return (await Promise.all(tasks)).filter(
+        (section): section is PluginNewTabSection => section !== null,
+      );
+    },
+
+    listCommandContributions() {
+      const contributions: PluginCommandContribution[] = [];
+      for (const [id, plugin] of [...loaded.entries()].sort(([a], [b]) =>
+        a.localeCompare(b),
+      )) {
+        for (const record of plugin.handle.commands) {
+          contributions.push({
+            pluginId: id,
+            commandId: record.id,
+            title: record.title,
+            shortcut: { ...record.shortcut },
+          });
+        }
+      }
+      return contributions;
+    },
+
+    async runCommand({ commandId, pluginId }) {
+      const plugin = loaded.get(pluginId);
+      const record = plugin?.handle.commands.find(
+        (candidate) => candidate.id === commandId,
+      );
+      if (!plugin || record === undefined) {
+        return {
+          ok: false,
+          error: `plugin "${pluginId}" has no command "${commandId}"`,
+        };
+      }
+      const outcome = await invokeCallback(
+        pluginId,
+        { kind: "uiCommand", target: commandId, payload: {} },
+        async () =>
+          withPluginTimeout({
+            run: async () => record.run(),
+            // A keypress is a deliberate action, like a picked menu entry.
             timeoutMs: contextMenuRunTimeoutMs,
           }),
       );

@@ -14,6 +14,14 @@ import {
   PromptBoxInternal,
 } from "./PromptBoxInternal";
 
+// The command provider reads plugin commands (`app.commands`); nothing here
+// contributes one, and this keeps the test off a query client it has no use
+// for.
+vi.mock("@/hooks/queries/plugin-contribution-queries", () => ({
+  usePluginContributions: () => ({ data: undefined }),
+  runPluginCommand: async () => {},
+}));
+
 const testState = vi.hoisted(() => ({
   calls: [] as string[],
   composerInputLocked: false,

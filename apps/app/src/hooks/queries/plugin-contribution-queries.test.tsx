@@ -98,6 +98,38 @@ describe("usePluginContributions", () => {
         { pluginId: "notes", itemId: "file-tab", title: "File this tab" },
         { pluginId: "broken", itemId: "no-title" }, // dropped at the boundary
       ],
+      browserToolbarItems: [
+        {
+          pluginId: "notes",
+          itemId: "star",
+          title: "Save this page",
+          icon: "Star",
+          hasState: true,
+        },
+        // Dropped at the boundary: there would be nothing to label the control
+        // with, and an unlabelled button in the chrome is unusable.
+        { pluginId: "broken", itemId: "star", hasState: true },
+      ],
+      browserNewTabWidgets: [
+        { pluginId: "notes", widgetId: "saved" },
+        { pluginId: "broken" }, // dropped at the boundary
+      ],
+      commands: [
+        {
+          pluginId: "notes",
+          commandId: "save-page",
+          title: "Save this page",
+          shortcut: { key: "d", mod: true },
+        },
+        // Dropped at the boundary: a command with no key could match no
+        // chord, and a shortcut row that never fires is worse than no row.
+        {
+          pluginId: "broken",
+          commandId: "nokey",
+          title: "Nowhere",
+          shortcut: { mod: true },
+        },
+      ],
       browserSearchEngines: [
         {
           pluginId: "notes",
@@ -131,6 +163,31 @@ describe("usePluginContributions", () => {
         ],
         browserTabActions: [
           { pluginId: "notes", itemId: "file-tab", title: "File this tab" },
+        ],
+        browserToolbarItems: [
+          {
+            pluginId: "notes",
+            itemId: "star",
+            title: "Save this page",
+            icon: "Star",
+            hasState: true,
+          },
+        ],
+        browserNewTabWidgets: [{ pluginId: "notes", widgetId: "saved" }],
+        commands: [
+          {
+            pluginId: "notes",
+            commandId: "save-page",
+            title: "Save this page",
+            shortcut: {
+              key: "d",
+              alt: false,
+              control: false,
+              meta: false,
+              mod: true,
+              shift: false,
+            },
+          },
         ],
         browserSearchEngines: [
           {
@@ -176,6 +233,9 @@ describe("usePluginContributions", () => {
         browserFindActions: [],
         browserSearchEngines: [],
         browserTabActions: [],
+        browserToolbarItems: [],
+        browserNewTabWidgets: [],
+        commands: [],
         mentionProviders: [],
         omniboxProviders: [],
       });

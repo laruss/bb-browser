@@ -7,6 +7,7 @@ import { cn } from "@bb/shared-ui/lib/utils";
 import { getBrowserUrlHost } from "@/lib/browser-url";
 import { formatRelativeTime } from "@/lib/relative-time";
 import type { BrowserHistoryEntry } from "@/lib/browser-history";
+import { BrowserNewTabPluginSections } from "./BrowserNewTabPluginSections";
 import {
   LAUNCHER_ROW_BASE_CLASS,
   LAUNCHER_ROW_ICON_CLASS,
@@ -18,6 +19,8 @@ interface BrowserNewTabScreenProps {
   onNavigateInput: (rawInput: string) => void;
   recent: readonly BrowserHistoryEntry[];
   onClearRecent: () => void;
+  /** The tab this screen is in — plugin sections are asked per tab. */
+  tabId: string;
 }
 
 interface BrowserRecentRowProps {
@@ -74,46 +77,54 @@ export function BrowserNewTabScreen({
   onNavigateInput,
   recent,
   onClearRecent,
+  tabId,
 }: BrowserNewTabScreenProps) {
   const now = Date.now();
 
-  if (recent.length === 0) {
-    return null;
-  }
-
+  // The screen itself is always mounted, even with nothing to show: a plugin
+  // section can arrive after this render, and returning null before asking would
+  // mean an install whose only new-tab content is a plugin's never asks for it.
   return (
     <div className="flex h-full flex-col overflow-y-auto px-4 pb-6 pt-8">
       <div className="mx-auto flex w-full max-w-xl flex-col gap-6">
-        <section>
-          <LauncherSectionHeader
-            label="Recently visited"
-            count={recent.length}
-            action={
-              <button
-                type="button"
-                onClick={onClearRecent}
-                aria-label="Clear recently visited"
-                className={cn(
-                  "rounded text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-                  COARSE_POINTER_TEXT_SM_CLASS,
-                )}
-              >
-                Clear
-              </button>
-            }
-          />
-          <ul aria-label="Recently visited" className="flex flex-col gap-px">
-            {recent.map((entry) => (
-              <li key={entry.url}>
-                <BrowserRecentRow
-                  entry={entry}
-                  now={now}
-                  onNavigate={onNavigateInput}
-                />
-              </li>
-            ))}
-          </ul>
-        </section>
+        {recent.length === 0 ? null : (
+          <section>
+            <LauncherSectionHeader
+              label="Recently visited"
+              count={recent.length}
+              action={
+                <button
+                  type="button"
+                  onClick={onClearRecent}
+                  aria-label="Clear recently visited"
+                  className={cn(
+                    "rounded text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+                    COARSE_POINTER_TEXT_SM_CLASS,
+                  )}
+                >
+                  Clear
+                </button>
+              }
+            />
+            <ul aria-label="Recently visited" className="flex flex-col gap-px">
+              {recent.map((entry) => (
+                <li key={entry.url}>
+                  <BrowserRecentRow
+                    entry={entry}
+                    now={now}
+                    onNavigate={onNavigateInput}
+                  />
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+        {/* After bb's own list: the browser's recents are what a new tab has
+            always shown, and a plugin adds to that rather than displacing it. */}
+        <BrowserNewTabPluginSections
+          onNavigate={onNavigateInput}
+          tabId={tabId}
+        />
       </div>
     </div>
   );

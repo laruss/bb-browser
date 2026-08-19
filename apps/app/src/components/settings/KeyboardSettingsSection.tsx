@@ -11,6 +11,7 @@ import {
   defaultAppSettings,
   type AppCommandId,
   type AppDefaultKeybindings,
+  type AppKeybindings,
   type AppKeybindingOverrides,
   type AppShortcut,
 } from "@bb/domain";
@@ -49,9 +50,20 @@ import {
   SettingsWithControl,
 } from "@/components/ui/settings-section";
 import { AppCommandShortcutPill } from "@/components/commands/AppCommandShortcutHint";
+import {
+  usePluginContributions,
+  type PluginCommandContribution,
+} from "@/hooks/queries/plugin-contribution-queries";
+import {
+  filterPluginCommands,
+  PluginShortcutsGroup,
+} from "./PluginShortcutsGroup";
 import { getBbDesktopInfo } from "@/lib/bb-desktop";
 
 const EMPTY_KEYBINDINGS: AppDefaultKeybindings = [];
+const EMPTY_PLUGIN_COMMANDS: readonly PluginCommandContribution[] = [];
+/** The resolved bindings, which differ from the defaults above by having one. */
+const EMPTY_EFFECTIVE_KEYBINDINGS: AppKeybindings = [];
 const EMPTY_OVERRIDES: AppKeybindingOverrides = [];
 const SETTINGS_SHORTCUT_PILL_CLASS =
   "rounded-none bg-transparent px-0 py-0 text-foreground opacity-100";
@@ -516,6 +528,16 @@ export function KeyboardSettingsSection() {
     });
   }, [search]);
 
+  // A plugin row that matched is still a match, so "nothing matches" below has
+  // to account for the group that renders after bb's own. The same cached query
+  // the group itself reads, so this costs nothing extra.
+  const pluginCommands =
+    usePluginContributions().data?.commands ?? EMPTY_PLUGIN_COMMANDS;
+  const matchingPluginCommandCount = filterPluginCommands(
+    pluginCommands,
+    search,
+  ).length;
+
   const latestSettingsRef = useRef({
     defaults,
     isDesktop,
@@ -669,7 +691,16 @@ export function KeyboardSettingsSection() {
               </div>
             </section>
           ))}
-          {visibleGroups.length === 0 ? (
+          {/* After bb's own: a plugin adds to the list rather than mixing into
+              the groups the user knows. */}
+          <PluginShortcutsGroup
+            keybindings={
+              systemConfig.data?.keybindings ?? EMPTY_EFFECTIVE_KEYBINDINGS
+            }
+            platform={platform}
+            search={search}
+          />
+          {visibleGroups.length === 0 && matchingPluginCommandCount === 0 ? (
             <p className="py-6 text-center text-sm text-subtle-foreground">
               No shortcuts match “{search}”.
             </p>

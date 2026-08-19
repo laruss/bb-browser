@@ -157,6 +157,10 @@ export interface PluginServiceDeps {
   /** Time box per picked context-menu item; tests shrink it. */
   contextMenuRunTimeoutMs?: number;
   siteInfoTimeoutMs?: number;
+  /** Time box per toolbar `state` call; tests shrink it. */
+  toolbarStateTimeoutMs?: number;
+  /** Time box per new-tab widget `rows` call; tests shrink it. */
+  newTabRowsTimeoutMs?: number;
   /** Failed candidates must remain healthy for this long before activation commits. */
   stabilizationWindowMs?: number;
   /** Previous artifacts and activation snapshots remain rollbackable for this long. */
@@ -277,6 +281,74 @@ export interface PluginTabActionContribution {
   pluginId: string;
   itemId: string;
   title: string;
+}
+
+/**
+ * A plugin control in the browser's toolbar (`browser.toolbar.items`).
+ *
+ * `hasState` is on the wire because it decides whether the app asks anything at
+ * all as the user browses: a control that looks the same everywhere costs one
+ * request when the contributions load, and nothing after it.
+ */
+export interface PluginToolbarItemContribution {
+  pluginId: string;
+  itemId: string;
+  title: string;
+  icon: string | null;
+  hasState: boolean;
+}
+
+/** What one control looks like for the page it was asked about. */
+export interface PluginToolbarItemState {
+  pluginId: string;
+  itemId: string;
+  active: boolean;
+  /** Replaces the declared title, or null to keep it. */
+  title: string | null;
+}
+
+/**
+ * That a plugin has a new-tab section at all (`browser.newTab.widgets`).
+ *
+ * Ids only: the heading travels with the rows, so nothing is stated twice on two
+ * wires. What this answers is whether opening a tab should ask anyone anything.
+ */
+export interface PluginNewTabWidgetContribution {
+  pluginId: string;
+  widgetId: string;
+}
+
+/**
+ * One widget's section of the new-tab screen (`browser.newTab.widgets`), grouped
+ * so the screen renders its rows under the widget's label.
+ */
+export interface PluginNewTabSection {
+  pluginId: string;
+  widgetId: string;
+  label: string;
+  rows: { title: string; subtitle: string | null; url: string }[];
+}
+
+/**
+ * A command a plugin added, with the chord that runs it (`app.commands`).
+ *
+ * Not part of bb's keybinding config, deliberately: bb's command ids are a closed
+ * enum that the settings UI, the palette metadata and the override store all key
+ * on, and widening it for ids bb has never seen would trade a compile-time
+ * guarantee for a string. The app matches these after every one of its own.
+ */
+export interface PluginCommandContribution {
+  pluginId: string;
+  commandId: string;
+  title: string;
+  shortcut: {
+    key: string;
+    alt: boolean;
+    control: boolean;
+    meta: boolean;
+    mod: boolean;
+    shift: boolean;
+  };
 }
 
 export interface PluginOmniboxProviderContribution {

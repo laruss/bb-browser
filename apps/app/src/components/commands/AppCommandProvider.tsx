@@ -20,6 +20,11 @@ import {
   type AppKeybindings,
   type AppShortcut,
 } from "@bb/domain";
+import {
+  runPluginCommand,
+  usePluginContributions,
+  type PluginCommandContribution,
+} from "@/hooks/queries/plugin-contribution-queries";
 import { useSystemConfig } from "@/hooks/queries/system-queries";
 import { getBbDesktopInfo } from "@/lib/bb-desktop";
 import {
@@ -63,6 +68,7 @@ const AppCommandContextValue = createContext<AppCommandProviderValue | null>(
 const AppCommandModifierHeldContext = createContext(false);
 
 const EMPTY_KEYBINDINGS: AppKeybindings = [];
+const EMPTY_PLUGIN_COMMANDS: readonly PluginCommandContribution[] = [];
 const SHORTCUT_HINT_HOLD_DELAY_MS = 700;
 
 const EMPTY_CONTEXT: AppCommandContext = {
@@ -104,7 +110,14 @@ export function AppCommandProvider({ children }: { children: ReactNode }) {
     null,
   );
   const shortcutHintModifierHeldRef = useRef(false);
+  // Commands plugins added (`app.commands`). Read here rather than in a component
+  // of their own because *precedence* is the point: they are matched only after
+  // every one of bb's own bindings has declined, and that ordering has to live in
+  // the same loop rather than in two listeners racing on the window.
+  const pluginCommands =
+    usePluginContributions().data?.commands ?? EMPTY_PLUGIN_COMMANDS;
   const keybindingsRef = useRef(keybindings);
+  const pluginCommandsRef = useRef(pluginCommands);
   const handlersRef = useRef(
     new Map<AppCommandId, Map<symbol, AppCommandHandlerRegistration>>(),
   );
@@ -183,6 +196,10 @@ export function AppCommandProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     keybindingsRef.current = keybindings;
   }, [keybindings]);
+
+  useEffect(() => {
+    pluginCommandsRef.current = pluginCommands;
+  }, [pluginCommands]);
 
   const registerHandler = useCallback<
     AppCommandProviderValue["registerHandler"]
@@ -305,6 +322,27 @@ export function AppCommandProvider({ children }: { children: ReactNode }) {
         context ??= currentContext(event.target);
         if (!matchesAppCommandContext(binding, context)) continue;
         if (!dispatch(binding.command, event.target)) return false;
+        clearShortcutHintHoldRef.current();
+        event.preventDefault();
+        event.stopPropagation();
+        return true;
+      }
+      const plugins = pluginCommandsRef.current;
+      if (plugins.length === 0) return false;
+      context ??= currentContext(event.target);
+      // The one scope rule a plugin command gets, and it is bb's own: a chord that
+      // fired while the user was typing or a dialog was open would be a plugin
+      // taking a key away from the thing in front of the user.
+      if (context.editableFocus || context.modalOpen) return false;
+      // Forward, so the server's plugin-id order decides a chord two plugins both
+      // want — the core loop runs backwards for the opposite reason, so a scoped
+      // binding can shadow a global one.
+      for (const command of plugins) {
+        if (!matchesAppShortcut(event, command.shortcut, isMac)) continue;
+        void runPluginCommand({
+          commandId: command.commandId,
+          pluginId: command.pluginId,
+        });
         clearShortcutHintHoldRef.current();
         event.preventDefault();
         event.stopPropagation();

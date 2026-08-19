@@ -972,6 +972,7 @@ export function BrowserTabContent({
             onNavigateInput={navigateToInput}
             recent={recent}
             onClearRecent={clearRecent}
+            tabId={tabId}
           />
         )}
         {hasPage && resizeSnapshotUrl !== null ? (

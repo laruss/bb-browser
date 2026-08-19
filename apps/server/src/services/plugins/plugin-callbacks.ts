@@ -169,6 +169,30 @@ export const PLUGIN_CALLBACKS = {
     resultCrosses: true,
     label: (target) => (target ? `site info ${target}` : "site info"),
   },
+  browserToolbarState: {
+    category: "call",
+    payloadCrosses: true,
+    resultCrosses: true,
+    label: (target) => (target ? `toolbar state ${target}` : "toolbar state"),
+  },
+  browserToolbarRun: {
+    category: "call",
+    payloadCrosses: true,
+    resultCrosses: true,
+    label: (target) => (target ? `toolbar item ${target}` : "toolbar item"),
+  },
+  browserNewTabRows: {
+    category: "call",
+    payloadCrosses: true,
+    resultCrosses: true,
+    label: (target) => (target ? `new tab widget ${target}` : "new tab widget"),
+  },
+  uiCommand: {
+    category: "call",
+    payloadCrosses: true,
+    resultCrosses: true,
+    label: (target) => (target ? `command ${target}` : "command"),
+  },
   browserFindAction: {
     category: "call",
     payloadCrosses: true,

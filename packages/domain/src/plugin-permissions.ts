@@ -72,6 +72,15 @@ export const PLUGIN_PERMISSIONS = [
   /** Add sections to the site-info popover, which receive the page's address. */
   "siteInfo.register",
   /**
+   * Put a control in the browser's own toolbar, which is asked about the page in
+   * every tab the user opens — the address is handed over on navigation, not on a
+   * click, so this is a standing read of where the user goes.
+   */
+  "toolbar.register",
+  /** Add a section to the new-tab screen. A new tab has no page, so nothing about
+   * the user's browsing is disclosed — this buys the placement. */
+  "newTab.register",
+  /**
    * Offer a search engine for the address bar. Offering is not choosing — the
    * user picks one — but a chosen engine receives every word typed there.
    */

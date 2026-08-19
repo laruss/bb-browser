@@ -118,6 +118,9 @@ describe("plugin CLI commands (bb.cli.register + endpoints + skill + logs)", () 
       browserFindActions: [],
       browserSearchEngines: [],
       browserTabActions: [],
+      browserToolbarItems: [],
+      browserNewTabWidgets: [],
+      commands: [],
       cliCommands: [
         {
           pluginId: "acme",

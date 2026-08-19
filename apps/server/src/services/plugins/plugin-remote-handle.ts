@@ -28,6 +28,7 @@ import type {
   PluginBackgroundServiceRecord,
   PluginHttpRouteRecord,
 } from "./plugin-api.js";
+import type { PluginBrowserToolbarContext } from "@bb/plugin-sdk";
 import type { PluginRegistrationSnapshot } from "./plugin-child-runtime.js";
 
 type HostChannel = PluginChannel<PluginCallbackKind, PluginHostCallPath>;
@@ -297,6 +298,31 @@ export function createRemotePluginApiHandle(args: {
       title: action.title,
       run: (context) =>
         call("browserTabAction", action.id, context) as Promise<void>,
+    })),
+    toolbarItems: snapshot.toolbarItems.map((item) => ({
+      id: item.id,
+      title: item.title,
+      icon: item.icon,
+      // Null rather than a function that would ask the far side for a state it
+      // never registered: `hasState` is what the host reads to decide whether to
+      // ask at all, and a stub here would make every navigation a round trip.
+      state: item.hasState
+        ? (context: PluginBrowserToolbarContext) =>
+            call("browserToolbarState", item.id, context) as never
+        : null,
+      run: (context) =>
+        call("browserToolbarRun", item.id, context) as Promise<void>,
+    })),
+    newTabWidgets: snapshot.newTabWidgets.map((widget) => ({
+      id: widget.id,
+      label: widget.label,
+      rows: (context) => call("browserNewTabRows", widget.id, context) as never,
+    })),
+    commands: snapshot.commands.map((command) => ({
+      id: command.id,
+      title: command.title,
+      shortcut: { ...command.shortcut },
+      run: () => call("uiCommand", command.id, {}) as Promise<void>,
     })),
     // Anonymous on both sides, so the index is the name. Rebuilding the same
     // number of them keeps the host's own rules — first answer wins for auth

@@ -39,6 +39,7 @@ import {
   BrowserDownloadsPanel,
 } from "./BrowserDownloads";
 import { BrowserOmniboxSuggestions } from "./BrowserOmniboxSuggestions";
+import { BrowserPluginToolbar } from "./BrowserPluginToolbar";
 import { BrowserSiteInfo } from "./BrowserSiteInfo";
 
 export interface BrowserSurfaceChromeProps {
@@ -499,6 +500,14 @@ export function BrowserSurfaceChrome({
             />
           ) : null}
         </div>
+        {/* Other people's controls sit between the address bar and bb's own, the
+            way a browser keeps its extension area — bb's buttons stay where the
+            user learned them. */}
+        <BrowserPluginToolbar
+          tabId={tabId}
+          title={pushedState?.title ?? null}
+          url={url}
+        />
         <div ref={downloadsButtonRef} className="contents">
           <BrowserDownloadsButton
             badge={resolveBrowserDownloadsBadge(downloads)}

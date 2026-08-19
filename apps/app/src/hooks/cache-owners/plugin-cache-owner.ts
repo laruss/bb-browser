@@ -9,6 +9,7 @@ import {
 } from "../queries/plugin-settings-queries";
 import type { InstalledPlugin } from "@bb/server-contract";
 import { allPluginCatalogSearchQueryKeyPrefix } from "../queries/plugin-catalog-queries";
+import { pluginToolbarStatesQueryKeyPrefix } from "../queries/plugin-contribution-queries";
 
 /**
  * Cache owner for plugin management data. The PUT /plugins/:id/settings
@@ -79,5 +80,22 @@ export function invalidatePluginCatalogSearch(args: {
 }): void {
   void args.queryClient.invalidateQueries({
     queryKey: allPluginCatalogSearchQueryKeyPrefix(),
+  });
+}
+
+/**
+ * Ask again what plugins' toolbar controls look like, after a press.
+ *
+ * The press is the one thing that can change the answer from inside this window
+ * — a star that has just saved this page has to fill in — and the plugin is the
+ * one who decides what the new look is, so this refetches rather than writing a
+ * guess into the cache. Every tab's entry goes, not just the pressed tab's: the
+ * same page can be open in more than one.
+ */
+export function invalidatePluginToolbarStates(args: {
+  queryClient: QueryClient;
+}): Promise<void> {
+  return args.queryClient.invalidateQueries({
+    queryKey: pluginToolbarStatesQueryKeyPrefix(),
   });
 }

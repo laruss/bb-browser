@@ -7,6 +7,14 @@ import { AppCommandProvider } from "@/components/commands/AppCommandProvider";
 import { createBbDesktopApi } from "@/test/bb-desktop-test-utils";
 import { RootComposePanelCommandHandlers } from "./RootComposePanelCommandHandlers";
 
+// The command provider reads plugin commands (`app.commands`); nothing here
+// contributes one, and this keeps the test off a query client it has no use
+// for.
+vi.mock("@/hooks/queries/plugin-contribution-queries", () => ({
+  usePluginContributions: () => ({ data: undefined }),
+  runPluginCommand: async () => {},
+}));
+
 const commandFixture = vi.hoisted(() => ({
   keybindings: [
     {

@@ -190,6 +190,120 @@ describe("contribution points", () => {
     ).not.toThrow();
   });
 
+  it("refuses a toolbar control the plugin did not declare", () => {
+    const { bb } = createFakePluginHost({ pluginId: "p", permissions: [] });
+
+    expect(() =>
+      bb.browser.registerToolbarItem({
+        id: "star",
+        title: "Save this page",
+        run: () => {},
+      }),
+    ).toThrow(/"toolbar\.register" permission/);
+  });
+
+  it("refuses a new-tab section the plugin did not declare", () => {
+    const { bb } = createFakePluginHost({ pluginId: "p", permissions: [] });
+
+    expect(() =>
+      bb.browser.registerNewTabWidget({
+        id: "saved",
+        label: "Bookmarks",
+        rows: () => [],
+      }),
+    ).toThrow(/"newTab\.register" permission/);
+  });
+
+  // A command is ungated on purpose: a chord that runs the plugin's own code
+  // discloses nothing, and what the command then reads is gated where it was.
+  it("admits a command with no permissions at all", () => {
+    const { bb } = createFakePluginHost({ pluginId: "p", permissions: [] });
+
+    expect(() =>
+      bb.ui.registerCommand({
+        id: "save-page",
+        title: "Save this page",
+        shortcut: { key: "d", mod: true },
+        run: () => {},
+      }),
+    ).not.toThrow();
+  });
+
+  // Every refusal the host makes at load, the double has to make in the test —
+  // otherwise a plugin's suite is green and the install fails.
+  it("refuses a second command with the same id or the same chord", () => {
+    const { bb } = createFakePluginHost({ pluginId: "p", permissions: [] });
+    const command = {
+      id: "save-page",
+      title: "Save this page",
+      shortcut: { key: "d", mod: true },
+      run: () => {},
+    };
+
+    bb.ui.registerCommand(command);
+
+    expect(() => bb.ui.registerCommand(command)).toThrow(/already registered/);
+    expect(() => bb.ui.registerCommand({ ...command, id: "other" })).toThrow(
+      /already bound/,
+    );
+  });
+
+  it("refuses a new-tab section with no label, or a second with one id", () => {
+    const { bb } = createFakePluginHost({
+      pluginId: "p",
+      permissions: ["newTab.register"],
+    });
+    const widget = { id: "saved", label: "Bookmarks", rows: () => [] };
+
+    expect(() =>
+      bb.browser.registerNewTabWidget({ ...widget, label: "  " }),
+    ).toThrow(/label/);
+
+    bb.browser.registerNewTabWidget(widget);
+
+    expect(() => bb.browser.registerNewTabWidget(widget)).toThrow(
+      /already registered/,
+    );
+  });
+
+  // bb has no palette, so a command with no chord could never be run — the double
+  // refuses it exactly like the host, or a plugin ships one that does nothing.
+  it("refuses a command with no chord", () => {
+    const { bb } = createFakePluginHost({ pluginId: "p", permissions: [] });
+
+    expect(() =>
+      bb.ui.registerCommand({
+        id: "orphan",
+        title: "Nowhere",
+        run: () => {},
+      } as never),
+    ).toThrow(/shortcut/);
+  });
+
+  // One control per plugin is the host's rule, so the double has to refuse the
+  // second one too — otherwise a plugin ships a button that never appears.
+  it("admits one toolbar control and refuses a second", () => {
+    const { bb } = createFakePluginHost({
+      pluginId: "p",
+      permissions: ["toolbar.register"],
+    });
+
+    expect(() =>
+      bb.browser.registerToolbarItem({
+        id: "star",
+        title: "Save this page",
+        run: () => {},
+      }),
+    ).not.toThrow();
+    expect(() =>
+      bb.browser.registerToolbarItem({
+        id: "second",
+        title: "Something else",
+        run: () => {},
+      }),
+    ).toThrow(/one toolbar control/);
+  });
+
   // getStatus reports only whether a browser window is connected, which is not
   // the user's data — the host leaves it open and so does this.
   it("leaves getStatus open to a plugin that declared nothing", () => {
