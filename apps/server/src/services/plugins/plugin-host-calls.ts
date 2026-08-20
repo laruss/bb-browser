@@ -270,6 +270,20 @@ export const PLUGIN_HOST_CALLS = {
     callbacks: [],
     note: "Data only — an id, a name and a URL template. The browser formats the template itself, which is what keeps Enter synchronous.",
   },
+  "browser.registerPageStyle": {
+    category: "register",
+    argsCross: true,
+    resultCrosses: true,
+    callbacks: [],
+    note: "Data only, and the first registration whose scope is a list of sites rather than a capability: the css and the matched patterns cross once at load, and nothing is asked of the plugin as the user browses.",
+  },
+  "browser.registerPageScript": {
+    category: "register",
+    argsCross: true,
+    resultCrosses: true,
+    callbacks: [],
+    note: "Data only on the way out — the source text and the matched patterns cross once at load, and this process never evaluates them. What the script calls back into is the plugin's own rpc, which already has a channel of its own.",
+  },
   "browser.registerSiteInfoProvider": {
     category: "register",
     argsCross: true,

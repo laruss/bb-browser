@@ -276,6 +276,36 @@ export interface PluginSearchEngineContribution {
   urlTemplate: string;
 }
 
+/**
+ * CSS a plugin applies to pages (`browser.pageStyles`), for the app to hand to
+ * the desktop shell.
+ *
+ * Carried as data all the way through: nothing here needs the plugin again, so a
+ * style keeps working while its plugin is idle and survives a page load without
+ * a round trip to this process.
+ */
+export interface PluginPageStyleContribution {
+  pluginId: string;
+  styleId: string;
+  matches: string[];
+  css: string;
+}
+
+/**
+ * A plugin's own code to run in pages (`browser.pageScripts`), for the app to
+ * hand to the desktop shell.
+ *
+ * Data on the way out, like a page style — but not on the way back: the point of
+ * a script is that it can ask its plugin something, and that answer does come
+ * from this process, over the rpc the plugin already exposes.
+ */
+export interface PluginPageScriptContribution {
+  pluginId: string;
+  scriptId: string;
+  matches: string[];
+  code: string;
+}
+
 /** A plugin entry on a browser tab's context menu (`browser.tab.actions`). */
 export interface PluginTabActionContribution {
   pluginId: string;

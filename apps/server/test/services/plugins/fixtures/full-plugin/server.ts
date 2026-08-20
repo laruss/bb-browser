@@ -114,6 +114,18 @@ export default function plugin(bb: any): void {
     urlTemplate: "https://kagi.com/search?q=%s",
   });
 
+  bb.browser.registerPageStyle({
+    id: "declutter",
+    matches: ["https://example.test/**"],
+    css: ".ad { display: none !important }",
+  });
+
+  bb.browser.registerPageScript({
+    id: "toolbar",
+    matches: ["https://example.test/**"],
+    code: "bb.ready(function () { document.title = 'seen'; });",
+  });
+
   bb.browser.registerAuthProvider(() => null);
   bb.browser.registerAuthProvider((challenge: { host: string }) => ({
     username: "u",

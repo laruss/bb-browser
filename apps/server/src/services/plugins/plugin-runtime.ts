@@ -1166,6 +1166,7 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
     const capabilities = {
       pluginId: row.id,
       permissions: manifest.permissions,
+      sites: manifest.sites,
       logger: deps.logger,
       // The server's own implementation of the two stores `bb` reads through.
       // A plugin process supplies the same shape backed by its channel; both
@@ -1791,6 +1792,7 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
         instanceId,
         pluginId: row.id,
         permissions: manifest.permissions,
+        sites: manifest.sites,
         serverEntry: await resolveServerEntry(row, manifest),
         apiKey: apiIdentities.keyFor(row.id),
       },

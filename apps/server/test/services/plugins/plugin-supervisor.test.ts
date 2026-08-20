@@ -38,6 +38,7 @@ function plugin(pluginId: string, instanceId = pluginId): SupervisedPlugin {
     instanceId,
     pluginId,
     permissions: ["contextMenu.register"],
+    sites: undefined,
     serverEntry: SAMPLE_ENTRY,
     apiKey: "test-key",
   };
@@ -336,6 +337,7 @@ describe("the plugin supervisor", () => {
         instanceId: "alpha",
         pluginId: "alpha",
         permissions: [],
+        sites: undefined,
         serverEntry: SAMPLE_ENTRY,
         apiKey: "test-key",
       }),

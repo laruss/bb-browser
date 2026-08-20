@@ -1884,6 +1884,207 @@ export type BbDesktopBrowserSearchSelectionHandler = (
 ) => void;
 
 /**
+ * Page styles plugins have contributed, pushed renderer → main and held by the
+ * shell.
+ *
+ * A whole-list replacement rather than an add/remove pair: the renderer already
+ * knows the complete set, and reconciling two incremental streams against what
+ * a document currently carries is a bug waiting for a reload to expose it.
+ *
+ * Held here rather than applied per navigation from the renderer because this is
+ * where the navigation is. Inserted CSS lives exactly one document (measured on
+ * Electron 41.7.0), so every committed navigation re-applies whatever matches —
+ * which the shell can do the moment the page commits, while a renderer round trip
+ * could not.
+ */
+export const BB_DESKTOP_BROWSER_MAX_PAGE_STYLES = 64;
+
+/** Longest stylesheet one style may carry; mirrors the plugin API's cap. */
+export const BB_DESKTOP_BROWSER_MAX_PAGE_STYLE_CSS_LENGTH = 64_000;
+
+export const bbDesktopBrowserPageStyleSchema = z
+  .object({
+    pluginId: z.string().min(1).max(128),
+    styleId: z.string().min(1).max(128),
+    /** URL globs; the same dialect route patterns are written in. */
+    matches: z.array(z.string().min(1).max(2_048)).min(1).max(16),
+    css: z.string().min(1).max(BB_DESKTOP_BROWSER_MAX_PAGE_STYLE_CSS_LENGTH),
+  })
+  .strict();
+export type BbDesktopBrowserPageStyle = z.infer<
+  typeof bbDesktopBrowserPageStyleSchema
+>;
+
+export const bbDesktopBrowserPageStylesSchema = z
+  .object({
+    styles: z
+      .array(bbDesktopBrowserPageStyleSchema)
+      .max(BB_DESKTOP_BROWSER_MAX_PAGE_STYLES),
+  })
+  .strict();
+export type BbDesktopBrowserPageStyles = z.infer<
+  typeof bbDesktopBrowserPageStylesSchema
+>;
+
+/**
+ * Page scripts plugins have contributed, pushed renderer → main and held by the
+ * shell.
+ *
+ * A whole-list replacement for the same reason a page style's list is, and held
+ * by the shell for a sharper one: a script has to be handed to a document as it
+ * is created, before the page's own first script runs, and the only process that
+ * is present at that moment is this one. A renderer round trip there is not late,
+ * it is impossible.
+ *
+ * The scripts are handed to a *browsed* renderer, which is untrusted, so what
+ * crosses is source text and a plugin id — never a token, never a handle. What
+ * the script can ask for comes back through
+ * {@link bbDesktopBrowserPageScriptCallSchema}, one method at a time.
+ */
+export const BB_DESKTOP_BROWSER_MAX_PAGE_SCRIPTS = 64;
+
+/** Longest script one registration may carry; mirrors the plugin API's cap. */
+export const BB_DESKTOP_BROWSER_MAX_PAGE_SCRIPT_CODE_LENGTH = 64_000;
+
+export const bbDesktopBrowserPageScriptSchema = z
+  .object({
+    pluginId: z.string().min(1).max(128),
+    scriptId: z.string().min(1).max(128),
+    /** URL globs; the same dialect route patterns are written in. */
+    matches: z.array(z.string().min(1).max(2_048)).min(1).max(16),
+    code: z.string().min(1).max(BB_DESKTOP_BROWSER_MAX_PAGE_SCRIPT_CODE_LENGTH),
+  })
+  .strict();
+export type BbDesktopBrowserPageScript = z.infer<
+  typeof bbDesktopBrowserPageScriptSchema
+>;
+
+export const bbDesktopBrowserPageScriptsSchema = z
+  .object({
+    scripts: z
+      .array(bbDesktopBrowserPageScriptSchema)
+      .max(BB_DESKTOP_BROWSER_MAX_PAGE_SCRIPTS),
+  })
+  .strict();
+export type BbDesktopBrowserPageScripts = z.infer<
+  typeof bbDesktopBrowserPageScriptsSchema
+>;
+
+/**
+ * Longest rpc input or result a page script may pass. Both directions cross two
+ * process boundaries as text, so this is a size the wire can carry rather than a
+ * size a database row can hold: a page script asks its plugin questions, and a
+ * plugin with a large answer has `bb.http.route` for it.
+ */
+export const BB_DESKTOP_BROWSER_MAX_PAGE_SCRIPT_JSON_LENGTH = 128_000;
+
+/**
+ * A page script asking its own plugin something, forwarded main → renderer.
+ *
+ * The shell cannot answer this itself: reaching a plugin means an authenticated
+ * call to the bb server, and the shell deliberately holds no credentials for it.
+ * So the trusted renderer performs the call, which also puts a second check in
+ * the path — it re-derives from its own contribution list that this plugin really
+ * does claim this page.
+ *
+ * `url` is the frame's address as **the shell** resolved it, never as the page
+ * claimed it. That is what makes the check meaningful: a browsed renderer that
+ * lied about where it was would be answering for a page it is not on.
+ */
+export const bbDesktopBrowserPageScriptCallSchema = z
+  .object({
+    callId: z.string().min(1).max(64),
+    tabId: z.string().min(1),
+    pluginId: z.string().min(1).max(128),
+    method: z.string().min(1).max(128),
+    /** The rpc input, already JSON text — the shell never inspects it. */
+    input: z.string().max(BB_DESKTOP_BROWSER_MAX_PAGE_SCRIPT_JSON_LENGTH),
+    url: z.string().min(1).max(BB_DESKTOP_BROWSER_MAX_URL_LENGTH),
+  })
+  .strict();
+export type BbDesktopBrowserPageScriptCall = z.infer<
+  typeof bbDesktopBrowserPageScriptCallSchema
+>;
+export type BbDesktopBrowserPageScriptCallHandler = (
+  call: BbDesktopBrowserPageScriptCall,
+) => void;
+
+/**
+ * The answer to one {@link bbDesktopBrowserPageScriptCallSchema}, renderer →
+ * main, on its way to the page that asked.
+ *
+ * `message` is shown to nobody: it becomes the rejection reason of the promise
+ * the page script is awaiting, which is the only place it can be acted on. It
+ * therefore says what the *script author* did wrong, and nothing about bb.
+ */
+export const bbDesktopBrowserPageScriptResultSchema = z.discriminatedUnion(
+  "ok",
+  [
+    z
+      .object({
+        callId: z.string().min(1).max(64),
+        ok: z.literal(true),
+        result: z.string().max(BB_DESKTOP_BROWSER_MAX_PAGE_SCRIPT_JSON_LENGTH),
+      })
+      .strict(),
+    z
+      .object({
+        callId: z.string().min(1).max(64),
+        ok: z.literal(false),
+        message: z.string().max(1024),
+      })
+      .strict(),
+  ],
+);
+export type BbDesktopBrowserPageScriptResult = z.infer<
+  typeof bbDesktopBrowserPageScriptResultSchema
+>;
+
+/**
+ * What a browsed page's preload is told at document start: one world per plugin
+ * that claims this address, each with the scripts to run in it.
+ *
+ * Types only, no schema: this direction is the shell answering, and the shell is
+ * the one process in the path that is trusted. The reverse direction —
+ * {@link bbDesktopPageScriptRpcRequestSchema} — is parsed, because it comes from
+ * a renderer that is sharing an address space with a website.
+ *
+ * `worldId` is assigned by the shell and is stable per plugin, so two scripts of
+ * one plugin share globals and two plugins never do.
+ */
+export interface BbDesktopPageScriptWorld {
+  pluginId: string;
+  worldId: number;
+  scripts: { scriptId: string; code: string }[];
+}
+
+export interface BbDesktopPageScriptBootstrap {
+  worlds: BbDesktopPageScriptWorld[];
+}
+
+/** One `bb.rpc(...)` from a page script, page → main. */
+export const bbDesktopPageScriptRpcRequestSchema = z
+  .object({
+    pluginId: z.string().min(1).max(128),
+    method: z.string().min(1).max(128),
+    /** The input, already JSON text; the preload serialised it. */
+    input: z.string().max(BB_DESKTOP_BROWSER_MAX_PAGE_SCRIPT_JSON_LENGTH),
+  })
+  .strict();
+export type BbDesktopPageScriptRpcRequest = z.infer<
+  typeof bbDesktopPageScriptRpcRequestSchema
+>;
+
+/**
+ * The answer to one. Always resolves — a refusal is `ok: false` with a message
+ * for the script's author, never a rejected invoke, because an invoke rejection
+ * reaches a page as an opaque Electron string.
+ */
+export type BbDesktopPageScriptRpcAnswer =
+  | { ok: true; result: string }
+  | { ok: false; message: string };
+
+/**
  * Context-menu entries plugins have contributed, pushed renderer → main and
  * held by the shell.
  *
@@ -2236,6 +2437,36 @@ export interface BbDesktopBrowserApi {
    * question this channel deliberately does not answer.
    */
   setMuted?(request: BbDesktopBrowserSetMutedRequest): void;
+  /**
+   * Replace the page styles this window's plugins have declared. The shell holds
+   * them and re-applies whatever matches on every committed navigation.
+   *
+   * Optional for the same version skew as {@link BbDesktopBrowserApi.onFavicon}:
+   * a renderer that finds it missing has an older shell, and the honest
+   * consequence is that page styles do nothing — there is no second path to
+   * them, which is why this is feature-detected rather than assumed.
+   */
+  setPageStyles?(request: BbDesktopBrowserPageStyles): void;
+  /**
+   * Replace the page scripts this window's plugins have declared. The shell
+   * hands whatever matches to each document as it is created.
+   *
+   * Feature-detected like {@link BbDesktopBrowserApi.setPageStyles}, and with a
+   * consequence worth stating: while this list is empty the shell installs no
+   * preload in the browsing session at all, so a user with no page-script plugin
+   * runs exactly the browser they ran before the feature existed.
+   */
+  setPageScripts?(request: BbDesktopBrowserPageScripts): void;
+  /**
+   * Subscribe to page scripts calling their own plugin's rpc. Every call must be
+   * answered with {@link BbDesktopBrowserApi.respondToPageScriptCall} — the page
+   * script is awaiting a promise that nothing else will settle.
+   */
+  onPageScriptCall?(
+    listener: BbDesktopBrowserPageScriptCallHandler,
+  ): BbDesktopBrowserUnsubscribe;
+  /** Answer one page-script call. A late answer is dropped, not delivered. */
+  respondToPageScriptCall?(result: BbDesktopBrowserPageScriptResult): void;
   /**
    * Subscribe to what the shell knows about a tab's connection — see
    * {@link bbDesktopBrowserPageSecuritySchema}. Pushed on every committed

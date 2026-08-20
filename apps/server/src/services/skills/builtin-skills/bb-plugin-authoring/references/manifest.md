@@ -18,6 +18,7 @@ The complete manifest, with the optional fields SKILL.md leaves out:
     "server": "./server.ts",
     "app": "./app.tsx",
     "permissions": ["tabs.read", "threads"],
+    "sites": ["https://github.com/**"],
     "skills": ["skills"]
   }
 }
@@ -71,6 +72,8 @@ The complete manifest, with the optional fields SKILL.md leaves out:
   | `siteInfo.register`     | `browser.registerSiteInfoProvider` (receives the page's address and host)                                                             |
   | `toolbar.register`      | `browser.registerToolbarItem` (asked about every page the user opens, on navigation)                                                  |
   | `newTab.register`       | `browser.registerNewTabWidget` (a section on the new-tab screen; a new tab has no page)                                               |
+  | `pageStyle.register`    | `browser.registerPageStyle` — CSS in the pages of the sites listed in `bb.sites`, which this permission is scoped by                  |
+  | `pageScript.register`   | `browser.registerPageScript` — the plugin's own code in those same pages, and `bb.rpc` back to itself; scoped by `bb.sites` too       |
   | `searchEngine.register` | `browser.registerSearchEngine` (a chosen engine receives everything typed in the address bar)                                         |
   | `find.register`         | `browser.registerFindAction` (receives the find query)                                                                                |
   | `downloads.handle`      | `browser.registerDownloadHandler`                                                                                                     |
@@ -82,6 +85,38 @@ The complete manifest, with the optional fields SKILL.md leaves out:
   | `shell`                 | `sdk.terminals`                                                                                                                       |
   | `workspace`             | `sdk.projects`, `environments`, `hosts`, `providers`, `skills`, `system`, `theme`, `status`, `guide`, and the other `subscribe` feeds |
   | `plugins`               | `sdk.plugins`                                                                                                                         |
+
+- `bb.sites` (optional) — which **websites** this plugin's page contributions may
+  reach, as URL globs. Not a permission but the _scope_ of two: `pageStyle.register`
+  says the plugin restyles pages and `pageScript.register` says it runs code in
+  them, while this says which pages. Absent or `[]` reaches none, so a permission
+  alone reaches nothing and this alone reaches nothing either.
+
+  ```json
+  { "permissions": ["pageScript.register"], "sites": ["https://github.com/**"] }
+  ```
+
+  Two permissions over one list on purpose: a plugin the user let restyle a site
+  has not thereby been let read it.
+
+  `**` crosses `/`, `*` stops at one, `?` is one non-`/` character; a pattern with
+  no wildcard is an exact URL. Write the host in **lower case** — matching is exact
+  and a URL never arrives with an upper-case host, so `https://GitHub.com/**` is
+  refused at install rather than left to claim nothing. `https` only, except
+  loopback over plain http (`http://localhost:5173/**`) — plain http to another machine is refused at
+  install, because standing access to a site the user is signed in to is not
+  something to hand over a connection anyone on the path can impersonate. An `http`
+  pattern with a wildcard in its host is refused for the same reason. At most 32
+  patterns, since the list is shown to whoever installs the plugin.
+
+  A `registerPageStyle` call's `matches` must be one of these patterns **verbatim**
+  — membership, not containment — so code picks from what the user read and cannot
+  widen it. Declare a second pattern rather than trying to broaden one.
+
+  `bb.sites` is nothing to do with `bb.hosts` in the plugin API, which is enrolled
+  machines. Frontend `matches` on a leading panel is also unrelated and costs
+  nothing: that is bb's own chrome reacting to the address bar, not code reaching
+  into a page.
 
   The same list applies to the loopback API, not only to the `bb.sdk` object:
   your plugin's SDK client identifies itself, so calling

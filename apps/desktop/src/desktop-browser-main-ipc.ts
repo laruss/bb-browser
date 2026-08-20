@@ -2,6 +2,10 @@ import { BrowserWindow, ipcMain, type IpcMainEvent } from "electron";
 import {
   bbDesktopBrowserAttachRequestSchema,
   bbDesktopBrowserContextMenuItemsSchema,
+  bbDesktopBrowserPageStylesSchema,
+  bbDesktopBrowserPageScriptsSchema,
+  bbDesktopBrowserPageScriptResultSchema,
+  bbDesktopPageScriptRpcRequestSchema,
   bbDesktopBrowserDownloadActionRequestSchema,
   bbDesktopBrowserSetOverlayRequestSchema,
   bbDesktopBrowserSetFullscreenRequestSchema,
@@ -34,6 +38,8 @@ import {
   type BbDesktopBrowserPageReadResult,
   type BbDesktopBrowserSnapshotResult,
   type BbDesktopBrowserStorageResult,
+  type BbDesktopPageScriptBootstrap,
+  type BbDesktopPageScriptRpcAnswer,
 } from "@bb/desktop-contract";
 import {
   BB_DESKTOP_BROWSER_ATTACH_CHANNEL,
@@ -43,6 +49,11 @@ import {
   BB_DESKTOP_BROWSER_NAVIGATE_CHANNEL,
   BB_DESKTOP_BROWSER_DOWNLOAD_ACTION_CHANNEL,
   BB_DESKTOP_BROWSER_SET_CONTEXT_MENU_ITEMS_CHANNEL,
+  BB_DESKTOP_BROWSER_SET_PAGE_STYLES_CHANNEL,
+  BB_DESKTOP_BROWSER_SET_PAGE_SCRIPTS_CHANNEL,
+  BB_DESKTOP_BROWSER_PAGE_SCRIPT_RESULT_CHANNEL,
+  BB_DESKTOP_PAGE_SCRIPT_BOOTSTRAP_CHANNEL,
+  BB_DESKTOP_PAGE_SCRIPT_RPC_CHANNEL,
   BB_DESKTOP_BROWSER_SET_OVERLAY_CHANNEL,
   BB_DESKTOP_BROWSER_SET_FULLSCREEN_CHANNEL,
   BB_DESKTOP_BROWSER_SET_POPUP_TABS_CHANNEL,
@@ -321,6 +332,105 @@ export function registerDesktopBrowserIpc(
         return;
       }
       manager.setContextMenuItems({ hostWindow, request: parsed.data });
+    },
+  );
+
+  ipcMain.on(
+    BB_DESKTOP_BROWSER_SET_PAGE_STYLES_CHANNEL,
+    (event, payload: unknown) => {
+      const hostWindow = hostWindowFromBrowserIpcEvent(event);
+      if (hostWindow === null) {
+        return;
+      }
+      const parsed = bbDesktopBrowserPageStylesSchema.safeParse(payload);
+      if (!parsed.success) {
+        return;
+      }
+      manager.setPageStyles({ hostWindow, request: parsed.data });
+    },
+  );
+
+  ipcMain.on(
+    BB_DESKTOP_BROWSER_SET_PAGE_SCRIPTS_CHANNEL,
+    (event, payload: unknown) => {
+      const hostWindow = hostWindowFromBrowserIpcEvent(event);
+      if (hostWindow === null) {
+        return;
+      }
+      const parsed = bbDesktopBrowserPageScriptsSchema.safeParse(payload);
+      if (!parsed.success) {
+        return;
+      }
+      manager.setPageScripts({ hostWindow, request: parsed.data });
+    },
+  );
+
+  // The app answering a page script's rpc. Needs no host window — the call id
+  // identifies which page is waiting — but still requires the sender to *be* an
+  // app window, so a browsed page cannot answer a call on the app's behalf.
+  ipcMain.on(
+    BB_DESKTOP_BROWSER_PAGE_SCRIPT_RESULT_CHANNEL,
+    (event, payload: unknown) => {
+      if (hostWindowFromBrowserIpcEvent(event) === null) {
+        return;
+      }
+      const parsed = bbDesktopBrowserPageScriptResultSchema.safeParse(payload);
+      if (!parsed.success) {
+        return;
+      }
+      manager.respondToPageScriptCall({ result: parsed.data });
+    },
+  );
+
+  // --- The two channels a browsed page's own preload reaches ---
+  //
+  // Everything above is the trusted app talking to the shell. These two are a
+  // *website's* renderer talking to it, so neither trusts a word of the payload
+  // about where it is: the address comes from `event.senderFrame`, which is
+  // Chromium's answer, and the manager re-decides what that address is allowed.
+
+  // Synchronous, and answered unconditionally: this runs while the browsed frame
+  // is blocked at document start, so any path that failed to set a return value
+  // would hang the page rather than merely skip its scripts.
+  ipcMain.on(BB_DESKTOP_PAGE_SCRIPT_BOOTSTRAP_CHANNEL, (event) => {
+    const empty: BbDesktopPageScriptBootstrap = { worlds: [] };
+    try {
+      const url = event.senderFrame?.url ?? "";
+      event.returnValue =
+        url.length === 0
+          ? empty
+          : manager.pageScriptBootstrap({
+              webContentsId: event.sender.id,
+              url,
+            });
+    } catch {
+      event.returnValue = empty;
+    }
+  });
+
+  ipcMain.handle(
+    BB_DESKTOP_PAGE_SCRIPT_RPC_CHANNEL,
+    async (event, payload: unknown): Promise<BbDesktopPageScriptRpcAnswer> => {
+      const parsed = bbDesktopPageScriptRpcRequestSchema.safeParse(payload);
+      if (!parsed.success) {
+        return { ok: false, message: "bb.rpc: that call was not understood." };
+      }
+      const url = event.senderFrame?.url ?? "";
+      if (url.length === 0) {
+        return { ok: false, message: "bb.rpc is not available in this page." };
+      }
+      try {
+        return await manager.pageScriptRpc({
+          webContentsId: event.sender.id,
+          url,
+          request: parsed.data,
+        });
+      } catch {
+        // Every refusal is a resolved `ok: false`, because an invoke rejection
+        // reaches the page as an opaque Electron string with nothing in it for
+        // the script's author.
+        return { ok: false, message: "bb.rpc: the call failed." };
+      }
     },
   );
 

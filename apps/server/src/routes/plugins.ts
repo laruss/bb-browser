@@ -344,6 +344,8 @@ export function registerPluginRoutes(
       browserNewTabWidgets: plugins.listNewTabWidgetContributions(),
       commands: plugins.listCommandContributions(),
       browserSearchEngines: plugins.listSearchEngineContributions(),
+      browserPageStyles: plugins.listPageStyleContributions(),
+      browserPageScripts: plugins.listPageScriptContributions(),
     }),
   );
 

@@ -29,6 +29,7 @@ export {
 } from "./fake-plugin-host.js";
 export {
   pluginPermissionsFromManifest,
+  pluginSitesFromManifest,
   type FakePermissionGate,
 } from "./fake-permissions.js";
 export {

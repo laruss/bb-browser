@@ -20,11 +20,40 @@ vi.mock("@/components/plugin/PluginSlotMount", () => ({
   ),
 }));
 
+const { Provider, createStore } = await import("jotai");
+const { browserSurfaceTabsAtom } = await import("@/lib/browser-surface-tabs");
 const {
   PluginLeadingPanel,
   resolveActiveLeadingPanel,
   resolveLeadingPanelResizeWidth,
 } = await import("./PluginLeadingPanel");
+
+/** Render the panel with the strip's active tab on `url` (null: no page). */
+function renderWithActivePage(url: string | null) {
+  const store = createStore();
+  store.set(
+    browserSurfaceTabsAtom,
+    url === null
+      ? { activeTabId: null, tabs: [] }
+      : {
+          activeTabId: "browser:a",
+          tabs: [
+            {
+              environmentId: null,
+              id: "browser:a",
+              kind: "browser" as const,
+              title: null,
+              url,
+            },
+          ],
+        },
+  );
+  return render(
+    <Provider store={store}>
+      <PluginLeadingPanel />
+    </Provider>,
+  );
+}
 
 function panel(pluginId: string, id: string): PluginLeadingPanelSlot {
   return {
@@ -136,5 +165,77 @@ describe("resolveLeadingPanelResizeWidth", () => {
     expect(
       resolveLeadingPanelResizeWidth({ deltaX: -9000, startWidth: 280 }),
     ).toBe(200);
+  });
+});
+
+/**
+ * A panel can say which pages it is for, and then the *column* comes and goes
+ * with them — not just its contents. An empty edge that still reserves width,
+ * and on macOS still owns the traffic lights, is the thing this prevents.
+ */
+describe("PluginLeadingPanel scoped to a site", () => {
+  function scopedPanel(matches: string[]): PluginLeadingPanelSlot {
+    return { ...panel("prs", "pulls"), matches };
+  }
+
+  it("draws nothing while the active tab is on another site", () => {
+    slotState.panels = [scopedPanel(["https://github.com/**"])];
+
+    renderWithActivePage("https://example.test/");
+
+    expect(screen.queryByTestId("plugin-leading-panel")).toBeNull();
+  });
+
+  it("draws the panel once the active tab is on a matching page", () => {
+    slotState.panels = [scopedPanel(["https://github.com/**"])];
+
+    renderWithActivePage("https://github.com/bb/pulls");
+
+    expect(screen.getByTestId("body-prs")).toBeTruthy();
+  });
+
+  it("draws nothing when there is no page at all", () => {
+    slotState.panels = [scopedPanel(["https://github.com/**"])];
+
+    renderWithActivePage(null);
+
+    expect(screen.queryByTestId("plugin-leading-panel")).toBeNull();
+  });
+
+  // The unscoped panel is the one every plugin wrote before this existed: it
+  // must keep claiming the edge whatever the browser is showing.
+  it("leaves an unscoped panel alone", () => {
+    slotState.panels = [panel("notes", "notes")];
+
+    renderWithActivePage("https://example.test/");
+
+    expect(screen.getByTestId("body-notes")).toBeTruthy();
+  });
+
+  // With one of two panels out of scope there is no choice left to offer, so the
+  // rail goes too — the same rule as one registration, applied to what applies.
+  it("counts only the panels that apply when deciding on a rail", () => {
+    slotState.panels = [
+      panel("notes", "notes"),
+      scopedPanel(["https://github.com/**"]),
+    ];
+
+    renderWithActivePage("https://example.test/");
+
+    expect(screen.getByTestId("body-notes")).toBeTruthy();
+    expect(screen.queryByTestId("plugin-leading-panel-rail")).toBeNull();
+  });
+
+  it("tells the panel which page the tab is on", () => {
+    slotState.panels = [
+      {
+        ...scopedPanel(["https://github.com/**"]),
+        component: ({ browserUrl }) => <div>at {browserUrl}</div>,
+      },
+    ];
+
+    renderWithActivePage("https://github.com/bb/pulls");
+
+    expect(screen.getByText("at https://github.com/bb/pulls")).toBeTruthy();
   });
 });

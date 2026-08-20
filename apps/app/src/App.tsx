@@ -17,6 +17,8 @@ import { useFaviconColorSync } from "./lib/favicon-color-preference";
 import { useDesktopThemeSync } from "./hooks/useDesktopThemeSync";
 import { usePluginFrontendBoot } from "./hooks/usePluginFrontendBoot";
 import { useBrowserAgentBridge } from "./lib/browser-agent/useBrowserAgentBridge";
+import { useBrowserPageScripts } from "./lib/browser-page-scripts";
+import { useBrowserPageStyles } from "./lib/browser-page-styles";
 import { useBrowserDownloadNotifications } from "./lib/browser-downloads";
 import { useWebSocket } from "./hooks/useWebSocket";
 import {
@@ -288,6 +290,8 @@ export function App() {
   // browser tools must keep working while the user is on a thread, and anything
   // mounted under a route unmounts on navigation.
   useBrowserAgentBridge();
+  useBrowserPageStyles();
+  useBrowserPageScripts();
   // Report downloads a browsed page started. Above <Routes> for the same reason
   // as the bridge: the file keeps arriving after the user leaves /browser.
   useBrowserDownloadNotifications();

@@ -58,6 +58,16 @@ await Promise.all([
   }),
   build({
     ...commonOptions,
+    // The preload for browsed pages. Bundled like the others, and with one thing
+    // to keep true: it imports only `electron` and type-only names, so nothing
+    // from @bb/desktop-contract (zod included) ends up in a website's renderer.
+    entryPoints: [resolve(packageRoot, "src", "page-script-preload.ts")],
+    external: ["electron"],
+    format: "cjs",
+    outfile: resolve(distDir, "page-script-preload.cjs"),
+  }),
+  build({
+    ...commonOptions,
     entryPoints: [resolve(packageRoot, "src", "log-viewer-preload.ts")],
     external: ["electron"],
     format: "cjs",

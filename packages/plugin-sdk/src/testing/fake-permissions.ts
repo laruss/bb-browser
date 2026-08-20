@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { z } from "zod";
 import {
   canonicalPermissions,
   pluginPermissionSchema,
@@ -37,6 +38,33 @@ import {
 export function pluginPermissionsFromManifest(
   from: string,
 ): readonly PluginPermission[] {
+  const declared = (readPluginManifestBb(from) as { permissions?: unknown })
+    .permissions;
+  // Parsed rather than trusted: a manifest typo must fail the test the way it
+  // fails the install, not silently grant nothing.
+  return pluginPermissionSchema.array().parse(declared ?? []);
+}
+
+/**
+ * The `bb.sites` of the plugin owning `from`, read off disk.
+ *
+ * The companion to {@link pluginPermissionsFromManifest}, and needed for the
+ * same reason plus one of its own: a page style names one of these patterns, so
+ * a test that listed them by hand could register a style against a site the
+ * manifest never declared — which is the one thing an install refuses.
+ */
+export function pluginSitesFromManifest(from: string): readonly string[] {
+  const declared = (readPluginManifestBb(from) as { sites?: unknown }).sites;
+  return pluginSitesSchema.parse(declared ?? []);
+}
+
+const pluginSitesSchema = z.array(z.string().min(1));
+
+/**
+ * The `bb` block of the nearest `package.json` above `from` that declares
+ * `bb.server`, so tests in subdirectories work without naming a path.
+ */
+function readPluginManifestBb(from: string): object {
   let dir = from.startsWith("file:")
     ? dirname(fileURLToPath(from))
     : resolve(from);
@@ -46,10 +74,7 @@ export function pluginPermissionsFromManifest(
       const manifest: unknown = JSON.parse(readFileSync(candidate, "utf8"));
       const bb = (manifest as { bb?: { server?: unknown } }).bb;
       if (bb !== undefined && typeof bb.server === "string") {
-        const declared = (bb as { permissions?: unknown }).permissions;
-        // Parsed rather than trusted: a manifest typo must fail the test the
-        // way it fails the install, not silently grant nothing.
-        return pluginPermissionSchema.array().parse(declared ?? []);
+        return bb;
       }
     }
     const parent = dirname(dir);

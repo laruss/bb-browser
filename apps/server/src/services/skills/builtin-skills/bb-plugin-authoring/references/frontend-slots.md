@@ -69,6 +69,8 @@ export default definePluginApp((app) => {
     title: "Board",
     icon: "Columns",
     component: BoardPanel,
+    // Optional: draw the column only while the active browser tab is here.
+    matches: ["https://github.com/**"],
   });
   app.slots.threadPanelAction({
     id: "issue",
@@ -350,17 +352,25 @@ Versioned and additive-only:
   for data. Enabled plugins appear in the
   settings sidebar when they declare settings descriptors OR register
   settings sections.
-- `experimental_leadingPanel` → `{}` — a panel on the window's **leading**
-  edge, the end opposite the sidebar. Registration:
-  `{ id, title, icon, component }`. It is not a route: nothing links to it, it
-  has no path, and it stays put while the user navigates — use it for something
-  that accompanies the work rather than somewhere the user goes.
+- `experimental_leadingPanel` → `{ browserUrl: string | null }` — a panel on the
+  window's **leading** edge, the end opposite the sidebar. Registration:
+  `{ id, title, icon, component, matches? }`. It is not a route: nothing links to
+  it, it has no path, and it stays put while the user navigates — use it for
+  something that accompanies the work rather than somewhere the user goes.
   bb contributes nothing to this edge, so it does not exist until a plugin
   claims it, and what the host draws around it follows from how many plugins
   did: one gets the panel whole with no host chrome, and a second is what makes
   the host add a rail of icons to switch between them. `title` names the rail
   button; `icon` is a BB icon name. The user can resize the panel; the plugin
   does not choose its width.
+  `matches` scopes the panel to pages: URL globs (`["https://github.com/**"]`,
+  `**` crossing `/`), and the host draws the column only while the **active
+  browser tab** is on a matching page. Declare it rather than returning `null`
+  from the component for pages you do not want — an empty column still reserves
+  the edge. `browserUrl` is that tab's address, or null when the window is not
+  showing a page; with `matches` declared it is non-null whenever the panel
+  renders. Costs no permission: this is bb's own UI reacting to the address bar,
+  unlike `bb.sites`, which governs reaching into a page.
 - `navPanel` → `{ subPath: string }` — owns the whole route at
   `/plugins/<pluginId>/<path>/*` and gets its own sidebar entry. `subPath`
   is the route remainder after the panel root (`""` at the root), so deep

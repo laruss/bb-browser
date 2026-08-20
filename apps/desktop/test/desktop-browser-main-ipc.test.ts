@@ -16,6 +16,8 @@ import {
   type BbDesktopBrowserNavigateRequest,
   type BbDesktopBrowserSetBoundsRequest,
   type BbDesktopBrowserSetVisibleRequest,
+  type BbDesktopPageScriptBootstrap,
+  type BbDesktopPageScriptRpcAnswer,
 } from "@bb/desktop-contract";
 import {
   BB_DESKTOP_BROWSER_ATTACH_CHANNEL,
@@ -37,6 +39,10 @@ import {
   BB_DESKTOP_BROWSER_RECORD_CHANNEL,
   BB_DESKTOP_BROWSER_SNAPSHOT_IN_CHANNEL,
   BB_DESKTOP_BROWSER_STORAGE_CHANNEL,
+  BB_DESKTOP_BROWSER_SET_PAGE_SCRIPTS_CHANNEL,
+  BB_DESKTOP_BROWSER_PAGE_SCRIPT_RESULT_CHANNEL,
+  BB_DESKTOP_PAGE_SCRIPT_BOOTSTRAP_CHANNEL,
+  BB_DESKTOP_PAGE_SCRIPT_RPC_CHANNEL,
 } from "../src/desktop-browser-ipc.js";
 import { registerDesktopBrowserIpc } from "../src/desktop-browser-main-ipc.js";
 import type { DesktopBrowserViewManager } from "../src/desktop-browser-view.js";
@@ -52,6 +58,9 @@ const electronMock = vi.hoisted(() => {
 
   interface FakeIpcEvent {
     sender: FakeWebContents;
+    /** Present for the channels a browsed page's preload reaches. */
+    senderFrame?: { url: string } | null;
+    returnValue?: unknown;
   }
 
   type FakeIpcListener = (event: FakeIpcEvent, payload: unknown) => void;
@@ -119,6 +128,21 @@ type SetDevToolsVisibleCall = Parameters<
 type SetContextMenuItemsCall = Parameters<
   DesktopBrowserViewManager["setContextMenuItems"]
 >[0];
+type SetPageStylesCall = Parameters<
+  DesktopBrowserViewManager["setPageStyles"]
+>[0];
+type SetPageScriptsCall = Parameters<
+  DesktopBrowserViewManager["setPageScripts"]
+>[0];
+type PageScriptBootstrapCall = Parameters<
+  DesktopBrowserViewManager["pageScriptBootstrap"]
+>[0];
+type PageScriptRpcCall = Parameters<
+  DesktopBrowserViewManager["pageScriptRpc"]
+>[0];
+type PageScriptRespondCall = Parameters<
+  DesktopBrowserViewManager["respondToPageScriptCall"]
+>[0];
 type SnapshotCall = Parameters<DesktopBrowserViewManager["snapshot"]>[0];
 type SnapshotInCall = Parameters<DesktopBrowserViewManager["snapshotIn"]>[0];
 type DialogRespondCall = Parameters<
@@ -181,6 +205,13 @@ class RecordingDesktopBrowserViewManager implements DesktopBrowserViewManager {
   public readonly setDevToolsCalls: SetDevToolsCall[] = [];
   public readonly setDevToolsVisibleCalls: SetDevToolsVisibleCall[] = [];
   public readonly setContextMenuItemsCalls: SetContextMenuItemsCall[] = [];
+  public readonly setPageStylesCalls: SetPageStylesCall[] = [];
+  public readonly setPageScriptsCalls: SetPageScriptsCall[] = [];
+  public readonly pageScriptBootstrapCalls: PageScriptBootstrapCall[] = [];
+  public readonly pageScriptRpcCalls: PageScriptRpcCall[] = [];
+  public readonly pageScriptRespondCalls: PageScriptRespondCall[] = [];
+  public pageScriptRpcFailure: Error | null = null;
+  public pageScriptBootstrapFailure: Error | null = null;
   public downloadActionFailure: Error | null = null;
   public downloadActionResult: BbDesktopBrowserDownloadActionResult = {
     ok: true,
@@ -333,6 +364,40 @@ class RecordingDesktopBrowserViewManager implements DesktopBrowserViewManager {
 
   setContextMenuItems(args: SetContextMenuItemsCall): void {
     this.setContextMenuItemsCalls.push(args);
+  }
+
+  setPageStyles(args: SetPageStylesCall): void {
+    this.setPageStylesCalls.push(args);
+  }
+
+  setPageScripts(args: SetPageScriptsCall): void {
+    this.setPageScriptsCalls.push(args);
+  }
+
+  pageScriptBootstrap(
+    args: PageScriptBootstrapCall,
+  ): BbDesktopPageScriptBootstrap {
+    this.pageScriptBootstrapCalls.push(args);
+    if (this.pageScriptBootstrapFailure !== null) {
+      throw this.pageScriptBootstrapFailure;
+    }
+    return {
+      worlds: [{ pluginId: "site-tweaks", worldId: 9001, scripts: [] }],
+    };
+  }
+
+  async pageScriptRpc(
+    args: PageScriptRpcCall,
+  ): Promise<BbDesktopPageScriptRpcAnswer> {
+    this.pageScriptRpcCalls.push(args);
+    if (this.pageScriptRpcFailure !== null) {
+      throw this.pageScriptRpcFailure;
+    }
+    return { ok: true, result: '{"ok":1}' };
+  }
+
+  respondToPageScriptCall(args: PageScriptRespondCall): void {
+    this.pageScriptRespondCalls.push(args);
   }
 
   downloadAction(
@@ -1058,5 +1123,196 @@ describe("registerDesktopBrowserIpc", () => {
         sender: renderer.sender,
       }),
     ).resolves.toEqual({ ok: false, reason: "unreadable" });
+  });
+
+  // --- The two channels a browsed page's own preload reaches ---
+
+  it("answers a page's bootstrap from the frame url Chromium reported", () => {
+    const manager = new RecordingDesktopBrowserViewManager();
+    registerDesktopBrowserIpc(manager);
+    const page = createUntrustedSender();
+    const listener = electronMock.listeners.get(
+      BB_DESKTOP_PAGE_SCRIPT_BOOTSTRAP_CHANNEL,
+    );
+    expect(listener).toBeDefined();
+    const event = {
+      sender: page,
+      senderFrame: { url: "https://github.com/bb/pulls" },
+      returnValue: undefined as unknown,
+    };
+
+    listener?.(event, { url: "https://bank.example/" });
+
+    // The payload's claim about where it is was not read at all.
+    expect(manager.pageScriptBootstrapCalls).toEqual([
+      { webContentsId: page.id, url: "https://github.com/bb/pulls" },
+    ]);
+    expect(event.returnValue).toEqual({
+      worlds: [{ pluginId: "site-tweaks", worldId: 9001, scripts: [] }],
+    });
+  });
+
+  // A frame with no address gets an answer anyway: the page is blocked on this
+  // call at document start, so a path that returned nothing would hang it.
+  it("always answers the bootstrap, even for a frame it will not serve", () => {
+    const manager = new RecordingDesktopBrowserViewManager();
+    registerDesktopBrowserIpc(manager);
+    const listener = electronMock.listeners.get(
+      BB_DESKTOP_PAGE_SCRIPT_BOOTSTRAP_CHANNEL,
+    );
+    const event = {
+      sender: createUntrustedSender(),
+      senderFrame: null,
+      returnValue: undefined as unknown,
+    };
+
+    listener?.(event, undefined);
+
+    expect(event.returnValue).toEqual({ worlds: [] });
+    expect(manager.pageScriptBootstrapCalls).toEqual([]);
+
+    // And the same when the manager itself throws: whatever went wrong, the page
+    // is unblocked with an empty answer rather than left waiting.
+    manager.pageScriptBootstrapFailure = new Error("boom");
+    const thrown = {
+      sender: createUntrustedSender(),
+      senderFrame: { url: "https://github.com/" },
+      returnValue: undefined as unknown,
+    };
+    listener?.(thrown, undefined);
+    expect(thrown.returnValue).toEqual({ worlds: [] });
+  });
+
+  it("passes a page script's rpc with the frame url, not the payload's", async () => {
+    const manager = new RecordingDesktopBrowserViewManager();
+    registerDesktopBrowserIpc(manager);
+    const page = createUntrustedSender();
+    const handler = electronMock.handlers.get(
+      BB_DESKTOP_PAGE_SCRIPT_RPC_CHANNEL,
+    );
+    expect(handler).toBeDefined();
+
+    const answer = await handler?.(
+      { sender: page, senderFrame: { url: "https://github.com/" } },
+      { pluginId: "site-tweaks", method: "notes", input: '{"repo":"bb/bb"}' },
+    );
+
+    expect(manager.pageScriptRpcCalls).toEqual([
+      {
+        webContentsId: page.id,
+        url: "https://github.com/",
+        request: {
+          pluginId: "site-tweaks",
+          method: "notes",
+          input: '{"repo":"bb/bb"}',
+        },
+      },
+    ]);
+    expect(answer).toEqual({ ok: true, result: '{"ok":1}' });
+  });
+
+  it("refuses a page script's rpc that does not parse, or has no frame", async () => {
+    const manager = new RecordingDesktopBrowserViewManager();
+    registerDesktopBrowserIpc(manager);
+    const handler = electronMock.handlers.get(
+      BB_DESKTOP_PAGE_SCRIPT_RPC_CHANNEL,
+    );
+    const frame = { url: "https://github.com/" };
+
+    await expect(
+      handler?.(
+        { sender: createUntrustedSender(), senderFrame: frame },
+        {
+          pluginId: "site-tweaks",
+          method: "notes",
+          input: 42,
+        },
+      ),
+    ).resolves.toEqual({
+      ok: false,
+      message: "bb.rpc: that call was not understood.",
+    });
+    await expect(
+      handler?.(
+        { sender: createUntrustedSender(), senderFrame: null },
+        {
+          pluginId: "site-tweaks",
+          method: "notes",
+          input: "",
+        },
+      ),
+    ).resolves.toEqual({
+      ok: false,
+      message: "bb.rpc is not available in this page.",
+    });
+    expect(manager.pageScriptRpcCalls).toEqual([]);
+  });
+
+  // The refusal a page script sees is a resolved answer, never a rejected
+  // invoke: Electron turns a rejection into an opaque string with nothing in it
+  // for whoever wrote the script.
+  it("turns a manager failure into an answer rather than a rejection", async () => {
+    const manager = new RecordingDesktopBrowserViewManager();
+    manager.pageScriptRpcFailure = new Error("boom");
+    registerDesktopBrowserIpc(manager);
+    const handler = electronMock.handlers.get(
+      BB_DESKTOP_PAGE_SCRIPT_RPC_CHANNEL,
+    );
+
+    await expect(
+      handler?.(
+        {
+          sender: createUntrustedSender(),
+          senderFrame: { url: "https://github.com/" },
+        },
+        { pluginId: "site-tweaks", method: "notes", input: "" },
+      ),
+    ).resolves.toEqual({ ok: false, message: "bb.rpc: the call failed." });
+  });
+
+  it("takes page scripts and their answers only from an app window", () => {
+    const manager = new RecordingDesktopBrowserViewManager();
+    registerDesktopBrowserIpc(manager);
+    const renderer = createTrustedRenderer("main-window");
+    const page = createUntrustedSender();
+    const scripts = {
+      scripts: [
+        {
+          pluginId: "site-tweaks",
+          scriptId: "toolbar",
+          matches: ["https://github.com/**"],
+          code: "bb.ready(function(){})",
+        },
+      ],
+    };
+    const result = { callId: "page-script-1", ok: true, result: "{}" };
+
+    sendBrowserIpc({
+      channel: BB_DESKTOP_BROWSER_SET_PAGE_SCRIPTS_CHANNEL,
+      payload: scripts,
+      sender: renderer.sender,
+    });
+    sendBrowserIpc({
+      channel: BB_DESKTOP_BROWSER_SET_PAGE_SCRIPTS_CHANNEL,
+      payload: scripts,
+      sender: page,
+    });
+    sendBrowserIpc({
+      channel: BB_DESKTOP_BROWSER_PAGE_SCRIPT_RESULT_CHANNEL,
+      payload: result,
+      sender: renderer.sender,
+    });
+    // A browsed page answering a call it did not make would be a page speaking
+    // for the plugin host.
+    sendBrowserIpc({
+      channel: BB_DESKTOP_BROWSER_PAGE_SCRIPT_RESULT_CHANNEL,
+      payload: result,
+      sender: page,
+    });
+
+    expect(manager.setPageScriptsCalls).toEqual([
+      { hostWindow: renderer.hostWindow, request: scripts },
+    ]);
+    expect(manager.pageScriptRespondCalls).toEqual([{ result }]);
   });
 });

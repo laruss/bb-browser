@@ -41,6 +41,8 @@ import type {
   PluginBrowserHistoryFilter,
   PluginBrowserPdfTextProvider,
   PluginBrowserFindActionRegistration,
+  PluginBrowserPageScriptRegistration,
+  PluginBrowserPageStyleRegistration,
   PluginBrowserSearchEngineRegistration,
   PluginBrowserSiteInfoProviderRegistration,
   PluginBrowserToolbarItemRegistration,
@@ -87,6 +89,8 @@ import {
   BROWSER_SEARCH_ENGINE_QUERY_PLACEHOLDER,
   normalizeBrowserSearchEngineTemplate,
 } from "@bb/domain/browser-search-engine";
+import { BROWSER_PAGE_STYLE_MAX_CSS_LENGTH } from "@bb/domain/browser-page-style";
+import { BROWSER_PAGE_SCRIPT_MAX_CODE_LENGTH } from "@bb/domain/browser-page-script";
 import { createFakePermissionGate } from "./fake-permissions.js";
 import {
   createFakeSdk,
@@ -478,6 +482,10 @@ export interface FakePluginRegistrations {
   commands: PluginCommandRegistration[];
   /** Engines from `bb.browser.registerSearchEngine`, in registration order. */
   searchEngines: PluginBrowserSearchEngineRegistration[];
+  /** Styles from `bb.browser.registerPageStyle`, in registration order. */
+  pageStyles: PluginBrowserPageStyleRegistration[];
+  /** Scripts from `bb.browser.registerPageScript`, in registration order. */
+  pageScripts: PluginBrowserPageScriptRegistration[];
   /** Providers from `bb.browser.registerAuthProvider`, in registration order. */
   authProviders: PluginBrowserAuthProvider[];
   /** Providers from `bb.browser.registerPdfTextProvider`, in order. */
@@ -654,6 +662,15 @@ export interface CreateFakePluginHostOptions {
    * `permissions: pluginPermissionsFromManifest(import.meta.url)`.
    */
   permissions?: readonly PluginPermission[];
+  /**
+   * What `bb.sites` declares: the websites this plugin's page contributions may
+   * reach. Defaults to none, so `registerPageStyle` and `registerPageScript`
+   * are refused here exactly as an install would refuse them.
+   *
+   * Read it from the plugin's own manifest, for the reason the permissions above
+   * are: `sites: pluginSitesFromManifest(import.meta.url)`.
+   */
+  sites?: readonly string[];
 }
 
 export interface FakePluginHost {
@@ -2084,6 +2101,9 @@ function createFakePluginHostInternal(
   const newTabWidgets: PluginBrowserNewTabWidgetRegistration[] = [];
   const commands: PluginCommandRegistration[] = [];
   const searchEngines: PluginBrowserSearchEngineRegistration[] = [];
+  const pageStyles: PluginBrowserPageStyleRegistration[] = [];
+  const pageScripts: PluginBrowserPageScriptRegistration[] = [];
+  const declaredSites = [...(options.sites ?? [])];
   const authProviders: PluginBrowserAuthProvider[] = [];
   const pdfTextProviders: PluginBrowserPdfTextProvider[] = [];
   const historyFilters: PluginBrowserHistoryFilter[] = [];
@@ -2251,6 +2271,86 @@ function createFakePluginHostInternal(
         );
       }
       searchEngines.push(engine);
+    },
+    registerPageStyle(style) {
+      assertLive();
+      permissionGate.assert(
+        "pageStyle.register",
+        "bb.browser.registerPageStyle",
+      );
+      if (typeof style?.id !== "string" || style.id.length === 0) {
+        throw new Error("registerPageStyle needs an id");
+      }
+      if (pageStyles.some((record) => record.id === style.id)) {
+        throw new Error(`page style "${style.id}" is already registered`);
+      }
+      if (
+        typeof style.css !== "string" ||
+        style.css.trim().length === 0 ||
+        style.css.length > BROWSER_PAGE_STYLE_MAX_CSS_LENGTH
+      ) {
+        throw new Error(
+          `page style "${style.id}" must provide css of up to ${BROWSER_PAGE_STYLE_MAX_CSS_LENGTH} characters`,
+        );
+      }
+      if (!Array.isArray(style.matches) || style.matches.length === 0) {
+        throw new Error(
+          `page style "${style.id}" must match at least one of the plugin's declared sites`,
+        );
+      }
+      // The same refusal the host makes, so a plugin's test sees it too: code
+      // picks from `bb.sites` and cannot widen it.
+      for (const pattern of style.matches) {
+        if (!declaredSites.includes(pattern)) {
+          throw new Error(
+            `page style "${style.id}" matches ${JSON.stringify(pattern)}, which plugin "${pluginId}" does not declare in "bb.sites". ` +
+              (declaredSites.length === 0
+                ? "That list is empty — add the site there, or pass `sites` to createFakePluginHost."
+                : `It declares: ${declaredSites.join(", ")}.`),
+          );
+        }
+      }
+      pageStyles.push(style);
+    },
+    registerPageScript(script) {
+      assertLive();
+      permissionGate.assert(
+        "pageScript.register",
+        "bb.browser.registerPageScript",
+      );
+      if (typeof script?.id !== "string" || script.id.length === 0) {
+        throw new Error("registerPageScript needs an id");
+      }
+      if (pageScripts.some((record) => record.id === script.id)) {
+        throw new Error(`page script "${script.id}" is already registered`);
+      }
+      if (
+        typeof script.code !== "string" ||
+        script.code.trim().length === 0 ||
+        script.code.length > BROWSER_PAGE_SCRIPT_MAX_CODE_LENGTH
+      ) {
+        throw new Error(
+          `page script "${script.id}" must provide code of up to ${BROWSER_PAGE_SCRIPT_MAX_CODE_LENGTH} characters`,
+        );
+      }
+      if (!Array.isArray(script.matches) || script.matches.length === 0) {
+        throw new Error(
+          `page script "${script.id}" must match at least one of the plugin's declared sites`,
+        );
+      }
+      // Same refusal as the host's, for the same reason a page style's is here:
+      // a plugin's own test is where widening `matches` should fail.
+      for (const pattern of script.matches) {
+        if (!declaredSites.includes(pattern)) {
+          throw new Error(
+            `page script "${script.id}" matches ${JSON.stringify(pattern)}, which plugin "${pluginId}" does not declare in "bb.sites". ` +
+              (declaredSites.length === 0
+                ? "That list is empty — add the site there, or pass `sites` to createFakePluginHost."
+                : `It declares: ${declaredSites.join(", ")}.`),
+          );
+        }
+      }
+      pageScripts.push(script);
     },
     registerAuthProvider(provider) {
       assertLive();
@@ -3173,6 +3273,8 @@ function createFakePluginHostInternal(
       newTabWidgets,
       commands,
       searchEngines,
+      pageStyles,
+      pageScripts,
       authProviders,
       pdfTextProviders,
       historyFilters,

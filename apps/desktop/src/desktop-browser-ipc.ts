@@ -83,6 +83,34 @@ export const BB_DESKTOP_BROWSER_SEARCH_SELECTION_CHANNEL =
 // happens when a user picks one.
 export const BB_DESKTOP_BROWSER_SET_CONTEXT_MENU_ITEMS_CHANNEL =
   "bb-desktop:browser:set-context-menu-items";
+/**
+ * The page styles this window's plugins declared, pushed whole. A new channel
+ * rather than a field on an existing request: browser IPC schemas are
+ * wire-frozen, and a renderer and a shell from different builds meet with no
+ * handshake — see bb-migration.md, Invariant 2.
+ */
+export const BB_DESKTOP_BROWSER_SET_PAGE_STYLES_CHANNEL =
+  "bb-desktop:browser:set-page-styles";
+/**
+ * The page scripts this window's plugins declared, pushed whole. A new channel
+ * for the same wire-frozen reason as the styles above.
+ */
+export const BB_DESKTOP_BROWSER_SET_PAGE_SCRIPTS_CHANNEL =
+  "bb-desktop:browser:set-page-scripts";
+/**
+ * A page script asking its own plugin something, and the answer coming back.
+ *
+ * Two channels rather than an invoke, because the request starts in a *third*
+ * process: a browsed page asks the shell, the shell asks this window's renderer
+ * (the only one that can authenticate to the bb server), and the answer walks
+ * the same path back. A promise handed to `ipcMain.handle` could not be settled
+ * by a message from somewhere else.
+ */
+export const BB_DESKTOP_BROWSER_PAGE_SCRIPT_CALL_CHANNEL =
+  "bb-desktop:browser:page-script-call";
+export const BB_DESKTOP_BROWSER_PAGE_SCRIPT_RESULT_CHANNEL =
+  "bb-desktop:browser:page-script-result";
+
 export const BB_DESKTOP_BROWSER_CONTEXT_MENU_INVOKE_CHANNEL =
   "bb-desktop:browser:context-menu-invoke";
 // Find in page: the command going down, the running count coming back up. Two
@@ -174,3 +202,20 @@ export const BB_DESKTOP_BROWSER_CAPTURE_FULL_PAGE_CHANNEL =
 // answer is an artifact rather than a fact about the page — megabytes of frames,
 // bounded by the recording's own caps rather than by a single result's.
 export const BB_DESKTOP_BROWSER_RECORD_CHANNEL = "bb-desktop:browser:record";
+
+// --- Channels a browsed page's own preload uses ---
+//
+// These two are the only ones reachable from the preload the shell installs in
+// the browsing session, and neither is on `BbDesktopBrowserApi`: the bb app has
+// no use for them, and a browsed renderer must not be able to reach anything
+// else. Both are answered from the sender frame's URL as the shell resolved it,
+// never from anything the payload claims about where it is.
+/**
+ * Answered synchronously, at document start, with the scripts that claim this
+ * frame's address. Synchronous because the answer decides what runs before the
+ * page's own first script, and there is no later moment to be early in.
+ */
+export const BB_DESKTOP_PAGE_SCRIPT_BOOTSTRAP_CHANNEL =
+  "bb-desktop:page:script-bootstrap";
+/** One `bb.rpc` call from a page script, awaiting its plugin's answer. */
+export const BB_DESKTOP_PAGE_SCRIPT_RPC_CHANNEL = "bb-desktop:page:script-rpc";

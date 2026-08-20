@@ -236,7 +236,7 @@ const FRONTEND_SLOT_PROP_FIELDS = {
   homepageSection: ["projectId"],
   settingsSection: [],
   navPanel: ["subPath"],
-  experimental_leadingPanel: [],
+  experimental_leadingPanel: ["browserUrl"],
   threadPanelAction: ["threadId", "params"],
   experimental_newThreadPanelAction: ["projectId", "params"],
   pendingInteraction: ["interaction", "submit", "cancel"],

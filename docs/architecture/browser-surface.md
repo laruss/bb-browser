@@ -1057,6 +1057,221 @@ and pays `tabs.read`, the permission that already governs exactly that. Which is
 also why `registerCommand` itself is ungated — a chord that runs the plugin's own
 code discloses nothing.
 
+## Pages a plugin restyles, and the first permission that names sites
+
+`bb.browser.registerPageStyle` applies a plugin's CSS to the pages the user let it
+reach. It is the cheapest thing on this list and the first one that touches the
+page itself rather than the chrome around it: hiding a banner, widening a column,
+restyling a site somebody stares at all day is one rule, runs no plugin code in the
+page, and reads nothing back.
+
+**The permission answers _where_, and that is new.** Every other browser permission
+answers _what_ — "may add a toolbar control", "may read a page" — and the plugin
+then reaches whatever that buys. Styling one site the user named and styling every
+site they visit are not the same risk, so one flag covering both would say neither.
+The declaration is therefore split in two:
+
+```json
+{
+  "bb": {
+    "permissions": ["pageStyle.register"],
+    "sites": ["https://github.com/**"]
+  }
+}
+```
+
+`permissions` says the plugin restyles pages; `bb.sites` says which ones, as URL
+globs in the dialect route patterns already use. A registration's `matches` must be
+**one of the declared patterns** — membership, not containment. Code picks from the
+list the user read before installing and cannot widen it, and nobody has to trust an
+answer to "is this glob inside that glob". `https` only, except loopback over plain
+http, for the reason a registered search engine's template is: standing access to a
+site the user is signed in to, over a connection anyone on the path can
+impersonate, is not a plugin's call to make. `bb.sites` is unrelated to `bb.hosts`
+in the plugin API, which is enrolled machines; these are websites.
+
+Not to be confused with the _frontend_ `contentScripts.register`, which is trusted
+code in bb's own page. This is CSS in a browsed page, and it was the first of the two
+things a Chrome extension does that bb could not. The second — the plugin's own code
+in a browsed page — is [below](#a-plugins-own-code-in-a-browsed-page).
+
+### What the browser can promise about applying it, measured
+
+All three of these were measured against Electron 41.7.0 rather than assumed, and
+each one shapes the design:
+
+- **Inserted CSS lives exactly one document.** It does not survive a navigation or
+  a reload. So the shell holds the declared set and re-applies whatever matches on
+  every committed navigation — and nothing has to be removed when a tab leaves a
+  matching site, because the document that carried the stylesheet is already gone.
+- **Main frame only.** A subframe keeps its own stylesheets, so an ad in an iframe
+  is not something a page style can reach.
+- **After commit, not before first paint.** The earliest hook that works is the
+  navigation committing (`did-start-navigation` leaves `insertCSS` pending
+  forever). A page's own inline script at the top of the document can still observe
+  the unstyled state. In practice a rule lands before a network page has streamed
+  the element it hides — but "in practice" is the honest word, and a style that must
+  never be seen is not something this surface can promise.
+
+### Why the shell holds the list
+
+The renderer pushes the whole set on a new channel (`setPageStyles`, feature-
+detected per Invariant 2) and the shell does the matching. Not because the renderer
+could not match, but because it is not there at the right moment: re-application
+belongs to the instant a page commits, and a round trip to the renderer would be a
+race against first paint.
+
+It is a **replacement**, not an add/remove pair. The renderer already knows the
+complete set; reconciling two incremental streams against what a document currently
+carries is a bug waiting for a reload to expose it. What the shell does with each
+push is compare desired against applied per view — so a style whose plugin was just
+removed comes off the page in front of the user, and one just installed goes on
+without waiting for a navigation.
+
+Two things follow that are worth knowing:
+
+- **Same-document navigation reconciles too.** An SPA route change keeps the
+  document, so its stylesheets survive — but the address moved, and that is exactly
+  where one site's pattern stops matching and another's starts.
+- **A page that is not a site gets nothing.** A fresh view is on the empty URL, and
+  `https://**/**` is a pattern a plugin may declare, so "every site" must not be
+  read as claiming bb's own blank page.
+
+### A panel that comes and goes with the site
+
+The other half of "when I'm on GitHub, show me my open PRs" is the panel, and it is
+already a plugin surface — the window's leading edge. What it was missing is
+_when_: `experimental_leadingPanel` now takes `matches`, the same URL globs, and the
+host draws the column only while the active browser tab is on a matching page. The
+panel's props carry that page's address, because "my open pull requests" is one
+panel but which repository it is looking at is the tab's business.
+
+Declared rather than decided in the component, for the reason the whole leading edge
+exists on those terms: with nothing declared the column appears whenever the plugin
+is installed, and a component that returns `null` for the page in front of the user
+leaves an empty resizable edge behind — on macOS, one that owns the traffic lights.
+The host removes the column instead. Filtering also decides the rail: with one of two
+panels out of scope there is no choice left to offer.
+
+This costs no permission and is checked against none. The panel is bb's own UI, and
+what it is told about the tab is the address the address bar is already showing —
+whereas `bb.sites` governs something else entirely, code and styling _inside_ a page.
+
+It is deliberately not scoped to the route: the leading edge is the _window's_, so a
+site-scoped panel that vanished the moment the user glanced at a thread would take
+the work they were doing in it with them.
+
+The worked example of all three halves is `examples/plugins/site-tweaks`: CSS that
+declutters GitHub, a button in GitHub's own page, and a panel scoped to the same site
+that keeps notes per repository in the plugin's own SQLite — with no change to the
+browser. Its test suite includes the refusal an install makes when `matches` names a
+site the manifest does not, which is the property the whole permission rests on.
+
+## A plugin's own code in a browsed page
+
+`bb.browser.registerPageScript` is the other half, and the one a userscript is
+usually reached for: read the page, add a control to it, answer a click by asking
+the plugin's backend — which is the part a userscript cannot do, because a page has
+no database, no keychain and no way past the site's CSP.
+
+**A separate permission over the same list.** `pageScript.register` is scoped by the
+same `bb.sites`, checked by the same membership rule, refused in the same three
+places. It is not folded into `pageStyle.register` because a stylesheet that cannot
+read the page and a program that can are not the same disclosure: a plugin the user
+let restyle GitHub has not thereby been let read what they do there. Granting this
+for a site is granting the plugin what a browser extension gets there.
+
+### Why a session preload, and not the debugger
+
+The obvious mechanism was CDP: `Page.addScriptToEvaluateOnNewDocument` with a
+`worldName`, plus `Runtime.addBinding` for the channel back. It would have done
+everything, including subframes.
+
+It was rejected on a documented invariant rather than on taste.
+[browser-automation.md](browser-automation.md) states that the browser debugger
+attaches **lazily**, per tab, on the first automation command — because a debugger
+attached to every tab for the life of the app is both overhead and exposure, and
+enabling the `Page` domain moves dialogs off Chromium's native path, which changes
+what an ordinary browsing session looks like to a human. Page scripts would have
+required exactly that, permanently. Worse, CDP allows one client per target: opening
+DevTools on a tab takes the session, so page scripts would silently stop working in
+the one situation where somebody is debugging them.
+
+So the shell registers a **session preload** for the browsing partition instead —
+and registers it _only while at least one plugin declares a page script_. That last
+part is the load-bearing property: a user with no such plugin runs a browser whose
+pages carry no bb code at all, which is the state the shell was in before this
+existed. Measured: after `unregisterPreloadScript`, the next document has no preload
+and the isolated world is empty.
+
+The standing rule that a browsed page never receives a bb bridge survives, because
+the preload exposes nothing into the page's own world. It calls
+`contextBridge.exposeInIsolatedWorld` for a world **per plugin**, and
+`webFrame.executeJavaScriptInIsolatedWorld` runs the plugin's source there. Measured
+in the page's own world: `bb`, the script's globals, `process` and `require` are all
+undefined.
+
+### What the browser can promise about running it, measured
+
+Each of these was measured against Electron 41.7.0, and each one shapes either the
+API or what the documentation is allowed to claim:
+
+- **Before the page's own first script.** The preload runs when the document exists
+  and the parser has produced nothing — `document.documentElement` is still null.
+  That is genuinely `document_start`, earlier than a page style lands, so a script
+  can patch what the page is about to use. It is also why `bb.ready` exists: a
+  generated script whose first line touches `document.body` would otherwise throw
+  every time.
+- **A world per plugin, invisible in both directions.** Two scripts of one plugin
+  share a world (measured: the second sees the first's globals); two plugins do not
+  (each sees `undefined` where the other's marker is). bb's own CDP automation world
+  is a third world again and shares nothing with either — measured, because a page
+  script that could see the automation world, or vice versa, would be a hole in both.
+- **Main frame only.** A session preload does not run in subframes without
+  `nodeIntegrationInSubFrames`, which is experimental and would change _every_
+  browsed page rather than the matching ones. Measured: a cross-origin iframe on a
+  matching page never bootstrapped. Same limit as a page style, and left as one.
+- **Per document, so a registration takes effect on the next load.** Preloads are
+  read as a frame's document is created. Chrome's content scripts behave the same
+  way, and the alternative — reloading the user's open pages to make an install feel
+  instant — is not a trade the browser gets to make. It also means a site's own
+  client-side navigation is _not_ a new document: it replaces the page's content and
+  takes the script's elements with it, and re-mounting is the script's job.
+- **A throwing script is contained.** The error lands in the page's console — which
+  bb's observation log already collects, so an agent can read it — the injection
+  promise rejects, and the next script still runs. One caveat the implementation has
+  to respect: a second `exposeInIsolatedWorld` for the same world throws _and aborts
+  the rest of the preload_, so every step there is wrapped.
+
+### The channel back, and where it is checked
+
+`bb.rpc(method, input)` reaches the plugin's own rpc and nothing else. Getting there
+crosses three processes, because no shorter path exists: the browsed page cannot
+hold credentials, and the shell deliberately holds none for the bb server either. So
+the page asks the shell, the shell asks that window's renderer, the renderer performs
+the authenticated call, and the answer walks back. JSON text end to end, bounded in
+both directions.
+
+The address is the shell's, not the payload's. `event.senderFrame.url` — measured to
+be the _new_ document's URL by the time the bootstrap is answered — is what decides
+which scripts a frame gets and, on **every** call, whether the named plugin still
+claims the page the caller is actually on. A browsed renderer that has been taken
+over can therefore reach the plugins already granted its current address, which is
+the same set a well-behaved script on that page could reach, and nothing else. The
+renderer re-derives the same answer from its own contribution list before calling:
+two checks of one rule, in two processes that would have to be wrong together.
+
+Two bounds on top: a per-tab sliding window (60 calls / 10s), because a script in a
+loop would otherwise be a page driving the bb server, and a 30-second backstop on an
+unanswered call, because nothing else in that path has a deadline and a page script
+awaiting a promise forever looks like a hung page.
+
+### What is deliberately not here
+
+Loading real CRX bundles, and shimming `chrome.*`. Both look like shortcuts and are
+permanent compatibility obligations to a moving target, with a permission model that
+is not ours. The agent is the translator instead: "port this userscript" is a prompt.
+
 ## The page context menu
 
 Right-clicking a browsed page used to offer cut, copy, paste and select-all —

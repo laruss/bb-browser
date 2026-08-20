@@ -64,6 +64,8 @@ import type { PluginServiceCommand } from "./plugin-service-message.js";
 export interface PluginHostConfig {
   pluginId: string;
   permissions: readonly PluginPermission[] | undefined;
+  /** What `bb.sites` declared; see the same field on `createPluginApi`. */
+  sites: readonly string[] | undefined;
   /** For `bb.storage.database()`, which this process opens itself. */
   dataDir: string;
   /**
@@ -168,6 +170,8 @@ export interface PluginRegistrationSnapshot {
   pdfTextProviderCount: number;
   keybindings: AppKeybindingOverrides;
   searchEngines: BrowserSearchEngine[];
+  pageStyles: { id: string; matches: string[]; css: string }[];
+  pageScripts: { id: string; matches: string[]; code: string }[];
   /** Only the events the plugin actually subscribed to. */
   threadEvents: string[];
   settingsDescriptors: PluginSettingDescriptors;
@@ -312,6 +316,7 @@ export function createPluginChildRuntime(
     const built = createPluginApi({
       pluginId: config.pluginId,
       permissions: config.permissions,
+      sites: config.sites,
       dataDir: config.dataDir,
       logger: {
         debug: (message: string) => send("log.debug", message),
@@ -858,6 +863,8 @@ function snapshot(handle: PluginApiHandle): PluginRegistrationSnapshot {
     pdfTextProviderCount: handle.pdfTextProviders.length,
     keybindings: handle.keybindings,
     searchEngines: handle.searchEngines,
+    pageStyles: handle.pageStyles,
+    pageScripts: handle.pageScripts,
     threadEvents: Object.entries(handle.threadEventHandlers)
       .filter(([, handlers]) => (handlers as unknown[]).length > 0)
       .map(([event]) => event),

@@ -361,6 +361,7 @@ describe("desktop build", () => {
       "main.js.map",
       "preload.cjs.map",
       "log-viewer-preload.cjs.map",
+      "page-script-preload.cjs.map",
       "bb-app-bridge.mjs.map",
     ]) {
       await expect(

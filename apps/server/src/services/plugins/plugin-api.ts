@@ -42,6 +42,18 @@ import type {
 } from "@bb/domain/browser-control";
 import { PLUGIN_INTERACTION_MAX_TITLE_LENGTH } from "@bb/domain/plugin-interaction-limits";
 import {
+  BROWSER_PAGE_STYLE_ID_PATTERN,
+  BROWSER_PAGE_STYLE_MAX_CSS_LENGTH,
+  BROWSER_PAGE_STYLE_MAX_ID_LENGTH,
+  BROWSER_PAGE_STYLE_MAX_MATCHES,
+} from "@bb/domain/browser-page-style";
+import {
+  BROWSER_PAGE_SCRIPT_ID_PATTERN,
+  BROWSER_PAGE_SCRIPT_MAX_CODE_LENGTH,
+  BROWSER_PAGE_SCRIPT_MAX_ID_LENGTH,
+  BROWSER_PAGE_SCRIPT_MAX_MATCHES,
+} from "@bb/domain/browser-page-script";
+import {
   BROWSER_SEARCH_ENGINE_ID_PATTERN,
   BROWSER_SEARCH_ENGINE_MAX_ID_LENGTH,
   BROWSER_SEARCH_ENGINE_MAX_NAME_LENGTH,
@@ -555,6 +567,10 @@ export interface PluginApiHandle {
   commands: PluginCommandRecord[];
   /** Search engines recorded by `bb.browser.registerSearchEngine`. */
   searchEngines: BrowserSearchEngine[];
+  /** Page styles recorded by `bb.browser.registerPageStyle`. */
+  pageStyles: PluginBrowserPageStyleRecord[];
+  /** Page scripts recorded by `bb.browser.registerPageScript`. */
+  pageScripts: PluginBrowserPageScriptRecord[];
   /** Auth providers recorded by `bb.browser.registerAuthProvider`. */
   authProviders: PluginBrowserAuthProvider[];
   /** PDF text providers recorded by `bb.browser.registerPdfTextProvider`. */
@@ -607,6 +623,29 @@ export interface PluginBrowserToolbarItemRecord {
         | Promise<PluginBrowserToolbarState | null>)
     | null;
   run: (context: PluginBrowserToolbarContext) => void | Promise<void>;
+}
+
+/**
+ * Runtime shape of a `bb.browser.registerPageStyle` registration. `matches` is
+ * already checked against the plugin's declared `bb.sites`, so everything
+ * downstream can apply it without re-deciding what the plugin may reach.
+ */
+export interface PluginBrowserPageStyleRecord {
+  id: string;
+  matches: string[];
+  css: string;
+}
+
+/**
+ * Runtime shape of a `bb.browser.registerPageScript` registration. `matches` is
+ * checked against `bb.sites` by the same rule as a page style's, so nothing
+ * downstream re-decides where this code may run — and `code` is text all the way
+ * to the page, never evaluated in this process.
+ */
+export interface PluginBrowserPageScriptRecord {
+  id: string;
+  matches: string[];
+  code: string;
 }
 
 /** Runtime shape of a `bb.browser.registerNewTabWidget` registration. */
@@ -665,6 +704,48 @@ export type PluginAgentConfigurationProvider = (
 
 /** Duck-typed zod detection: plugin sources may carry their own zod copy,
  * so instanceof is useless — anything with safeParse is treated as zod. */
+/**
+ * The site patterns one page contribution may use, or a refusal naming the list
+ * it has to pick from.
+ *
+ * Shared by page styles and page scripts because this is the rule the whole
+ * consent model rests on, and two copies of it could drift: `matches` must be a
+ * **member** of what the manifest declared, verbatim. Not a subset by glob — "is
+ * this pattern inside that one" is a question with no answer worth trusting code
+ * on a signed-in page to, and the manifest is the line a human read before
+ * installing.
+ */
+function resolveDeclaredMatches(args: {
+  kind: string;
+  id: string;
+  matches: unknown;
+  maxMatches: number;
+  declared: readonly string[];
+  pluginId: string;
+}): string[] {
+  const { kind, id, matches, maxMatches, declared, pluginId } = args;
+  if (
+    !Array.isArray(matches) ||
+    matches.length === 0 ||
+    matches.length > maxMatches
+  ) {
+    throw new Error(
+      `${kind} "${id}" must match between 1 and ${maxMatches} of the plugin's declared sites`,
+    );
+  }
+  for (const pattern of matches) {
+    if (typeof pattern !== "string" || !declared.includes(pattern)) {
+      throw new Error(
+        `${kind} "${id}" matches ${JSON.stringify(pattern)}, which plugin "${pluginId}" does not declare in "bb.sites". ` +
+          (declared.length === 0
+            ? `That list is empty — add the site there, then run \`bb plugin reload ${pluginId}\`.`
+            : `It declares: ${declared.join(", ")}.`),
+      );
+    }
+  }
+  return [...(matches as string[])];
+}
+
 function isZodSchemaLike(value: unknown): boolean {
   return (
     typeof value === "object" &&
@@ -741,6 +822,13 @@ export function createPluginApi(options: {
    * there is no legacy "everything" mode, see ./plugin-permission-gate.ts.
    */
   permissions: readonly PluginPermission[] | undefined;
+  /**
+   * What `bb.sites` declared: the websites this plugin's page contributions may
+   * reach. Absent or empty reaches none, so a `registerPageStyle` or
+   * `registerPageScript` call with nothing declared is refused rather than
+   * silently applying nowhere.
+   */
+  sites: readonly string[] | undefined;
   logger: ServerLogger;
   /** `bb.storage.kv`'s rows; db-backed in the server, a channel call in a
    * plugin process. See {@link PluginKvStore}. */
@@ -794,6 +882,7 @@ export function createPluginApi(options: {
   const {
     pluginId,
     permissions,
+    sites,
     logger,
     kvStore,
     readSettingsValues,
@@ -1946,6 +2035,8 @@ export function createPluginApi(options: {
   const newTabWidgets: PluginBrowserNewTabWidgetRecord[] = [];
   const commands: PluginCommandRecord[] = [];
   const searchEngines: BrowserSearchEngine[] = [];
+  const pageStyles: PluginBrowserPageStyleRecord[] = [];
+  const pageScripts: PluginBrowserPageScriptRecord[] = [];
   const authProviders: PluginBrowserAuthProvider[] = [];
   const pdfTextProviders: PluginBrowserPdfTextProvider[] = [];
   const historyFilters: PluginBrowserHistoryFilter[] = [];
@@ -2226,6 +2317,88 @@ export function createPluginApi(options: {
         );
       }
       searchEngines.push({ id, name: name.trim(), urlTemplate });
+    },
+    registerPageStyle(style) {
+      assertLive();
+      permissionGate.assert(
+        "pageStyle.register",
+        "bb.browser.registerPageStyle",
+      );
+      const id = style?.id;
+      if (
+        typeof id !== "string" ||
+        id.length > BROWSER_PAGE_STYLE_MAX_ID_LENGTH ||
+        !BROWSER_PAGE_STYLE_ID_PATTERN.test(id)
+      ) {
+        throw new Error(
+          `invalid page style id ${JSON.stringify(id)} — use letters, digits, "-" and "_"`,
+        );
+      }
+      if (pageStyles.some((record) => record.id === id)) {
+        throw new Error(`page style "${id}" is already registered`);
+      }
+      const matches = resolveDeclaredMatches({
+        kind: "page style",
+        id,
+        matches: style.matches,
+        maxMatches: BROWSER_PAGE_STYLE_MAX_MATCHES,
+        declared: sites ?? [],
+        pluginId,
+      });
+      const css = style.css;
+      if (
+        typeof css !== "string" ||
+        css.trim().length === 0 ||
+        css.length > BROWSER_PAGE_STYLE_MAX_CSS_LENGTH
+      ) {
+        throw new Error(
+          `page style "${id}" must provide css of up to ${BROWSER_PAGE_STYLE_MAX_CSS_LENGTH} characters`,
+        );
+      }
+      pageStyles.push({ id, matches, css });
+    },
+
+    registerPageScript(script) {
+      assertLive();
+      permissionGate.assert(
+        "pageScript.register",
+        "bb.browser.registerPageScript",
+      );
+      const id = script?.id;
+      if (
+        typeof id !== "string" ||
+        id.length > BROWSER_PAGE_SCRIPT_MAX_ID_LENGTH ||
+        !BROWSER_PAGE_SCRIPT_ID_PATTERN.test(id)
+      ) {
+        throw new Error(
+          `invalid page script id ${JSON.stringify(id)} — use letters, digits, "-" and "_"`,
+        );
+      }
+      if (pageScripts.some((record) => record.id === id)) {
+        throw new Error(`page script "${id}" is already registered`);
+      }
+      const matches = resolveDeclaredMatches({
+        kind: "page script",
+        id,
+        matches: script.matches,
+        maxMatches: BROWSER_PAGE_SCRIPT_MAX_MATCHES,
+        declared: sites ?? [],
+        pluginId,
+      });
+      const code = script.code;
+      if (
+        typeof code !== "string" ||
+        code.trim().length === 0 ||
+        code.length > BROWSER_PAGE_SCRIPT_MAX_CODE_LENGTH
+      ) {
+        throw new Error(
+          `page script "${id}" must provide code of up to ${BROWSER_PAGE_SCRIPT_MAX_CODE_LENGTH} characters`,
+        );
+      }
+      // Never parsed here, and never run here: this process hands text to the
+      // browser, which hands it to a page. A syntax error is the page console's
+      // to report, in the world it would have run in.
+      pageScripts.push({ id, matches, code });
     },
     registerAuthProvider(provider) {
       assertLive();
@@ -3130,6 +3303,8 @@ export function createPluginApi(options: {
     newTabWidgets,
     commands,
     searchEngines,
+    pageStyles,
+    pageScripts,
     authProviders,
     pdfTextProviders,
     historyFilters,

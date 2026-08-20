@@ -59,6 +59,8 @@ export const ANSWERED_IN_THE_PLUGIN_PROCESS = new Set<PluginHostCallPath>([
   "browser.registerContextMenuItem",
   "browser.registerTabAction",
   "browser.registerSearchEngine",
+  "browser.registerPageStyle",
+  "browser.registerPageScript",
   "browser.registerSiteInfoProvider",
   "browser.registerToolbarItem",
   "browser.registerNewTabWidget",

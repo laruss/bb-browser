@@ -137,6 +137,86 @@ still its own permission rather than none, because _placement in bb's chrome_ is
 what the user is agreeing to — but it is the cheapest of the browser's permissions
 to reason about, and the manifest should read that way.
 
+### And two whose answer is a list of sites
+
+`pageStyle.register` is the first permission where "what may this reach" could not
+be answered by the permission alone. Every other entry in the list names a
+capability and the holder then reaches whatever that capability reaches. A page
+style reaches _pages_ — so styling one site the user named and styling every site
+they visit would have been the same grant, and a single flag covering both says
+neither.
+
+So the declaration is two fields, and the second one is not a permission:
+
+```json
+{ "permissions": ["pageStyle.register"], "sites": ["https://github.com/**"] }
+```
+
+`bb.sites` is the _scope_ of the permission, not another one. Holding
+`pageStyle.register` with no sites reaches no page at all, and declaring sites
+without the permission reaches nothing either — which is the property worth having,
+because it means neither field can be read as harmless on its own.
+
+Three decisions inside that are worth keeping:
+
+- **Membership, not containment.** A registration's `matches` must be one of the
+  declared patterns, verbatim. "Is this glob inside that glob" is a question whose
+  answer nobody should have to trust with a stylesheet in a signed-in page, and the
+  manifest is what the user actually read.
+- **`https` only, except loopback over plain http.** The same rule a registered
+  search engine's template gets, and for a sharper reason: what a site pattern buys
+  is _standing_ access, and plain http to another machine is a site anyone on the
+  path can impersonate. An `http` pattern with a wildcard in its host is refused
+  rather than optimistically resolved — `http://*.localhost/**` would have to be
+  trusted to stay loopback, and it does not.
+- **The manifest refuses before the install.** A bad pattern is not a loaded plugin
+  in an error state; it is a `package.json` that never installs, because the line
+  the user would have consented to is the broken one. A `matches` entry the manifest
+  does not carry is refused later, at registration, where the plugin author is the
+  one who can fix it.
+- **A pattern that would match nothing is a bad pattern.** Matching is exact and
+  Chromium never reports an upper-case host, so `https://GitHub.com/**` is refused
+  with the lower-case spelling to use — rather than corrected quietly, because the
+  declared string is what a registration's `matches` must equal verbatim, or
+  accepted, which would show the user a site the plugin never reaches.
+
+`https://**/**` is allowed — a dark-mode or declutter plugin legitimately wants
+every site — so the honesty of this permission rests on the list being shown before
+anyone agrees to it. `bb plugin install` prints it above the confirmation ("It will
+restyle pages on: …") and `bb plugin info` lists it, both read from the manifest on
+disk, which is the path an agent-generated plugin takes.
+
+**The app does not show it, and does not show permissions either.** That gap
+predates this permission — nothing in the SPA renders `bb.permissions` today — but
+it matters more here than for the others, because this is the one whose scope is a
+list only the reader can judge. `sites` is on the wire (`InstalledPlugin.sites`)
+ready for that surface; until it exists, a plugin installed through the app's own
+dialog discloses its sites nowhere the user will look.
+
+Not to be confused with `bb.hosts` in the plugin API, which is enrolled machines.
+These are websites.
+
+#### Two permissions over one list
+
+`pageScript.register` — the plugin's own code running in those same pages — is
+scoped by the same `bb.sites`, checked by the same membership rule, and refused in
+the same three places. It is deliberately **not** the same permission as the styling
+one.
+
+The line is what the grant discloses. A stylesheet cannot read the page and cannot
+carry anything back; a program can do both — the text, the form fields, whatever the
+signed-in user can see — and it has a channel to the plugin's backend. A plugin the
+user let declutter GitHub has not thereby been let read what they do there, and one
+permission covering both would have made that distinction unsayable.
+
+The disclosure follows the split: `bb plugin install` prints "It will restyle pages
+on: …" for one and "It will run its own code on pages of: …" for the other, each only
+if the permission that grants it was declared. A site list nothing is allowed to use
+grants nothing, and says nothing.
+
+This is the shape to copy if a third site-scoped capability ever arrives: another
+permission over the same list, never a wider reading of an existing one.
+
 ### And one that stayed ungated on purpose
 
 `bb.ui.registerCommand` — a command of the plugin's own, with a chord — costs

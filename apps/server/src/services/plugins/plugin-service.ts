@@ -117,6 +117,8 @@ import type {
   PluginMentionSearchGroup,
   PluginMentionSearchItem,
   PluginContextMenuItemContribution,
+  PluginPageScriptContribution,
+  PluginPageStyleContribution,
   PluginSearchEngineContribution,
   PluginSiteInfoSection,
   PluginTabActionContribution,
@@ -150,6 +152,8 @@ export type {
   PluginMentionSearchGroup,
   PluginMentionSearchItem,
   PluginContextMenuItemContribution,
+  PluginPageScriptContribution,
+  PluginPageStyleContribution,
   PluginSearchEngineContribution,
   PluginSiteInfoSection,
   PluginTabActionContribution,
@@ -471,6 +475,22 @@ export interface PluginService {
    * code runs — the rows were declared at load.
    */
   listSearchEngineContributions(): PluginSearchEngineContribution[];
+  /**
+   * Page styles plugins declared (`browser.pageStyles`), for the app to push to
+   * the desktop shell. Ordered by plugin id, then registration order. No plugin
+   * code runs — and none runs later either: what comes back is the CSS itself,
+   * so a page load never waits on this process.
+   */
+  listPageStyleContributions(): PluginPageStyleContribution[];
+  /**
+   * Page scripts plugins declared (`browser.pageScripts`), for the app to push
+   * to the desktop shell. Ordered by plugin id, then registration order.
+   *
+   * No plugin code runs here — what comes back is the source text, which the
+   * shell hands to a matching document. The plugin is reached later, if its own
+   * script calls its rpc.
+   */
+  listPageScriptContributions(): PluginPageScriptContribution[];
   /**
    * Tab-menu entries plugins contributed (`browser.tab.actions`), for the
    * browser's tab strip to render after its own entries. Ordered by plugin id,
@@ -1809,6 +1829,9 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
               (loadedPlugin?.manifest ?? identity?.manifest)?.permissions,
             ),
           ],
+          sites: [
+            ...((loadedPlugin?.manifest ?? identity?.manifest)?.sites ?? []),
+          ],
           hasSettings:
             loadedPlugin !== undefined &&
             Object.keys(loadedPlugin.handle.settings.descriptors).length > 0,
@@ -2783,6 +2806,40 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
             id: engine.id,
             name: engine.name,
             urlTemplate: engine.urlTemplate,
+          });
+        }
+      }
+      return contributions;
+    },
+
+    listPageStyleContributions() {
+      const contributions: PluginPageStyleContribution[] = [];
+      for (const [id, plugin] of [...loaded.entries()].sort(([a], [b]) =>
+        a.localeCompare(b),
+      )) {
+        for (const style of plugin.handle.pageStyles) {
+          contributions.push({
+            pluginId: id,
+            styleId: style.id,
+            matches: [...style.matches],
+            css: style.css,
+          });
+        }
+      }
+      return contributions;
+    },
+
+    listPageScriptContributions() {
+      const contributions: PluginPageScriptContribution[] = [];
+      for (const [id, plugin] of [...loaded.entries()].sort(([a], [b]) =>
+        a.localeCompare(b),
+      )) {
+        for (const script of plugin.handle.pageScripts) {
+          contributions.push({
+            pluginId: id,
+            scriptId: script.id,
+            matches: [...script.matches],
+            code: script.code,
           });
         }
       }

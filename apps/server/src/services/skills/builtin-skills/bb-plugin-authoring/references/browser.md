@@ -300,6 +300,140 @@ BB's own recents still render. At most 12 rows; titles and subtitles are trimmed
 The screen is the same one the thread panel's browser shows, so a widget appears in
 both — a saved-pages list is as useful beside an agent as it is on its own tab.
 
+## bb.browser — restyling the sites the user let you reach
+
+The cheapest way onto a page, and the only one that needs no code running in it:
+hide a banner, widen a column, restyle something the user stares at all day.
+
+Needs **two** declarations, because this is one of the two permissions whose
+answer is a list of sites rather than a capability:
+
+```json
+{
+  "bb": {
+    "permissions": ["pageStyle.register"],
+    "sites": ["https://github.com/**"]
+  }
+}
+```
+
+`permissions` says the plugin restyles pages; `bb.sites` says which ones. Holding
+one without the other reaches nothing. `bb.sites` takes URL globs — `**` crosses
+`/`, `*` stops at one — `https` only, except loopback over plain http
+(`http://localhost:5173/**`). Anything else is refused by the manifest, before the
+install. Unrelated to `bb.hosts` in this API, which is enrolled machines; these are
+websites.
+
+```ts
+bb.browser.registerPageStyle({
+  id: "declutter",
+  // Each entry must be one of the patterns in bb.sites, verbatim: code picks
+  // from the list the user read before installing and cannot widen it.
+  matches: ["https://github.com/**"],
+  css: ".js-notification-shelf { display: none !important }",
+});
+```
+
+Data only — no callback, nothing asked of the plugin as the user browses, so the
+style keeps working while the plugin is idle. Register one per site you declared if
+they need different CSS; ids are unique within the plugin, css is capped at 64,000
+characters.
+
+What the browser can promise, measured rather than assumed:
+
+- **One document.** Inserted CSS does not survive a navigation or a reload, so the
+  shell re-applies whatever matches on every committed navigation. You do not have
+  to clean anything up.
+- **Main frame only.** A subframe keeps its own stylesheets — an ad inside an
+  iframe is out of reach.
+- **After commit, not before first paint.** A rule usually lands before a network
+  page has streamed the element it hides, but a page's own inline script can still
+  observe the unstyled state. If a style must _never_ be seen, this surface cannot
+  promise it.
+
+The page's author wrote their stylesheet first, so a rule that has to win says
+`!important` like any other late stylesheet.
+
+For the browser-UI half of "when I'm on GitHub, show me my open PRs", scope a
+frontend panel to the same pages with `app.slots.experimental_leadingPanel({
+matches })` — see references/frontend-slots.md. That one costs no permission: it is
+bb's own chrome reacting to the address bar, not code reaching into a page.
+
+## bb.browser — running your own code in a page
+
+`bb.browser.registerPageScript` is everything a page style cannot do: read the
+page, add a control to it, and answer a click by asking your own backend. It is the
+replacement for a userscript, with the thing a userscript never has — a backend.
+
+A **separate** permission over the same `bb.sites`, because a stylesheet that
+cannot read the page and a program that can are not the same thing to agree to:
+
+```json
+{
+  "bb": {
+    "permissions": ["pageScript.register"],
+    "sites": ["https://github.com/**"]
+  }
+}
+```
+
+```ts
+bb.browser.registerPageScript({
+  id: "note-button",
+  // Same rule as a page style's: verbatim members of bb.sites.
+  matches: ["https://github.com/**"],
+  // Source text, capped at 64,000 characters. It is wrapped in a function before
+  // it runs, and `bb` is in scope: `declare const bb: PluginPageScriptApi` at the
+  // top of the file types it.
+  code: `
+    bb.ready(function () {
+      const button = document.createElement("button");
+      button.textContent = "Note this page";
+      button.addEventListener("click", function () {
+        bb.rpc("notePage", { url: location.href }).then(function (answer) {
+          button.textContent = answer.repo === null ? "Not a repo" : "Noted";
+        });
+      });
+      document.body.append(button);
+    });
+  `,
+});
+```
+
+Inside the script there are exactly two names:
+
+- `bb.rpc(method, input?)` — **your** plugin's rpc methods and nothing else.
+  Resolves with the result, rejects with the plugin's own message. JSON in and out,
+  bounded in size, and rate limited per tab.
+- `bb.ready(callback)` — runs once the document has parsed.
+
+What the browser can promise, measured rather than assumed:
+
+- **It runs before the page's own first script**, when the document exists and the
+  parser has produced nothing — `document.documentElement` is null. That is the
+  power (you can patch what the page is about to use) and the footgun: DOM work
+  goes in `bb.ready`, or it throws.
+- **An isolated world of your own.** The page cannot see `bb` or anything the
+  script defines and cannot shadow what it reads; two of your scripts share that
+  world, another plugin's do not. Nothing is exposed to the page's own world.
+- **Main frame only**, as with the css.
+- **Per document.** A site's client-side navigation is not a new document: it
+  replaces the page's content and takes your elements with it, and re-mounting is
+  the script's job (a `MutationObserver` on `document.body`). This is the single
+  most common reason a generated page script "stops working".
+- **A new registration runs on the next load** of a matching page, as Chrome's
+  content scripts do. Reload the tab.
+- **An error is contained.** It lands in the page's console — which bb's
+  observation log collects, so `bb.browser.tabs.observe` can read it — and the next
+  script still runs.
+
+Nothing here is evaluated in the server: the source is text all the way to the
+page. A syntax error is reported by the page's console, in the world it would have
+run in.
+
+See examples/plugins/site-tweaks for the whole loop — a button in GitHub's page, a
+row in the plugin's SQLite, and the note appearing in bb's own panel.
+
 ## bb.browser — adding a button to the find bar
 
 The browser's `Cmd+F` bar is the one place that knows what the user is looking

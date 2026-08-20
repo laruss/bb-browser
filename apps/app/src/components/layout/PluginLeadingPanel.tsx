@@ -7,12 +7,19 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@bb/shared-ui/tooltip";
+import { useAtomValue } from "jotai";
+import { matchesBrowserUrlPattern } from "@bb/domain/browser-url-pattern";
 import { PluginSlotMount } from "@/components/plugin/PluginSlotMount";
 import {
   usePluginSlots,
   type PluginLeadingPanelSlot,
 } from "@/lib/plugin-slots";
 import { dispatchBrowserViewBoundsSync } from "@/lib/browser-view-bounds-sync";
+import {
+  browserSurfaceTabsAtom,
+  getActiveBrowserSurfaceTab,
+  isWebSurfaceTab,
+} from "@/lib/browser-surface-tabs";
 import { useDesktopWindowState } from "@/hooks/useDesktopWindowState";
 import {
   CHROME_ROW_HEIGHT_CLASS,
@@ -126,11 +133,54 @@ function readStoredActiveId(): string | null {
  * up inset twice; none reserving it is BB-46.
  */
 export function useIsLeadingPanelShowing(): boolean {
-  return usePluginSlots().leadingPanels.length > 0;
+  return useApplicableLeadingPanels().length > 0;
+}
+
+/**
+ * The address of the page in the active browser tab, or null.
+ *
+ * Read off the strip rather than from the surface, and deliberately not scoped
+ * to the route: this panel is the *window's* leading edge, so a site-scoped
+ * panel that vanished the moment the user glanced at a thread would take the
+ * work they were doing in it with them.
+ */
+function useActiveBrowserUrl(): string | null {
+  const tabs = useAtomValue(browserSurfaceTabsAtom);
+  const active = getActiveBrowserSurfaceTab(tabs);
+  if (active === null || !isWebSurfaceTab(active) || active.url.length === 0) {
+    return null;
+  }
+  return active.url;
+}
+
+/**
+ * The panels that apply right now: every registration, minus those scoped to a
+ * site the active tab is not on.
+ *
+ * Filtered here rather than left to each component, because what is at stake is
+ * whether bb draws the column at all — a panel that renders nothing still
+ * reserves an edge, and on macOS still claims the traffic lights.
+ */
+function useApplicableLeadingPanels(): readonly PluginLeadingPanelSlot[] {
+  const { leadingPanels } = usePluginSlots();
+  const browserUrl = useActiveBrowserUrl();
+  return useMemo(
+    () =>
+      leadingPanels.filter(
+        (panel) =>
+          panel.matches === undefined ||
+          (browserUrl !== null &&
+            panel.matches.some((pattern) =>
+              matchesBrowserUrlPattern(pattern, browserUrl),
+            )),
+      ),
+    [browserUrl, leadingPanels],
+  );
 }
 
 export function PluginLeadingPanel() {
-  const { leadingPanels } = usePluginSlots();
+  const leadingPanels = useApplicableLeadingPanels();
+  const browserUrl = useActiveBrowserUrl();
   const [width, setWidth] = useState(readStoredWidth);
   const [activeId, setActiveId] = useState(readStoredActiveId);
   const [isResizing, setIsResizing] = useState(false);
@@ -270,7 +320,7 @@ export function PluginLeadingPanel() {
           slotKind="experimental_leadingPanel"
           slotId={active.id}
         >
-          <active.component />
+          <active.component browserUrl={browserUrl} />
         </PluginSlotMount>
       </div>
       <div

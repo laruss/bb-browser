@@ -1136,6 +1136,76 @@ Prioritize based on real use cases rather than implementing every API upfront.
 
 ---
 
+## Phase 9 — Extending the Pages Themselves
+
+Everything through Phase 8 extends bb's own chrome. This phase is about the
+browsed page: the work a user would otherwise reach for a Chrome extension or a
+userscript to do.
+
+> "Users can modify websites and the browser itself" — remove or alter parts of a
+> site, add controls to specific sites, change behaviour per site, and put the
+> result in a **browser-native** panel rather than injected DOM.
+
+**A note on Phase 8's "page scripts".** That line was read as satisfied by the
+frontend `app.contentScripts` surface, which is trusted code in *bb's own* page.
+Running a plugin's code in a *browsed* page is a different thing entirely and was
+never built. This phase is where it belongs.
+
+### Stage A — CSS, and a permission that names sites (done)
+
+`bb.browser.registerPageStyle`, permission `pageStyle.register`, scoped by a new
+manifest field `bb.sites`. Plus `matches` on `experimental_leadingPanel`, so a
+panel appears only while the active tab is on a matching site.
+
+Taken first because it closes the largest share of the ask — "remove or alter
+parts of a site" is usually one CSS rule — while running no plugin code in the
+page and reading nothing back, which reduces the consent question to *which
+sites*. That made it the right place to introduce the repository's first
+host-scoped permission on the safest possible capability.
+
+Deliverable: `examples/plugins/site-tweaks`, with no change to the browser core.
+
+### Stage B — the plugin's own code in the page (done)
+
+`bb.browser.registerPageScript`, permission `pageScript.register`, scoped by the
+same `bb.sites` and checked by the same membership rule. The script runs in an
+isolated world of the plugin's own with two names in it: `bb.rpc` — the plugin's own
+backend and nothing else — and `bb.ready`.
+
+The mechanism is a **session preload registered only while a page script is
+declared**, not CDP. CDP would have done more (subframes, bindings), but it would
+have required the browser debugger attached to every tab permanently, against a
+documented invariant, and DevTools taking the target would have silently stopped
+every page script. The preload exposes nothing into the page's own world, so the
+standing rule that a browsed page never receives a bb bridge survives.
+
+Both things Stage A's mechanism could not carry were settled by measurement rather
+than assumption:
+
+- **`document_start` timing: reached.** The preload runs when the document exists
+  and the parser has produced nothing — earlier than `insertCSS` lands, and earlier
+  than the page's own first script. `bb.ready` exists because of it.
+- **Subframes: still out of reach, deliberately.** A session preload does not run in
+  subframes without `nodeIntegrationInSubFrames`, which is experimental and would
+  change every browsed page rather than the matching ones.
+
+The channel crosses three processes because no shorter path exists — the page can
+hold no credentials and the shell holds none for the bb server — and the plugin is
+re-checked against the frame's real address on every call, in both the shell and the
+renderer.
+
+Deliverable: `examples/plugins/site-tweaks` gained the in-page half, closing the
+loop — a button in GitHub's page, a row in the plugin's own SQLite, and the note
+appearing in bb's own panel over `bb.realtime`. Still no change to the browser core
+from the plugin's side.
+
+Explicitly **not** in scope, and still not: loading real CRX bundles or shimming
+`chrome.*`. That looks like a shortcut and is a permanent compatibility obligation
+to a moving target, with a permission model that is not ours. The agent is the
+translator instead — "port this userscript" is a prompt.
+
+---
+
 # 19. Non-Goals for Initial MVP
 
 Do not initially attempt:
@@ -1147,7 +1217,9 @@ Do not initially attempt:
 - browser sync infrastructure;
 - account ecosystem;
 - complete bookmark manager;
-- sophisticated password manager;
+- sophisticated password manager — no sync, no sharing, no breach monitoring;
+  the plain one is now first in [TODO.md](TODO.md), because signing in to a site
+  turned out to be a hole rather than a scope boundary;
 - perfect privacy architecture;
 - every browser setting;
 - production-ready plugin marketplace;

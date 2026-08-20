@@ -1,4 +1,8 @@
 import { z } from "zod";
+import {
+  normalizePluginSitePattern,
+  PLUGIN_SITE_PATTERN_MAX_COUNT,
+} from "./browser-url-pattern.js";
 import { pluginPermissionSchema } from "./plugin-permission-schema.js";
 
 const requiredManifestString = z.string().trim().min(1);
@@ -57,6 +61,19 @@ export const pluginBbManifestSchema = z
      * default and for what these can and cannot enforce.
      */
     permissions: z.array(pluginPermissionSchema).optional(),
+    /**
+     * Which sites this plugin's page contributions may reach, as URL globs
+     * (`https://github.com/**`). Absent or empty means none, so a plugin holding
+     * `pageStyle.register` and no sites reaches no page at all.
+     *
+     * Separate from `permissions` because it answers a different question —
+     * *where*, not *what* — and because it is the line the user reads before
+     * installing. `https` only, except loopback over plain http.
+     *
+     * Not to be confused with `bb.hosts` in the plugin API, which is the
+     * enrolled machines a plugin can reach; these are websites.
+     */
+    sites: z.array(z.string()).optional(),
     skills: z.array(requiredManifestString).optional(),
     themes: z
       .array(
@@ -74,7 +91,40 @@ export const pluginBbManifestSchema = z
       )
       .optional(),
   })
-  .strict();
+  .strict()
+  .superRefine((bb, context) => {
+    if (bb.sites === undefined) return;
+    if (bb.sites.length > PLUGIN_SITE_PATTERN_MAX_COUNT) {
+      context.addIssue({
+        code: "custom",
+        path: ["sites"],
+        message: `declares more than ${PLUGIN_SITE_PATTERN_MAX_COUNT} site patterns; a list this long is not something a user can consent to`,
+      });
+    }
+    bb.sites.forEach((pattern, index) => {
+      const normalized = normalizePluginSitePattern(pattern);
+      if (normalized === null) {
+        context.addIssue({
+          code: "custom",
+          path: ["sites", index],
+          message: `${JSON.stringify(pattern)} is not a site pattern this plugin may declare — use an https URL glob such as "https://github.com/**" (plain http only for loopback)`,
+        });
+        return;
+      }
+      if (normalized !== pattern) {
+        // Refused rather than quietly corrected: matching is case-sensitive and
+        // a URL never arrives with an upper-case host, so this pattern would be
+        // shown to the user at install and then claim no page at all. And it
+        // cannot be corrected here, because a registration's `matches` has to
+        // equal the declared string verbatim.
+        context.addIssue({
+          code: "custom",
+          path: ["sites", index],
+          message: `${JSON.stringify(pattern)} would match no page — write the host in lower case (${JSON.stringify(normalized)})`,
+        });
+      }
+    });
+  });
 
 export const pluginPackageJsonSchema = z
   .object({

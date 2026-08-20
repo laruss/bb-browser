@@ -114,6 +114,39 @@ describe("usePluginContributions", () => {
         { pluginId: "notes", widgetId: "saved" },
         { pluginId: "broken" }, // dropped at the boundary
       ],
+      browserPageStyles: [
+        {
+          pluginId: "notes",
+          styleId: "declutter",
+          matches: ["https://github.com/**"],
+          css: ".ad { display: none }",
+        },
+        // Dropped whole rather than trimmed to its good pattern: what the shell
+        // applies has to be what a manifest could have declared, and plain http
+        // to another machine could not.
+        {
+          pluginId: "evil",
+          styleId: "wide",
+          matches: ["https://github.com/**", "http://intranet.example/**"],
+          css: "* { display: none }",
+        },
+      ],
+      browserPageScripts: [
+        {
+          pluginId: "notes",
+          scriptId: "toolbar",
+          matches: ["https://github.com/**"],
+          code: "bb.ready(function(){})",
+        },
+        // Dropped for the same reason a style is, with more at stake: this one
+        // decides which sites get to run a plugin's program.
+        {
+          pluginId: "evil",
+          scriptId: "everywhere",
+          matches: ["http://intranet.example/**"],
+          code: "fetch('/secrets')",
+        },
+      ],
       commands: [
         {
           pluginId: "notes",
@@ -174,6 +207,22 @@ describe("usePluginContributions", () => {
           },
         ],
         browserNewTabWidgets: [{ pluginId: "notes", widgetId: "saved" }],
+        browserPageStyles: [
+          {
+            pluginId: "notes",
+            styleId: "declutter",
+            matches: ["https://github.com/**"],
+            css: ".ad { display: none }",
+          },
+        ],
+        browserPageScripts: [
+          {
+            pluginId: "notes",
+            scriptId: "toolbar",
+            matches: ["https://github.com/**"],
+            code: "bb.ready(function(){})",
+          },
+        ],
         commands: [
           {
             pluginId: "notes",
@@ -231,6 +280,8 @@ describe("usePluginContributions", () => {
       expect(result.current.data).toEqual({
         browserContextMenuItems: [],
         browserFindActions: [],
+        browserPageScripts: [],
+        browserPageStyles: [],
         browserSearchEngines: [],
         browserTabActions: [],
         browserToolbarItems: [],

@@ -479,6 +479,24 @@
         "vitest": "^4.1.1",
       },
     },
+    "examples/plugins/site-tweaks": {
+      "name": "bb-plugin-site-tweaks",
+      "version": "0.1.0",
+      "dependencies": {
+        "zod": "^4.3.6",
+      },
+      "devDependencies": {
+        "@bb/plugin-sdk": "workspace:*",
+        "@types/better-sqlite3": "^7.6.12",
+        "@types/node": "^22.0.0",
+        "@types/react": "^19.0.0",
+        "better-sqlite3": "12.10.0",
+        "react": "^19.0.0",
+        "typescript": "^6.0.2",
+        "typescript-7": "npm:typescript@^7.0.2",
+        "vitest": "^4.1.1",
+      },
+    },
     "examples/plugins/slack-bot": {
       "name": "bb-plugin-slack-bot",
       "version": "0.1.0",
@@ -3040,6 +3058,8 @@
     "bb-plugin-side-chat": ["bb-plugin-side-chat@workspace:plugins/side-chat"],
 
     "bb-plugin-simple-notes": ["bb-plugin-simple-notes@workspace:plugins/docs"],
+
+    "bb-plugin-site-tweaks": ["bb-plugin-site-tweaks@workspace:examples/plugins/site-tweaks"],
 
     "bb-plugin-slack-bot": ["bb-plugin-slack-bot@workspace:examples/plugins/slack-bot"],
 

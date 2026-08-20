@@ -25,6 +25,16 @@ import {
   type BbDesktopBrowserDownloadActionResult,
   type BbDesktopBrowserContextMenuInvoke,
   type BbDesktopBrowserContextMenuItem,
+  type BbDesktopBrowserPageStyle,
+  type BbDesktopBrowserPageStyles,
+  type BbDesktopBrowserPageScript,
+  type BbDesktopBrowserPageScripts,
+  type BbDesktopBrowserPageScriptCall,
+  type BbDesktopBrowserPageScriptResult,
+  type BbDesktopPageScriptBootstrap,
+  type BbDesktopPageScriptRpcAnswer,
+  type BbDesktopPageScriptRpcRequest,
+  type BbDesktopPageScriptWorld,
   type BbDesktopBrowserContextMenuItems,
   type BbDesktopBrowserSearchSelection,
   type BbDesktopBrowserSetOverlayRequest,
@@ -83,6 +93,7 @@ import {
   type BbDesktopBrowserViewBounds,
 } from "@bb/desktop-contract";
 import type { AppCommandId, AppShortcutInput } from "@bb/domain";
+import { matchesBrowserUrlPattern } from "@bb/domain/browser-url-pattern";
 import {
   BB_DESKTOP_BROWSER_DIALOG_CHANNEL,
   BB_DESKTOP_BROWSER_DOWNLOAD_CHANNEL,
@@ -96,6 +107,7 @@ import {
   BB_DESKTOP_BROWSER_OPEN_TAB_CHANNEL,
   BB_DESKTOP_BROWSER_SCOPED_OPEN_TAB_CHANNEL,
   BB_DESKTOP_BROWSER_CONTEXT_MENU_INVOKE_CHANNEL,
+  BB_DESKTOP_BROWSER_PAGE_SCRIPT_CALL_CHANNEL,
   BB_DESKTOP_BROWSER_SEARCH_SELECTION_CHANNEL,
   BB_DESKTOP_BROWSER_SNAPSHOT_CHANNEL,
   BB_DESKTOP_BROWSER_STATE_CHANNEL,
@@ -199,6 +211,39 @@ import {
 // window, so a hostile page cannot flood the panel with tabs.
 const POPUP_RATE_WINDOW_MS = 10_000;
 const POPUP_RATE_MAX_IN_WINDOW = 3;
+
+/**
+ * Where the isolated worlds page scripts run in start.
+ *
+ * High on purpose. Chromium hands out the world ids behind
+ * `Page.createIsolatedWorld` — the mechanism behind bb's own automation world —
+ * from a low counter, so starting here keeps the two apart. Measured on Electron
+ * 41.7.0: with world 9001 in use, a CDP-created world came back as 5, and neither
+ * could see the other's globals.
+ */
+const PAGE_SCRIPT_WORLD_BASE = 9001;
+
+/** Identifies the browsing session's page-script preload, for unregistering. */
+const PAGE_SCRIPT_PRELOAD_ID = "bb-page-scripts";
+
+/**
+ * How long a page script's `bb.rpc` waits.
+ *
+ * A backstop rather than a policy: the answer travels through this window's
+ * renderer to the bb server and back, and nothing in that path has a deadline of
+ * its own, so without this a plugin that never answers leaves a page script
+ * awaiting a promise for the life of the tab.
+ */
+const PAGE_SCRIPT_CALL_TIMEOUT_MS = 30_000;
+
+/**
+ * The sliding window on `bb.rpc`, same shape as the popup limiter above.
+ *
+ * Generous enough for a script answering clicks and typing, and bounded because
+ * a page script in a loop would otherwise be a page driving the bb server.
+ */
+const PAGE_SCRIPT_RATE_WINDOW_MS = 10_000;
+const PAGE_SCRIPT_RATE_MAX_IN_WINDOW = 60;
 
 /**
  * How many download paths stay openable. Comfortably more than the ten the
@@ -351,6 +396,34 @@ interface BrowserViewEntry {
   faviconFetchTimestamps: number[];
   /** Download stamps behind that same limiter — see `desktop-browser-download.ts`. */
   downloadTimestamps: number[];
+  /**
+   * Page styles applied to the document this view is showing: `pluginId:styleId`
+   * against the key `insertCSS` returned for it.
+   *
+   * Per document, not per view, because that is what the browser gives us —
+   * inserted CSS does not survive a navigation (measured on Electron 41.7.0) —
+   * so a commit clears this map without removing anything: the stylesheets went
+   * with the document that held them.
+   */
+  appliedPageStyles: Map<string, string>;
+  /**
+   * Which document the map above describes, bumped on every commit.
+   *
+   * `insertCSS` is a promise, so a fast second navigation can land between
+   * asking and being answered. Without this the answer would be filed against
+   * the new document, and the style it names would be neither applied nor
+   * re-appliable.
+   */
+  pageStyleDocument: number;
+  /**
+   * `bb.rpc` stamps from page scripts running in this view, behind the same
+   * sliding-window limiter the popups use.
+   *
+   * Per view rather than per plugin: what this bounds is how much one page can
+   * ask of the bb server, and a page with two plugins' scripts on it is still
+   * one page.
+   */
+  pageScriptCallTimestamps: number[];
   /**
    * The app is drawing its own chrome over the page area, so the view is
    * hidden behind a bitmap of itself. Separate from `visible`, which is the
@@ -520,7 +593,8 @@ export type DesktopBrowserHostWebContentsPayload =
   | BbDesktopBrowserPopup
   | BbDesktopBrowserDevToolsState
   | BbDesktopBrowserSearchSelection
-  | BbDesktopBrowserContextMenuInvoke;
+  | BbDesktopBrowserContextMenuInvoke
+  | BbDesktopBrowserPageScriptCall;
 
 export interface DesktopBrowserHostContentBounds {
   height: number;
@@ -586,6 +660,15 @@ export interface CreateDesktopBrowserViewManagerArgs {
   openDownloadPath: (savePath: string) => Promise<string>;
   /** Hand a link to the user's real browser. */
   openExternalUrl: (url: string) => void;
+  /**
+   * The built `page-script-preload.cjs`, which the shell registers in the
+   * browsing session while any plugin declares a page script.
+   *
+   * Injected rather than resolved here for the reason every other path in this
+   * interface is: the manager has to be drivable in a test that has no packaged
+   * app to resolve against.
+   */
+  pageScriptPreloadPath: string;
   partition?: string;
   /** Show a downloaded file in the OS file manager. */
   revealDownloadPath: (savePath: string) => void;
@@ -691,6 +774,32 @@ export interface DesktopBrowserViewManager {
   setContextMenuItems(
     args: HostScopedRequestArgs<BbDesktopBrowserContextMenuItems>,
   ): void;
+  /**
+   * Replace the plugin stylesheets applied to browsed pages, and bring every
+   * open page in line with the new set.
+   */
+  setPageStyles(args: HostScopedRequestArgs<BbDesktopBrowserPageStyles>): void;
+  setPageScripts(
+    args: HostScopedRequestArgs<BbDesktopBrowserPageScripts>,
+  ): void;
+  /**
+   * What a browsed frame's preload should run, answered synchronously at document
+   * start. `url` is the frame's address as the shell resolved it.
+   */
+  pageScriptBootstrap(args: {
+    webContentsId: number;
+    url: string;
+  }): BbDesktopPageScriptBootstrap;
+  /** One `bb.rpc` from a page script, routed through this window's renderer. */
+  pageScriptRpc(args: {
+    webContentsId: number;
+    url: string;
+    request: BbDesktopPageScriptRpcRequest;
+  }): Promise<BbDesktopPageScriptRpcAnswer>;
+  /** The renderer's answer to one, on its way back to the page. */
+  respondToPageScriptCall(args: {
+    result: BbDesktopBrowserPageScriptResult;
+  }): void;
   /**
    * Freeze the page to a bitmap and hide the view so the app can draw over it,
    * or reveal it again. The only way React can put anything over a page.
@@ -2463,6 +2572,302 @@ export function createDesktopBrowserViewManager(
    */
   let contextMenuItems: readonly BbDesktopBrowserContextMenuItem[] = [];
   /**
+   * Plugin page styles, as the renderer last declared them. Held here for a
+   * sharper reason than the menu entries above: this is where navigation
+   * happens, and inserted CSS lasts exactly one document, so re-applying it is
+   * something only the shell can do at the moment the page commits.
+   */
+  let pageStyles: readonly BbDesktopBrowserPageStyle[] = [];
+
+  /**
+   * Bring one view's applied stylesheets in line with what should be applied to
+   * the page it is showing.
+   *
+   * Reconciliation rather than "insert on navigate", because two different
+   * things call it: a commit, where nothing is applied yet, and a change to the
+   * declared set, where a document may already be carrying styles that should
+   * now go. One function that compares desired against applied answers both, and
+   * cannot double-insert.
+   *
+   * Failures are swallowed per style. A page that is being torn down rejects an
+   * insertion, and the tab it happened in is not a place to report anything —
+   * whereas letting it reject would abandon the styles queued behind it.
+   */
+  async function reconcilePageStyles(entry: BrowserViewEntry): Promise<void> {
+    const webContents = entry.view.webContents;
+    if (webContents.isDestroyed()) {
+      return;
+    }
+    const url = webContents.getURL();
+    const wanted = new Map<string, BbDesktopBrowserPageStyle>();
+    // Only a real page: `about:blank` and the empty URL of a fresh view are not
+    // sites, and a pattern like `https://**/**` must not be read as claiming them.
+    if (url.startsWith("https://") || url.startsWith("http://")) {
+      for (const style of pageStyles) {
+        if (
+          style.matches.some((pattern) =>
+            matchesBrowserUrlPattern(pattern, url),
+          )
+        ) {
+          wanted.set(`${style.pluginId}:${style.styleId}`, style);
+        }
+      }
+    }
+    const document = entry.pageStyleDocument;
+    for (const [id, cssKey] of [...entry.appliedPageStyles]) {
+      if (wanted.has(id)) continue;
+      entry.appliedPageStyles.delete(id);
+      try {
+        await webContents.removeInsertedCSS(cssKey);
+      } catch {
+        // The document that carried it is gone, which is the outcome asked for.
+      }
+    }
+    for (const [id, style] of wanted) {
+      if (entry.appliedPageStyles.has(id)) continue;
+      // Claim the slot before awaiting: a second reconcile for the same document
+      // — a push arriving mid-commit — would otherwise insert the same
+      // stylesheet twice and remember only one of the two keys.
+      entry.appliedPageStyles.set(id, "");
+      try {
+        const cssKey = await webContents.insertCSS(style.css);
+        if (entry.pageStyleDocument !== document) {
+          // The page moved on while this was in flight. The key names a
+          // stylesheet in a document that no longer exists, so it is not worth
+          // filing — and the commit that replaced it cleared this map and
+          // reconciled again, so whatever stands under `id` now is that
+          // document's and must not be dropped on this pass's way out.
+          continue;
+        }
+        if (entry.appliedPageStyles.get(id) !== "") {
+          // The slot stopped being ours: a reconcile for this same document
+          // released it because the style is no longer declared. Take the
+          // stylesheet back rather than leaving one nothing remembers.
+          try {
+            await webContents.removeInsertedCSS(cssKey);
+          } catch {
+            // The document that carried it is gone, which is the outcome asked
+            // for.
+          }
+          continue;
+        }
+        entry.appliedPageStyles.set(id, cssKey);
+      } catch {
+        // Same two questions as the success path, in the same order. The
+        // document first: a page being torn down is what rejects an insertion,
+        // and that is exactly when the next one commits — so a stale failure
+        // must not clear a slot the new document's reconcile is holding, or that
+        // reconcile finds its own claim gone and takes its stylesheet back.
+        // Then the slot, so a release for this same document is not undone.
+        if (
+          entry.pageStyleDocument === document &&
+          entry.appliedPageStyles.get(id) === ""
+        ) {
+          entry.appliedPageStyles.delete(id);
+        }
+      }
+    }
+  }
+  /**
+   * Plugin page scripts, as the renderer last declared them, and the worlds they
+   * run in.
+   *
+   * Held here for the reason the styles above are, one step sharper: a script has
+   * to reach a document *as it is created*, before the page's own first script
+   * runs, and this is the only process present at that moment.
+   */
+  let pageScripts: readonly BbDesktopBrowserPageScript[] = [];
+  /**
+   * Whether the browsing session currently carries the page-script preload.
+   *
+   * The load-bearing property of this whole surface: while no plugin declares a
+   * page script, no preload is installed, so a browsed renderer holds no bb code
+   * at all and the shell's standing rule needs no qualification. Measured: after
+   * `unregisterPreloadScript`, the next document has no preload and the isolated
+   * world is empty.
+   */
+  let pageScriptPreloadRegistered = false;
+  /**
+   * `pluginId` → the isolated world its scripts run in, allocated on first sight
+   * and stable after.
+   *
+   * One world per plugin, not one per script and not one shared: two scripts of
+   * the same plugin are one program and may share globals, while two plugins are
+   * two programs and — measured — cannot see each other's `bb` or anything else.
+   */
+  const pageScriptWorldIds = new Map<string, number>();
+  let pageScriptCallSequence = 0;
+  /**
+   * `bb.rpc` calls in flight: callId → how to answer the page that asked.
+   *
+   * The request starts in a browsed renderer, is answered by this window's
+   * renderer, and has to find its way back, so the correlation lives here. A late
+   * answer resolves nothing and is dropped, exactly as a late dialog answer is.
+   */
+  const pendingPageScriptCalls = new Map<
+    string,
+    (answer: BbDesktopPageScriptRpcAnswer) => void
+  >();
+
+  function pageScriptWorldId(pluginId: string): number {
+    const existing = pageScriptWorldIds.get(pluginId);
+    if (existing !== undefined) {
+      return existing;
+    }
+    const worldId = PAGE_SCRIPT_WORLD_BASE + pageScriptWorldIds.size;
+    pageScriptWorldIds.set(pluginId, worldId);
+    return worldId;
+  }
+
+  /**
+   * The worlds a document at this address should get, grouped by plugin.
+   *
+   * The same matching a page style gets, against the same declared patterns, and
+   * the same refusal to treat a blank page as a site: `https://**` must not be
+   * read as claiming `about:blank`.
+   */
+  function pageScriptWorldsFor(url: string): BbDesktopPageScriptWorld[] {
+    if (!url.startsWith("https://") && !url.startsWith("http://")) {
+      return [];
+    }
+    const worlds = new Map<string, BbDesktopPageScriptWorld>();
+    for (const script of pageScripts) {
+      if (
+        !script.matches.some((pattern) =>
+          matchesBrowserUrlPattern(pattern, url),
+        )
+      ) {
+        continue;
+      }
+      let world = worlds.get(script.pluginId);
+      if (world === undefined) {
+        world = {
+          pluginId: script.pluginId,
+          worldId: pageScriptWorldId(script.pluginId),
+          scripts: [],
+        };
+        worlds.set(script.pluginId, world);
+      }
+      world.scripts.push({ scriptId: script.scriptId, code: script.code });
+    }
+    return [...worlds.values()];
+  }
+
+  /**
+   * Install or remove the browsing session's page-script preload to match what is
+   * declared.
+   *
+   * Preloads are read as a frame's document is created, so this takes effect on
+   * the next load of a page — which is also what Chrome's content scripts do, and
+   * the honest thing to tell a plugin author: a script registered while a matching
+   * page is open runs when that page is reloaded.
+   */
+  function syncPageScriptPreload(): void {
+    const wanted = pageScripts.length > 0;
+    if (wanted === pageScriptPreloadRegistered) {
+      return;
+    }
+    const browserSession = ensureHardenedSession();
+    try {
+      if (wanted) {
+        browserSession.registerPreloadScript({
+          id: PAGE_SCRIPT_PRELOAD_ID,
+          type: "frame",
+          filePath: args.pageScriptPreloadPath,
+        });
+      } else {
+        browserSession.unregisterPreloadScript(PAGE_SCRIPT_PRELOAD_ID);
+      }
+      pageScriptPreloadRegistered = wanted;
+    } catch {
+      // A session that will not take the preload leaves page scripts not
+      // running, which is the safe direction: nothing half-installed, and the
+      // flag stays false so the next push tries again.
+    }
+  }
+
+  function refusePageScriptCall(message: string): BbDesktopPageScriptRpcAnswer {
+    return { ok: false, message };
+  }
+
+  /**
+   * One `bb.rpc` from a page script.
+   *
+   * `url` is the frame's address as Chromium reports it to this process, never
+   * something the payload claimed, and the plugin is re-checked against it on
+   * every call rather than once at injection. That is what bounds a browsed
+   * renderer that has been taken over: it can reach the plugins that already
+   * claim the page it is actually on, and nothing else — the same set a
+   * well-behaved script on that page could reach.
+   */
+  async function callPageScriptRpc(callArgs: {
+    webContentsId: number;
+    url: string;
+    request: BbDesktopPageScriptRpcRequest;
+  }): Promise<BbDesktopPageScriptRpcAnswer> {
+    const entry = entriesByWebContentsId.get(callArgs.webContentsId);
+    if (entry === undefined) {
+      return refusePageScriptCall("bb.rpc is not available in this page.");
+    }
+    const { pluginId, method, input } = callArgs.request;
+    if (
+      !pageScriptWorldsFor(callArgs.url).some(
+        (world) => world.pluginId === pluginId,
+      )
+    ) {
+      return refusePageScriptCall(
+        `bb.rpc: plugin "${pluginId}" declares no page script for this address.`,
+      );
+    }
+    const now = Date.now();
+    const recent = entry.pageScriptCallTimestamps.filter(
+      (stamp) => now - stamp < PAGE_SCRIPT_RATE_WINDOW_MS,
+    );
+    if (recent.length >= PAGE_SCRIPT_RATE_MAX_IN_WINDOW) {
+      entry.pageScriptCallTimestamps = recent;
+      return refusePageScriptCall(
+        `bb.rpc: too many calls — at most ${PAGE_SCRIPT_RATE_MAX_IN_WINDOW} every ${
+          PAGE_SCRIPT_RATE_WINDOW_MS / 1000
+        } seconds.`,
+      );
+    }
+    entry.pageScriptCallTimestamps = [...recent, now];
+
+    const hostWindow = entry.hostWindow;
+    if (hostWindow.webContents.isDestroyed()) {
+      return refusePageScriptCall("bb.rpc: this tab's bb window is gone.");
+    }
+    const callId = `page-script-${(pageScriptCallSequence += 1)}`;
+    return await new Promise<BbDesktopPageScriptRpcAnswer>((resolve) => {
+      const timer = setTimeout(() => {
+        if (pendingPageScriptCalls.delete(callId)) {
+          resolve(
+            refusePageScriptCall(
+              `bb.rpc("${method}"): no answer within ${
+                PAGE_SCRIPT_CALL_TIMEOUT_MS / 1000
+              } seconds.`,
+            ),
+          );
+        }
+      }, PAGE_SCRIPT_CALL_TIMEOUT_MS);
+      // Unref'd so a call in flight cannot hold the process open at shutdown.
+      timer.unref?.();
+      pendingPageScriptCalls.set(callId, (answer) => {
+        clearTimeout(timer);
+        resolve(answer);
+      });
+      send(hostWindow, BB_DESKTOP_BROWSER_PAGE_SCRIPT_CALL_CHANNEL, {
+        callId,
+        tabId: entry.tabId,
+        pluginId,
+        method,
+        input,
+        url: truncate(callArgs.url, BB_DESKTOP_BROWSER_MAX_URL_LENGTH),
+      });
+    });
+  }
+
+  /**
    * `host|fingerprint` pairs a human chose to trust despite a certificate
    * error. Keyed on the fingerprint as well as the host so trusting one bad
    * certificate does not trust the next one served from the same name — which
@@ -3518,6 +3923,12 @@ export function createDesktopBrowserViewManager(
     webContents.on("did-navigate", (_event, url) => {
       commitEntryMainFrameUrl(entry, url);
       entry.lastErrorText = null;
+      // The stylesheets went with the previous document: `insertCSS` lasts one
+      // document, so this forgets the keys rather than removing them, and then
+      // re-applies whatever the new address matches.
+      entry.pageStyleDocument += 1;
+      entry.appliedPageStyles.clear();
+      void reconcilePageStyles(entry);
       // Snapshot refs name nodes in the document that produced them; a new
       // document means every ref is now either dangling or, worse, pointing at
       // whatever inherited that node id. Same contract Playwright has.
@@ -3542,6 +3953,10 @@ export function createDesktopBrowserViewManager(
         // A same-document navigation keeps the document but routinely replaces
         // the view an SPA is showing, so the refs are just as stale.
         invalidateSnapshotRefs(entry);
+        // The document survives, so its stylesheets do too — but the address
+        // changed, and an SPA route is exactly where one site's pattern stops
+        // matching and another's starts.
+        void reconcilePageStyles(entry);
       }
       refresh();
     });
@@ -3666,6 +4081,9 @@ export function createDesktopBrowserViewManager(
       faviconPageKey: null,
       faviconFetchTimestamps: [],
       downloadTimestamps: [],
+      appliedPageStyles: new Map(),
+      pageStyleDocument: 0,
+      pageScriptCallTimestamps: [],
       overlayActive: false,
       visible: false,
       findRequestId: null,
@@ -4459,6 +4877,48 @@ export function createDesktopBrowserViewManager(
     },
     setContextMenuItems({ request }) {
       contextMenuItems = request.items;
+    },
+    setPageStyles({ request }) {
+      pageStyles = request.styles;
+      // Every open page, not only the active one: a style the user just enabled
+      // should not wait for a navigation in a background tab to take effect, and
+      // one whose plugin was just removed should stop applying everywhere at
+      // once.
+      for (const entry of entries.values()) {
+        void reconcilePageStyles(entry);
+      }
+    },
+    setPageScripts({ request }) {
+      pageScripts = request.scripts;
+      // No walk over open views, unlike the styles above: a document already
+      // running cannot be given a world it was not created with, and reloading
+      // the user's pages under them to make an install feel instant is not a
+      // trade the browser gets to make. The next load runs it.
+      syncPageScriptPreload();
+    },
+    pageScriptBootstrap({ webContentsId, url }) {
+      // Scoped to views this manager knows: the browsing session's preload runs
+      // in every frame it creates, and only a tab has a plugin list behind it.
+      return entriesByWebContentsId.has(webContentsId)
+        ? { worlds: pageScriptWorldsFor(url) }
+        : { worlds: [] };
+    },
+    pageScriptRpc(callArgs) {
+      return callPageScriptRpc(callArgs);
+    },
+    respondToPageScriptCall({ result }) {
+      const settle = pendingPageScriptCalls.get(result.callId);
+      if (settle === undefined) {
+        // The call timed out, or the page navigated away from the script that
+        // asked. Dropping it is the whole point of correlating by id.
+        return;
+      }
+      pendingPageScriptCalls.delete(result.callId);
+      settle(
+        result.ok
+          ? { ok: true, result: result.result }
+          : { ok: false, message: result.message },
+      );
     },
     async downloadAction({ action, savePath }) {
       if (!writtenDownloadPaths.has(savePath)) {

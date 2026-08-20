@@ -43,6 +43,36 @@ export type CollectedPluginAppRegistrations = PluginRegistrationSet & {
  * plugin's frontend failed without touching other plugins or its backend.
  */
 
+/** How many URL globs one leading panel may be scoped to. */
+const MAX_LEADING_PANEL_MATCHES = 16;
+
+/**
+ * A registration's URL globs, checked for shape only.
+ *
+ * No scheme or host rule, unlike `bb.sites`: this decides whether bb draws one
+ * of its own columns, not what a plugin may reach, so a pattern that matches
+ * nothing costs the plugin its panel and nobody else anything.
+ */
+function requirePatternList(kind: string, value: unknown): string[] {
+  if (
+    !Array.isArray(value) ||
+    value.length === 0 ||
+    value.length > MAX_LEADING_PANEL_MATCHES
+  ) {
+    throw new Error(
+      `${kind}: "matches" must be 1 to ${MAX_LEADING_PANEL_MATCHES} URL patterns when set`,
+    );
+  }
+  return value.map((pattern, index) => {
+    if (typeof pattern !== "string" || pattern.trim().length === 0) {
+      throw new Error(
+        `${kind}: "matches[${index}]" must be a non-empty URL pattern`,
+      );
+    }
+    return pattern;
+  });
+}
+
 /** Real `@bb/plugin-sdk/app` implementation of `definePluginApp`. */
 export function definePluginApp(setup: PluginAppSetup): PluginAppDefinition {
   if (typeof setup !== "function") {
@@ -186,6 +216,9 @@ export function collectPluginAppRegistrations(
           title: requireNonEmptyString(kind, "title", registration.title),
           icon: requireNonEmptyString(kind, "icon", registration.icon),
           component: requireComponent(kind, registration.component),
+          ...(registration.matches === undefined
+            ? {}
+            : { matches: requirePatternList(kind, registration.matches) }),
         });
       },
       threadPanelAction(registration) {

@@ -19,7 +19,12 @@ import { pluginProcessPolicy } from "../../../src/services/plugins/plugin-placem
 
 async function writePlugin(
   dir: string,
-  options: { name: string; permissions?: readonly string[]; source: string },
+  options: {
+    name: string;
+    permissions?: readonly string[];
+    sites?: readonly string[];
+    source: string;
+  },
 ): Promise<string> {
   const rootDir = join(dir, options.name);
   await mkdir(rootDir, { recursive: true });
@@ -36,6 +41,7 @@ async function writePlugin(
         ...(options.permissions === undefined
           ? {}
           : { permissions: options.permissions }),
+        ...(options.sites === undefined ? {} : { sites: options.sites }),
       },
     }),
   );
@@ -74,6 +80,26 @@ const EDITED_CONTEXT_MENU_PLUGIN = CONTEXT_MENU_PLUGIN.replace(
 // not a class, and a fixture in a temp directory has no node_modules to import
 // a real validator from — in either placement, which is what once looked like
 // a plugin-process defect and was the fixture's own.
+const PAGE_STYLE_PLUGIN = `
+  export default function plugin(bb: any) {
+    bb.browser.registerPageStyle({
+      id: "declutter",
+      matches: ["https://github.com/**"],
+      css: ".ad { display: none !important }",
+    });
+  }
+`;
+
+const PAGE_SCRIPT_PLUGIN = `
+  export default function plugin(bb: any) {
+    bb.browser.registerPageScript({
+      id: "toolbar",
+      matches: ["https://github.com/**"],
+      code: "bb.ready(function () { document.title = 'seen'; });",
+    });
+  }
+`;
+
 const RPC_PLUGIN = `
   const wantsAnObject = {
     "~standard": {
@@ -123,6 +149,65 @@ describe("loading a plugin into a plugin process", () => {
     // plugin is: it finds the registration and calls it.
     const items = harness.pluginService.listContextMenuItemContributions();
     expect(items.map((item) => item.itemId)).toContain("shout");
+  }, 30_000);
+
+  // `bb.sites` has to survive the boundary, and nothing else makes it: the
+  // bootstrap payload is built with an `as never` cast, so a field the child
+  // needs and the supervisor forgets compiles clean and refuses every style the
+  // plugin registers — in the placement that is the whole point of the feature,
+  // since a plugin that came from an agent is exactly the one that runs out here.
+  it("honours the sites it declared when it runs out of process", async () => {
+    await start(() => true);
+    const rootDir = await writePlugin(
+      join(harness.config.dataDir, "fixtures"),
+      {
+        name: "bb-plugin-remote",
+        permissions: ["pageStyle.register"],
+        sites: ["https://github.com/**"],
+        source: PAGE_STYLE_PLUGIN,
+      },
+    );
+
+    const entry = await harness.pluginService.installPath(rootDir);
+
+    expect([entry.status, entry.statusDetail]).toEqual(["running", null]);
+    expect(harness.pluginService.listPageStyleContributions()).toEqual([
+      {
+        pluginId: "remote",
+        styleId: "declutter",
+        matches: ["https://github.com/**"],
+        css: ".ad { display: none !important }",
+      },
+    ]);
+  }, 30_000);
+
+  // The source text has to cross too, and by a different route than the style
+  // above: it rides the handle *snapshot* the child sends back, so a field the
+  // snapshot forgets leaves a plugin that loads fine and contributes nothing —
+  // and the endpoint that lists contributions throws for every other plugin too.
+  it("carries a page script out of the plugin process", async () => {
+    await start(() => true);
+    const rootDir = await writePlugin(
+      join(harness.config.dataDir, "fixtures"),
+      {
+        name: "bb-plugin-remote",
+        permissions: ["pageScript.register"],
+        sites: ["https://github.com/**"],
+        source: PAGE_SCRIPT_PLUGIN,
+      },
+    );
+
+    const entry = await harness.pluginService.installPath(rootDir);
+
+    expect([entry.status, entry.statusDetail]).toEqual(["running", null]);
+    expect(harness.pluginService.listPageScriptContributions()).toEqual([
+      {
+        pluginId: "remote",
+        scriptId: "toolbar",
+        matches: ["https://github.com/**"],
+        code: "bb.ready(function () { document.title = 'seen'; });",
+      },
+    ]);
   }, 30_000);
 
   // The one place the difference is visible, and it is visible on purpose:

@@ -38,6 +38,21 @@
       "types": "./src/browser-search-engine.ts",
       "default": "./src/browser-search-engine.ts"
     },
+    "./browser-url-pattern": {
+      "source": "./src/browser-url-pattern.ts",
+      "types": "./src/browser-url-pattern.ts",
+      "default": "./src/browser-url-pattern.ts"
+    },
+    "./browser-page-script": {
+      "source": "./src/browser-page-script.ts",
+      "types": "./src/browser-page-script.ts",
+      "default": "./src/browser-page-script.ts"
+    },
+    "./browser-page-style": {
+      "source": "./src/browser-page-style.ts",
+      "types": "./src/browser-page-style.ts",
+      "default": "./src/browser-page-style.ts"
+    },
     "./plugin-permissions": {
       "source": "./src/plugin-permissions.ts",
       "types": "./src/plugin-permissions.ts",

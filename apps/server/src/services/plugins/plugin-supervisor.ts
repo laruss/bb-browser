@@ -65,6 +65,8 @@ export interface SupervisedPlugin {
   instanceId: string;
   pluginId: string;
   permissions: readonly PluginPermission[] | undefined;
+  /** What `bb.sites` declared; per-plugin, like the permissions beside it. */
+  sites: readonly string[] | undefined;
   serverEntry: string;
   /** Identifies this plugin's SDK client; per-plugin, never shared. */
   apiKey: string;
@@ -107,7 +109,7 @@ export interface PluginSupervisorOptions {
    */
   shared: () => Omit<
     PluginHostConfig,
-    "pluginId" | "permissions" | "serverEntry" | "apiKey"
+    "pluginId" | "permissions" | "sites" | "serverEntry" | "apiKey"
   >;
   handlers: SupervisorHostHandlers;
   placement?: PluginPlacement;
@@ -374,6 +376,7 @@ export function createPluginSupervisor(
           ...options.shared(),
           pluginId: plugin.pluginId,
           permissions: plugin.permissions ?? null,
+          sites: plugin.sites ?? null,
           serverEntry: plugin.serverEntry,
           apiKey: plugin.apiKey,
         } as never,

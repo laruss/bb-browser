@@ -214,6 +214,123 @@ describe("contribution points", () => {
     ).toThrow(/"newTab\.register" permission/);
   });
 
+  it("refuses a page style the plugin did not declare", () => {
+    const { bb } = createFakePluginHost({ pluginId: "p", permissions: [] });
+
+    expect(() =>
+      bb.browser.registerPageStyle({
+        id: "declutter",
+        matches: ["https://github.com/**"],
+        css: ".ad { display: none }",
+      }),
+    ).toThrow(/"pageStyle\.register" permission/);
+  });
+
+  // The permission says the plugin restyles pages; `bb.sites` says which ones.
+  // Holding one without the other reaches nothing, and the double has to say so
+  // or a plugin ships a style the install refuses.
+  it("refuses a page style whose site is not declared, and names the list", () => {
+    const { bb } = createFakePluginHost({
+      pluginId: "p",
+      permissions: ["pageStyle.register"],
+      sites: ["https://gitlab.com/**"],
+    });
+
+    expect(() =>
+      bb.browser.registerPageStyle({
+        id: "declutter",
+        matches: ["https://github.com/**"],
+        css: ".ad { display: none }",
+      }),
+    ).toThrow(/does not declare in "bb\.sites".*https:\/\/gitlab\.com/su);
+  });
+
+  it("admits a page style matching a site the plugin declared", () => {
+    const { bb, harness } = createFakePluginHost({
+      pluginId: "p",
+      permissions: ["pageStyle.register"],
+      sites: ["https://github.com/**"],
+    });
+    const style = {
+      id: "declutter",
+      matches: ["https://github.com/**"],
+      css: ".ad { display: none }",
+    };
+
+    bb.browser.registerPageStyle(style);
+
+    expect(harness.registrations.pageStyles).toEqual([style]);
+    expect(() => bb.browser.registerPageStyle(style)).toThrow(
+      /already registered/,
+    );
+  });
+
+  it("refuses a page script the plugin did not declare", () => {
+    const { bb } = createFakePluginHost({ pluginId: "p", permissions: [] });
+
+    expect(() =>
+      bb.browser.registerPageScript({
+        id: "toolbar",
+        matches: ["https://github.com/**"],
+        code: "void 0",
+      }),
+    ).toThrow(/"pageScript\.register" permission/);
+  });
+
+  // Two permissions over one list, and this is the line between them: a plugin
+  // the user let restyle a site has not been let read it.
+  it("does not let the styling permission run code", () => {
+    const { bb } = createFakePluginHost({
+      pluginId: "p",
+      permissions: ["pageStyle.register"],
+      sites: ["https://github.com/**"],
+    });
+
+    expect(() =>
+      bb.browser.registerPageScript({
+        id: "toolbar",
+        matches: ["https://github.com/**"],
+        code: "void 0",
+      }),
+    ).toThrow(/"pageScript\.register" permission/);
+  });
+
+  it("refuses a page script whose site is not declared, and names the list", () => {
+    const { bb } = createFakePluginHost({
+      pluginId: "p",
+      permissions: ["pageScript.register"],
+      sites: ["https://gitlab.com/**"],
+    });
+
+    expect(() =>
+      bb.browser.registerPageScript({
+        id: "toolbar",
+        matches: ["https://github.com/**"],
+        code: "void 0",
+      }),
+    ).toThrow(/does not declare in "bb\.sites".*https:\/\/gitlab\.com/su);
+  });
+
+  it("admits a page script matching a site the plugin declared", () => {
+    const { bb, harness } = createFakePluginHost({
+      pluginId: "p",
+      permissions: ["pageScript.register"],
+      sites: ["https://github.com/**"],
+    });
+    const script = {
+      id: "toolbar",
+      matches: ["https://github.com/**"],
+      code: "bb.ready(function(){})",
+    };
+
+    bb.browser.registerPageScript(script);
+
+    expect(harness.registrations.pageScripts).toEqual([script]);
+    expect(() => bb.browser.registerPageScript(script)).toThrow(
+      /already registered/,
+    );
+  });
+
   // A command is ungated on purpose: a chord that runs the plugin's own code
   // discloses nothing, and what the command then reads is gated where it was.
   it("admits a command with no permissions at all", () => {

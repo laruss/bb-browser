@@ -49,7 +49,18 @@ export interface PluginSettingsSectionProps {}
  * Named rather than omitted so fields can be added additively later without
  * changing what a plugin's component signature looks like.
  */
-export interface PluginLeadingPanelProps {}
+export interface PluginLeadingPanelProps {
+  /**
+   * The address of the page in the active browser tab, or null when the window
+   * is not showing one.
+   *
+   * Here because a panel scoped to a site (see
+   * {@link PluginLeadingPanelRegistration.matches}) needs to know *which* page —
+   * "my open pull requests" is one panel, but which repository it is looking at
+   * is the tab's business.
+   */
+  browserUrl: string | null;
+}
 
 /** Props passed to a `navPanel` component (it owns its whole route). */
 export interface PluginNavPanelProps {
@@ -262,6 +273,20 @@ export interface PluginLeadingPanelRegistration {
   icon: string;
   /** Rendered as the whole panel body; it owns its own scrolling. */
   component: ComponentType<PluginLeadingPanelProps>;
+  /**
+   * Show this panel only while the active browser tab is on a matching page —
+   * URL globs, the dialect route patterns use (`https://github.com/**`).
+   *
+   * Declared rather than decided in the component, because with nothing declared
+   * the host draws the column whenever the plugin is installed, and a component
+   * that returns null for the page in front of the user leaves an empty edge
+   * behind. The host removes the column instead.
+   *
+   * Unlike `bb.sites`, this costs no permission and is not checked against one:
+   * the panel is bb's own UI, and what it is told about the tab is the address
+   * the address bar is already showing.
+   */
+  matches?: string[];
 }
 
 export interface PluginNavPanelRegistration {

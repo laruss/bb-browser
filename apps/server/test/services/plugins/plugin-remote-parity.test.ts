@@ -42,6 +42,7 @@ function noopCapabilities(dataDir: string) {
   return {
     pluginId: "full",
     permissions: PLUGIN_PERMISSIONS,
+    sites: ["https://example.test/**"],
     dataDir,
     logger: {
       debug: () => {},
@@ -117,6 +118,7 @@ describe("a remote handle against the in-process one", () => {
       payload: {
         pluginId: "full",
         permissions: PLUGIN_PERMISSIONS,
+        sites: ["https://example.test/**"],
         dataDir: await dataDir(),
         loopbackBaseUrl: "http://127.0.0.1:1",
         apiKey: "k",
@@ -172,6 +174,12 @@ describe("a remote handle against the in-process one", () => {
       ),
       searchEngines: handle.searchEngines.map(
         (e) => `${e.id} ${e.name} ${e.urlTemplate}`,
+      ),
+      pageStyles: handle.pageStyles.map(
+        (style) => `${style.id} ${style.matches.join("|")} ${style.css}`,
+      ),
+      pageScripts: handle.pageScripts.map(
+        (script) => `${script.id} ${script.matches.join("|")} ${script.code}`,
       ),
       downloadHandlers: handle.downloadHandlers.length,
       authProviders: handle.authProviders.length,

@@ -1010,6 +1010,115 @@ export interface PluginBrowserNewTabWidgetRegistration {
 }
 
 /**
+ * CSS the browser applies to pages on the sites this plugin declared.
+ *
+ * The declaration is data — no callback, nothing asked of the plugin as the user
+ * browses — so a style keeps working while the plugin is idle, and a page that
+ * matches nothing costs nothing.
+ *
+ * What it can and cannot do, because the difference matters when writing one:
+ * the rules apply to the **main frame only** (a subframe keeps its own
+ * stylesheets), they are re-applied on every navigation rather than surviving
+ * one, and they land once the navigation has committed — early enough that a
+ * network page has usually not painted the element yet, but not a guarantee that
+ * it never appears. A rule that must never be seen is not something this surface
+ * can promise.
+ */
+export interface PluginBrowserPageStyleRegistration {
+  /** Unique within this plugin: [a-zA-Z0-9_-]+. */
+  id: string;
+  /**
+   * Which of the plugin's declared sites this stylesheet is for. Each entry must
+   * be one of the patterns in `bb.sites` — the manifest is where the user reads
+   * what a plugin reaches, so code may pick from that list but never widen it.
+   */
+  matches: string[];
+  /**
+   * The stylesheet, as text. Ordinary CSS against the page's own DOM; the page's
+   * author wrote theirs first, so a rule that has to win says `!important` like
+   * any other late stylesheet.
+   */
+  css: string;
+}
+
+/**
+ * What the page-side half of a page script is handed.
+ *
+ * Two members, and no more on purpose. This code runs next to a site the user is
+ * signed in to; every name here is something the browser has to be willing to
+ * stand behind, so the surface is the channel home and the one piece of timing
+ * sugar that keeps the common case from being a footgun.
+ *
+ * It arrives as the global `bb` inside the script — declare it at the top of the
+ * source (`declare const bb: PluginPageScriptApi`) to type-check a script written
+ * as a template literal.
+ */
+export interface PluginPageScriptApi {
+  /**
+   * Call one of this plugin's own rpc methods, and nothing else.
+   *
+   * This is the whole reason a page script beats a userscript: a page cannot read
+   * a token from the user's keychain, open a database or reach a host the site's
+   * CSP forbids, and the plugin's backend can do all three. Input and result
+   * cross as JSON, so both must be JSON-serialisable, and both are bounded.
+   *
+   * Rejects — never throws synchronously — if the plugin is not running, the
+   * method does not exist, the page has since navigated somewhere the plugin does
+   * not declare, or the script is calling faster than the browser will carry.
+   */
+  rpc(method: string, input?: unknown): Promise<unknown>;
+  /**
+   * Run `callback` once the document has been parsed, or immediately if it
+   * already has.
+   *
+   * A page script starts before the page's first element exists, which is what
+   * makes it powerful and what makes `document.body.append(...)` at the top level
+   * a crash. Anything touching the DOM goes in here; anything that has to happen
+   * before the page's own scripts (patching `fetch`, taking a global) stays
+   * outside it.
+   */
+  ready(callback: () => void): void;
+}
+
+/**
+ * The plugin's own code, run in pages on the sites this plugin declared.
+ *
+ * The declaration is data, like a page style: the browser holds the source and
+ * hands it to a matching document, so nothing is asked of the plugin as the user
+ * browses and a page that matches nothing costs nothing.
+ *
+ * What the browser promises about running it — all of it measured, none of it
+ * inherited from Chrome's content scripts:
+ *
+ * - It runs **before the page's own first script**, when the document exists and
+ *   the parser has produced nothing (`document.documentElement` is null). Use
+ *   `bb.ready` for DOM work.
+ * - It runs in an **isolated world of this plugin's own**. The page cannot see
+ *   `bb` or anything the script defines, and cannot shadow what it reads. Two
+ *   scripts of the same plugin share that world; another plugin's scripts do not.
+ * - **Main frame only.** An iframe is out of reach, as it is for a page style.
+ * - A script registered while a matching page is already open runs when that page
+ *   is **next loaded**.
+ * - An error at the top level lands in the page's console — where bb's
+ *   observation log collects it for agents — and does not stop the next script.
+ */
+export interface PluginBrowserPageScriptRegistration {
+  /** Unique within this plugin: [a-zA-Z0-9_-]+. */
+  id: string;
+  /**
+   * Which of the plugin's declared sites this script is for. Each entry must be
+   * one of the patterns in `bb.sites`, exactly as for a page style: the manifest
+   * is what the user read, so code may pick from that list but never widen it.
+   */
+  matches: string[];
+  /**
+   * The script, as source text. It is wrapped in a function before it runs, so
+   * top-level `const` stays out of the world's globals, and `bb` is in scope.
+   */
+  code: string;
+}
+
+/**
  * A search engine the user can pick for the browser's address bar.
  *
  * Data only — the browser holds the template and formats it, so nothing is asked
@@ -2008,6 +2117,36 @@ export interface PluginBrowser {
    * contributed ones in plugin id order.
    */
   registerSearchEngine(engine: PluginBrowserSearchEngineRegistration): void;
+  /**
+   * Apply CSS to pages on the sites this plugin declared (`browser.pageStyles`)
+   * — see {@link PluginBrowserPageStyleRegistration}.
+   *
+   * The cheapest way onto a page, and the first one: hiding a banner, widening a
+   * column or restyling a site the user has to look at all day is one rule, runs
+   * no code in the page, and reads nothing back.
+   *
+   * Costs `pageStyle.register` **and** the sites in `bb.sites`: the permission
+   * says the plugin restyles pages, the manifest's sites say which ones, and
+   * `matches` picks from that list. Declaring neither reaches nothing.
+   */
+  registerPageStyle(style: PluginBrowserPageStyleRegistration): void;
+  /**
+   * Run this plugin's own code in pages on the sites it declared
+   * (`browser.pageScripts`) — see {@link PluginBrowserPageScriptRegistration}
+   * for what the browser promises about running it, and
+   * {@link PluginPageScriptApi} for what the code is handed.
+   *
+   * Everything a page style cannot do: read the page, add a control to it,
+   * answer a click by asking this plugin's backend. The script's `bb.rpc` reaches
+   * *this plugin's* rpc methods and nothing else, which is what keeps a program
+   * in an untrusted page from being a program in bb.
+   *
+   * Costs `pageScript.register` **and** the sites in `bb.sites` — a separate
+   * permission from `pageStyle.register` over the same list, because a stylesheet
+   * that cannot read the page and a program that can are not the same thing to
+   * agree to.
+   */
+  registerPageScript(script: PluginBrowserPageScriptRegistration): void;
   /**
    * Answer HTTP authentication challenges for browsed pages
    * (`browser.auth.providers`) — see {@link PluginBrowserAuthProvider}.

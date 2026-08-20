@@ -81,6 +81,27 @@ export const PLUGIN_PERMISSIONS = [
    * the user's browsing is disclosed — this buys the placement. */
   "newTab.register",
   /**
+   * Apply the plugin's CSS to pages on the sites it declared in `bb.sites`.
+   *
+   * The first permission whose answer is a *list of sites* rather than a
+   * capability, and it has to be: styling one site the user named and styling
+   * every site they visit are not the same risk, and one flag covering both would
+   * say neither. It runs no plugin code in the page and reads nothing back, which
+   * is what keeps the question down to "where".
+   */
+  "pageStyle.register",
+  /**
+   * Run the plugin's own code in the pages of the sites it declared in
+   * `bb.sites`, and let that code call the plugin's own rpc.
+   *
+   * Separate from `pageStyle.register` over the same list, because a stylesheet
+   * and a program are not the same disclosure: this one reads the page — its
+   * text, its form fields, whatever the signed-in user can see — and can carry
+   * what it reads to the plugin's backend. Granting it for a site is granting
+   * the plugin what a browser extension gets there.
+   */
+  "pageScript.register",
+  /**
    * Offer a search engine for the address bar. Offering is not choosing — the
    * user picks one — but a chosen engine receives every word typed there.
    */

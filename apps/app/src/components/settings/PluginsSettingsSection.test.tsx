@@ -217,6 +217,7 @@ function serverPlugin(
     cliCommand: null,
     capabilities: [],
     permissions: [],
+    sites: [],
     hasSettings: true,
     app: { hasApp: false, bundle: null },
     logoUrl: null,

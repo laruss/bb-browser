@@ -35,6 +35,11 @@ import {
   type BbDesktopBrowserDownloadHandler,
   type BbDesktopBrowserContextMenuInvokeHandler,
   type BbDesktopBrowserContextMenuItems,
+  type BbDesktopBrowserPageStyles,
+  type BbDesktopBrowserPageScripts,
+  type BbDesktopBrowserPageScriptResult,
+  type BbDesktopBrowserPageScriptCallHandler,
+  bbDesktopBrowserPageScriptCallSchema,
   type BbDesktopBrowserSearchSelectionHandler,
   type BbDesktopBrowserFaviconHandler,
   type BbDesktopBrowserFindRequest,
@@ -93,6 +98,10 @@ import {
   BB_DESKTOP_BROWSER_CONTEXT_MENU_INVOKE_CHANNEL,
   BB_DESKTOP_BROWSER_SEARCH_SELECTION_CHANNEL,
   BB_DESKTOP_BROWSER_SET_CONTEXT_MENU_ITEMS_CHANNEL,
+  BB_DESKTOP_BROWSER_SET_PAGE_STYLES_CHANNEL,
+  BB_DESKTOP_BROWSER_SET_PAGE_SCRIPTS_CHANNEL,
+  BB_DESKTOP_BROWSER_PAGE_SCRIPT_CALL_CHANNEL,
+  BB_DESKTOP_BROWSER_PAGE_SCRIPT_RESULT_CHANNEL,
   BB_DESKTOP_BROWSER_SET_OVERLAY_CHANNEL,
   BB_DESKTOP_BROWSER_SET_FULLSCREEN_CHANNEL,
   BB_DESKTOP_BROWSER_DOWNLOAD_CHANNEL,
@@ -257,6 +266,8 @@ const browserSearchSelectionListeners =
 const browserContextMenuInvokeListeners =
   new Set<BbDesktopBrowserContextMenuInvokeHandler>();
 const browserDialogListeners = new Set<BbDesktopBrowserDialogHandler>();
+const browserPageScriptCallListeners =
+  new Set<BbDesktopBrowserPageScriptCallHandler>();
 const browserPagePromptListeners = new Set<BbDesktopBrowserPagePromptHandler>();
 const browserPopupListeners = new Set<BbDesktopBrowserPopupHandler>();
 const browserDevToolsListeners =
@@ -406,6 +417,21 @@ const bbBrowserApi: BbDesktopBrowserApi = {
       BB_DESKTOP_BROWSER_SET_CONTEXT_MENU_ITEMS_CHANNEL,
       request,
     );
+  },
+  setPageStyles(request: BbDesktopBrowserPageStyles): void {
+    ipcRenderer.send(BB_DESKTOP_BROWSER_SET_PAGE_STYLES_CHANNEL, request);
+  },
+  setPageScripts(request: BbDesktopBrowserPageScripts): void {
+    ipcRenderer.send(BB_DESKTOP_BROWSER_SET_PAGE_SCRIPTS_CHANNEL, request);
+  },
+  onPageScriptCall(listener): BbDesktopBrowserUnsubscribe {
+    browserPageScriptCallListeners.add(listener);
+    return () => {
+      browserPageScriptCallListeners.delete(listener);
+    };
+  },
+  respondToPageScriptCall(result: BbDesktopBrowserPageScriptResult): void {
+    ipcRenderer.send(BB_DESKTOP_BROWSER_PAGE_SCRIPT_RESULT_CHANNEL, result);
   },
   onContextMenuInvoke(listener): BbDesktopBrowserUnsubscribe {
     browserContextMenuInvokeListeners.add(listener);
@@ -919,6 +945,19 @@ ipcRenderer.on(
       return;
     }
     for (const listener of browserFindResultListeners) {
+      listener(parsed.data);
+    }
+  },
+);
+
+ipcRenderer.on(
+  BB_DESKTOP_BROWSER_PAGE_SCRIPT_CALL_CHANNEL,
+  (_event, payload: unknown) => {
+    const parsed = bbDesktopBrowserPageScriptCallSchema.safeParse(payload);
+    if (!parsed.success) {
+      return;
+    }
+    for (const listener of browserPageScriptCallListeners) {
       listener(parsed.data);
     }
   },

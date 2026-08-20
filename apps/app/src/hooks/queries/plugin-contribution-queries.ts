@@ -1,5 +1,6 @@
 import { useQuery, type QueryKey } from "@tanstack/react-query";
 import { normalizeBrowserSearchEngineTemplate } from "@bb/domain/browser-search-engine";
+import { normalizePluginSitePattern } from "@bb/domain/browser-url-pattern";
 import {
   normalizePluginMentionTriggers,
   type PluginMentionTrigger,
@@ -105,9 +106,42 @@ export interface PluginBrowserSearchEngineContribution {
   urlTemplate: string;
 }
 
+/**
+ * CSS a plugin applies to pages on the sites it declared
+ * (`browser.pageStyles`).
+ *
+ * The css itself, not a handle: this is pushed straight to the desktop shell,
+ * which re-applies it on every navigation, so a page load never waits on the
+ * server or on the plugin.
+ */
+export interface PluginBrowserPageStyleContribution {
+  pluginId: string;
+  styleId: string;
+  matches: string[];
+  css: string;
+}
+
+/**
+ * A plugin's own code to run in pages on the sites it declared
+ * (`browser.pageScripts`).
+ *
+ * The source text, like a page style's css: the shell hands it to a document as
+ * that document is created, so nothing about running it waits on the server. What
+ * *is* asked of the server is whatever the script calls back with — see
+ * `useBrowserPageScripts`.
+ */
+export interface PluginBrowserPageScriptContribution {
+  pluginId: string;
+  scriptId: string;
+  matches: string[];
+  code: string;
+}
+
 export interface PluginContributions {
   browserContextMenuItems: PluginBrowserContextMenuItemContribution[];
   browserFindActions: PluginBrowserFindActionContribution[];
+  browserPageScripts: PluginBrowserPageScriptContribution[];
+  browserPageStyles: PluginBrowserPageStyleContribution[];
   browserSearchEngines: PluginBrowserSearchEngineContribution[];
   browserTabActions: PluginBrowserTabActionContribution[];
   browserToolbarItems: PluginBrowserToolbarItemContribution[];
@@ -120,6 +154,8 @@ export interface PluginContributions {
 const EMPTY_CONTRIBUTIONS: PluginContributions = {
   browserContextMenuItems: [],
   browserFindActions: [],
+  browserPageScripts: [],
+  browserPageStyles: [],
   browserSearchEngines: [],
   browserTabActions: [],
   browserToolbarItems: [],
@@ -200,6 +236,71 @@ function toSearchEngineContribution(
     id: engine.id,
     name: engine.name,
     urlTemplate: engine.urlTemplate,
+  };
+}
+
+function toPageStyleContribution(
+  value: unknown,
+): PluginBrowserPageStyleContribution | null {
+  if (typeof value !== "object" || value === null) return null;
+  const style = value as Record<string, unknown>;
+  if (
+    typeof style.pluginId !== "string" ||
+    typeof style.styleId !== "string" ||
+    typeof style.css !== "string" ||
+    style.css.length === 0 ||
+    !Array.isArray(style.matches) ||
+    style.matches.length === 0
+  ) {
+    return null;
+  }
+  // Re-checked here rather than trusted from the server: the shell applies these
+  // to whatever page matches, so a pattern this build would not have accepted
+  // must not become one it honours.
+  const matches = style.matches.filter(
+    (pattern): pattern is string =>
+      typeof pattern === "string" &&
+      normalizePluginSitePattern(pattern) !== null,
+  );
+  if (matches.length !== style.matches.length) return null;
+  return {
+    pluginId: style.pluginId,
+    styleId: style.styleId,
+    matches,
+    css: style.css,
+  };
+}
+
+function toPageScriptContribution(
+  value: unknown,
+): PluginBrowserPageScriptContribution | null {
+  if (typeof value !== "object" || value === null) return null;
+  const script = value as Record<string, unknown>;
+  if (
+    typeof script.pluginId !== "string" ||
+    typeof script.scriptId !== "string" ||
+    typeof script.code !== "string" ||
+    script.code.length === 0 ||
+    !Array.isArray(script.matches) ||
+    script.matches.length === 0
+  ) {
+    return null;
+  }
+  // Re-checked here for the reason a page style's patterns are, with more at
+  // stake: this decides which sites get to run a plugin's program, so a pattern
+  // this build would not have accepted must not become one it honours. A row with
+  // any bad pattern is dropped whole rather than narrowed.
+  const matches = script.matches.filter(
+    (pattern): pattern is string =>
+      typeof pattern === "string" &&
+      normalizePluginSitePattern(pattern) !== null,
+  );
+  if (matches.length !== script.matches.length) return null;
+  return {
+    pluginId: script.pluginId,
+    scriptId: script.scriptId,
+    matches,
+    code: script.code,
   };
 }
 
@@ -328,6 +429,8 @@ async function fetchPluginContributions(
   const body = (await response.json()) as {
     browserContextMenuItems?: unknown;
     browserFindActions?: unknown;
+    browserPageScripts?: unknown;
+    browserPageStyles?: unknown;
     browserSearchEngines?: unknown;
     browserTabActions?: unknown;
     browserToolbarItems?: unknown;
@@ -351,6 +454,22 @@ async function fetchPluginContributions(
           .filter(
             (action): action is PluginBrowserFindActionContribution =>
               action !== null,
+          )
+      : [],
+    browserPageScripts: Array.isArray(body.browserPageScripts)
+      ? body.browserPageScripts
+          .map(toPageScriptContribution)
+          .filter(
+            (script): script is PluginBrowserPageScriptContribution =>
+              script !== null,
+          )
+      : [],
+    browserPageStyles: Array.isArray(body.browserPageStyles)
+      ? body.browserPageStyles
+          .map(toPageStyleContribution)
+          .filter(
+            (style): style is PluginBrowserPageStyleContribution =>
+              style !== null,
           )
       : [],
     browserSearchEngines: Array.isArray(body.browserSearchEngines)

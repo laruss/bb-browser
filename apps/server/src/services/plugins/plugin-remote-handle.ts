@@ -347,6 +347,8 @@ export function createRemotePluginApiHandle(args: {
     // Data, like the keybindings above: nothing calls back into the plugin, so
     // the remote handle carries the rows rather than proxies.
     searchEngines: snapshot.searchEngines,
+    pageStyles: snapshot.pageStyles,
+    pageScripts: snapshot.pageScripts,
     activate: () => {},
     invalidate: () => {},
   };

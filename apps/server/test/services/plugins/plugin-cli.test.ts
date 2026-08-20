@@ -116,6 +116,8 @@ describe("plugin CLI commands (bb.cli.register + endpoints + skill + logs)", () 
     expect(await response.json()).toEqual({
       browserContextMenuItems: [],
       browserFindActions: [],
+      browserPageScripts: [],
+      browserPageStyles: [],
       browserSearchEngines: [],
       browserTabActions: [],
       browserToolbarItems: [],

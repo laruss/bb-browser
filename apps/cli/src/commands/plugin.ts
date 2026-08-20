@@ -131,7 +131,10 @@ const pluginPackageSummarySchema = z.object({
   name: z.string().optional(),
   version: z.string().optional(),
   bb: z
-    .object({ permissions: z.array(z.string()).optional() })
+    .object({
+      permissions: z.array(z.string()).optional(),
+      sites: z.array(z.string()).optional(),
+    })
     .partial()
     .optional(),
 });
@@ -480,6 +483,13 @@ function printPlugin(plugin: PluginEntry): void {
       plugin.permissions?.length ? plugin.permissions.join(", ") : "none"
     }`,
   );
+  // Only when there are any: a permission whose answer is a list of sites has to
+  // show the list, but a plugin that reaches no page has nothing to say here.
+  // "reach" rather than "restyle", because two permissions are scoped by this
+  // list now and the line above says which of them this plugin holds.
+  if (plugin.sites?.length) {
+    console.log(`  pages it may reach: ${plugin.sites.join(", ")}`);
+  }
   const stats = plugin.handlerStats;
   if (stats && stats.count > 0) {
     const errors = stats.errorCount > 0 ? `, ${stats.errorCount} errors` : "";
@@ -696,6 +706,7 @@ export function registerPluginCommands(
           // plan §9 is about; every other source shows its permissions in the
           // entry printed straight after.
           let declared: readonly string[] | undefined;
+          let declaredSites: readonly string[] = [];
           if (intent.kind === "source" && intent.source.startsWith("path:")) {
             const path = intent.source.slice(5);
             // Best effort — a missing/invalid manifest is the server's
@@ -709,6 +720,7 @@ export function registerPluginCommands(
                 summary = `Installing ${pkg.name}@${pkg.version ?? "?"} from ${path}`;
               }
               declared = pkg.bb?.permissions ?? [];
+              declaredSites = pkg.bb?.sites ?? [];
             } catch {
               // fall through to the bare path summary
             }
@@ -719,6 +731,20 @@ export function registerPluginCommands(
               console.log(
                 `It declares: ${declared.length > 0 ? declared.join(", ") : "no permissions"}.`,
               );
+            }
+            // The scope of the two site-scoped permissions, and the one thing in
+            // a manifest that names sites the plugin gets standing access to — so
+            // it is printed before the install, not discoverable after it. Each
+            // line is printed only if the permission that grants it was declared:
+            // a site list nothing is allowed to use grants nothing.
+            if (declaredSites.length > 0) {
+              const sites = declaredSites.join(", ");
+              if (declared?.includes("pageStyle.register")) {
+                console.log(`It will restyle pages on: ${sites}.`);
+              }
+              if (declared?.includes("pageScript.register")) {
+                console.log(`It will run its own code on pages of: ${sites}.`);
+              }
             }
             console.log(
               "Plugins are full-trust code running inside the BB server. " +

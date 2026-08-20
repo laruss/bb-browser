@@ -89,6 +89,7 @@ describe("PLUGIN_HOST_CALLS covers the bb object", () => {
       // Everything declared, so reading an area does not hit the gate — the
       // gate has its own tests and is not what this file is checking.
       permissions: PLUGIN_PERMISSIONS,
+      sites: undefined,
       logger: testLogger,
       kvStore: {
         get: async () => undefined,

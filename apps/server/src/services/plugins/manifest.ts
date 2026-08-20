@@ -36,6 +36,12 @@ export interface PluginManifest {
    * for what that does and does not enforce.
    */
   permissions: readonly PluginPermission[] | undefined;
+  /**
+   * `bb.sites` — which websites this plugin's page contributions may reach, as
+   * URL globs. Undeclared means none; the schema has already refused anything
+   * that is not https (or loopback http).
+   */
+  sites: readonly string[] | undefined;
   /** semver range from engines.bb, when declared. */
   bbEngineRange: string | undefined;
   /** semver range from engines.bbPluginSdk; absent manifests are legacy. */
@@ -257,6 +263,7 @@ export async function readPluginManifest(
       ...(brandingLogo === undefined ? {} : { logo: brandingLogo }),
     },
     permissions: bb.permissions,
+    sites: bb.sites,
     bbEngineRange: engines?.bb,
     bbPluginSdkRange: engines?.bbPluginSdk,
     serverEntry,

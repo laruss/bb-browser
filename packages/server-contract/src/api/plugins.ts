@@ -209,6 +209,13 @@ export const installedPluginSchema = z.object({
    * whose runtime half needs a loaded plugin.
    */
   permissions: z.array(pluginPermissionSchema).default([]),
+  /**
+   * What the manifest's `bb.sites` declared: the websites this plugin's page
+   * contributions may reach. Manifest-declared for the same reason as
+   * `permissions`, and shown beside them — a permission whose answer is a list of
+   * sites is only honest if the list is on screen.
+   */
+  sites: z.array(z.string()).default([]),
   hasSettings: z.boolean(),
   app: pluginAppStateSchema,
   logoUrl: z.string().nullable(),

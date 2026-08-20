@@ -2023,6 +2023,13 @@ async function runDesktopApp(): Promise<void> {
     "log-viewer-preload.cjs",
   );
   const preloadPath = join(paths.appPath, "dist", "preload.cjs");
+  // The preload for *browsed* pages, installed in the browsing session only while
+  // a plugin declares a page script — see `syncPageScriptPreload`.
+  const resolvedPageScriptPreloadPath = join(
+    paths.appPath,
+    "dist",
+    "page-script-preload.cjs",
+  );
   const resolvedExistingServerDialogPreloadPath = join(
     paths.appPath,
     "dist",
@@ -2153,6 +2160,7 @@ async function runDesktopApp(): Promise<void> {
   });
   registerDesktopUpdateIpc();
   desktopBrowserViewManager = createDesktopBrowserViewManager({
+    pageScriptPreloadPath: resolvedPageScriptPreloadPath,
     dispatchAppCommand({ command, hostWebContentsId }) {
       const browserWindow = BrowserWindow.getAllWindows().find(
         (candidate) => candidate.webContents.id === hostWebContentsId,
