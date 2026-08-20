@@ -181,6 +181,39 @@ either a screen bb has not drawn (below) or a decision nobody has needed yet.
   in practice because each closes the other, documented rather than fixed.
 - **Streaming HTTP across the plugin boundary.** Deferred on purpose; a plugin's
   route buffers its response.
+- **Permissions the user grants, rather than the plugin declaring them.** Today
+  `bb.permissions` is written by whoever wrote the plugin — which, in the case this
+  product exists for, is the user's own agent. The install is one all-or-nothing
+  yes (and only in the CLI), nothing can be granted in part, and nothing can be
+  taken back afterwards short of uninstalling. So "the agent asked for `threads`
+  and `filesystem`" is a sentence the user has never actually answered, and a
+  plugin that reads more of their data than they expected — by accident as easily
+  as by design — is inside what bb currently permits.
+
+  Not higher up this list for a reason that has to be said before anyone builds
+  the dialog: **a grant UI over today's mechanism would be theatre.**
+  [architecture/plugin-permissions.md](architecture/plugin-permissions.md) states
+  the case — a plugin is a Node module with `node:fs`, `child_process` and the
+  loopback base URL, so a gate on the `bb` object stops none of it. Running it out
+  of process closed **none** of those three: the child is a Node process like any
+  other and is handed `loopbackBaseUrl` as soon as the server binds
+  (`plugin-child-runtime.ts`). What that move bought was crash and memory
+  isolation, which is worth having and is not this. Asking
+  somebody to deny a capability the code can take anyway is worse than not asking:
+  it manufactures a belief that is not true. The order is therefore **enforceable
+  first, then consented** — which is also why this is one item and not two.
+
+  What is cheap and honest before any of that exists is the **record**: the gate is
+  two chokepoints (`callBrowser` and the `bb.sdk` wrapper), so "what has this
+  plugin actually reached" is collectable today, and it describes behaviour instead
+  of promising containment. Three questions the design has to answer when it is
+  time: which permissions are worth asking about at all (a dialog listing twenty is
+  a list nobody reads, and `newTab.register` is not `filesystem`); when to ask —
+  install time has no context, first use has no user present when the caller is a
+  background service; and where the answer lives, including what revoking one does
+  to a plugin that is running, which is a failure its author has never had to
+  handle.
+
 - **The app shows no plugin permissions.** Nothing in the SPA renders
   `bb.permissions`, and nothing renders `bb.sites` either. The CLI prints both
   before an install and `bb plugin info` lists them, so the agent-authored path
