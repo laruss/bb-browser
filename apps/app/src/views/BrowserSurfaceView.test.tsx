@@ -509,6 +509,86 @@ describe("BrowserSurfaceView", () => {
     expect(tabButtons()).toHaveLength(1);
   });
 
+  // Links macOS handed the shell because bb is the user's default browser. The
+  // surface pulls them: the click that launched bb reached main before this
+  // renderer existed, so there was nobody to push to.
+  it("opens the links waiting in the shell when it mounts", async () => {
+    const takeExternalUrls = vi
+      .fn<() => Promise<string[]>>()
+      .mockResolvedValue(["https://example.com/from-mail"]);
+    renderSurface({
+      ...createNoopDesktopBrowserApi(),
+      takeExternalUrls,
+    });
+
+    await act(async () => {});
+
+    expect(takeExternalUrls).toHaveBeenCalledTimes(1);
+    expect(tabButtons()).toHaveLength(2);
+  });
+
+  // The routing seam: plugins see a link the system opened before it becomes a
+  // tab, and the first decision wins.
+  it("opens the address a plugin rewrote, and nothing for one it took over", async () => {
+    const decisions = [
+      { url: "https://work.example.com/issue" },
+      { handled: true },
+    ];
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(async (input) => {
+        if (!String(input).includes("/plugins/browser/external-link")) {
+          return new Response("{}", {
+            headers: { "content-type": "application/json" },
+          });
+        }
+        return new Response(
+          JSON.stringify({ ok: true, decision: decisions.shift() ?? null }),
+          { headers: { "content-type": "application/json" } },
+        );
+      });
+    renderSurface({
+      ...createNoopDesktopBrowserApi(),
+      async takeExternalUrls() {
+        return [
+          "https://tracker.example.com/1",
+          "https://tracker.example.com/2",
+        ];
+      },
+    });
+
+    await act(async () => {});
+
+    // One tab for the rewritten link, none for the one the plugin took over —
+    // plus the tab the surface starts with.
+    expect(tabButtons()).toHaveLength(2);
+    fetchSpy.mockRestore();
+  });
+
+  it("drains again when the shell says more arrived", async () => {
+    const pendingListeners: Array<() => void> = [];
+    const takeExternalUrls = vi
+      .fn<() => Promise<string[]>>()
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce(["https://example.com/later"]);
+    renderSurface({
+      ...createNoopDesktopBrowserApi(),
+      takeExternalUrls,
+      onExternalUrlsPending(listener) {
+        pendingListeners.push(listener);
+        return () => {};
+      },
+    });
+    await act(async () => {});
+
+    await act(async () => {
+      pendingListeners.at(-1)?.();
+    });
+
+    expect(takeExternalUrls).toHaveBeenCalledTimes(2);
+    expect(tabButtons()).toHaveLength(2);
+  });
+
   // Version skew: a shell predating source-attributed popups offers only the
   // unscoped channel, and the link still has to open.
   it("opens a popup from a shell with no scoped channel", () => {

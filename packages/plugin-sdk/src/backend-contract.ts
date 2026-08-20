@@ -1215,6 +1215,44 @@ export type PluginBrowserPdfTextProvider = (
   document: PluginBrowserPdfDocument,
 ) => string | null | Promise<string | null>;
 
+/** A link another app asked macOS to open, handed here because bb is the
+ * user's default browser. */
+export interface PluginBrowserExternalLink {
+  /** The address. Always `http(s)`: the shell drops every other scheme. */
+  url: string;
+}
+
+/** What a handler decided about one such link. */
+export interface PluginBrowserExternalLinkDecision {
+  /** Open this address instead of the one that arrived. Must be `http(s)`. */
+  url?: string;
+  /**
+   * True when the plugin dealt with the link itself and bb should open no tab —
+   * a link routed to a workspace, filed for later, answered by an agent.
+   */
+  handled?: boolean;
+}
+
+/**
+ * Decide where a link the *system* handed bb goes.
+ *
+ * This is the seam the "which browser opens what" apps exist for, and it only
+ * exists while bb is the default browser: the link was clicked in Mail, Slack or
+ * a terminal, and bb is what macOS launched with it.
+ *
+ * Handlers are asked in plugin id order and the **first decision wins** — a
+ * rewritten address, or `handled` for a link the plugin took over. Return null to
+ * decline; declining, throwing and running out of time are the same answer, and
+ * the link opens in a tab exactly as it would with no plugins at all. The user is
+ * waiting on a click, so the time box is short.
+ */
+export type PluginBrowserExternalLinkHandler = (
+  link: PluginBrowserExternalLink,
+) =>
+  | PluginBrowserExternalLinkDecision
+  | null
+  | Promise<PluginBrowserExternalLinkDecision | null>;
+
 export interface PluginBrowserFindActionRegistration {
   /** Unique within this plugin: [a-zA-Z0-9_-]+. */
   id: string;
@@ -2165,6 +2203,16 @@ export interface PluginBrowser {
    * Additive: providers are asked in plugin id order until one answers.
    */
   registerPdfTextProvider(provider: PluginBrowserPdfTextProvider): void;
+  /**
+   * Route a link the system handed bb, while bb is the user's default browser
+   * (`browser.externalLink.handlers`) — see
+   * {@link PluginBrowserExternalLinkHandler}.
+   *
+   * Additive: handlers are asked in plugin id order until one decides. Costs
+   * `externalLink.handle`, which is a standing read of every address the user
+   * opens from outside bb.
+   */
+  registerExternalLinkHandler(handler: PluginBrowserExternalLinkHandler): void;
   /**
    * See every page before it enters the browser's history, and rewrite or drop
    * it (`browser.history.filters`) — see {@link PluginBrowserHistoryFilter}.

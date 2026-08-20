@@ -282,6 +282,24 @@ export type BbDesktopBrowserScopedOpenTabRequest = z.infer<
 >;
 
 /**
+ * The links macOS handed the shell because bb is the user's default browser,
+ * answered to the surface that asked for them and emptied in the asking.
+ *
+ * An answer rather than a push: `open-url` fires before there is a renderer at
+ * all when the click is what launched bb, so the shell queues and the surface
+ * pulls when it mounts. Same URL bound as a popup request, for the same reason
+ * — the address comes from outside this app either way.
+ */
+export const bbDesktopBrowserExternalUrlsSchema = z
+  .object({
+    urls: z.array(z.string().min(1).max(BB_DESKTOP_BROWSER_MAX_URL_LENGTH)),
+  })
+  .strict();
+export type BbDesktopBrowserExternalUrls = z.infer<
+  typeof bbDesktopBrowserExternalUrlsSchema
+>;
+
+/**
  * Upper bound for a snapshot data URL. A JPEG of a full-window view on a 5K
  * display lands well under this; the cap exists so a misbehaving push can
  * never balloon renderer memory.
@@ -2361,6 +2379,7 @@ export type BbDesktopBrowserOpenTabHandler = (
 export type BbDesktopBrowserScopedOpenTabHandler = (
   request: BbDesktopBrowserScopedOpenTabRequest,
 ) => void;
+export type BbDesktopBrowserExternalUrlsPendingHandler = () => void;
 export type BbDesktopBrowserSnapshotHandler = (
   snapshot: BbDesktopBrowserSnapshot,
 ) => void;
@@ -2390,6 +2409,27 @@ export interface BbDesktopBrowserApi {
    */
   onScopedOpenTab?(
     listener: BbDesktopBrowserScopedOpenTabHandler,
+  ): BbDesktopBrowserUnsubscribe;
+  /**
+   * Take the links macOS handed the shell because bb is the user's default
+   * browser, emptying the queue as they are taken.
+   *
+   * Optional for the same version skew as
+   * {@link BbDesktopBrowserApi.onScopedOpenTab}: an older shell has no queue and
+   * feature-detection is the negotiation. Call it once when a surface mounts —
+   * that is the cold-start path, where the click that launched bb arrived before
+   * this renderer existed — and again on
+   * {@link BbDesktopBrowserApi.onExternalUrlsPending}.
+   */
+  takeExternalUrls?(): Promise<string[]>;
+  /**
+   * Subscribe to "there are links waiting" nudges, for the case where bb was
+   * already running when the user clicked one. Carries no payload on purpose:
+   * the queue is the single source, so a nudge that raced a mount cannot open
+   * the same link twice.
+   */
+  onExternalUrlsPending?(
+    listener: BbDesktopBrowserExternalUrlsPendingHandler,
   ): BbDesktopBrowserUnsubscribe;
   /**
    * Subscribe to resize-burst snapshot pushes. Optional purely for version

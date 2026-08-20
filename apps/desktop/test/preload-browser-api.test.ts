@@ -274,6 +274,7 @@ describe("desktop preload browser API", () => {
       "onDevToolsState",
       "onDialog",
       "onDownload",
+      "onExternalUrlsPending",
       "onFavicon",
       "onFindResult",
       "onOpenTab",
@@ -309,6 +310,7 @@ describe("desktop preload browser API", () => {
       "snapshotIn",
       "stop",
       "storage",
+      "takeExternalUrls",
     ]);
     expect(api.browser).not.toHaveProperty("send");
     expect(api.browser).not.toHaveProperty("invoke");

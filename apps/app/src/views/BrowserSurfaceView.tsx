@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -24,6 +25,7 @@ import {
   useIndexedAppCommandHandlers,
 } from "@/components/commands/AppCommandProvider";
 import {
+  resolvePluginExternalLink,
   runPluginContextMenuItem,
   runPluginFindAction,
   runPluginTabAction,
@@ -301,6 +303,63 @@ export function BrowserSurfaceView({
       openSurfaceTab(url);
     });
   }, [openSurfaceTab, surfaceTabIds]);
+
+  // The current `openSurfaceTab`, for the drain below: it runs for the life of
+  // the surface, and this identity changes every time the route does.
+  const openSurfaceTabRef = useRef(openSurfaceTab);
+  useEffect(() => {
+    openSurfaceTabRef.current = openSurfaceTab;
+  }, [openSurfaceTab]);
+
+  // Links macOS handed the shell because bb is the user's default browser. A
+  // pull rather than a subscription, and that is the shape the cold start
+  // forces: the click that launched bb was delivered to the main process before
+  // this renderer existed, so the queue is drained here on mount, and again on
+  // every nudge saying more arrived while the app was running.
+  useEffect(() => {
+    const browserApi = getDesktopBrowserApi();
+    const takeExternalUrls = browserApi?.takeExternalUrls;
+    if (browserApi === null || takeExternalUrls === undefined) {
+      return;
+    }
+    let mounted = true;
+    const drain = (): void => {
+      void takeExternalUrls
+        .call(browserApi)
+        .then(async (urls) => {
+          for (const url of urls) {
+            // Plugins get the link before it becomes a tab: this is the routing
+            // seam the "which browser opens what" apps exist for, and it only
+            // exists while bb is the default browser. Nobody deciding —
+            // including a server that is not listening — opens the link
+            // unchanged.
+            const decision = await resolvePluginExternalLink(url);
+            // A surface that went away between asking and answering drops what
+            // it took: opening a tab from here would navigate a window that is
+            // gone.
+            if (!mounted || decision?.handled === true) {
+              continue;
+            }
+            openSurfaceTabRef.current(decision?.url ?? url);
+          }
+        })
+        // The queue is already empty by the time anything here can fail, so a
+        // failure is only ever a link that does not open — never an unhandled
+        // rejection in the surface.
+        .catch(() => undefined);
+    };
+    drain();
+    const unsubscribe = browserApi.onExternalUrlsPending?.(drain);
+    return () => {
+      mounted = false;
+      unsubscribe?.();
+    };
+    // Mount to unmount, deliberately: `takeExternalUrls` empties the shell's
+    // queue, so a re-run mid-drain would flip `mounted` and drop the links this
+    // surface has already taken. `openSurfaceTab` changes identity with the
+    // route — which the first link opening from an app tab does — so it is read
+    // through a ref rather than depended on.
+  }, []);
 
   // Real popups. This surface claims them for its own tabs: it owns them, so it
   // can host a window Chromium created — which is what gives a page back the

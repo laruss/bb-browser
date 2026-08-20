@@ -110,6 +110,17 @@ export const PLUGIN_PERMISSIONS = [
   "downloads.handle",
   /** Supply credentials for a site's HTTP authentication challenge. */
   "auth.provide",
+  /**
+   * Decide where a link the *system* hands bb goes, when bb is the user's
+   * default browser — rewrite it, or take it over entirely.
+   *
+   * Its own permission rather than part of `tabs.modify`, on the house rule the
+   * rest of this group follows: what the holder *sees* is every address the user
+   * opens from outside bb — Mail, Slack, a terminal — which is a standing read of
+   * where the user goes, in the same class as `toolbar.register`. That it can
+   * also redirect one is the smaller half.
+   */
+  "externalLink.handle",
   /** Supply the text of a PDF the browser could not read. */
   "pdf.provide",
 

@@ -65,6 +65,7 @@ import {
   getFaviconGlyphHref,
 } from "@/lib/favicon-color-preference";
 import { useOpenLinksInAppBrowserPreference } from "@/lib/in-app-browser-link-preference";
+import { useDefaultBrowserStatus } from "@/hooks/useDefaultBrowserStatus";
 import { useRewriteLocalhostLinksPreference } from "@/lib/localhost-link-rewrite-preference";
 import { useRichTextEditingPreference } from "@/lib/rich-text-editing-preference";
 import {
@@ -571,6 +572,41 @@ export function InAppBrowserLinkSettingsControl({
 }
 
 /**
+ * Making bb the browser macOS hands links to.
+ *
+ * A button rather than a switch, because the choice is not this app's to make:
+ * Launch Services shows its own "keep using …?" confirmation and returns before
+ * the user answers, so the row reports what the OS decided and asks again at
+ * most. A development run cannot ask at all — its bundle is the stock Electron
+ * one in `node_modules`, which declares no web schemes and would take over the
+ * developer's own links.
+ */
+export function DefaultBrowserSettingsControl() {
+  const { request, status } = useDefaultBrowserStatus();
+  const description = status.isDefault
+    ? "macOS opens web links in bb."
+    : status.canRequest
+      ? "macOS opens web links in another browser."
+      : "A development build cannot register itself with macOS.";
+  return (
+    <SettingsWithControl label="Default web browser" description={description}>
+      {status.isDefault ? (
+        <span className="text-muted-foreground text-sm">bb</span>
+      ) : (
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={!status.canRequest}
+          onClick={request}
+        >
+          Make bb the default
+        </Button>
+      )}
+    </SettingsWithControl>
+  );
+}
+
+/**
  * The address bar's search engine: bb's own, plus whatever plugins declared
  * (`bb.browser.registerSearchEngine`). A plugin's row says which plugin it came
  * from, the way the palette list does for plugin themes — the user is picking who
@@ -895,6 +931,8 @@ export function GeneralSettingsSection({
             onEnabledChange={onCaffeinateChange}
           />
         ) : null}
+
+        {desktopBrowserAvailable ? <DefaultBrowserSettingsControl /> : null}
 
         {desktopBrowserAvailable ? (
           <InAppBrowserLinkSettingsControl

@@ -168,6 +168,7 @@ export interface PluginRegistrationSnapshot {
   historyFilterCount: number;
   authProviderCount: number;
   pdfTextProviderCount: number;
+  externalLinkHandlerCount: number;
   keybindings: AppKeybindingOverrides;
   searchEngines: BrowserSearchEngine[];
   pageStyles: { id: string; matches: string[]; css: string }[];
@@ -673,6 +674,14 @@ async function dispatchToRegistration(args: {
       if (provider === undefined) return missing("pdf text provider");
       return (await provider(payload as never)) ?? null;
     }
+    case "browserExternalLink": {
+      const handler = handle.externalLinkHandlers[Number(target)];
+      if (handler === undefined) return missing("external link handler");
+      // `?? null` for the reason the two above have it: JSON collapses
+      // `undefined` into a missing property, and "declined" has to survive the
+      // crossing as a value the host can branch on.
+      return (await handler(payload as never)) ?? null;
+    }
     case "browserOmniboxSuggest": {
       const record = handle.omniboxProviders.find((one) => one.id === target);
       if (record === undefined) return missing("omnibox provider");
@@ -861,6 +870,7 @@ function snapshot(handle: PluginApiHandle): PluginRegistrationSnapshot {
     historyFilterCount: handle.historyFilters.length,
     authProviderCount: handle.authProviders.length,
     pdfTextProviderCount: handle.pdfTextProviders.length,
+    externalLinkHandlerCount: handle.externalLinkHandlers.length,
     keybindings: handle.keybindings,
     searchEngines: handle.searchEngines,
     pageStyles: handle.pageStyles,

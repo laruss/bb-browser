@@ -34,6 +34,16 @@
     "entitlementsInherit": "build/entitlements.mac.inherit.plist",
     "gatekeeperAssess": false,
     "hardenedRuntime": true,
+    "extendInfo": {
+      "CFBundleURLTypes": [
+        {
+          "CFBundleTypeRole": "Viewer",
+          "CFBundleURLName": "Web site URL",
+          "CFBundleURLSchemes": ["http", "https"]
+        }
+      ],
+      "NSUserActivityTypes": ["NSUserActivityTypeBrowsingWeb"]
+    },
     "icon": "assets/icon.icns",
     "identity": null,
     "notarize": false,

@@ -17,6 +17,7 @@ import {
 } from "@/components/commands/AppCommandProvider";
 import { CHROME_SUBTLE_ICON_BUTTON_FOREGROUND_CLASS } from "@/components/ui/chromeStyleTokens";
 import { runPluginOmniboxAction } from "@/hooks/queries/plugin-contribution-queries";
+import { useDefaultBrowserStatus } from "@/hooks/useDefaultBrowserStatus";
 import { getBbDesktopInfo, getDesktopBrowserApi } from "@/lib/bb-desktop";
 import { resolveBrowserPageSecurity } from "@/lib/browser-page-security";
 import { useBrowserSearchEngine } from "@/lib/browser-search-engine";
@@ -158,6 +159,7 @@ export function BrowserSurfaceChrome({
   // passed down: what Enter does is this component's to resolve, and it has to be
   // able to do it synchronously.
   const searchEngine = useBrowserSearchEngine();
+  const { status: defaultBrowserStatus } = useDefaultBrowserStatus();
   const downloads = useBrowserDownloads();
   const acknowledgeDownloads = useAcknowledgeBrowserDownloads();
   const { openDownload, revealDownload } = useBrowserDownloadActions();
@@ -515,14 +517,18 @@ export function BrowserSurfaceChrome({
             onToggle={toggleDownloads}
           />
         </div>
-        <ChromeButton
-          icon="ExternalLink"
-          label="Open in external browser"
-          disabled={url.length === 0}
-          onClick={() => {
-            getBbDesktopInfo()?.openExternalUrl(url);
-          }}
-        />
+        {/* Nothing to hand a link to when bb is the browser macOS hands links
+            to: Launch Services would route it straight back here as a tab. */}
+        {defaultBrowserStatus.isDefault ? null : (
+          <ChromeButton
+            icon="ExternalLink"
+            label="Open in external browser"
+            disabled={url.length === 0}
+            onClick={() => {
+              getBbDesktopInfo()?.openExternalUrl(url);
+            }}
+          />
+        )}
       </div>
       {isDownloadsOpen ? (
         <BrowserDownloadsPanel

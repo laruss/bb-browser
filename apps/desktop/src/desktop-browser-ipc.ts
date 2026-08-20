@@ -203,6 +203,18 @@ export const BB_DESKTOP_BROWSER_CAPTURE_FULL_PAGE_CHANNEL =
 // bounded by the recording's own caps rather than by a single result's.
 export const BB_DESKTOP_BROWSER_RECORD_CHANNEL = "bb-desktop:browser:record";
 
+// --- Links the OS hands us, because bb is the user's browser ---
+//
+// A pull rather than a push, which is the whole shape: `open-url` fires before
+// `whenReady` when the click is what launched bb, so there is no renderer to
+// push to. Main queues, the surface drains the queue when it mounts, and the
+// pending channel is a nudge for the case where a window was already open.
+// Draining once is what keeps a cold start from opening the same link twice.
+export const BB_DESKTOP_BROWSER_TAKE_EXTERNAL_URLS_CHANNEL =
+  "bb-desktop:browser:take-external-urls";
+export const BB_DESKTOP_BROWSER_EXTERNAL_URLS_PENDING_CHANNEL =
+  "bb-desktop:browser:external-urls-pending";
+
 // --- Channels a browsed page's own preload uses ---
 //
 // These two are the only ones reachable from the preload the shell installs in

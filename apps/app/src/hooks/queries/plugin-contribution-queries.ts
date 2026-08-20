@@ -1125,6 +1125,44 @@ export async function resolvePluginBrowserAuth(
   };
 }
 
+export interface PluginExternalLinkDecision {
+  handled: boolean;
+  url: string | null;
+}
+
+/**
+ * Ask plugins where a link the system handed bb should go
+ * (`browser.externalLink.handlers`), before it becomes a tab.
+ *
+ * Null means nobody decided — which is also what a server that is not listening
+ * means, and what a slow handler becomes. Every one of those opens the link in a
+ * tab, which is what bb does with no plugins at all.
+ */
+export async function resolvePluginExternalLink(
+  url: string,
+): Promise<PluginExternalLinkDecision | null> {
+  const response = await fetch("/api/v1/plugins/browser/external-link", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ url }),
+  }).catch(() => null);
+  if (response === null || !response.ok) return null;
+  const body = (await response.json().catch(() => null)) as {
+    decision?: unknown;
+    ok?: unknown;
+  } | null;
+  if (body?.ok !== true) return null;
+  const decision = body.decision as
+    | { handled?: unknown; url?: unknown }
+    | null
+    | undefined;
+  if (decision === null || decision === undefined) return null;
+  return {
+    handled: decision.handled === true,
+    url: typeof decision.url === "string" ? decision.url : null,
+  };
+}
+
 export interface ResolvePluginBrowserPdfTextArgs {
   pageUrl: string;
   tabId: string;

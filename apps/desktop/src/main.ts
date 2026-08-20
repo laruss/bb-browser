@@ -26,6 +26,7 @@ import type { ConnectCredential } from "@bb/connect-client";
 import type { AppKeybindings } from "@bb/domain";
 import {
   bbDesktopThemeSchema,
+  type BbDesktopDefaultBrowserStatus,
   type BbDesktopInfo,
   type BbDesktopWindowState,
 } from "@bb/desktop-contract";
@@ -147,6 +148,19 @@ import {
 import { createBrowserPdfTextExtractor } from "./desktop-browser-pdf-process.js";
 import { resolveDesktopBrowserAppCommand } from "./desktop-browser-shortcuts.js";
 import { registerDesktopBrowserIpc } from "./desktop-browser-main-ipc.js";
+import {
+  BB_DESKTOP_BROWSER_EXTERNAL_URLS_PENDING_CHANNEL,
+  BB_DESKTOP_BROWSER_TAKE_EXTERNAL_URLS_CHANNEL,
+} from "./desktop-browser-ipc.js";
+import { createExternalUrlQueue } from "./desktop-external-url.js";
+import {
+  BB_DESKTOP_DEFAULT_BROWSER_CHANGED_CHANNEL,
+  BB_DESKTOP_GET_DEFAULT_BROWSER_CHANNEL,
+  BB_DESKTOP_REQUEST_DEFAULT_BROWSER_CHANNEL,
+  readDefaultBrowserStatus,
+  requestDefaultBrowser,
+  type DefaultBrowserEnvironment,
+} from "./desktop-default-browser.js";
 import { ensurePackagedMacOsUserShellPath } from "./desktop-shell-path.js";
 import { clearPackagedSessionHttpCache } from "./desktop-session-cache.js";
 import { resolveDesktopReloadShortcut } from "./desktop-reload-shortcut.js";
@@ -530,6 +544,28 @@ function shouldEnableServerDaemonLogsMenu(): boolean {
 // Close requests routed through the renderer, keyed by webContents id. If the
 // renderer never answers (crashed, hung, or still loading), the timer closes
 // the window from the main process like the native close role used to.
+const defaultBrowserEnvironment: DefaultBrowserEnvironment = {
+  get isPackaged() {
+    return app.isPackaged;
+  },
+  isDefaultProtocolClient(protocol) {
+    return app.isDefaultProtocolClient(protocol);
+  },
+  setAsDefaultProtocolClient(protocol) {
+    return app.setAsDefaultProtocolClient(protocol);
+  },
+};
+
+/** Last status pushed to renderers, so an unchanged one is not pushed twice. */
+let lastDefaultBrowserStatus: BbDesktopDefaultBrowserStatus | null = null;
+
+/**
+ * Links macOS handed us because bb is the user's default browser, waiting for a
+ * surface to take them. Module state rather than a field on a window: the click
+ * that launched bb arrives before any window exists.
+ */
+const externalUrlQueue = createExternalUrlQueue();
+
 const pendingCloseWindowRequests = new Map<number, NodeJS.Timeout>();
 
 function requestRendererWindowClose(browserWindow: BrowserWindow): void {
@@ -552,6 +588,73 @@ function requestRendererWindowClose(browserWindow: BrowserWindow): void {
     BB_DESKTOP_CLOSE_WINDOW_REQUEST_CHANNEL,
     null,
   );
+}
+
+/**
+ * A link the OS asked bb to open. Queued first and delivered second, because on
+ * a cold start there is nothing to deliver to yet — `getFocusedApplicationWindow`
+ * is null until the runtime has built a window, and the surface drains the queue
+ * itself when it mounts.
+ */
+function handleExternalUrlOpen(rawUrl: string): void {
+  if (!externalUrlQueue.push(rawUrl)) {
+    return;
+  }
+  const browserWindow = getFocusedApplicationWindow();
+  if (browserWindow === null) {
+    return;
+  }
+  if (browserWindow.isMinimized()) {
+    browserWindow.restore();
+  }
+  browserWindow.show();
+  sendToApplicationRenderer(
+    browserWindow,
+    BB_DESKTOP_BROWSER_EXTERNAL_URLS_PENDING_CHANNEL,
+    null,
+  );
+}
+
+/**
+ * Re-read whether macOS still routes links here and tell the renderers when it
+ * changed. Called on activation because that is the only moment this app can
+ * observe the two places the answer changes — the system's own confirmation
+ * dialog, which returns before the user answers it, and System Settings.
+ */
+function refreshDefaultBrowserStatus(): void {
+  const status = readDefaultBrowserStatus(defaultBrowserEnvironment);
+  if (
+    lastDefaultBrowserStatus !== null &&
+    lastDefaultBrowserStatus.isDefault === status.isDefault &&
+    lastDefaultBrowserStatus.canRequest === status.canRequest
+  ) {
+    return;
+  }
+  lastDefaultBrowserStatus = status;
+  for (const browserWindow of BrowserWindow.getAllWindows()) {
+    if (isRegisteredApplicationWindow(browserWindow)) {
+      sendToApplicationRenderer(
+        browserWindow,
+        BB_DESKTOP_DEFAULT_BROWSER_CHANGED_CHANNEL,
+        status,
+      );
+    }
+  }
+}
+
+function registerDefaultBrowserIpc(): void {
+  ipcMain.handle(BB_DESKTOP_GET_DEFAULT_BROWSER_CHANNEL, () =>
+    readDefaultBrowserStatus(defaultBrowserEnvironment),
+  );
+  ipcMain.handle(BB_DESKTOP_REQUEST_DEFAULT_BROWSER_CHANNEL, () =>
+    requestDefaultBrowser(defaultBrowserEnvironment),
+  );
+}
+
+function registerExternalUrlIpc(): void {
+  ipcMain.handle(BB_DESKTOP_BROWSER_TAKE_EXTERNAL_URLS_CHANNEL, () => ({
+    urls: externalUrlQueue.takeAll(),
+  }));
 }
 
 function closeFocusedDetachedDevTools(): void {
@@ -1960,6 +2063,14 @@ async function runDesktopApp(): Promise<void> {
       stateKey: null,
     });
   });
+  // macOS delivers every link bb is asked to open here — and on a cold start it
+  // fires before `whenReady`, which is why this listener is registered with the
+  // other app events rather than after the runtime is up. `preventDefault` marks
+  // the URL as ours; without it macOS treats the launch as unhandled.
+  app.on("open-url", (event, url) => {
+    event.preventDefault();
+    handleExternalUrlOpen(url);
+  });
   app.on("before-quit", handleBeforeQuit);
   app.on("window-all-closed", () => {
     if (process.platform !== "darwin") {
@@ -1975,6 +2086,9 @@ async function runDesktopApp(): Promise<void> {
     }
   });
   app.on("did-become-active", () => {
+    // The user may have answered the system's "change your default browser?"
+    // dialog, or changed it in System Settings, while bb was in the background.
+    refreshDefaultBrowserStatus();
     void desktopUpdateService?.checkAfterActive();
     void desktopAutoUpdateService?.checkAfterActive();
     // A remote target has no realtime socket for config changes.
@@ -2191,6 +2305,12 @@ async function runDesktopApp(): Promise<void> {
     openExternalUrl(url) {
       void shell.openExternal(url);
     },
+    canOpenExternalUrl() {
+      // When bb is the default browser, `shell.openExternal` hands the link to
+      // Launch Services, which hands it straight back here as a new tab. That is
+      // one round trip rather than a loop, but it makes the entry a lie.
+      return !readDefaultBrowserStatus(defaultBrowserEnvironment).isDefault;
+    },
     async openDownloadPath(savePath) {
       return await shell.openPath(savePath);
     },
@@ -2212,6 +2332,8 @@ async function runDesktopApp(): Promise<void> {
     },
   });
   registerDesktopBrowserIpc(desktopBrowserViewManager);
+  registerExternalUrlIpc();
+  registerDefaultBrowserIpc();
   desktopUpdateService.start();
   desktopAutoUpdateService.start();
 

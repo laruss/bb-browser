@@ -68,6 +68,7 @@ export const ANSWERED_IN_THE_PLUGIN_PROCESS = new Set<PluginHostCallPath>([
   "browser.registerFindAction",
   "browser.registerAuthProvider",
   "browser.registerPdfTextProvider",
+  "browser.registerExternalLinkHandler",
   "events.on",
   "onDispose",
 ]);

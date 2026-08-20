@@ -211,6 +211,12 @@ export const PLUGIN_CALLBACKS = {
     resultCrosses: true,
     label: (target) => "browser pdf text provider",
   },
+  browserExternalLink: {
+    category: "call",
+    payloadCrosses: true,
+    resultCrosses: true,
+    label: (target) => "browser external link handler",
+  },
   browserOmniboxSuggest: {
     category: "call",
     payloadCrosses: true,

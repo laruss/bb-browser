@@ -39,6 +39,7 @@ import type {
   PluginBrowserContextMenuItemRegistration,
   PluginBrowserAuthProvider,
   PluginBrowserHistoryFilter,
+  PluginBrowserExternalLinkHandler,
   PluginBrowserPdfTextProvider,
   PluginBrowserFindActionRegistration,
   PluginBrowserPageScriptRegistration,
@@ -490,6 +491,11 @@ export interface FakePluginRegistrations {
   authProviders: PluginBrowserAuthProvider[];
   /** Providers from `bb.browser.registerPdfTextProvider`, in order. */
   pdfTextProviders: PluginBrowserPdfTextProvider[];
+  /**
+   * Handlers from `bb.browser.registerExternalLinkHandler`, in registration
+   * order.
+   */
+  externalLinkHandlers: PluginBrowserExternalLinkHandler[];
   /** Filters from `bb.browser.registerHistoryFilter`, in registration order. */
   historyFilters: PluginBrowserHistoryFilter[];
 }
@@ -2106,6 +2112,7 @@ function createFakePluginHostInternal(
   const declaredSites = [...(options.sites ?? [])];
   const authProviders: PluginBrowserAuthProvider[] = [];
   const pdfTextProviders: PluginBrowserPdfTextProvider[] = [];
+  const externalLinkHandlers: PluginBrowserExternalLinkHandler[] = [];
   const historyFilters: PluginBrowserHistoryFilter[] = [];
   const browser: PluginBrowser = {
     registerOmniboxProvider(provider) {
@@ -2374,6 +2381,19 @@ function createFakePluginHostInternal(
         );
       }
       pdfTextProviders.push(provider);
+    },
+    registerExternalLinkHandler(handler) {
+      assertLive();
+      permissionGate.assert(
+        "externalLink.handle",
+        "bb.browser.registerExternalLinkHandler",
+      );
+      if (typeof handler !== "function") {
+        throw new Error(
+          "registerExternalLinkHandler(handler) needs a function taking one link",
+        );
+      }
+      externalLinkHandlers.push(handler);
     },
     registerHistoryFilter(filter) {
       assertLive();
@@ -3277,6 +3297,7 @@ function createFakePluginHostInternal(
       pageScripts,
       authProviders,
       pdfTextProviders,
+      externalLinkHandlers,
       historyFilters,
     },
     get pendingInteractions() {

@@ -78,6 +78,21 @@ describe("buildBrowserContextMenuTemplate", () => {
     ]);
   });
 
+  it("drops the external entry when bb is itself the default browser", () => {
+    const template = buildBrowserContextMenuTemplate({
+      actions: actions(),
+      canOpenExternally: false,
+      target: target({ linkURL: "https://example.test/page" }),
+    });
+
+    // Not disabled but gone: handing the link to Launch Services would hand it
+    // straight back as a tab, which the entry above already does honestly.
+    expect(labels(template)).toEqual([
+      "Open Link in New Tab",
+      "Copy Link Address",
+    ]);
+  });
+
   // A page chooses these URLs, so the entries that act on one refuse anything
   // that is not a page: `javascript:` would otherwise become a click that runs
   // it, and `file:` a reader for the local disk.

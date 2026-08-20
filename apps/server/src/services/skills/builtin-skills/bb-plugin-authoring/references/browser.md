@@ -11,6 +11,7 @@ so call them from handlers, tools, and services, never at load time.
 - [HTTP auth provider](#bbbrowser--answering-a-sites-login-prompt)
 - [PDF text provider](#bbbrowser--reading-a-pdf-the-browser-cannot)
 - [Download handler](#bbbrowser--taking-over-downloads)
+- [External link routing](#bbbrowser--routing-a-link-the-system-opened)
 - [History filter](#bbbrowser--deciding-what-the-browser-remembers)
 - [Driving tabs and pages](#bbbrowser--driving-the-browser-surface)
 
@@ -534,6 +535,44 @@ a plugin lives in another process. So a plugin cannot stop a download — it
 moves or deletes the finished file instead. Handlers are additive, time-boxed
 (30s) and failure-isolated: throwing changes nothing for the other handlers or
 for the browser.
+
+## bb.browser — routing a link the system opened
+
+While BB is the user's default browser, macOS hands it every web link clicked in
+another app — Mail, Slack, a terminal. Each one is offered to the registered
+handlers before it becomes a tab, which is where a plugin decides _where_ it
+goes.
+
+```ts
+bb.browser.registerExternalLinkHandler((link) => {
+  // link: { url }, always http(s).
+  const { host } = new URL(link.url);
+  // Send the tracker's links to the issue they belong to...
+  if (host === "tracker.example.com") {
+    return { url: `https://work.example.com/issues?from=${host}` };
+  }
+  // ...file a paper away without opening anything.
+  if (host === "arxiv.org") {
+    void bb.kv.set(`reading:${link.url}`, { addedAt: Date.now() });
+    return { handled: true };
+  }
+  return null; // declines, and the next handler is asked
+});
+```
+
+Handlers are asked in plugin id order and the **first decision wins**: two
+handlers rewriting one click would fight over it. Declining, throwing, answering
+with the wrong shape and running past the **2s** box all mean the same thing —
+ask the next one, and open the link in a tab exactly as BB would with no plugins
+at all. The box is the tightest of the browser hooks after the history filter,
+because the user is waiting for the link they just clicked.
+
+A rewritten address must be `http(s)`: it opens in a browsed view, where `file:`
+would be a reader for the local disk. `handled: true` opens nothing, and holds
+even if the address alongside it was refused.
+
+Costs `externalLink.handle`, which is a standing read of every address the user
+opens from outside BB — declare it knowing that is what the manifest says.
 
 ## bb.browser — deciding what the browser remembers
 

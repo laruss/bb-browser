@@ -15,6 +15,8 @@ import {
   bbDesktopBrowserOpenTabRequestSchema,
   bbDesktopBrowserPageReadResultSchema,
   bbDesktopBrowserScopedOpenTabRequestSchema,
+  bbDesktopBrowserExternalUrlsSchema,
+  bbDesktopDefaultBrowserStatusSchema,
   bbDesktopBrowserDialogSchema,
   bbDesktopBrowserPagePromptSchema,
   bbDesktopBrowserPopupSchema,
@@ -42,6 +44,9 @@ import {
   bbDesktopBrowserPageScriptCallSchema,
   type BbDesktopBrowserSearchSelectionHandler,
   type BbDesktopBrowserFaviconHandler,
+  type BbDesktopBrowserExternalUrlsPendingHandler,
+  type BbDesktopDefaultBrowserStatus,
+  type BbDesktopDefaultBrowserStatusChangeHandler,
   type BbDesktopBrowserFindRequest,
   type BbDesktopBrowserFindResultHandler,
   type BbDesktopBrowserCaptureFullPageResult,
@@ -91,6 +96,11 @@ import {
   BB_DESKTOP_SET_THEME_CHANNEL,
 } from "./desktop-update-ipc.js";
 import {
+  BB_DESKTOP_DEFAULT_BROWSER_CHANGED_CHANNEL,
+  BB_DESKTOP_GET_DEFAULT_BROWSER_CHANNEL,
+  BB_DESKTOP_REQUEST_DEFAULT_BROWSER_CHANNEL,
+} from "./desktop-default-browser.js";
+import {
   BB_DESKTOP_BROWSER_ATTACH_CHANNEL,
   BB_DESKTOP_BROWSER_CAPTURE_FULL_PAGE_CHANNEL,
   BB_DESKTOP_BROWSER_DETACH_CHANNEL,
@@ -119,6 +129,8 @@ import {
   BB_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
   BB_DESKTOP_BROWSER_RELOAD_CHANNEL,
   BB_DESKTOP_BROWSER_SCOPED_OPEN_TAB_CHANNEL,
+  BB_DESKTOP_BROWSER_TAKE_EXTERNAL_URLS_CHANNEL,
+  BB_DESKTOP_BROWSER_EXTERNAL_URLS_PENDING_CHANNEL,
   BB_DESKTOP_BROWSER_STORAGE_CHANNEL,
   BB_DESKTOP_BROWSER_DIALOG_CHANNEL,
   BB_DESKTOP_BROWSER_DIALOG_RESPOND_CHANNEL,
@@ -254,6 +266,10 @@ const browserStateListeners = new Set<BbDesktopBrowserStateHandler>();
 const browserOpenTabListeners = new Set<BbDesktopBrowserOpenTabHandler>();
 const browserScopedOpenTabListeners =
   new Set<BbDesktopBrowserScopedOpenTabHandler>();
+const browserExternalUrlsPendingListeners =
+  new Set<BbDesktopBrowserExternalUrlsPendingHandler>();
+const defaultBrowserStatusListeners =
+  new Set<BbDesktopDefaultBrowserStatusChangeHandler>();
 const browserSnapshotListeners = new Set<BbDesktopBrowserSnapshotHandler>();
 const browserFaviconListeners = new Set<BbDesktopBrowserFaviconHandler>();
 const browserZoomListeners = new Set<BbDesktopBrowserZoomHandler>();
@@ -371,6 +387,25 @@ const bbBrowserApi: BbDesktopBrowserApi = {
     browserScopedOpenTabListeners.add(listener);
     return () => {
       browserScopedOpenTabListeners.delete(listener);
+    };
+  },
+  async takeExternalUrls(): Promise<string[]> {
+    // Parse here and swallow rejections, the way `readPage` does: the SPA gets a
+    // list it can loop over, never a transport error.
+    try {
+      const payload: unknown = await ipcRenderer.invoke(
+        BB_DESKTOP_BROWSER_TAKE_EXTERNAL_URLS_CHANNEL,
+      );
+      const parsed = bbDesktopBrowserExternalUrlsSchema.safeParse(payload);
+      return parsed.success ? parsed.data.urls : [];
+    } catch {
+      return [];
+    }
+  },
+  onExternalUrlsPending(listener): BbDesktopBrowserUnsubscribe {
+    browserExternalUrlsPendingListeners.add(listener);
+    return () => {
+      browserExternalUrlsPendingListeners.delete(listener);
     };
   },
   onSnapshot(listener): BbDesktopBrowserUnsubscribe {
@@ -666,6 +701,24 @@ const windowKey = process.argv
   )
   ?.slice(BB_DESKTOP_WINDOW_KEY_ARGUMENT_PREFIX.length);
 
+/**
+ * Parse here and swallow rejections, the way `invokeDesktopInfo` does: a shell
+ * that predates these channels answers with a rejection, and "bb is not the
+ * default and cannot ask" is exactly what such a shell means.
+ */
+async function invokeDefaultBrowserStatus(
+  channel: string,
+): Promise<BbDesktopDefaultBrowserStatus> {
+  const unavailable = { canRequest: false, isDefault: false } as const;
+  try {
+    const payload: unknown = await ipcRenderer.invoke(channel);
+    const parsed = bbDesktopDefaultBrowserStatusSchema.safeParse(payload);
+    return parsed.success ? parsed.data : unavailable;
+  } catch {
+    return unavailable;
+  }
+}
+
 const bbDesktopApi: BbDesktopApi = {
   browser: bbBrowserApi,
   ...(windowKey === undefined || windowKey.length === 0 ? {} : { windowKey }),
@@ -697,6 +750,24 @@ const bbDesktopApi: BbDesktopApi = {
   },
   getWindowState() {
     return invokeDesktopWindowState();
+  },
+  async getDefaultBrowserStatus(): Promise<BbDesktopDefaultBrowserStatus> {
+    return await invokeDefaultBrowserStatus(
+      BB_DESKTOP_GET_DEFAULT_BROWSER_CHANNEL,
+    );
+  },
+  async requestDefaultBrowser(): Promise<BbDesktopDefaultBrowserStatus> {
+    return await invokeDefaultBrowserStatus(
+      BB_DESKTOP_REQUEST_DEFAULT_BROWSER_CHANNEL,
+    );
+  },
+  onDefaultBrowserStatusChange(
+    listener: BbDesktopDefaultBrowserStatusChangeHandler,
+  ): BbDesktopInfoUnsubscribe {
+    defaultBrowserStatusListeners.add(listener);
+    return () => {
+      defaultBrowserStatusListeners.delete(listener);
+    };
   },
   installUpdate() {
     return invokeInstallUpdate();
@@ -744,6 +815,19 @@ const bbDesktopApi: BbDesktopApi = {
 ipcRenderer.on(BB_DESKTOP_INFO_CHANGED_CHANNEL, (_event, payload: unknown) => {
   applyDesktopInfoPayload(payload);
 });
+
+ipcRenderer.on(
+  BB_DESKTOP_DEFAULT_BROWSER_CHANGED_CHANNEL,
+  (_event, payload: unknown) => {
+    const parsed = bbDesktopDefaultBrowserStatusSchema.safeParse(payload);
+    if (!parsed.success) {
+      return;
+    }
+    for (const listener of defaultBrowserStatusListeners) {
+      listener(parsed.data);
+    }
+  },
+);
 
 ipcRenderer.on(
   BB_DESKTOP_WINDOW_STATE_CHANGED_CHANNEL,
@@ -812,6 +896,14 @@ ipcRenderer.on(
     }
   },
 );
+
+ipcRenderer.on(BB_DESKTOP_BROWSER_EXTERNAL_URLS_PENDING_CHANNEL, () => {
+  // No payload to parse: the queue in main is the single source, and every
+  // listener answers by draining it.
+  for (const listener of browserExternalUrlsPendingListeners) {
+    listener();
+  }
+});
 
 ipcRenderer.on(
   BB_DESKTOP_BROWSER_SNAPSHOT_CHANNEL,

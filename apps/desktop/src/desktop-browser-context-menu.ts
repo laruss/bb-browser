@@ -76,6 +76,14 @@ export interface BrowserContextMenuActions {
 
 export interface BuildBrowserContextMenuArgs {
   actions: BrowserContextMenuActions;
+  /**
+   * False when bb is itself the browser macOS opens links with. The entry would
+   * then hand the link to Launch Services, which would hand it straight back as
+   * a new tab — which is what "Open Link in New Tab" above already does, without
+   * claiming to have left the app. Defaults to true, which is what every build
+   * before bb could be a default browser did.
+   */
+  canOpenExternally?: boolean;
   /** Contributed by plugins; already capped by the wire schema. */
   pluginItems?: readonly BbDesktopBrowserContextMenuItem[];
   target: BrowserContextMenuTarget;
@@ -118,6 +126,7 @@ export function matchesContextMenuTarget(
  */
 export function buildBrowserContextMenuTemplate({
   actions,
+  canOpenExternally = true,
   pluginItems = [],
   target,
 }: BuildBrowserContextMenuArgs): MenuItemConstructorOptions[] {
@@ -134,13 +143,17 @@ export function buildBrowserContextMenuTemplate({
           actions.openInNewTab(target.linkURL);
         },
       },
-      {
-        label: "Open Link in Default Browser",
-        enabled: canOpen,
-        click: () => {
-          actions.openExternally(target.linkURL);
-        },
-      },
+      ...(canOpenExternally
+        ? [
+            {
+              label: "Open Link in Default Browser",
+              enabled: canOpen,
+              click: () => {
+                actions.openExternally(target.linkURL);
+              },
+            },
+          ]
+        : []),
       {
         label: "Copy Link Address",
         click: () => {

@@ -31,6 +31,25 @@ export const bbDesktopInfoSchema = z.object({
 });
 export type BbDesktopInfo = z.infer<typeof bbDesktopInfoSchema>;
 
+/**
+ * Whether macOS routes web links to bb, and whether this build may ask to
+ * change that.
+ *
+ * `canRequest` is false for a development run: `Info.plist` cannot be written at
+ * runtime, so an unpackaged shell has no `http`/`https` declaration of its own —
+ * and the bundle it would register is the stock Electron one sitting in
+ * `node_modules`, which would take over the developer's own links.
+ */
+export const bbDesktopDefaultBrowserStatusSchema = z
+  .object({
+    canRequest: z.boolean(),
+    isDefault: z.boolean(),
+  })
+  .strict();
+export type BbDesktopDefaultBrowserStatus = z.infer<
+  typeof bbDesktopDefaultBrowserStatusSchema
+>;
+
 export const bbDesktopWindowStateSchema = z
   .object({
     isFullScreen: z.boolean(),
@@ -45,6 +64,9 @@ export type BbDesktopInfoChangeHandler = (info: BbDesktopInfo) => void;
 export type BbDesktopInfoUnsubscribe = () => void;
 export type BbDesktopWindowStateChangeHandler = (
   state: BbDesktopWindowState,
+) => void;
+export type BbDesktopDefaultBrowserStatusChangeHandler = (
+  status: BbDesktopDefaultBrowserStatus,
 ) => void;
 export type BbDesktopOpenNewTabHandler = () => void;
 export type BbDesktopAppCommandHandler = (command: AppCommandId) => void;
@@ -87,6 +109,29 @@ export interface BbDesktopApi extends BbDesktopInfo {
    * feature-detect and fall back to the normal window layout.
    */
   getWindowState?(): Promise<BbDesktopWindowState>;
+  /**
+   * Whether macOS currently hands web links to bb. Optional for version skew
+   * with shells that predate the declaration that makes it possible.
+   */
+  getDefaultBrowserStatus?(): Promise<BbDesktopDefaultBrowserStatus>;
+  /**
+   * Ask macOS to make bb the default browser.
+   *
+   * The answer is the status *before* the user has answered: macOS shows the
+   * confirmation itself and Launch Services returns without waiting for it, so
+   * `isDefault` flips later — on
+   * {@link BbDesktopApi.onDefaultBrowserStatusChange}, which the shell pushes
+   * when the app is activated again.
+   */
+  requestDefaultBrowser?(): Promise<BbDesktopDefaultBrowserStatus>;
+  /**
+   * Subscribe to default-browser changes. They happen outside this app — the
+   * system dialog above, or System Settings — so the status is re-read whenever
+   * bb is activated and pushed when it differs.
+   */
+  onDefaultBrowserStatusChange?(
+    listener: BbDesktopDefaultBrowserStatusChangeHandler,
+  ): BbDesktopInfoUnsubscribe;
   installUpdate(): Promise<void>;
   onChange(listener: BbDesktopInfoChangeHandler): BbDesktopInfoUnsubscribe;
   /**

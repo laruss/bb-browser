@@ -338,6 +338,10 @@ export function createRemotePluginApiHandle(args: {
       snapshot.pdfTextProviderCount,
       (index, document) => call("browserPdfText", String(index), document),
     ) as PluginApiHandle["pdfTextProviders"],
+    externalLinkHandlers: byIndex(
+      snapshot.externalLinkHandlerCount,
+      (index, link) => call("browserExternalLink", String(index), link),
+    ) as PluginApiHandle["externalLinkHandlers"],
     historyFilters: byIndex(snapshot.historyFilterCount, (index, visit) =>
       call("browserHistoryFilter", String(index), visit).then(
         readBrowserHistoryDecision,

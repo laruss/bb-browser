@@ -19,6 +19,8 @@ import {
   PLUGIN_CLI_OUTPUT_MAX_BYTES,
   type PluginBrowserAuthChallenge,
   type PluginBrowserPdfDocument,
+  type PluginBrowserExternalLink,
+  type PluginBrowserExternalLinkDecision,
   type PluginBrowserAuthCredentials,
   type PluginBrowserContextMenuContext,
   type PluginBrowserSiteInfoContext,
@@ -83,6 +85,7 @@ import {
   applyBrowserHistoryRewrite,
   normalizeBrowserHistoryDecision,
 } from "./plugin-history-filter.js";
+import { readBrowserExternalLinkDecision } from "./plugin-external-link.js";
 import { isResponseLike } from "./plugin-http-message.js";
 import { rpcBoundaryError, runRpcCall } from "./plugin-rpc-call.js";
 import { readPluginLogTail } from "./plugin-log.js";
@@ -595,6 +598,19 @@ export interface PluginService {
     document: PluginBrowserPdfDocument;
   }): Promise<string | null>;
   /**
+   * Ask every registered external-link handler
+   * (`browser.externalLink.handlers`) where a link the system handed bb should
+   * go, in plugin id order, stopping at the first that decides.
+   *
+   * Sequential and first-wins like auth, and for the harder reason: two handlers
+   * that both rewrote the address would fight over one click. Each is time-boxed
+   * and failure-isolated; null means nobody decided, and the link opens in a tab
+   * the way it would with no plugins at all.
+   */
+  resolveBrowserExternalLink(args: {
+    link: PluginBrowserExternalLink;
+  }): Promise<PluginBrowserExternalLinkDecision | null>;
+  /**
    * Run every loaded plugin's omnibox providers against one query
    * (`browser.omnibox.providers`). Providers run concurrently, each wrapped in
    * the failure-isolation discipline (invokeWrapped) and time-boxed (2s); a
@@ -735,6 +751,13 @@ const DEFAULT_BROWSER_AUTH_TIMEOUT_MS = 5_000;
  * agent is told the document has no text layer, which is what it had before.
  */
 const DEFAULT_BROWSER_PDF_TEXT_TIMEOUT_MS = 10_000;
+/**
+ * An external-link handler is asked while the user waits for the link they just
+ * clicked in another app to open, so it gets the tightest box of the browser
+ * hooks after the history filter. Running out of time is not an error: the link
+ * opens in a tab, which is what it would have done with no plugin at all.
+ */
+const DEFAULT_BROWSER_EXTERNAL_LINK_TIMEOUT_MS = 2_000;
 /**
  * The same cap the browser's own page read carries, restated rather than
  * imported: the server does not depend on the desktop boundary, and a plugin's
@@ -1422,6 +1445,7 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
     deps.contextMenuRunTimeoutMs ?? DEFAULT_CONTEXT_MENU_RUN_TIMEOUT_MS;
   const browserAuthTimeoutMs = DEFAULT_BROWSER_AUTH_TIMEOUT_MS;
   const browserPdfTextTimeoutMs = DEFAULT_BROWSER_PDF_TEXT_TIMEOUT_MS;
+  const browserExternalLinkTimeoutMs = DEFAULT_BROWSER_EXTERNAL_LINK_TIMEOUT_MS;
   const stabilizationWindowMs =
     deps.stabilizationWindowMs ?? DEFAULT_STABILIZATION_WINDOW_MS;
   const artifactRetentionMs =
@@ -3136,6 +3160,35 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
             username: credentials.username,
             password: credentials.password,
           };
+        }
+      }
+      return null;
+    },
+
+    async resolveBrowserExternalLink({ link }) {
+      for (const [pluginId, plugin] of [...loaded.entries()].sort(([a], [b]) =>
+        a.localeCompare(b),
+      )) {
+        for (const handler of plugin.handle.externalLinkHandlers) {
+          const outcome = await invokeCallback(
+            pluginId,
+            { kind: "browserExternalLink", payload: link },
+            async (payload) =>
+              withPluginTimeout({
+                run: async () => handler(payload),
+                timeoutMs: browserExternalLinkTimeoutMs,
+              }),
+          );
+          if (!outcome.ok) {
+            continue;
+          }
+          // Checked here rather than at the route, because this is where the
+          // untrusted value arrives — and what it asks for is a navigation.
+          const decision = readBrowserExternalLinkDecision(outcome.value);
+          if (decision === null) {
+            continue;
+          }
+          return decision;
         }
       }
       return null;

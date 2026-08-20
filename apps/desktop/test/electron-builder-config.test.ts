@@ -20,6 +20,22 @@ import {
 
 const desktopPackageRoot = process.cwd();
 
+/**
+ * The `Info.plist` additions that make macOS treat the bundle as a browser.
+ * Parsed on its own because `macConfigSchema` passes unknown keys through
+ * untyped, and these are the keys the OS reads rather than electron-builder.
+ */
+const macExtendInfoSchema = z
+  .object({
+    CFBundleURLTypes: z.array(
+      z
+        .object({ CFBundleURLSchemes: z.array(z.string().min(1)) })
+        .passthrough(),
+    ),
+    NSUserActivityTypes: z.array(z.string().min(1)),
+  })
+  .passthrough();
+
 const macConfigSchema = z
   .object({
     entitlements: z.string().min(1),
@@ -427,6 +443,35 @@ describe("electron-builder signing config", () => {
       );
 
       expect(entitlements).toMatch(audioInputEntitlementPattern);
+    }
+  });
+
+  it("declares the URL schemes macOS builds its default-browser list from", async () => {
+    // macOS decides what a browser is in Launch Services, not from what the app
+    // can render: a bundle reaches the "Default web browser" list only by
+    // declaring both `http` and `https`. `Info.plist` cannot be written at
+    // runtime, so this declaration is also what makes
+    // `app.setAsDefaultProtocolClient` legal for those two schemes — without it
+    // the call fails whatever the user picked in Settings.
+    //
+    // Deliberately no `CFBundleDocumentTypes`: declaring `public.html` would
+    // make bb the opener for local HTML files, and the browsed view refuses
+    // `file:` (`isAllowedBrowserUrl`), so a double-clicked document would open
+    // a window that shows nothing.
+    for (const channel of ["latest", "nightly"]) {
+      const { config } = await readResolvedConfig({
+        BB_DESKTOP_RELEASE_CHANNEL: channel,
+      });
+      const extendInfo = macExtendInfoSchema.parse(config.mac.extendInfo);
+
+      expect(
+        extendInfo.CFBundleURLTypes.flatMap(
+          (urlType) => urlType.CFBundleURLSchemes,
+        ),
+      ).toEqual(expect.arrayContaining(["http", "https"]));
+      expect(extendInfo.NSUserActivityTypes).toContain(
+        "NSUserActivityTypeBrowsingWeb",
+      );
     }
   });
 

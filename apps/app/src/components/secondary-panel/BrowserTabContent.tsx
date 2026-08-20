@@ -34,6 +34,7 @@ import { useBrowserSearchEngine } from "@/lib/browser-search-engine";
 import { useBrowserHistory } from "@/lib/browser-history";
 import { BROWSER_VIEW_BOUNDS_SYNC_EVENT } from "@/lib/browser-view-bounds-sync";
 import { useIsBrowserDimmingModalOpen } from "@/hooks/useBrowserDimmingModal";
+import { useDefaultBrowserStatus } from "@/hooks/useDefaultBrowserStatus";
 import { usePointerCoarse } from "@bb/shared-ui/hooks/use-pointer-coarse";
 import { BrowserPageDialog } from "@/components/browser-surface/BrowserPageDialog";
 import { BrowserPagePrompt } from "@/components/browser-surface/BrowserPagePrompt";
@@ -122,6 +123,12 @@ interface BrowserChromeProps {
   onBack: () => void;
   onForward: () => void;
   onReloadOrStop: () => void;
+  /**
+   * False when bb is macOS's own default browser: the link would go to Launch
+   * Services and come straight back as a bb tab, so the control says nothing
+   * true and is not drawn.
+   */
+  canOpenExternal: boolean;
   onOpenExternal: () => void;
   locationShortcut: AppShortcutPresentation | null;
   reloadShortcut: AppShortcutPresentation | null;
@@ -156,6 +163,12 @@ interface BrowserViewAttachIdentity {
 
 interface BrowserPageLoadErrorProps {
   errorText: string;
+  /**
+   * False when bb is macOS's own default browser: the link would go to Launch
+   * Services and come straight back as a bb tab, so the control says nothing
+   * true and is not drawn.
+   */
+  canOpenExternal: boolean;
   onOpenExternal: () => void;
   onRetry: () => void;
   url: string;
@@ -280,6 +293,7 @@ function BrowserChrome({
   onBack,
   onForward,
   onReloadOrStop,
+  canOpenExternal,
   onOpenExternal,
   locationShortcut,
   reloadShortcut,
@@ -376,12 +390,14 @@ function BrowserChrome({
             />
           </div>
         </form>
-        <NavButton
-          icon="ExternalLink"
-          label="Open in external browser"
-          disabled={currentUrl.length === 0}
-          onClick={onOpenExternal}
-        />
+        {canOpenExternal ? (
+          <NavButton
+            icon="ExternalLink"
+            label="Open in external browser"
+            disabled={currentUrl.length === 0}
+            onClick={onOpenExternal}
+          />
+        ) : null}
         {isLoading ? (
           <span className="absolute inset-x-0 bottom-0 h-0.5 overflow-hidden">
             <span className="block h-full w-1/3 animate-pulse bg-ring/70 motion-reduce:animate-none" />
@@ -416,6 +432,7 @@ function BrowserUnavailable() {
 
 function BrowserPageLoadError({
   errorText,
+  canOpenExternal,
   onOpenExternal,
   onRetry,
   url,
@@ -452,14 +469,16 @@ function BrowserPageLoadError({
             <Icon name="RotateCcw" className="size-3.5" aria-hidden />
             Reload
           </button>
-          <button
-            type="button"
-            onClick={onOpenExternal}
-            className="inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-state-hover hover:text-foreground"
-          >
-            <Icon name="ExternalLink" className="size-3.5" aria-hidden />
-            Open externally
-          </button>
+          {canOpenExternal ? (
+            <button
+              type="button"
+              onClick={onOpenExternal}
+              className="inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-state-hover hover:text-foreground"
+            >
+              <Icon name="ExternalLink" className="size-3.5" aria-hidden />
+              Open externally
+            </button>
+          ) : null}
         </div>
         <p className="max-w-full truncate pt-1 font-mono text-[11px] text-subtle-foreground">
           {errorText}
@@ -926,6 +945,11 @@ export function BrowserTabContent({
     100,
   );
 
+  // Whether "open this elsewhere" can mean anything: when bb is the default
+  // browser, elsewhere is here.
+  const { status: defaultBrowserStatus } = useDefaultBrowserStatus();
+  const canOpenExternal = !defaultBrowserStatus.isDefault;
+
   const handleOpenExternal = useCallback(() => {
     getBbDesktopInfo()?.openExternalUrl(currentUrl);
   }, [currentUrl]);
@@ -954,6 +978,7 @@ export function BrowserTabContent({
             desktopBrowser.goForward(tabId);
           }}
           onReloadOrStop={handleReloadOrStop}
+          canOpenExternal={canOpenExternal}
           onOpenExternal={handleOpenExternal}
           locationShortcut={locationShortcut}
           reloadShortcut={reloadShortcut}
@@ -963,6 +988,7 @@ export function BrowserTabContent({
         {hasPageLoadError ? (
           <BrowserPageLoadError
             errorText={pageLoadErrorText}
+            canOpenExternal={canOpenExternal}
             onOpenExternal={handleOpenExternal}
             onRetry={handleReloadOrStop}
             url={currentUrl}

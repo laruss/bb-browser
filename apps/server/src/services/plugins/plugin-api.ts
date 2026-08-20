@@ -98,6 +98,7 @@ import type {
   PluginMentionSearchContext,
   PluginMentionTrigger,
   PluginBrowserAuthProvider,
+  PluginBrowserExternalLinkHandler,
   PluginBrowserPdfTextProvider,
   PluginBrowserContextMenuContext,
   PluginBrowserFindContext,
@@ -174,6 +175,9 @@ export type {
   PluginMentionSearchContext,
   PluginMentionTrigger,
   PluginBrowserDownloadHandler,
+  PluginBrowserExternalLink,
+  PluginBrowserExternalLinkDecision,
+  PluginBrowserExternalLinkHandler,
   PluginBrowserHistoryFilter,
   PluginBrowserHistoryRewrite,
   PluginBrowserHistoryVisit,
@@ -575,6 +579,11 @@ export interface PluginApiHandle {
   authProviders: PluginBrowserAuthProvider[];
   /** PDF text providers recorded by `bb.browser.registerPdfTextProvider`. */
   pdfTextProviders: PluginBrowserPdfTextProvider[];
+  /**
+   * External-link handlers recorded by
+   * `bb.browser.registerExternalLinkHandler`.
+   */
+  externalLinkHandlers: PluginBrowserExternalLinkHandler[];
   /** History filters recorded by `bb.browser.registerHistoryFilter`. */
   historyFilters: PluginBrowserHistoryFilter[];
   /** Publish factory-time host declarations and status only after commit. */
@@ -2039,6 +2048,7 @@ export function createPluginApi(options: {
   const pageScripts: PluginBrowserPageScriptRecord[] = [];
   const authProviders: PluginBrowserAuthProvider[] = [];
   const pdfTextProviders: PluginBrowserPdfTextProvider[] = [];
+  const externalLinkHandlers: PluginBrowserExternalLinkHandler[] = [];
   const historyFilters: PluginBrowserHistoryFilter[] = [];
   const keybindings: AppKeybindingOverride[] = [];
   const browser: PluginBrowser = {
@@ -2422,6 +2432,19 @@ export function createPluginApi(options: {
         );
       }
       pdfTextProviders.push(provider);
+    },
+    registerExternalLinkHandler(handler) {
+      assertLive();
+      permissionGate.assert(
+        "externalLink.handle",
+        "bb.browser.registerExternalLinkHandler",
+      );
+      if (typeof handler !== "function") {
+        throw new Error(
+          "registerExternalLinkHandler(handler) needs a function taking one link",
+        );
+      }
+      externalLinkHandlers.push(handler);
     },
     registerHistoryFilter(filter) {
       assertLive();
@@ -3307,6 +3330,7 @@ export function createPluginApi(options: {
     pageScripts,
     authProviders,
     pdfTextProviders,
+    externalLinkHandlers,
     historyFilters,
     activate() {
       if (activated) return;

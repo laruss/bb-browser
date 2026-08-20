@@ -142,6 +142,32 @@ const pluginBrowserPdfDocumentSchema = z
   })
   .strict();
 
+/**
+ * A link the system handed bb because it is the user's default browser. Capped
+ * like the rest, and validated as its own schema rather than borrowed from the
+ * desktop contract: the server does not depend on that boundary, and the route
+ * has to defend itself against any caller.
+ */
+const pluginBrowserExternalLinkSchema = z
+  .object({
+    // `http(s)` only, the way the shell's own queue is. Handlers are promised a
+    // page (`PluginBrowserExternalLink`), and this route is where that promise
+    // has to be kept: the shell is not the only thing that can reach it.
+    url: z
+      .string()
+      .min(1)
+      .max(4096)
+      .refine((value) => {
+        try {
+          const { protocol } = new URL(value);
+          return protocol === "http:" || protocol === "https:";
+        } catch {
+          return false;
+        }
+      }),
+  })
+  .strict();
+
 const pluginBrowserDownloadSchema = z
   .object({
     id: z.string().min(1).max(128),
@@ -704,6 +730,30 @@ export function registerPluginRoutes(
       document: parsed.data,
     });
     return context.json({ ok: true, text: text ?? "" });
+  });
+
+  // A link another app asked macOS to open, offered to every plugin that
+  // registered a handler (`browser.externalLink.handlers`) before it becomes a
+  // tab. Executes plugin code, so it takes the same local-origin guard as the
+  // rest.
+  //
+  // The app asks and waits, unlike the download route below: this decides where
+  // the link goes, and nothing has happened yet. A failure here is a decline —
+  // the link opens in a tab, which is what it does with no plugins at all.
+  app.post("/plugins/browser/external-link", async (context) => {
+    const problem = localAuthProblem(context, deps);
+    if (problem) {
+      return context.json({ ok: false, error: problem.error }, problem.status);
+    }
+    const body = await context.req.json().catch(() => null);
+    const parsed = pluginBrowserExternalLinkSchema.safeParse(body);
+    if (!parsed.success) {
+      return context.json({ ok: false, error: "expected { url }" }, 400);
+    }
+    const decision = await plugins.resolveBrowserExternalLink({
+      link: parsed.data,
+    });
+    return context.json({ ok: true, decision });
   });
 
   // A download the browser finished, handed to every plugin that registered a

@@ -79,6 +79,7 @@ The complete manifest, with the optional fields SKILL.md leaves out:
   | `downloads.handle`      | `browser.registerDownloadHandler`                                                                                                     |
   | `auth.provide`          | `browser.registerAuthProvider`                                                                                                        |
   | `pdf.provide`           | `browser.registerPdfTextProvider`                                                                                                     |
+  | `externalLink.handle`   | `browser.registerExternalLinkHandler` (every address the user opens from outside BB, while BB is the default browser)                 |
   | `history`               | `browser.registerHistoryFilter` and `sdk.browserHistory` — the browsing history, read and write                                       |
   | `threads`               | `sdk.threads`, `sdk.threadSections`, `sdk.subscribe({event:"thread:changed"})`                                                        |
   | `filesystem`            | `sdk.files`                                                                                                                           |

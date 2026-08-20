@@ -661,6 +661,12 @@ export interface CreateDesktopBrowserViewManagerArgs {
   /** Hand a link to the user's real browser. */
   openExternalUrl: (url: string) => void;
   /**
+   * Whether there is a browser other than bb to hand a link to. Asked per
+   * right-click rather than captured once: the user can change their default
+   * browser while bb runs, and the shell hears about it on activation.
+   */
+  canOpenExternalUrl?: () => boolean;
+  /**
    * The built `page-script-preload.cjs`, which the shell registers in the
    * browsing session while any plugin declares a page script.
    *
@@ -3552,6 +3558,7 @@ export function createDesktopBrowserViewManager(
         return;
       }
       const template = buildBrowserContextMenuTemplate({
+        canOpenExternally: args.canOpenExternalUrl?.() ?? true,
         target: {
           canGoBack: webContents.navigationHistory.canGoBack(),
           canGoForward: webContents.navigationHistory.canGoForward(),

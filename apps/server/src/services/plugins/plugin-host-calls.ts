@@ -328,6 +328,12 @@ export const PLUGIN_HOST_CALLS = {
     resultCrosses: true,
     callbacks: ["browserPdfText"],
   },
+  "browser.registerExternalLinkHandler": {
+    category: "register",
+    argsCross: true,
+    resultCrosses: true,
+    callbacks: ["browserExternalLink"],
+  },
   "browser.getStatus": {
     category: "call",
     argsCross: true,
