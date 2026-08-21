@@ -64,6 +64,18 @@ occurrences across 1 181 files**: `BB_*` 2 800, `bb.*` 2 461, `bb-plugin-*`
 `packages` 4 170 / 330, `plugins` 1 721 / 121, `examples` 454 / 56, `docs`
 321 / 13, `tests` 92 / 16, `scripts` 37 / 4, `.github` 18 / 2.
 
+After phase 4 the `BB_*` column is **0** — the one hit left is a comment in
+`contract.test.ts` that names the old prefix on purpose — and so are the prod
+ports, `~/.bb`, `.bb-dev` and `bb.db`. Counted as literal `bb` substrings
+outside this file, the tree went from 13 548 occurrences across 1 395 files to
+**12 875 across 1 340**: `bb.*` 2 387, `bb-plugin-*` 831, `bb-app` 609,
+`get-bb` / `getbb.app` 78, `.bb-` 167 (CSS classes and one plugin state file).
+`apps` 5 486 / 739 files, `packages` 3 897 / 326, `plugins` 1 935 / 148,
+`examples` 491 / 67, `docs` 349 / 13, `qa` 240 / 4, `tests` 57 / 16, `scripts`
+25 / 8, `.github` 65 / 5. This counting rule is looser than the one used above
+— it also catches `bubble`, `abbrev` and lockfile digests — so compare it only
+against itself.
+
 ## Traps
 
 These are the reasons this is a phased plan and not one `sed`.
@@ -143,17 +155,17 @@ justification, so the phase-8 gate does not flag them forever.
 
 ### Runtime state — clean break, no migration
 
-| Old                                                                                                                   | New                               | Defined in                                                     |
-| --------------------------------------------------------------------------------------------------------------------- | --------------------------------- | -------------------------------------------------------------- |
-| `BB_*` (297)                                                                                                          | `PATCHER_*`                       | `packages/config/src/env-vars.ts`                              |
-| `~/.bb`                                                                                                               | `~/.patcher`                      | `runtime.ts` `BB_PROD_DATA_DIR_NAME`                           |
-| `~/.bb-dev/<instance>`                                                                                                | `~/.patcher-dev/<instance>`       | `runtime.ts` `BB_DEV_DATA_ROOT_DIR`                            |
-| `bb.db`                                                                                                               | `patcher.db`                      | `runtime.ts` `BB_SQLITE_DATABASE_FILE_NAME`                    |
-| `~/.bb-machines`                                                                                                      | `~/.patcher-machines`             | server assets                                                  |
-| `.bb-env-setup.sh`                                                                                                    | `.patcher-env-setup.sh`           | repo root                                                      |
-| prod ports 38886 / 38887                                                                                              | new pair (proposal 38986 / 38987) | `runtime.ts` `BB_PROD_SERVER_PORT`, `BB_PROD_HOST_DAEMON_PORT` |
-| localStorage `bb.theme`, `bb.faviconColor`, `bb.promptbox.*`, `bb.sidebar.*`, `bb.root-compose.*`, `bb.promptDraft.*` | `patcher.*`                       | `apps/app`                                                     |
-| `_bb_migrations` (plugin SQLite)                                                                                      | `_patcher_migrations`             | `plugin-api.ts`, `fake-plugin-host.ts`                         |
+| Old                                                                                                                   | New                         | Defined in                                                     |
+| --------------------------------------------------------------------------------------------------------------------- | --------------------------- | -------------------------------------------------------------- |
+| `BB_*` (297)                                                                                                          | `PATCHER_*`                 | `packages/config/src/env-vars.ts`                              |
+| `~/.bb`                                                                                                               | `~/.patcher`                | `runtime.ts` `BB_PROD_DATA_DIR_NAME`                           |
+| `~/.bb-dev/<instance>`                                                                                                | `~/.patcher-dev/<instance>` | `runtime.ts` `BB_DEV_DATA_ROOT_DIR`                            |
+| `bb.db`                                                                                                               | `patcher.db`                | `runtime.ts` `BB_SQLITE_DATABASE_FILE_NAME`                    |
+| `~/.bb-machines`                                                                                                      | `~/.patcher-machines`       | server assets                                                  |
+| `.bb-env-setup.sh`                                                                                                    | `.patcher-env-setup.sh`     | repo root                                                      |
+| prod ports 38886 / 38887                                                                                              | **38986 / 38987**           | `runtime.ts` `BB_PROD_SERVER_PORT`, `BB_PROD_HOST_DAEMON_PORT` |
+| localStorage `bb.theme`, `bb.faviconColor`, `bb.promptbox.*`, `bb.sidebar.*`, `bb.root-compose.*`, `bb.promptDraft.*` | `patcher.*`                 | `apps/app`                                                     |
+| `_bb_migrations` (plugin SQLite)                                                                                      | `_patcher_migrations`       | `plugin-api.ts`, `fake-plugin-host.ts`                         |
 
 New ports matter even under a clean break: they are what lets a bb install and a
 Patcher install run side by side. `reservePackagedAppPorts()` in `runtime.ts`
@@ -393,25 +405,104 @@ load-sensitivity caveat again. Formatting: 133 of 442 changed files fail
 prettier, 63 already at the parent commit; the 70 the rename broke were
 formatted.
 
-### Phase 4 — Environment, paths, ports, database
+### Phase 4 — Environment, paths, ports, database — **done** (`8e00a054e`)
 
-- 297 `BB_*` → `PATCHER_*` across `packages/config` and every consumer,
-  including `apps/server/src/assets/install-machine.sh` and the launchd/systemd
-  unit it writes. This also carries the `SCREAMING_CASE` constants that are
-  not environment variables — `BB_DESKTOP_*_CHANNEL`,
-  `BB_DESKTOP_SPELLCHECK_GLOBAL_NAME` — whose _names_ rename while the
-  channel string _values_ stay frozen.
-- `runtime.ts`: data dir names, db file name, prod ports,
-  `reservePackagedAppPorts`.
-- localStorage keys in `apps/app` (including the inline bootstrap in
-  `index.html`).
-- Bump `HOST_DAEMON_PROTOCOL_VERSION` (currently 106) — the daemon's environment
-  contract changes, and an enrolled older daemon must be told to update rather
-  than enter an `invalid-message` reconnect loop.
+299 distinct `BB_*` tokens, 2 947 occurrences, plus the paths, ports, database
+name and storage keys: 440 files changed (+3 991 / −3 679). By tree: `apps`
+271, `packages` 118, `plugins` 19, `tests` 10, `scripts` 4, `examples` 4,
+`docs` 4, `qa` 3, `.github` 1, six at the root.
 
-**Verify:** `bun run dev` starts and prints the new dev ports; `bun run start`
-runs a production build from source; `bun run reset:dev` targets
-`~/.patcher-dev`; `bun run dev:restart-host-daemon` reconnects cleanly.
+The `BB_` pass is the one place in this rename where a bare prefix swap is
+safe: over 2 947 hits no `BB_` is preceded by a letter or digit, so
+`DEFAULT_BB_SERVER_URL` and `TEST_BB_VERSION` come along for free. Print that
+histogram before trusting it — the preceding characters were space, `"`, `.`,
+`(`, `_`, backtick, `$`, `{`, `/`, `[`, `'`, `-`, `>` and nothing else.
+
+**`HOST_DAEMON_PROTOCOL_VERSION` 107 → 108, and the reason is not the wire.**
+Nothing in `@patcher/host-daemon-contract` changed shape. The daemon builds
+the agent shell itself: it injects the thread-context variables, strips
+inherited ones by prefix, and puts the CLI shim on `PATH`. A 107 daemon
+injects `BB_*` and a `bb` shim, so a thread the new server started would run
+agents that cannot see their own thread id. The version is the only handshake
+there is, so it has to carry a break the message schemas do not show.
+
+**`<repo>/.bb` → `<repo>/.patcher`, which the table above did not list.** This
+is a directory in the _user's_ repository — `.bb/AGENTS.md`, `.bb/skills/`,
+`.bb/workflows/` — not app state, so renaming it makes every project that
+adopted bb move a committed directory. That is the clean break working as
+intended, and the alternative was leaving the old product's name inside the
+user's own checkout, which is the most visible leftover available.
+
+**`.bb` cannot be matched by a pattern.** The tree holds 62 distinct `.bb*`
+literals and most of them must not move: property access (`host.bb`,
+`pkg.bb`, `engines.bb`, `manifest.bb`, `PROJECT_IDS.bb`), CSS classes
+(`.bb-sidebar-*`, `.bb-tasks-*`, `.bb-app-shell`, and the digest-derived
+`.bb71-authored-decoration`), the frozen `globalThis.bb`, and `.bbedit`.
+Fifteen explicit path forms moved — the quoted segment, `.bb/`, `/.bb` at a
+path end, and the named scratch prefixes — and the leftovers were read one by
+one. Two survived a first pass and were fixed by hand: a Windows path written
+with escaped backslashes, and one built from `${path.sep}`.
+
+**Two traps worth carrying into phases 5–7.**
+
+1. **A rename moves a name's place in the alphabet.** `bb.db` sorted before
+   `logs`; `patcher.db` sorts after it, which broke a `localeCompare`-sorted
+   assertion in the dev-data migration test. Nothing else in the suite is
+   order-dependent on a renamed name, but the failure looked like lost data
+   until the diff was read.
+2. **Regex literals escape the dot.** `/^bb\.db\./u` does not match a search
+   anchored on the literal `bb.db`, so the migration matcher kept the old name
+   while its `Set` of entry names moved. Phase 2 hit the same shape with
+   `@bb\/`. Search the escaped forms as their own pass.
+
+Deliberately left, with the reason: `bb.ready` is the frozen page-script
+global, not a storage key; `bb.themes` is a plugin contribution point and was
+spared by anchoring `bb.theme` against a following letter; the `http://bb.test`
+hostnames in the fixtures are not product state, so only the three
+`bb.test.promptbox.*` storage keys moved; `.bb-docs-state.json` is written by
+the `docs` plugin into the user's repo and travels with that plugin in phase 5.
+
+**Two gaps this phase exposed in the plan itself.**
+
+1. **`x-bb-*` HTTP headers are in no phase.** `x-bb-plugin-token`,
+   `x-bb-plugin-id` and `x-bb-plugin-key` are plugin contract → phase 5;
+   `x-bb-content-encoding`, `x-bb-size-bytes` and `x-bb-app-surface` are
+   server ↔ SDK → phase 7, and `x-bb-app-surface` needs the mixed-build
+   question asked before it moves.
+2. **Test fixture ids and scratch temp-dir prefixes are in no phase either** —
+   `bb-thread-1`, `bb-user`, `bb-project`, `bb-workspace-`, `bb-browser-cli-`
+   and ~40 more. Nothing reads them back, so they are not runtime state and
+   they stayed; they belong with the cosmetic pass in phase 6. One coupling to
+   remember: the four glob defaults in
+   `packages/scripts/src/commands/archive-codex-tmp-patcher-sessions.ts`
+   (`*/bb-standalone-*`, `*/bb-integration-*`, `*/bb-integ-*`,
+   `*/bb-qa-smoke-*`) match those prefixes and must move in the same commit.
+
+The private `bb-script-*` bins in `@patcher/scripts` moved too, though the
+deferral table only promised the two command names. Leaving
+`bb-script-reset-patcher-data` behind would have been an inconsistency this
+change created itself. Six lines in `bun.lock` mirror those bins; unlike phase
+2 that is workspace metadata rather than a dependency upgrade, so it rides in
+the same commit and `bun install --frozen-lockfile` confirms it.
+
+**Verified** on Node 22.20.0: `typecheck --force` 54/54, `lint` clean (0
+errors, 152 pre-existing warnings), `build` 13/13,
+`env -u CLAUDE_CONFIG_DIR bun run test` 54/54 with no load flakes this time,
+and the generated set regenerated with no drift — twice, because formatting
+`portal-scope.ts` invalidated the plugin registry that embeds its source.
+Resolved values checked directly: `~/.patcher`,
+`~/.patcher-dev/<instance>/patcher.db`, prod ports 38986/38987 (free, and in
+the unassigned user-port range), and a dev env of `PATCHER_DATA_DIR`,
+`PATCHER_DEV_APP_PORT`, `PATCHER_HOST_DAEMON_PORT`,
+`PATCHER_INHERITED_SKILLS_ROOTS`, `PATCHER_SERVER_PORT`, `PATCHER_SERVER_URL`.
+`bun run dev` was not run by hand: `@patcher/integration-tests` starts a real
+server and daemon under the new names across 25 files and 55 tests, which
+covers more.
+
+Formatting: 480 files in the tree fail prettier and 418 of them already failed
+at the parent commit — the repo has never been prettier-clean and no CI job
+checks it. `PATCHER_` is five characters longer than `BB_`, so 62 files
+overflowed the print width; those were formatted and the rest left alone.
 
 ### Phase 5 — Plugin contract
 
@@ -494,6 +585,5 @@ Add `scripts/rename-audit.mjs`, wired into CI:
 
 - The new GitHub org/repo name.
 - npm availability of `patcher-app` and of the `@patcher` scope.
-- The prod port pair — 38986 / 38987 is a proposal, not a decision.
 - The desktop appId — `app.patcher.desktop` is a proposal.
 - Logo and icon artwork: eight files that need design, not a rename.
