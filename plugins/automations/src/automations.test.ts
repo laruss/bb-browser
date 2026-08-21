@@ -344,7 +344,7 @@ describe("automation data access", () => {
 
     await sweepDueAutomations(bb, db, {
       pluginDataDir: "/tmp",
-      serverUrl: "http://127.0.0.1:38886",
+      serverUrl: "http://127.0.0.1:38986",
       now: 1000,
     });
 
@@ -439,7 +439,7 @@ describe("automation service", () => {
       bb,
       db,
       pluginDataDir: "/tmp",
-      serverUrl: "http://127.0.0.1:38886",
+      serverUrl: "http://127.0.0.1:38986",
     });
 
     await expect(
@@ -488,7 +488,7 @@ describe("automation service", () => {
       bb: createAutomationServiceBb(),
       db,
       pluginDataDir,
-      serverUrl: "http://127.0.0.1:38886",
+      serverUrl: "http://127.0.0.1:38986",
     });
 
     try {
@@ -538,7 +538,7 @@ describe("automation service", () => {
       bb: createAutomationServiceBb(),
       db,
       pluginDataDir,
-      serverUrl: "http://127.0.0.1:38886",
+      serverUrl: "http://127.0.0.1:38986",
     });
 
     try {
@@ -596,7 +596,7 @@ describe("automation service", () => {
       bb: createAutomationServiceBb(),
       db,
       pluginDataDir,
-      serverUrl: "http://127.0.0.1:38886",
+      serverUrl: "http://127.0.0.1:38986",
     });
 
     try {
@@ -652,7 +652,7 @@ describe("automation service", () => {
       bb: createAutomationServiceBb(),
       db,
       pluginDataDir,
-      serverUrl: "http://127.0.0.1:38886",
+      serverUrl: "http://127.0.0.1:38986",
     });
 
     try {
@@ -682,18 +682,18 @@ describe("bb CLI injection for script runs", () => {
   it("prefers the env pointers over PATH and macOS install locations", () => {
     expect(
       patcherBinaryCandidates({
-        BB_CLI: "/daemon/bundle/bb",
-        BB_CLI_DIR: "/other/dir",
+        PATCHER_CLI: "/daemon/bundle/bb",
+        PATCHER_CLI_DIR: "/other/dir",
       })[0],
     ).toBe("/daemon/bundle/bb");
-    // The server process gets BB_CLI_DIR, not BB_CLI, from the launcher.
-    expect(patcherBinaryCandidates({ BB_CLI_DIR: "/daemon/bundle" })[0]).toBe(
-      "/daemon/bundle/bb",
-    );
+    // The server process gets PATCHER_CLI_DIR, not PATCHER_CLI, from the launcher.
+    expect(
+      patcherBinaryCandidates({ PATCHER_CLI_DIR: "/daemon/bundle" })[0],
+    ).toBe("/daemon/bundle/bb");
   });
 
   it("expands PATH itself so every candidate is absolute", () => {
-    // The resolved value is handed to scripts as BB_CLI, which is documented
+    // The resolved value is handed to scripts as PATCHER_CLI, which is documented
     // as absolute; a bare "bb" would re-resolve if a script edits PATH.
     expect(patcherBinaryCandidates({ PATH: "/usr/bin:/opt/tools" })).toEqual([
       "/usr/bin/bb",
@@ -719,12 +719,16 @@ describe("bb CLI injection for script runs", () => {
     ]);
     // Blank or relative env pointers are skipped, not resolved against cwd.
     expect(
-      patcherBinaryCandidates({ BB_CLI: "  ", BB_CLI_DIR: "", PATH: "" }),
+      patcherBinaryCandidates({
+        PATCHER_CLI: "  ",
+        PATCHER_CLI_DIR: "",
+        PATH: "",
+      }),
     ).toEqual(["/opt/homebrew/bin/bb", "/usr/local/bin/bb"]);
     expect(
       patcherBinaryCandidates({
-        BB_CLI: "./bb",
-        BB_CLI_DIR: "rel/dir",
+        PATCHER_CLI: "./bb",
+        PATCHER_CLI_DIR: "rel/dir",
         PATH: "",
       }),
     ).toEqual(["/opt/homebrew/bin/bb", "/usr/local/bin/bb"]);

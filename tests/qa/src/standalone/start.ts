@@ -107,11 +107,11 @@ async function main() {
       env: buildStandaloneRuntimeEnv({
         baseEnv: standaloneBaseEnv,
         overrides: {
-          BB_DATA_DIR: patcherRoot,
-          BB_HOST_DAEMON_PORT: String(daemonPort),
-          BB_HOST_ENROLL_KEY: enrollKey.enrollKey,
-          BB_HOST_ID: enrollKey.hostId,
-          BB_SERVER_URL: serverUrl,
+          PATCHER_DATA_DIR: patcherRoot,
+          PATCHER_HOST_DAEMON_PORT: String(daemonPort),
+          PATCHER_HOST_ENROLL_KEY: enrollKey.enrollKey,
+          PATCHER_HOST_ID: enrollKey.hostId,
+          PATCHER_SERVER_URL: serverUrl,
           [STANDALONE_INSTANCE_ENV]: instanceId,
           [STANDALONE_PARENT_PID_ENV]: String(parentPid),
         },
@@ -148,9 +148,9 @@ async function main() {
     });
 
     const cliEnv = {
-      BB_HOST_DAEMON_PORT: String(daemonPort),
-      BB_PROJECT_ID: project.id,
-      BB_SERVER_URL: serverUrl,
+      PATCHER_HOST_DAEMON_PORT: String(daemonPort),
+      PATCHER_PROJECT_ID: project.id,
+      PATCHER_SERVER_URL: serverUrl,
     };
 
     const setupEnv = {

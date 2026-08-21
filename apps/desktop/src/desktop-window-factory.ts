@@ -1,5 +1,5 @@
 import type { BrowserWindowConstructorOptions } from "electron";
-import { BB_DESKTOP_WINDOW_KEY_ARGUMENT_PREFIX } from "@patcher/desktop-contract";
+import { PATCHER_DESKTOP_WINDOW_KEY_ARGUMENT_PREFIX } from "@patcher/desktop-contract";
 import {
   MIN_WINDOW_HEIGHT,
   MIN_WINDOW_WIDTH,
@@ -183,7 +183,7 @@ function createWindowOptions(
       // list) picks its storage key as it initialises. An argument is the only
       // channel that has already arrived by then.
       additionalArguments: [
-        `${BB_DESKTOP_WINDOW_KEY_ARGUMENT_PREFIX}${args.stateKey}`,
+        `${PATCHER_DESKTOP_WINDOW_KEY_ARGUMENT_PREFIX}${args.stateKey}`,
       ],
       contextIsolation: true,
       nodeIntegration: false,

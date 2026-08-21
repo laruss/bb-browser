@@ -205,7 +205,7 @@ describe("createWorktree with .worktreeinclude", () => {
   it("copies the files before the setup script reads them", async () => {
     const sourcePath = await initRepo(".env\n");
     await writeFile(
-      path.join(sourcePath, ".bb-env-setup.sh"),
+      path.join(sourcePath, ".patcher-env-setup.sh"),
       "set -eu\ncp .env copied-by-setup\n",
     );
     await writeFile(

@@ -237,8 +237,8 @@ describe("bb thread log command output", () => {
     expect(getEvents).not.toHaveBeenCalled();
   });
 
-  it("bb thread log --self resolves from BB_THREAD_ID", async () => {
-    vi.stubEnv("BB_THREAD_ID", "thread-log-self");
+  it("bb thread log --self resolves from PATCHER_THREAD_ID", async () => {
+    vi.stubEnv("PATCHER_THREAD_ID", "thread-log-self");
     const getEvents = vi.fn(async () => []);
     const getTimeline = vi.fn(async () => fixtures.makeTimelineResponse([]));
     stubServerApi({

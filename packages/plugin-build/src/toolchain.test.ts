@@ -69,7 +69,7 @@ describe("plugin build toolchain", () => {
   // passed every local-toolchain test and still could not build anything once
   // packaged.
   describe("fetched toolchain", () => {
-    it.runIf(process.env.BB_TEST_TOOLCHAIN_FETCH === "1")(
+    it.runIf(process.env.PATCHER_TEST_TOOLCHAIN_FETCH === "1")(
       "builds a plugin frontend with nothing resolvable locally",
       async () => {
         const fetchEvents: string[] = [];

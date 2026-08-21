@@ -6,7 +6,7 @@ import {
 } from "@patcher/process-utils";
 
 const serverConfig = loadServerConfig();
-const diagnosticsLogsDir = join(serverConfig.BB_DATA_DIR, "logs");
+const diagnosticsLogsDir = join(serverConfig.PATCHER_DATA_DIR, "logs");
 
 installSafeProcessDiagnostics({
   logsDir: diagnosticsLogsDir,

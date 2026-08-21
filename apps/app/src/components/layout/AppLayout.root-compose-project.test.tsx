@@ -6,7 +6,7 @@ import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppLayout } from "./AppLayout";
 
-const ROOT_COMPOSE_PROJECT_ID_STORAGE_KEY = "bb.root-compose.project-id";
+const ROOT_COMPOSE_PROJECT_ID_STORAGE_KEY = "patcher.root-compose.project-id";
 
 const mockUseThread = vi.hoisted(() => vi.fn());
 const mockUseThreadDetailBootstrap = vi.hoisted(() => vi.fn());

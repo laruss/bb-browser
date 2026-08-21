@@ -54,7 +54,7 @@ describe("browser search engines", () => {
   // the only way an engine can be something other than a web search.
   it("admits loopback, which is how a plugin route becomes an engine", () => {
     for (const template of [
-      "http://127.0.0.1:38886/api/v1/plugins/ask/http/search?q=%s",
+      "http://127.0.0.1:38986/api/v1/plugins/ask/http/search?q=%s",
       "http://localhost:5173/?q=%s",
       "http://[::1]:3000/?q=%s",
     ]) {

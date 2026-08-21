@@ -30,7 +30,7 @@ import {
   parseAppSurface,
 } from "@patcher/config/app-surface";
 import {
-  BB_APP_MANAGED_CONFIG_KEYS,
+  PATCHER_APP_MANAGED_CONFIG_KEYS,
   patcherAppManagedEnvFileSchema,
   formatPatcherAppConfigPath,
   formatPatcherAppEnvPath,
@@ -57,9 +57,9 @@ import { validateLogLevel } from "@patcher/config/log-level";
 import { validateOptionalUrl } from "@patcher/config/public-url";
 import { parseServerBindHost } from "@patcher/config/server";
 import {
-  BB_PROD_HOST_DAEMON_PORT,
-  BB_LOOPBACK_HOST,
-  BB_PROD_SERVER_PORT,
+  PATCHER_PROD_HOST_DAEMON_PORT,
+  PATCHER_LOOPBACK_HOST,
+  PATCHER_PROD_SERVER_PORT,
   resolveConfiguredDataDir,
   resolveDataDirDatabasePath,
   resolvePortFromEnv,
@@ -93,32 +93,35 @@ const CONFIG_LIST_COMMAND = "list";
 const CONFIG_REFRESH_COMMAND = "refresh";
 
 type ManagedConfigValueKey = PatcherAppManagedConfigKey;
-type ManagedConfigKey = "BB_SERVER_URL" | "serverUrl" | ManagedConfigValueKey;
+type ManagedConfigKey =
+  | "PATCHER_SERVER_URL"
+  | "serverUrl"
+  | ManagedConfigValueKey;
 
-const MANAGED_CONFIG_KEYS = BB_APP_MANAGED_CONFIG_KEYS;
+const MANAGED_CONFIG_KEYS = PATCHER_APP_MANAGED_CONFIG_KEYS;
 const MANAGED_CONFIG_KEY_VALUES = new Set<string>(MANAGED_CONFIG_KEYS);
-const STARTUP_ONLY_MANAGED_CONFIG_KEYS = new Set<string>(["BB_LOG_LEVEL"]);
+const STARTUP_ONLY_MANAGED_CONFIG_KEYS = new Set<string>(["PATCHER_LOG_LEVEL"]);
 // Keep this in sync with loadServerConfig and direct process.env reads made
-// while assembling the server. BB_APP_VERSION and NODE_ENV are omitted because
+// while assembling the server. PATCHER_APP_VERSION and NODE_ENV are omitted because
 // the launcher owns and overwrites them rather than applying env.json values.
 const STARTUP_ONLY_MANAGED_ENV_KEYS = new Set<string>([
-  "BB_APP_SURFACE",
-  "BB_APP_URL",
-  "BB_DATA_DIR",
-  "BB_DEV_APP_PORT",
-  "BB_EXTERNAL_URL",
-  "BB_HOST_DAEMON_PORT",
-  "BB_INFERENCE",
-  "BB_INFERENCE_FALLBACK",
-  "BB_INHERITED_SKILLS_ROOTS",
-  "BB_LOG_LEVEL",
-  "BB_MANAGED_DEV_BUILTIN_PLUGIN_HOT_RELOAD",
-  "BB_PLUGIN_PROCESS",
-  "BB_POSTHOG_API_KEY",
-  "BB_SERVER_BIND_HOST",
-  "BB_SERVER_PORT",
-  "BB_TELEMETRY",
-  "BB_TRANSCRIPTION",
+  "PATCHER_APP_SURFACE",
+  "PATCHER_APP_URL",
+  "PATCHER_DATA_DIR",
+  "PATCHER_DEV_APP_PORT",
+  "PATCHER_EXTERNAL_URL",
+  "PATCHER_HOST_DAEMON_PORT",
+  "PATCHER_INFERENCE",
+  "PATCHER_INFERENCE_FALLBACK",
+  "PATCHER_INHERITED_SKILLS_ROOTS",
+  "PATCHER_LOG_LEVEL",
+  "PATCHER_MANAGED_DEV_BUILTIN_PLUGIN_HOT_RELOAD",
+  "PATCHER_PLUGIN_PROCESS",
+  "PATCHER_POSTHOG_API_KEY",
+  "PATCHER_SERVER_BIND_HOST",
+  "PATCHER_SERVER_PORT",
+  "PATCHER_TELEMETRY",
+  "PATCHER_TRANSCRIPTION",
 ]);
 const PORTABLE_ENV_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/u;
 const SECRET_SHAPED_ENV_NAME_PATTERN =
@@ -678,7 +681,7 @@ function isSecretShapedEnvName(value: string): boolean {
 }
 
 function supportedConfigKeysText(): string {
-  return ["BB_SERVER_URL", ...MANAGED_CONFIG_KEYS].join(", ");
+  return ["PATCHER_SERVER_URL", ...MANAGED_CONFIG_KEYS].join(", ");
 }
 
 function createDefaultLauncherOptions(): LauncherCliOptions {
@@ -808,34 +811,34 @@ function createEnvFromOptions(
 ): NodeJS.ProcessEnv {
   const env = { ...args.env };
   if (args.options.dataDir !== undefined) {
-    env.BB_DATA_DIR = args.options.dataDir;
+    env.PATCHER_DATA_DIR = args.options.dataDir;
   }
   if (args.options.autoUpdate === true) {
-    env.BB_HOST_DAEMON_AUTO_UPDATE = "1";
+    env.PATCHER_HOST_DAEMON_AUTO_UPDATE = "1";
   }
   if (args.options.hostDaemonPort !== undefined) {
-    env.BB_HOST_DAEMON_PORT = args.options.hostDaemonPort;
+    env.PATCHER_HOST_DAEMON_PORT = args.options.hostDaemonPort;
   }
   if (args.options.serverBindHost !== undefined) {
-    env.BB_SERVER_BIND_HOST = args.options.serverBindHost;
+    env.PATCHER_SERVER_BIND_HOST = args.options.serverBindHost;
   }
   if (args.options.serverPort !== undefined) {
-    env.BB_SERVER_PORT = args.options.serverPort;
+    env.PATCHER_SERVER_PORT = args.options.serverPort;
   }
   if (args.options.serverUrl !== undefined) {
-    env.BB_SERVER_URL = args.options.serverUrl;
+    env.PATCHER_SERVER_URL = args.options.serverUrl;
   }
   if (args.options.hostId !== undefined) {
-    env.BB_HOST_ID = args.options.hostId;
+    env.PATCHER_HOST_ID = args.options.hostId;
   }
   if (args.options.hostType !== undefined) {
-    env.BB_HOST_TYPE = args.options.hostType;
+    env.PATCHER_HOST_TYPE = args.options.hostType;
   }
   if (args.options.joinCode !== undefined) {
-    env.BB_HOST_ENROLL_KEY = args.options.joinCode;
+    env.PATCHER_HOST_ENROLL_KEY = args.options.joinCode;
   }
   if (args.options.enrollKey !== undefined) {
-    env.BB_HOST_ENROLL_KEY = args.options.enrollKey;
+    env.PATCHER_HOST_ENROLL_KEY = args.options.enrollKey;
   }
   return env;
 }
@@ -844,7 +847,7 @@ function resolveServerUrl(args: ResolveServerUrlArgs): string {
   return (
     trimToUndefined(args.optionServerUrl) ??
     args.config.serverUrl ??
-    trimToUndefined(args.env.BB_SERVER_URL) ??
+    trimToUndefined(args.env.PATCHER_SERVER_URL) ??
     args.defaultServerUrl
   );
 }
@@ -865,7 +868,7 @@ function createServerBaseEnv(args: CreateServerBaseEnvArgs): NodeJS.ProcessEnv {
     ...args.config.config,
     ...args.envFile.env,
     ...(args.serverBindHostOverride !== undefined
-      ? { BB_SERVER_BIND_HOST: args.serverBindHostOverride }
+      ? { PATCHER_SERVER_BIND_HOST: args.serverBindHostOverride }
       : {}),
   };
 }
@@ -1119,26 +1122,26 @@ async function writeManagedConfigFile(
 
 function validateManagedConfigForWrite(config: ManagedConfigForWrite): void {
   if (config.serverUrl !== undefined) {
-    validateOptionalUrl("BB_SERVER_URL", config.serverUrl);
+    validateOptionalUrl("PATCHER_SERVER_URL", config.serverUrl);
   }
   const configValues = config.config;
   if (configValues === undefined) {
     return;
   }
-  if (configValues.BB_APP_URL !== undefined) {
-    validateOptionalUrl("BB_APP_URL", configValues.BB_APP_URL);
+  if (configValues.PATCHER_APP_URL !== undefined) {
+    validateOptionalUrl("PATCHER_APP_URL", configValues.PATCHER_APP_URL);
   }
-  if (configValues.BB_INFERENCE !== undefined) {
-    validateInferenceModel(configValues.BB_INFERENCE);
+  if (configValues.PATCHER_INFERENCE !== undefined) {
+    validateInferenceModel(configValues.PATCHER_INFERENCE);
   }
-  if (configValues.BB_INFERENCE_FALLBACK !== undefined) {
-    validateInferenceFallbackModel(configValues.BB_INFERENCE_FALLBACK);
+  if (configValues.PATCHER_INFERENCE_FALLBACK !== undefined) {
+    validateInferenceFallbackModel(configValues.PATCHER_INFERENCE_FALLBACK);
   }
-  if (configValues.BB_TRANSCRIPTION !== undefined) {
-    validateTranscriptionModel(configValues.BB_TRANSCRIPTION);
+  if (configValues.PATCHER_TRANSCRIPTION !== undefined) {
+    validateTranscriptionModel(configValues.PATCHER_TRANSCRIPTION);
   }
-  if (configValues.BB_LOG_LEVEL !== undefined) {
-    validateLogLevel(configValues.BB_LOG_LEVEL);
+  if (configValues.PATCHER_LOG_LEVEL !== undefined) {
+    validateLogLevel(configValues.PATCHER_LOG_LEVEL);
   }
 }
 
@@ -1205,7 +1208,7 @@ async function writeClientConfigFile(
   }
 }
 
-const BB_APP_VERSION_DEV_FALLBACK = "0.0.0-dev";
+const PATCHER_APP_VERSION_DEV_FALLBACK = "0.0.0-dev";
 
 export function readPatcherAppPackageVersion(packageRoot: string): string {
   try {
@@ -1213,7 +1216,7 @@ export function readPatcherAppPackageVersion(packageRoot: string): string {
     const rawContents = readFileSync(packageJsonPath, "utf8");
     return patcherAppPackageJsonSchema.parse(JSON.parse(rawContents)).version;
   } catch {
-    return BB_APP_VERSION_DEV_FALLBACK;
+    return PATCHER_APP_VERSION_DEV_FALLBACK;
   }
 }
 
@@ -1226,14 +1229,14 @@ export function resolvePatcherAppStartContext(
   const runsFromSourceCheckout = entrypointDir === resolve(packageRoot, "src");
   const dataDir = resolveDataDir({ env: args.env, homeDir: args.homeDir });
   const serverPort = resolvePort({
-    defaultPort: BB_PROD_SERVER_PORT,
+    defaultPort: PATCHER_PROD_SERVER_PORT,
     env: args.env,
-    name: "BB_SERVER_PORT",
+    name: "PATCHER_SERVER_PORT",
   });
   const daemonPort = resolvePort({
-    defaultPort: BB_PROD_HOST_DAEMON_PORT,
+    defaultPort: PATCHER_PROD_HOST_DAEMON_PORT,
     env: args.env,
-    name: "BB_HOST_DAEMON_PORT",
+    name: "PATCHER_HOST_DAEMON_PORT",
   });
   const appDistDir = runsFromSourceCheckout
     ? resolve(workspaceRoot, "apps", "app", "dist")
@@ -1262,8 +1265,8 @@ export function resolvePatcherAppStartContext(
     serverEntry,
     serverPort,
     serverUrl:
-      trimToUndefined(args.env.BB_SERVER_URL) ??
-      `http://${BB_LOOPBACK_HOST}:${serverPort}`,
+      trimToUndefined(args.env.PATCHER_SERVER_URL) ??
+      `http://${PATCHER_LOOPBACK_HOST}:${serverPort}`,
   };
 }
 
@@ -1297,8 +1300,8 @@ export async function resolvePatcherAppRuntimeState(
         serverBindHostOverride: args.options.serverBindHost,
       }),
     );
-    delete localEnv.BB_SERVER_URL;
-    delete localServerEnv.BB_SERVER_URL;
+    delete localEnv.PATCHER_SERVER_URL;
+    delete localServerEnv.PATCHER_SERVER_URL;
     return {
       config,
       context: resolvePatcherAppStartContext({
@@ -1313,7 +1316,7 @@ export async function resolvePatcherAppRuntimeState(
 
   const finalEnv = {
     ...managedEnv,
-    BB_SERVER_URL: resolveServerUrl({
+    PATCHER_SERVER_URL: resolveServerUrl({
       config,
       defaultServerUrl: initialContext.serverUrl,
       env: managedEnv,
@@ -1431,7 +1434,7 @@ Supported keys:
   ${supportedConfigKeysText()}
 
 Startup-only:
-  BB_LOG_LEVEL changes require a full bb-app restart with
+  PATCHER_LOG_LEVEL changes require a full bb-app restart with
   bb-app stop && bb-app start, or a desktop app restart.
 
 Config file:
@@ -1449,15 +1452,15 @@ Usage:
   bb-app env unset <key>
 
 Startup-only server and launcher keys:
-  BB_APP_SURFACE, BB_APP_URL, BB_DATA_DIR, BB_DEV_APP_PORT,
-  BB_EXTERNAL_URL, BB_HOST_DAEMON_PORT, BB_INFERENCE,
-  BB_INFERENCE_FALLBACK, BB_INHERITED_SKILLS_ROOTS, BB_LOG_LEVEL,
-  BB_MANAGED_DEV_BUILTIN_PLUGIN_HOT_RELOAD, BB_PLUGIN_PROCESS,
-  BB_POSTHOG_API_KEY, BB_SERVER_BIND_HOST, BB_SERVER_PORT, BB_TELEMETRY,
-  BB_TRANSCRIPTION, and BB_FF_* feature flags.
+  PATCHER_APP_SURFACE, PATCHER_APP_URL, PATCHER_DATA_DIR, PATCHER_DEV_APP_PORT,
+  PATCHER_EXTERNAL_URL, PATCHER_HOST_DAEMON_PORT, PATCHER_INFERENCE,
+  PATCHER_INFERENCE_FALLBACK, PATCHER_INHERITED_SKILLS_ROOTS, PATCHER_LOG_LEVEL,
+  PATCHER_MANAGED_DEV_BUILTIN_PLUGIN_HOT_RELOAD, PATCHER_PLUGIN_PROCESS,
+  PATCHER_POSTHOG_API_KEY, PATCHER_SERVER_BIND_HOST, PATCHER_SERVER_PORT, PATCHER_TELEMETRY,
+  PATCHER_TRANSCRIPTION, and PATCHER_FF_* feature flags.
   Changes require a full bb-app restart with bb-app stop && bb-app start,
-  or a desktop app restart. BB_APP_URL, BB_INFERENCE,
-  BB_INFERENCE_FALLBACK, and BB_TRANSCRIPTION can instead be changed live
+  or a desktop app restart. PATCHER_APP_URL, PATCHER_INFERENCE,
+  PATCHER_INFERENCE_FALLBACK, and PATCHER_TRANSCRIPTION can instead be changed live
   with bb-app config.
 
 Env file:
@@ -1480,7 +1483,7 @@ Config file:
 
 function resolveManagedConfigKey(rawKey: string): ManagedConfigKey {
   const key = rawKey.trim();
-  if (key === "BB_SERVER_URL" || key === "serverUrl") {
+  if (key === "PATCHER_SERVER_URL" || key === "serverUrl") {
     return key;
   }
   if (isManagedConfigValueKey(key)) {
@@ -1500,7 +1503,7 @@ function createManagedConfigPatch(
   key: ManagedConfigKey,
   value: string,
 ): ManagedConfig {
-  if (key === "BB_SERVER_URL" || key === "serverUrl") {
+  if (key === "PATCHER_SERVER_URL" || key === "serverUrl") {
     return { serverUrl: value };
   }
   return { config: createManagedConfigValuePatch(key, value) };
@@ -1513,7 +1516,7 @@ function unsetManagedConfigKey(
   const nextConfig: ManagedConfigForWrite = {
     ...config,
   };
-  if (key === "BB_SERVER_URL" || key === "serverUrl") {
+  if (key === "PATCHER_SERVER_URL" || key === "serverUrl") {
     delete nextConfig.serverUrl;
     return pruneManagedConfig(nextConfig);
   }
@@ -1561,7 +1564,7 @@ function unsetManagedEnvKey(
 function formatManagedConfig(config: ManagedConfig): string {
   const lines: string[] = [];
   if (config.serverUrl !== undefined) {
-    lines.push(`BB_SERVER_URL=${config.serverUrl}`);
+    lines.push(`PATCHER_SERVER_URL=${config.serverUrl}`);
   }
   for (const key of MANAGED_CONFIG_KEYS) {
     const value = config.config?.[key];
@@ -1724,14 +1727,16 @@ function isStartupOnlyManagedKey(
   if (source === "config") {
     return STARTUP_ONLY_MANAGED_CONFIG_KEYS.has(key);
   }
-  return STARTUP_ONLY_MANAGED_ENV_KEYS.has(key) || key.startsWith("BB_FF_");
+  return (
+    STARTUP_ONLY_MANAGED_ENV_KEYS.has(key) || key.startsWith("PATCHER_FF_")
+  );
 }
 
 function printStartupOnlyChangeNotice(key: string): void {
   process.stdout.write(
     `${key} is startup-only. The running process keeps its current value; a full bb-app restart is required to apply this change. Run \`bb-app stop && bb-app start\`, or restart the desktop app.\n`,
   );
-  if (key === "BB_SERVER_BIND_HOST") {
+  if (key === "PATCHER_SERVER_BIND_HOST") {
     process.stdout.write(
       "Until then, the server keeps its previous bind address. If it was bound to 0.0.0.0, that network exposure remains open.\n",
     );
@@ -1899,7 +1904,7 @@ async function runEnvCommand(args: RunEnvCommandArgs): Promise<void> {
   if (value.length === 0) {
     throw new Error("Env value must not be empty. Use unset to remove it.");
   }
-  if (key === "BB_SERVER_BIND_HOST") {
+  if (key === "PATCHER_SERVER_BIND_HOST") {
     parseServerBindHost(value);
   }
   await writeManagedEnv({
@@ -2075,7 +2080,7 @@ async function requireExpectedHostDaemonId(args: {
   env: NodeJS.ProcessEnv;
 }): Promise<string> {
   const hostId =
-    trimToUndefined(args.env.BB_HOST_ID) ??
+    trimToUndefined(args.env.PATCHER_HOST_ID) ??
     (await readPersistedHostId(args.dataDir)) ??
     (await readPersistedHostAuthId(args.dataDir));
   if (hostId === null) {
@@ -2112,7 +2117,7 @@ export async function requestHostEnrollKey(
 export async function maybeAddAutoJoinEnv(
   args: MaybeAddAutoJoinEnvArgs,
 ): Promise<NodeJS.ProcessEnv> {
-  if (trimToUndefined(args.env.BB_HOST_ENROLL_KEY) !== undefined) {
+  if (trimToUndefined(args.env.PATCHER_HOST_ENROLL_KEY) !== undefined) {
     return args.env;
   }
   if (await pathExists(join(args.dataDir, HOST_AUTH_FILE_NAME))) {
@@ -2120,7 +2125,7 @@ export async function maybeAddAutoJoinEnv(
   }
 
   const requestedHostId =
-    trimToUndefined(args.env.BB_HOST_ID) ??
+    trimToUndefined(args.env.PATCHER_HOST_ID) ??
     (await readPersistedHostId(args.dataDir));
   const enrollKeyResponse = await requestHostEnrollKey({
     requestedHostId,
@@ -2138,8 +2143,8 @@ export async function maybeAddAutoJoinEnv(
 
   return {
     ...args.env,
-    BB_HOST_ENROLL_KEY: enrollKeyResponse.enrollKey,
-    BB_HOST_ID: enrollKeyResponse.hostId,
+    PATCHER_HOST_ENROLL_KEY: enrollKeyResponse.enrollKey,
+    PATCHER_HOST_ID: enrollKeyResponse.hostId,
   };
 }
 
@@ -2169,7 +2174,7 @@ async function waitForHealth(args: WaitForHealthArgs): Promise<void> {
 
 function normalizeServerUrlForComparison(serverUrl: string): string {
   const url = new URL(serverUrl);
-  if (url.hostname === "localhost") url.hostname = BB_LOOPBACK_HOST;
+  if (url.hostname === "localhost") url.hostname = PATCHER_LOOPBACK_HOST;
   return url.href.replace(/\/$/u, "");
 }
 
@@ -2181,7 +2186,7 @@ export async function waitForHostDaemonStatus(
   const expectedServerUrl = normalizeServerUrlForComparison(
     args.expectedServerUrl,
   );
-  const statusUrl = `http://${BB_LOOPBACK_HOST}:${args.port}/status`;
+  const statusUrl = `http://${PATCHER_LOOPBACK_HOST}:${args.port}/status`;
 
   while (Date.now() <= deadline) {
     if (
@@ -2404,10 +2409,10 @@ async function terminateProcessIfRunning(
 function createSharedEnv(args: CreateSharedEnvArgs): NodeJS.ProcessEnv {
   return {
     ...args.env,
-    BB_APP_VERSION: args.context.appVersion,
-    BB_DATA_DIR: args.context.dataDir,
-    BB_HOST_DAEMON_PORT: String(args.context.daemonPort),
-    BB_SERVER_PORT: String(args.context.serverPort),
+    PATCHER_APP_VERSION: args.context.appVersion,
+    PATCHER_DATA_DIR: args.context.dataDir,
+    PATCHER_HOST_DAEMON_PORT: String(args.context.daemonPort),
+    PATCHER_SERVER_PORT: String(args.context.serverPort),
     NODE_ENV: "production",
   };
 }
@@ -2415,23 +2420,23 @@ function createSharedEnv(args: CreateSharedEnvArgs): NodeJS.ProcessEnv {
 function createServerEnv(args: CreateServerEnvArgs): NodeJS.ProcessEnv {
   return {
     ...args.env,
-    BB_APP_VERSION: args.context.appVersion,
+    PATCHER_APP_VERSION: args.context.appVersion,
     [APP_SURFACE_ENV_NAME]: APP_SURFACE_WEB,
     // The daemon bundle holds the bb CLI. Server-side features that shell out
     // — script automations put it on the script's PATH — otherwise have no way
     // to find it: bb lives in the bundle directory, which is on no shell PATH.
-    // BB_CLI_DIR matches createDaemonEnv, which has always passed it through.
+    // PATCHER_CLI_DIR matches createDaemonEnv, which has always passed it through.
     //
-    // BB_CLI is set rather than inherited on purpose. Launching bb-app from an
-    // agent shell brings that shell's BB_CLI along, pointing at whichever
+    // PATCHER_CLI is set rather than inherited on purpose. Launching bb-app from an
+    // agent shell brings that shell's PATCHER_CLI along, pointing at whichever
     // install spawned it. That binary can be older than this bundle and still
     // answer `--version`, so an inherited value would quietly win over the
     // bundle actually being run.
-    BB_CLI: join(args.context.daemonBundleDir, "bb"),
-    BB_CLI_DIR: args.context.daemonBundleDir,
-    BB_DATA_DIR: args.context.dataDir,
-    BB_HOST_DAEMON_PORT: String(args.context.daemonPort),
-    BB_SERVER_PORT: String(args.context.serverPort),
+    PATCHER_CLI: join(args.context.daemonBundleDir, "bb"),
+    PATCHER_CLI_DIR: args.context.daemonBundleDir,
+    PATCHER_DATA_DIR: args.context.dataDir,
+    PATCHER_HOST_DAEMON_PORT: String(args.context.daemonPort),
+    PATCHER_SERVER_PORT: String(args.context.serverPort),
     NODE_ENV: "production",
   };
 }
@@ -2442,12 +2447,12 @@ export function createDaemonEnv(
 ): NodeJS.ProcessEnv {
   return {
     ...stripThreadContextEnv(autoJoinEnv),
-    BB_APP_VERSION: context.appVersion,
-    BB_BRIDGE_DIR: context.daemonBundleDir,
-    BB_CLI_DIR: context.daemonBundleDir,
-    BB_DATA_DIR: context.dataDir,
-    BB_HOST_DAEMON_PORT: String(context.daemonPort),
-    BB_SERVER_URL: context.serverUrl,
+    PATCHER_APP_VERSION: context.appVersion,
+    PATCHER_BRIDGE_DIR: context.daemonBundleDir,
+    PATCHER_CLI_DIR: context.daemonBundleDir,
+    PATCHER_DATA_DIR: context.dataDir,
+    PATCHER_HOST_DAEMON_PORT: String(context.daemonPort),
+    PATCHER_SERVER_URL: context.serverUrl,
     NODE_ENV: "production",
   };
 }
@@ -2455,13 +2460,13 @@ export function createDaemonEnv(
 function createCliEnv(args: CreateCliEnvArgs): NodeJS.ProcessEnv {
   const cliEnv: NodeJS.ProcessEnv = {
     ...args.env,
-    BB_APP_VERSION: args.context.appVersion,
-    BB_HOST_DAEMON_PORT: String(args.context.daemonPort),
+    PATCHER_APP_VERSION: args.context.appVersion,
+    PATCHER_HOST_DAEMON_PORT: String(args.context.daemonPort),
     NODE_ENV: "production",
   };
 
-  if (trimToUndefined(cliEnv.BB_SERVER_URL) === undefined) {
-    cliEnv.BB_SERVER_URL = args.context.serverUrl;
+  if (trimToUndefined(cliEnv.PATCHER_SERVER_URL) === undefined) {
+    cliEnv.PATCHER_SERVER_URL = args.context.serverUrl;
   }
 
   return cliEnv;
@@ -2470,7 +2475,7 @@ function createCliEnv(args: CreateCliEnvArgs): NodeJS.ProcessEnv {
 function resolveHostDaemonServerUrl(
   args: ResolveHostDaemonServerUrlArgs,
 ): string {
-  return trimToUndefined(args.env.BB_SERVER_URL) ?? args.context.serverUrl;
+  return trimToUndefined(args.env.PATCHER_SERVER_URL) ?? args.context.serverUrl;
 }
 
 function createHostDaemonOnlyEnv(
@@ -2478,12 +2483,12 @@ function createHostDaemonOnlyEnv(
 ): NodeJS.ProcessEnv {
   return {
     ...stripThreadContextEnv(args.env),
-    BB_APP_VERSION: args.context.appVersion,
-    BB_BRIDGE_DIR: args.context.daemonBundleDir,
-    BB_CLI_DIR: args.context.daemonBundleDir,
-    BB_DATA_DIR: args.context.dataDir,
-    BB_HOST_DAEMON_PORT: String(args.context.daemonPort),
-    BB_SERVER_URL: args.serverUrl,
+    PATCHER_APP_VERSION: args.context.appVersion,
+    PATCHER_BRIDGE_DIR: args.context.daemonBundleDir,
+    PATCHER_CLI_DIR: args.context.daemonBundleDir,
+    PATCHER_DATA_DIR: args.context.dataDir,
+    PATCHER_HOST_DAEMON_PORT: String(args.context.daemonPort),
+    PATCHER_SERVER_URL: args.serverUrl,
     NODE_ENV: "production",
   };
 }
@@ -2491,7 +2496,7 @@ function createHostDaemonOnlyEnv(
 function resolveEnrollmentRequirements(
   args: ResolveEnrollmentRequirementsArgs,
 ): EnrollmentRequirements {
-  const enrollKey = trimToUndefined(args.env.BB_HOST_ENROLL_KEY);
+  const enrollKey = trimToUndefined(args.env.PATCHER_HOST_ENROLL_KEY);
   return {
     enrolled: existsSync(join(args.context.dataDir, HOST_AUTH_FILE_NAME)),
     ...(enrollKey !== undefined ? { enrollKey } : {}),
@@ -2516,9 +2521,9 @@ export async function createHostDaemonJoinEnv(
   args: CreateHostDaemonJoinEnvArgs,
 ): Promise<NodeJS.ProcessEnv> {
   const requestedHostId =
-    trimToUndefined(args.env.BB_HOST_ID) ??
+    trimToUndefined(args.env.PATCHER_HOST_ID) ??
     (await readPersistedHostId(args.context.dataDir));
-  const suppliedJoinCode = trimToUndefined(args.env.BB_HOST_ENROLL_KEY);
+  const suppliedJoinCode = trimToUndefined(args.env.PATCHER_HOST_ENROLL_KEY);
   if (suppliedJoinCode !== undefined) {
     if (requestedHostId === null) {
       throw new Error("--host-id is required when --join-code is supplied");
@@ -2531,8 +2536,8 @@ export async function createHostDaemonJoinEnv(
     });
     return {
       ...args.env,
-      BB_HOST_ENROLL_KEY: suppliedJoinCode,
-      BB_HOST_ID: requestedHostId,
+      PATCHER_HOST_ENROLL_KEY: suppliedJoinCode,
+      PATCHER_HOST_ID: requestedHostId,
     };
   }
   const enrollKeyResponse = await requestHostEnrollKey({
@@ -2558,8 +2563,8 @@ export async function createHostDaemonJoinEnv(
 
   return {
     ...args.env,
-    BB_HOST_ENROLL_KEY: enrollKeyResponse.enrollKey,
-    BB_HOST_ID: enrollKeyResponse.hostId,
+    PATCHER_HOST_ENROLL_KEY: enrollKeyResponse.enrollKey,
+    PATCHER_HOST_ID: enrollKeyResponse.hostId,
   };
 }
 
@@ -2568,7 +2573,7 @@ export async function runBundledCliCommand(
 ): Promise<number> {
   // Prefer the daemon-injected absolute CLI when present so packaged `bb`
   // trampolines match the running host daemon (dev workspace or this install).
-  const patcherCliOverride = trimToUndefined(args.env.BB_CLI);
+  const patcherCliOverride = trimToUndefined(args.env.PATCHER_CLI);
   const cliPath =
     patcherCliOverride ?? join(args.context.daemonBundleDir, "bb");
   const childProcess = spawn(cliPath, args.args, {
@@ -2621,7 +2626,7 @@ Usage:
     options: parsedArgs.options,
     serverUrlMode: "local",
   });
-  const configuredServerBindHost = runtime.serverEnv.BB_SERVER_BIND_HOST;
+  const configuredServerBindHost = runtime.serverEnv.PATCHER_SERVER_BIND_HOST;
   if (configuredServerBindHost !== undefined) {
     try {
       parseServerBindHost(configuredServerBindHost);
@@ -2631,7 +2636,7 @@ Usage:
       });
       if (
         parsedArgs.options.serverBindHost === undefined &&
-        envFile.env?.BB_SERVER_BIND_HOST === configuredServerBindHost &&
+        envFile.env?.PATCHER_SERVER_BIND_HOST === configuredServerBindHost &&
         error instanceof Error
       ) {
         throw new Error(
@@ -2688,7 +2693,7 @@ async function runHostDaemonOnly(args: RunHostDaemonOnlyArgs): Promise<void> {
   if (!enrollment.enrolled && enrollment.enrollKey === undefined) {
     endStep(
       red("✗"),
-      `Not enrolled - set BB_HOST_ENROLL_KEY to join ${serverUrl}`,
+      `Not enrolled - set PATCHER_HOST_ENROLL_KEY to join ${serverUrl}`,
     );
     process.stdout.write("\n");
     log(" ", dim("Run this command to request enrollment and start daemon:"));
@@ -3165,7 +3170,7 @@ export async function runPatcherApp(
   });
 
   if (command.kind === "start") {
-    const configuredServerBindHost = runtime.serverEnv.BB_SERVER_BIND_HOST;
+    const configuredServerBindHost = runtime.serverEnv.PATCHER_SERVER_BIND_HOST;
     if (configuredServerBindHost !== undefined) {
       try {
         parseServerBindHost(configuredServerBindHost);
@@ -3175,7 +3180,7 @@ export async function runPatcherApp(
         });
         if (
           parsedArgs.options.serverBindHost === undefined &&
-          envFile.env?.BB_SERVER_BIND_HOST === configuredServerBindHost &&
+          envFile.env?.PATCHER_SERVER_BIND_HOST === configuredServerBindHost &&
           error instanceof Error
         ) {
           throw new Error(

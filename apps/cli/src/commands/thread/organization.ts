@@ -195,7 +195,7 @@ export function registerOrganizationCommands(
     parent
       .command(`${name} [id]`)
       .description(`Mark a thread ${name}`)
-      .option("--self", "Target the current thread (from BB_THREAD_ID)")
+      .option("--self", "Target the current thread (from PATCHER_THREAD_ID)")
       .option("--json", "Print machine-readable JSON output")
       .action(
         action(async (id: string | undefined, opts: SelfOptions) => {

@@ -13,7 +13,7 @@ Theming — the app-wide color palette
 applied live to every open window. This is the palette only; light/dark mode is a
 separate per-client setting the palette layers on top of. Custom themes live on
 disk, one folder per theme, at <bb-data-dir>/theme/<name>/theme.css (the packaged
-app uses ~/.bb/theme/…). The folder name is the theme id.
+app uses ~/.patcher/theme/…). The folder name is the theme id.
 
   bb theme list                  Built-in and custom themes; shows the active one
   bb theme dir                   Print the custom-theme directory (where to author)
@@ -40,20 +40,20 @@ Packaged launcher settings
 `bb-app config` and `bb-app env` reload runtime settings in a running server,
 but the CLI identifies server and launcher settings that are startup-only,
 including binding/ports, data and the dev-app port, telemetry, inherited skill
-roots, and `BB_FF_*` flags. `BB_LOG_LEVEL` is also startup-only. Use
-`bb-app config`, not `bb-app env`, to change `BB_APP_URL`, `BB_INFERENCE`,
-`BB_INFERENCE_FALLBACK`, or `BB_TRANSCRIPTION` live. After a startup-only
+roots, and `PATCHER_FF_*` flags. `PATCHER_LOG_LEVEL` is also startup-only. Use
+`bb-app config`, not `bb-app env`, to change `PATCHER_APP_URL`, `PATCHER_INFERENCE`,
+`PATCHER_INFERENCE_FALLBACK`, or `PATCHER_TRANSCRIPTION` live. After a startup-only
 change, run `bb-app stop && bb-app start` or restart the desktop app. Until
-then, changing or unsetting `BB_SERVER_BIND_HOST` does not close a previous
+then, changing or unsetting `PATCHER_SERVER_BIND_HOST` does not close a previous
 `0.0.0.0` listener.
 
-Server helper completions use `BB_INFERENCE` first, then
-`BB_INFERENCE_FALLBACK` after a transient timeout, rate limit, or
+Server helper completions use `PATCHER_INFERENCE` first, then
+`PATCHER_INFERENCE_FALLBACK` after a transient timeout, rate limit, or
 service-unavailable failure. Their defaults are `codex/gpt-5.6-luna` and
 `codex/gpt-5.4-mini`, respectively.
 
-  bb-app config set BB_INFERENCE <provider/model>
-  bb-app config set BB_INFERENCE_FALLBACK <provider/model>
+  bb-app config set PATCHER_INFERENCE <provider/model>
+  bb-app config set PATCHER_INFERENCE_FALLBACK <provider/model>
 
 Server-backed General settings
 
@@ -108,7 +108,7 @@ conversation history while retaining workspace side effects. Grouped
 multi-message requests are not yet editable.
 
 Thread timeline windows are bounded by event count as well as user-message
-count (`BB_FF_TIMELINE_WINDOW_EVENT_BUDGET`, default 1500), so a long thread
+count (`PATCHER_FF_TIMELINE_WINDOW_EVENT_BUDGET`, default 1500), so a long thread
 stops reprojecting its whole history — and blocking the server event loop — on
 every update. A turn still running is cut at the budget too, so a very long
 turn costs the budget per update instead of growing without limit. Older
@@ -135,9 +135,9 @@ Host files and voice transcription
   bb file read|write|list|paths|mkdir|move|remove ...
   bb voice transcribe <audio-file> [--prompt <context>]
 
-Voice transcription uses the `BB_TRANSCRIPTION` model, which defaults to
+Voice transcription uses the `PATCHER_TRANSCRIPTION` model, which defaults to
 `codex/gpt-transcribe`. Override it with
-`bb-app config set BB_TRANSCRIPTION <provider/model>`.
+`bb-app config set PATCHER_TRANSCRIPTION <provider/model>`.
 
 `bb file` supports `--host` for remote machines and `--root` on mutating
 commands to confine access beneath an absolute directory. Use `--json` for
@@ -147,5 +147,5 @@ Client-local UI preferences
 
 Some Settings values live only in the current browser/client. The Voice Input
 microphone picker stores the selected browser MediaDevices device id in
-localStorage as `bb.voiceInput.audioInputDeviceId`; it does not have a `bb`
+localStorage as `patcher.voiceInput.audioInputDeviceId`; it does not have a `bb`
 command and does not change the server-side transcription model.

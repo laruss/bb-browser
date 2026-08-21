@@ -17,7 +17,7 @@ const baseProps = {
 };
 
 // ---------------------------------------------------------------------------
-// Real tool work rows pulled from live threads in ~/.bb-dev/bb.db. These are
+// Real tool work rows pulled from live threads in ~/.patcher-dev/patcher.db. These are
 // the catch-all "tool" rows — tools that aren't classified as activity intents
 // on a command row (Read/Grep/Glob/list_files/search go on commands instead).
 // Common tools that surface here: TodoWrite, ToolSearch, notify_user, Skill,

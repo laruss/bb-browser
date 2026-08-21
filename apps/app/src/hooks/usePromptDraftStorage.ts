@@ -13,7 +13,7 @@ import {
   serializePromptDraftStorage,
 } from "@/lib/prompt-draft";
 
-const PROMPT_DRAFT_STORAGE_PREFIX = "bb.promptbox.contents";
+const PROMPT_DRAFT_STORAGE_PREFIX = "patcher.promptbox.contents";
 const PROMPT_DRAFT_STORAGE_VERSION = "3";
 const PROMPT_DRAFT_PERSIST_DEBOUNCE_MS = 250;
 

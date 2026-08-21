@@ -1135,7 +1135,7 @@ describe("RegistrySkillDetailView reference creation", () => {
           scope: "bb-user",
           registrySkillId: registrySkill.id,
         })}
-        localPath="/home/u/.bb/skills/useful-skill/SKILL.md"
+        localPath="/home/u/.patcher/skills/useful-skill/SKILL.md"
       />,
     );
     fireEvent.click(
@@ -1237,7 +1237,7 @@ describe("SkillDetailDialogView", () => {
       provider: null,
       scope: "bb-user",
       manageable: true,
-      filePath: "/home/u/.bb/skills/bb-skill/SKILL.md",
+      filePath: "/home/u/.patcher/skills/bb-skill/SKILL.md",
     });
     const onEdit = vi.fn();
     renderSkillDetailDialog(skill, {
@@ -1247,9 +1247,9 @@ describe("SkillDetailDialogView", () => {
     });
 
     screen.getByRole("button", {
-      name: "Copy skill path: /home/u/.bb/skills/bb-skill",
+      name: "Copy skill path: /home/u/.patcher/skills/bb-skill",
     });
-    expect(screen.getByText("~/.bb/skills/bb-skill")).toBeTruthy();
+    expect(screen.getByText("~/.patcher/skills/bb-skill")).toBeTruthy();
     expect(screen.queryByText("BB Official", { exact: true })).toBeNull();
     expect(screen.queryByText("Included", { exact: true })).toBeNull();
     expect(screen.queryByText("Imported", { exact: true })).toBeNull();

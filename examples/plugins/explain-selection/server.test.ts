@@ -24,7 +24,7 @@ async function load(
   const host = createFakePluginHost({
     permissions: pluginPermissionsFromManifest(import.meta.url),
     pluginId: "explain-selection",
-    loopbackBaseUrl: "http://127.0.0.1:38886",
+    loopbackBaseUrl: "http://127.0.0.1:38986",
     settings,
     sdk: { threads: { spawn: async () => ({ id: "th_1" }) } },
   });
@@ -127,7 +127,7 @@ describe("explain-selection", () => {
     expect(host.harness.browserCalls).toEqual([
       {
         type: "tabs.open",
-        args: { url: "http://127.0.0.1:38886/threads/th_1", activate: true },
+        args: { url: "http://127.0.0.1:38986/threads/th_1", activate: true },
       },
     ]);
   });
@@ -141,7 +141,7 @@ describe("explain-selection", () => {
 
     expect(host.harness.sdk.callsTo("threads.spawn")).toHaveLength(1);
     expect(host.harness.logEntries.at(-1)?.message).toContain(
-      "could not open http://127.0.0.1:38886/threads/th_1",
+      "could not open http://127.0.0.1:38986/threads/th_1",
     );
   });
 

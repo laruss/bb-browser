@@ -19,8 +19,8 @@ all of them.
 - Run `bb guide` for the system overview and `bb guide <chapter>` for full
   command reference.
 - A standalone `bb` CLI with no connection env targets the default local server
-  at `http://127.0.0.1:38886` and host daemon port `38887`. Set
-  `BB_SERVER_URL` and `BB_HOST_DAEMON_PORT` only for remote or non-default
+  at `http://127.0.0.1:38986` and host daemon port `38987`. Set
+  `PATCHER_SERVER_URL` and `PATCHER_HOST_DAEMON_PORT` only for remote or non-default
   targets. The Add machine installer injects its enrolled daemon's selected
   local API port automatically and atomically reserves it across default and
   custom machine data directories.
@@ -71,7 +71,7 @@ Every flag in full, plus machine, environment, and provider selection, is in
   Pass `--expected-request-sequence <sequence>` to select an earlier message.
   Opening edit mode in the app is non-destructive; history changes only when the
   edit is submitted successfully, and workspace changes remain. When an agent
-  edits another thread, the CLI carries its `BB_THREAD_ID` so the replacement
+  edits another thread, the CLI carries its `PATCHER_THREAD_ID` so the replacement
   runs under agent permission policy.
 - `bb thread tell` steers by default, delivering the message immediately into
   the active turn. Use `--mode queue` when the message is non-urgent and the
@@ -102,7 +102,7 @@ For review or fix pipelines, get the environment ID from
 | Read                                                               | When the task involves                                                                                                                                                                        |
 | ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [references/threads.md](references/threads.md)                     | every `bb thread` flag, permission inheritance, opening threads and files in the app, `bb terminal` for long-running commands, `bb file`/`bb voice`, and recovering failed or stopped threads |
-| [references/machines-projects.md](references/machines-projects.md) | Enrolled execution machines, projects and their sources, environments and diffs, providers/models/ACP agents, and the repo `.bb-env-setup.sh` hook                                            |
+| [references/machines-projects.md](references/machines-projects.md) | Enrolled execution machines, projects and their sources, environments and diffs, providers/models/ACP agents, and the repo `.patcher-env-setup.sh` hook                                       |
 | [references/configuration.md](references/configuration.md)         | `bb-app config` / `bb settings`, experiments, `AGENTS.md` instruction files, and `bb skill ...`                                                                                               |
 | [references/app-settings.md](references/app-settings.md)           | the Settings → General and Settings → Keyboard preferences in detail                                                                                                                          |
 | [references/plugins.md](references/plugins.md)                     | installing, updating, configuring, inspecting, or scaffolding plugins                                                                                                                         |

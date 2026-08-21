@@ -122,7 +122,7 @@ export function resolveAppTabIconName(path: string): IconName {
  * Plugin panels are appended by the caller from the slot registry — a plugin
  * registering a panel gets an omnibox entry without touching this list.
  */
-export const BB_APP_TAB_DESTINATIONS: readonly {
+export const PATCHER_APP_TAB_DESTINATIONS: readonly {
   id: string;
   keywords: readonly string[];
   path: string;

@@ -122,8 +122,8 @@ import { useSystemConfig } from "@/hooks/queries/system-queries";
  */
 const BrowserSurfaceView = lazy(() => import("@/views/BrowserSurfaceView"));
 
-const SIDEBAR_WIDTH_KEY = "bb.sidebar.width";
-const SIDEBAR_OPEN_KEY = "bb.sidebar.open";
+const SIDEBAR_WIDTH_KEY = "patcher.sidebar.width";
+const SIDEBAR_OPEN_KEY = "patcher.sidebar.open";
 // The panel is no longer only a nav list: the agent screens (New thread, a
 // thread) paint inside it, so it has to hold a conversation and a composer. The
 // ceiling is raised well past the default so dragging the panel wide is a real

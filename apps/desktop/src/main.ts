@@ -101,21 +101,21 @@ import {
 } from "./desktop-auto-update.js";
 import { mergeDesktopUpdateInfo } from "./desktop-update-info.js";
 import {
-  BB_DESKTOP_CHECK_FOR_UPDATES_CHANNEL,
-  BB_DESKTOP_GET_INFO_CHANNEL,
-  BB_DESKTOP_INFO_CHANGED_CHANNEL,
-  BB_DESKTOP_INSTALL_UPDATE_CHANNEL,
-  BB_DESKTOP_OPEN_EXTERNAL_URL_CHANNEL,
-  BB_DESKTOP_SET_THEME_CHANNEL,
+  PATCHER_DESKTOP_CHECK_FOR_UPDATES_CHANNEL,
+  PATCHER_DESKTOP_GET_INFO_CHANNEL,
+  PATCHER_DESKTOP_INFO_CHANGED_CHANNEL,
+  PATCHER_DESKTOP_INSTALL_UPDATE_CHANNEL,
+  PATCHER_DESKTOP_OPEN_EXTERNAL_URL_CHANNEL,
+  PATCHER_DESKTOP_SET_THEME_CHANNEL,
 } from "./desktop-update-ipc.js";
 import {
-  BB_DESKTOP_APP_COMMAND_CHANNEL,
-  BB_DESKTOP_CLOSE_WINDOW_CHANNEL,
-  BB_DESKTOP_CLOSE_WINDOW_REQUEST_CHANNEL,
-  BB_DESKTOP_CLOSE_WINDOW_RESPONSE_CHANNEL,
-  BB_DESKTOP_GET_WINDOW_STATE_CHANNEL,
-  BB_DESKTOP_OPEN_NEW_TAB_CHANNEL,
-  BB_DESKTOP_WINDOW_STATE_CHANGED_CHANNEL,
+  PATCHER_DESKTOP_APP_COMMAND_CHANNEL,
+  PATCHER_DESKTOP_CLOSE_WINDOW_CHANNEL,
+  PATCHER_DESKTOP_CLOSE_WINDOW_REQUEST_CHANNEL,
+  PATCHER_DESKTOP_CLOSE_WINDOW_RESPONSE_CHANNEL,
+  PATCHER_DESKTOP_GET_WINDOW_STATE_CHANNEL,
+  PATCHER_DESKTOP_OPEN_NEW_TAB_CHANNEL,
+  PATCHER_DESKTOP_WINDOW_STATE_CHANGED_CHANNEL,
   CLOSE_WINDOW_REQUEST_TIMEOUT_MS,
 } from "./desktop-window-command-ipc.js";
 import {
@@ -126,14 +126,14 @@ import { createBrowserPdfTextExtractor } from "./desktop-browser-pdf-process.js"
 import { resolveDesktopBrowserAppCommand } from "./desktop-browser-shortcuts.js";
 import { registerDesktopBrowserIpc } from "./desktop-browser-main-ipc.js";
 import {
-  BB_DESKTOP_BROWSER_EXTERNAL_URLS_PENDING_CHANNEL,
-  BB_DESKTOP_BROWSER_TAKE_EXTERNAL_URLS_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_EXTERNAL_URLS_PENDING_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_TAKE_EXTERNAL_URLS_CHANNEL,
 } from "./desktop-browser-ipc.js";
 import { createExternalUrlQueue } from "./desktop-external-url.js";
 import {
-  BB_DESKTOP_DEFAULT_BROWSER_CHANGED_CHANNEL,
-  BB_DESKTOP_GET_DEFAULT_BROWSER_CHANNEL,
-  BB_DESKTOP_REQUEST_DEFAULT_BROWSER_CHANNEL,
+  PATCHER_DESKTOP_DEFAULT_BROWSER_CHANGED_CHANNEL,
+  PATCHER_DESKTOP_GET_DEFAULT_BROWSER_CHANNEL,
+  PATCHER_DESKTOP_REQUEST_DEFAULT_BROWSER_CHANNEL,
   readDefaultBrowserStatus,
   requestDefaultBrowser,
   type DefaultBrowserEnvironment,
@@ -162,7 +162,7 @@ import {
 } from "./log-viewer-contract.js";
 import {
   ATTACH_PROBE_TIMEOUT_MS,
-  DEFAULT_BB_SERVER_URL,
+  DEFAULT_PATCHER_SERVER_URL,
   PROCESS_LOG_LINE_LIMIT,
   STARTUP_POLL_INTERVAL_MS,
   STARTUP_TIMEOUT_MS,
@@ -301,16 +301,16 @@ let stoppingForQuit = false;
 let quitting = false;
 let serverTargetStore: ServerTargetStore | null = null;
 let serverTargetGeneration = 0;
-let builtinServerUrl: string = DEFAULT_BB_SERVER_URL;
+let builtinServerUrl: string = DEFAULT_PATCHER_SERVER_URL;
 let desktopBridgePath: string | null = null;
 let desktopUserDataPath: string | null = null;
 let serverUrlDialogPreloadPath: string | null = null;
 let existingServerDialogPreloadPath: string | null = null;
 
 function resolveDesktopServerUrl(args: ResolveDesktopServerUrlArgs): string {
-  const rawPort = args.env.BB_SERVER_PORT?.trim();
+  const rawPort = args.env.PATCHER_SERVER_PORT?.trim();
   if (rawPort === undefined || rawPort.length === 0) {
-    return DEFAULT_BB_SERVER_URL;
+    return DEFAULT_PATCHER_SERVER_URL;
   }
 
   const port = Number(rawPort);
@@ -318,19 +318,19 @@ function resolveDesktopServerUrl(args: ResolveDesktopServerUrlArgs): string {
     return `http://127.0.0.1:${port}`;
   }
 
-  throw new Error("BB_SERVER_PORT must be a valid TCP port");
+  throw new Error("PATCHER_SERVER_PORT must be a valid TCP port");
 }
 
 /**
  * The URL the main window loads. Defaults to the attached/owned bb server, which
- * serves the built UI. In dev, `run-electron-dev.mjs` sets `BB_DESKTOP_APP_URL`
+ * serves the built UI. In dev, `run-electron-dev.mjs` sets `PATCHER_DESKTOP_APP_URL`
  * to the running Vite dev server — but only when it has confirmed Vite is
  * actually listening — so the desktop shell loads live source with HMR while
  * still talking to the same server it attached to. It is unset in packaged
  * builds, so production always loads the server itself.
  */
 function resolveDesktopWindowUrl(args: ResolveDesktopWindowUrlArgs): string {
-  const rawAppUrl = args.env.BB_DESKTOP_APP_URL?.trim();
+  const rawAppUrl = args.env.PATCHER_DESKTOP_APP_URL?.trim();
   if (rawAppUrl === undefined || rawAppUrl.length === 0) {
     return args.serverUrl;
   }
@@ -338,10 +338,10 @@ function resolveDesktopWindowUrl(args: ResolveDesktopWindowUrlArgs): string {
   try {
     parsedAppUrl = new URL(rawAppUrl);
   } catch {
-    throw new Error("BB_DESKTOP_APP_URL must be a valid URL");
+    throw new Error("PATCHER_DESKTOP_APP_URL must be a valid URL");
   }
   if (parsedAppUrl.protocol !== "http:" && parsedAppUrl.protocol !== "https:") {
-    throw new Error("BB_DESKTOP_APP_URL must be an http(s) URL");
+    throw new Error("PATCHER_DESKTOP_APP_URL must be an http(s) URL");
   }
   return rawAppUrl;
 }
@@ -349,7 +349,7 @@ function resolveDesktopWindowUrl(args: ResolveDesktopWindowUrlArgs): string {
 function resolveDesktopUpdateFeedUrl(
   args: ResolveDesktopUpdateFeedUrlArgs,
 ): string {
-  const rawFeedUrl = args.env.BB_DESKTOP_VERSION_FEED_URL?.trim();
+  const rawFeedUrl = args.env.PATCHER_DESKTOP_VERSION_FEED_URL?.trim();
   if (rawFeedUrl === undefined || rawFeedUrl.length === 0) {
     return DESKTOP_UPDATE_FEED_URL;
   }
@@ -416,11 +416,14 @@ function sendDesktopInfoChanged(): void {
     if (isRegisteredApplicationWindow(browserWindow)) {
       sendToApplicationRenderer(
         browserWindow,
-        BB_DESKTOP_INFO_CHANGED_CHANNEL,
+        PATCHER_DESKTOP_INFO_CHANGED_CHANNEL,
         info,
       );
     } else {
-      browserWindow.webContents.send(BB_DESKTOP_INFO_CHANGED_CHANNEL, info);
+      browserWindow.webContents.send(
+        PATCHER_DESKTOP_INFO_CHANGED_CHANNEL,
+        info,
+      );
     }
   }
 }
@@ -444,7 +447,7 @@ function sendDesktopWindowStateChanged(
 ): void {
   sendToApplicationRenderer(
     browserWindow as BrowserWindow,
-    BB_DESKTOP_WINDOW_STATE_CHANGED_CHANNEL,
+    PATCHER_DESKTOP_WINDOW_STATE_CHANGED_CHANNEL,
     getDesktopWindowState(browserWindow),
   );
 }
@@ -464,9 +467,9 @@ function createDesktopLogger(): DesktopAutoUpdateLogger {
 }
 
 function resolveDataDirFromEnv(args: ResolveDataDirFromEnvArgs): string {
-  const rawDataDir = args.env.BB_DATA_DIR?.trim();
+  const rawDataDir = args.env.PATCHER_DATA_DIR?.trim();
   if (rawDataDir === undefined || rawDataDir.length === 0) {
-    return join(args.homeDir, ".bb");
+    return join(args.homeDir, ".patcher");
   }
   if (rawDataDir === "~") {
     return args.homeDir;
@@ -556,7 +559,7 @@ function requestRendererWindowClose(browserWindow: BrowserWindow): void {
   );
   sendToApplicationRenderer(
     browserWindow,
-    BB_DESKTOP_CLOSE_WINDOW_REQUEST_CHANNEL,
+    PATCHER_DESKTOP_CLOSE_WINDOW_REQUEST_CHANNEL,
     null,
   );
 }
@@ -581,7 +584,7 @@ function handleExternalUrlOpen(rawUrl: string): void {
   browserWindow.show();
   sendToApplicationRenderer(
     browserWindow,
-    BB_DESKTOP_BROWSER_EXTERNAL_URLS_PENDING_CHANNEL,
+    PATCHER_DESKTOP_BROWSER_EXTERNAL_URLS_PENDING_CHANNEL,
     null,
   );
 }
@@ -606,7 +609,7 @@ function refreshDefaultBrowserStatus(): void {
     if (isRegisteredApplicationWindow(browserWindow)) {
       sendToApplicationRenderer(
         browserWindow,
-        BB_DESKTOP_DEFAULT_BROWSER_CHANGED_CHANNEL,
+        PATCHER_DESKTOP_DEFAULT_BROWSER_CHANGED_CHANNEL,
         status,
       );
     }
@@ -614,16 +617,16 @@ function refreshDefaultBrowserStatus(): void {
 }
 
 function registerDefaultBrowserIpc(): void {
-  ipcMain.handle(BB_DESKTOP_GET_DEFAULT_BROWSER_CHANNEL, () =>
+  ipcMain.handle(PATCHER_DESKTOP_GET_DEFAULT_BROWSER_CHANNEL, () =>
     readDefaultBrowserStatus(defaultBrowserEnvironment),
   );
-  ipcMain.handle(BB_DESKTOP_REQUEST_DEFAULT_BROWSER_CHANNEL, () =>
+  ipcMain.handle(PATCHER_DESKTOP_REQUEST_DEFAULT_BROWSER_CHANNEL, () =>
     requestDefaultBrowser(defaultBrowserEnvironment),
   );
 }
 
 function registerExternalUrlIpc(): void {
-  ipcMain.handle(BB_DESKTOP_BROWSER_TAKE_EXTERNAL_URLS_CHANNEL, () => ({
+  ipcMain.handle(PATCHER_DESKTOP_BROWSER_TAKE_EXTERNAL_URLS_CHANNEL, () => ({
     urls: externalUrlQueue.takeAll(),
   }));
 }
@@ -704,12 +707,12 @@ function installCurrentApplicationMenu(): void {
       if (browserWindow !== null) {
         sendToApplicationRenderer(
           browserWindow,
-          BB_DESKTOP_OPEN_NEW_TAB_CHANNEL,
+          PATCHER_DESKTOP_OPEN_NEW_TAB_CHANNEL,
           null,
         );
         sendToApplicationRenderer(
           browserWindow,
-          BB_DESKTOP_APP_COMMAND_CHANNEL,
+          PATCHER_DESKTOP_APP_COMMAND_CHANNEL,
           "panel.newTab",
         );
       }
@@ -719,7 +722,7 @@ function installCurrentApplicationMenu(): void {
       if (browserWindow !== null) {
         sendToApplicationRenderer(
           browserWindow,
-          BB_DESKTOP_APP_COMMAND_CHANNEL,
+          PATCHER_DESKTOP_APP_COMMAND_CHANNEL,
           "thread.new",
         );
       }
@@ -729,7 +732,7 @@ function installCurrentApplicationMenu(): void {
       if (browserWindow !== null) {
         sendToApplicationRenderer(
           browserWindow,
-          BB_DESKTOP_APP_COMMAND_CHANNEL,
+          PATCHER_DESKTOP_APP_COMMAND_CHANNEL,
           "settings.open",
         );
       }
@@ -1322,7 +1325,7 @@ async function loadPatcherApp(serverUrl: string): Promise<void> {
 }
 
 function shouldOpenDevTools(): boolean {
-  return process.env.BB_DESKTOP_OPEN_DEVTOOLS === "1";
+  return process.env.PATCHER_DESKTOP_OPEN_DEVTOOLS === "1";
 }
 
 async function createApplicationWindow(
@@ -1388,20 +1391,20 @@ async function finishQuit(): Promise<void> {
 }
 
 function registerDesktopUpdateIpc(): void {
-  ipcMain.handle(BB_DESKTOP_GET_INFO_CHANNEL, () => {
+  ipcMain.handle(PATCHER_DESKTOP_GET_INFO_CHANNEL, () => {
     return getCurrentDesktopInfo();
   });
-  ipcMain.handle(BB_DESKTOP_GET_WINDOW_STATE_CHANNEL, (event) => {
+  ipcMain.handle(PATCHER_DESKTOP_GET_WINDOW_STATE_CHANNEL, (event) => {
     return getSenderDesktopWindowState(event);
   });
-  ipcMain.handle(BB_DESKTOP_CHECK_FOR_UPDATES_CHANNEL, async () => {
+  ipcMain.handle(PATCHER_DESKTOP_CHECK_FOR_UPDATES_CHANNEL, async () => {
     await Promise.all([
       desktopUpdateService?.checkForUpdates() ?? Promise.resolve(null),
       desktopAutoUpdateService?.checkForUpdates() ?? Promise.resolve(null),
     ]);
     return getCurrentDesktopInfo();
   });
-  ipcMain.handle(BB_DESKTOP_INSTALL_UPDATE_CHANNEL, async () => {
+  ipcMain.handle(PATCHER_DESKTOP_INSTALL_UPDATE_CHANNEL, async () => {
     if (desktopAutoUpdateService === null) {
       return;
     }
@@ -1418,7 +1421,7 @@ function registerDesktopUpdateIpc(): void {
   // traffic lights and inactive title-bar chrome — follows an explicit bb
   // theme or the OS when set to system. `themeSource` is app-global so a
   // single assignment covers every BrowserWindow, including the log viewer.
-  ipcMain.on(BB_DESKTOP_SET_THEME_CHANNEL, (_event, payload: unknown) => {
+  ipcMain.on(PATCHER_DESKTOP_SET_THEME_CHANNEL, (_event, payload: unknown) => {
     const parsed = patcherDesktopThemeSchema.safeParse(payload);
     if (!parsed.success) {
       return;
@@ -1426,25 +1429,28 @@ function registerDesktopUpdateIpc(): void {
     nativeTheme.themeSource = parsed.data;
   });
 
-  ipcMain.on(BB_DESKTOP_CLOSE_WINDOW_CHANNEL, (event) => {
+  ipcMain.on(PATCHER_DESKTOP_CLOSE_WINDOW_CHANNEL, (event) => {
     resolveApplicationWindow(event.sender)?.close();
   });
 
-  ipcMain.on(BB_DESKTOP_CLOSE_WINDOW_RESPONSE_CHANNEL, (event, payload) => {
-    const pending = pendingCloseWindowRequests.get(event.sender.id);
-    if (pending !== undefined) {
-      clearTimeout(pending);
-      pendingCloseWindowRequests.delete(event.sender.id);
-    }
-    if (payload === false) {
-      resolveApplicationWindow(event.sender)?.close();
-    }
-  });
+  ipcMain.on(
+    PATCHER_DESKTOP_CLOSE_WINDOW_RESPONSE_CHANNEL,
+    (event, payload) => {
+      const pending = pendingCloseWindowRequests.get(event.sender.id);
+      if (pending !== undefined) {
+        clearTimeout(pending);
+        pendingCloseWindowRequests.delete(event.sender.id);
+      }
+      if (payload === false) {
+        resolveApplicationWindow(event.sender)?.close();
+      }
+    },
+  );
   // The in-app browser tab hands off the current address to the system
   // browser. The URL originates from a possibly-hostile page, so only open
   // well-formed `http(s)` URLs — never `file:`, custom schemes, or junk.
   ipcMain.on(
-    BB_DESKTOP_OPEN_EXTERNAL_URL_CHANNEL,
+    PATCHER_DESKTOP_OPEN_EXTERNAL_URL_CHANNEL,
     (_event, payload: unknown) => {
       if (typeof payload !== "string") {
         return;
@@ -1618,7 +1624,7 @@ interface InitializeRuntimeArgs {
  * so ask first. Local development stays silent, because attaching to a
  * `bun run dev` server is the whole point there.
  *
- * `BB_DESKTOP_ATTACH_WITHOUT_PROMPT` exists for the packaged smoke test, which
+ * `PATCHER_DESKTOP_ATTACH_WITHOUT_PROMPT` exists for the packaged smoke test, which
  * points a packaged build at a stub server and has no one to click the dialog.
  * It is deliberately opt-in and never set by the app itself: the prompt is a
  * safety boundary, so suppressing it must be an explicit act by the harness.
@@ -1627,10 +1633,10 @@ function shouldAskBeforeAttaching(): boolean {
   if (!app.isPackaged || existingServerDialogPreloadPath === null) {
     return false;
   }
-  if (process.env.BB_DESKTOP_ATTACH_WITHOUT_PROMPT === "1") {
+  if (process.env.PATCHER_DESKTOP_ATTACH_WITHOUT_PROMPT === "1") {
     return false;
   }
-  return (process.env.BB_DESKTOP_APP_URL ?? "").trim().length === 0;
+  return (process.env.PATCHER_DESKTOP_APP_URL ?? "").trim().length === 0;
 }
 
 /**
@@ -1915,7 +1921,7 @@ async function runDesktopApp(): Promise<void> {
   const serverUrl = resolveDesktopServerUrl({ env: process.env });
   builtinServerUrl = serverUrl;
   desktopBridgePath = bridgePath;
-  const desktopVersion = getDesktopVersion(process.env.BB_DESKTOP_VERSION);
+  const desktopVersion = getDesktopVersion(process.env.PATCHER_DESKTOP_VERSION);
   const desktopUpdateFeedUrl = resolveDesktopUpdateFeedUrl({
     env: process.env,
   });
@@ -1963,7 +1969,8 @@ async function runDesktopApp(): Promise<void> {
 
   desktopUpdateService = createDesktopUpdateService({
     currentVersion: desktopVersion,
-    enabled: app.isPackaged || process.env.BB_DESKTOP_VERSION_CHECK === "1",
+    enabled:
+      app.isPackaged || process.env.PATCHER_DESKTOP_VERSION_CHECK === "1",
     feedUrl: desktopUpdateFeedUrl,
     logger: createDesktopLogger(),
   });
@@ -1974,7 +1981,7 @@ async function runDesktopApp(): Promise<void> {
       isPackaged: app.isPackaged,
     }),
     forceDevUpdateConfig:
-      !app.isPackaged && process.env.BB_DESKTOP_AUTO_UPDATE === "1",
+      !app.isPackaged && process.env.PATCHER_DESKTOP_AUTO_UPDATE === "1",
     logger: createDesktopLogger(),
     updater: createElectronAutoUpdaterAdapter(autoUpdater),
   });
@@ -1996,7 +2003,7 @@ async function runDesktopApp(): Promise<void> {
       }
       sendToApplicationRenderer(
         browserWindow,
-        BB_DESKTOP_APP_COMMAND_CHANNEL,
+        PATCHER_DESKTOP_APP_COMMAND_CHANNEL,
         command,
       );
     },

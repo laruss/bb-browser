@@ -30,7 +30,7 @@ describe("looksLikeUrl", () => {
     expect(looksLikeUrl("localhost:3000")).toBe(true);
     expect(looksLikeUrl("localhost:3000?debug=1")).toBe(true);
     expect(looksLikeUrl("foo.localhost:3000/path")).toBe(true);
-    expect(looksLikeUrl("127.0.0.1:38886")).toBe(true);
+    expect(looksLikeUrl("127.0.0.1:38986")).toBe(true);
     expect(looksLikeUrl("[::1]:5173/#/route")).toBe(true);
   });
 
@@ -194,7 +194,7 @@ describe("getBrowserUrlSecurity", () => {
   it("does not warn about loopback", () => {
     for (const url of [
       "http://localhost:5173/",
-      "http://127.0.0.1:38886/threads/th_1",
+      "http://127.0.0.1:38986/threads/th_1",
       "http://dev.localhost/",
       "http://[::1]:3000/",
     ]) {

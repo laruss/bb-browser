@@ -6,8 +6,8 @@ import { z } from "zod";
  * (localStorage) tab state. The main process truncates to these before sending;
  * the schemas reject anything longer.
  */
-export const BB_DESKTOP_BROWSER_MAX_URL_LENGTH = 4096;
-export const BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH = 1024;
+export const PATCHER_DESKTOP_BROWSER_MAX_URL_LENGTH = 4096;
+export const PATCHER_DESKTOP_BROWSER_MAX_TITLE_LENGTH = 1024;
 
 /**
  * Pixel rect of the panel region the native browser view must overlay,
@@ -103,7 +103,7 @@ export function clampPatcherDesktopBrowserViewBounds(
 export const patcherDesktopBrowserAttachRequestSchema = z
   .object({
     tabId: z.string().min(1),
-    url: z.string().max(BB_DESKTOP_BROWSER_MAX_URL_LENGTH),
+    url: z.string().max(PATCHER_DESKTOP_BROWSER_MAX_URL_LENGTH),
     bounds: patcherDesktopBrowserViewBoundsSchema,
     visible: z.boolean(),
   })
@@ -115,7 +115,7 @@ export type PatcherDesktopBrowserAttachRequest = z.infer<
 export const patcherDesktopBrowserNavigateRequestSchema = z
   .object({
     tabId: z.string().min(1),
-    url: z.string().min(1).max(BB_DESKTOP_BROWSER_MAX_URL_LENGTH),
+    url: z.string().min(1).max(PATCHER_DESKTOP_BROWSER_MAX_URL_LENGTH),
   })
   .strict();
 export type PatcherDesktopBrowserNavigateRequest = z.infer<
@@ -153,13 +153,13 @@ export type PatcherDesktopBrowserSetVisibleRequest = z.infer<
  * clamps so its steps cannot walk out, and the shell clamps because a plugin
  * can ask for anything.
  */
-export const BB_DESKTOP_BROWSER_MIN_ZOOM_FACTOR = 0.25;
-export const BB_DESKTOP_BROWSER_MAX_ZOOM_FACTOR = 5;
+export const PATCHER_DESKTOP_BROWSER_MIN_ZOOM_FACTOR = 0.25;
+export const PATCHER_DESKTOP_BROWSER_MAX_ZOOM_FACTOR = 5;
 
 const patcherDesktopBrowserZoomFactorSchema = z
   .number()
-  .min(BB_DESKTOP_BROWSER_MIN_ZOOM_FACTOR)
-  .max(BB_DESKTOP_BROWSER_MAX_ZOOM_FACTOR);
+  .min(PATCHER_DESKTOP_BROWSER_MIN_ZOOM_FACTOR)
+  .max(PATCHER_DESKTOP_BROWSER_MAX_ZOOM_FACTOR);
 
 export const patcherDesktopBrowserSetZoomRequestSchema = z
   .object({
@@ -247,12 +247,15 @@ export type PatcherDesktopBrowserTabRef = z.infer<
 export const patcherDesktopBrowserStateSchema = z
   .object({
     tabId: z.string().min(1),
-    url: z.string().max(BB_DESKTOP_BROWSER_MAX_URL_LENGTH),
-    title: z.string().max(BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH).nullable(),
+    url: z.string().max(PATCHER_DESKTOP_BROWSER_MAX_URL_LENGTH),
+    title: z.string().max(PATCHER_DESKTOP_BROWSER_MAX_TITLE_LENGTH).nullable(),
     isLoading: z.boolean(),
     canGoBack: z.boolean(),
     canGoForward: z.boolean(),
-    errorText: z.string().max(BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH).nullable(),
+    errorText: z
+      .string()
+      .max(PATCHER_DESKTOP_BROWSER_MAX_TITLE_LENGTH)
+      .nullable(),
   })
   .strict();
 export type PatcherDesktopBrowserState = z.infer<
@@ -265,7 +268,7 @@ export type PatcherDesktopBrowserState = z.infer<
  */
 export const patcherDesktopBrowserOpenTabRequestSchema = z
   .object({
-    url: z.string().min(1).max(BB_DESKTOP_BROWSER_MAX_URL_LENGTH),
+    url: z.string().min(1).max(PATCHER_DESKTOP_BROWSER_MAX_URL_LENGTH),
   })
   .strict();
 export type PatcherDesktopBrowserOpenTabRequest = z.infer<
@@ -280,7 +283,7 @@ export type PatcherDesktopBrowserOpenTabRequest = z.infer<
 export const patcherDesktopBrowserScopedOpenTabRequestSchema = z
   .object({
     tabId: z.string().min(1),
-    url: z.string().min(1).max(BB_DESKTOP_BROWSER_MAX_URL_LENGTH),
+    url: z.string().min(1).max(PATCHER_DESKTOP_BROWSER_MAX_URL_LENGTH),
   })
   .strict();
 export type PatcherDesktopBrowserScopedOpenTabRequest = z.infer<
@@ -298,7 +301,9 @@ export type PatcherDesktopBrowserScopedOpenTabRequest = z.infer<
  */
 export const patcherDesktopBrowserExternalUrlsSchema = z
   .object({
-    urls: z.array(z.string().min(1).max(BB_DESKTOP_BROWSER_MAX_URL_LENGTH)),
+    urls: z.array(
+      z.string().min(1).max(PATCHER_DESKTOP_BROWSER_MAX_URL_LENGTH),
+    ),
   })
   .strict();
 export type PatcherDesktopBrowserExternalUrls = z.infer<
@@ -310,7 +315,7 @@ export type PatcherDesktopBrowserExternalUrls = z.infer<
  * display lands well under this; the cap exists so a misbehaving push can
  * never balloon renderer memory.
  */
-export const BB_DESKTOP_BROWSER_MAX_SNAPSHOT_DATA_URL_LENGTH = 8_388_608;
+export const PATCHER_DESKTOP_BROWSER_MAX_SNAPSHOT_DATA_URL_LENGTH = 8_388_608;
 
 /**
  * A transient bitmap of a browser view, pushed main → renderer at the start
@@ -325,7 +330,7 @@ export const patcherDesktopBrowserSnapshotSchema = z
     tabId: z.string().min(1),
     dataUrl: z
       .string()
-      .max(BB_DESKTOP_BROWSER_MAX_SNAPSHOT_DATA_URL_LENGTH)
+      .max(PATCHER_DESKTOP_BROWSER_MAX_SNAPSHOT_DATA_URL_LENGTH)
       .nullable(),
   })
   .strict();
@@ -336,10 +341,10 @@ export type PatcherDesktopBrowserSnapshot = z.infer<
 /**
  * Cap on a favicon data URL. Favicons cross the wire as the page's own image
  * bytes, so this is the wire-side twin of the shell's byte cap
- * (`BB_DESKTOP_BROWSER_MAX_FAVICON_BYTES`): base64 expands by 4/3, and the value
+ * (`PATCHER_DESKTOP_BROWSER_MAX_FAVICON_BYTES`): base64 expands by 4/3, and the value
  * leaves room for the `data:<mime>;base64,` prefix on top of that.
  */
-export const BB_DESKTOP_BROWSER_MAX_FAVICON_DATA_URL_LENGTH = 196_608;
+export const PATCHER_DESKTOP_BROWSER_MAX_FAVICON_DATA_URL_LENGTH = 196_608;
 
 /**
  * The icon a browser tab shows, pushed main → renderer when a page declares one
@@ -358,7 +363,7 @@ export const patcherDesktopBrowserFaviconSchema = z
     tabId: z.string().min(1),
     dataUrl: z
       .string()
-      .max(BB_DESKTOP_BROWSER_MAX_FAVICON_DATA_URL_LENGTH)
+      .max(PATCHER_DESKTOP_BROWSER_MAX_FAVICON_DATA_URL_LENGTH)
       .nullable(),
   })
   .strict();
@@ -371,10 +376,10 @@ export type PatcherDesktopBrowserFavicon = z.infer<
  * `Content-Disposition` (or its URL) and a path is built from it, so both are
  * attacker-influenced and bounded here as well as sanitized in the shell.
  */
-export const BB_DESKTOP_BROWSER_MAX_DOWNLOAD_PATH_LENGTH = 4096;
+export const PATCHER_DESKTOP_BROWSER_MAX_DOWNLOAD_PATH_LENGTH = 4096;
 
 /** A media type is short; anything longer is not one, so it is cut. */
-export const BB_DESKTOP_BROWSER_MAX_MIME_TYPE_LENGTH = 255;
+export const PATCHER_DESKTOP_BROWSER_MAX_MIME_TYPE_LENGTH = 255;
 
 /**
  * What a download did, pushed main → renderer. `started` fires when the shell
@@ -417,11 +422,11 @@ export const patcherDesktopBrowserDownloadSchema = z
     filename: z
       .string()
       .min(1)
-      .max(BB_DESKTOP_BROWSER_MAX_DOWNLOAD_PATH_LENGTH),
+      .max(PATCHER_DESKTOP_BROWSER_MAX_DOWNLOAD_PATH_LENGTH),
     savePath: z
       .string()
       .min(1)
-      .max(BB_DESKTOP_BROWSER_MAX_DOWNLOAD_PATH_LENGTH)
+      .max(PATCHER_DESKTOP_BROWSER_MAX_DOWNLOAD_PATH_LENGTH)
       .nullable(),
     /**
      * Where the file came from and what the server said it was. Neither is used
@@ -429,8 +434,8 @@ export const patcherDesktopBrowserDownloadSchema = z
      * to do with a download needs more than a filename, and the shell is the
      * only place that knows them.
      */
-    url: z.string().max(BB_DESKTOP_BROWSER_MAX_URL_LENGTH),
-    mimeType: z.string().max(BB_DESKTOP_BROWSER_MAX_MIME_TYPE_LENGTH),
+    url: z.string().max(PATCHER_DESKTOP_BROWSER_MAX_URL_LENGTH),
+    mimeType: z.string().max(PATCHER_DESKTOP_BROWSER_MAX_MIME_TYPE_LENGTH),
     state: patcherDesktopBrowserDownloadStateSchema,
   })
   .strict();
@@ -501,7 +506,7 @@ export const patcherDesktopBrowserDownloadActionRequestSchema = z
     savePath: z
       .string()
       .min(1)
-      .max(BB_DESKTOP_BROWSER_MAX_DOWNLOAD_PATH_LENGTH),
+      .max(PATCHER_DESKTOP_BROWSER_MAX_DOWNLOAD_PATH_LENGTH),
   })
   .strict();
 export type PatcherDesktopBrowserDownloadActionRequest = z.infer<
@@ -521,7 +526,7 @@ export const patcherDesktopBrowserDownloadActionResultSchema =
       .object({
         ok: z.literal(false),
         reason: z.enum(["unknown-path", "failed"]),
-        message: z.string().max(BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH),
+        message: z.string().max(PATCHER_DESKTOP_BROWSER_MAX_TITLE_LENGTH),
       })
       .strict(),
   ]);
@@ -539,8 +544,8 @@ export type PatcherDesktopBrowserDownloadActionResult = z.infer<
  * schema below rejects anything longer. A caller wanting less is expected to
  * trim further for its own budget.
  */
-export const BB_DESKTOP_BROWSER_MAX_PAGE_TEXT_LENGTH = 65_536;
-export const BB_DESKTOP_BROWSER_MAX_PAGE_SELECTION_LENGTH = 16_384;
+export const PATCHER_DESKTOP_BROWSER_MAX_PAGE_TEXT_LENGTH = 65_536;
+export const PATCHER_DESKTOP_BROWSER_MAX_PAGE_SELECTION_LENGTH = 16_384;
 
 /**
  * What a page read answers with.
@@ -572,12 +577,14 @@ export const patcherDesktopBrowserPageReadResultSchema = z.union([
   z.object({
     ok: z.literal(true),
     tabId: z.string().min(1),
-    url: z.string().max(BB_DESKTOP_BROWSER_MAX_URL_LENGTH),
-    title: z.string().max(BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH).nullable(),
+    url: z.string().max(PATCHER_DESKTOP_BROWSER_MAX_URL_LENGTH),
+    title: z.string().max(PATCHER_DESKTOP_BROWSER_MAX_TITLE_LENGTH).nullable(),
     isLoading: z.boolean(),
-    text: z.string().max(BB_DESKTOP_BROWSER_MAX_PAGE_TEXT_LENGTH),
+    text: z.string().max(PATCHER_DESKTOP_BROWSER_MAX_PAGE_TEXT_LENGTH),
     textTruncated: z.boolean(),
-    selection: z.string().max(BB_DESKTOP_BROWSER_MAX_PAGE_SELECTION_LENGTH),
+    selection: z
+      .string()
+      .max(PATCHER_DESKTOP_BROWSER_MAX_PAGE_SELECTION_LENGTH),
     selectionTruncated: z.boolean(),
     /** Where `text` came from. A PDF has no selection, so it always reads "". */
     contentKind: z.enum(["html", "pdf"]).catch("html").default("html"),
@@ -616,7 +623,7 @@ export type PatcherDesktopBrowserPageReadResult = z.infer<
  * costs it a round trip — but still bounded: this is attacker-shaped content
  * (roles and labels a page chooses) on its way into a model's context.
  */
-export const BB_DESKTOP_BROWSER_MAX_SNAPSHOT_LENGTH = 65_536;
+export const PATCHER_DESKTOP_BROWSER_MAX_SNAPSHOT_LENGTH = 65_536;
 
 /**
  * Ask for a snapshot. `maxDepth` trades completeness for size on deep pages;
@@ -633,7 +640,7 @@ export type PatcherDesktopBrowserSnapshotRequest = z.infer<
   typeof patcherDesktopBrowserSnapshotRequestSchema
 >;
 
-export const BB_DESKTOP_BROWSER_MAX_SELECTOR_LENGTH = 1024;
+export const PATCHER_DESKTOP_BROWSER_MAX_SELECTOR_LENGTH = 1024;
 
 /**
  * The same snapshot, narrowed to what a CSS selector matches.
@@ -648,7 +655,10 @@ export const BB_DESKTOP_BROWSER_MAX_SELECTOR_LENGTH = 1024;
 export const patcherDesktopBrowserSnapshotInRequestSchema = z
   .object({
     tabId: z.string().min(1),
-    selector: z.string().min(1).max(BB_DESKTOP_BROWSER_MAX_SELECTOR_LENGTH),
+    selector: z
+      .string()
+      .min(1)
+      .max(PATCHER_DESKTOP_BROWSER_MAX_SELECTOR_LENGTH),
     maxDepth: z.number().int().positive().max(100).optional(),
   })
   .strict();
@@ -669,9 +679,9 @@ export const patcherDesktopBrowserSnapshotResultSchema = z.union([
   z.object({
     ok: z.literal(true),
     tabId: z.string().min(1),
-    url: z.string().max(BB_DESKTOP_BROWSER_MAX_URL_LENGTH),
-    title: z.string().max(BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH).nullable(),
-    snapshot: z.string().max(BB_DESKTOP_BROWSER_MAX_SNAPSHOT_LENGTH),
+    url: z.string().max(PATCHER_DESKTOP_BROWSER_MAX_URL_LENGTH),
+    title: z.string().max(PATCHER_DESKTOP_BROWSER_MAX_TITLE_LENGTH).nullable(),
+    snapshot: z.string().max(PATCHER_DESKTOP_BROWSER_MAX_SNAPSHOT_LENGTH),
     generation: z.number().int().nonnegative(),
     refCount: z.number().int().nonnegative(),
     truncated: z.boolean(),
@@ -704,7 +714,7 @@ export type PatcherDesktopBrowserSnapshotResult = z.infer<
 >;
 
 /** A page's `alert()` message is page-controlled text; bound it like a title. */
-export const BB_DESKTOP_BROWSER_MAX_DIALOG_MESSAGE_LENGTH = 4096;
+export const PATCHER_DESKTOP_BROWSER_MAX_DIALOG_MESSAGE_LENGTH = 4096;
 
 /**
  * A JavaScript dialog the page has opened and is now blocked on.
@@ -724,10 +734,12 @@ export const patcherDesktopBrowserDialogSchema = z
     dialog: z
       .object({
         type: z.enum(["alert", "confirm", "prompt", "beforeunload"]),
-        message: z.string().max(BB_DESKTOP_BROWSER_MAX_DIALOG_MESSAGE_LENGTH),
+        message: z
+          .string()
+          .max(PATCHER_DESKTOP_BROWSER_MAX_DIALOG_MESSAGE_LENGTH),
         defaultPrompt: z
           .string()
-          .max(BB_DESKTOP_BROWSER_MAX_DIALOG_MESSAGE_LENGTH),
+          .max(PATCHER_DESKTOP_BROWSER_MAX_DIALOG_MESSAGE_LENGTH),
       })
       .nullable(),
   })
@@ -746,7 +758,7 @@ export const patcherDesktopBrowserDialogRespondRequestSchema = z
     accept: z.boolean(),
     promptText: z
       .string()
-      .max(BB_DESKTOP_BROWSER_MAX_DIALOG_MESSAGE_LENGTH)
+      .max(PATCHER_DESKTOP_BROWSER_MAX_DIALOG_MESSAGE_LENGTH)
       .optional(),
   })
   .strict();
@@ -763,10 +775,10 @@ export type PatcherDesktopBrowserDialogHandler = (
  * reached — a host, a certificate's own fields — so each is bounded rather than
  * trusted, and a credential is bounded because it crosses a process boundary.
  */
-export const BB_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH = 1024;
-export const BB_DESKTOP_BROWSER_MAX_CREDENTIAL_LENGTH = 1024;
+export const PATCHER_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH = 1024;
+export const PATCHER_DESKTOP_BROWSER_MAX_CREDENTIAL_LENGTH = 1024;
 /** A certificate store with more than this is not a list a human picks from. */
-export const BB_DESKTOP_BROWSER_MAX_CLIENT_CERTIFICATES = 20;
+export const PATCHER_DESKTOP_BROWSER_MAX_CLIENT_CERTIFICATES = 20;
 
 /**
  * A question the network asked that only a human can answer.
@@ -792,7 +804,10 @@ export const patcherDesktopBrowserPagePromptDetailsSchema =
         kind: z.literal("auth"),
         id: z.string().min(1),
         /** `host` or `host:port` — who is asking, which is the whole question. */
-        host: z.string().min(1).max(BB_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH),
+        host: z
+          .string()
+          .min(1)
+          .max(PATCHER_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH),
         /** The credentials would travel in the clear; worth saying out loud. */
         insecure: z.boolean(),
       })
@@ -801,22 +816,36 @@ export const patcherDesktopBrowserPagePromptDetailsSchema =
       .object({
         kind: z.literal("certificate"),
         id: z.string().min(1),
-        host: z.string().min(1).max(BB_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH),
+        host: z
+          .string()
+          .min(1)
+          .max(PATCHER_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH),
         /** Chromium's own error code, e.g. `net::ERR_CERT_DATE_INVALID`. */
-        errorCode: z.string().max(BB_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH),
-        subjectName: z.string().max(BB_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH),
-        issuerName: z.string().max(BB_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH),
+        errorCode: z
+          .string()
+          .max(PATCHER_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH),
+        subjectName: z
+          .string()
+          .max(PATCHER_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH),
+        issuerName: z
+          .string()
+          .max(PATCHER_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH),
         /** Unix seconds, as Chromium reports them; formatting is the app's. */
         validFrom: z.number().int(),
         validTo: z.number().int(),
-        fingerprint: z.string().max(BB_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH),
+        fingerprint: z
+          .string()
+          .max(PATCHER_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH),
       })
       .strict(),
     z
       .object({
         kind: z.literal("client-certificate"),
         id: z.string().min(1),
-        host: z.string().min(1).max(BB_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH),
+        host: z
+          .string()
+          .min(1)
+          .max(PATCHER_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH),
         certificates: z
           .array(
             z
@@ -825,15 +854,15 @@ export const patcherDesktopBrowserPagePromptDetailsSchema =
                 index: z.number().int().min(0),
                 subjectName: z
                   .string()
-                  .max(BB_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH),
+                  .max(PATCHER_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH),
                 issuerName: z
                   .string()
-                  .max(BB_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH),
+                  .max(PATCHER_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH),
                 validTo: z.number().int(),
               })
               .strict(),
           )
-          .max(BB_DESKTOP_BROWSER_MAX_CLIENT_CERTIFICATES),
+          .max(PATCHER_DESKTOP_BROWSER_MAX_CLIENT_CERTIFICATES),
       })
       .strict(),
   ]);
@@ -874,8 +903,12 @@ export const patcherDesktopBrowserPagePromptAnswerSchema = z
       z
         .object({
           kind: z.literal("credentials"),
-          username: z.string().max(BB_DESKTOP_BROWSER_MAX_CREDENTIAL_LENGTH),
-          password: z.string().max(BB_DESKTOP_BROWSER_MAX_CREDENTIAL_LENGTH),
+          username: z
+            .string()
+            .max(PATCHER_DESKTOP_BROWSER_MAX_CREDENTIAL_LENGTH),
+          password: z
+            .string()
+            .max(PATCHER_DESKTOP_BROWSER_MAX_CREDENTIAL_LENGTH),
         })
         .strict(),
       /** Proceed to a site whose certificate does not verify. */
@@ -902,12 +935,12 @@ export type PatcherDesktopBrowserPagePromptAnswer = z.infer<
  * are counted rather than sized: the interesting limit there is how many, not
  * how long.
  */
-export const BB_DESKTOP_BROWSER_MAX_FILL_TEXT_LENGTH = 8_192;
-export const BB_DESKTOP_BROWSER_MAX_TYPE_TEXT_LENGTH = 1_024;
-export const BB_DESKTOP_BROWSER_MAX_UPLOAD_FILES = 10;
-export const BB_DESKTOP_BROWSER_MAX_SELECT_VALUES = 20;
+export const PATCHER_DESKTOP_BROWSER_MAX_FILL_TEXT_LENGTH = 8_192;
+export const PATCHER_DESKTOP_BROWSER_MAX_TYPE_TEXT_LENGTH = 1_024;
+export const PATCHER_DESKTOP_BROWSER_MAX_UPLOAD_FILES = 10;
+export const PATCHER_DESKTOP_BROWSER_MAX_SELECT_VALUES = 20;
 /** Widest viewport an emulated resize may ask for; beyond this is not a page. */
-export const BB_DESKTOP_BROWSER_MAX_VIEWPORT_SIZE = 10_000;
+export const PATCHER_DESKTOP_BROWSER_MAX_VIEWPORT_SIZE = 10_000;
 
 /**
  * A `[ref=eN]` handed out by a snapshot. Shaped, not free-form, so a ref that
@@ -958,12 +991,12 @@ export const patcherDesktopBrowserInteractionSchema = z.discriminatedUnion(
     z.object({
       action: z.literal("fill"),
       ref: patcherDesktopBrowserRefSchema,
-      text: z.string().max(BB_DESKTOP_BROWSER_MAX_FILL_TEXT_LENGTH),
+      text: z.string().max(PATCHER_DESKTOP_BROWSER_MAX_FILL_TEXT_LENGTH),
     }),
     z.object({
       action: z.literal("type"),
       ref: patcherDesktopBrowserRefSchema,
-      text: z.string().max(BB_DESKTOP_BROWSER_MAX_TYPE_TEXT_LENGTH),
+      text: z.string().max(PATCHER_DESKTOP_BROWSER_MAX_TYPE_TEXT_LENGTH),
     }),
     z.object({
       action: z.literal("press"),
@@ -975,9 +1008,9 @@ export const patcherDesktopBrowserInteractionSchema = z.discriminatedUnion(
       action: z.literal("select"),
       ref: patcherDesktopBrowserRefSchema,
       values: z
-        .array(z.string().max(BB_DESKTOP_BROWSER_MAX_TYPE_TEXT_LENGTH))
+        .array(z.string().max(PATCHER_DESKTOP_BROWSER_MAX_TYPE_TEXT_LENGTH))
         .min(1)
-        .max(BB_DESKTOP_BROWSER_MAX_SELECT_VALUES),
+        .max(PATCHER_DESKTOP_BROWSER_MAX_SELECT_VALUES),
     }),
     z.object({
       action: z.literal("check"),
@@ -996,7 +1029,7 @@ export const patcherDesktopBrowserInteractionSchema = z.discriminatedUnion(
       paths: z
         .array(z.string().min(1).max(1024))
         .min(1)
-        .max(BB_DESKTOP_BROWSER_MAX_UPLOAD_FILES),
+        .max(PATCHER_DESKTOP_BROWSER_MAX_UPLOAD_FILES),
     }),
     z.object({
       action: z.literal("resize"),
@@ -1005,12 +1038,12 @@ export const patcherDesktopBrowserInteractionSchema = z.discriminatedUnion(
         .number()
         .int()
         .nonnegative()
-        .max(BB_DESKTOP_BROWSER_MAX_VIEWPORT_SIZE),
+        .max(PATCHER_DESKTOP_BROWSER_MAX_VIEWPORT_SIZE),
       height: z
         .number()
         .int()
         .nonnegative()
-        .max(BB_DESKTOP_BROWSER_MAX_VIEWPORT_SIZE),
+        .max(PATCHER_DESKTOP_BROWSER_MAX_VIEWPORT_SIZE),
     }),
   ],
 );
@@ -1050,8 +1083,8 @@ export const patcherDesktopBrowserInteractResultSchema = z.union([
   z.object({
     ok: z.literal(true),
     tabId: z.string().min(1),
-    url: z.string().max(BB_DESKTOP_BROWSER_MAX_URL_LENGTH),
-    title: z.string().max(BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH).nullable(),
+    url: z.string().max(PATCHER_DESKTOP_BROWSER_MAX_URL_LENGTH),
+    title: z.string().max(PATCHER_DESKTOP_BROWSER_MAX_TITLE_LENGTH).nullable(),
   }),
   z.object({
     ok: z.literal(false),
@@ -1094,10 +1127,10 @@ export type PatcherDesktopBrowserInteractResult = z.infer<
  * contents are page-authored: a page in a `console.log` loop must cost a fixed
  * amount of shell memory, not a growing one.
  */
-export const BB_DESKTOP_BROWSER_MAX_SCREENSHOT_BASE64_LENGTH = 8_388_608;
-export const BB_DESKTOP_BROWSER_MAX_PDF_BASE64_LENGTH = 16_777_216;
-export const BB_DESKTOP_BROWSER_MAX_OBSERVATION_ENTRIES = 500;
-export const BB_DESKTOP_BROWSER_MAX_CONSOLE_TEXT_LENGTH = 4096;
+export const PATCHER_DESKTOP_BROWSER_MAX_SCREENSHOT_BASE64_LENGTH = 8_388_608;
+export const PATCHER_DESKTOP_BROWSER_MAX_PDF_BASE64_LENGTH = 16_777_216;
+export const PATCHER_DESKTOP_BROWSER_MAX_OBSERVATION_ENTRIES = 500;
+export const PATCHER_DESKTOP_BROWSER_MAX_CONSOLE_TEXT_LENGTH = 4096;
 
 /**
  * What to observe about a tab.
@@ -1131,7 +1164,7 @@ export const patcherDesktopBrowserObservationSchema = z.discriminatedUnion(
         .number()
         .int()
         .min(1)
-        .max(BB_DESKTOP_BROWSER_MAX_OBSERVATION_ENTRIES),
+        .max(PATCHER_DESKTOP_BROWSER_MAX_OBSERVATION_ENTRIES),
     }),
     z.object({
       kind: z.literal("network"),
@@ -1139,7 +1172,7 @@ export const patcherDesktopBrowserObservationSchema = z.discriminatedUnion(
         .number()
         .int()
         .min(1)
-        .max(BB_DESKTOP_BROWSER_MAX_OBSERVATION_ENTRIES),
+        .max(PATCHER_DESKTOP_BROWSER_MAX_OBSERVATION_ENTRIES),
     }),
   ],
 );
@@ -1164,8 +1197,8 @@ export type PatcherDesktopBrowserObserveRequest = z.infer<
  */
 const patcherDesktopBrowserConsoleEntrySchema = z.object({
   level: z.enum(["debug", "info", "warning", "error"]).catch("info"),
-  text: z.string().max(BB_DESKTOP_BROWSER_MAX_CONSOLE_TEXT_LENGTH),
-  source: z.string().max(BB_DESKTOP_BROWSER_MAX_URL_LENGTH),
+  text: z.string().max(PATCHER_DESKTOP_BROWSER_MAX_CONSOLE_TEXT_LENGTH),
+  source: z.string().max(PATCHER_DESKTOP_BROWSER_MAX_URL_LENGTH),
   line: z.number().int().nonnegative(),
   timestamp: z.number().int().nonnegative(),
 });
@@ -1183,11 +1216,11 @@ export type PatcherDesktopBrowserConsoleEntry = z.infer<
  */
 const patcherDesktopBrowserNetworkEntrySchema = z.object({
   method: z.string().max(16),
-  url: z.string().max(BB_DESKTOP_BROWSER_MAX_URL_LENGTH),
+  url: z.string().max(PATCHER_DESKTOP_BROWSER_MAX_URL_LENGTH),
   resourceType: z.string().max(32),
   status: z.number().int().nullable(),
   fromCache: z.boolean(),
-  error: z.string().max(BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH).nullable(),
+  error: z.string().max(PATCHER_DESKTOP_BROWSER_MAX_TITLE_LENGTH).nullable(),
   timestamp: z.number().int().nonnegative(),
 });
 export type PatcherDesktopBrowserNetworkEntry = z.infer<
@@ -1196,8 +1229,8 @@ export type PatcherDesktopBrowserNetworkEntry = z.infer<
 
 const patcherDesktopBrowserObservedPageSchema = {
   tabId: z.string().min(1),
-  url: z.string().max(BB_DESKTOP_BROWSER_MAX_URL_LENGTH),
-  title: z.string().max(BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH).nullable(),
+  url: z.string().max(PATCHER_DESKTOP_BROWSER_MAX_URL_LENGTH),
+  title: z.string().max(PATCHER_DESKTOP_BROWSER_MAX_TITLE_LENGTH).nullable(),
 };
 
 /**
@@ -1218,7 +1251,9 @@ export const patcherDesktopBrowserObserveResultSchema = z.union([
       kind: z.literal("screenshot"),
       ...patcherDesktopBrowserObservedPageSchema,
       mimeType: z.enum(["image/png", "image/jpeg"]),
-      base64: z.string().max(BB_DESKTOP_BROWSER_MAX_SCREENSHOT_BASE64_LENGTH),
+      base64: z
+        .string()
+        .max(PATCHER_DESKTOP_BROWSER_MAX_SCREENSHOT_BASE64_LENGTH),
       width: z.number().int().nonnegative(),
       height: z.number().int().nonnegative(),
     }),
@@ -1226,7 +1261,7 @@ export const patcherDesktopBrowserObserveResultSchema = z.union([
       ok: z.literal(true),
       kind: z.literal("pdf"),
       ...patcherDesktopBrowserObservedPageSchema,
-      base64: z.string().max(BB_DESKTOP_BROWSER_MAX_PDF_BASE64_LENGTH),
+      base64: z.string().max(PATCHER_DESKTOP_BROWSER_MAX_PDF_BASE64_LENGTH),
       byteLength: z.number().int().nonnegative(),
     }),
     z.object({
@@ -1235,7 +1270,7 @@ export const patcherDesktopBrowserObserveResultSchema = z.union([
       ...patcherDesktopBrowserObservedPageSchema,
       entries: z
         .array(patcherDesktopBrowserConsoleEntrySchema)
-        .max(BB_DESKTOP_BROWSER_MAX_OBSERVATION_ENTRIES),
+        .max(PATCHER_DESKTOP_BROWSER_MAX_OBSERVATION_ENTRIES),
       droppedCount: z.number().int().nonnegative(),
     }),
     z.object({
@@ -1244,7 +1279,7 @@ export const patcherDesktopBrowserObserveResultSchema = z.union([
       ...patcherDesktopBrowserObservedPageSchema,
       entries: z
         .array(patcherDesktopBrowserNetworkEntrySchema)
-        .max(BB_DESKTOP_BROWSER_MAX_OBSERVATION_ENTRIES),
+        .max(PATCHER_DESKTOP_BROWSER_MAX_OBSERVATION_ENTRIES),
       droppedCount: z.number().int().nonnegative(),
     }),
   ]),
@@ -1273,7 +1308,7 @@ export type PatcherDesktopBrowserObserveResult = z.infer<
  * 16384 CSS pixels is the conservative floor across the GPUs Chromium runs on;
  * a document longer than that is captured down to this height and says so.
  */
-export const BB_DESKTOP_BROWSER_MAX_FULL_PAGE_DIMENSION = 16_384;
+export const PATCHER_DESKTOP_BROWSER_MAX_FULL_PAGE_DIMENSION = 16_384;
 
 /**
  * Capture the whole document rather than the visible viewport.
@@ -1308,7 +1343,7 @@ export type PatcherDesktopBrowserCaptureFullPageRequest = z.infer<
  * measured in different units.
  *
  * `truncated` means the document was longer than
- * {@link BB_DESKTOP_BROWSER_MAX_FULL_PAGE_DIMENSION} and this is its top. A
+ * {@link PATCHER_DESKTOP_BROWSER_MAX_FULL_PAGE_DIMENSION} and this is its top. A
  * clipped picture is still a useful picture — which is why this truncates where
  * an over-large PDF refuses — but only if it admits it.
  */
@@ -1316,10 +1351,12 @@ export const patcherDesktopBrowserCaptureFullPageResultSchema = z.union([
   z.object({
     ok: z.literal(true),
     tabId: z.string().min(1),
-    url: z.string().max(BB_DESKTOP_BROWSER_MAX_URL_LENGTH),
-    title: z.string().max(BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH).nullable(),
+    url: z.string().max(PATCHER_DESKTOP_BROWSER_MAX_URL_LENGTH),
+    title: z.string().max(PATCHER_DESKTOP_BROWSER_MAX_TITLE_LENGTH).nullable(),
     mimeType: z.enum(["image/png", "image/jpeg"]),
-    base64: z.string().max(BB_DESKTOP_BROWSER_MAX_SCREENSHOT_BASE64_LENGTH),
+    base64: z
+      .string()
+      .max(PATCHER_DESKTOP_BROWSER_MAX_SCREENSHOT_BASE64_LENGTH),
     width: z.number().int().nonnegative(),
     height: z.number().int().nonnegative(),
     truncated: z.boolean(),
@@ -1356,12 +1393,12 @@ export type PatcherDesktopBrowserCaptureFullPageResult = z.infer<
  * origin may legitimately hold megabytes of serialized application state, and
  * all three of those must not become the size of one IPC message.
  */
-export const BB_DESKTOP_BROWSER_MAX_COOKIES = 200;
-export const BB_DESKTOP_BROWSER_MAX_COOKIE_NAME_LENGTH = 256;
-export const BB_DESKTOP_BROWSER_MAX_COOKIE_VALUE_LENGTH = 4096;
-export const BB_DESKTOP_BROWSER_MAX_STORAGE_ITEMS = 500;
-export const BB_DESKTOP_BROWSER_MAX_STORAGE_VALUE_LENGTH = 65_536;
-export const BB_DESKTOP_BROWSER_MAX_STORAGE_TOTAL_LENGTH = 1_048_576;
+export const PATCHER_DESKTOP_BROWSER_MAX_COOKIES = 200;
+export const PATCHER_DESKTOP_BROWSER_MAX_COOKIE_NAME_LENGTH = 256;
+export const PATCHER_DESKTOP_BROWSER_MAX_COOKIE_VALUE_LENGTH = 4096;
+export const PATCHER_DESKTOP_BROWSER_MAX_STORAGE_ITEMS = 500;
+export const PATCHER_DESKTOP_BROWSER_MAX_STORAGE_VALUE_LENGTH = 65_536;
+export const PATCHER_DESKTOP_BROWSER_MAX_STORAGE_TOTAL_LENGTH = 1_048_576;
 
 /**
  * One cookie, in **Playwright's `storageState` shape** rather than Electron's.
@@ -1377,11 +1414,11 @@ export const BB_DESKTOP_BROWSER_MAX_STORAGE_TOTAL_LENGTH = 1_048_576;
  * {@link patcherDesktopBrowserStorageOperationSchema}.
  */
 const patcherDesktopBrowserCookieSchema = z.object({
-  name: z.string().max(BB_DESKTOP_BROWSER_MAX_COOKIE_NAME_LENGTH),
-  value: z.string().max(BB_DESKTOP_BROWSER_MAX_COOKIE_VALUE_LENGTH),
+  name: z.string().max(PATCHER_DESKTOP_BROWSER_MAX_COOKIE_NAME_LENGTH),
+  value: z.string().max(PATCHER_DESKTOP_BROWSER_MAX_COOKIE_VALUE_LENGTH),
   /** A leading dot means a domain cookie; without one it is host-only. */
-  domain: z.string().max(BB_DESKTOP_BROWSER_MAX_COOKIE_NAME_LENGTH),
-  path: z.string().max(BB_DESKTOP_BROWSER_MAX_COOKIE_NAME_LENGTH),
+  domain: z.string().max(PATCHER_DESKTOP_BROWSER_MAX_COOKIE_NAME_LENGTH),
+  path: z.string().max(PATCHER_DESKTOP_BROWSER_MAX_COOKIE_NAME_LENGTH),
   /** Seconds since the epoch, or -1 for a cookie that dies with the session. */
   expires: z.number(),
   httpOnly: z.boolean(),
@@ -1393,8 +1430,8 @@ export type PatcherDesktopBrowserCookie = z.infer<
 >;
 
 const patcherDesktopBrowserStorageItemSchema = z.object({
-  name: z.string().max(BB_DESKTOP_BROWSER_MAX_COOKIE_NAME_LENGTH),
-  value: z.string().max(BB_DESKTOP_BROWSER_MAX_STORAGE_VALUE_LENGTH),
+  name: z.string().max(PATCHER_DESKTOP_BROWSER_MAX_COOKIE_NAME_LENGTH),
+  value: z.string().max(PATCHER_DESKTOP_BROWSER_MAX_STORAGE_VALUE_LENGTH),
 });
 export type PatcherDesktopBrowserStorageItem = z.infer<
   typeof patcherDesktopBrowserStorageItemSchema
@@ -1436,7 +1473,7 @@ export const patcherDesktopBrowserStorageOperationSchema = z.discriminatedUnion(
       cookies: z
         .array(patcherDesktopBrowserCookieSchema)
         .min(1)
-        .max(BB_DESKTOP_BROWSER_MAX_COOKIES),
+        .max(PATCHER_DESKTOP_BROWSER_MAX_COOKIES),
     }),
     /** A null name clears every cookie the tab's URL carries. */
     z.object({
@@ -1444,7 +1481,7 @@ export const patcherDesktopBrowserStorageOperationSchema = z.discriminatedUnion(
       name: z
         .string()
         .min(1)
-        .max(BB_DESKTOP_BROWSER_MAX_COOKIE_NAME_LENGTH)
+        .max(PATCHER_DESKTOP_BROWSER_MAX_COOKIE_NAME_LENGTH)
         .nullable(),
     }),
     z.object({
@@ -1457,7 +1494,7 @@ export const patcherDesktopBrowserStorageOperationSchema = z.discriminatedUnion(
       items: z
         .array(patcherDesktopBrowserStorageItemSchema)
         .min(1)
-        .max(BB_DESKTOP_BROWSER_MAX_STORAGE_ITEMS),
+        .max(PATCHER_DESKTOP_BROWSER_MAX_STORAGE_ITEMS),
     }),
     z.object({
       kind: z.literal("items-clear"),
@@ -1465,7 +1502,7 @@ export const patcherDesktopBrowserStorageOperationSchema = z.discriminatedUnion(
       name: z
         .string()
         .min(1)
-        .max(BB_DESKTOP_BROWSER_MAX_COOKIE_NAME_LENGTH)
+        .max(PATCHER_DESKTOP_BROWSER_MAX_COOKIE_NAME_LENGTH)
         .nullable(),
     }),
   ],
@@ -1504,7 +1541,7 @@ export const patcherDesktopBrowserStorageResultSchema = z.union([
       ...patcherDesktopBrowserObservedPageSchema,
       cookies: z
         .array(patcherDesktopBrowserCookieSchema)
-        .max(BB_DESKTOP_BROWSER_MAX_COOKIES),
+        .max(PATCHER_DESKTOP_BROWSER_MAX_COOKIES),
     }),
     z.object({
       ok: z.literal(true),
@@ -1513,7 +1550,7 @@ export const patcherDesktopBrowserStorageResultSchema = z.union([
       area: patcherDesktopBrowserStorageAreaSchema,
       items: z
         .array(patcherDesktopBrowserStorageItemSchema)
-        .max(BB_DESKTOP_BROWSER_MAX_STORAGE_ITEMS),
+        .max(PATCHER_DESKTOP_BROWSER_MAX_STORAGE_ITEMS),
       /** The origin held more than the caps allow, so this is not all of it. */
       truncated: z.boolean(),
     }),
@@ -1553,13 +1590,13 @@ export type PatcherDesktopBrowserStorageResult = z.infer<
  * like a PDF — it is text, so a caller can still use the part that arrived, and
  * the flag says there was more.
  */
-export const BB_DESKTOP_BROWSER_MAX_ROUTES = 20;
-export const BB_DESKTOP_BROWSER_MAX_ROUTE_PATTERN_LENGTH = 1024;
-export const BB_DESKTOP_BROWSER_MAX_ROUTE_BODY_LENGTH = 262_144;
-export const BB_DESKTOP_BROWSER_MAX_ROUTE_HEADERS = 20;
-export const BB_DESKTOP_BROWSER_MAX_EVAL_EXPRESSION_LENGTH = 8_192;
-export const BB_DESKTOP_BROWSER_MAX_EVAL_RESULT_LENGTH = 65_536;
-export const BB_DESKTOP_BROWSER_MAX_WHEEL_DELTA = 100_000;
+export const PATCHER_DESKTOP_BROWSER_MAX_ROUTES = 20;
+export const PATCHER_DESKTOP_BROWSER_MAX_ROUTE_PATTERN_LENGTH = 1024;
+export const PATCHER_DESKTOP_BROWSER_MAX_ROUTE_BODY_LENGTH = 262_144;
+export const PATCHER_DESKTOP_BROWSER_MAX_ROUTE_HEADERS = 20;
+export const PATCHER_DESKTOP_BROWSER_MAX_EVAL_EXPRESSION_LENGTH = 8_192;
+export const PATCHER_DESKTOP_BROWSER_MAX_EVAL_RESULT_LENGTH = 65_536;
+export const PATCHER_DESKTOP_BROWSER_MAX_WHEEL_DELTA = 100_000;
 
 /**
  * A request the tab should be answered with instead of the network's answer.
@@ -1570,10 +1607,13 @@ export const BB_DESKTOP_BROWSER_MAX_WHEEL_DELTA = 100_000;
  * it means there.
  */
 export const patcherDesktopBrowserRouteSchema = z.object({
-  pattern: z.string().min(1).max(BB_DESKTOP_BROWSER_MAX_ROUTE_PATTERN_LENGTH),
+  pattern: z
+    .string()
+    .min(1)
+    .max(PATCHER_DESKTOP_BROWSER_MAX_ROUTE_PATTERN_LENGTH),
   status: z.number().int().min(100).max(599),
   contentType: z.string().max(256),
-  body: z.string().max(BB_DESKTOP_BROWSER_MAX_ROUTE_BODY_LENGTH),
+  body: z.string().max(PATCHER_DESKTOP_BROWSER_MAX_ROUTE_BODY_LENGTH),
   headers: z
     .array(
       z.object({
@@ -1581,7 +1621,7 @@ export const patcherDesktopBrowserRouteSchema = z.object({
         value: z.string().max(4096),
       }),
     )
-    .max(BB_DESKTOP_BROWSER_MAX_ROUTE_HEADERS),
+    .max(PATCHER_DESKTOP_BROWSER_MAX_ROUTE_HEADERS),
 });
 export type PatcherDesktopBrowserRoute = z.infer<
   typeof patcherDesktopBrowserRouteSchema
@@ -1620,12 +1660,12 @@ export const patcherDesktopBrowserControlOperationSchema = z.discriminatedUnion(
         .number()
         .int()
         .nonnegative()
-        .max(BB_DESKTOP_BROWSER_MAX_VIEWPORT_SIZE),
+        .max(PATCHER_DESKTOP_BROWSER_MAX_VIEWPORT_SIZE),
       y: z
         .number()
         .int()
         .nonnegative()
-        .max(BB_DESKTOP_BROWSER_MAX_VIEWPORT_SIZE),
+        .max(PATCHER_DESKTOP_BROWSER_MAX_VIEWPORT_SIZE),
     }),
     z.object({
       kind: z.literal("mouse-button"),
@@ -1638,13 +1678,13 @@ export const patcherDesktopBrowserControlOperationSchema = z.discriminatedUnion(
       deltaX: z
         .number()
         .int()
-        .min(-BB_DESKTOP_BROWSER_MAX_WHEEL_DELTA)
-        .max(BB_DESKTOP_BROWSER_MAX_WHEEL_DELTA),
+        .min(-PATCHER_DESKTOP_BROWSER_MAX_WHEEL_DELTA)
+        .max(PATCHER_DESKTOP_BROWSER_MAX_WHEEL_DELTA),
       deltaY: z
         .number()
         .int()
-        .min(-BB_DESKTOP_BROWSER_MAX_WHEEL_DELTA)
-        .max(BB_DESKTOP_BROWSER_MAX_WHEEL_DELTA),
+        .min(-PATCHER_DESKTOP_BROWSER_MAX_WHEEL_DELTA)
+        .max(PATCHER_DESKTOP_BROWSER_MAX_WHEEL_DELTA),
     }),
     z.object({
       kind: z.literal("evaluate"),
@@ -1658,7 +1698,7 @@ export const patcherDesktopBrowserControlOperationSchema = z.discriminatedUnion(
       expression: z
         .string()
         .min(1)
-        .max(BB_DESKTOP_BROWSER_MAX_EVAL_EXPRESSION_LENGTH),
+        .max(PATCHER_DESKTOP_BROWSER_MAX_EVAL_EXPRESSION_LENGTH),
       /** The element to pass in, or null to evaluate against the page. */
       ref: patcherDesktopBrowserRefSchema.nullable(),
     }),
@@ -1673,7 +1713,7 @@ export const patcherDesktopBrowserControlOperationSchema = z.discriminatedUnion(
       pattern: z
         .string()
         .min(1)
-        .max(BB_DESKTOP_BROWSER_MAX_ROUTE_PATTERN_LENGTH)
+        .max(PATCHER_DESKTOP_BROWSER_MAX_ROUTE_PATTERN_LENGTH)
         .nullable(),
     }),
     z.object({ kind: z.literal("offline"), offline: z.boolean() }),
@@ -1721,7 +1761,7 @@ export const patcherDesktopBrowserControlResultSchema = z.union([
       kind: z.literal("evaluated"),
       ...patcherDesktopBrowserObservedPageSchema,
       /** `JSON.stringify` of what the expression returned, or `undefined`. */
-      value: z.string().max(BB_DESKTOP_BROWSER_MAX_EVAL_RESULT_LENGTH),
+      value: z.string().max(PATCHER_DESKTOP_BROWSER_MAX_EVAL_RESULT_LENGTH),
       truncated: z.boolean(),
     }),
     z.object({
@@ -1730,7 +1770,7 @@ export const patcherDesktopBrowserControlResultSchema = z.union([
       ...patcherDesktopBrowserObservedPageSchema,
       routes: z
         .array(patcherDesktopBrowserRouteStateSchema)
-        .max(BB_DESKTOP_BROWSER_MAX_ROUTES),
+        .max(PATCHER_DESKTOP_BROWSER_MAX_ROUTES),
       /**
        * Reported alongside the routes because it answers the same question a
        * caller is usually asking by then: why is this page not loading.
@@ -1771,12 +1811,12 @@ export type PatcherDesktopBrowserControlResult = z.infer<
  * is what the shell stops filming at, and the frame count and per-frame cap are
  * only there so no single number can be missed.
  */
-export const BB_DESKTOP_BROWSER_MAX_VIDEO_FRAMES = 300;
-export const BB_DESKTOP_BROWSER_MAX_VIDEO_FRAME_BASE64_LENGTH = 262_144;
-export const BB_DESKTOP_BROWSER_MAX_VIDEO_BASE64_LENGTH = 16_777_216;
-export const BB_DESKTOP_BROWSER_MAX_VIDEO_CHAPTERS = 50;
-export const BB_DESKTOP_BROWSER_MAX_CHAPTER_TITLE_LENGTH = 200;
-export const BB_DESKTOP_BROWSER_MAX_VIDEO_FPS = 30;
+export const PATCHER_DESKTOP_BROWSER_MAX_VIDEO_FRAMES = 300;
+export const PATCHER_DESKTOP_BROWSER_MAX_VIDEO_FRAME_BASE64_LENGTH = 262_144;
+export const PATCHER_DESKTOP_BROWSER_MAX_VIDEO_BASE64_LENGTH = 16_777_216;
+export const PATCHER_DESKTOP_BROWSER_MAX_VIDEO_CHAPTERS = 50;
+export const PATCHER_DESKTOP_BROWSER_MAX_CHAPTER_TITLE_LENGTH = 200;
+export const PATCHER_DESKTOP_BROWSER_MAX_VIDEO_FPS = 30;
 
 /**
  * Filming a tab.
@@ -1797,11 +1837,14 @@ export const patcherDesktopBrowserRecordOperationSchema = z.discriminatedUnion(
        * acknowledged and dropped, because an unacknowledged frame stops the
        * screencast dead.
        */
-      fps: z.number().int().min(1).max(BB_DESKTOP_BROWSER_MAX_VIDEO_FPS),
+      fps: z.number().int().min(1).max(PATCHER_DESKTOP_BROWSER_MAX_VIDEO_FPS),
     }),
     z.object({
       kind: z.literal("video-chapter"),
-      title: z.string().min(1).max(BB_DESKTOP_BROWSER_MAX_CHAPTER_TITLE_LENGTH),
+      title: z
+        .string()
+        .min(1)
+        .max(PATCHER_DESKTOP_BROWSER_MAX_CHAPTER_TITLE_LENGTH),
     }),
     z.object({ kind: z.literal("video-stop") }),
   ],
@@ -1823,7 +1866,7 @@ export type PatcherDesktopBrowserRecordRequest = z.infer<
 const patcherDesktopBrowserVideoFrameSchema = z.object({
   /** Milliseconds since the recording started. */
   at: z.number().int().nonnegative(),
-  base64: z.string().max(BB_DESKTOP_BROWSER_MAX_VIDEO_FRAME_BASE64_LENGTH),
+  base64: z.string().max(PATCHER_DESKTOP_BROWSER_MAX_VIDEO_FRAME_BASE64_LENGTH),
 });
 export type PatcherDesktopBrowserVideoFrame = z.infer<
   typeof patcherDesktopBrowserVideoFrameSchema
@@ -1848,15 +1891,17 @@ export const patcherDesktopBrowserRecordResultSchema = z.union([
       ...patcherDesktopBrowserObservedPageSchema,
       frames: z
         .array(patcherDesktopBrowserVideoFrameSchema)
-        .max(BB_DESKTOP_BROWSER_MAX_VIDEO_FRAMES),
+        .max(PATCHER_DESKTOP_BROWSER_MAX_VIDEO_FRAMES),
       chapters: z
         .array(
           z.object({
             at: z.number().int().nonnegative(),
-            title: z.string().max(BB_DESKTOP_BROWSER_MAX_CHAPTER_TITLE_LENGTH),
+            title: z
+              .string()
+              .max(PATCHER_DESKTOP_BROWSER_MAX_CHAPTER_TITLE_LENGTH),
           }),
         )
-        .max(BB_DESKTOP_BROWSER_MAX_VIDEO_CHAPTERS),
+        .max(PATCHER_DESKTOP_BROWSER_MAX_VIDEO_CHAPTERS),
       /**
        * Frames Chromium sent that this did not keep — the pacing threw most of
        * them away, and the caps may have ended the recording early. Without the
@@ -1904,7 +1949,7 @@ export type PatcherDesktopBrowserFaviconHandler = (
 export const patcherDesktopBrowserSearchSelectionSchema = z
   .object({
     tabId: z.string().min(1),
-    query: z.string().min(1).max(BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH),
+    query: z.string().min(1).max(PATCHER_DESKTOP_BROWSER_MAX_TITLE_LENGTH),
   })
   .strict();
 export type PatcherDesktopBrowserSearchSelection = z.infer<
@@ -1928,10 +1973,10 @@ export type PatcherDesktopBrowserSearchSelectionHandler = (
  * which the shell can do the moment the page commits, while a renderer round trip
  * could not.
  */
-export const BB_DESKTOP_BROWSER_MAX_PAGE_STYLES = 64;
+export const PATCHER_DESKTOP_BROWSER_MAX_PAGE_STYLES = 64;
 
 /** Longest stylesheet one style may carry; mirrors the plugin API's cap. */
-export const BB_DESKTOP_BROWSER_MAX_PAGE_STYLE_CSS_LENGTH = 64_000;
+export const PATCHER_DESKTOP_BROWSER_MAX_PAGE_STYLE_CSS_LENGTH = 64_000;
 
 export const patcherDesktopBrowserPageStyleSchema = z
   .object({
@@ -1939,7 +1984,10 @@ export const patcherDesktopBrowserPageStyleSchema = z
     styleId: z.string().min(1).max(128),
     /** URL globs; the same dialect route patterns are written in. */
     matches: z.array(z.string().min(1).max(2_048)).min(1).max(16),
-    css: z.string().min(1).max(BB_DESKTOP_BROWSER_MAX_PAGE_STYLE_CSS_LENGTH),
+    css: z
+      .string()
+      .min(1)
+      .max(PATCHER_DESKTOP_BROWSER_MAX_PAGE_STYLE_CSS_LENGTH),
   })
   .strict();
 export type PatcherDesktopBrowserPageStyle = z.infer<
@@ -1950,7 +1998,7 @@ export const patcherDesktopBrowserPageStylesSchema = z
   .object({
     styles: z
       .array(patcherDesktopBrowserPageStyleSchema)
-      .max(BB_DESKTOP_BROWSER_MAX_PAGE_STYLES),
+      .max(PATCHER_DESKTOP_BROWSER_MAX_PAGE_STYLES),
   })
   .strict();
 export type PatcherDesktopBrowserPageStyles = z.infer<
@@ -1972,10 +2020,10 @@ export type PatcherDesktopBrowserPageStyles = z.infer<
  * the script can ask for comes back through
  * {@link patcherDesktopBrowserPageScriptCallSchema}, one method at a time.
  */
-export const BB_DESKTOP_BROWSER_MAX_PAGE_SCRIPTS = 64;
+export const PATCHER_DESKTOP_BROWSER_MAX_PAGE_SCRIPTS = 64;
 
 /** Longest script one registration may carry; mirrors the plugin API's cap. */
-export const BB_DESKTOP_BROWSER_MAX_PAGE_SCRIPT_CODE_LENGTH = 64_000;
+export const PATCHER_DESKTOP_BROWSER_MAX_PAGE_SCRIPT_CODE_LENGTH = 64_000;
 
 export const patcherDesktopBrowserPageScriptSchema = z
   .object({
@@ -1983,7 +2031,10 @@ export const patcherDesktopBrowserPageScriptSchema = z
     scriptId: z.string().min(1).max(128),
     /** URL globs; the same dialect route patterns are written in. */
     matches: z.array(z.string().min(1).max(2_048)).min(1).max(16),
-    code: z.string().min(1).max(BB_DESKTOP_BROWSER_MAX_PAGE_SCRIPT_CODE_LENGTH),
+    code: z
+      .string()
+      .min(1)
+      .max(PATCHER_DESKTOP_BROWSER_MAX_PAGE_SCRIPT_CODE_LENGTH),
   })
   .strict();
 export type PatcherDesktopBrowserPageScript = z.infer<
@@ -1994,7 +2045,7 @@ export const patcherDesktopBrowserPageScriptsSchema = z
   .object({
     scripts: z
       .array(patcherDesktopBrowserPageScriptSchema)
-      .max(BB_DESKTOP_BROWSER_MAX_PAGE_SCRIPTS),
+      .max(PATCHER_DESKTOP_BROWSER_MAX_PAGE_SCRIPTS),
   })
   .strict();
 export type PatcherDesktopBrowserPageScripts = z.infer<
@@ -2007,7 +2058,7 @@ export type PatcherDesktopBrowserPageScripts = z.infer<
  * size a database row can hold: a page script asks its plugin questions, and a
  * plugin with a large answer has `bb.http.route` for it.
  */
-export const BB_DESKTOP_BROWSER_MAX_PAGE_SCRIPT_JSON_LENGTH = 128_000;
+export const PATCHER_DESKTOP_BROWSER_MAX_PAGE_SCRIPT_JSON_LENGTH = 128_000;
 
 /**
  * A page script asking its own plugin something, forwarded main → renderer.
@@ -2029,8 +2080,8 @@ export const patcherDesktopBrowserPageScriptCallSchema = z
     pluginId: z.string().min(1).max(128),
     method: z.string().min(1).max(128),
     /** The rpc input, already JSON text — the shell never inspects it. */
-    input: z.string().max(BB_DESKTOP_BROWSER_MAX_PAGE_SCRIPT_JSON_LENGTH),
-    url: z.string().min(1).max(BB_DESKTOP_BROWSER_MAX_URL_LENGTH),
+    input: z.string().max(PATCHER_DESKTOP_BROWSER_MAX_PAGE_SCRIPT_JSON_LENGTH),
+    url: z.string().min(1).max(PATCHER_DESKTOP_BROWSER_MAX_URL_LENGTH),
   })
   .strict();
 export type PatcherDesktopBrowserPageScriptCall = z.infer<
@@ -2055,7 +2106,9 @@ export const patcherDesktopBrowserPageScriptResultSchema = z.discriminatedUnion(
       .object({
         callId: z.string().min(1).max(64),
         ok: z.literal(true),
-        result: z.string().max(BB_DESKTOP_BROWSER_MAX_PAGE_SCRIPT_JSON_LENGTH),
+        result: z
+          .string()
+          .max(PATCHER_DESKTOP_BROWSER_MAX_PAGE_SCRIPT_JSON_LENGTH),
       })
       .strict(),
     z
@@ -2099,7 +2152,7 @@ export const patcherDesktopPageScriptRpcRequestSchema = z
     pluginId: z.string().min(1).max(128),
     method: z.string().min(1).max(128),
     /** The input, already JSON text; the preload serialised it. */
-    input: z.string().max(BB_DESKTOP_BROWSER_MAX_PAGE_SCRIPT_JSON_LENGTH),
+    input: z.string().max(PATCHER_DESKTOP_BROWSER_MAX_PAGE_SCRIPT_JSON_LENGTH),
   })
   .strict();
 export type PatcherDesktopPageScriptRpcRequest = z.infer<
@@ -2124,13 +2177,13 @@ export type PatcherDesktopPageScriptRpcAnswer =
  * right-click by a round trip. The shell composes what it already has, and the
  * *click* is what travels back.
  */
-export const BB_DESKTOP_BROWSER_MAX_CONTEXT_MENU_ITEMS = 20;
+export const PATCHER_DESKTOP_BROWSER_MAX_CONTEXT_MENU_ITEMS = 20;
 
 export const patcherDesktopBrowserContextMenuItemSchema = z
   .object({
     pluginId: z.string().min(1).max(128),
     itemId: z.string().min(1).max(128),
-    title: z.string().min(1).max(BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH),
+    title: z.string().min(1).max(PATCHER_DESKTOP_BROWSER_MAX_TITLE_LENGTH),
     /** Any match shows the item; empty means every context. */
     when: z
       .object({
@@ -2150,7 +2203,7 @@ export const patcherDesktopBrowserContextMenuItemsSchema = z
   .object({
     items: z
       .array(patcherDesktopBrowserContextMenuItemSchema)
-      .max(BB_DESKTOP_BROWSER_MAX_CONTEXT_MENU_ITEMS),
+      .max(PATCHER_DESKTOP_BROWSER_MAX_CONTEXT_MENU_ITEMS),
   })
   .strict();
 export type PatcherDesktopBrowserContextMenuItems = z.infer<
@@ -2163,12 +2216,12 @@ export const patcherDesktopBrowserContextMenuInvokeSchema = z
     pluginId: z.string().min(1).max(128),
     itemId: z.string().min(1).max(128),
     tabId: z.string().min(1),
-    pageUrl: z.string().max(BB_DESKTOP_BROWSER_MAX_URL_LENGTH),
-    linkUrl: z.string().max(BB_DESKTOP_BROWSER_MAX_URL_LENGTH).nullable(),
-    imageUrl: z.string().max(BB_DESKTOP_BROWSER_MAX_URL_LENGTH).nullable(),
+    pageUrl: z.string().max(PATCHER_DESKTOP_BROWSER_MAX_URL_LENGTH),
+    linkUrl: z.string().max(PATCHER_DESKTOP_BROWSER_MAX_URL_LENGTH).nullable(),
+    imageUrl: z.string().max(PATCHER_DESKTOP_BROWSER_MAX_URL_LENGTH).nullable(),
     selectionText: z
       .string()
-      .max(BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH)
+      .max(PATCHER_DESKTOP_BROWSER_MAX_TITLE_LENGTH)
       .nullable(),
   })
   .strict();
@@ -2184,7 +2237,7 @@ export type PatcherDesktopBrowserContextMenuInvokeHandler = (
  * stops being useful long before this, and the string crosses a process
  * boundary on every keystroke.
  */
-export const BB_DESKTOP_BROWSER_MAX_FIND_QUERY_LENGTH = 256;
+export const PATCHER_DESKTOP_BROWSER_MAX_FIND_QUERY_LENGTH = 256;
 
 /**
  * What to do with a tab's find session.
@@ -2216,7 +2269,7 @@ export const patcherDesktopBrowserFindRequestSchema = z
   .object({
     tabId: z.string().min(1),
     action: patcherDesktopBrowserFindActionSchema,
-    query: z.string().max(BB_DESKTOP_BROWSER_MAX_FIND_QUERY_LENGTH),
+    query: z.string().max(PATCHER_DESKTOP_BROWSER_MAX_FIND_QUERY_LENGTH),
   })
   .strict();
 export type PatcherDesktopBrowserFindRequest = z.infer<
@@ -2252,7 +2305,7 @@ export type PatcherDesktopBrowserFindResultHandler = (
  * How many tabs may claim real popups at once. A surface declares its whole tab
  * list, so this is the same cap the tab list itself lives under.
  */
-export const BB_DESKTOP_BROWSER_MAX_POPUP_TABS = 200;
+export const PATCHER_DESKTOP_BROWSER_MAX_POPUP_TABS = 200;
 
 /**
  * The tabs whose pages get **real** popups — windows Chromium creates, with a
@@ -2269,7 +2322,9 @@ export const BB_DESKTOP_BROWSER_MAX_POPUP_TABS = 200;
  */
 export const patcherDesktopBrowserPopupTabsSchema = z
   .object({
-    tabIds: z.array(z.string().min(1)).max(BB_DESKTOP_BROWSER_MAX_POPUP_TABS),
+    tabIds: z
+      .array(z.string().min(1))
+      .max(PATCHER_DESKTOP_BROWSER_MAX_POPUP_TABS),
   })
   .strict();
 export type PatcherDesktopBrowserPopupTabs = z.infer<
@@ -2298,7 +2353,7 @@ export const patcherDesktopBrowserPopupSchema = z.discriminatedUnion("kind", [
       /** The shell's id for the new tab; the renderer must use this one. */
       tabId: z.string().min(1),
       /** Where it is going, for the tab the renderer creates. */
-      url: z.string().max(BB_DESKTOP_BROWSER_MAX_URL_LENGTH),
+      url: z.string().max(PATCHER_DESKTOP_BROWSER_MAX_URL_LENGTH),
     })
     .strict(),
   z

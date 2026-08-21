@@ -249,7 +249,7 @@ const EMPTY_PROJECT_THREAD_SUBSET_FILTERS =
   {} satisfies ProjectThreadSubsetFilters;
 const EMPTY_TERMINAL_SESSIONS: readonly TerminalSession[] = [];
 const DEFAULT_PULL_REQUEST_MERGE_METHOD: PullRequestMergeMethod = "merge";
-const PULL_REQUEST_MERGE_METHOD_STORAGE_KEY = "bb.pullRequest.mergeMethod";
+const PULL_REQUEST_MERGE_METHOD_STORAGE_KEY = "patcher.pullRequest.mergeMethod";
 
 function isPullRequestMergeMethod(
   value: string,

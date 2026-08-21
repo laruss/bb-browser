@@ -63,7 +63,7 @@
           });
         function getFaviconColorSuffix() {
           try {
-            var color = localStorage.getItem("bb.faviconColor");
+            var color = localStorage.getItem("patcher.faviconColor");
             return /^(red|orange|yellow|green|teal|blue|purple|pink)$/.test(
               color,
             )
@@ -80,9 +80,9 @@
           "/apple-touch-icon" + faviconColorSuffix + ".png";
         // Pre-paint browser-chrome color so PWA/status-bar chrome doesn't
         // flash the wrong shade before the app boots; useTheme.ts owns the
-        // meta tag afterwards. Mirrors the bb.theme preference resolution and
+        // meta tag afterwards. Mirrors the patcher.theme preference resolution and
         // the --canvas values in theme.css (#151515 = oklch(0.195 0 0)).
-        var theme = localStorage.getItem("bb.theme");
+        var theme = localStorage.getItem("patcher.theme");
         var darkTheme = theme === "dark" || (theme !== "light" && mq.matches);
         document.getElementById("theme-color").content = darkTheme
           ? "#151515"

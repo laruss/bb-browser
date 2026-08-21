@@ -7,7 +7,7 @@ import { createPatcherSdk, type PatcherSdk } from "./core.js";
 import { createNodeWebsocketFactory } from "./node-websocket.js";
 import {
   createRequestTimeoutFetch,
-  DEFAULT_BB_REQUEST_TIMEOUT_MS,
+  DEFAULT_PATCHER_REQUEST_TIMEOUT_MS,
   type FetchImplementation,
 } from "./response.js";
 import { createHttpTransport } from "./transport-http.js";
@@ -41,7 +41,7 @@ function resolveCliConfig(cliConfig?: CliConfig): CliConfig {
 
 function resolveHostDaemonUrl(cliConfig?: CliConfig): string {
   const config = resolveCliConfig(cliConfig);
-  return `http://${DEFAULT_HOST_DAEMON_LOCAL_BIND_HOST}:${config.BB_HOST_DAEMON_PORT}`;
+  return `http://${DEFAULT_HOST_DAEMON_LOCAL_BIND_HOST}:${config.PATCHER_HOST_DAEMON_PORT}`;
 }
 
 export function createNodeTransport(
@@ -49,12 +49,13 @@ export function createNodeTransport(
 ): PatcherSdkTransport {
   return createHttpTransport({
     // Only fall back to CLI config when no base URL is given, so explicitly
-    // configured SDKs work in environments without BB_SERVER_URL.
-    baseUrl: args.baseUrl ?? resolveCliConfig(args.cliConfig).BB_SERVER_URL,
+    // configured SDKs work in environments without PATCHER_SERVER_URL.
+    baseUrl:
+      args.baseUrl ?? resolveCliConfig(args.cliConfig).PATCHER_SERVER_URL,
     fetch:
       args.fetch ??
       createRequestTimeoutFetch({
-        timeoutMs: args.timeoutMs ?? DEFAULT_BB_REQUEST_TIMEOUT_MS,
+        timeoutMs: args.timeoutMs ?? DEFAULT_PATCHER_REQUEST_TIMEOUT_MS,
       }),
     realtimeUrl: args.realtimeUrl,
     runtime: "node",
@@ -94,7 +95,7 @@ export {
   createHttpTransport,
   createNodeWebsocketFactory,
   createRequestTimeoutFetch,
-  DEFAULT_BB_REQUEST_TIMEOUT_MS,
+  DEFAULT_PATCHER_REQUEST_TIMEOUT_MS,
 };
 export { PatcherHttpError, PatcherRequestTimeoutError } from "./response.js";
 export { createGuideArea } from "./areas/guide.js";

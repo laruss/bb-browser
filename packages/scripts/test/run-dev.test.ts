@@ -48,7 +48,7 @@ afterEach(async () => {
 describe("run-dev", () => {
   it("derives stable data and ports from a managed checkout", () => {
     const homeDir = "/Users/tester";
-    const repoRoot = "/Users/tester/.bb-dev/projects/env_q7e5i54kxt/bb";
+    const repoRoot = "/Users/tester/.patcher-dev/projects/env_q7e5i54kxt/bb";
     const config = resolveDevInstanceConfig({ homeDir, repoRoot });
 
     expect(config.instanceId).toBe(
@@ -61,8 +61,8 @@ describe("run-dev", () => {
     expect(Object.values(config.ports)).not.toContain(5173);
     expect(Object.values(config.ports)).not.toContain(3334);
     expect(Object.values(config.ports)).not.toContain(3002);
-    expect(Object.values(config.ports)).not.toContain(38886);
-    expect(Object.values(config.ports)).not.toContain(38887);
+    expect(Object.values(config.ports)).not.toContain(38986);
+    expect(Object.values(config.ports)).not.toContain(38987);
   });
 
   it("keeps Cloud gateway ports out of the worker band and packaged ports", () => {
@@ -105,11 +105,11 @@ describe("run-dev", () => {
   it("overrides instance selectors while preserving unrelated environment", () => {
     const config = resolveDevInstanceConfig({
       homeDir: "/Users/tester",
-      repoRoot: "/Users/tester/.bb-dev/projects/env_q7e5i54kxt/bb",
+      repoRoot: "/Users/tester/.patcher-dev/projects/env_q7e5i54kxt/bb",
     });
     const baseEnv: NodeJS.ProcessEnv = {
-      BB_DATA_DIR: "/Users/tester/.bb-dev",
-      BB_SERVER_PORT: "3334",
+      PATCHER_DATA_DIR: "/Users/tester/.patcher-dev",
+      PATCHER_SERVER_PORT: "3334",
       NODE_ENV: "production",
       OPENAI_API_KEY: "test-key",
     };
@@ -118,47 +118,51 @@ describe("run-dev", () => {
 
     expect(env.OPENAI_API_KEY).toBe("test-key");
     expect(env.NODE_ENV).toBe("development");
-    expect(env.BB_DATA_DIR).toBe(config.dataDir);
-    expect(env.BB_SERVER_PORT).toBe(String(config.ports.serverPort));
-    expect(env.BB_SERVER_URL).toBe(config.serverUrl);
-    expect(env.BB_HOST_DAEMON_PORT).toBe(String(config.ports.hostDaemonPort));
-    expect(env.BB_DEV_APP_PORT).toBe(String(config.ports.appPort));
+    expect(env.PATCHER_DATA_DIR).toBe(config.dataDir);
+    expect(env.PATCHER_SERVER_PORT).toBe(String(config.ports.serverPort));
+    expect(env.PATCHER_SERVER_URL).toBe(config.serverUrl);
+    expect(env.PATCHER_HOST_DAEMON_PORT).toBe(
+      String(config.ports.hostDaemonPort),
+    );
+    expect(env.PATCHER_DEV_APP_PORT).toBe(String(config.ports.appPort));
   });
 
   it("inherits parent bb skills for managed worktree dev apps", () => {
     const homeDir = "/Users/tester";
     const repoRoot =
-      "/Users/tester/.bb-dev/code-bb-abc123/worktrees/env_feature/bb";
+      "/Users/tester/.patcher-dev/code-bb-abc123/worktrees/env_feature/bb";
     const config = resolveDevInstanceConfig({
       homeDir,
       repoRoot,
     });
 
     const inheritedSkillsRootPaths = [
-      "/Users/tester/.bb-dev/code-bb-abc123/skills",
-      "/Users/tester/.bb/skills",
+      "/Users/tester/.patcher-dev/code-bb-abc123/skills",
+      "/Users/tester/.patcher/skills",
     ];
     expect(resolveInheritedDevSkillsRootPaths({ homeDir, repoRoot })).toEqual(
       inheritedSkillsRootPaths,
     );
     expect(toDevProcessEnv({ baseEnv: {}, config })).toMatchObject({
-      BB_INHERITED_SKILLS_ROOTS: inheritedSkillsRootPaths.join(path.delimiter),
+      PATCHER_INHERITED_SKILLS_ROOTS: inheritedSkillsRootPaths.join(
+        path.delimiter,
+      ),
     });
   });
 
   it("dedupes inherited bb skills for prod-managed worktree dev apps", () => {
     const homeDir = "/Users/tester";
-    const repoRoot = "/Users/tester/.bb/worktrees/env_feature/bb";
+    const repoRoot = "/Users/tester/.patcher/worktrees/env_feature/bb";
     const config = resolveDevInstanceConfig({
       homeDir,
       repoRoot,
     });
 
     expect(resolveInheritedDevSkillsRootPaths({ homeDir, repoRoot })).toEqual([
-      "/Users/tester/.bb/skills",
+      "/Users/tester/.patcher/skills",
     ]);
     expect(toDevProcessEnv({ baseEnv: {}, config })).toMatchObject({
-      BB_INHERITED_SKILLS_ROOTS: "/Users/tester/.bb/skills",
+      PATCHER_INHERITED_SKILLS_ROOTS: "/Users/tester/.patcher/skills",
     });
   });
 
@@ -171,10 +175,10 @@ describe("run-dev", () => {
     });
 
     expect(resolveInheritedDevSkillsRootPaths({ homeDir, repoRoot })).toEqual([
-      "/Users/tester/.bb/skills",
+      "/Users/tester/.patcher/skills",
     ]);
     expect(toDevProcessEnv({ baseEnv: {}, config })).toMatchObject({
-      BB_INHERITED_SKILLS_ROOTS: "/Users/tester/.bb/skills",
+      PATCHER_INHERITED_SKILLS_ROOTS: "/Users/tester/.patcher/skills",
     });
   });
 
@@ -184,18 +188,19 @@ describe("run-dev", () => {
       repoRoot: "/Users/tester/src/bb",
     });
     const baseEnv: NodeJS.ProcessEnv = {
-      BB_ENVIRONMENT_ID: "env_parent",
-      BB_PROJECT_ID: "proj_parent",
-      BB_THREAD_ID: "thr_parent",
-      BB_THREAD_STORAGE: "/Users/tester/.bb/thread-storage/thr_parent",
+      PATCHER_ENVIRONMENT_ID: "env_parent",
+      PATCHER_PROJECT_ID: "proj_parent",
+      PATCHER_THREAD_ID: "thr_parent",
+      PATCHER_THREAD_STORAGE:
+        "/Users/tester/.patcher/thread-storage/thr_parent",
     };
 
     const env = toDevProcessEnv({ baseEnv, config });
 
-    expect(env.BB_ENVIRONMENT_ID).toBeUndefined();
-    expect(env.BB_THREAD_ID).toBeUndefined();
-    expect(env.BB_THREAD_STORAGE).toBeUndefined();
-    expect(env.BB_PROJECT_ID).toBe("proj_parent");
+    expect(env.PATCHER_ENVIRONMENT_ID).toBeUndefined();
+    expect(env.PATCHER_THREAD_ID).toBeUndefined();
+    expect(env.PATCHER_THREAD_STORAGE).toBeUndefined();
+    expect(env.PATCHER_PROJECT_ID).toBe("proj_parent");
   });
 
   it("runs the same persistent dev tasks as bun run dev", () => {
@@ -219,7 +224,7 @@ describe("run-dev", () => {
 
   it("migrates legacy flat dev data into the checkout instance", async () => {
     const homeDir = await makeTempDir("bb-dev-home-");
-    const legacyDataDir = path.join(homeDir, ".bb-dev");
+    const legacyDataDir = path.join(homeDir, ".patcher-dev");
     const config = resolveDevInstanceConfig({
       homeDir,
       repoRoot: path.join(homeDir, "src", "bb"),
@@ -234,9 +239,9 @@ describe("run-dev", () => {
     await fs.mkdir(path.join(legacyDataDir, "dev-supervisors"), {
       recursive: true,
     });
-    await fs.writeFile(path.join(legacyDataDir, "bb.db"), "db", "utf8");
+    await fs.writeFile(path.join(legacyDataDir, "patcher.db"), "db", "utf8");
     await fs.writeFile(
-      path.join(legacyDataDir, "bb.db.backup-20260515-160305"),
+      path.join(legacyDataDir, "patcher.db.backup-20260515-160305"),
       "backup",
       "utf8",
     );
@@ -264,13 +269,13 @@ describe("run-dev", () => {
       migratedEntries: [
         "attachments",
         "auth-secret",
-        "bb.db",
-        "bb.db.backup-20260515-160305",
         "logs",
+        "patcher.db",
+        "patcher.db.backup-20260515-160305",
       ],
     });
     await expect(
-      fs.readFile(path.join(config.dataDir, "bb.db"), "utf8"),
+      fs.readFile(path.join(config.dataDir, "patcher.db"), "utf8"),
     ).resolves.toBe("db");
     await expect(
       fs.readFile(path.join(config.dataDir, "auth-secret"), "utf8"),
@@ -299,25 +304,33 @@ describe("run-dev", () => {
 
   it("skips migration when the target instance already has data", async () => {
     const homeDir = await makeTempDir("bb-dev-home-");
-    const legacyDataDir = path.join(homeDir, ".bb-dev");
+    const legacyDataDir = path.join(homeDir, ".patcher-dev");
     const config = resolveDevInstanceConfig({
       homeDir,
       repoRoot: path.join(homeDir, "src", "bb"),
     });
     await fs.mkdir(legacyDataDir, { recursive: true });
     await fs.mkdir(config.dataDir, { recursive: true });
-    await fs.writeFile(path.join(legacyDataDir, "bb.db"), "legacy", "utf8");
-    await fs.writeFile(path.join(config.dataDir, "bb.db"), "target", "utf8");
+    await fs.writeFile(
+      path.join(legacyDataDir, "patcher.db"),
+      "legacy",
+      "utf8",
+    );
+    await fs.writeFile(
+      path.join(config.dataDir, "patcher.db"),
+      "target",
+      "utf8",
+    );
 
     await expect(migrateLegacyDevData({ config })).resolves.toEqual({
       migratedEntries: [],
       skippedReason: "target-exists",
     });
     await expect(
-      fs.readFile(path.join(legacyDataDir, "bb.db"), "utf8"),
+      fs.readFile(path.join(legacyDataDir, "patcher.db"), "utf8"),
     ).resolves.toBe("legacy");
     await expect(
-      fs.readFile(path.join(config.dataDir, "bb.db"), "utf8"),
+      fs.readFile(path.join(config.dataDir, "patcher.db"), "utf8"),
     ).resolves.toBe("target");
   });
 
@@ -337,7 +350,7 @@ describe("run-dev", () => {
 
   it("skips migration when legacy dev data has no migratable entries", async () => {
     const homeDir = await makeTempDir("bb-dev-home-");
-    const legacyDataDir = path.join(homeDir, ".bb-dev");
+    const legacyDataDir = path.join(homeDir, ".patcher-dev");
     const config = resolveDevInstanceConfig({
       homeDir,
       repoRoot: path.join(homeDir, "src", "bb"),
@@ -354,7 +367,7 @@ describe("run-dev", () => {
 
   it("rolls back already moved entries when migration rename fails", async () => {
     const homeDir = await makeTempDir("bb-dev-home-");
-    const legacyDataDir = path.join(homeDir, ".bb-dev");
+    const legacyDataDir = path.join(homeDir, ".patcher-dev");
     const config = resolveDevInstanceConfig({
       homeDir,
       repoRoot: path.join(homeDir, "src", "bb"),
@@ -365,7 +378,7 @@ describe("run-dev", () => {
       "secret",
       "utf8",
     );
-    await fs.writeFile(path.join(legacyDataDir, "bb.db"), "db", "utf8");
+    await fs.writeFile(path.join(legacyDataDir, "patcher.db"), "db", "utf8");
     const renameCalls: string[] = [];
     const renameWithInjectedFailure = vi.fn(
       async (sourcePath: string, targetPath: string): Promise<void> => {
@@ -388,19 +401,19 @@ describe("run-dev", () => {
       }),
     ).rejects.toThrow("injected rename failure");
 
-    expect(renameCalls).toEqual(["auth-secret", "bb.db"]);
+    expect(renameCalls).toEqual(["auth-secret", "patcher.db"]);
     await expect(
       fs.readFile(path.join(legacyDataDir, "auth-secret"), "utf8"),
     ).resolves.toBe("secret");
     await expect(
-      fs.readFile(path.join(legacyDataDir, "bb.db"), "utf8"),
+      fs.readFile(path.join(legacyDataDir, "patcher.db"), "utf8"),
     ).resolves.toBe("db");
     expect(await pathExists(config.dataDir)).toBe(false);
   });
 
   it("does not migrate legacy data while a legacy dev supervisor is running", async () => {
     const homeDir = await makeTempDir("bb-dev-home-");
-    const legacyDataDir = path.join(homeDir, ".bb-dev");
+    const legacyDataDir = path.join(homeDir, ".patcher-dev");
     const config = resolveDevInstanceConfig({
       homeDir,
       repoRoot: path.join(homeDir, "src", "bb"),
@@ -408,7 +421,7 @@ describe("run-dev", () => {
     await fs.mkdir(path.join(legacyDataDir, "dev-supervisors"), {
       recursive: true,
     });
-    await fs.writeFile(path.join(legacyDataDir, "bb.db"), "db", "utf8");
+    await fs.writeFile(path.join(legacyDataDir, "patcher.db"), "db", "utf8");
     await fs.writeFile(
       path.join(legacyDataDir, "dev-supervisors", "server.pid"),
       `${process.pid}\n`,
@@ -420,7 +433,7 @@ describe("run-dev", () => {
       skippedReason: "legacy-dev-process-running",
     });
     await expect(
-      fs.readFile(path.join(legacyDataDir, "bb.db"), "utf8"),
+      fs.readFile(path.join(legacyDataDir, "patcher.db"), "utf8"),
     ).resolves.toBe("db");
     expect(await pathExists(config.dataDir)).toBe(false);
   });

@@ -189,7 +189,7 @@ export function registerShowCommand(
   parent
     .command("show [id]")
     .description("Show thread details and pull request status")
-    .option("--self", "Target the current thread (from BB_THREAD_ID)")
+    .option("--self", "Target the current thread (from PATCHER_THREAD_ID)")
     .option("--json", "Print machine-readable JSON output")
     .option("--work-status", "Include work status (git state) in output")
     .option("--git-diff", "Include git diff in output")
@@ -424,7 +424,7 @@ export function registerShowCommand(
   parent
     .command("log [id]")
     .description("Show thread event log")
-    .option("--self", "Target the current thread (from BB_THREAD_ID)")
+    .option("--self", "Target the current thread (from PATCHER_THREAD_ID)")
     .option(
       "--json",
       "Print machine-readable JSON output (alias for --format json)",
@@ -480,7 +480,7 @@ export function registerShowCommand(
   parent
     .command("output [id]")
     .description("Get the final output of a thread")
-    .option("--self", "Target the current thread (from BB_THREAD_ID)")
+    .option("--self", "Target the current thread (from PATCHER_THREAD_ID)")
     .option("--json", "Print machine-readable JSON output")
     .action(
       action(async (id: string | undefined, opts: ThreadOutputCommandOptions) => {

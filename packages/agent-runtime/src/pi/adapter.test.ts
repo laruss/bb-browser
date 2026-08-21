@@ -449,7 +449,7 @@ describe("pi provider adapter", () => {
     expect(
       (cmd as { params: { config?: Record<string, unknown> } }).params.config,
     ).toMatchObject({
-      "shell_environment_policy.set.BB_THREAD_ID": "bb-thread-1",
+      "shell_environment_policy.set.PATCHER_THREAD_ID": "bb-thread-1",
       "shell_environment_policy.set.TEST_VAR": "123",
     });
     expect(cmd).not.toMatchObject({

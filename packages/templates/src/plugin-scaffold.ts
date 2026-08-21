@@ -178,8 +178,8 @@ async function writeDeclarationAtomically(
   label: string,
   content: string,
 ): Promise<void> {
-  const tempPath = `${filePath}.bb-tmp`;
-  await statNoFollow(tempPath, `${label}.bb-tmp`);
+  const tempPath = `${filePath}.patcher-tmp`;
+  await statNoFollow(tempPath, `${label}.patcher-tmp`);
   await rm(tempPath, { force: true });
   await writeFile(tempPath, content, { flag: "wx" });
   try {
@@ -273,7 +273,7 @@ export default async function plugin(bb: PatcherPluginApi) {
   });
   const { greeting } = await settings.get();
 
-  // Namespaced key-value storage in bb.db (JSON values, up to 256KB each).
+  // Namespaced key-value storage in patcher.db (JSON values, up to 256KB each).
   // For bigger or relational data use bb.storage.database().
   const loadCount = ((await bb.storage.kv.get<number>("load-count")) ?? 0) + 1;
   await bb.storage.kv.set("load-count", loadCount);

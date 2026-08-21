@@ -123,59 +123,60 @@ interface FakeSupervisor {
 
 const invalidConfigCommandCases: InvalidConfigCommandCase[] = [
   {
-    expectedError: /BB_INFERENCE must use provider\/model format/u,
-    key: "BB_INFERENCE",
+    expectedError: /PATCHER_INFERENCE must use provider\/model format/u,
+    key: "PATCHER_INFERENCE",
     value: "gpt-4o-mini",
   },
   {
-    expectedError: /BB_INFERENCE_FALLBACK must use provider\/model format/u,
-    key: "BB_INFERENCE_FALLBACK",
+    expectedError:
+      /PATCHER_INFERENCE_FALLBACK must use provider\/model format/u,
+    key: "PATCHER_INFERENCE_FALLBACK",
     value: "gpt-5.4-mini",
   },
   {
-    expectedError: /BB_TRANSCRIPTION must use provider\/model format/u,
-    key: "BB_TRANSCRIPTION",
+    expectedError: /PATCHER_TRANSCRIPTION must use provider\/model format/u,
+    key: "PATCHER_TRANSCRIPTION",
     value: "gpt-4o-mini-transcribe",
   },
   {
-    expectedError: /BB_APP_URL must be a valid URL/u,
-    key: "BB_APP_URL",
+    expectedError: /PATCHER_APP_URL must be a valid URL/u,
+    key: "PATCHER_APP_URL",
     value: "not-a-url",
   },
   {
-    expectedError: /BB_SERVER_URL must be a valid URL/u,
-    key: "BB_SERVER_URL",
+    expectedError: /PATCHER_SERVER_URL must be a valid URL/u,
+    key: "PATCHER_SERVER_URL",
     value: "not-a-url",
   },
   {
-    expectedError: /BB_LOG_LEVEL must be one of/u,
-    key: "BB_LOG_LEVEL",
+    expectedError: /PATCHER_LOG_LEVEL must be one of/u,
+    key: "PATCHER_LOG_LEVEL",
     value: "bogus",
   },
 ];
 
 const startupOnlyManagedEnvCases: StartupOnlyManagedEnvCase[] = [
-  { key: "BB_APP_SURFACE", value: "desktop" },
-  { key: "BB_APP_URL", value: "https://app.example.test" },
-  { key: "BB_DATA_DIR", value: "/tmp/bb-managed-data" },
-  { key: "BB_DEV_APP_PORT", value: "4173" },
-  { key: "BB_EXTERNAL_URL", value: "https://external.example.test" },
-  { key: "BB_FF_PLACEHOLDER", value: "true" },
-  { key: "BB_FF_TIMELINE_WINDOW_EVENT_BUDGET", value: "2000" },
-  { key: "BB_HOST_DAEMON_PORT", value: "48887" },
-  { key: "BB_INFERENCE", value: "codex/test-inference" },
+  { key: "PATCHER_APP_SURFACE", value: "desktop" },
+  { key: "PATCHER_APP_URL", value: "https://app.example.test" },
+  { key: "PATCHER_DATA_DIR", value: "/tmp/bb-managed-data" },
+  { key: "PATCHER_DEV_APP_PORT", value: "4173" },
+  { key: "PATCHER_EXTERNAL_URL", value: "https://external.example.test" },
+  { key: "PATCHER_FF_PLACEHOLDER", value: "true" },
+  { key: "PATCHER_FF_TIMELINE_WINDOW_EVENT_BUDGET", value: "2000" },
+  { key: "PATCHER_HOST_DAEMON_PORT", value: "48887" },
+  { key: "PATCHER_INFERENCE", value: "codex/test-inference" },
   {
-    key: "BB_INFERENCE_FALLBACK",
+    key: "PATCHER_INFERENCE_FALLBACK",
     value: "codex/test-inference-fallback",
   },
-  { key: "BB_INHERITED_SKILLS_ROOTS", value: "/tmp/bb-skills" },
-  { key: "BB_LOG_LEVEL", value: "debug" },
-  { key: "BB_MANAGED_DEV_BUILTIN_PLUGIN_HOT_RELOAD", value: "1" },
-  { key: "BB_POSTHOG_API_KEY", value: "test-posthog-key" },
-  { key: "BB_SERVER_BIND_HOST", value: "127.0.0.1" },
-  { key: "BB_SERVER_PORT", value: "48886" },
-  { key: "BB_TELEMETRY", value: "false" },
-  { key: "BB_TRANSCRIPTION", value: "codex/test-transcription" },
+  { key: "PATCHER_INHERITED_SKILLS_ROOTS", value: "/tmp/bb-skills" },
+  { key: "PATCHER_LOG_LEVEL", value: "debug" },
+  { key: "PATCHER_MANAGED_DEV_BUILTIN_PLUGIN_HOT_RELOAD", value: "1" },
+  { key: "PATCHER_POSTHOG_API_KEY", value: "test-posthog-key" },
+  { key: "PATCHER_SERVER_BIND_HOST", value: "127.0.0.1" },
+  { key: "PATCHER_SERVER_PORT", value: "48886" },
+  { key: "PATCHER_TELEMETRY", value: "false" },
+  { key: "PATCHER_TRANSCRIPTION", value: "codex/test-transcription" },
 ];
 
 const packageMetadataSchema = z.object({
@@ -251,15 +252,15 @@ function createTestStartContext(): PatcherAppStartContext {
     daemonEntry: "/tmp/bb-app-test/host-daemon/dist/daemon-bundle.mjs",
     daemonLockDir: "/tmp/bb-app-test/daemon.lock.lock",
     daemonLockFile: "/tmp/bb-app-test/daemon.lock",
-    daemonPort: 38887,
+    daemonPort: 38987,
     dataDir: "/tmp/bb-app-test",
-    dbPath: "/tmp/bb-app-test/bb.db",
+    dbPath: "/tmp/bb-app-test/patcher.db",
     envFile: "/tmp/bb-app-test/env.json",
     logDir: "/tmp/bb-app-test/logs",
     packageRoot: "/tmp/bb-app-test/package",
     serverEntry: "/tmp/bb-app-test/server/dist/index.js",
-    serverPort: 38886,
-    serverUrl: "http://127.0.0.1:38886",
+    serverPort: 38986,
+    serverUrl: "http://127.0.0.1:38986",
   };
 }
 
@@ -500,7 +501,7 @@ describe("bb-app launcher", () => {
         JSON.stringify({
           connected: statusRequests >= 2,
           hostId: "host-expected",
-          serverUrl: "http://127.0.0.1:38886/",
+          serverUrl: "http://127.0.0.1:38986/",
         }),
       );
     });
@@ -517,7 +518,7 @@ describe("bb-app launcher", () => {
       await waitForHostDaemonStatus({
         childProcess: null,
         expectedHostId: "host-expected",
-        expectedServerUrl: "http://localhost:38886",
+        expectedServerUrl: "http://localhost:38986",
         port: address.port,
         timeoutMs: 1_000,
       });
@@ -575,12 +576,12 @@ describe("bb-app launcher", () => {
       homeDir: "/home/tester",
     });
 
-    expect(context.dataDir).toBe("/home/tester/.bb");
-    expect(context.configFile).toBe("/home/tester/.bb/config.json");
-    expect(context.envFile).toBe("/home/tester/.bb/env.json");
-    expect(context.serverPort).toBe(38886);
-    expect(context.daemonPort).toBe(38887);
-    expect(context.serverUrl).toBe("http://127.0.0.1:38886");
+    expect(context.dataDir).toBe("/home/tester/.patcher");
+    expect(context.configFile).toBe("/home/tester/.patcher/config.json");
+    expect(context.envFile).toBe("/home/tester/.patcher/env.json");
+    expect(context.serverPort).toBe(38986);
+    expect(context.daemonPort).toBe(38987);
+    expect(context.serverUrl).toBe("http://127.0.0.1:38986");
     expect(context.serverEntry).toBe(
       "/repo/packages/bb-app/server/dist/index.js",
     );
@@ -625,19 +626,19 @@ describe("bb-app launcher", () => {
 
   it("honors explicit production ports and data directory", () => {
     const env = {
-      BB_DATA_DIR: "~/custom-bb",
-      BB_HOST_DAEMON_PORT: "48887",
-      BB_SERVER_PORT: "48886",
+      PATCHER_DATA_DIR: "~/custom-bb",
+      PATCHER_HOST_DAEMON_PORT: "48887",
+      PATCHER_SERVER_PORT: "48886",
     };
 
     expect(resolveDataDir({ env, homeDir: "/home/tester" })).toBe(
       "/home/tester/custom-bb",
     );
-    expect(resolvePort({ defaultPort: 1, env, name: "BB_SERVER_PORT" })).toBe(
-      48886,
-    );
     expect(
-      resolvePort({ defaultPort: 1, env, name: "BB_HOST_DAEMON_PORT" }),
+      resolvePort({ defaultPort: 1, env, name: "PATCHER_SERVER_PORT" }),
+    ).toBe(48886);
+    expect(
+      resolvePort({ defaultPort: 1, env, name: "PATCHER_HOST_DAEMON_PORT" }),
     ).toBe(48887);
   });
 
@@ -694,11 +695,11 @@ describe("bb-app launcher", () => {
       resolvePatcherAppCommand([
         "config",
         "set",
-        "BB_APP_URL",
+        "PATCHER_APP_URL",
         "https://bb.test",
       ]),
     ).toEqual({
-      args: ["set", "BB_APP_URL", "https://bb.test"],
+      args: ["set", "PATCHER_APP_URL", "https://bb.test"],
       kind: "config",
     });
   });
@@ -772,14 +773,14 @@ describe("bb-app launcher", () => {
     const dataDir = mkdtempSync(join(tmpdir(), "bb-app-bind-host-"));
     const runtime = await resolvePatcherAppRuntimeState({
       entrypointUrl: pathToFileURL("/repo/packages/bb-app/dist/bb-app.js").href,
-      env: { BB_DATA_DIR: dataDir },
+      env: { PATCHER_DATA_DIR: dataDir },
       homeDir: "/home/tester",
       options: parsedArgs.options,
       serverUrlMode: "local",
     });
 
     expect(parsedArgs.options.serverBindHost).toBe("0.0.0.0");
-    expect(runtime.serverEnv.BB_SERVER_BIND_HOST).toBe("0.0.0.0");
+    expect(runtime.serverEnv.PATCHER_SERVER_BIND_HOST).toBe("0.0.0.0");
   });
 
   it("strips parent thread context from the production server without stripping the CLI", async () => {
@@ -787,43 +788,44 @@ describe("bb-app launcher", () => {
     const runtime = await resolvePatcherAppRuntimeState({
       entrypointUrl: pathToFileURL("/repo/packages/bb-app/dist/bb-app.js").href,
       env: {
-        BB_DATA_DIR: dataDir,
-        BB_ENVIRONMENT_ID: "env_parent",
-        BB_PROJECT_ID: "proj_parent",
-        BB_THREAD_ID: "thr_parent",
-        BB_THREAD_STORAGE: "/home/tester/.bb/thread-storage/thr_parent",
+        PATCHER_DATA_DIR: dataDir,
+        PATCHER_ENVIRONMENT_ID: "env_parent",
+        PATCHER_PROJECT_ID: "proj_parent",
+        PATCHER_THREAD_ID: "thr_parent",
+        PATCHER_THREAD_STORAGE:
+          "/home/tester/.patcher/thread-storage/thr_parent",
       },
       homeDir: "/home/tester",
       options: { help: false },
       serverUrlMode: "local",
     });
 
-    expect(runtime.serverEnv.BB_ENVIRONMENT_ID).toBeUndefined();
-    expect(runtime.serverEnv.BB_THREAD_ID).toBeUndefined();
-    expect(runtime.serverEnv.BB_THREAD_STORAGE).toBeUndefined();
-    expect(runtime.serverEnv.BB_PROJECT_ID).toBe("proj_parent");
+    expect(runtime.serverEnv.PATCHER_ENVIRONMENT_ID).toBeUndefined();
+    expect(runtime.serverEnv.PATCHER_THREAD_ID).toBeUndefined();
+    expect(runtime.serverEnv.PATCHER_THREAD_STORAGE).toBeUndefined();
+    expect(runtime.serverEnv.PATCHER_PROJECT_ID).toBe("proj_parent");
 
     const daemonEnv = createDaemonEnv(runtime.context, runtime.env);
-    expect(daemonEnv.BB_ENVIRONMENT_ID).toBeUndefined();
-    expect(daemonEnv.BB_THREAD_ID).toBeUndefined();
-    expect(daemonEnv.BB_THREAD_STORAGE).toBeUndefined();
-    expect(daemonEnv.BB_PROJECT_ID).toBe("proj_parent");
+    expect(daemonEnv.PATCHER_ENVIRONMENT_ID).toBeUndefined();
+    expect(daemonEnv.PATCHER_THREAD_ID).toBeUndefined();
+    expect(daemonEnv.PATCHER_THREAD_STORAGE).toBeUndefined();
+    expect(daemonEnv.PATCHER_PROJECT_ID).toBe("proj_parent");
 
-    expect(runtime.env.BB_ENVIRONMENT_ID).toBe("env_parent");
-    expect(runtime.env.BB_THREAD_ID).toBe("thr_parent");
-    expect(runtime.env.BB_THREAD_STORAGE).toBe(
-      "/home/tester/.bb/thread-storage/thr_parent",
+    expect(runtime.env.PATCHER_ENVIRONMENT_ID).toBe("env_parent");
+    expect(runtime.env.PATCHER_THREAD_ID).toBe("thr_parent");
+    expect(runtime.env.PATCHER_THREAD_STORAGE).toBe(
+      "/home/tester/.patcher/thread-storage/thr_parent",
     );
 
     const cliThreadIdPath = join(dataDir, "cli-thread-id.txt");
     const exitCode = await runBundledCliCommand({
       args: [
         "-e",
-        "require('node:fs').writeFileSync(process.argv[1], process.env.BB_THREAD_ID ?? 'missing')",
+        "require('node:fs').writeFileSync(process.argv[1], process.env.PATCHER_THREAD_ID ?? 'missing')",
         cliThreadIdPath,
       ],
       context: runtime.context,
-      env: { ...runtime.env, BB_CLI: process.execPath },
+      env: { ...runtime.env, PATCHER_CLI: process.execPath },
     });
 
     expect(exitCode).toBe(0);
@@ -835,7 +837,9 @@ describe("bb-app launcher", () => {
 
     await expect(
       runPatcherApp(["--data-dir", dataDir, "--server-bind-host", "localhost"]),
-    ).rejects.toThrow('BB_SERVER_BIND_HOST must be "127.0.0.1" or "0.0.0.0"');
+    ).rejects.toThrow(
+      'PATCHER_SERVER_BIND_HOST must be "127.0.0.1" or "0.0.0.0"',
+    );
   });
 
   it("uses a supplied join code without requesting a loopback enroll key", async () => {
@@ -845,15 +849,15 @@ describe("bb-app launcher", () => {
     const env = await createHostDaemonJoinEnv({
       context,
       env: {
-        BB_HOST_ENROLL_KEY: "bbde_supplied",
-        BB_HOST_ID: "host_remote",
+        PATCHER_HOST_ENROLL_KEY: "bbde_supplied",
+        PATCHER_HOST_ID: "host_remote",
       },
       serverUrl: "https://bb.example.test",
     });
 
     expect(env).toMatchObject({
-      BB_HOST_ENROLL_KEY: "bbde_supplied",
-      BB_HOST_ID: "host_remote",
+      PATCHER_HOST_ENROLL_KEY: "bbde_supplied",
+      PATCHER_HOST_ID: "host_remote",
     });
     expect(
       JSON.parse(readFileSync(join(dataDir, "config.json"), "utf8")),
@@ -868,7 +872,7 @@ describe("bb-app launcher", () => {
     await expect(
       createHostDaemonJoinEnv({
         context: { ...createTestStartContext(), dataDir },
-        env: { BB_HOST_ENROLL_KEY: "bbde_supplied" },
+        env: { PATCHER_HOST_ENROLL_KEY: "bbde_supplied" },
         serverUrl: "https://bb.example.test",
       }),
     ).rejects.toThrow("--host-id is required when --join-code is supplied");
@@ -896,7 +900,7 @@ describe("bb-app launcher", () => {
 
     const context = await resolvePatcherAppRuntimeContext({
       entrypointUrl: pathToFileURL("/repo/packages/bb-app/dist/bb-app.js").href,
-      env: { BB_DATA_DIR: dataDir },
+      env: { PATCHER_DATA_DIR: dataDir },
       homeDir: "/home/tester",
       options: { help: false },
       serverUrlMode: "managed",
@@ -916,8 +920,8 @@ describe("bb-app launcher", () => {
     const runtime = await resolvePatcherAppRuntimeState({
       entrypointUrl: pathToFileURL("/repo/packages/bb-app/dist/bb-app.js").href,
       env: {
-        BB_DATA_DIR: dataDir,
-        BB_SERVER_URL: "https://ambient.example.test",
+        PATCHER_DATA_DIR: dataDir,
+        PATCHER_SERVER_URL: "https://ambient.example.test",
       },
       homeDir: "/home/tester",
       options: { help: false },
@@ -925,7 +929,7 @@ describe("bb-app launcher", () => {
     });
 
     expect(runtime.context.serverUrl).toBe("https://stored.example.test");
-    expect(runtime.env.BB_SERVER_URL).toBe("https://stored.example.test");
+    expect(runtime.env.PATCHER_SERVER_URL).toBe("https://stored.example.test");
   });
 
   it("keeps full-stack startup local even when managed config has a server URL", async () => {
@@ -938,13 +942,13 @@ describe("bb-app launcher", () => {
 
     const context = await resolvePatcherAppRuntimeContext({
       entrypointUrl: pathToFileURL("/repo/packages/bb-app/dist/bb-app.js").href,
-      env: { BB_DATA_DIR: dataDir },
+      env: { PATCHER_DATA_DIR: dataDir },
       homeDir: "/home/tester",
       options: { help: false },
       serverUrlMode: "local",
     });
 
-    expect(context.serverUrl).toBe("http://127.0.0.1:38886");
+    expect(context.serverUrl).toBe("http://127.0.0.1:38986");
   });
 
   it("applies managed config environment values over ambient env", async () => {
@@ -953,8 +957,8 @@ describe("bb-app launcher", () => {
       join(dataDir, "config.json"),
       JSON.stringify({
         config: {
-          BB_APP_URL: "https://bb.example.test",
-          BB_LOG_LEVEL: "debug",
+          PATCHER_APP_URL: "https://bb.example.test",
+          PATCHER_LOG_LEVEL: "debug",
         },
       }),
       "utf8",
@@ -971,16 +975,16 @@ describe("bb-app launcher", () => {
 
     const runtime = await resolvePatcherAppRuntimeState({
       entrypointUrl: pathToFileURL("/repo/packages/bb-app/dist/bb-app.js").href,
-      env: { BB_DATA_DIR: dataDir, OPENAI_API_KEY: "ambient-openai-key" },
+      env: { PATCHER_DATA_DIR: dataDir, OPENAI_API_KEY: "ambient-openai-key" },
       homeDir: "/home/tester",
       options: { help: false },
       serverUrlMode: "local",
     });
 
-    expect(runtime.env.BB_APP_URL).toBe("https://bb.example.test");
-    expect(runtime.env.BB_LOG_LEVEL).toBe("debug");
+    expect(runtime.env.PATCHER_APP_URL).toBe("https://bb.example.test");
+    expect(runtime.env.PATCHER_LOG_LEVEL).toBe("debug");
     expect(runtime.env.OPENAI_API_KEY).toBe("stored-openai-key");
-    expect(runtime.serverEnv.BB_LOG_LEVEL).toBe("debug");
+    expect(runtime.serverEnv.PATCHER_LOG_LEVEL).toBe("debug");
     expect(runtime.serverEnv.OPENAI_API_KEY).toBe("stored-openai-key");
   });
 
@@ -995,8 +999,8 @@ describe("bb-app launcher", () => {
     const runtime = await resolvePatcherAppRuntimeState({
       entrypointUrl: pathToFileURL("/repo/packages/bb-app/dist/bb-app.js").href,
       env: {
-        BB_DATA_DIR: dataDir,
-        BB_SERVER_URL: "https://ambient.example.test",
+        PATCHER_DATA_DIR: dataDir,
+        PATCHER_SERVER_URL: "https://ambient.example.test",
       },
       homeDir: "/home/tester",
       options: {
@@ -1007,7 +1011,7 @@ describe("bb-app launcher", () => {
     });
 
     expect(runtime.context.serverUrl).toBe("https://flag.example.test");
-    expect(runtime.env.BB_SERVER_URL).toBe("https://flag.example.test");
+    expect(runtime.env.PATCHER_SERVER_URL).toBe("https://flag.example.test");
   });
 
   it("stores managed config values from the config command", async () => {
@@ -1018,7 +1022,7 @@ describe("bb-app launcher", () => {
       dataDir,
       "config",
       "set",
-      "BB_APP_URL",
+      "PATCHER_APP_URL",
       "https://bb.example.test",
     ]);
     await runPatcherApp([
@@ -1026,7 +1030,7 @@ describe("bb-app launcher", () => {
       dataDir,
       "config",
       "set",
-      "BB_INFERENCE",
+      "PATCHER_INFERENCE",
       "anthropic/claude-sonnet-4-5",
     ]);
     await runPatcherApp([
@@ -1034,7 +1038,7 @@ describe("bb-app launcher", () => {
       dataDir,
       "config",
       "set",
-      "BB_INFERENCE_FALLBACK",
+      "PATCHER_INFERENCE_FALLBACK",
       "codex/gpt-5.4-mini",
     ]);
     await runPatcherApp([
@@ -1050,9 +1054,9 @@ describe("bb-app launcher", () => {
       JSON.parse(readFileSync(join(dataDir, "config.json"), "utf8")),
     ).toEqual({
       config: {
-        BB_APP_URL: "https://bb.example.test",
-        BB_INFERENCE: "anthropic/claude-sonnet-4-5",
-        BB_INFERENCE_FALLBACK: "codex/gpt-5.4-mini",
+        PATCHER_APP_URL: "https://bb.example.test",
+        PATCHER_INFERENCE: "anthropic/claude-sonnet-4-5",
+        PATCHER_INFERENCE_FALLBACK: "codex/gpt-5.4-mini",
       },
     });
     expect(JSON.parse(readFileSync(join(dataDir, "env.json"), "utf8"))).toEqual(
@@ -1142,7 +1146,7 @@ describe("bb-app launcher", () => {
       dataDir,
       "config",
       "set",
-      "BB_APP_URL",
+      "PATCHER_APP_URL",
       "https://bb.example.test",
     ]);
 
@@ -1150,7 +1154,7 @@ describe("bb-app launcher", () => {
       JSON.parse(readFileSync(join(dataDir, "config.json"), "utf8")),
     ).toEqual({
       config: {
-        BB_APP_URL: "https://bb.example.test",
+        PATCHER_APP_URL: "https://bb.example.test",
       },
       customModels,
     });
@@ -1175,7 +1179,7 @@ describe("bb-app launcher", () => {
       dataDir,
       "config",
       "set",
-      "BB_APP_URL",
+      "PATCHER_APP_URL",
       "https://bb.example.test",
     ]);
 
@@ -1185,7 +1189,7 @@ describe("bb-app launcher", () => {
       JSON.parse(readFileSync(join(dataDir, "config.json"), "utf8")),
     ).toEqual({
       config: {
-        BB_APP_URL: "https://bb.example.test",
+        PATCHER_APP_URL: "https://bb.example.test",
       },
       customModels,
     });
@@ -1213,7 +1217,7 @@ describe("bb-app launcher", () => {
       dataDir,
       "config",
       "set",
-      "BB_APP_URL",
+      "PATCHER_APP_URL",
       "https://bb.example.test",
     ]);
 
@@ -1221,7 +1225,7 @@ describe("bb-app launcher", () => {
       JSON.parse(readFileSync(join(dataDir, "config.json"), "utf8")),
     ).toEqual({
       config: {
-        BB_APP_URL: "https://bb.example.test",
+        PATCHER_APP_URL: "https://bb.example.test",
       },
       customAcpAgents,
     });
@@ -1249,7 +1253,7 @@ describe("bb-app launcher", () => {
       dataDir,
       "config",
       "set",
-      "BB_APP_URL",
+      "PATCHER_APP_URL",
       "https://bb.example.test",
     ]);
 
@@ -1257,7 +1261,7 @@ describe("bb-app launcher", () => {
       JSON.parse(readFileSync(join(dataDir, "config.json"), "utf8")),
     ).toEqual({
       config: {
-        BB_APP_URL: "https://bb.example.test",
+        PATCHER_APP_URL: "https://bb.example.test",
       },
       customAcpAgents,
     });
@@ -1277,7 +1281,7 @@ describe("bb-app launcher", () => {
     writeFileSync(
       join(dataDir, "config.json"),
       `${JSON.stringify({
-        config: { BB_APP_URL: "https://bb.example.test" },
+        config: { PATCHER_APP_URL: "https://bb.example.test" },
         customAcpAgents,
       })}\n`,
       "utf8",
@@ -1288,7 +1292,7 @@ describe("bb-app launcher", () => {
       dataDir,
       "config",
       "unset",
-      "BB_APP_URL",
+      "PATCHER_APP_URL",
     ]);
 
     expect(
@@ -1349,10 +1353,12 @@ describe("bb-app launcher", () => {
         dataDir,
         "env",
         "set",
-        "BB_SERVER_BIND_HOST",
+        "PATCHER_SERVER_BIND_HOST",
         "localhost",
       ]),
-    ).rejects.toThrow('BB_SERVER_BIND_HOST must be "127.0.0.1" or "0.0.0.0"');
+    ).rejects.toThrow(
+      'PATCHER_SERVER_BIND_HOST must be "127.0.0.1" or "0.0.0.0"',
+    );
 
     expect(JSON.parse(readFileSync(envPath, "utf8"))).toEqual(initialEnvFile);
   });
@@ -1362,7 +1368,7 @@ describe("bb-app launcher", () => {
     const envPath = join(dataDir, "env.json");
     writeFileSync(
       envPath,
-      JSON.stringify({ env: { BB_SERVER_BIND_HOST: "localhost" } }),
+      JSON.stringify({ env: { PATCHER_SERVER_BIND_HOST: "localhost" } }),
       "utf8",
     );
 
@@ -1371,7 +1377,7 @@ describe("bb-app launcher", () => {
       dataDir,
       "env",
       "unset",
-      "BB_SERVER_BIND_HOST",
+      "PATCHER_SERVER_BIND_HOST",
     ]);
 
     expect(JSON.parse(readFileSync(envPath, "utf8"))).toEqual({});
@@ -1382,7 +1388,7 @@ describe("bb-app launcher", () => {
     const envPath = join(dataDir, "env.json");
     writeFileSync(
       envPath,
-      JSON.stringify({ env: { BB_SERVER_BIND_HOST: "localhost" } }),
+      JSON.stringify({ env: { PATCHER_SERVER_BIND_HOST: "localhost" } }),
       "utf8",
     );
 
@@ -1396,7 +1402,7 @@ describe("bb-app launcher", () => {
     const envPath = join(dataDir, "env.json");
     writeFileSync(
       envPath,
-      JSON.stringify({ env: { BB_SERVER_BIND_HOST: "localhost" } }),
+      JSON.stringify({ env: { PATCHER_SERVER_BIND_HOST: "localhost" } }),
       "utf8",
     );
 
@@ -1408,7 +1414,7 @@ describe("bb-app launcher", () => {
     ]).catch((error: unknown) => error);
 
     expect(failure).toBeInstanceOf(Error);
-    expect((failure as Error).message).toContain("BB_SERVER_BIND_HOST");
+    expect((failure as Error).message).toContain("PATCHER_SERVER_BIND_HOST");
     expect((failure as Error).message).not.toContain(envPath);
   });
 
@@ -1424,20 +1430,20 @@ describe("bb-app launcher", () => {
     const dataDir = mkdtempSync(join(tmpdir(), "bb-app-bind-host-env-"));
     writeFileSync(
       join(dataDir, "env.json"),
-      JSON.stringify({ env: { BB_SERVER_BIND_HOST: "0.0.0.0" } }),
+      JSON.stringify({ env: { PATCHER_SERVER_BIND_HOST: "0.0.0.0" } }),
       "utf8",
     );
     const parsedArgs = parseLauncherArgs(["--server-bind-host", "127.0.0.1"]);
 
     const runtime = await resolvePatcherAppRuntimeState({
       entrypointUrl: pathToFileURL("/repo/packages/bb-app/dist/bb-app.js").href,
-      env: { BB_DATA_DIR: dataDir },
+      env: { PATCHER_DATA_DIR: dataDir },
       homeDir: "/home/tester",
       options: parsedArgs.options,
       serverUrlMode: "local",
     });
 
-    expect(runtime.serverEnv.BB_SERVER_BIND_HOST).toBe("127.0.0.1");
+    expect(runtime.serverEnv.PATCHER_SERVER_BIND_HOST).toBe("127.0.0.1");
   });
 
   it("unsets managed env values", async () => {
@@ -1473,7 +1479,7 @@ describe("bb-app launcher", () => {
         const configPath = join(dataDir, "config.json");
         const initialConfig = {
           config: {
-            BB_APP_URL: "https://existing.example.test",
+            PATCHER_APP_URL: "https://existing.example.test",
           },
         };
         writeFileSync(
@@ -1519,13 +1525,13 @@ describe("bb-app launcher", () => {
           String(server.port),
           "config",
           "set",
-          "BB_LOG_LEVEL",
+          "PATCHER_LOG_LEVEL",
           "debug",
         ]),
       );
 
       expect(output).toContain(
-        "BB_LOG_LEVEL is startup-only. The running process keeps its current value; a full bb-app restart is required to apply this change. Run `bb-app stop && bb-app start`, or restart the desktop app.",
+        "PATCHER_LOG_LEVEL is startup-only. The running process keeps its current value; a full bb-app restart is required to apply this change. Run `bb-app stop && bb-app start`, or restart the desktop app.",
       );
       expect(output).not.toContain("Reloaded running bb server config.");
       expect(server.reloadRequests()).toEqual([
@@ -1570,7 +1576,7 @@ describe("bb-app launcher", () => {
     const dataDir = mkdtempSync(join(tmpdir(), "bb-app-startup-bind-unset-"));
     writeFileSync(
       join(dataDir, "env.json"),
-      JSON.stringify({ env: { BB_SERVER_BIND_HOST: "0.0.0.0" } }),
+      JSON.stringify({ env: { PATCHER_SERVER_BIND_HOST: "0.0.0.0" } }),
       "utf8",
     );
     const server = await startConfigReloadTestServer();
@@ -1584,12 +1590,12 @@ describe("bb-app launcher", () => {
           String(server.port),
           "env",
           "unset",
-          "BB_SERVER_BIND_HOST",
+          "PATCHER_SERVER_BIND_HOST",
         ]),
       );
 
       expect(output).toContain(
-        "BB_SERVER_BIND_HOST is startup-only. The running process keeps its current value; a full bb-app restart is required to apply this change. Run `bb-app stop && bb-app start`, or restart the desktop app.",
+        "PATCHER_SERVER_BIND_HOST is startup-only. The running process keeps its current value; a full bb-app restart is required to apply this change. Run `bb-app stop && bb-app start`, or restart the desktop app.",
       );
       expect(output).toContain(
         "Until then, the server keeps its previous bind address. If it was bound to 0.0.0.0, that network exposure remains open.",
@@ -1642,7 +1648,7 @@ describe("bb-app launcher", () => {
         String(unavailablePort),
         "env",
         "set",
-        "BB_SERVER_BIND_HOST",
+        "PATCHER_SERVER_BIND_HOST",
         "0.0.0.0",
       ]),
     );
@@ -1655,17 +1661,17 @@ describe("bb-app launcher", () => {
     const dataDir = mkdtempSync(join(tmpdir(), "bb-app-startup-refresh-"));
     writeFileSync(
       join(dataDir, "config.json"),
-      JSON.stringify({ config: { BB_LOG_LEVEL: "debug" } }),
+      JSON.stringify({ config: { PATCHER_LOG_LEVEL: "debug" } }),
       "utf8",
     );
     writeFileSync(
       join(dataDir, "env.json"),
       JSON.stringify({
         env: {
-          BB_FF_PLACEHOLDER: "true",
-          BB_SERVER_BIND_HOST: "0.0.0.0",
-          BB_SERVER_PORT: "48886",
-          BB_TELEMETRY: "false",
+          PATCHER_FF_PLACEHOLDER: "true",
+          PATCHER_SERVER_BIND_HOST: "0.0.0.0",
+          PATCHER_SERVER_PORT: "48886",
+          PATCHER_TELEMETRY: "false",
         },
       }),
       "utf8",
@@ -1686,7 +1692,7 @@ describe("bb-app launcher", () => {
 
       expect(output).toContain("Reloaded running bb server config.");
       expect(output).toContain(
-        "Startup-only settings currently configured (BB_FF_PLACEHOLDER, BB_LOG_LEVEL, BB_SERVER_BIND_HOST, BB_SERVER_PORT, BB_TELEMETRY) apply on the next full bb-app restart.",
+        "Startup-only settings currently configured (PATCHER_FF_PLACEHOLDER, PATCHER_LOG_LEVEL, PATCHER_SERVER_BIND_HOST, PATCHER_SERVER_PORT, PATCHER_TELEMETRY) apply on the next full bb-app restart.",
       );
     } finally {
       await server.close();
@@ -1705,7 +1711,7 @@ describe("bb-app launcher", () => {
         String(server.port),
         "config",
         "set",
-        "BB_APP_URL",
+        "PATCHER_APP_URL",
         "https://bb.example.test",
       ]);
 
@@ -1739,13 +1745,13 @@ describe("bb-app launcher", () => {
     }
   });
 
-  it("uses BB_SERVER_URL for config refresh when set", async () => {
+  it("uses PATCHER_SERVER_URL for config refresh when set", async () => {
     const dataDir = mkdtempSync(join(tmpdir(), "bb-app-config-env-refresh-"));
     const server = await startConfigReloadTestServer();
-    const previousServerUrl = process.env.BB_SERVER_URL;
+    const previousServerUrl = process.env.PATCHER_SERVER_URL;
 
     try {
-      process.env.BB_SERVER_URL = server.url;
+      process.env.PATCHER_SERVER_URL = server.url;
 
       await runPatcherApp(["--data-dir", dataDir, "config", "refresh"]);
 
@@ -1754,15 +1760,15 @@ describe("bb-app launcher", () => {
       ]);
     } finally {
       if (previousServerUrl === undefined) {
-        delete process.env.BB_SERVER_URL;
+        delete process.env.PATCHER_SERVER_URL;
       } else {
-        process.env.BB_SERVER_URL = previousServerUrl;
+        process.env.PATCHER_SERVER_URL = previousServerUrl;
       }
       await server.close();
     }
   });
 
-  it("uses persisted BB_SERVER_URL for config refresh without env or flags", async () => {
+  it("uses persisted PATCHER_SERVER_URL for config refresh without env or flags", async () => {
     const dataDir = mkdtempSync(join(tmpdir(), "bb-app-config-persisted-url-"));
     const server = await startConfigReloadTestServer();
 
@@ -1772,7 +1778,7 @@ describe("bb-app launcher", () => {
         dataDir,
         "config",
         "set",
-        "BB_SERVER_URL",
+        "PATCHER_SERVER_URL",
         server.url,
       ]);
 
@@ -1798,7 +1804,7 @@ describe("bb-app launcher", () => {
     const configServer = await startConfigReloadTestServer();
     const envServer = await startConfigReloadTestServer();
     const flagServer = await startConfigReloadTestServer();
-    const previousServerUrl = process.env.BB_SERVER_URL;
+    const previousServerUrl = process.env.PATCHER_SERVER_URL;
 
     try {
       await runPatcherApp([
@@ -1806,11 +1812,11 @@ describe("bb-app launcher", () => {
         dataDir,
         "config",
         "set",
-        "BB_SERVER_URL",
+        "PATCHER_SERVER_URL",
         configServer.url,
       ]);
 
-      process.env.BB_SERVER_URL = envServer.url;
+      process.env.PATCHER_SERVER_URL = envServer.url;
       await runPatcherApp([
         "--data-dir",
         dataDir,
@@ -1827,9 +1833,9 @@ describe("bb-app launcher", () => {
       ]);
     } finally {
       if (previousServerUrl === undefined) {
-        delete process.env.BB_SERVER_URL;
+        delete process.env.PATCHER_SERVER_URL;
       } else {
-        process.env.BB_SERVER_URL = previousServerUrl;
+        process.env.PATCHER_SERVER_URL = previousServerUrl;
       }
       await flagServer.close();
       await envServer.close();

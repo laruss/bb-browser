@@ -315,7 +315,9 @@ export async function inferenceComplete<T extends TSchema>(
   const configuredModel = args.model ?? deps.config.inferenceModel;
   const modelInfo = parseProviderModelConfig({
     name:
-      args.model === undefined ? "BB_INFERENCE" : "inference model override",
+      args.model === undefined
+        ? "PATCHER_INFERENCE"
+        : "inference model override",
     value: configuredModel,
   });
   if (backsHostDaemonAiServices(modelInfo.provider)) {

@@ -16,7 +16,7 @@ function testToolchain() {
 }
 
 
-const TEST_BB_VERSION = "0.9.0-test";
+const TEST_PATCHER_VERSION = "0.9.0-test";
 
 const FIXTURE_PACKAGE_JSON = JSON.stringify(
   {
@@ -65,7 +65,7 @@ describe("buildPluginServer", () => {
 
   it("bundles the server entry into a self-contained ESM dist/server.js with a meta sidecar", async () => {
     await writeFixture();
-    const result = await buildPluginServer(root, TEST_BB_VERSION, await testToolchain());
+    const result = await buildPluginServer(root, TEST_PATCHER_VERSION, await testToolchain());
 
     expect(result.jsPath).toBe(join(root, "dist", "server.js"));
     const js = await readFile(result.jsPath, "utf8");
@@ -88,7 +88,7 @@ describe("buildPluginServer", () => {
       pluginId: "server-fixture",
       pluginVersion: "0.1.0",
       builtWith: {
-        patcherVersion: TEST_BB_VERSION,
+        patcherVersion: TEST_PATCHER_VERSION,
         pluginSdkVersion: PLUGIN_SDK_VERSION,
       },
     });
@@ -107,7 +107,7 @@ describe("buildPluginServer", () => {
       }
       `,
     );
-    const result = await buildPluginServer(root, TEST_BB_VERSION, await testToolchain());
+    const result = await buildPluginServer(root, TEST_PATCHER_VERSION, await testToolchain());
     const js = await readFile(result.jsPath, "utf8");
     expect(js).toMatch(/from\s*"@patcher\/plugin-sdk"/);
   });
@@ -117,7 +117,7 @@ describe("buildPluginServer", () => {
       join(root, "package.json"),
       JSON.stringify({ name: "bb-plugin-headless", version: "0.1.0" }),
     );
-    await expect(buildPluginServer(root, TEST_BB_VERSION, await testToolchain())).rejects.toThrowError(
+    await expect(buildPluginServer(root, TEST_PATCHER_VERSION, await testToolchain())).rejects.toThrowError(
       /no server entry/,
     );
   });
@@ -132,14 +132,14 @@ describe("buildPluginServer", () => {
         bb: { server: "./server.ts" },
       }),
     );
-    await expect(buildPluginServer(root, TEST_BB_VERSION, await testToolchain())).rejects.toThrowError(
+    await expect(buildPluginServer(root, TEST_PATCHER_VERSION, await testToolchain())).rejects.toThrowError(
       /bb\.name/,
     );
   });
 
   it("preserves the previous dist/server.js when a rebuild fails", async () => {
     await writeFixture();
-    const first = await buildPluginServer(root, TEST_BB_VERSION, await testToolchain());
+    const first = await buildPluginServer(root, TEST_PATCHER_VERSION, await testToolchain());
     const before = await readFile(first.jsPath, "utf8");
     const metaBefore = await readFile(first.metaPath, "utf8");
 
@@ -147,7 +147,7 @@ describe("buildPluginServer", () => {
     // artifacts (they are staged and only renamed into place on success).
     await writeFile(join(root, "server.ts"), "export default function ( {\n");
     await expect(
-      buildPluginServer(root, TEST_BB_VERSION, await testToolchain()),
+      buildPluginServer(root, TEST_PATCHER_VERSION, await testToolchain()),
     ).rejects.toThrowError();
 
     expect(await readFile(first.jsPath, "utf8")).toBe(before);

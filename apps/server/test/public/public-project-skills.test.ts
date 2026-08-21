@@ -1487,7 +1487,7 @@ describe("public project skills route", () => {
             discovered(
               "bb-helper",
               "bb-project",
-              "/missing/.bb/skills/bb-helper/SKILL.md",
+              "/missing/.patcher/skills/bb-helper/SKILL.md",
             ),
           ],
         },
@@ -1499,7 +1499,7 @@ describe("public project skills route", () => {
           method: "DELETE",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
-            skillId: skillId("/missing/.bb/skills/bb-helper/SKILL.md"),
+            skillId: skillId("/missing/.patcher/skills/bb-helper/SKILL.md"),
             environmentId: null,
           }),
         },

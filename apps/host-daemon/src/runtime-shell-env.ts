@@ -14,7 +14,7 @@ export interface PrepareRuntimeShellEnvOptions {
   patcherExecutableDirectory: string;
   /**
    * Absolute path to the daemon-managed `bb` executable. Defaults to
-   * `<patcherExecutableDirectory>/bb`. Injected as `BB_CLI` so agent shells can
+   * `<patcherExecutableDirectory>/bb`. Injected as `PATCHER_CLI` so agent shells can
    * invoke it even when PATH is rewritten (ACP providers).
    */
   patcherExecutablePath?: string;
@@ -49,8 +49,8 @@ export type SpawnUserShellEnv = (
   args: SpawnUserShellEnvArgs,
 ) => Promise<UserShellEnvSpawnResult>;
 
-const SHELL_ENV_START_MARKER = "__BB_SHELL_ENV_START__";
-const SHELL_ENV_END_MARKER = "__BB_SHELL_ENV_END__";
+const SHELL_ENV_START_MARKER = "__PATCHER_SHELL_ENV_START__";
+const SHELL_ENV_END_MARKER = "__PATCHER_SHELL_ENV_END__";
 const SHELL_ENV_COMMAND = [
   `printf '%s\\n' ${SHELL_ENV_START_MARKER}`,
   "env",
@@ -345,7 +345,7 @@ export async function resolveLocalPatcherExecutableDirectory(
 
 /**
  * Absolute path to the local bb CLI entry used for agent shell injection.
- * Prefer this over directory-only resolution when setting `BB_CLI`.
+ * Prefer this over directory-only resolution when setting `PATCHER_CLI`.
  */
 export async function resolveLocalPatcherExecutablePath(
   options: ResolveLocalPatcherExecutableDirectoryOptions = {},
@@ -355,7 +355,7 @@ export async function resolveLocalPatcherExecutablePath(
   return resolveCliEntryPath(resolvedCliExecutablePath);
 }
 
-/** Platform-stable name of the bb CLI file inside `BB_CLI_DIR` / daemon dist. */
+/** Platform-stable name of the bb CLI file inside `PATCHER_CLI_DIR` / daemon dist. */
 export function patcherExecutableFileName(): string {
   return "bb";
 }
@@ -380,24 +380,24 @@ export function prepareRuntimeShellEnv(
     // Absolute path survives PATH rewrites in ACP agent tool shells. Official
     // CLI entrypoints re-exec to this target when it differs from the current
     // binary (see apps/cli `maybeReexecViaPatcherCli`).
-    BB_CLI: patcherExecutablePath,
-    BB_SERVER_URL: options.serverUrl,
+    PATCHER_CLI: patcherExecutablePath,
+    PATCHER_SERVER_URL: options.serverUrl,
   };
   assignIfDefined({
-    key: "BB_HOST_DAEMON_PORT",
+    key: "PATCHER_HOST_DAEMON_PORT",
     target: shellEnv,
     value:
       options.hostDaemonPort === undefined
         ? undefined
         : String(options.hostDaemonPort),
   });
-  // Provider process spawning strips inherited BB_* variables, so the
+  // Provider process spawning strips inherited PATCHER_* variables, so the
   // documented Claude CLI override must be forwarded explicitly for the
   // bridge to see it.
   assignIfDefined({
-    key: "BB_CLAUDE_CODE_EXECUTABLE",
+    key: "PATCHER_CLAUDE_CODE_EXECUTABLE",
     target: shellEnv,
-    value: process.env.BB_CLAUDE_CODE_EXECUTABLE,
+    value: process.env.PATCHER_CLAUDE_CODE_EXECUTABLE,
   });
 
   return shellEnv;

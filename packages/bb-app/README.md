@@ -58,7 +58,7 @@ checkout, but it is slower and less reliable for file watching.
 npx bb-app@latest
 ```
 
-Then open: `http://localhost:38886`
+Then open: `http://localhost:38986`
 
 To opt into the automated nightly channel:
 
@@ -71,7 +71,7 @@ dist-tag moves independently of the stable `latest` tag.
 
 `npx bb-app@latest` downloads the published `bb-app` package, starts the server and
 local host daemon, and serves the web app. It stores bb-managed state under
-`~/.bb/` by default. If either managed child process exits unexpectedly, the
+`~/.patcher/` by default. If either managed child process exits unexpectedly, the
 launcher restarts that child without stopping the other one. Press `Ctrl+C` in
 the terminal to stop both processes and exit with status `0`.
 
@@ -83,7 +83,7 @@ npx bb-app stop
 
 `stop` reads `bb-app-runtime.json` from the data directory, confirms that the
 recorded process really is that launcher, then stops it. Pass `--data-dir` when
-the bb you want to stop does not use the default `~/.bb/`.
+the bb you want to stop does not use the default `~/.patcher/`.
 
 From the app, add or open a project, start a thread, and choose the provider
 you want that thread to use.
@@ -96,9 +96,9 @@ The package also exposes the `bb` CLI for an already-running bb server:
 npx --package bb-app bb --help
 ```
 
-The CLI uses the same `BB_SERVER_URL` and bb config resolution as the SDK. When
+The CLI uses the same `PATCHER_SERVER_URL` and bb config resolution as the SDK. When
 unset, it targets the default local packaged server at
-`http://127.0.0.1:38886`.
+`http://127.0.0.1:38986`.
 
 ## Scripting with the SDK
 
@@ -118,10 +118,10 @@ await bb.threads.wait({ threadId: String(thread.id), status: "idle" });
 console.log(await bb.threads.output({ threadId: String(thread.id) }));
 ```
 
-`new BBSdk()` uses the same `BB_SERVER_URL` and bb config resolution as the
-CLI. Pass `new BBSdk({ baseUrl: "http://host:38886" })` for remote or test
-targets (see the remote-access note below). Scripts launched by bb already receive `BB_SERVER_URL` and
-`BB_THREAD_ID` in their environment.
+`new BBSdk()` uses the same `PATCHER_SERVER_URL` and bb config resolution as the
+CLI. Pass `new BBSdk({ baseUrl: "http://host:38986" })` for remote or test
+targets (see the remote-access note below). Scripts launched by bb already receive `PATCHER_SERVER_URL` and
+`PATCHER_THREAD_ID` in their environment.
 
 ## Provider Credentials
 
@@ -154,7 +154,7 @@ trust prompt.
 You can still use the Pi CLI and `/login` to create this configuration.
 
 Custom ACP agents can be configured through `customAcpAgents` in
-`~/.bb/config.json`; see the configuration docs for optional `modelCli` and
+`~/.patcher/config.json`; see the configuration docs for optional `modelCli` and
 `reasoningCli` or `nativeReasoning` reasoning settings. A `logo`
 field accepts an SVG, PNG, or WebP path for the provider picker icon.
 The optional `nativeSkillRoots` field adds provider-native skills to the
@@ -168,23 +168,23 @@ standalone provider CLI.
 ## Configuration
 
 Use `bb-app config` for persistent non-secret package settings under
-`~/.bb/config.json`:
+`~/.patcher/config.json`:
 
 ```bash
-npx bb-app config set BB_APP_URL https://<machine>.<tailnet>.ts.net
-npx bb-app config set BB_INFERENCE codex/gpt-5.6-luna
-npx bb-app config set BB_INFERENCE_FALLBACK codex/gpt-5.4-mini
-npx bb-app config set BB_TRANSCRIPTION codex/gpt-transcribe
+npx bb-app config set PATCHER_APP_URL https://<machine>.<tailnet>.ts.net
+npx bb-app config set PATCHER_INFERENCE codex/gpt-5.6-luna
+npx bb-app config set PATCHER_INFERENCE_FALLBACK codex/gpt-5.4-mini
+npx bb-app config set PATCHER_TRANSCRIPTION codex/gpt-transcribe
 npx bb-app config list
 npx bb-app config refresh
 ```
 
-For remote access, publish the default loopback listener with Tailscale Serve. Direct tailnet or LAN access to port `38886` requires the
+For remote access, publish the default loopback listener with Tailscale Serve. Direct tailnet or LAN access to port `38986` requires the
 explicit, security-sensitive `--server-bind-host 0.0.0.0` compatibility option;
 see the multiple-devices guide.
 
 Use `bb-app client ssh-target` to configure local editor opens for remote
-bb servers under `~/.bb/client.json`. The target is the value that works after
+bb servers under `~/.patcher/client.json`. The target is the value that works after
 `ssh`, such as `devbox` or `user@devbox`:
 
 ```bash
@@ -192,7 +192,7 @@ npx bb-app client ssh-target set https://bb.example.test devbox
 npx bb-app client ssh-target list
 ```
 
-Use `bb-app env` for provider credentials under `~/.bb/env.json`:
+Use `bb-app env` for provider credentials under `~/.patcher/env.json`:
 
 ```bash
 npx bb-app env set OPENAI_API_KEY <key>

@@ -69,7 +69,7 @@ Workflow input follows the native Claude source modes: provide exactly one of
 an inline `script`, a workspace `scriptPath`, or a workflow `name`. The older
 `source` field remains an explicit alias for inline `script`; `script` and
 `source` cannot be supplied together. Name lookup is project-local at
-`.bb/workflows/<name>.js`. There is no plugin-bundled workflow discovery.
+`.patcher/workflows/<name>.js`. There is no plugin-bundled workflow discovery.
 
 File and name sources are resolved on the workflow origin environment's host,
 not on the bb server machine. BB reads them through the environment `hostId`
@@ -111,7 +111,7 @@ temporary Workflow folder.
 
 Workflows may invoke one child workflow level with
 `workflow(nameOrRef, args)`. A string and `{ name }` resolve under
-`.bb/workflows`, `{ scriptPath }` uses the same origin-workspace confinement as
+`.patcher/workflows`, `{ scriptPath }` uses the same origin-workspace confinement as
 top-level runs, and `{ script }` is inline source. Each child is parsed,
 schema-validated, and evaluated in a separate QuickJS VM. Parent and child VMs
 share one FIFO agent scheduler, call budget, cancellation signal, replay order,
@@ -158,17 +158,17 @@ User-facing commands (run these from a BB project thread) are:
 
 ```bash
 bb workflows validate --script '<javascript>'
-bb workflows validate --file .bb/workflows/review.js
+bb workflows validate --file .patcher/workflows/review.js
 bb workflows validate --name review
 bb workflows run --script '<javascript>' --args '<json>'
-bb workflows run --file .bb/workflows/review.js --resume <run-id>
+bb workflows run --file .patcher/workflows/review.js --resume <run-id>
 bb workflows run --name review
 bb workflows status <run-id>
 bb workflows history <run-id> --cursor 0 --limit 100
 bb workflows list --limit 20
 bb workflows stop <run-id>
-bb provider list --environment "$BB_ENVIRONMENT_ID" --json
-bb provider models <provider-id> --environment "$BB_ENVIRONMENT_ID" --json
+bb provider list --environment "$PATCHER_ENVIRONMENT_ID" --json
+bb provider models <provider-id> --environment "$PATCHER_ENVIRONMENT_ID" --json
 ```
 
 `status` is deliberately bounded: it returns run state, phase, call counts,
@@ -184,9 +184,9 @@ transcript:
 
 ```bash
 run=<run-id>
-mkdir -p "$BB_THREAD_STORAGE/workflows"
+mkdir -p "$PATCHER_THREAD_STORAGE/workflows"
 bb workflows history "$run" --cursor 0 --limit 100 \
-  > "$BB_THREAD_STORAGE/workflows/$run.jsonl"
+  > "$PATCHER_THREAD_STORAGE/workflows/$run.jsonl"
 ```
 
 The final `page` record reports `hasMore` and `nextCursor`. Fetch the next page
@@ -199,7 +199,7 @@ detailed view is needed.
 
 This redirection intentionally happens in the invoking agent's shell. The
 canonical state remains in the plugin's server-side SQLite database, while the
-JSONL file lands in `$BB_THREAD_STORAGE` on that thread's execution host. The
+JSONL file lands in `$PATCHER_THREAD_STORAGE` on that thread's execution host. The
 same flow therefore works for local and remote environments without granting
 the server arbitrary filesystem-write access.
 

@@ -113,7 +113,7 @@ describe("bb thread update command output", () => {
   });
 
   it("bb thread update clears the parent thread id", async () => {
-    vi.stubEnv("BB_THREAD_ID", "thread-update-2");
+    vi.stubEnv("PATCHER_THREAD_ID", "thread-update-2");
     const thread: domain.Thread = fixtures.makeThread({
       id: "thread-update-2",
       projectId: "proj-1",

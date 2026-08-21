@@ -30,7 +30,7 @@ function TimelineStage({ children }: { children: React.ReactNode }) {
 }
 
 // ---------------------------------------------------------------------------
-// Real assistant messages pulled from live threads in ~/.bb-dev/bb.db.
+// Real assistant messages pulled from live threads in ~/.patcher-dev/patcher.db.
 // ---------------------------------------------------------------------------
 
 // thr_zzvsfyn7rm — "Investigate User Manual Issue"

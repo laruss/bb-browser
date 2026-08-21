@@ -9,7 +9,7 @@
  * browser. Each consumer derives its own list from its own config rather
  * than sharing a runtime singleton, because the server and daemon run as
  * separate processes that don't necessarily agree on every value (the
- * daemon, for example, learns the server's port by parsing `BB_SERVER_URL`).
+ * daemon, for example, learns the server's port by parsing `PATCHER_SERVER_URL`).
  *
  * Both `127.0.0.1` and `localhost` variants are emitted because browsers
  * treat them as distinct origins for CORS purposes.

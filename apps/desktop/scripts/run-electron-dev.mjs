@@ -14,7 +14,7 @@ const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(scriptDirectory, "..", "..", "..");
 
 function resolveDesktopUserDataDir(env, dataDir) {
-  const rawUserDataDir = env.BB_DESKTOP_USER_DATA_DIR?.trim();
+  const rawUserDataDir = env.PATCHER_DESKTOP_USER_DATA_DIR?.trim();
   if (rawUserDataDir === undefined || rawUserDataDir.length === 0) {
     return join(dataDir, "desktop");
   }
@@ -28,7 +28,7 @@ function createElectronAppEnv(env, config) {
     baseEnv: env,
     config,
   });
-  childEnv.BB_DESKTOP_NODE_EXEC_PATH = process.execPath;
+  childEnv.PATCHER_DESKTOP_NODE_EXEC_PATH = process.execPath;
   delete childEnv.ELECTRON_RUN_AS_NODE;
   return childEnv;
 }
@@ -59,7 +59,7 @@ const desktopUserDataDir = resolveDesktopUserDataDir(childEnv, dataDir);
 const appUrl = `http://localhost:${devConfig.ports.appPort}`;
 const viteReachable = await isViteDevServerReachable(appUrl);
 if (viteReachable) {
-  childEnv.BB_DESKTOP_APP_URL = appUrl;
+  childEnv.PATCHER_DESKTOP_APP_URL = appUrl;
 }
 
 process.stdout.write(`@patcher/desktop: instance ${devConfig.instanceId}\n`);
@@ -78,8 +78,8 @@ process.stdout.write(
 process.stdout.write(`@patcher/desktop: user-data ${desktopUserDataDir}\n`);
 
 // Extra Chromium/Electron switches for dev automation (e.g.
-// BB_DESKTOP_ELECTRON_ARGS="--remote-debugging-port=9223" for CDP-driven QA).
-const extraElectronArgs = (process.env.BB_DESKTOP_ELECTRON_ARGS ?? "")
+// PATCHER_DESKTOP_ELECTRON_ARGS="--remote-debugging-port=9223" for CDP-driven QA).
+const extraElectronArgs = (process.env.PATCHER_DESKTOP_ELECTRON_ARGS ?? "")
   .split(" ")
   .map((arg) => arg.trim())
   .filter((arg) => arg.length > 0);

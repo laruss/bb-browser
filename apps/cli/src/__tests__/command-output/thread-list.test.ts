@@ -135,7 +135,7 @@ describe("bb thread list command output", () => {
     ]);
     stubServerApi({ "v1.threads.$get": list });
 
-    vi.stubEnv("BB_PROJECT_ID", undefined);
+    vi.stubEnv("PATCHER_PROJECT_ID", undefined);
     await runCommand(["thread", "list"], register);
 
     expect(list).toHaveBeenCalledWith({
@@ -148,11 +148,11 @@ describe("bb thread list command output", () => {
     ]);
   });
 
-  it("bb thread list ignores BB_PROJECT_ID when --project is omitted", async () => {
+  it("bb thread list ignores PATCHER_PROJECT_ID when --project is omitted", async () => {
     const list = vi.fn(async () => []);
     stubServerApi({ "v1.threads.$get": list });
 
-    vi.stubEnv("BB_PROJECT_ID", "proj-env");
+    vi.stubEnv("PATCHER_PROJECT_ID", "proj-env");
     await runCommand(["thread", "list"], register);
 
     expect(list).toHaveBeenCalledWith({
@@ -160,13 +160,13 @@ describe("bb thread list command output", () => {
     });
   });
 
-  it("bb thread list does not infer parent-thread from BB_THREAD_ID", async () => {
+  it("bb thread list does not infer parent-thread from PATCHER_THREAD_ID", async () => {
     const list = vi.fn(async () => []);
 
     stubServerApi({ "v1.threads.$get": list });
 
-    vi.stubEnv("BB_PROJECT_ID", "proj-env");
-    vi.stubEnv("BB_THREAD_ID", "thread-current");
+    vi.stubEnv("PATCHER_PROJECT_ID", "proj-env");
+    vi.stubEnv("PATCHER_THREAD_ID", "thread-current");
     await runCommand(["thread", "list"], register);
 
     expect(list).toHaveBeenCalledWith({

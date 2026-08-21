@@ -32,8 +32,8 @@ import type {
   PatcherDesktopPageScriptWorld,
 } from "@patcher/desktop-contract";
 import {
-  BB_DESKTOP_PAGE_SCRIPT_BOOTSTRAP_CHANNEL,
-  BB_DESKTOP_PAGE_SCRIPT_RPC_CHANNEL,
+  PATCHER_DESKTOP_PAGE_SCRIPT_BOOTSTRAP_CHANNEL,
+  PATCHER_DESKTOP_PAGE_SCRIPT_RPC_CHANNEL,
 } from "./desktop-browser-ipc.js";
 
 /**
@@ -71,7 +71,7 @@ function buildApi(pluginId: string): PageScriptApi {
         );
       }
       const answer = (await ipcRenderer.invoke(
-        BB_DESKTOP_PAGE_SCRIPT_RPC_CHANNEL,
+        PATCHER_DESKTOP_PAGE_SCRIPT_RPC_CHANNEL,
         { pluginId, method, input: serialized },
       )) as PatcherDesktopPageScriptRpcAnswer | undefined;
       if (answer === undefined || answer.ok !== true) {
@@ -148,9 +148,9 @@ function runWorld(world: PatcherDesktopPageScriptWorld): void {
 function bootstrap(): void {
   let answer: PatcherDesktopPageScriptBootstrap | undefined;
   try {
-    answer = ipcRenderer.sendSync(BB_DESKTOP_PAGE_SCRIPT_BOOTSTRAP_CHANNEL) as
-      | PatcherDesktopPageScriptBootstrap
-      | undefined;
+    answer = ipcRenderer.sendSync(
+      PATCHER_DESKTOP_PAGE_SCRIPT_BOOTSTRAP_CHANNEL,
+    ) as PatcherDesktopPageScriptBootstrap | undefined;
   } catch {
     return;
   }

@@ -10,7 +10,7 @@ import {
   parseThreadPreviewRows,
   renderHelpText,
   resolveCodexStateDbPath,
-} from "../src/commands/archive-codex-tmp-bb-sessions.js";
+} from "../src/commands/archive-codex-tmp-patcher-sessions.js";
 
 const tempDirs: string[] = [];
 
@@ -20,7 +20,7 @@ afterEach(() => {
   }
 });
 
-describe("archive-codex-tmp-bb-sessions", () => {
+describe("archive-codex-tmp-patcher-sessions", () => {
   it("defaults to archiving bb test temp dirs from ~/.codex", () => {
     const parsedArgs = parseArchiveTmpPatcherSessionsArgs(
       [],
@@ -107,7 +107,7 @@ describe("archive-codex-tmp-bb-sessions", () => {
 
   it("documents the command and default pattern", () => {
     const help = renderHelpText();
-    expect(help).toContain("bun run codex:archive-tmp-bb-sessions");
+    expect(help).toContain("bun run codex:archive-tmp-patcher-sessions");
     expect(help).toContain("*/bb-standalone-*");
     expect(help).toContain("*/bb-integration-*");
     expect(help).toContain("*/bb-integ-*");

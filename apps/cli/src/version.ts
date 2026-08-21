@@ -3,7 +3,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
 
-const BB_APP_VERSION_FALLBACK = "0.0.0-dev";
+const PATCHER_APP_VERSION_FALLBACK = "0.0.0-dev";
 const PARENT_LOOKUP_MAX_DEPTH = 8;
 
 const patcherAppPackageJsonSchema = z
@@ -41,7 +41,7 @@ function trimEnvValue(value: string | undefined): string | undefined {
 }
 
 export function resolvePatcherAppVersion(args: ResolvePatcherAppVersionArgs): string {
-  const envValue = trimEnvValue(args.env.BB_APP_VERSION);
+  const envValue = trimEnvValue(args.env.PATCHER_APP_VERSION);
   if (envValue !== undefined) {
     return envValue;
   }
@@ -70,7 +70,7 @@ export function resolvePatcherAppVersion(args: ResolvePatcherAppVersionArgs): st
     currentDir = parentDir;
   }
 
-  return BB_APP_VERSION_FALLBACK;
+  return PATCHER_APP_VERSION_FALLBACK;
 }
 
 export function resolvePatcherCliVersion(): string {

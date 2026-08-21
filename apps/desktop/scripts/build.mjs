@@ -30,10 +30,10 @@ const desktopReleaseChannel = resolveDesktopReleaseChannel(process.env);
 const commonOptions = {
   bundle: true,
   define: {
-    "process.env.BB_DESKTOP_RELEASE_CHANNEL": JSON.stringify(
+    "process.env.PATCHER_DESKTOP_RELEASE_CHANNEL": JSON.stringify(
       desktopReleaseChannel,
     ),
-    "process.env.BB_DESKTOP_VERSION": JSON.stringify(desktopVersion),
+    "process.env.PATCHER_DESKTOP_VERSION": JSON.stringify(desktopVersion),
   },
   legalComments: "none",
   platform: "node",

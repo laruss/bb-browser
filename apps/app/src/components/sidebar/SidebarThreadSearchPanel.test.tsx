@@ -232,7 +232,7 @@ describe("SidebarThreadSearchPanel", () => {
     });
     thread.activity = { ...thread.activity, activePlanModeCount: 1 };
     window.localStorage.setItem(
-      "bb.promptbox.contents-proj_search-thr_search_draft-3",
+      "patcher.promptbox.contents-proj_search-thr_search_draft-3",
       JSON.stringify({ text: "Keep editing", attachments: [] }),
     );
     mockThreadSearch({
@@ -270,7 +270,7 @@ describe("SidebarThreadSearchPanel", () => {
       title: "Idle draft",
     });
     window.localStorage.setItem(
-      "bb.promptbox.contents-proj_search-thr_search_idle_draft-3",
+      "patcher.promptbox.contents-proj_search-thr_search_idle_draft-3",
       JSON.stringify({ text: "Keep editing", attachments: [] }),
     );
     mockThreadSearch({

@@ -269,11 +269,11 @@ function normalizeMentionProviderTriggers(
 
 /**
  * Copies of the server's hand-maintained reserved-name lists
- * (RESERVED_BB_CLI_COMMANDS / RESERVED_AGENT_TOOL_NAMES in
+ * (RESERVED_PATCHER_CLI_COMMANDS / RESERVED_AGENT_TOOL_NAMES in
  * apps/server/src/services/plugins/plugin-api.ts) so registrations fail here
  * the same way they fail there. Update alongside the server lists.
  */
-const RESERVED_BB_CLI_COMMANDS: readonly string[] = [
+const RESERVED_PATCHER_CLI_COMMANDS: readonly string[] = [
   "environment",
   "guide",
   "help",
@@ -637,7 +637,7 @@ export interface CreateFakePluginHostOptions {
   pluginId?: string;
   /**
    * Value served by `bb.server.loopbackBaseUrl` (always bound here, like
-   * `bb.sdk`). Defaults to "http://127.0.0.1:38886".
+   * `bb.sdk`). Defaults to "http://127.0.0.1:38986".
    */
   loopbackBaseUrl?: string;
   /**
@@ -1589,7 +1589,7 @@ function createFakePluginHostInternal(
           `invalid cli command name ${JSON.stringify(name)} — use lowercase letters, digits, and "-"`,
         );
       }
-      if (RESERVED_BB_CLI_COMMANDS.includes(name)) {
+      if (RESERVED_PATCHER_CLI_COMMANDS.includes(name)) {
         throw new Error(
           `cli command name "${name}" is reserved by the bb CLI — pick another name`,
         );
@@ -2992,7 +2992,7 @@ function createFakePluginHostInternal(
   };
 
   // --- server ---
-  const loopbackBaseUrl = options.loopbackBaseUrl ?? "http://127.0.0.1:38886";
+  const loopbackBaseUrl = options.loopbackBaseUrl ?? "http://127.0.0.1:38986";
   const server: PluginServerApi = {
     get loopbackBaseUrl(): string {
       assertLive();

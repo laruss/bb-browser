@@ -67,7 +67,7 @@ function createScriptEnv(
 ): NodeJS.ProcessEnv {
   return {
     ...process.env,
-    BB_DATA_DIR: fixture.dataDir,
+    PATCHER_DATA_DIR: fixture.dataDir,
     HOME: fixture.homeDir,
     PATH: [fixture.binDir, "/usr/bin", "/bin"].join(delimiter),
     ...env,
@@ -153,7 +153,7 @@ const option = (name) => {
   return index === -1 ? undefined : cliArgs[index + 1];
 };
 ${recordInvocation}
-const dataDir = process.env.BB_DATA_DIR;
+const dataDir = process.env.PATCHER_DATA_DIR;
 const hostId = ${JSON.stringify(args.hostId)};
 const port = Number(option("--host-daemon-port"));
 const serverUrl = option("--server-url");
@@ -181,7 +181,7 @@ process.on("SIGTERM", () => server.close(() => process.exit(0)));
 
 // Mocks curl to answer the bb-app tarball
 // download with the given status; npm records invocations and fabricates a
-// bb-app that enrolls into whatever BB_DATA_DIR the script hands it.
+// bb-app that enrolls into whatever PATCHER_DATA_DIR the script hands it.
 function writeServerInstallTools(
   fixture: ReturnType<typeof createFixture>,
   artifactStatus: 200 | 404,
@@ -313,7 +313,7 @@ describe("machine install script", () => {
     writeCurlArtifactMock(fixture, 404);
     writeEnrollingPatcherApp(fixture, invocationPath);
     const result = runScript(JOIN_ARGS, fixture, {
-      BB_INSTALL_SKIP_SERVICE: "1",
+      PATCHER_INSTALL_SKIP_SERVICE: "1",
     });
 
     expect(result.status, result.stderr).toBe(0);
@@ -356,7 +356,7 @@ describe("machine install script", () => {
         "http://localhost:20101",
       ],
       fixture,
-      { BB_INSTALL_SKIP_SERVICE: "1" },
+      { PATCHER_INSTALL_SKIP_SERVICE: "1" },
     );
 
     expect(result.status, result.stderr).toBe(0);
@@ -368,7 +368,7 @@ describe("machine install script", () => {
     // A stale build with the same version string must not be reused.
     writeExecutable(join(fixture.binDir, "bb-app"), "#!/bin/sh\nexit 99\n");
     const result = runScript(JOIN_ARGS, fixture, {
-      BB_INSTALL_SKIP_SERVICE: "1",
+      PATCHER_INSTALL_SKIP_SERVICE: "1",
     });
 
     expect(result.status, result.stderr).toBe(0);
@@ -383,7 +383,7 @@ describe("machine install script", () => {
     const fixture = createFixture();
     writeServerInstallTools(fixture, 200);
     const result = runScript(JOIN_ARGS, fixture, {
-      BB_INSTALL_SKIP_SERVICE: "1",
+      PATCHER_INSTALL_SKIP_SERVICE: "1",
     });
 
     expect(result.status, result.stderr).toBe(0);
@@ -399,7 +399,7 @@ describe("machine install script", () => {
     const fixture = createFixture();
     writeServerInstallTools(fixture, 404);
     const result = runScript(JOIN_ARGS, fixture, {
-      BB_INSTALL_SKIP_SERVICE: "1",
+      PATCHER_INSTALL_SKIP_SERVICE: "1",
     });
 
     expect(result.status, result.stderr).toBe(0);
@@ -408,18 +408,18 @@ describe("machine install script", () => {
     );
   }, SCRIPT_RUN_TIMEOUT_MS);
 
-  it("defaults the data dir to a per-server directory under ~/.bb-machines", () => {
+  it("defaults the data dir to a per-server directory under ~/.patcher-machines", () => {
     const fixture = createFixture();
     writeServerInstallTools(fixture, 200);
     const result = runScript(JOIN_ARGS, fixture, {
-      BB_DATA_DIR: "",
-      BB_INSTALL_SKIP_SERVICE: "1",
+      PATCHER_DATA_DIR: "",
+      PATCHER_INSTALL_SKIP_SERVICE: "1",
     });
 
     expect(result.status, result.stderr).toBe(0);
     const defaultDataDir = join(
       fixture.homeDir,
-      ".bb-machines/machine.getbb.app",
+      ".patcher-machines/machine.getbb.app",
     );
     expect(
       JSON.parse(readFileSync(join(defaultDataDir, "auth.json"), "utf8")),
@@ -432,7 +432,7 @@ describe("machine install script", () => {
     writeExecutable(join(fixture.binDir, "bb-app"), "#!/bin/sh\nexit 99\n");
     writeJoinedState(fixture, "https://machine.getbb.app", "host-other");
     const result = runScript(JOIN_ARGS, fixture, {
-      BB_INSTALL_SKIP_SERVICE: "1",
+      PATCHER_INSTALL_SKIP_SERVICE: "1",
     });
 
     expect(result.status).toBe(1);
@@ -467,7 +467,7 @@ describe("machine install script", () => {
 
     try {
       const result = runScript(JOIN_ARGS, fixture, {
-        BB_INSTALL_SKIP_SERVICE: "1",
+        PATCHER_INSTALL_SKIP_SERVICE: "1",
       });
 
       expect(result.status, result.stderr).toBe(0);
@@ -502,9 +502,9 @@ describe("machine install script", () => {
     writeExecutable(join(fixture.binDir, "bb-app"), "#!/bin/sh\nexit 99\n");
 
     const [firstResult, secondResult] = await Promise.all([
-      runScriptAsync(JOIN_ARGS, firstFixture, { BB_INSTALL_SKIP_SERVICE: "1" }),
+      runScriptAsync(JOIN_ARGS, firstFixture, { PATCHER_INSTALL_SKIP_SERVICE: "1" }),
       runScriptAsync(JOIN_ARGS, secondFixture, {
-        BB_INSTALL_SKIP_SERVICE: "1",
+        PATCHER_INSTALL_SKIP_SERVICE: "1",
       }),
     ]);
 
@@ -519,7 +519,7 @@ describe("machine install script", () => {
       "utf8",
     ).trim();
     expect(firstPort).not.toBe(secondPort);
-    const registryDir = join(fixture.homeDir, ".bb-machines/host-daemon-ports");
+    const registryDir = join(fixture.homeDir, ".patcher-machines/host-daemon-ports");
     expect(
       new Set([
         readFileSync(join(registryDir, firstPort, "data-dir"), "utf8").trim(),
@@ -542,7 +542,7 @@ describe("machine install script", () => {
 printf '%s\n' "$*" >>"${join(fixture.dataDir, "launchctl.log")}"
 if [ "$1" = kickstart ]; then
   port=$(sed -n '1p' "${join(fixture.dataDir, "host-daemon-port")}")
-  BB_DATA_DIR="${fixture.dataDir}" "${join(fixture.binDir, "bb-app")}" host-daemon --host-daemon-port "$port" --server-url https://machine.getbb.app >/dev/null 2>&1 &
+  PATCHER_DATA_DIR="${fixture.dataDir}" "${join(fixture.binDir, "bb-app")}" host-daemon --host-daemon-port "$port" --server-url https://machine.getbb.app >/dev/null 2>&1 &
   echo $! >"${join(fixture.dataDir, "service-daemon.pid")}"
 fi
 `,
@@ -599,7 +599,7 @@ fi
 printf '%s\n' "$*" >>"${join(fixture.dataDir, "systemctl.log")}"
 if [ "$*" = "--user restart bb-host-daemon-machine-getbb-app.service" ]; then
   port=$(sed -n '1p' "${join(fixture.dataDir, "host-daemon-port")}")
-  BB_DATA_DIR="${fixture.dataDir}" "${join(fixture.binDir, "bb-app")}" host-daemon --host-daemon-port "$port" --server-url https://machine.getbb.app >/dev/null 2>&1 &
+  PATCHER_DATA_DIR="${fixture.dataDir}" "${join(fixture.binDir, "bb-app")}" host-daemon --host-daemon-port "$port" --server-url https://machine.getbb.app >/dev/null 2>&1 &
   echo $! >"${join(fixture.dataDir, "service-daemon.pid")}"
 fi
 `,

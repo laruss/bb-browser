@@ -769,7 +769,7 @@ export function PluginNewThreadComposer({
         isSubmitting={isSubmitting}
         disabled={isSubmitDisabled}
         placeholder={placeholder}
-        zenModeStorageKey={`bb.promptbox.zen-mode.plugin-new-thread.${
+        zenModeStorageKey={`patcher.promptbox.zen-mode.plugin-new-thread.${
           draftKey ?? pluginId ?? "default"
         }`}
         history={{

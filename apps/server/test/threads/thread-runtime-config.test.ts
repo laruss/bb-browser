@@ -86,7 +86,7 @@ async function writeDataDirAgentInstructions(
 async function writeWorkspaceAgentInstructions(
   args: WriteWorkspaceAgentInstructionsArgs,
 ): Promise<void> {
-  const patcherDir = path.join(args.workspacePath, ".bb");
+  const patcherDir = path.join(args.workspacePath, ".patcher");
   await mkdir(patcherDir, { recursive: true });
   await writeFile(path.join(patcherDir, "AGENTS.md"), args.content, "utf8");
 }
@@ -744,7 +744,7 @@ describe("thread runtime config", () => {
       );
       const projectSourceRootPath = await writeRuntimeSkill({
         name: "project-helper",
-        rootPath: path.join(workspacePath, ".bb", "skills"),
+        rootPath: path.join(workspacePath, ".patcher", "skills"),
       });
       const { host } = seedHostSession(harness.deps, {
         id: "host-runtime-injected-skills",
@@ -1210,7 +1210,7 @@ describe("thread runtime config", () => {
     });
   });
 
-  it("keeps local-host workspace .bb/AGENTS.md instructions unchanged", async () => {
+  it("keeps local-host workspace .patcher/AGENTS.md instructions unchanged", async () => {
     await withTestHarness(async (harness) => {
       const hostId = "host-runtime-agents-md";
       seedHostSession(harness.deps, { id: hostId });
@@ -1259,7 +1259,7 @@ describe("thread runtime config", () => {
         "You are working inside bb, an agentic IDE",
       );
       expect(runtimeConfig.instructions).toContain(
-        "The following workspace instructions come from .bb/AGENTS.md:",
+        "The following workspace instructions come from .patcher/AGENTS.md:",
       );
       expect(runtimeConfig.instructions).toContain(
         "Always run the smoke test before pushing.",
@@ -1267,7 +1267,7 @@ describe("thread runtime config", () => {
     });
   });
 
-  it("reads workspace .bb/AGENTS.md from a non-primary host", async () => {
+  it("reads workspace .patcher/AGENTS.md from a non-primary host", async () => {
     await withTestHarness(async (harness) => {
       const { host: primary } = seedHostSession(harness.deps, {
         id: "host-runtime-agents-primary",
@@ -1282,7 +1282,7 @@ describe("thread runtime config", () => {
       const workspacePath = "/remote/runtime-agents-workspace";
       const agentInstructionsPath = path.join(
         workspacePath,
-        ".bb",
+        ".patcher",
         "AGENTS.md",
       );
       const responder = registerRemoteRuntimeFileResponder(harness, {
@@ -1335,7 +1335,7 @@ describe("thread runtime config", () => {
     });
   });
 
-  it("treats a missing remote workspace .bb/AGENTS.md as null", async () => {
+  it("treats a missing remote workspace .patcher/AGENTS.md as null", async () => {
     await withTestHarness(async (harness) => {
       const { host: primary } = seedHostSession(harness.deps, {
         id: "host-runtime-missing-agents-primary",
@@ -1373,7 +1373,7 @@ describe("thread runtime config", () => {
       );
 
       expect(runtimeConfig.instructions).not.toContain(
-        "The following workspace instructions come from .bb/AGENTS.md:",
+        "The following workspace instructions come from .patcher/AGENTS.md:",
       );
     });
   });
@@ -1393,7 +1393,7 @@ describe("thread runtime config", () => {
       const workspacePath = "/remote/runtime-skills-workspace";
       const skillRootPath = path.join(
         workspacePath,
-        ".bb",
+        ".patcher",
         "skills",
         "remote-review",
       );
@@ -1447,7 +1447,7 @@ describe("thread runtime config", () => {
           expect.objectContaining({
             command: expect.objectContaining({
               type: "host.list_files",
-              path: path.join(workspacePath, ".bb", "skills"),
+              path: path.join(workspacePath, ".patcher", "skills"),
             }),
           }),
           expect.objectContaining({
@@ -1579,7 +1579,7 @@ describe("thread runtime config", () => {
       const userSource =
         "The following user instructions come from <dataDir>/AGENTS.md:";
       const workspaceSource =
-        "The following workspace instructions come from .bb/AGENTS.md:";
+        "The following workspace instructions come from .patcher/AGENTS.md:";
       expect(runtimeConfig.instructions).toContain(userSource);
       expect(runtimeConfig.instructions).toContain(
         "Prefer concise progress updates.",

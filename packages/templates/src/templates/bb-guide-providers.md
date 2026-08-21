@@ -89,7 +89,7 @@ ACP providers discover models from the agent itself. For acp-opencode, the
 list mirrors the OpenCode catalog, so a custom model from the OpenCode config
 appears automatically. Discover and select one with:
 
-  bb provider models acp-opencode --environment "$BB_ENVIRONMENT_ID"
+  bb provider models acp-opencode --environment "$PATCHER_ENVIRONMENT_ID"
   bb thread spawn --provider acp-opencode --model <provider/model>
 
 bb applies the selected model to the ACP session before the first prompt.

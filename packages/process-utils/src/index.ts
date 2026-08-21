@@ -179,7 +179,7 @@ export function sanitizeInheritedChildProcessEnv(
     if (value === undefined) {
       continue;
     }
-    if (key === "NODE_ENV" || key.startsWith("BB_")) {
+    if (key === "NODE_ENV" || key.startsWith("PATCHER_")) {
       continue;
     }
     sanitizedEnv[key] = value;

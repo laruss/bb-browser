@@ -234,7 +234,7 @@ describe("provider registry", () => {
         permissionScope: "full",
         approvalReviewer: null,
         permissionEscalation: null,
-        envVars: { BB_THREAD_ID: "thread-1" },
+        envVars: { PATCHER_THREAD_ID: "thread-1" },
       },
       instructionMode: "append",
     });
@@ -246,7 +246,7 @@ describe("provider registry", () => {
         agent: { command: "custom-agent", args: ["serve"] },
         envVars: {
           CUSTOM_AGENT_TOKEN: "token",
-          BB_THREAD_ID: "thread-1",
+          PATCHER_THREAD_ID: "thread-1",
         },
         workspaceWriteRoots: ["/agent-home", "/extra-root"],
       },

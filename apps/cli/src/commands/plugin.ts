@@ -67,11 +67,11 @@ export function resolveNewPluginTarget(name: string): NewPluginTarget | null {
  * Where `bb plugin build`/`dev` cache the pinned esbuild/Tailwind set.
  *
  * The CLI ships no build toolchain, so the first build on a machine fetches
- * one. Honors BB_DATA_DIR (dev instances and tests set it) and otherwise uses
+ * one. Honors PATCHER_DATA_DIR (dev instances and tests set it) and otherwise uses
  * the production data dir, so the CLI and server share one cache.
  */
 function toolchainBaseDir(): string {
-  const configured = process.env.BB_DATA_DIR;
+  const configured = process.env.PATCHER_DATA_DIR;
   const dataDir =
     configured === undefined || configured.trim().length === 0
       ? resolveProdDataDir({ homeDir: homedir() })

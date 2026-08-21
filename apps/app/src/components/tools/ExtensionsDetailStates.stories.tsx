@@ -183,7 +183,7 @@ function State({
 
 // --- Skills -----------------------------------------------------------------
 
-const SKILL_PATH = "/Users/you/.bb/skills/writing-voice/SKILL.md";
+const SKILL_PATH = "/Users/you/.patcher/skills/writing-voice/SKILL.md";
 
 /**
  * The leading slot carries the skill's provider, exactly as the real library
@@ -248,7 +248,10 @@ export function SkillDetailStates() {
         note="Files appears above Definition and never below it."
       >
         <Skill
-          files={[SKILL_PATH, "/Users/you/.bb/skills/writing-voice/tone.md"]}
+          files={[
+            SKILL_PATH,
+            "/Users/you/.patcher/skills/writing-voice/tone.md",
+          ]}
         />
       </State>
 
@@ -383,7 +386,7 @@ export function SkillDetailStates() {
 const PLUGIN: PluginListItem = {
   id: "github",
   source: "npm:@bb-plugins/github",
-  rootDir: "/Users/you/.bb/plugins/github",
+  rootDir: "/Users/you/.patcher/plugins/github",
   version: "1.4.0",
   enabled: true,
   status: "running",
@@ -486,7 +489,7 @@ const AWKWARD_PLUGIN: PluginListItem = {
   id: "enterprise-issue-tracker-synchronization",
   name: "Enterprise Issue Tracker Synchronization",
   rootDir:
-    "/Users/you/.bb/plugins/enterprise-issue-tracker-synchronization/packages/runtime",
+    "/Users/you/.patcher/plugins/enterprise-issue-tracker-synchronization/packages/runtime",
   description:
     "Keeps issues, pull requests, review comments, and release checklists synchronized between bb threads and your issue tracker, including bidirectional status mapping, attachment mirroring, and per-project field translation.",
   cliCommand: {

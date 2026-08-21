@@ -460,7 +460,7 @@ describe("electron-builder signing config", () => {
     // a window that shows nothing.
     for (const channel of ["latest", "nightly"]) {
       const { config } = await readResolvedConfig({
-        BB_DESKTOP_RELEASE_CHANNEL: channel,
+        PATCHER_DESKTOP_RELEASE_CHANNEL: channel,
       });
       const extendInfo = macExtendInfoSchema.parse(config.mac.extendInfo);
 
@@ -490,7 +490,7 @@ describe("electron-builder signing config", () => {
 
   it("creates a separate nightly app identity and update feed", async () => {
     const { config } = await readResolvedConfig({
-      BB_DESKTOP_RELEASE_CHANNEL: "nightly",
+      PATCHER_DESKTOP_RELEASE_CHANNEL: "nightly",
     });
     const nightlyRelease = createDesktopReleaseInfo("nightly");
 
@@ -513,12 +513,12 @@ describe("electron-builder signing config", () => {
 
   it("rejects unknown desktop release channels", async () => {
     const result = await runConfigScript({
-      BB_DESKTOP_RELEASE_CHANNEL: "canary",
+      PATCHER_DESKTOP_RELEASE_CHANNEL: "canary",
     });
 
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toContain(
-      "BB_DESKTOP_RELEASE_CHANNEL must be latest or nightly",
+      "PATCHER_DESKTOP_RELEASE_CHANNEL must be latest or nightly",
     );
   });
 

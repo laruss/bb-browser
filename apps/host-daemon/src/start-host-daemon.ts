@@ -130,7 +130,8 @@ export async function startHostDaemon(
     });
     const instanceId = (options.createInstanceId ?? randomUUID)();
     const serverUrl = resolveServerUrl({
-      providedServerUrl: options.serverUrl ?? hostDaemonConfig?.BB_SERVER_URL,
+      providedServerUrl:
+        options.serverUrl ?? hostDaemonConfig?.PATCHER_SERVER_URL,
     });
     if (!serverUrl) {
       throw new Error("Host daemon server URL is required");
@@ -167,7 +168,7 @@ export async function startHostDaemon(
             options.enrollKey ??
             (() => {
               throw new Error(
-                `Missing host bootstrap material. Provide BB_HOST_ENROLL_KEY or populate ${dataDir}/auth.json first.`,
+                `Missing host bootstrap material. Provide PATCHER_HOST_ENROLL_KEY or populate ${dataDir}/auth.json first.`,
               );
             })(),
         })
@@ -186,7 +187,7 @@ export async function startHostDaemon(
       ? resolveHostDaemonLocalApiConfig({
           hostDaemonPort:
             options.hostDaemonPort ??
-            requireHostDaemonConfig(hostDaemonConfig).BB_HOST_DAEMON_PORT,
+            requireHostDaemonConfig(hostDaemonConfig).PATCHER_HOST_DAEMON_PORT,
           hostType,
           localApi: options.localApi,
         })
@@ -248,10 +249,10 @@ export async function startHostDaemon(
       hostName: identity.hostName,
       instanceId,
       appUrl:
-        hostDaemonConfig?.BB_APP_URL === ""
+        hostDaemonConfig?.PATCHER_APP_URL === ""
           ? undefined
-          : hostDaemonConfig?.BB_APP_URL,
-      devAppPort: hostDaemonConfig?.BB_DEV_APP_PORT,
+          : hostDaemonConfig?.PATCHER_APP_URL,
+      devAppPort: hostDaemonConfig?.PATCHER_DEV_APP_PORT,
       logger,
       releaseLock,
       localApiConfig,

@@ -52,7 +52,7 @@ describe("adopting a pre-window-scoping tab list", () => {
     return getBrowserSurfaceTabsStorageKey();
   }
 
-  const LEGACY = "bb.browserSurface.tabs-1";
+  const LEGACY = "patcher.browserSurface.tabs-1";
   const STORED = JSON.stringify({ activeTabId: null, tabs: [] });
 
   it("hands the old list to the first window and leaves the next one empty", () => {

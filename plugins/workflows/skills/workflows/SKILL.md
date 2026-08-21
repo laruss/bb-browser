@@ -32,7 +32,7 @@ phase and worker inspector in the thread's right panel. The completion
 notification still arrives in the origin thread, and
 `bb workflows status <run-id>` remains the authoritative compact polling
 surface. For detailed history, redirect a bounded `bb workflows history` JSONL
-page into `$BB_THREAD_STORAGE` before reading it with filesystem tools.
+page into `$PATCHER_THREAD_STORAGE` before reading it with filesystem tools.
 
 Common single-phase workflows you can chain across turns:
 
@@ -48,8 +48,8 @@ next phase. You stay in the loop; each workflow is one well-scoped fan-out.
 Before writing explicit provider selections, use BB's built-in provider CLI:
 
 ```bash
-bb provider list --environment "$BB_ENVIRONMENT_ID" --json
-bb provider models <provider-id> --environment "$BB_ENVIRONMENT_ID" --json
+bb provider list --environment "$PATCHER_ENVIRONMENT_ID" --json
+bb provider models <provider-id> --environment "$PATCHER_ENVIRONMENT_ID" --json
 ```
 
 Query only the provider you intend to use. Do not guess identifiers from
@@ -402,7 +402,7 @@ deterministic (loops, conditionals, fan-out) rather than model-driven.
 - `scriptPath`: a relative path or an absolute path confined to the workflow
   origin environment's workspace.
 - `name`: a lowercase kebab-case name resolved as
-  `.bb/workflows/<name>.js` in the current project workspace.
+  `.patcher/workflows/<name>.js` in the current project workspace.
 
 The existing `source` field remains a supported alias for inline `script`, but
 do not provide both. File and name resolution happens through the origin
@@ -429,10 +429,10 @@ JSONL page on the execution host, then use normal file-navigation tools:
 
 ```bash
 run=<run-id>
-mkdir -p "$BB_THREAD_STORAGE/workflows"
+mkdir -p "$PATCHER_THREAD_STORAGE/workflows"
 bb workflows history "$run" --cursor 0 --limit 100 \
-  > "$BB_THREAD_STORAGE/workflows/$run.jsonl"
-jq -c 'select(.type == "page")' "$BB_THREAD_STORAGE/workflows/$run.jsonl"
+  > "$PATCHER_THREAD_STORAGE/workflows/$run.jsonl"
+jq -c 'select(.type == "page")' "$PATCHER_THREAD_STORAGE/workflows/$run.jsonl"
 ```
 
 The last `page` record supplies `nextCursor`; fetch that cursor and append the
@@ -468,17 +468,17 @@ The CLI equivalents are:
 
 ```bash
 bb workflows validate --script '<javascript>'
-bb workflows validate --file .bb/workflows/review-change.js
+bb workflows validate --file .patcher/workflows/review-change.js
 bb workflows validate --name review-change
 bb workflows run --script '<javascript>' --args '<json>'
-bb workflows run --file .bb/workflows/review-change.js --resume <run-id>
+bb workflows run --file .patcher/workflows/review-change.js --resume <run-id>
 bb workflows run --name review-change
 bb workflows status <run-id>
 bb workflows history <run-id> --cursor 0 --limit 100
 bb workflows list --limit 20
 bb workflows stop <run-id>
-bb provider list --environment "$BB_ENVIRONMENT_ID" --json
-bb provider models <provider-id> --environment "$BB_ENVIRONMENT_ID" --json
+bb provider list --environment "$PATCHER_ENVIRONMENT_ID" --json
+bb provider models <provider-id> --environment "$PATCHER_ENVIRONMENT_ID" --json
 ```
 
 The CLI's `--file` maps to the agent tool's `scriptPath`, but a relative CLI

@@ -17,7 +17,7 @@ const baseProps = {
 };
 
 // ---------------------------------------------------------------------------
-// Real web-search rows pulled from live threads in ~/.bb-dev/bb.db.
+// Real web-search rows pulled from live threads in ~/.patcher-dev/patcher.db.
 // webSearch events emit only `item/completed`, so startedAt == createdAt.
 // ---------------------------------------------------------------------------
 
@@ -93,7 +93,7 @@ const runningSearch: TimelineRow = webSearchRow({
 });
 
 // Error — same shape as the multi-query search but flipped to status=error.
-// No real "errored" web-search rows exist in ~/.bb-dev/bb.db; we reuse a real
+// No real "errored" web-search rows exist in ~/.patcher-dev/patcher.db; we reuse a real
 // queries payload and surface the error state.
 const erroredSearch: TimelineRow = webSearchRow({
   id: "thr_yr83zs2m7f:web-search:ws_errored",

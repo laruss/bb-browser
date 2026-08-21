@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import {
-  BB_DESKTOP_BROWSER_MAX_PAGE_SCRIPT_JSON_LENGTH,
-  BB_DESKTOP_BROWSER_MAX_PAGE_SCRIPTS,
+  PATCHER_DESKTOP_BROWSER_MAX_PAGE_SCRIPT_JSON_LENGTH,
+  PATCHER_DESKTOP_BROWSER_MAX_PAGE_SCRIPTS,
 } from "@patcher/desktop-contract";
 import { matchesBrowserUrlPattern } from "@patcher/domain/browser-url-pattern";
 import { usePluginContributions } from "@/hooks/queries/plugin-contribution-queries";
@@ -47,7 +47,7 @@ export function useBrowserPageScripts(): void {
       // whole push and keeps the list it already had, so one plugin declaring
       // too many would leave every plugin's scripts stale.
       scripts: scripts
-        .slice(0, BB_DESKTOP_BROWSER_MAX_PAGE_SCRIPTS)
+        .slice(0, PATCHER_DESKTOP_BROWSER_MAX_PAGE_SCRIPTS)
         .map((script) => ({
           pluginId: script.pluginId,
           scriptId: script.scriptId,
@@ -116,7 +116,7 @@ async function answer(
   const parsed: unknown = input.length === 0 ? null : JSON.parse(input);
   const result = await callPluginRpc(fetch, pluginId, method, parsed);
   const serialized = result === undefined ? "" : JSON.stringify(result);
-  if (serialized.length > BB_DESKTOP_BROWSER_MAX_PAGE_SCRIPT_JSON_LENGTH) {
+  if (serialized.length > PATCHER_DESKTOP_BROWSER_MAX_PAGE_SCRIPT_JSON_LENGTH) {
     throw new Error(
       `bb.rpc("${method}"): the answer is too large to hand to a page.`,
     );

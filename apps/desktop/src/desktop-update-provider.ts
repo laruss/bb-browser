@@ -39,7 +39,7 @@ function resolveBuiltDesktopReleaseChannel(
 }
 
 export const DESKTOP_RELEASE_CHANNEL = resolveBuiltDesktopReleaseChannel(
-  process.env.BB_DESKTOP_RELEASE_CHANNEL,
+  process.env.PATCHER_DESKTOP_RELEASE_CHANNEL,
 );
 export const DESKTOP_RELEASE_INFO = createDesktopReleaseInfo(
   DESKTOP_RELEASE_CHANNEL,

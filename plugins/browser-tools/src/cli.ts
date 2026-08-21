@@ -1819,7 +1819,7 @@ export function registerBrowserToolsCli(bb: PatcherPluginApi): void {
               return {
                 exitCode: 1,
                 stderr:
-                  "No Homebrew here to install it with. Install ffmpeg however this machine installs things, then point BB_FFMPEG at it if it is somewhere unusual.\n",
+                  "No Homebrew here to install it with. Install ffmpeg however this machine installs things, then point PATCHER_FFMPEG at it if it is somewhere unusual.\n",
               };
             }
             // On the server's machine, which on a remote server is not the one
@@ -1842,7 +1842,7 @@ export function registerBrowserToolsCli(bb: PatcherPluginApi): void {
                   exitCode: 1,
                   stdout: `${installed.output}\n`,
                   stderr:
-                    "Homebrew finished, but no working ffmpeg turned up. Point BB_FFMPEG at one.\n",
+                    "Homebrew finished, but no working ffmpeg turned up. Point PATCHER_FFMPEG at one.\n",
                 }
               : { exitCode: 0, stdout: `ffmpeg is ready: ${found}\n` };
           }

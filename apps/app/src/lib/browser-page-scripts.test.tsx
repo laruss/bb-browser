@@ -3,7 +3,7 @@
 import { cleanup, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-  BB_DESKTOP_BROWSER_MAX_PAGE_SCRIPTS,
+  PATCHER_DESKTOP_BROWSER_MAX_PAGE_SCRIPTS,
   type PatcherDesktopBrowserApi,
   type PatcherDesktopBrowserPageScriptCall,
   type PatcherDesktopBrowserPageScriptCallHandler,
@@ -160,7 +160,7 @@ describe("useBrowserPageScripts", () => {
   it("pushes no more scripts than the shell will accept", async () => {
     contributions.value = {
       browserPageScripts: Array.from(
-        { length: BB_DESKTOP_BROWSER_MAX_PAGE_SCRIPTS + 5 },
+        { length: PATCHER_DESKTOP_BROWSER_MAX_PAGE_SCRIPTS + 5 },
         (_unused, index) => ({ ...SCRIPT, scriptId: `toolbar-${index}` }),
       ),
     };
@@ -170,7 +170,7 @@ describe("useBrowserPageScripts", () => {
 
     await waitFor(() => {
       expect(shell.pushes[0]?.scripts).toHaveLength(
-        BB_DESKTOP_BROWSER_MAX_PAGE_SCRIPTS,
+        PATCHER_DESKTOP_BROWSER_MAX_PAGE_SCRIPTS,
       );
     });
   });

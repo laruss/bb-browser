@@ -43,7 +43,7 @@ type HostChannel = PluginChannel<PluginCallbackKind, PluginHostCallPath>;
  * in the server under `plugin-placement.ts`. An *installed* plugin no longer
  * gets that escape: the shipped policy moves it out, so a route that never ends
  * its body (SSE, say) buffers forever here rather than streaming. That is a
- * real difference between the two placements, not a detail; `BB_PLUGIN_PROCESS`
+ * real difference between the two placements, not a detail; `PATCHER_PLUGIN_PROCESS`
  * is the way back for a deployment that hits it.
  */
 export function remoteHttpRoute(args: {

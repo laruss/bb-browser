@@ -102,12 +102,12 @@ afterEach(async () => {
 describe("runShellPipeline", () => {
   it("scrubs inherited bb runtime env vars and node mode", async () => {
     const repoPath = await initEmptyRepo();
-    vi.stubEnv("BB_DATA_DIR", "/tmp/leaked-bb-data");
+    vi.stubEnv("PATCHER_DATA_DIR", "/tmp/leaked-bb-data");
     vi.stubEnv("NODE_ENV", "development");
     vi.stubEnv("OPENAI_API_KEY", "external-secret");
 
     const result = await runShellPipeline(
-      `printf '%s|%s|%s' "\${BB_DATA_DIR-missing}" "\${NODE_ENV-missing}" "\${OPENAI_API_KEY-missing}"`,
+      `printf '%s|%s|%s' "\${PATCHER_DATA_DIR-missing}" "\${NODE_ENV-missing}" "\${OPENAI_API_KEY-missing}"`,
       [],
       { cwd: repoPath },
     );
@@ -255,7 +255,7 @@ describe("command timeouts", () => {
     const repoPath = await initEmptyRepo();
 
     await expect(
-      runGit(["-c", "alias.bb-sleep=!sleep 5", "bb-sleep"], {
+      runGit(["-c", "alias.patcher-sleep=!sleep 5", "bb-sleep"], {
         cwd: repoPath,
         allowFailure: true,
         timeoutMs: 10,

@@ -12,12 +12,12 @@ environments, and the provider/model catalog.
 ## Environment setup script
 
 - To make a repo work with bb worktrees, run `bb guide environments`. It
-  documents the repo-level `.bb-env-setup.sh` setup hook and the
+  documents the repo-level `.patcher-env-setup.sh` setup hook and the
   `.worktreeinclude` file.
 - A new worktree checks out tracked files only. Commit a `.worktreeinclude`
   file at the repo root to list untracked files, such as `.env`, that bb must
   copy from the source checkout. It uses gitignore pattern syntax. bb copies
-  the matches before it runs `.bb-env-setup.sh`.
+  the matches before it runs `.patcher-env-setup.sh`.
 
 ## Remote client
 
@@ -86,7 +86,7 @@ status|install` to inspect or install provider CLIs on a selected machine.
 - Use `bb project attachment upload <project-id> --client-file <path>` when the
   bytes live on the CLI machine, including when the CLI and bb server are on
   different hosts. It reads locally and sends multipart bytes through the
-  configured `BB_SERVER_URL` (and its enrolled-machine authentication proxy),
+  configured `PATCHER_SERVER_URL` (and its enrolled-machine authentication proxy),
   returning the stable server attachment DTO. Optional `--filename` and
   `--mime-type` override inferred metadata. Pass the returned relative `path`
   to thread `--file` or `--image`; image MIME types are capped at 10MB and

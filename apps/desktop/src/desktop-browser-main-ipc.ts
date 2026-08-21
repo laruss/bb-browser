@@ -42,42 +42,42 @@ import {
   type PatcherDesktopPageScriptRpcAnswer,
 } from "@patcher/desktop-contract";
 import {
-  BB_DESKTOP_BROWSER_ATTACH_CHANNEL,
-  BB_DESKTOP_BROWSER_DETACH_CHANNEL,
-  BB_DESKTOP_BROWSER_GO_BACK_CHANNEL,
-  BB_DESKTOP_BROWSER_GO_FORWARD_CHANNEL,
-  BB_DESKTOP_BROWSER_NAVIGATE_CHANNEL,
-  BB_DESKTOP_BROWSER_DOWNLOAD_ACTION_CHANNEL,
-  BB_DESKTOP_BROWSER_SET_CONTEXT_MENU_ITEMS_CHANNEL,
-  BB_DESKTOP_BROWSER_SET_PAGE_STYLES_CHANNEL,
-  BB_DESKTOP_BROWSER_SET_PAGE_SCRIPTS_CHANNEL,
-  BB_DESKTOP_BROWSER_PAGE_SCRIPT_RESULT_CHANNEL,
-  BB_DESKTOP_PAGE_SCRIPT_BOOTSTRAP_CHANNEL,
-  BB_DESKTOP_PAGE_SCRIPT_RPC_CHANNEL,
-  BB_DESKTOP_BROWSER_SET_OVERLAY_CHANNEL,
-  BB_DESKTOP_BROWSER_SET_FULLSCREEN_CHANNEL,
-  BB_DESKTOP_BROWSER_SET_POPUP_TABS_CHANNEL,
-  BB_DESKTOP_BROWSER_SET_DEV_TOOLS_CHANNEL,
-  BB_DESKTOP_BROWSER_SET_DEV_TOOLS_VISIBLE_CHANNEL,
-  BB_DESKTOP_BROWSER_FIND_CHANNEL,
-  BB_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
-  BB_DESKTOP_BROWSER_DIALOG_RESPOND_CHANNEL,
-  BB_DESKTOP_BROWSER_PAGE_PROMPT_RESPOND_CHANNEL,
-  BB_DESKTOP_BROWSER_CAPTURE_FULL_PAGE_CHANNEL,
-  BB_DESKTOP_BROWSER_CONTROL_CHANNEL,
-  BB_DESKTOP_BROWSER_RECORD_CHANNEL,
-  BB_DESKTOP_BROWSER_INTERACT_CHANNEL,
-  BB_DESKTOP_BROWSER_OBSERVE_CHANNEL,
-  BB_DESKTOP_BROWSER_SNAPSHOT_TREE_CHANNEL,
-  BB_DESKTOP_BROWSER_SNAPSHOT_IN_CHANNEL,
-  BB_DESKTOP_BROWSER_STORAGE_CHANNEL,
-  BB_DESKTOP_BROWSER_RELOAD_CHANNEL,
-  BB_DESKTOP_BROWSER_SET_BOUNDS_CHANNEL,
-  BB_DESKTOP_BROWSER_SET_VISIBLE_CHANNEL,
-  BB_DESKTOP_BROWSER_PRINT_CHANNEL,
-  BB_DESKTOP_BROWSER_SET_MUTED_CHANNEL,
-  BB_DESKTOP_BROWSER_SET_ZOOM_CHANNEL,
-  BB_DESKTOP_BROWSER_STOP_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_ATTACH_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_DETACH_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_GO_BACK_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_GO_FORWARD_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_NAVIGATE_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_DOWNLOAD_ACTION_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_SET_CONTEXT_MENU_ITEMS_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_SET_PAGE_STYLES_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_SET_PAGE_SCRIPTS_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_PAGE_SCRIPT_RESULT_CHANNEL,
+  PATCHER_DESKTOP_PAGE_SCRIPT_BOOTSTRAP_CHANNEL,
+  PATCHER_DESKTOP_PAGE_SCRIPT_RPC_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_SET_OVERLAY_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_SET_FULLSCREEN_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_SET_POPUP_TABS_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_SET_DEV_TOOLS_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_SET_DEV_TOOLS_VISIBLE_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_FIND_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_DIALOG_RESPOND_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_PAGE_PROMPT_RESPOND_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_CAPTURE_FULL_PAGE_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_CONTROL_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_RECORD_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_INTERACT_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_OBSERVE_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_SNAPSHOT_TREE_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_SNAPSHOT_IN_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_STORAGE_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_RELOAD_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_SET_BOUNDS_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_SET_VISIBLE_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_PRINT_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_SET_MUTED_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_SET_ZOOM_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_STOP_CHANNEL,
 } from "./desktop-browser-ipc.js";
 import type { DesktopBrowserViewManager } from "./desktop-browser-view.js";
 
@@ -117,36 +117,43 @@ export function registerDesktopBrowserIpc(
   manager: DesktopBrowserViewManager,
 ): void {
   // Every browser command is renderer -> main fire-and-forget; navigation state
-  // flows back over `BB_DESKTOP_BROWSER_STATE_CHANNEL`. Each handler resolves
+  // flows back over `PATCHER_DESKTOP_BROWSER_STATE_CHANNEL`. Each handler resolves
   // its own host window from the sender, so multi-window is safe, and zod-parses
   // the untrusted-content-adjacent payload before touching the view.
-  ipcMain.on(BB_DESKTOP_BROWSER_ATTACH_CHANNEL, (event, payload: unknown) => {
-    const hostWindow = hostWindowFromBrowserIpcEvent(event);
-    if (hostWindow === null) {
-      return;
-    }
-    const parsed = patcherDesktopBrowserAttachRequestSchema.safeParse(payload);
-    if (!parsed.success) {
-      return;
-    }
-    manager.attach({ hostWindow, request: parsed.data });
-  });
-
-  ipcMain.on(BB_DESKTOP_BROWSER_NAVIGATE_CHANNEL, (event, payload: unknown) => {
-    const hostWindow = hostWindowFromBrowserIpcEvent(event);
-    if (hostWindow === null) {
-      return;
-    }
-    const parsed =
-      patcherDesktopBrowserNavigateRequestSchema.safeParse(payload);
-    if (!parsed.success) {
-      return;
-    }
-    manager.navigate({ hostWindow, request: parsed.data });
-  });
+  ipcMain.on(
+    PATCHER_DESKTOP_BROWSER_ATTACH_CHANNEL,
+    (event, payload: unknown) => {
+      const hostWindow = hostWindowFromBrowserIpcEvent(event);
+      if (hostWindow === null) {
+        return;
+      }
+      const parsed =
+        patcherDesktopBrowserAttachRequestSchema.safeParse(payload);
+      if (!parsed.success) {
+        return;
+      }
+      manager.attach({ hostWindow, request: parsed.data });
+    },
+  );
 
   ipcMain.on(
-    BB_DESKTOP_BROWSER_SET_BOUNDS_CHANNEL,
+    PATCHER_DESKTOP_BROWSER_NAVIGATE_CHANNEL,
+    (event, payload: unknown) => {
+      const hostWindow = hostWindowFromBrowserIpcEvent(event);
+      if (hostWindow === null) {
+        return;
+      }
+      const parsed =
+        patcherDesktopBrowserNavigateRequestSchema.safeParse(payload);
+      if (!parsed.success) {
+        return;
+      }
+      manager.navigate({ hostWindow, request: parsed.data });
+    },
+  );
+
+  ipcMain.on(
+    PATCHER_DESKTOP_BROWSER_SET_BOUNDS_CHANNEL,
     (event, payload: unknown) => {
       const hostWindow = hostWindowFromBrowserIpcEvent(event);
       if (hostWindow === null) {
@@ -162,7 +169,7 @@ export function registerDesktopBrowserIpc(
   );
 
   ipcMain.on(
-    BB_DESKTOP_BROWSER_SET_VISIBLE_CHANNEL,
+    PATCHER_DESKTOP_BROWSER_SET_VISIBLE_CHANNEL,
     (event, payload: unknown) => {
       const hostWindow = hostWindowFromBrowserIpcEvent(event);
       if (hostWindow === null) {
@@ -177,20 +184,24 @@ export function registerDesktopBrowserIpc(
     },
   );
 
-  ipcMain.on(BB_DESKTOP_BROWSER_SET_ZOOM_CHANNEL, (event, payload: unknown) => {
-    const hostWindow = hostWindowFromBrowserIpcEvent(event);
-    if (hostWindow === null) {
-      return;
-    }
-    const parsed = patcherDesktopBrowserSetZoomRequestSchema.safeParse(payload);
-    if (!parsed.success) {
-      return;
-    }
-    manager.setZoom({ hostWindow, request: parsed.data });
-  });
+  ipcMain.on(
+    PATCHER_DESKTOP_BROWSER_SET_ZOOM_CHANNEL,
+    (event, payload: unknown) => {
+      const hostWindow = hostWindowFromBrowserIpcEvent(event);
+      if (hostWindow === null) {
+        return;
+      }
+      const parsed =
+        patcherDesktopBrowserSetZoomRequestSchema.safeParse(payload);
+      if (!parsed.success) {
+        return;
+      }
+      manager.setZoom({ hostWindow, request: parsed.data });
+    },
+  );
 
   ipcMain.on(
-    BB_DESKTOP_BROWSER_SET_MUTED_CHANNEL,
+    PATCHER_DESKTOP_BROWSER_SET_MUTED_CHANNEL,
     (event, payload: unknown) => {
       const hostWindow = hostWindowFromBrowserIpcEvent(event);
       if (hostWindow === null) {
@@ -206,27 +217,27 @@ export function registerDesktopBrowserIpc(
   );
 
   registerTabCommand({
-    channel: BB_DESKTOP_BROWSER_DETACH_CHANNEL,
+    channel: PATCHER_DESKTOP_BROWSER_DETACH_CHANNEL,
     run: (args) => manager.detach(args),
   });
   registerTabCommand({
-    channel: BB_DESKTOP_BROWSER_PRINT_CHANNEL,
+    channel: PATCHER_DESKTOP_BROWSER_PRINT_CHANNEL,
     run: (args) => manager.print(args),
   });
   registerTabCommand({
-    channel: BB_DESKTOP_BROWSER_GO_BACK_CHANNEL,
+    channel: PATCHER_DESKTOP_BROWSER_GO_BACK_CHANNEL,
     run: (args) => manager.goBack(args),
   });
   registerTabCommand({
-    channel: BB_DESKTOP_BROWSER_GO_FORWARD_CHANNEL,
+    channel: PATCHER_DESKTOP_BROWSER_GO_FORWARD_CHANNEL,
     run: (args) => manager.goForward(args),
   });
   registerTabCommand({
-    channel: BB_DESKTOP_BROWSER_RELOAD_CHANNEL,
+    channel: PATCHER_DESKTOP_BROWSER_RELOAD_CHANNEL,
     run: (args) => manager.reload(args),
   });
   registerTabCommand({
-    channel: BB_DESKTOP_BROWSER_STOP_CHANNEL,
+    channel: PATCHER_DESKTOP_BROWSER_STOP_CHANNEL,
     run: (args) => manager.stop(args),
   });
 
@@ -236,7 +247,7 @@ export function registerDesktopBrowserIpc(
   // every failure — including an unresolvable window and a malformed payload —
   // comes back as a typed `ok: false` instead.
   ipcMain.on(
-    BB_DESKTOP_BROWSER_SET_OVERLAY_CHANNEL,
+    PATCHER_DESKTOP_BROWSER_SET_OVERLAY_CHANNEL,
     (event, payload: unknown) => {
       const hostWindow = hostWindowFromBrowserIpcEvent(event);
       if (hostWindow === null) {
@@ -252,7 +263,7 @@ export function registerDesktopBrowserIpc(
   );
 
   ipcMain.on(
-    BB_DESKTOP_BROWSER_SET_FULLSCREEN_CHANNEL,
+    PATCHER_DESKTOP_BROWSER_SET_FULLSCREEN_CHANNEL,
     (event, payload: unknown) => {
       const hostWindow = hostWindowFromBrowserIpcEvent(event);
       if (hostWindow === null) {
@@ -267,20 +278,23 @@ export function registerDesktopBrowserIpc(
     },
   );
 
-  ipcMain.on(BB_DESKTOP_BROWSER_FIND_CHANNEL, (event, payload: unknown) => {
-    const hostWindow = hostWindowFromBrowserIpcEvent(event);
-    if (hostWindow === null) {
-      return;
-    }
-    const parsed = patcherDesktopBrowserFindRequestSchema.safeParse(payload);
-    if (!parsed.success) {
-      return;
-    }
-    manager.find({ hostWindow, request: parsed.data });
-  });
+  ipcMain.on(
+    PATCHER_DESKTOP_BROWSER_FIND_CHANNEL,
+    (event, payload: unknown) => {
+      const hostWindow = hostWindowFromBrowserIpcEvent(event);
+      if (hostWindow === null) {
+        return;
+      }
+      const parsed = patcherDesktopBrowserFindRequestSchema.safeParse(payload);
+      if (!parsed.success) {
+        return;
+      }
+      manager.find({ hostWindow, request: parsed.data });
+    },
+  );
 
   ipcMain.on(
-    BB_DESKTOP_BROWSER_SET_DEV_TOOLS_CHANNEL,
+    PATCHER_DESKTOP_BROWSER_SET_DEV_TOOLS_CHANNEL,
     (event, payload: unknown) => {
       const hostWindow = hostWindowFromBrowserIpcEvent(event);
       if (hostWindow === null) {
@@ -296,7 +310,7 @@ export function registerDesktopBrowserIpc(
   );
 
   ipcMain.on(
-    BB_DESKTOP_BROWSER_SET_DEV_TOOLS_VISIBLE_CHANNEL,
+    PATCHER_DESKTOP_BROWSER_SET_DEV_TOOLS_VISIBLE_CHANNEL,
     (event, payload: unknown) => {
       const hostWindow = hostWindowFromBrowserIpcEvent(event);
       if (hostWindow === null) {
@@ -312,7 +326,7 @@ export function registerDesktopBrowserIpc(
   );
 
   ipcMain.on(
-    BB_DESKTOP_BROWSER_SET_POPUP_TABS_CHANNEL,
+    PATCHER_DESKTOP_BROWSER_SET_POPUP_TABS_CHANNEL,
     (event, payload: unknown) => {
       const hostWindow = hostWindowFromBrowserIpcEvent(event);
       if (hostWindow === null) {
@@ -327,7 +341,7 @@ export function registerDesktopBrowserIpc(
   );
 
   ipcMain.on(
-    BB_DESKTOP_BROWSER_SET_CONTEXT_MENU_ITEMS_CHANNEL,
+    PATCHER_DESKTOP_BROWSER_SET_CONTEXT_MENU_ITEMS_CHANNEL,
     (event, payload: unknown) => {
       const hostWindow = hostWindowFromBrowserIpcEvent(event);
       if (hostWindow === null) {
@@ -343,7 +357,7 @@ export function registerDesktopBrowserIpc(
   );
 
   ipcMain.on(
-    BB_DESKTOP_BROWSER_SET_PAGE_STYLES_CHANNEL,
+    PATCHER_DESKTOP_BROWSER_SET_PAGE_STYLES_CHANNEL,
     (event, payload: unknown) => {
       const hostWindow = hostWindowFromBrowserIpcEvent(event);
       if (hostWindow === null) {
@@ -358,7 +372,7 @@ export function registerDesktopBrowserIpc(
   );
 
   ipcMain.on(
-    BB_DESKTOP_BROWSER_SET_PAGE_SCRIPTS_CHANNEL,
+    PATCHER_DESKTOP_BROWSER_SET_PAGE_SCRIPTS_CHANNEL,
     (event, payload: unknown) => {
       const hostWindow = hostWindowFromBrowserIpcEvent(event);
       if (hostWindow === null) {
@@ -376,7 +390,7 @@ export function registerDesktopBrowserIpc(
   // identifies which page is waiting — but still requires the sender to *be* an
   // app window, so a browsed page cannot answer a call on the app's behalf.
   ipcMain.on(
-    BB_DESKTOP_BROWSER_PAGE_SCRIPT_RESULT_CHANNEL,
+    PATCHER_DESKTOP_BROWSER_PAGE_SCRIPT_RESULT_CHANNEL,
     (event, payload: unknown) => {
       if (hostWindowFromBrowserIpcEvent(event) === null) {
         return;
@@ -400,7 +414,7 @@ export function registerDesktopBrowserIpc(
   // Synchronous, and answered unconditionally: this runs while the browsed frame
   // is blocked at document start, so any path that failed to set a return value
   // would hang the page rather than merely skip its scripts.
-  ipcMain.on(BB_DESKTOP_PAGE_SCRIPT_BOOTSTRAP_CHANNEL, (event) => {
+  ipcMain.on(PATCHER_DESKTOP_PAGE_SCRIPT_BOOTSTRAP_CHANNEL, (event) => {
     const empty: PatcherDesktopPageScriptBootstrap = { worlds: [] };
     try {
       const url = event.senderFrame?.url ?? "";
@@ -417,7 +431,7 @@ export function registerDesktopBrowserIpc(
   });
 
   ipcMain.handle(
-    BB_DESKTOP_PAGE_SCRIPT_RPC_CHANNEL,
+    PATCHER_DESKTOP_PAGE_SCRIPT_RPC_CHANNEL,
     async (
       event,
       payload: unknown,
@@ -449,7 +463,7 @@ export function registerDesktopBrowserIpc(
   // Opening a download needs no host window: the manager answers from the set
   // of paths it wrote, which is not scoped to a window.
   ipcMain.handle(
-    BB_DESKTOP_BROWSER_DOWNLOAD_ACTION_CHANNEL,
+    PATCHER_DESKTOP_BROWSER_DOWNLOAD_ACTION_CHANNEL,
     async (
       _event,
       payload: unknown,
@@ -478,7 +492,7 @@ export function registerDesktopBrowserIpc(
   );
 
   ipcMain.handle(
-    BB_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
+    PATCHER_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
     async (
       event,
       payload: unknown,
@@ -505,7 +519,7 @@ export function registerDesktopBrowserIpc(
   // Same request/response discipline as the page read: a typed refusal, never a
   // rejection, so the renderer can tell "no view" from "DevTools has this tab".
   ipcMain.handle(
-    BB_DESKTOP_BROWSER_SNAPSHOT_TREE_CHANNEL,
+    PATCHER_DESKTOP_BROWSER_SNAPSHOT_TREE_CHANNEL,
     async (
       event,
       payload: unknown,
@@ -531,7 +545,7 @@ export function registerDesktopBrowserIpc(
   // `failed` rather than `no-view` for the reason the interaction handler
   // below gives: the tab is not the problem, the request is.
   ipcMain.handle(
-    BB_DESKTOP_BROWSER_SNAPSHOT_IN_CHANNEL,
+    PATCHER_DESKTOP_BROWSER_SNAPSHOT_IN_CHANNEL,
     async (
       event,
       payload: unknown,
@@ -561,7 +575,7 @@ export function registerDesktopBrowserIpc(
   // `no-view`: the tab is not the problem, the request is, and telling the
   // caller to go activate a tab would send it after the wrong fix.
   ipcMain.handle(
-    BB_DESKTOP_BROWSER_INTERACT_CHANNEL,
+    PATCHER_DESKTOP_BROWSER_INTERACT_CHANNEL,
     async (
       event,
       payload: unknown,
@@ -590,7 +604,7 @@ export function registerDesktopBrowserIpc(
   // Looking at a page. Same discipline as the interact channel: a malformed
   // payload is the request's fault, not the tab's.
   ipcMain.handle(
-    BB_DESKTOP_BROWSER_OBSERVE_CHANNEL,
+    PATCHER_DESKTOP_BROWSER_OBSERVE_CHANNEL,
     async (
       event,
       payload: unknown,
@@ -619,7 +633,7 @@ export function registerDesktopBrowserIpc(
   // A picture of the whole document. Same discipline as the observe channel,
   // and the same reason a malformed payload is not `no-view`.
   ipcMain.handle(
-    BB_DESKTOP_BROWSER_CAPTURE_FULL_PAGE_CHANNEL,
+    PATCHER_DESKTOP_BROWSER_CAPTURE_FULL_PAGE_CHANNEL,
     async (
       event,
       payload: unknown,
@@ -651,7 +665,7 @@ export function registerDesktopBrowserIpc(
   // Cookies and web storage. Same discipline again, and the same reason a
   // malformed payload is not `no-view`.
   ipcMain.handle(
-    BB_DESKTOP_BROWSER_STORAGE_CHANNEL,
+    PATCHER_DESKTOP_BROWSER_STORAGE_CHANNEL,
     async (
       event,
       payload: unknown,
@@ -681,7 +695,7 @@ export function registerDesktopBrowserIpc(
   // can carry are wider, but a request that did not parse is still the
   // request's fault.
   ipcMain.handle(
-    BB_DESKTOP_BROWSER_CONTROL_CHANNEL,
+    PATCHER_DESKTOP_BROWSER_CONTROL_CHANNEL,
     async (
       event,
       payload: unknown,
@@ -711,7 +725,7 @@ export function registerDesktopBrowserIpc(
   // payload the browser bridge carries; what bounds it is the recording's caps,
   // applied while it films rather than discovered at the end.
   ipcMain.handle(
-    BB_DESKTOP_BROWSER_RECORD_CHANNEL,
+    PATCHER_DESKTOP_BROWSER_RECORD_CHANNEL,
     async (
       event,
       payload: unknown,
@@ -741,7 +755,7 @@ export function registerDesktopBrowserIpc(
   // same reason the dialog channel does — and here the race is real: a prompt
   // can be closed by a navigation while a human is still typing into it.
   ipcMain.handle(
-    BB_DESKTOP_BROWSER_PAGE_PROMPT_RESPOND_CHANNEL,
+    PATCHER_DESKTOP_BROWSER_PAGE_PROMPT_RESPOND_CHANNEL,
     async (event, payload: unknown): Promise<boolean> => {
       const hostWindow = BrowserWindow.fromWebContents(event.sender);
       if (hostWindow === null) {
@@ -766,7 +780,7 @@ export function registerDesktopBrowserIpc(
   // Answering a dialog reports whether there was one to answer, so a caller can
   // tell "dismissed it" from "a human got there first".
   ipcMain.handle(
-    BB_DESKTOP_BROWSER_DIALOG_RESPOND_CHANNEL,
+    PATCHER_DESKTOP_BROWSER_DIALOG_RESPOND_CHANNEL,
     async (event, payload: unknown): Promise<boolean> => {
       const hostWindow = BrowserWindow.fromWebContents(event.sender);
       if (hostWindow === null) {

@@ -68,14 +68,14 @@ function createRuntimeConfig(): ServerRuntimeConfig {
     customModels: [],
     dataDir: "/tmp/bb-test",
     featureFlags: defaultFeatureFlags,
-    hostDaemonPort: 38887,
+    hostDaemonPort: 38987,
     inheritedSkillsRootPaths: [],
     inferenceFallbackModel: "openai/gpt-4o-mini-fallback",
     inferenceModel: "openai/gpt-4o-mini",
     isDevelopment: false,
     managedEnvironmentRetireGraceMs: 5 * 60_000,
     openAiApiKey: "ambient-openai-key",
-    serverPort: 38886,
+    serverPort: 38986,
     sharedSkillRoots: { user: [], project: [] },
     threadStorageRootPath: "/tmp/bb-test/thread-storage",
     transcriptionModel: "openai/gpt-4o-transcribe",
@@ -91,10 +91,10 @@ describe("bb-app managed config", () => {
       baseConfig,
       managedConfig: {
         config: {
-          BB_APP_URL: "https://stored-app.example.test",
-          BB_INFERENCE: "anthropic/claude-sonnet-4-5",
-          BB_INFERENCE_FALLBACK: "openai/gpt-5.4-mini",
-          BB_TRANSCRIPTION: "openai/gpt-4o-transcribe",
+          PATCHER_APP_URL: "https://stored-app.example.test",
+          PATCHER_INFERENCE: "anthropic/claude-sonnet-4-5",
+          PATCHER_INFERENCE_FALLBACK: "openai/gpt-5.4-mini",
+          PATCHER_TRANSCRIPTION: "openai/gpt-4o-transcribe",
         },
       },
       managedEnvFile: {
@@ -122,7 +122,7 @@ describe("bb-app managed config", () => {
       baseConfig,
       managedConfig: {
         config: {
-          BB_APP_URL: "https://stored-app.example.test",
+          PATCHER_APP_URL: "https://stored-app.example.test",
         },
       },
       managedEnvFile: {
@@ -288,13 +288,13 @@ describe("bb-app managed config", () => {
         baseConfig,
         managedConfig: {
           config: {
-            BB_INFERENCE: "gpt-4o-mini",
+            PATCHER_INFERENCE: "gpt-4o-mini",
           },
         },
         managedEnvFile: {},
         targetConfig,
       }),
-    ).toThrow(/BB_INFERENCE/u);
+    ).toThrow(/PATCHER_INFERENCE/u);
   });
 
   it("rejects invalid inference fallback model config", () => {
@@ -306,13 +306,13 @@ describe("bb-app managed config", () => {
         baseConfig,
         managedConfig: {
           config: {
-            BB_INFERENCE_FALLBACK: "gpt-5.4-mini",
+            PATCHER_INFERENCE_FALLBACK: "gpt-5.4-mini",
           },
         },
         managedEnvFile: {},
         targetConfig,
       }),
-    ).toThrow(/BB_INFERENCE_FALLBACK/u);
+    ).toThrow(/PATCHER_INFERENCE_FALLBACK/u);
   });
 
   it("reloads config file changes and notifies clients", async () => {
@@ -335,7 +335,7 @@ describe("bb-app managed config", () => {
       writeFileSync(
         formatPatcherAppConfigPath(dataDir),
         `${JSON.stringify({
-          config: { BB_INFERENCE_FALLBACK: "codex/gpt-5.4-mini" },
+          config: { PATCHER_INFERENCE_FALLBACK: "codex/gpt-5.4-mini" },
         })}\n`,
         "utf8",
       );
@@ -462,12 +462,12 @@ describe("bb-app managed config", () => {
     try {
       writeFileSync(
         formatPatcherAppConfigPath(dataDir),
-        `${JSON.stringify({ config: { BB_INFERENCE: "gpt-4o-mini" } })}\n`,
+        `${JSON.stringify({ config: { PATCHER_INFERENCE: "gpt-4o-mini" } })}\n`,
         "utf8",
       );
 
       await expect(reloader.reload({ notify: true })).rejects.toThrow(
-        /BB_INFERENCE/u,
+        /PATCHER_INFERENCE/u,
       );
       expect(config.inferenceModel).toBe("openai/gpt-4o-mini");
     } finally {

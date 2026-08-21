@@ -99,7 +99,12 @@ export function registerOpenCommand(
             return;
           }
 
-          printContextLabel(target.resolved, "Thread", "BB_THREAD_ID", opts);
+          printContextLabel(
+            target.resolved,
+            "Thread",
+            "PATCHER_THREAD_ID",
+            opts,
+          );
           console.log(`Thread: ${target.threadId}`);
           console.log(`Split: ${split}`);
           if (file !== null) {
@@ -140,7 +145,7 @@ function resolveThreadOpenTarget(
       }
       if (explicitThreadId !== contextThreadId && !allowsExplicitThreadTarget) {
         throw new Error(
-          "BB_THREAD_ID is set, so bb thread open targets the current thread. Omit the thread ID.",
+          "PATCHER_THREAD_ID is set, so bb thread open targets the current thread. Omit the thread ID.",
         );
       }
       return {
@@ -250,7 +255,7 @@ async function resolveThreadOpenFileRequest(args: {
   }
 
   const acceptedRoots = threadStorageRoot
-    ? "the target thread workspace or BB_THREAD_STORAGE"
+    ? "the target thread workspace or PATCHER_THREAD_STORAGE"
     : "the target thread workspace";
   throw new Error(`Absolute path must be inside ${acceptedRoots}.`);
 }
@@ -274,7 +279,7 @@ async function resolveThreadWorkspaceRoot(
 
 function resolveThreadStorageRoot(threadId: string): string | undefined {
   if (resolveContextThreadId() !== threadId) return undefined;
-  const rawRoot = process.env.BB_THREAD_STORAGE?.trim();
+  const rawRoot = process.env.PATCHER_THREAD_STORAGE?.trim();
   if (!rawRoot) return undefined;
   return path.resolve(rawRoot);
 }

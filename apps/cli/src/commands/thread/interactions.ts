@@ -680,7 +680,7 @@ export function registerInteractionCommands(
   interactions
     .command("list [id]")
     .description("List interactions for a thread")
-    .option("--self", "Target the current thread (from BB_THREAD_ID)")
+    .option("--self", "Target the current thread (from PATCHER_THREAD_ID)")
     .option("--json", "Print machine-readable JSON output")
     .action(
       action(
@@ -729,7 +729,7 @@ export function registerInteractionCommands(
   interactions
     .command("show <interactionId> [id]")
     .description("Show an interaction")
-    .option("--self", "Target the current thread (from BB_THREAD_ID)")
+    .option("--self", "Target the current thread (from PATCHER_THREAD_ID)")
     .option("--json", "Print machine-readable JSON output")
     .action(
       action(
@@ -758,7 +758,7 @@ export function registerInteractionCommands(
     .description(
       "Approve a command, file-change, or plan interaction for this turn",
     )
-    .option("--self", "Target the current thread (from BB_THREAD_ID)")
+    .option("--self", "Target the current thread (from PATCHER_THREAD_ID)")
     .option("--json", "Print machine-readable JSON output")
     .action(
       action(
@@ -790,7 +790,7 @@ export function registerInteractionCommands(
   interactions
     .command("grant <interactionId> [id]")
     .description("Grant a permission interaction")
-    .option("--self", "Target the current thread (from BB_THREAD_ID)")
+    .option("--self", "Target the current thread (from PATCHER_THREAD_ID)")
     .option("--json", "Print machine-readable JSON output")
     .option("--scope <scope>", "Grant scope: turn or session")
     .action(
@@ -824,7 +824,7 @@ export function registerInteractionCommands(
   interactions
     .command("answer <interactionId> [id]")
     .description("Answer a user-question interaction")
-    .option("--self", "Target the current thread (from BB_THREAD_ID)")
+    .option("--self", "Target the current thread (from PATCHER_THREAD_ID)")
     .option("--json", "Print machine-readable JSON output")
     .option(
       "--choice <questionId=value>",
@@ -871,7 +871,7 @@ export function registerInteractionCommands(
   interactions
     .command("deny <interactionId> [id]")
     .description("Deny a command, file-change, plan, or permission interaction")
-    .option("--self", "Target the current thread (from BB_THREAD_ID)")
+    .option("--self", "Target the current thread (from PATCHER_THREAD_ID)")
     .option("--json", "Print machine-readable JSON output")
     .action(
       action(

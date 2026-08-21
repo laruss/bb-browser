@@ -62,7 +62,7 @@ import {
   type BrowserSurfaceTab,
 } from "@/lib/browser-surface-tabs";
 import {
-  BB_APP_TAB_DESTINATIONS,
+  PATCHER_APP_TAB_DESTINATIONS,
   resolveSurfaceTabRoute,
 } from "@/lib/app-surface-tabs";
 import { getPluginPanelRoutePath, isRoutePath } from "@/lib/route-paths";
@@ -578,7 +578,7 @@ export function BrowserSurfaceView({
   const { navPanels } = usePluginSlots();
   const appRoutes = useMemo(
     () => [
-      ...BB_APP_TAB_DESTINATIONS,
+      ...PATCHER_APP_TAB_DESTINATIONS,
       ...navPanels.map((panel) => ({
         id: `plugin:${panel.pluginId}/${panel.path}`,
         keywords: [panel.title, panel.pluginId],

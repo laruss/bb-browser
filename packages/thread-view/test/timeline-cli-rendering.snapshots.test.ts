@@ -493,7 +493,7 @@ describe("timeline CLI rendering snapshots", () => {
       }),
       event.commandCompleted({
         itemId: "tool-after-steer",
-        command: "sqlite3 ~/.bb-dev/bb.db '.tables'",
+        command: "sqlite3 ~/.patcher-dev/patcher.db '.tables'",
       }),
       event.assistantCompleted({ itemId: "assistant-1", text: "Done." }),
       event.turnCompleted(),
@@ -536,8 +536,8 @@ describe("timeline CLI rendering snapshots", () => {
         ── Ran 2 commands
           ── Ran pnpm test
             $ pnpm test
-          ── Ran sqlite3 ~/.bb-dev/bb.db '.tables'
-            $ sqlite3 ~/.bb-dev/bb.db '.tables'
+          ── Ran sqlite3 ~/.patcher-dev/patcher.db '.tables'
+            $ sqlite3 ~/.patcher-dev/patcher.db '.tables'
 
       ── Assistant ───────────────────────────────────────────────
       Done.
@@ -566,7 +566,7 @@ describe("timeline CLI rendering snapshots", () => {
       }),
       event.commandCompleted({
         itemId: "tool-after-steer",
-        command: "sqlite3 ~/.bb-dev/bb.db '.tables'",
+        command: "sqlite3 ~/.patcher-dev/patcher.db '.tables'",
       }),
       event.assistantCompleted({ itemId: "assistant-1", text: "Done." }),
       event.turnCompleted(),
@@ -615,8 +615,8 @@ describe("timeline CLI rendering snapshots", () => {
       steer
 
       ── Worked for (0ms) ────────────────────────────────────────
-        ── Ran sqlite3 ~/.bb-dev/bb.db '.tables'
-          $ sqlite3 ~/.bb-dev/bb.db '.tables'
+        ── Ran sqlite3 ~/.patcher-dev/patcher.db '.tables'
+          $ sqlite3 ~/.patcher-dev/patcher.db '.tables'
 
       ── Assistant ───────────────────────────────────────────────
       Done."

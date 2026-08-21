@@ -48,10 +48,10 @@ const { join } = require("node:path");
 
 const args = process.argv.slice(2);
 // npm treats NODE_ENV=production as omit=dev; a command-line --include=dev
-// outranks it. BB_TEST_NPM_ALWAYS_OMIT_DEV forces the omission to stand in for
+// outranks it. PATCHER_TEST_NPM_ALWAYS_OMIT_DEV forces the omission to stand in for
 // an install that silently drops packages.
 const omitDev =
-  process.env.BB_TEST_NPM_ALWAYS_OMIT_DEV === "1" ||
+  process.env.PATCHER_TEST_NPM_ALWAYS_OMIT_DEV === "1" ||
   (process.env.NODE_ENV === "production" && !args.includes("--include=dev"));
 const manifest = JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf8"));
 const installed = {
@@ -59,8 +59,8 @@ const installed = {
   ...(omitDev ? {} : manifest.devDependencies),
 };
 // npm installs the whole workspace and hoists to its root when the package is
-// a workspace member; BB_TEST_NPM_HOIST_TO stands in for that root.
-const installRoot = process.env.BB_TEST_NPM_HOIST_TO ?? process.cwd();
+// a workspace member; PATCHER_TEST_NPM_HOIST_TO stands in for that root.
+const installRoot = process.env.PATCHER_TEST_NPM_HOIST_TO ?? process.cwd();
 for (const name of Object.keys(installed)) {
   mkdirSync(join(installRoot, "node_modules", ...name.split("/")), {
     recursive: true,
@@ -145,7 +145,7 @@ describe.sequential("bb plugin new dependency install", () => {
       join(workDir, "package.json"),
       JSON.stringify({ name: "host", private: true, workspaces: ["*"] }),
     );
-    vi.stubEnv("BB_TEST_NPM_HOIST_TO", workDir);
+    vi.stubEnv("PATCHER_TEST_NPM_HOIST_TO", workDir);
 
     await runPluginNew(["hoisted", "--app"]);
 
@@ -155,7 +155,7 @@ describe.sequential("bb plugin new dependency install", () => {
   });
 
   it("does not report success when npm exits 0 without installing the tree", async () => {
-    vi.stubEnv("BB_TEST_NPM_ALWAYS_OMIT_DEV", "1");
+    vi.stubEnv("PATCHER_TEST_NPM_ALWAYS_OMIT_DEV", "1");
 
     await runPluginNew(["silent-omit", "--app"]);
 

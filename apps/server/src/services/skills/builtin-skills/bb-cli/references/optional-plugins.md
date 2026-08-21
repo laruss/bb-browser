@@ -97,8 +97,8 @@ add <key-or-comment-id> --file <path>` (task key = task-level; comment ID
   last non-empty line is `{"wakeAgent": false}`, stays silent.
 - Script automations run on the server with cwd set to the plugin data
   directory. They have no environment/workspace. Injected variables are
-  `BB_SERVER_URL`, `BB_PROJECT_ID`, `BB_AUTOMATION_ID`, and
-  `BB_AUTOMATION_RUN_ID`.
+  `PATCHER_SERVER_URL`, `PATCHER_PROJECT_ID`, `PATCHER_AUTOMATION_ID`, and
+  `PATCHER_AUTOMATION_RUN_ID`.
 - A script run's status IS its exit code: exit 0 = succeeded; a non-zero exit is
   recorded as failed even if the script already produced a visible side effect
   (e.g. posted a message via `bb thread tell`). Make scripts exit 0 on success
@@ -170,14 +170,14 @@ add <key-or-comment-id> --file <path>` (task key = task-level; comment ID
   run summaries with `bb workflows list [--limit <1-50>]`. For details,
   redirect one bounded
   `bb workflows history <run-id> [--cursor <call-index>] [--limit <1-100>]`
-  JSONL page into `$BB_THREAD_STORAGE`, inspect it with file tools, and continue
+  JSONL page into `$PATCHER_THREAD_STORAGE`, inspect it with file tools, and continue
   from the final page record's `nextCursor`. This shell redirection writes on
   the thread's execution host, including remote hosts; do not print the raw
   history into the agent transcript. Cancel with `bb workflows stop <run-id>`.
 - Before choosing an explicit provider/model/reasoning tuple, run `bb provider
-list --environment "$BB_ENVIRONMENT_ID" --json`, then query only the chosen
+list --environment "$PATCHER_ENVIRONMENT_ID" --json`, then query only the chosen
   provider with `bb provider models <provider-id> --environment
-"$BB_ENVIRONMENT_ID" --json`. Never guess ACP model IDs. Run every Workflows
+"$PATCHER_ENVIRONMENT_ID" --json`. Never guess ACP model IDs. Run every Workflows
   command from a BB project thread.
 - Configure its six settings with `bb plugin config workflows set <key>
 <value>`: `maxActiveRuns` (default 4, range 1–32), `maxConcurrentAgents` (8,

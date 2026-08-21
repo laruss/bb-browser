@@ -1,4 +1,4 @@
-import { BB_DESKTOP_BROWSER_MAX_FAVICON_DATA_URL_LENGTH } from "@patcher/desktop-contract";
+import { PATCHER_DESKTOP_BROWSER_MAX_FAVICON_DATA_URL_LENGTH } from "@patcher/desktop-contract";
 
 /**
  * Turning a page's declared favicon into something the trusted bb app may show.
@@ -40,7 +40,7 @@ const ALLOWED_FAVICON_MEDIA_TYPES: readonly string[] = [
  * to decode them to resize, and decoding untrusted bytes in the privileged
  * process is the one thing this path does not do.
  */
-export const BB_DESKTOP_BROWSER_MAX_FAVICON_BYTES = 131_072;
+export const PATCHER_DESKTOP_BROWSER_MAX_FAVICON_BYTES = 131_072;
 
 /** The subset of `Response` this module needs, so `session.fetch` fits as-is. */
 export interface BrowserFaviconFetchResponse {
@@ -155,7 +155,7 @@ export async function resolveBrowserFaviconDataUrl(
   }
   if (
     bytes.byteLength === 0 ||
-    bytes.byteLength > BB_DESKTOP_BROWSER_MAX_FAVICON_BYTES
+    bytes.byteLength > PATCHER_DESKTOP_BROWSER_MAX_FAVICON_BYTES
   ) {
     return null;
   }
@@ -163,7 +163,7 @@ export async function resolveBrowserFaviconDataUrl(
   const dataUrl = `data:${mediaType};base64,${Buffer.from(bytes).toString("base64")}`;
   // The byte cap already bounds this; the check is the wire contract's own limit
   // restated where the value is built, so the two cannot drift apart silently.
-  return dataUrl.length > BB_DESKTOP_BROWSER_MAX_FAVICON_DATA_URL_LENGTH
+  return dataUrl.length > PATCHER_DESKTOP_BROWSER_MAX_FAVICON_DATA_URL_LENGTH
     ? null
     : dataUrl;
 }

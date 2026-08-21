@@ -7,11 +7,11 @@ import type { PatcherDesktopDefaultBrowserStatus } from "@patcher/desktop-contra
 // runtime half — asking whether the registration is the active one, and asking
 // the OS to make it so.
 
-export const BB_DESKTOP_GET_DEFAULT_BROWSER_CHANNEL =
+export const PATCHER_DESKTOP_GET_DEFAULT_BROWSER_CHANNEL =
   "bb-desktop:get-default-browser";
-export const BB_DESKTOP_REQUEST_DEFAULT_BROWSER_CHANNEL =
+export const PATCHER_DESKTOP_REQUEST_DEFAULT_BROWSER_CHANNEL =
   "bb-desktop:request-default-browser";
-export const BB_DESKTOP_DEFAULT_BROWSER_CHANGED_CHANNEL =
+export const PATCHER_DESKTOP_DEFAULT_BROWSER_CHANGED_CHANNEL =
   "bb-desktop:default-browser-changed";
 
 /**

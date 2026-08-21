@@ -53,7 +53,7 @@ const mocks = vi.hoisted(() => ({
     restoreIfEmpty: vi.fn(),
     setDraft: vi.fn(),
     setTextAndMentions: vi.fn(),
-    storageKey: "bb.promptbox.contents-proj_1-thr_1-3",
+    storageKey: "patcher.promptbox.contents-proj_1-thr_1-3",
     text: "",
   },
   queuedMessages: [] as ThreadQueuedMessage[],

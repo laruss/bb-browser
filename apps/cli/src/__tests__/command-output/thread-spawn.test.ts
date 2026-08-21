@@ -23,7 +23,7 @@ describe("bb thread spawn command output", () => {
   }
 
   it("bb thread spawn omits provider and model when the user relies on project defaults", async () => {
-    vi.stubEnv("BB_PROJECT_ID", "proj-1");
+    vi.stubEnv("PATCHER_PROJECT_ID", "proj-1");
     const thread: domain.Thread = fixtures.makeThread({
       id: "thread-1",
       projectId: "proj-1",
@@ -94,7 +94,7 @@ describe("bb thread spawn command output", () => {
   });
 
   it("bb thread spawn requires an explicit --project", async () => {
-    vi.stubEnv("BB_PROJECT_ID", undefined);
+    vi.stubEnv("PATCHER_PROJECT_ID", undefined);
     const post = vi.fn();
     const stderrWrite = captureCommanderErrors();
     stubServerApi({ "v1.threads.$post": post });
@@ -112,8 +112,8 @@ describe("bb thread spawn command output", () => {
     expect(post).not.toHaveBeenCalled();
   });
 
-  it("bb thread spawn ignores BB_PROJECT_ID when --project is omitted", async () => {
-    vi.stubEnv("BB_PROJECT_ID", "proj-env");
+  it("bb thread spawn ignores PATCHER_PROJECT_ID when --project is omitted", async () => {
+    vi.stubEnv("PATCHER_PROJECT_ID", "proj-env");
     const post = vi.fn();
     const stderrWrite = captureCommanderErrors();
     stubServerApi({ "v1.threads.$post": post });
@@ -174,7 +174,7 @@ describe("bb thread spawn command output", () => {
   });
 
   it("bb thread spawn forwards explicit execution overrides", async () => {
-    vi.stubEnv("BB_PROJECT_ID", "proj-1");
+    vi.stubEnv("PATCHER_PROJECT_ID", "proj-1");
     const thread: domain.Thread = fixtures.makeThread({
       id: "thread-overrides",
       projectId: "proj-1",
@@ -305,7 +305,7 @@ describe("bb thread spawn command output", () => {
   });
 
   it("bb thread spawn reports invalid permission mode choices", async () => {
-    vi.stubEnv("BB_PROJECT_ID", "proj-1");
+    vi.stubEnv("PATCHER_PROJECT_ID", "proj-1");
 
     await expect(
       runCommand(
@@ -357,7 +357,7 @@ describe("bb thread spawn command output", () => {
   });
 
   it("bb thread spawn --json prints the raw thread", async () => {
-    vi.stubEnv("BB_PROJECT_ID", "proj-1");
+    vi.stubEnv("PATCHER_PROJECT_ID", "proj-1");
     const thread: domain.Thread = fixtures.makeThread({
       id: "thread-json-spawn",
       projectId: "proj-1",
@@ -392,7 +392,7 @@ describe("bb thread spawn command output", () => {
   });
 
   it("bb thread spawn prefixes model-catalog failures with context", async () => {
-    vi.stubEnv("BB_PROJECT_ID", "proj-1");
+    vi.stubEnv("PATCHER_PROJECT_ID", "proj-1");
     const post = vi.fn(async () => {
       throw new Error(
         "HTTP 503: Unable to load codex models to resolve the default",
@@ -413,7 +413,7 @@ describe("bb thread spawn command output", () => {
   });
 
   it("bb thread spawn with --parent-thread forwards parent thread id", async () => {
-    vi.stubEnv("BB_PROJECT_ID", "proj-1");
+    vi.stubEnv("PATCHER_PROJECT_ID", "proj-1");
     const thread: domain.Thread = fixtures.makeThread({
       id: "thread-2",
       projectId: "proj-1",
@@ -464,9 +464,9 @@ describe("bb thread spawn command output", () => {
     });
   });
 
-  it("bb thread spawn does not default parent thread id from BB_THREAD_ID", async () => {
-    vi.stubEnv("BB_PROJECT_ID", "proj-1");
-    vi.stubEnv("BB_THREAD_ID", "thread-context-parent");
+  it("bb thread spawn does not default parent thread id from PATCHER_THREAD_ID", async () => {
+    vi.stubEnv("PATCHER_PROJECT_ID", "proj-1");
+    vi.stubEnv("PATCHER_THREAD_ID", "thread-context-parent");
     const thread: domain.Thread = fixtures.makeThread({
       id: "thread-2",
       projectId: "proj-1",
@@ -514,9 +514,9 @@ describe("bb thread spawn command output", () => {
     });
   });
 
-  it("bb thread spawn with --parent-self forwards BB_THREAD_ID as parent thread id", async () => {
-    vi.stubEnv("BB_PROJECT_ID", "proj-1");
-    vi.stubEnv("BB_THREAD_ID", "thread-context-parent");
+  it("bb thread spawn with --parent-self forwards PATCHER_THREAD_ID as parent thread id", async () => {
+    vi.stubEnv("PATCHER_PROJECT_ID", "proj-1");
+    vi.stubEnv("PATCHER_THREAD_ID", "thread-context-parent");
     const thread: domain.Thread = fixtures.makeThread({
       id: "thread-2",
       projectId: "proj-1",
@@ -556,7 +556,7 @@ describe("bb thread spawn command output", () => {
     );
   });
 
-  it("bb thread spawn rejects --parent-self without BB_THREAD_ID", async () => {
+  it("bb thread spawn rejects --parent-self without PATCHER_THREAD_ID", async () => {
     const post = vi.fn(async () =>
       fixtures.makeThread({
         id: "thread-parent-self-missing-context",
@@ -586,13 +586,13 @@ describe("bb thread spawn command output", () => {
     ).rejects.toThrow("process.exit:1");
 
     expect(console.error).toHaveBeenCalledWith(
-      "Error: --parent-self requires BB_THREAD_ID to be set.",
+      "Error: --parent-self requires PATCHER_THREAD_ID to be set.",
     );
     expect(post).not.toHaveBeenCalled();
   });
 
   it("bb thread spawn rejects combining --parent-thread and --parent-self", async () => {
-    vi.stubEnv("BB_THREAD_ID", "thread-context-parent");
+    vi.stubEnv("PATCHER_THREAD_ID", "thread-context-parent");
     const post = vi.fn(async () =>
       fixtures.makeThread({
         id: "thread-conflicting-parent",
@@ -666,7 +666,7 @@ describe("bb thread spawn command output", () => {
   });
 
   it("bb thread spawn forwards a valid --environment ID", async () => {
-    vi.stubEnv("BB_PROJECT_ID", "proj-1");
+    vi.stubEnv("PATCHER_PROJECT_ID", "proj-1");
     const thread: domain.Thread = fixtures.makeThread({
       id: "thread-env-1",
       projectId: "proj-1",
@@ -713,7 +713,7 @@ describe("bb thread spawn command output", () => {
   });
 
   it("bb thread spawn forwards an absolute --environment path as an unmanaged workspace", async () => {
-    vi.stubEnv("BB_PROJECT_ID", "proj-1");
+    vi.stubEnv("PATCHER_PROJECT_ID", "proj-1");
     const workspacePath = "/Users/michael/Projects/bb";
     const thread: domain.Thread = fixtures.makeThread({
       id: "thread-env-path-1",
@@ -766,7 +766,7 @@ describe("bb thread spawn command output", () => {
   });
 
   it("bb thread spawn rejects invalid non-path --environment IDs", async () => {
-    vi.stubEnv("BB_PROJECT_ID", "proj-1");
+    vi.stubEnv("PATCHER_PROJECT_ID", "proj-1");
     const post = vi.fn();
     stubServerApi({ "v1.threads.$post": post });
 
@@ -797,7 +797,7 @@ describe("bb thread spawn command output", () => {
   });
 
   it("bb thread spawn forwards --new-environment", async () => {
-    vi.stubEnv("BB_PROJECT_ID", "proj-1");
+    vi.stubEnv("PATCHER_PROJECT_ID", "proj-1");
     const thread: domain.Thread = fixtures.makeThread({
       id: "thread-env-1",
       projectId: "proj-1",

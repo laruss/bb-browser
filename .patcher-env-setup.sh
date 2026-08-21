@@ -2,7 +2,7 @@
 set -u
 
 log() {
-  printf '%s\n' "[bb-env-setup] $*"
+  printf '%s\n' "[patcher-env-setup] $*"
 }
 
 run_step() {

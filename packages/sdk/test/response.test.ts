@@ -2,7 +2,7 @@ import { afterEach, describe, it, expect, vi } from "vitest";
 import {
   PatcherHttpError,
   createRequestTimeoutFetch,
-  DEFAULT_BB_REQUEST_TIMEOUT_MS,
+  DEFAULT_PATCHER_REQUEST_TIMEOUT_MS,
   readJsonResponse,
   readVoidResponse,
 } from "../src/response.js";
@@ -313,7 +313,7 @@ describe("readJsonResponse()", () => {
     await expect(
       readJsonResponse(Promise.reject(connError)),
     ).rejects.toThrow(
-      "Cannot connect to BB server. Ensure it is running and BB_SERVER_URL is correct.",
+      "Cannot connect to BB server. Ensure it is running and PATCHER_SERVER_URL is correct.",
     );
   });
 
@@ -347,7 +347,7 @@ describe("createRequestTimeoutFetch()", () => {
 
   it("uses the default timeout when creating the node transport", async () => {
     useImmediateTimeoutSignalFor({
-      timeoutMs: DEFAULT_BB_REQUEST_TIMEOUT_MS,
+      timeoutMs: DEFAULT_PATCHER_REQUEST_TIMEOUT_MS,
     });
     mockPendingFetchUntilAbort();
     const transport = createNodeTransport({ baseUrl: "http://server" });

@@ -51,8 +51,8 @@ describe("bb thread action command output", () => {
     );
   });
 
-  it("bb thread archive --self resolves from BB_THREAD_ID", async () => {
-    vi.stubEnv("BB_THREAD_ID", "thread-archive-2");
+  it("bb thread archive --self resolves from PATCHER_THREAD_ID", async () => {
+    vi.stubEnv("PATCHER_THREAD_ID", "thread-archive-2");
     const archivePost = vi.fn(async () => ({
       ok: true,
       archivedThreadIds: ["thread-archive-2"],
@@ -84,8 +84,8 @@ describe("bb thread action command output", () => {
     });
   });
 
-  it("bb thread unarchive --self resolves from BB_THREAD_ID", async () => {
-    vi.stubEnv("BB_THREAD_ID", "thread-unarchive-1");
+  it("bb thread unarchive --self resolves from PATCHER_THREAD_ID", async () => {
+    vi.stubEnv("PATCHER_THREAD_ID", "thread-unarchive-1");
     const unarchivePost = vi.fn(async () => ({ ok: true }));
     stubServerApi({ "v1.threads.:id.unarchive.$post": unarchivePost });
 
@@ -127,7 +127,7 @@ describe("bb thread action command output", () => {
   });
 
   it("bb thread edit-message preserves an agent caller when targeting another thread", async () => {
-    vi.stubEnv("BB_THREAD_ID", "thread-agent-caller");
+    vi.stubEnv("PATCHER_THREAD_ID", "thread-agent-caller");
     const submitEdit = vi.fn(async () => ({
       ok: true,
       operationId: "edit-op-server",
@@ -159,7 +159,7 @@ describe("bb thread action command output", () => {
   });
 
   it("bb thread edit-message accepts an explicit stale-edit guard", async () => {
-    vi.stubEnv("BB_THREAD_ID", "thread-edit-self");
+    vi.stubEnv("PATCHER_THREAD_ID", "thread-edit-self");
     const submitEdit = vi.fn(async () => ({
       ok: true,
       operationId: "edit-op-server",
@@ -241,8 +241,8 @@ describe("bb thread action command output", () => {
     );
   });
 
-  it("bb thread unpin --self resolves from BB_THREAD_ID", async () => {
-    vi.stubEnv("BB_THREAD_ID", "thread-unpin-1");
+  it("bb thread unpin --self resolves from PATCHER_THREAD_ID", async () => {
+    vi.stubEnv("PATCHER_THREAD_ID", "thread-unpin-1");
     const unpinnedThread = fixtures.makeThread({
       id: "thread-unpin-1",
       projectId: "proj-1",

@@ -6,7 +6,7 @@ import {
   ensureSafeTargets,
   renderHelpText,
   resolveResetTargets,
-} from "../src/commands/reset-bb-data.js";
+} from "../src/commands/reset-patcher-data.js";
 import { expectedDevDataDir } from "./dev-instance-expectations.js";
 
 const testDir = dirname(fileURLToPath(import.meta.url));
@@ -16,11 +16,11 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 
-describe("reset-bb-data", () => {
+describe("reset-patcher-data", () => {
   it("documents the NODE_ENV-based reset contract", () => {
     expect(renderHelpText()).not.toContain("--mode");
     expect(renderHelpText()).toContain(
-      "Production resets respect BB_DATA_DIR",
+      "Production resets respect PATCHER_DATA_DIR",
     );
     expect(renderHelpText()).toContain(
       "Development resets always target this checkout's dev data directory",
@@ -38,9 +38,9 @@ describe("reset-bb-data", () => {
     ]);
   });
 
-  it("ignores BB_DATA_DIR for the development target", () => {
+  it("ignores PATCHER_DATA_DIR for the development target", () => {
     vi.stubEnv("NODE_ENV", "development");
-    vi.stubEnv("BB_DATA_DIR", "~/custom-bb");
+    vi.stubEnv("PATCHER_DATA_DIR", "~/custom-bb");
 
     expect(resolveResetTargets(new Set())).toEqual([
       expectedDevDataDir({
@@ -56,18 +56,18 @@ describe("reset-bb-data", () => {
     const targets = resolveResetTargets(new Set(["--all"]));
 
     expect(targets).toEqual([
-      join(os.homedir(), ".bb"),
+      join(os.homedir(), ".patcher"),
       expectedDevDataDir({
         homeDir: os.homedir(),
         repoRoot,
       }),
     ]);
-    expect(targets).not.toContain(join(os.homedir(), ".bb-dev"));
+    expect(targets).not.toContain(join(os.homedir(), ".patcher-dev"));
   });
 
-  it("lets BB_DATA_DIR override the production target for --all", () => {
+  it("lets PATCHER_DATA_DIR override the production target for --all", () => {
     vi.stubEnv("NODE_ENV", "production");
-    vi.stubEnv("BB_DATA_DIR", "~/custom-bb");
+    vi.stubEnv("PATCHER_DATA_DIR", "~/custom-bb");
 
     expect(resolveResetTargets(new Set(["--all"]))).toEqual([
       join(os.homedir(), "custom-bb"),
@@ -78,9 +78,9 @@ describe("reset-bb-data", () => {
     ]);
   });
 
-  it("lets BB_DATA_DIR override the single reset target", () => {
+  it("lets PATCHER_DATA_DIR override the single reset target", () => {
     vi.stubEnv("NODE_ENV", "production");
-    vi.stubEnv("BB_DATA_DIR", "~/custom-bb");
+    vi.stubEnv("PATCHER_DATA_DIR", "~/custom-bb");
 
     expect(resolveResetTargets(new Set())).toEqual([
       join(os.homedir(), "custom-bb"),

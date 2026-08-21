@@ -31,13 +31,16 @@ import { WatchInterestCoordinator } from "./ws/watch-interests.js";
 
 interface StartHttpListenerArgs {
   fetch: Parameters<typeof serve>[0]["fetch"];
-  serverConfig: Pick<ServerConfig, "BB_SERVER_BIND_HOST" | "BB_SERVER_PORT">;
+  serverConfig: Pick<
+    ServerConfig,
+    "PATCHER_SERVER_BIND_HOST" | "PATCHER_SERVER_PORT"
+  >;
 }
 
 export function startHttpListener(args: StartHttpListenerArgs) {
   return serve({
-    hostname: args.serverConfig.BB_SERVER_BIND_HOST,
-    port: args.serverConfig.BB_SERVER_PORT,
+    hostname: args.serverConfig.PATCHER_SERVER_BIND_HOST,
+    port: args.serverConfig.PATCHER_SERVER_PORT,
     fetch: args.fetch,
   });
 }
@@ -45,18 +48,18 @@ export function startHttpListener(args: StartHttpListenerArgs) {
 export async function runServer(serverConfig: ServerConfig): Promise<void> {
   const logger = createLogger({
     component: "server",
-    dataDir: serverConfig.BB_DATA_DIR,
+    dataDir: serverConfig.PATCHER_DATA_DIR,
   });
   const db = initDb(serverConfig.databasePath, {
-    dataDir: serverConfig.BB_DATA_DIR,
+    dataDir: serverConfig.PATCHER_DATA_DIR,
     logger,
   });
   const hub = new NotificationHub();
   const watchInterests = new WatchInterestCoordinator({ db, hub });
   const lifecycleDedupers = createLifecycleDedupers();
-  const appUrl = toOptionalString(serverConfig.BB_APP_URL);
+  const appUrl = toOptionalString(serverConfig.PATCHER_APP_URL);
   const threadStorageRootPath = resolveThreadStorageRootPath({
-    dataDir: serverConfig.BB_DATA_DIR,
+    dataDir: serverConfig.PATCHER_DATA_DIR,
   });
 
   const selfDir = dirname(fileURLToPath(import.meta.url));
@@ -66,31 +69,31 @@ export async function runServer(serverConfig: ServerConfig): Promise<void> {
   const staticDir =
     isProduction && existsSync(appDistDir) ? appDistDir : undefined;
   const runtimeConfig: ServerRuntimeConfig = {
-    appSurface: serverConfig.BB_APP_SURFACE,
-    appVersion: serverConfig.BB_APP_VERSION,
+    appSurface: serverConfig.PATCHER_APP_SURFACE,
+    appVersion: serverConfig.PATCHER_APP_VERSION,
     builtinSkillsRootPath: resolveBuiltinSkillsRootPath(),
     customAcpAgents: [],
     customModels: [],
-    dataDir: serverConfig.BB_DATA_DIR,
+    dataDir: serverConfig.PATCHER_DATA_DIR,
     featureFlags: serverConfig.featureFlags,
-    hostDaemonPort: serverConfig.BB_HOST_DAEMON_PORT,
-    inheritedSkillsRootPaths: serverConfig.BB_INHERITED_SKILLS_ROOTS,
-    inferenceFallbackModel: serverConfig.BB_INFERENCE_FALLBACK,
-    inferenceModel: serverConfig.BB_INFERENCE,
+    hostDaemonPort: serverConfig.PATCHER_HOST_DAEMON_PORT,
+    inheritedSkillsRootPaths: serverConfig.PATCHER_INHERITED_SKILLS_ROOTS,
+    inferenceFallbackModel: serverConfig.PATCHER_INFERENCE_FALLBACK,
+    inferenceModel: serverConfig.PATCHER_INFERENCE,
     isDevelopment: !isProduction,
     managedEnvironmentRetireGraceMs: MANAGED_ENVIRONMENT_RETIRE_GRACE_MS,
     openAiApiKey: serverConfig.OPENAI_API_KEY,
-    serverPort: serverConfig.BB_SERVER_PORT,
+    serverPort: serverConfig.PATCHER_SERVER_PORT,
     sharedSkillRoots: { user: [], project: [] },
     threadStorageRootPath,
-    transcriptionModel: serverConfig.BB_TRANSCRIPTION,
+    transcriptionModel: serverConfig.PATCHER_TRANSCRIPTION,
   };
 
   if (appUrl !== undefined) {
     runtimeConfig.appUrl = appUrl;
   }
-  if (serverConfig.BB_DEV_APP_PORT !== undefined) {
-    runtimeConfig.devAppPort = serverConfig.BB_DEV_APP_PORT;
+  if (serverConfig.PATCHER_DEV_APP_PORT !== undefined) {
+    runtimeConfig.devAppPort = serverConfig.PATCHER_DEV_APP_PORT;
   }
   const terminalSessions = new TerminalSessionLifecycle({
     config: runtimeConfig,
@@ -107,16 +110,16 @@ export async function runServer(serverConfig: ServerConfig): Promise<void> {
   // Telemetry only operates in production runs (the bb-app launcher and the
   // desktop app both set NODE_ENV=production); dev/source runs never send.
   const telemetry = await createTelemetryService({
-    apiKey: serverConfig.BB_POSTHOG_API_KEY,
-    appSurface: serverConfig.BB_APP_SURFACE,
-    appVersion: serverConfig.BB_APP_VERSION,
-    dataDir: serverConfig.BB_DATA_DIR,
-    enabled: serverConfig.BB_TELEMETRY && isProduction,
+    apiKey: serverConfig.PATCHER_POSTHOG_API_KEY,
+    appSurface: serverConfig.PATCHER_APP_SURFACE,
+    appVersion: serverConfig.PATCHER_APP_VERSION,
+    dataDir: serverConfig.PATCHER_DATA_DIR,
+    enabled: serverConfig.PATCHER_TELEMETRY && isProduction,
     logger,
   });
 
   const machineAuth = await createMachineAuthService({
-    dataDir: serverConfig.BB_DATA_DIR,
+    dataDir: serverConfig.PATCHER_DATA_DIR,
     db,
     logger,
   });
@@ -159,7 +162,7 @@ export async function runServer(serverConfig: ServerConfig): Promise<void> {
       // Where installed plugins run. Without this the server loads every
       // plugin into itself, which is what it did until the policy existed.
       runPluginOutOfProcess: pluginProcessPolicy({
-        enabled: serverConfig.BB_PLUGIN_PROCESS,
+        enabled: serverConfig.PATCHER_PLUGIN_PROCESS,
       }),
       staticDir,
     },
@@ -184,9 +187,9 @@ export async function runServer(serverConfig: ServerConfig): Promise<void> {
     logger.error({ err: error }, "Startup recovery sweep failed");
   });
 
-  if (!isLoopbackHostname(serverConfig.BB_SERVER_BIND_HOST)) {
+  if (!isLoopbackHostname(serverConfig.PATCHER_SERVER_BIND_HOST)) {
     logger.warn(
-      { bindHost: serverConfig.BB_SERVER_BIND_HOST },
+      { bindHost: serverConfig.PATCHER_SERVER_BIND_HOST },
       "SECURITY WARNING: The public API is unauthenticated and permits command execution and file reads. Wildcard server binding must only be used behind a trusted network boundary.",
     );
   }
@@ -199,9 +202,9 @@ export async function runServer(serverConfig: ServerConfig): Promise<void> {
 
   logger.info(
     {
-      bindHost: serverConfig.BB_SERVER_BIND_HOST,
-      port: serverConfig.BB_SERVER_PORT,
-      dataDir: serverConfig.BB_DATA_DIR,
+      bindHost: serverConfig.PATCHER_SERVER_BIND_HOST,
+      port: serverConfig.PATCHER_SERVER_PORT,
+      dataDir: serverConfig.PATCHER_DATA_DIR,
     },
     "Server listening",
   );
@@ -211,7 +214,7 @@ export async function runServer(serverConfig: ServerConfig): Promise<void> {
   // plugin must not delay serving. Bind the loopback SDK first so bb.sdk is
   // usable from the moment factories run.
   pluginService.bindSdk({
-    baseUrl: `http://127.0.0.1:${serverConfig.BB_SERVER_PORT}`,
+    baseUrl: `http://127.0.0.1:${serverConfig.PATCHER_SERVER_PORT}`,
   });
   void pluginService.start().catch((error: unknown) => {
     logger.error({ err: error }, "Plugin startup failed");

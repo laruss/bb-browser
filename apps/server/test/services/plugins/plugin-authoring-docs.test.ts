@@ -65,7 +65,7 @@ function readReferenceFileNames(): string[] {
  * `satisfies` rejects entries that are not keys, and the Missing assertion
  * below rejects keys that are not entries.
  */
-const BB_PLUGIN_API_KEYS = [
+const PATCHER_PLUGIN_API_KEYS = [
   "pluginId",
   "log",
   "settings",
@@ -87,7 +87,7 @@ const BB_PLUGIN_API_KEYS = [
 
 type MissingApiKey = Exclude<
   keyof PatcherPluginApi,
-  (typeof BB_PLUGIN_API_KEYS)[number]
+  (typeof PATCHER_PLUGIN_API_KEYS)[number]
 >;
 const _assertAllApiKeysListed: MissingApiKey extends never ? true : never =
   true;
@@ -97,7 +97,7 @@ void _assertAllApiKeysListed;
  * Mirrors PluginSettingDescriptor["type"]
  * (packages/plugin-sdk/src/backend-contract.ts) — types only, so the union is
  * mirrored here and compile-time checked in both directions like
- * BB_PLUGIN_API_KEYS above.
+ * PATCHER_PLUGIN_API_KEYS above.
  */
 const SETTING_DESCRIPTOR_TYPES = [
   "string",
@@ -384,7 +384,7 @@ describe("bb-plugin-authoring skill", () => {
   });
 
   it("documents every PatcherPluginApi property", () => {
-    for (const key of BB_PLUGIN_API_KEYS) {
+    for (const key of PATCHER_PLUGIN_API_KEYS) {
       expect(skill, `bb.${key} is not documented in the skill`).toContain(
         `bb.${key}`,
       );

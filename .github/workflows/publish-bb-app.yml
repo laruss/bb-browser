@@ -226,7 +226,7 @@ jobs:
     permissions:
       contents: write
     env:
-      BB_DESKTOP_RELEASE_CHANNEL: nightly
+      PATCHER_DESKTOP_RELEASE_CHANNEL: nightly
       CSC_IDENTITY_AUTO_DISCOVERY: "false"
 
     steps:

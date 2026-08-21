@@ -46,7 +46,7 @@ describe("bb thread interactions command output", () => {
   });
 
   it("bb thread interactions show prints interaction details", async () => {
-    vi.stubEnv("BB_THREAD_ID", "thread-show-interaction");
+    vi.stubEnv("PATCHER_THREAD_ID", "thread-show-interaction");
     const getInteraction = vi.fn(async () =>
       fixtures.makePendingInteraction({
         id: "int-show",
@@ -87,7 +87,7 @@ describe("bb thread interactions command output", () => {
   });
 
   it("bb thread interactions show prints user question details", async () => {
-    vi.stubEnv("BB_THREAD_ID", "thread-show-question");
+    vi.stubEnv("PATCHER_THREAD_ID", "thread-show-question");
     const getInteraction = vi.fn(async () =>
       fixtures.makePendingInteraction({
         id: "int-question",
@@ -402,7 +402,7 @@ describe("bb thread interactions command output", () => {
   });
 
   it("bb thread interactions show indicates when resolution delivery is in progress", async () => {
-    vi.stubEnv("BB_THREAD_ID", "thread-show-resolving");
+    vi.stubEnv("PATCHER_THREAD_ID", "thread-show-resolving");
     const getInteraction = vi.fn(async () =>
       fixtures.makePendingInteraction({
         id: "int-show-resolving",

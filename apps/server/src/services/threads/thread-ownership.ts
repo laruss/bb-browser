@@ -63,7 +63,7 @@ interface ThreadOwnershipTransactionDeps {
   hub: DbNotifier;
 }
 
-const THREAD_OWNERSHIP_MENTION_SLOT = "__BB_THREAD_OWNERSHIP_MENTION__";
+const THREAD_OWNERSHIP_MENTION_SLOT = "__PATCHER_THREAD_OWNERSHIP_MENTION__";
 
 async function queueParentSystemMessageBestEffort(
   deps: LoggedPendingInteractionWorkSessionDeps,

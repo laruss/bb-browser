@@ -53,7 +53,7 @@ browser.** Plan §18 Phase 1 is largely satisfied by existing code.
 `apps/desktop/src/desktop-browser-view.ts` (819 lines) manages one
 `WebContentsView` per browser tab:
 
-- dedicated persistent partition (`BB_BROWSER_PARTITION`), so page cookies and
+- dedicated persistent partition (`PATCHER_BROWSER_PARTITION`), so page cookies and
   storage never touch the bb app session or the user's real browser;
 - `sandbox: true`, `contextIsolation: true`, `nodeIntegration: false`;
 - `setWindowOpenHandler` denies every native popup and routes

@@ -359,7 +359,7 @@ moving them would buy isolation from ourselves and cost the one thing the
 boundary cannot carry (a streaming HTTP response). Catalog plugins are the
 opposite case on both counts and move like any other install.
 
-`BB_PLUGIN_PROCESS=false` loads everything in the server again. It exists as a
+`PATCHER_PLUGIN_PROCESS=false` loads everything in the server again. It exists as a
 way back if the boundary breaks something in the field, not as a per-plugin
 knob; deciding placement per plugin would need somewhere to keep the decision,
 and no one has asked for that yet.

@@ -17,7 +17,7 @@ import { createSessionStorageSyncStorage } from "./browser-storage";
  * against a page that has not loaded yet is a promise about a `webContents` that
  * does not exist.
  */
-const BROWSER_MUTED_TABS_STORAGE_KEY = "bb.browserSurface.mutedTabs-1";
+const BROWSER_MUTED_TABS_STORAGE_KEY = "patcher.browserSurface.mutedTabs-1";
 
 export const EMPTY_BROWSER_MUTED_TABS: ReadonlySet<string> = new Set();
 

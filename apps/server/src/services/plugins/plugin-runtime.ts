@@ -17,7 +17,7 @@ import {
   createNodePatcherSdk,
   createNodeWebsocketFactory,
   createRequestTimeoutFetch,
-  DEFAULT_BB_REQUEST_TIMEOUT_MS,
+  DEFAULT_PATCHER_REQUEST_TIMEOUT_MS,
   type PatcherSdk,
 } from "@patcher/sdk";
 import {
@@ -393,7 +393,7 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
           pluginId,
           key,
           fetch: createRequestTimeoutFetch({
-            timeoutMs: DEFAULT_BB_REQUEST_TIMEOUT_MS,
+            timeoutMs: DEFAULT_PATCHER_REQUEST_TIMEOUT_MS,
           }),
         }),
         // The realtime socket identifies itself too. `/ws` is not under

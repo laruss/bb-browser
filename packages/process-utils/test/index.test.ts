@@ -114,7 +114,7 @@ describe("process utils", () => {
       "logs",
     );
     const connectionError = new Error(
-      "connect ECONNREFUSED 127.0.0.1:38886",
+      "connect ECONNREFUSED 127.0.0.1:38986",
     );
     Object.defineProperty(connectionError, "code", {
       value: "ECONNREFUSED",
@@ -134,7 +134,7 @@ describe("process utils", () => {
         message: "fetch failed",
         cause: {
           name: "Error",
-          message: "connect ECONNREFUSED 127.0.0.1:38886",
+          message: "connect ECONNREFUSED 127.0.0.1:38986",
           code: "ECONNREFUSED",
         },
       },
@@ -282,8 +282,8 @@ describe("process utils", () => {
 
   it("scrubs inherited bb runtime env vars and node mode", () => {
     const env: NodeJS.ProcessEnv = {
-      BB_DATA_DIR: "/tmp/bb-data",
-      BB_HOST_DAEMON_PORT: "38887",
+      PATCHER_DATA_DIR: "/tmp/bb-data",
+      PATCHER_HOST_DAEMON_PORT: "38987",
       NODE_ENV: "development",
       NODE_OPTIONS: "--enable-source-maps",
       OPENAI_API_KEY: "external-secret",
@@ -302,7 +302,7 @@ describe("process utils", () => {
 
   it("does not mutate the inherited env", () => {
     const env: NodeJS.ProcessEnv = {
-      BB_DATA_DIR: "/tmp/bb-data",
+      PATCHER_DATA_DIR: "/tmp/bb-data",
       NODE_ENV: "development",
       PATH: "/bin",
     };

@@ -587,7 +587,7 @@ describe("generated managed branch names", () => {
         harness,
         provision,
         {
-          path: "/tmp/generated-title-rename-project/.bb-worktrees/thread",
+          path: "/tmp/generated-title-rename-project/.patcher-worktrees/thread",
           branchName: `bb/generated-rename-title-${thread.id}`,
           defaultBranch: "main",
           isGitRepo: true,
@@ -747,7 +747,7 @@ describe("generated managed branch names", () => {
         harness,
         provision,
         {
-          path: "/tmp/user-title-no-rename-project/.bb-worktrees/thread",
+          path: "/tmp/user-title-no-rename-project/.patcher-worktrees/thread",
           branchName: `bb/user-picked-title-${thread.id}`,
           defaultBranch: "main",
           isGitRepo: true,

@@ -237,7 +237,7 @@ describe("workspace provisioning", () => {
     const parentDir = await makeTempDir("bb-worktree-nested-parent-");
     const targetPath = path.join(
       parentDir,
-      ".bb-worktrees",
+      ".patcher-worktrees",
       "proj_123",
       "thr_456",
     );
@@ -334,7 +334,9 @@ describe("workspace provisioning", () => {
       markerDir,
       timeoutMs: 2_000,
     });
-    expect(entries).toContain("setup-cancelled:.bb-env-setup.sh cancelled");
+    expect(entries).toContain(
+      "setup-cancelled:.patcher-env-setup.sh cancelled",
+    );
   });
 
   it("aborts setup scripts when the signal is aborted at listener registration", async () => {
@@ -364,7 +366,9 @@ describe("workspace provisioning", () => {
     ).rejects.toMatchObject({ code: "provision_cancelled" });
 
     await expect(fs.stat(completedMarker)).rejects.toThrow();
-    expect(entries).toContain("setup-cancelled:.bb-env-setup.sh cancelled");
+    expect(entries).toContain(
+      "setup-cancelled:.patcher-env-setup.sh cancelled",
+    );
   });
 
   it("removes managed worktrees after setup script cancellation", async () => {
@@ -453,8 +457,8 @@ describe("workspace provisioning", () => {
   });
 
   it("scrubs inherited bb runtime env vars before running setup scripts", async () => {
-    vi.stubEnv("BB_DATA_DIR", "/tmp/leaked-bb-data");
-    vi.stubEnv("BB_SERVER_PORT", "38886");
+    vi.stubEnv("PATCHER_DATA_DIR", "/tmp/leaked-bb-data");
+    vi.stubEnv("PATCHER_SERVER_PORT", "38986");
     vi.stubEnv("NODE_ENV", "development");
     vi.stubEnv("EXTERNAL_SETUP_ENV", "external-value");
     const workspacePath = await makeTempDir("bb-setup-env-");
@@ -462,8 +466,8 @@ describe("workspace provisioning", () => {
       path.join(workspacePath, DEFAULT_ENV_SETUP_SCRIPT_NAME),
       [
         'printf "%s|%s|%s|%s\\n" \\',
-        '  "${BB_DATA_DIR-missing}" \\',
-        '  "${BB_SERVER_PORT-missing}" \\',
+        '  "${PATCHER_DATA_DIR-missing}" \\',
+        '  "${PATCHER_SERVER_PORT-missing}" \\',
         '  "${NODE_ENV-missing}" \\',
         '  "${EXTERNAL_SETUP_ENV-missing}"',
       ].join("\n"),
@@ -505,12 +509,12 @@ describe("workspace provisioning", () => {
     expect(
       buildSetupScriptCommand({
         platform: "darwin",
-        scriptPath: "/tmp/.bb-env-setup.sh",
+        scriptPath: "/tmp/.patcher-env-setup.sh",
       }),
     ).toMatchObject({
       command: "env",
-      args: ["bash", "/tmp/.bb-env-setup.sh"],
-      text: "env bash .bb-env-setup.sh",
+      args: ["bash", "/tmp/.patcher-env-setup.sh"],
+      text: "env bash .patcher-env-setup.sh",
     });
   });
 
@@ -518,7 +522,7 @@ describe("workspace provisioning", () => {
     expect(() =>
       buildSetupScriptCommand({
         platform: "win32",
-        scriptPath: "C:\\repo\\.bb-env-setup.sh",
+        scriptPath: "C:\\repo\\.patcher-env-setup.sh",
       }),
     ).toThrow(/not supported on Windows/u);
   });

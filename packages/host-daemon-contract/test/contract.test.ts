@@ -214,7 +214,7 @@ const ONLINE_RPC_RESPONSE_RESULT_FIXTURES: OnlineRpcResponseResultFixtures = {
     gitRemoteUrl: "git@example.com:me/project.git",
   },
   "project.clone_default_path": {
-    path: "/home/me/.bb/checkouts/project",
+    path: "/home/me/.patcher/checkouts/project",
   },
   "host.pick_folder": {
     path: "/home/me/project",
@@ -236,18 +236,18 @@ const ONLINE_RPC_RESPONSE_RESULT_FIXTURES: OnlineRpcResponseResultFixtures = {
         id: `skill_${"a".repeat(64)}`,
         name: "review",
         description: "Review the current diff",
-        filePath: "/home/user/.bb/skills/review/SKILL.md",
+        filePath: "/home/user/.patcher/skills/review/SKILL.md",
         rootKind: "bb-data-dir",
         linked: false,
       },
     ],
   },
   "host.delete_skill": {
-    deletedPath: "/home/user/.bb/skills/review",
+    deletedPath: "/home/user/.patcher/skills/review",
   },
   "host.write_skill": {
     outcome: "written",
-    filePath: "/home/user/.bb/skills/review/SKILL.md",
+    filePath: "/home/user/.patcher/skills/review/SKILL.md",
     sha256: "b".repeat(64),
   },
   "host.global_skills_status": {
@@ -516,7 +516,7 @@ const SETTLED_RESPONSE_RESULT_FIXTURES: SettledResponseResultFixtures = {
       {
         type: "step",
         key: "setup",
-        text: "/bin/bash .bb-env-setup.sh",
+        text: "/bin/bash .patcher-env-setup.sh",
         status: "completed",
       },
     ],
@@ -525,7 +525,7 @@ const SETTLED_RESPONSE_RESULT_FIXTURES: SettledResponseResultFixtures = {
     aborted: true,
   },
   "project.clone": {
-    path: "/home/me/.bb/checkouts/project",
+    path: "/home/me/.patcher/checkouts/project",
     gitRemoteUrl: "git@example.com:me/project.git",
   },
   "environment.destroy": {},
@@ -1052,14 +1052,15 @@ describe("host-daemon local schemas", () => {
 });
 
 describe("host-daemon command schemas", () => {
-  // Version 107 removed the connect gate from the wire: the
-  // `connect-tunnel.ensure-identity` command, the `connect-tunnel.identity`
-  // and `connect-shares.replace` messages, and the `connectMachineId` /
-  // `hasMachineCredential` session fields. An older daemon still sends and
-  // expects them, so enrolled machines must update rather than reconnect into
-  // an `invalid-message` loop.
-  it("uses protocol version 107 after removing the connect gate", () => {
-    expect(HOST_DAEMON_PROTOCOL_VERSION).toBe(107);
+  // Version 108 renamed the daemon's environment contract. The daemon builds
+  // the agent shell itself: it injects the thread-context variables, strips
+  // inherited ones by prefix, and puts the CLI shim on PATH. A 107 daemon
+  // injects `BB_*` and a `bb` shim, so a thread the server started would run
+  // agents that cannot see their own thread id. Nothing on the wire changed,
+  // which is why the version has to say it — enrolled machines must update
+  // rather than connect and quietly break.
+  it("uses protocol version 108 after renaming the daemon environment", () => {
+    expect(HOST_DAEMON_PROTOCOL_VERSION).toBe(108);
   });
 
   it("binds Plan cancellation to a required turn id and typed result", () => {
@@ -1187,7 +1188,7 @@ describe("host-daemon command schemas", () => {
         },
         workspaceProvisionType: "managed-worktree",
         sourcePath: "/tmp/project",
-        targetPath: "/tmp/project/.bb/env",
+        targetPath: "/tmp/project/.patcher/env",
         branchName: "bb/env-123",
         baseBranch: null,
         setupTimeoutMs: 900000,
@@ -1697,7 +1698,7 @@ describe("host-daemon command schemas", () => {
         initiator: null,
         workspaceProvisionType: "managed-worktree",
         sourcePath: "/tmp/project",
-        targetPath: "/tmp/project/.bb/env",
+        targetPath: "/tmp/project/.patcher/env",
       }),
     ).toThrow();
 
@@ -2214,8 +2215,8 @@ describe("host-daemon command schemas", () => {
         ...base,
         kind: "workspace-path",
         sourceType: "project",
-        sourceRootPath: "/workspace/.bb/skills/workflow-help",
-        skillFilePath: "/workspace/.bb/skills/workflow-help/SKILL.md",
+        sourceRootPath: "/workspace/.patcher/skills/workflow-help",
+        skillFilePath: "/workspace/.patcher/skills/workflow-help/SKILL.md",
       }),
     ).toMatchObject({ kind: "workspace-path", sourceType: "project" });
     expect(
@@ -2484,7 +2485,7 @@ describe("host-daemon command schemas", () => {
         },
         workspaceProvisionType: "managed-worktree",
         sourcePath: "/tmp/project",
-        targetPath: "/tmp/project/.bb/env",
+        targetPath: "/tmp/project/.patcher/env",
         branchName: "bb/env-123",
         setupTimeoutMs: 900000,
       }),
@@ -2534,7 +2535,7 @@ describe("host-daemon command schemas", () => {
         initiator: null,
         workspaceProvisionType: "managed-worktree",
         sourcePath: "/tmp/project",
-        targetPath: "/tmp/project/.bb/env",
+        targetPath: "/tmp/project/.patcher/env",
         branchName: "bb/env lock",
         baseBranch: null,
         setupTimeoutMs: 900000,
@@ -2548,7 +2549,7 @@ describe("host-daemon command schemas", () => {
         initiator: null,
         workspaceProvisionType: "managed-worktree",
         sourcePath: "/tmp/project",
-        targetPath: "/tmp/project/.bb/env",
+        targetPath: "/tmp/project/.patcher/env",
         branchName: "bb/env-123",
         baseBranch: "release lock",
         setupTimeoutMs: 900000,
@@ -2849,7 +2850,7 @@ describe("host-daemon command schemas", () => {
           {
             type: "step",
             key: "setup",
-            text: "/bin/bash .bb-env-setup.sh",
+            text: "/bin/bash .patcher-env-setup.sh",
             status: "completed",
           },
         ],

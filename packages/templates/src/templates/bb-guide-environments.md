@@ -12,20 +12,20 @@ Environments determine where threads run. Multiple threads can share an environm
 
 Making your repo work with bb:
 
-  Commit a .bb-env-setup.sh script at the repo root when new bb worktrees need
+  Commit a .patcher-env-setup.sh script at the repo root when new bb worktrees need
   repo-specific setup. After bb creates a new managed worktree environment, it
-  looks for .bb-env-setup.sh inside that new workspace. If the file is absent,
+  looks for .patcher-env-setup.sh inside that new workspace. If the file is absent,
   provisioning continues with no error.
 
   The script must be tracked by git. A fresh worktree only checks out tracked
-  files, so an untracked .bb-env-setup.sh in your source checkout will not be
+  files, so an untracked .patcher-env-setup.sh in your source checkout will not be
   present and will not run.
 
-  BB runs the hook as `env bash .bb-env-setup.sh` with cwd set to the new
+  BB runs the hook as `env bash .patcher-env-setup.sh` with cwd set to the new
   workspace. POSIX shell setup scripts are not supported on Windows. The hook
-  inherits the host daemon's sanitized environment: NODE_ENV and every BB_*
-  variable are removed, and bb does not inject BB_PROJECT_ID, BB_ENVIRONMENT_ID,
-  or BB_SOURCE_PATH.
+  inherits the host daemon's sanitized environment: NODE_ENV and every PATCHER_*
+  variable are removed, and bb does not inject PATCHER_PROJECT_ID, PATCHER_ENVIRONMENT_ID,
+  or PATCHER_SOURCE_PATH.
 
   The hook runs only for newly-created managed worktree environments. It does
   not run for direct/project-checkout environments, personal scratch workspaces,
@@ -34,8 +34,8 @@ Making your repo work with bb:
   A non-zero exit, timeout, signal, or cancellation fails provisioning and bb
   removes the new worktree. Keep optional setup steps non-fatal inside the
   script if the environment should still open. Provisioning progress reports
-  "Running .bb-env-setup.sh" and then ".bb-env-setup.sh finished",
-  ".bb-env-setup.sh failed", or ".bb-env-setup.sh cancelled".
+  "Running .patcher-env-setup.sh" and then ".patcher-env-setup.sh finished",
+  ".patcher-env-setup.sh failed", or ".patcher-env-setup.sh cancelled".
 
   New worktrees do not contain untracked files such as .env.local. To copy
   them from the source checkout, commit a .worktreeinclude file at the repo
@@ -50,15 +50,15 @@ Making your repo work with bb:
 
   bb copies files only. It follows no symlinks, and it replaces nothing that
   the worktree already has. The copy runs after `git worktree add` and before
-  .bb-env-setup.sh, so the setup script can read the copied files. A pattern
+  .patcher-env-setup.sh, so the setup script can read the copied files. A pattern
   that matches nothing, or a file bb cannot read, is reported in the
   provisioning transcript and does not fail provisioning.
 
   Large directories such as node_modules are copied file by file. Install
-  dependencies in .bb-env-setup.sh instead of listing them here.
+  dependencies in .patcher-env-setup.sh instead of listing them here.
 
   For files that customize agent instructions and skills (AGENTS.md,
-  .bb/AGENTS.md, .bb/skills/), run `bb guide agent-configuration`.
+  .patcher/AGENTS.md, .patcher/skills/), run `bb guide agent-configuration`.
 
   bb environment show <id>                Show environment details (path, branch, status)
 

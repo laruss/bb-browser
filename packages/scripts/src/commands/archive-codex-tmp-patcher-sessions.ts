@@ -9,7 +9,7 @@ import type { ChildProcessByStdio } from "node:child_process";
 import { resolveCodexHome } from "@patcher/config/codex-home";
 import { bold, cyan, dim, green, yellow, log } from "../lib/script-helpers.js";
 
-const DEFAULT_TMP_BB_PATTERNS: readonly string[] = [
+const DEFAULT_TMP_PATCHER_PATTERNS: readonly string[] = [
   "*/bb-standalone-*",
   "*/bb-integration-*",
   "*/bb-integ-*",
@@ -232,7 +232,7 @@ export function parseArchiveTmpPatcherSessionsArgs(
     ),
     concurrency: DEFAULT_ARCHIVE_CONCURRENCY,
     dryRun: false,
-    patterns: [...DEFAULT_TMP_BB_PATTERNS],
+    patterns: [...DEFAULT_TMP_PATCHER_PATTERNS],
     yes: false,
   };
 
@@ -303,12 +303,12 @@ export function parseArchiveTmpPatcherSessionsArgs(
 }
 
 export function renderHelpText(): string {
-  const defaultPatterns = DEFAULT_TMP_BB_PATTERNS.join(", ");
+  const defaultPatterns = DEFAULT_TMP_PATCHER_PATTERNS.join(", ");
   return `
   ${bold("codex archive tmp bb sessions")}
 
   ${dim("Usage")}
-    bun run codex:archive-tmp-bb-sessions [--dry-run] [--yes]
+    bun run codex:archive-tmp-patcher-sessions [--dry-run] [--yes]
 
   ${dim("Options")}
     --dry-run             Show matching sessions without archiving
@@ -410,7 +410,7 @@ function buildBackupPath(dbPath: string): string {
     .replaceAll("-", "")
     .replaceAll(":", "")
     .replace(/\.\d{3}Z$/, "Z");
-  return `${dbPath}.backup-${timestamp}-archive-tmp-bb`;
+  return `${dbPath}.backup-${timestamp}-archive-tmp-patcher`;
 }
 
 async function runSqlite(dbPath: string, sql: string): Promise<string> {
@@ -657,7 +657,7 @@ export function archiveThreadsViaAppServer(
       params: {
         capabilities: { experimentalApi: true },
         clientInfo: {
-          name: "archive-tmp-bb-sessions",
+          name: "archive-tmp-patcher-sessions",
           title: "archive tmp bb sessions",
           version: "0",
         },

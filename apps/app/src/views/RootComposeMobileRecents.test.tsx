@@ -101,7 +101,7 @@ describe("RootComposeMobileRecents", () => {
 
   it("keeps the mobile working draft state ahead of runtime activity", () => {
     window.localStorage.setItem(
-      "bb.promptbox.contents-proj_mobile-thr_mobile-3",
+      "patcher.promptbox.contents-proj_mobile-thr_mobile-3",
       JSON.stringify({ text: "Keep editing", attachments: [] }),
     );
 
@@ -125,7 +125,7 @@ describe("RootComposeMobileRecents", () => {
 
   it("includes only the resolved idle draft indicator in the link label", () => {
     window.localStorage.setItem(
-      "bb.promptbox.contents-proj_mobile-thr_mobile-3",
+      "patcher.promptbox.contents-proj_mobile-thr_mobile-3",
       JSON.stringify({ text: "Keep editing", attachments: [] }),
     );
 

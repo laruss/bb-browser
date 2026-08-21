@@ -39,7 +39,7 @@ describe.sequential(
               content: "setup project\n",
             },
             {
-              relativePath: ".bb-env-setup.sh",
+              relativePath: ".patcher-env-setup.sh",
               content:
                 [
                   "set -euo pipefail",

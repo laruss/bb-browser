@@ -496,7 +496,7 @@ export async function buildPluginApp(
         // Consumed by shared-ui's vendored portal-scope so plugin-rendered
         // portals (dialog, select, …) carry this plugin's own scope id and
         // match the per-plugin `@scope` arm of app.css.
-        __BB_PLUGIN_ID__: JSON.stringify(pluginId),
+        __PATCHER_PLUGIN_ID__: JSON.stringify(pluginId),
       },
       logLevel: "error",
       plugins: [runtimeShimPlugin()],

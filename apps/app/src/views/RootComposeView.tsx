@@ -243,7 +243,7 @@ import {
 import { useOptionalPaneContext } from "./thread-detail/PaneContext";
 import { RootComposePanelCommandHandlers } from "./RootComposePanelCommandHandlers";
 
-const ROOT_COMPOSE_ZEN_MODE_STORAGE_KEY = "bb.promptbox.zen-mode.root-compose";
+const ROOT_COMPOSE_ZEN_MODE_STORAGE_KEY = "patcher.promptbox.zen-mode.root-compose";
 const ROOT_COMPOSE_SIDEBAR_ACTION_ALIGNED_TOP_PADDING_CLASS = "pt-14";
 
 function resolveHostOpenContext(args: {

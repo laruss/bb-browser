@@ -318,7 +318,7 @@ function buildTerminalEnv(args: BuildTerminalEnvArgs): NodeJS.ProcessEnv {
   return {
     ...sanitizeInheritedChildProcessEnv({ env: process.env }),
     ...args.shellEnv,
-    BB_TERMINAL_SESSION_ID: args.terminalId,
+    PATCHER_TERMINAL_SESSION_ID: args.terminalId,
     COLORTERM: "truecolor",
     DISABLE_AUTO_TITLE: "true",
     // zsh emits a highlighted "%" by default when a prompt follows output

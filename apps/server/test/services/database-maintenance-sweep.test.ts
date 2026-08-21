@@ -82,7 +82,7 @@ function createTempDatabasePath(): TempDatabasePath {
     cleanup(): void {
       rmSync(dir, { force: true, recursive: true });
     },
-    dbPath: join(dir, "bb.db"),
+    dbPath: join(dir, "patcher.db"),
   };
 }
 

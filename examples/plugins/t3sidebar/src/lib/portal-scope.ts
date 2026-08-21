@@ -2,7 +2,7 @@
  * Portaled content leaves the plugin mount. These attributes restore the
  * plugin style scope and mark the content as an interactive overlay.
  */
-declare const __BB_PLUGIN_ID__: string | undefined;
+declare const __PATCHER_PLUGIN_ID__: string | undefined;
 
 export function usePortalScopeProps(): {
   "data-bb-portaled-overlay": "";
@@ -10,7 +10,9 @@ export function usePortalScopeProps(): {
   "data-bb-plugin"?: string;
 } {
   const pluginId =
-    typeof __BB_PLUGIN_ID__ === "string" ? __BB_PLUGIN_ID__ : undefined;
+    typeof __PATCHER_PLUGIN_ID__ === "string"
+      ? __PATCHER_PLUGIN_ID__
+      : undefined;
   return {
     "data-bb-portaled-overlay": "",
     "data-bb-plugin-root": "",

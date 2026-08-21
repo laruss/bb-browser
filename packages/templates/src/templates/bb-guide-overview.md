@@ -20,17 +20,17 @@ Threads can have a parent-child relationship. The parent coordinates the child a
 
 Context variables set automatically inside a thread environment:
 
-- BB_PROJECT_ID — current project
-- BB_THREAD_ID — current thread
-- BB_ENVIRONMENT_ID — current environment
-- BB_CLI — absolute path to the daemon-managed `bb` executable (prefer this if bare `bb` is wrong; official entrypoints also re-exec to it)
+- PATCHER_PROJECT_ID — current project
+- PATCHER_THREAD_ID — current thread
+- PATCHER_ENVIRONMENT_ID — current environment
+- PATCHER_CLI — absolute path to the daemon-managed `bb` executable (prefer this if bare `bb` is wrong; official entrypoints also re-exec to it)
 
 Run `bb status` to see your current context (resolved project and thread IDs).
 
 All commands support --json for machine-readable output.
 
 To make a repo work with bb worktrees, run `bb guide environments` for the
-repo-level `.bb-env-setup.sh` setup hook. Run `bb guide agent-configuration` for
+repo-level `.patcher-env-setup.sh` setup hook. Run `bb guide agent-configuration` for
 the data-dir and workspace files that customize agent behavior.
 
 Run `bb guide <chapter>` for command details:

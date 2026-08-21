@@ -77,7 +77,7 @@ export const bundleTargets = [
     outfile: resolve(packageRoot, "dist", "bb"),
   },
   {
-    // Forked child that runs @parcel/watcher in isolation (BB_WATCHER_SUBPROCESS=1).
+    // Forked child that runs @parcel/watcher in isolation (PATCHER_WATCHER_SUBPROCESS=1).
     // Emitted next to the daemon bundle so fork-channel resolves it as a sibling.
     banner: NODE_ESM_REQUIRE_BANNER,
     entryPoint: resolve(

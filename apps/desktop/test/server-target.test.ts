@@ -35,8 +35,8 @@ describe("normalizeCustomServerUrl", () => {
     expect(normalizeCustomServerUrl(" https://example.com/ ")).toBe(
       "https://example.com",
     );
-    expect(normalizeCustomServerUrl("http://10.0.0.5:38886/#x")).toBe(
-      "http://10.0.0.5:38886",
+    expect(normalizeCustomServerUrl("http://10.0.0.5:38986/#x")).toBe(
+      "http://10.0.0.5:38986",
     );
     expect(normalizeCustomServerUrl("")).toBeNull();
     expect(normalizeCustomServerUrl("example.com")).toBeNull();
@@ -57,10 +57,10 @@ describe("server target store", () => {
     const { files, fs } = createMemoryFs();
     const store = createServerTargetStore({ fs, storagePath: "/tmp/t.json" });
     await store.load();
-    await store.setCustomServerUrl("https://example.com:38886");
+    await store.setCustomServerUrl("https://example.com:38986");
     expect(store.getTarget()).toEqual({
       kind: "custom",
-      url: "https://example.com:38886",
+      url: "https://example.com:38986",
     });
 
     const reloaded = createServerTargetStore({
@@ -70,9 +70,9 @@ describe("server target store", () => {
     await reloaded.load();
     expect(reloaded.getTarget()).toEqual({
       kind: "custom",
-      url: "https://example.com:38886",
+      url: "https://example.com:38986",
     });
-    expect(files.get("/tmp/t.json")).toContain("https://example.com:38886");
+    expect(files.get("/tmp/t.json")).toContain("https://example.com:38986");
   });
 
   it("switches back to builtin while keeping the custom URL", async () => {

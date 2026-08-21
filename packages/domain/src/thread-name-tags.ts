@@ -1,6 +1,6 @@
 import type { ThreadEvent } from "./provider-event.js";
 
-export const BB_THREAD_NAME_TAG = "bb";
+export const PATCHER_THREAD_NAME_TAG = "bb";
 
 export interface TagThreadNameArgs {
   name: string;
@@ -48,11 +48,11 @@ export function untagThreadName(args: UntagThreadNameArgs): string {
  * are not forcibly re-renamed by this helper.
  */
 export function toProviderExternalThreadName(title: string): string {
-  return tagThreadName({ name: title, tag: BB_THREAD_NAME_TAG });
+  return tagThreadName({ name: title, tag: PATCHER_THREAD_NAME_TAG });
 }
 
 export function fromProviderExternalThreadName(name: string): string {
-  return untagThreadName({ name, tag: BB_THREAD_NAME_TAG });
+  return untagThreadName({ name, tag: PATCHER_THREAD_NAME_TAG });
 }
 
 export function normalizeProviderThreadNameEvent(

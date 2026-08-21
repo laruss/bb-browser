@@ -1,7 +1,8 @@
 import { useAtom } from "jotai";
 import { createBooleanPreferenceAtom } from "./browser-storage";
 
-export const OPEN_LINKS_IN_APP_BROWSER_STORAGE_KEY = "bb.openLinksInAppBrowser";
+export const OPEN_LINKS_IN_APP_BROWSER_STORAGE_KEY =
+  "patcher.openLinksInAppBrowser";
 
 /**
  * Default ON: the feature routes bb links into the desktop in-app browser

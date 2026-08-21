@@ -70,7 +70,7 @@ const SUMMARIZED_ADAPTIVE_THINKING = {
   type: "adaptive",
   display: "summarized",
 } satisfies Exclude<Options["thinking"], undefined>;
-const CLAUDE_CODE_EXECUTABLE_ENV = "BB_CLAUDE_CODE_EXECUTABLE";
+const CLAUDE_CODE_EXECUTABLE_ENV = "PATCHER_CLAUDE_CODE_EXECUTABLE";
 
 /**
  * BB's "ultracode" reasoning level is not an SDK effort: it decomposes into
@@ -271,7 +271,7 @@ function resolveExecutableOnPath(
 // binary, which packaged bb builds do not ship.
 function wellKnownClaudeExecutablePaths(env: NodeJS.ProcessEnv): string[] {
   // Under elevated privileges a user-writable binary must never be picked up
-  // implicitly; root operators can still set BB_CLAUDE_CODE_EXECUTABLE.
+  // implicitly; root operators can still set PATCHER_CLAUDE_CODE_EXECUTABLE.
   if (process.getuid?.() === 0) {
     return [];
   }

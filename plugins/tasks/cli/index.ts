@@ -1796,9 +1796,9 @@ async function runAttach(
   const [address] = requirePositionals(args, 1, ATTACH_HELP);
   const task = await resolveTask(domain, address!);
   const threadId =
-    option(args, "thread") ?? process.env.BB_THREAD_ID ?? ctx.threadId;
+    option(args, "thread") ?? process.env.PATCHER_THREAD_ID ?? ctx.threadId;
   if (!threadId) {
-    throw new CliError("missing --thread and BB_THREAD_ID is not set");
+    throw new CliError("missing --thread and PATCHER_THREAD_ID is not set");
   }
   const result = delegationRpcContract.taskThreadsAttach.output.parse(
     await delegationHandlers(bb, store).taskThreadsAttach(

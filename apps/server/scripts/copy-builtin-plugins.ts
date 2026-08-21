@@ -105,7 +105,7 @@ async function copyBuiltinPlugin(args: {
   if (args.build) {
     // Resolves from this repo's own devDependencies; no download here.
     const toolchain = await resolvePluginBuildToolchain(
-      path.join(serverRoot, "node_modules", ".bb-toolchain"),
+      path.join(serverRoot, "node_modules", ".patcher-toolchain"),
     );
     await buildPluginServer(args.sourceRoot, args.patcherVersion, toolchain);
     const raw = await readFile(

@@ -4,24 +4,26 @@ import {
   type SyncStorage,
 } from "@/lib/browser-storage";
 
-const COLLAPSED_PROJECTS_STORAGE_KEY = "bb.sidebar.collapsedProjects";
-const COLLAPSED_THREADS_STORAGE_KEY = "bb.sidebar.collapsedThreads";
-const COLLAPSED_ENVIRONMENTS_STORAGE_KEY = "bb.sidebar.collapsedEnvironments";
-const COLLAPSED_SIDEBAR_SECTIONS_STORAGE_KEY = "bb.sidebar.collapsedSections";
-const SIDEBAR_SECTION_ORDER_STORAGE_KEY = "bb.sidebar.sectionOrder";
+const COLLAPSED_PROJECTS_STORAGE_KEY = "patcher.sidebar.collapsedProjects";
+const COLLAPSED_THREADS_STORAGE_KEY = "patcher.sidebar.collapsedThreads";
+const COLLAPSED_ENVIRONMENTS_STORAGE_KEY =
+  "patcher.sidebar.collapsedEnvironments";
+const COLLAPSED_SIDEBAR_SECTIONS_STORAGE_KEY =
+  "patcher.sidebar.collapsedSections";
+const SIDEBAR_SECTION_ORDER_STORAGE_KEY = "patcher.sidebar.sectionOrder";
 const SIDEBAR_MANUAL_SECTION_ORDER_STORAGE_KEY =
-  "bb.sidebar.manualSectionOrder";
+  "patcher.sidebar.manualSectionOrder";
 const LEGACY_SIDEBAR_FOLDER_SECTION_ORDER_STORAGE_KEY =
-  "bb.sidebar.folderSectionOrder";
+  "patcher.sidebar.folderSectionOrder";
 const SIDEBAR_MACHINE_SECTION_ORDER_STORAGE_KEY =
-  "bb.sidebar.machineSectionOrder";
+  "patcher.sidebar.machineSectionOrder";
 export const SIDEBAR_ORGANIZATION_MODE_STORAGE_KEY =
-  "bb.sidebar.organizationMode";
-const CHRONOLOGICAL_SORT_STORAGE_KEY = "bb.sidebar.chronologicalSort";
+  "patcher.sidebar.organizationMode";
+const CHRONOLOGICAL_SORT_STORAGE_KEY = "patcher.sidebar.chronologicalSort";
 const COLLAPSED_THREAD_SECTIONS_STORAGE_KEY =
-  "bb.sidebar.collapsedThreadSections";
-const LEGACY_COLLAPSED_FOLDERS_STORAGE_KEY = "bb.sidebar.collapsedFolders";
-const COLLAPSED_MACHINES_STORAGE_KEY = "bb.sidebar.collapsedMachines";
+  "patcher.sidebar.collapsedThreadSections";
+const LEGACY_COLLAPSED_FOLDERS_STORAGE_KEY = "patcher.sidebar.collapsedFolders";
+const COLLAPSED_MACHINES_STORAGE_KEY = "patcher.sidebar.collapsedMachines";
 
 export type SidebarSectionId =
   | "pinned"

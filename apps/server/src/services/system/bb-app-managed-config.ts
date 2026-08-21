@@ -109,24 +109,24 @@ export function applyPatcherAppManagedConfig(
   args.targetConfig.sharedSkillRoots =
     args.managedConfig.sharedSkillRoots ?? args.baseConfig.sharedSkillRoots;
   args.targetConfig.inferenceModel =
-    managedConfig.BB_INFERENCE !== undefined
-      ? validateInferenceModel(managedConfig.BB_INFERENCE)
+    managedConfig.PATCHER_INFERENCE !== undefined
+      ? validateInferenceModel(managedConfig.PATCHER_INFERENCE)
       : args.baseConfig.inferenceModel;
   args.targetConfig.inferenceFallbackModel =
-    managedConfig.BB_INFERENCE_FALLBACK !== undefined
-      ? validateInferenceFallbackModel(managedConfig.BB_INFERENCE_FALLBACK)
+    managedConfig.PATCHER_INFERENCE_FALLBACK !== undefined
+      ? validateInferenceFallbackModel(managedConfig.PATCHER_INFERENCE_FALLBACK)
       : args.baseConfig.inferenceFallbackModel;
   args.targetConfig.transcriptionModel =
-    managedConfig.BB_TRANSCRIPTION !== undefined
-      ? validateTranscriptionModel(managedConfig.BB_TRANSCRIPTION)
+    managedConfig.PATCHER_TRANSCRIPTION !== undefined
+      ? validateTranscriptionModel(managedConfig.PATCHER_TRANSCRIPTION)
       : args.baseConfig.transcriptionModel;
   args.targetConfig.openAiApiKey =
     managedEnv.OPENAI_API_KEY ?? args.baseConfig.openAiApiKey;
 
   setOptionalAppUrl(
     args.targetConfig,
-    managedConfig.BB_APP_URL !== undefined
-      ? validateOptionalUrl("BB_APP_URL", managedConfig.BB_APP_URL)
+    managedConfig.PATCHER_APP_URL !== undefined
+      ? validateOptionalUrl("PATCHER_APP_URL", managedConfig.PATCHER_APP_URL)
       : args.baseConfig.appUrl,
   );
 }

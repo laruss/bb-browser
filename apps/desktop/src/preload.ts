@@ -85,86 +85,86 @@ import {
   type PatcherDesktopBrowserTabRef,
   type PatcherDesktopBrowserZoomHandler,
   patcherDesktopBrowserZoomSchema,
-  BB_DESKTOP_WINDOW_KEY_ARGUMENT_PREFIX,
+  PATCHER_DESKTOP_WINDOW_KEY_ARGUMENT_PREFIX,
 } from "@patcher/desktop-contract";
 import {
-  BB_DESKTOP_CHECK_FOR_UPDATES_CHANNEL,
-  BB_DESKTOP_GET_INFO_CHANNEL,
-  BB_DESKTOP_INFO_CHANGED_CHANNEL,
-  BB_DESKTOP_INSTALL_UPDATE_CHANNEL,
-  BB_DESKTOP_OPEN_EXTERNAL_URL_CHANNEL,
-  BB_DESKTOP_SET_THEME_CHANNEL,
+  PATCHER_DESKTOP_CHECK_FOR_UPDATES_CHANNEL,
+  PATCHER_DESKTOP_GET_INFO_CHANNEL,
+  PATCHER_DESKTOP_INFO_CHANGED_CHANNEL,
+  PATCHER_DESKTOP_INSTALL_UPDATE_CHANNEL,
+  PATCHER_DESKTOP_OPEN_EXTERNAL_URL_CHANNEL,
+  PATCHER_DESKTOP_SET_THEME_CHANNEL,
 } from "./desktop-update-ipc.js";
 import {
-  BB_DESKTOP_DEFAULT_BROWSER_CHANGED_CHANNEL,
-  BB_DESKTOP_GET_DEFAULT_BROWSER_CHANNEL,
-  BB_DESKTOP_REQUEST_DEFAULT_BROWSER_CHANNEL,
+  PATCHER_DESKTOP_DEFAULT_BROWSER_CHANGED_CHANNEL,
+  PATCHER_DESKTOP_GET_DEFAULT_BROWSER_CHANNEL,
+  PATCHER_DESKTOP_REQUEST_DEFAULT_BROWSER_CHANNEL,
 } from "./desktop-default-browser.js";
 import {
-  BB_DESKTOP_BROWSER_ATTACH_CHANNEL,
-  BB_DESKTOP_BROWSER_CAPTURE_FULL_PAGE_CHANNEL,
-  BB_DESKTOP_BROWSER_DETACH_CHANNEL,
-  BB_DESKTOP_BROWSER_DOWNLOAD_ACTION_CHANNEL,
-  BB_DESKTOP_BROWSER_CONTEXT_MENU_INVOKE_CHANNEL,
-  BB_DESKTOP_BROWSER_SEARCH_SELECTION_CHANNEL,
-  BB_DESKTOP_BROWSER_SET_CONTEXT_MENU_ITEMS_CHANNEL,
-  BB_DESKTOP_BROWSER_SET_PAGE_STYLES_CHANNEL,
-  BB_DESKTOP_BROWSER_SET_PAGE_SCRIPTS_CHANNEL,
-  BB_DESKTOP_BROWSER_PAGE_SCRIPT_CALL_CHANNEL,
-  BB_DESKTOP_BROWSER_PAGE_SCRIPT_RESULT_CHANNEL,
-  BB_DESKTOP_BROWSER_SET_OVERLAY_CHANNEL,
-  BB_DESKTOP_BROWSER_SET_FULLSCREEN_CHANNEL,
-  BB_DESKTOP_BROWSER_DOWNLOAD_CHANNEL,
-  BB_DESKTOP_BROWSER_FAVICON_CHANNEL,
-  BB_DESKTOP_BROWSER_FIND_CHANNEL,
-  BB_DESKTOP_BROWSER_FIND_RESULT_CHANNEL,
-  BB_DESKTOP_BROWSER_GO_BACK_CHANNEL,
-  BB_DESKTOP_BROWSER_GO_FORWARD_CHANNEL,
-  BB_DESKTOP_BROWSER_NAVIGATE_CHANNEL,
-  BB_DESKTOP_BROWSER_CONTROL_CHANNEL,
-  BB_DESKTOP_BROWSER_RECORD_CHANNEL,
-  BB_DESKTOP_BROWSER_SNAPSHOT_IN_CHANNEL,
-  BB_DESKTOP_BROWSER_OBSERVE_CHANNEL,
-  BB_DESKTOP_BROWSER_OPEN_TAB_CHANNEL,
-  BB_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
-  BB_DESKTOP_BROWSER_RELOAD_CHANNEL,
-  BB_DESKTOP_BROWSER_SCOPED_OPEN_TAB_CHANNEL,
-  BB_DESKTOP_BROWSER_TAKE_EXTERNAL_URLS_CHANNEL,
-  BB_DESKTOP_BROWSER_EXTERNAL_URLS_PENDING_CHANNEL,
-  BB_DESKTOP_BROWSER_STORAGE_CHANNEL,
-  BB_DESKTOP_BROWSER_DIALOG_CHANNEL,
-  BB_DESKTOP_BROWSER_DIALOG_RESPOND_CHANNEL,
-  BB_DESKTOP_BROWSER_PAGE_PROMPT_CHANNEL,
-  BB_DESKTOP_BROWSER_PAGE_PROMPT_RESPOND_CHANNEL,
-  BB_DESKTOP_BROWSER_POPUP_CHANNEL,
-  BB_DESKTOP_BROWSER_SET_POPUP_TABS_CHANNEL,
-  BB_DESKTOP_BROWSER_SET_DEV_TOOLS_CHANNEL,
-  BB_DESKTOP_BROWSER_SET_DEV_TOOLS_VISIBLE_CHANNEL,
-  BB_DESKTOP_BROWSER_DEV_TOOLS_STATE_CHANNEL,
-  BB_DESKTOP_BROWSER_INTERACT_CHANNEL,
-  BB_DESKTOP_BROWSER_SNAPSHOT_TREE_CHANNEL,
-  BB_DESKTOP_BROWSER_SET_BOUNDS_CHANNEL,
-  BB_DESKTOP_BROWSER_SET_VISIBLE_CHANNEL,
-  BB_DESKTOP_BROWSER_PRINT_CHANNEL,
-  BB_DESKTOP_BROWSER_PAGE_SECURITY_CHANNEL,
-  BB_DESKTOP_BROWSER_SET_MUTED_CHANNEL,
-  BB_DESKTOP_BROWSER_SET_ZOOM_CHANNEL,
-  BB_DESKTOP_BROWSER_ZOOM_CHANNEL,
-  BB_DESKTOP_BROWSER_SNAPSHOT_CHANNEL,
-  BB_DESKTOP_BROWSER_STATE_CHANNEL,
-  BB_DESKTOP_BROWSER_STOP_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_ATTACH_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_CAPTURE_FULL_PAGE_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_DETACH_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_DOWNLOAD_ACTION_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_CONTEXT_MENU_INVOKE_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_SEARCH_SELECTION_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_SET_CONTEXT_MENU_ITEMS_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_SET_PAGE_STYLES_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_SET_PAGE_SCRIPTS_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_PAGE_SCRIPT_CALL_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_PAGE_SCRIPT_RESULT_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_SET_OVERLAY_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_SET_FULLSCREEN_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_DOWNLOAD_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_FAVICON_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_FIND_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_FIND_RESULT_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_GO_BACK_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_GO_FORWARD_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_NAVIGATE_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_CONTROL_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_RECORD_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_SNAPSHOT_IN_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_OBSERVE_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_OPEN_TAB_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_RELOAD_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_SCOPED_OPEN_TAB_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_TAKE_EXTERNAL_URLS_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_EXTERNAL_URLS_PENDING_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_STORAGE_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_DIALOG_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_DIALOG_RESPOND_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_PAGE_PROMPT_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_PAGE_PROMPT_RESPOND_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_POPUP_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_SET_POPUP_TABS_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_SET_DEV_TOOLS_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_SET_DEV_TOOLS_VISIBLE_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_DEV_TOOLS_STATE_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_INTERACT_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_SNAPSHOT_TREE_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_SET_BOUNDS_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_SET_VISIBLE_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_PRINT_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_PAGE_SECURITY_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_SET_MUTED_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_SET_ZOOM_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_ZOOM_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_SNAPSHOT_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_STATE_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_STOP_CHANNEL,
 } from "./desktop-browser-ipc.js";
 import {
-  BB_DESKTOP_APP_COMMAND_CHANNEL,
-  BB_DESKTOP_CLOSE_WINDOW_CHANNEL,
-  BB_DESKTOP_CLOSE_WINDOW_REQUEST_CHANNEL,
-  BB_DESKTOP_CLOSE_WINDOW_RESPONSE_CHANNEL,
-  BB_DESKTOP_GET_WINDOW_STATE_CHANNEL,
-  BB_DESKTOP_OPEN_NEW_TAB_CHANNEL,
-  BB_DESKTOP_WINDOW_STATE_CHANGED_CHANNEL,
+  PATCHER_DESKTOP_APP_COMMAND_CHANNEL,
+  PATCHER_DESKTOP_CLOSE_WINDOW_CHANNEL,
+  PATCHER_DESKTOP_CLOSE_WINDOW_REQUEST_CHANNEL,
+  PATCHER_DESKTOP_CLOSE_WINDOW_RESPONSE_CHANNEL,
+  PATCHER_DESKTOP_GET_WINDOW_STATE_CHANNEL,
+  PATCHER_DESKTOP_OPEN_NEW_TAB_CHANNEL,
+  PATCHER_DESKTOP_WINDOW_STATE_CHANGED_CHANNEL,
 } from "./desktop-window-command-ipc.js";
 import {
-  BB_DESKTOP_SPELLCHECK_GLOBAL_NAME,
+  PATCHER_DESKTOP_SPELLCHECK_GLOBAL_NAME,
   type PatcherDesktopSpellcheckApi,
 } from "./desktop-spellcheck-contract.js";
 
@@ -184,7 +184,7 @@ function createInitialDesktopInfo(): PatcherDesktopInfo {
     platform: "macos",
     updateAvailable: false,
     updateDownloaded: false,
-    version: getDesktopVersion(process.env.BB_DESKTOP_VERSION),
+    version: getDesktopVersion(process.env.PATCHER_DESKTOP_VERSION),
   };
 }
 
@@ -246,7 +246,7 @@ async function invokeDesktopInfo(channel: string): Promise<PatcherDesktopInfo> {
 async function invokeDesktopWindowState(): Promise<PatcherDesktopWindowState> {
   try {
     const payload: unknown = await ipcRenderer.invoke(
-      BB_DESKTOP_GET_WINDOW_STATE_CHANNEL,
+      PATCHER_DESKTOP_GET_WINDOW_STATE_CHANNEL,
     );
     return applyDesktopWindowStatePayload(payload) ?? currentWindowState;
   } catch {
@@ -256,7 +256,7 @@ async function invokeDesktopWindowState(): Promise<PatcherDesktopWindowState> {
 
 async function invokeInstallUpdate(): Promise<void> {
   try {
-    await ipcRenderer.invoke(BB_DESKTOP_INSTALL_UPDATE_CHANNEL);
+    await ipcRenderer.invoke(PATCHER_DESKTOP_INSTALL_UPDATE_CHANNEL);
   } catch {
     return;
   }
@@ -343,37 +343,37 @@ function browserViewBoundsAtWindowScale(
 
 const patcherBrowserApi: PatcherDesktopBrowserApi = {
   attach(request): void {
-    ipcRenderer.send(BB_DESKTOP_BROWSER_ATTACH_CHANNEL, {
+    ipcRenderer.send(PATCHER_DESKTOP_BROWSER_ATTACH_CHANNEL, {
       ...request,
       bounds: browserViewBoundsAtWindowScale(request.bounds),
     });
   },
   detach(tabId): void {
-    ipcRenderer.send(BB_DESKTOP_BROWSER_DETACH_CHANNEL, { tabId });
+    ipcRenderer.send(PATCHER_DESKTOP_BROWSER_DETACH_CHANNEL, { tabId });
   },
   navigate(request): void {
-    ipcRenderer.send(BB_DESKTOP_BROWSER_NAVIGATE_CHANNEL, request);
+    ipcRenderer.send(PATCHER_DESKTOP_BROWSER_NAVIGATE_CHANNEL, request);
   },
   goBack(tabId): void {
-    ipcRenderer.send(BB_DESKTOP_BROWSER_GO_BACK_CHANNEL, { tabId });
+    ipcRenderer.send(PATCHER_DESKTOP_BROWSER_GO_BACK_CHANNEL, { tabId });
   },
   goForward(tabId): void {
-    ipcRenderer.send(BB_DESKTOP_BROWSER_GO_FORWARD_CHANNEL, { tabId });
+    ipcRenderer.send(PATCHER_DESKTOP_BROWSER_GO_FORWARD_CHANNEL, { tabId });
   },
   reload(tabId): void {
-    ipcRenderer.send(BB_DESKTOP_BROWSER_RELOAD_CHANNEL, { tabId });
+    ipcRenderer.send(PATCHER_DESKTOP_BROWSER_RELOAD_CHANNEL, { tabId });
   },
   stop(tabId): void {
-    ipcRenderer.send(BB_DESKTOP_BROWSER_STOP_CHANNEL, { tabId });
+    ipcRenderer.send(PATCHER_DESKTOP_BROWSER_STOP_CHANNEL, { tabId });
   },
   setBounds(request): void {
-    ipcRenderer.send(BB_DESKTOP_BROWSER_SET_BOUNDS_CHANNEL, {
+    ipcRenderer.send(PATCHER_DESKTOP_BROWSER_SET_BOUNDS_CHANNEL, {
       ...request,
       bounds: browserViewBoundsAtWindowScale(request.bounds),
     });
   },
   setVisible(request): void {
-    ipcRenderer.send(BB_DESKTOP_BROWSER_SET_VISIBLE_CHANNEL, request);
+    ipcRenderer.send(PATCHER_DESKTOP_BROWSER_SET_VISIBLE_CHANNEL, request);
   },
   onState(listener): PatcherDesktopBrowserUnsubscribe {
     browserStateListeners.add(listener);
@@ -398,7 +398,7 @@ const patcherBrowserApi: PatcherDesktopBrowserApi = {
     // list it can loop over, never a transport error.
     try {
       const payload: unknown = await ipcRenderer.invoke(
-        BB_DESKTOP_BROWSER_TAKE_EXTERNAL_URLS_CHANNEL,
+        PATCHER_DESKTOP_BROWSER_TAKE_EXTERNAL_URLS_CHANNEL,
       );
       const parsed = patcherDesktopBrowserExternalUrlsSchema.safeParse(payload);
       return parsed.success ? parsed.data.urls : [];
@@ -431,7 +431,7 @@ const patcherBrowserApi: PatcherDesktopBrowserApi = {
     };
   },
   setZoom(request: PatcherDesktopBrowserSetZoomRequest): void {
-    ipcRenderer.send(BB_DESKTOP_BROWSER_SET_ZOOM_CHANNEL, request);
+    ipcRenderer.send(PATCHER_DESKTOP_BROWSER_SET_ZOOM_CHANNEL, request);
   },
   onPageSecurity(listener): PatcherDesktopBrowserUnsubscribe {
     browserPageSecurityListeners.add(listener);
@@ -440,10 +440,10 @@ const patcherBrowserApi: PatcherDesktopBrowserApi = {
     };
   },
   setMuted(request: PatcherDesktopBrowserSetMutedRequest): void {
-    ipcRenderer.send(BB_DESKTOP_BROWSER_SET_MUTED_CHANNEL, request);
+    ipcRenderer.send(PATCHER_DESKTOP_BROWSER_SET_MUTED_CHANNEL, request);
   },
   print(request: PatcherDesktopBrowserTabRef): void {
-    ipcRenderer.send(BB_DESKTOP_BROWSER_PRINT_CHANNEL, request);
+    ipcRenderer.send(PATCHER_DESKTOP_BROWSER_PRINT_CHANNEL, request);
   },
   onDownload(listener): PatcherDesktopBrowserUnsubscribe {
     browserDownloadListeners.add(listener);
@@ -453,15 +453,15 @@ const patcherBrowserApi: PatcherDesktopBrowserApi = {
   },
   setContextMenuItems(request: PatcherDesktopBrowserContextMenuItems): void {
     ipcRenderer.send(
-      BB_DESKTOP_BROWSER_SET_CONTEXT_MENU_ITEMS_CHANNEL,
+      PATCHER_DESKTOP_BROWSER_SET_CONTEXT_MENU_ITEMS_CHANNEL,
       request,
     );
   },
   setPageStyles(request: PatcherDesktopBrowserPageStyles): void {
-    ipcRenderer.send(BB_DESKTOP_BROWSER_SET_PAGE_STYLES_CHANNEL, request);
+    ipcRenderer.send(PATCHER_DESKTOP_BROWSER_SET_PAGE_STYLES_CHANNEL, request);
   },
   setPageScripts(request: PatcherDesktopBrowserPageScripts): void {
-    ipcRenderer.send(BB_DESKTOP_BROWSER_SET_PAGE_SCRIPTS_CHANNEL, request);
+    ipcRenderer.send(PATCHER_DESKTOP_BROWSER_SET_PAGE_SCRIPTS_CHANNEL, request);
   },
   onPageScriptCall(listener): PatcherDesktopBrowserUnsubscribe {
     browserPageScriptCallListeners.add(listener);
@@ -470,7 +470,10 @@ const patcherBrowserApi: PatcherDesktopBrowserApi = {
     };
   },
   respondToPageScriptCall(result: PatcherDesktopBrowserPageScriptResult): void {
-    ipcRenderer.send(BB_DESKTOP_BROWSER_PAGE_SCRIPT_RESULT_CHANNEL, result);
+    ipcRenderer.send(
+      PATCHER_DESKTOP_BROWSER_PAGE_SCRIPT_RESULT_CHANNEL,
+      result,
+    );
   },
   onContextMenuInvoke(listener): PatcherDesktopBrowserUnsubscribe {
     browserContextMenuInvokeListeners.add(listener);
@@ -485,13 +488,13 @@ const patcherBrowserApi: PatcherDesktopBrowserApi = {
     };
   },
   setOverlay(request: PatcherDesktopBrowserSetOverlayRequest): void {
-    ipcRenderer.send(BB_DESKTOP_BROWSER_SET_OVERLAY_CHANNEL, request);
+    ipcRenderer.send(PATCHER_DESKTOP_BROWSER_SET_OVERLAY_CHANNEL, request);
   },
   setFullscreen(request: PatcherDesktopBrowserSetFullscreenRequest): void {
-    ipcRenderer.send(BB_DESKTOP_BROWSER_SET_FULLSCREEN_CHANNEL, request);
+    ipcRenderer.send(PATCHER_DESKTOP_BROWSER_SET_FULLSCREEN_CHANNEL, request);
   },
   find(request: PatcherDesktopBrowserFindRequest): void {
-    ipcRenderer.send(BB_DESKTOP_BROWSER_FIND_CHANNEL, request);
+    ipcRenderer.send(PATCHER_DESKTOP_BROWSER_FIND_CHANNEL, request);
   },
   onFindResult(listener): PatcherDesktopBrowserUnsubscribe {
     browserFindResultListeners.add(listener);
@@ -511,7 +514,7 @@ const patcherBrowserApi: PatcherDesktopBrowserApi = {
     } as const;
     try {
       const payload: unknown = await ipcRenderer.invoke(
-        BB_DESKTOP_BROWSER_DOWNLOAD_ACTION_CHANNEL,
+        PATCHER_DESKTOP_BROWSER_DOWNLOAD_ACTION_CHANNEL,
         request,
       );
       const parsed =
@@ -526,7 +529,7 @@ const patcherBrowserApi: PatcherDesktopBrowserApi = {
     // the SPA gets a value it can branch on, never a transport error.
     try {
       const payload: unknown = await ipcRenderer.invoke(
-        BB_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
+        PATCHER_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
         { tabId },
       );
       const parsed =
@@ -543,10 +546,10 @@ const patcherBrowserApi: PatcherDesktopBrowserApi = {
     };
   },
   setPopupTabs(request: PatcherDesktopBrowserPopupTabs): void {
-    ipcRenderer.send(BB_DESKTOP_BROWSER_SET_POPUP_TABS_CHANNEL, request);
+    ipcRenderer.send(PATCHER_DESKTOP_BROWSER_SET_POPUP_TABS_CHANNEL, request);
   },
   setDevTools(request: PatcherDesktopBrowserDevToolsRequest): void {
-    ipcRenderer.send(BB_DESKTOP_BROWSER_SET_DEV_TOOLS_CHANNEL, {
+    ipcRenderer.send(PATCHER_DESKTOP_BROWSER_SET_DEV_TOOLS_CHANNEL, {
       ...request,
       bounds: browserViewBoundsAtWindowScale(request.bounds),
     });
@@ -554,7 +557,10 @@ const patcherBrowserApi: PatcherDesktopBrowserApi = {
   setDevToolsVisible(
     request: PatcherDesktopBrowserDevToolsVisibleRequest,
   ): void {
-    ipcRenderer.send(BB_DESKTOP_BROWSER_SET_DEV_TOOLS_VISIBLE_CHANNEL, request);
+    ipcRenderer.send(
+      PATCHER_DESKTOP_BROWSER_SET_DEV_TOOLS_VISIBLE_CHANNEL,
+      request,
+    );
   },
   onDevToolsState(listener): PatcherDesktopBrowserUnsubscribe {
     browserDevToolsListeners.add(listener);
@@ -577,7 +583,7 @@ const patcherBrowserApi: PatcherDesktopBrowserApi = {
   async respondToPagePrompt(answer): Promise<boolean> {
     try {
       const answered: unknown = await ipcRenderer.invoke(
-        BB_DESKTOP_BROWSER_PAGE_PROMPT_RESPOND_CHANNEL,
+        PATCHER_DESKTOP_BROWSER_PAGE_PROMPT_RESPOND_CHANNEL,
         answer,
       );
       return answered === true;
@@ -588,7 +594,7 @@ const patcherBrowserApi: PatcherDesktopBrowserApi = {
   async respondToDialog(request): Promise<boolean> {
     try {
       const answered: unknown = await ipcRenderer.invoke(
-        BB_DESKTOP_BROWSER_DIALOG_RESPOND_CHANNEL,
+        PATCHER_DESKTOP_BROWSER_DIALOG_RESPOND_CHANNEL,
         request,
       );
       return answered === true;
@@ -599,7 +605,7 @@ const patcherBrowserApi: PatcherDesktopBrowserApi = {
   async snapshot(request): Promise<PatcherDesktopBrowserSnapshotResult> {
     try {
       const payload: unknown = await ipcRenderer.invoke(
-        BB_DESKTOP_BROWSER_SNAPSHOT_TREE_CHANNEL,
+        PATCHER_DESKTOP_BROWSER_SNAPSHOT_TREE_CHANNEL,
         request,
       );
       const parsed =
@@ -612,7 +618,7 @@ const patcherBrowserApi: PatcherDesktopBrowserApi = {
   async snapshotIn(request): Promise<PatcherDesktopBrowserSnapshotResult> {
     try {
       const payload: unknown = await ipcRenderer.invoke(
-        BB_DESKTOP_BROWSER_SNAPSHOT_IN_CHANNEL,
+        PATCHER_DESKTOP_BROWSER_SNAPSHOT_IN_CHANNEL,
         request,
       );
       const parsed =
@@ -625,7 +631,7 @@ const patcherBrowserApi: PatcherDesktopBrowserApi = {
   async interact(request): Promise<PatcherDesktopBrowserInteractResult> {
     try {
       const payload: unknown = await ipcRenderer.invoke(
-        BB_DESKTOP_BROWSER_INTERACT_CHANNEL,
+        PATCHER_DESKTOP_BROWSER_INTERACT_CHANNEL,
         request,
       );
       const parsed =
@@ -638,7 +644,7 @@ const patcherBrowserApi: PatcherDesktopBrowserApi = {
   async observe(request): Promise<PatcherDesktopBrowserObserveResult> {
     try {
       const payload: unknown = await ipcRenderer.invoke(
-        BB_DESKTOP_BROWSER_OBSERVE_CHANNEL,
+        PATCHER_DESKTOP_BROWSER_OBSERVE_CHANNEL,
         request,
       );
       const parsed =
@@ -653,7 +659,7 @@ const patcherBrowserApi: PatcherDesktopBrowserApi = {
   ): Promise<PatcherDesktopBrowserCaptureFullPageResult> {
     try {
       const payload: unknown = await ipcRenderer.invoke(
-        BB_DESKTOP_BROWSER_CAPTURE_FULL_PAGE_CHANNEL,
+        PATCHER_DESKTOP_BROWSER_CAPTURE_FULL_PAGE_CHANNEL,
         request,
       );
       const parsed =
@@ -666,7 +672,7 @@ const patcherBrowserApi: PatcherDesktopBrowserApi = {
   async storage(request): Promise<PatcherDesktopBrowserStorageResult> {
     try {
       const payload: unknown = await ipcRenderer.invoke(
-        BB_DESKTOP_BROWSER_STORAGE_CHANNEL,
+        PATCHER_DESKTOP_BROWSER_STORAGE_CHANNEL,
         request,
       );
       const parsed =
@@ -679,7 +685,7 @@ const patcherBrowserApi: PatcherDesktopBrowserApi = {
   async control(request): Promise<PatcherDesktopBrowserControlResult> {
     try {
       const payload: unknown = await ipcRenderer.invoke(
-        BB_DESKTOP_BROWSER_CONTROL_CHANNEL,
+        PATCHER_DESKTOP_BROWSER_CONTROL_CHANNEL,
         request,
       );
       const parsed =
@@ -692,7 +698,7 @@ const patcherBrowserApi: PatcherDesktopBrowserApi = {
   async record(request): Promise<PatcherDesktopBrowserRecordResult> {
     try {
       const payload: unknown = await ipcRenderer.invoke(
-        BB_DESKTOP_BROWSER_RECORD_CHANNEL,
+        PATCHER_DESKTOP_BROWSER_RECORD_CHANNEL,
         request,
       );
       const parsed = patcherDesktopBrowserRecordResultSchema.safeParse(payload);
@@ -710,9 +716,9 @@ const patcherBrowserApi: PatcherDesktopBrowserApi = {
  */
 const windowKey = process.argv
   .find((argument) =>
-    argument.startsWith(BB_DESKTOP_WINDOW_KEY_ARGUMENT_PREFIX),
+    argument.startsWith(PATCHER_DESKTOP_WINDOW_KEY_ARGUMENT_PREFIX),
   )
-  ?.slice(BB_DESKTOP_WINDOW_KEY_ARGUMENT_PREFIX.length);
+  ?.slice(PATCHER_DESKTOP_WINDOW_KEY_ARGUMENT_PREFIX.length);
 
 /**
  * Parse here and swallow rejections, the way `invokeDesktopInfo` does: a shell
@@ -753,25 +759,25 @@ const patcherDesktopApi: PatcherDesktopApi = {
   },
   version: currentInfo.version,
   checkForUpdates() {
-    return invokeDesktopInfo(BB_DESKTOP_CHECK_FOR_UPDATES_CHANNEL);
+    return invokeDesktopInfo(PATCHER_DESKTOP_CHECK_FOR_UPDATES_CHANNEL);
   },
   closeWindow() {
-    ipcRenderer.send(BB_DESKTOP_CLOSE_WINDOW_CHANNEL);
+    ipcRenderer.send(PATCHER_DESKTOP_CLOSE_WINDOW_CHANNEL);
   },
   getInfo() {
-    return invokeDesktopInfo(BB_DESKTOP_GET_INFO_CHANNEL);
+    return invokeDesktopInfo(PATCHER_DESKTOP_GET_INFO_CHANNEL);
   },
   getWindowState() {
     return invokeDesktopWindowState();
   },
   async getDefaultBrowserStatus(): Promise<PatcherDesktopDefaultBrowserStatus> {
     return await invokeDefaultBrowserStatus(
-      BB_DESKTOP_GET_DEFAULT_BROWSER_CHANNEL,
+      PATCHER_DESKTOP_GET_DEFAULT_BROWSER_CHANNEL,
     );
   },
   async requestDefaultBrowser(): Promise<PatcherDesktopDefaultBrowserStatus> {
     return await invokeDefaultBrowserStatus(
-      BB_DESKTOP_REQUEST_DEFAULT_BROWSER_CHANNEL,
+      PATCHER_DESKTOP_REQUEST_DEFAULT_BROWSER_CHANNEL,
     );
   },
   onDefaultBrowserStatusChange(
@@ -820,19 +826,22 @@ const patcherDesktopApi: PatcherDesktopApi = {
     };
   },
   openExternalUrl(url: string): void {
-    ipcRenderer.send(BB_DESKTOP_OPEN_EXTERNAL_URL_CHANNEL, url);
+    ipcRenderer.send(PATCHER_DESKTOP_OPEN_EXTERNAL_URL_CHANNEL, url);
   },
   setTheme(theme: PatcherDesktopTheme): void {
-    ipcRenderer.send(BB_DESKTOP_SET_THEME_CHANNEL, theme);
+    ipcRenderer.send(PATCHER_DESKTOP_SET_THEME_CHANNEL, theme);
   },
 };
 
-ipcRenderer.on(BB_DESKTOP_INFO_CHANGED_CHANNEL, (_event, payload: unknown) => {
-  applyDesktopInfoPayload(payload);
-});
+ipcRenderer.on(
+  PATCHER_DESKTOP_INFO_CHANGED_CHANNEL,
+  (_event, payload: unknown) => {
+    applyDesktopInfoPayload(payload);
+  },
+);
 
 ipcRenderer.on(
-  BB_DESKTOP_DEFAULT_BROWSER_CHANGED_CHANNEL,
+  PATCHER_DESKTOP_DEFAULT_BROWSER_CHANGED_CHANNEL,
   (_event, payload: unknown) => {
     const parsed = patcherDesktopDefaultBrowserStatusSchema.safeParse(payload);
     if (!parsed.success) {
@@ -845,48 +854,54 @@ ipcRenderer.on(
 );
 
 ipcRenderer.on(
-  BB_DESKTOP_WINDOW_STATE_CHANGED_CHANNEL,
+  PATCHER_DESKTOP_WINDOW_STATE_CHANGED_CHANNEL,
   (_event, payload: unknown) => {
     applyDesktopWindowStatePayload(payload);
   },
 );
 
-ipcRenderer.on(BB_DESKTOP_OPEN_NEW_TAB_CHANNEL, () => {
+ipcRenderer.on(PATCHER_DESKTOP_OPEN_NEW_TAB_CHANNEL, () => {
   for (const listener of openNewTabListeners) {
     listener();
   }
 });
 
-ipcRenderer.on(BB_DESKTOP_APP_COMMAND_CHANNEL, (_event, payload: unknown) => {
-  const parsed = appCommandIdSchema.safeParse(payload);
-  if (!parsed.success) return;
-  for (const listener of appCommandListeners) {
-    listener(parsed.data);
-  }
-});
+ipcRenderer.on(
+  PATCHER_DESKTOP_APP_COMMAND_CHANNEL,
+  (_event, payload: unknown) => {
+    const parsed = appCommandIdSchema.safeParse(payload);
+    if (!parsed.success) return;
+    for (const listener of appCommandListeners) {
+      listener(parsed.data);
+    }
+  },
+);
 
-ipcRenderer.on(BB_DESKTOP_CLOSE_WINDOW_REQUEST_CHANNEL, () => {
+ipcRenderer.on(PATCHER_DESKTOP_CLOSE_WINDOW_REQUEST_CHANNEL, () => {
   let handled = false;
   for (const listener of closeWindowRequestListeners) {
     handled = listener() || handled;
   }
   // Always answer: main closes the window on `false` and falls back to
   // closing it itself if no answer arrives in time.
-  ipcRenderer.send(BB_DESKTOP_CLOSE_WINDOW_RESPONSE_CHANNEL, handled);
-});
-
-ipcRenderer.on(BB_DESKTOP_BROWSER_STATE_CHANNEL, (_event, payload: unknown) => {
-  const parsed = patcherDesktopBrowserStateSchema.safeParse(payload);
-  if (!parsed.success) {
-    return;
-  }
-  for (const listener of browserStateListeners) {
-    listener(parsed.data);
-  }
+  ipcRenderer.send(PATCHER_DESKTOP_CLOSE_WINDOW_RESPONSE_CHANNEL, handled);
 });
 
 ipcRenderer.on(
-  BB_DESKTOP_BROWSER_OPEN_TAB_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_STATE_CHANNEL,
+  (_event, payload: unknown) => {
+    const parsed = patcherDesktopBrowserStateSchema.safeParse(payload);
+    if (!parsed.success) {
+      return;
+    }
+    for (const listener of browserStateListeners) {
+      listener(parsed.data);
+    }
+  },
+);
+
+ipcRenderer.on(
+  PATCHER_DESKTOP_BROWSER_OPEN_TAB_CHANNEL,
   (_event, payload: unknown) => {
     const parsed = patcherDesktopBrowserOpenTabRequestSchema.safeParse(payload);
     if (!parsed.success) {
@@ -899,7 +914,7 @@ ipcRenderer.on(
 );
 
 ipcRenderer.on(
-  BB_DESKTOP_BROWSER_SCOPED_OPEN_TAB_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_SCOPED_OPEN_TAB_CHANNEL,
   (_event, payload: unknown) => {
     const parsed =
       patcherDesktopBrowserScopedOpenTabRequestSchema.safeParse(payload);
@@ -912,7 +927,7 @@ ipcRenderer.on(
   },
 );
 
-ipcRenderer.on(BB_DESKTOP_BROWSER_EXTERNAL_URLS_PENDING_CHANNEL, () => {
+ipcRenderer.on(PATCHER_DESKTOP_BROWSER_EXTERNAL_URLS_PENDING_CHANNEL, () => {
   // No payload to parse: the queue in main is the single source, and every
   // listener answers by draining it.
   for (const listener of browserExternalUrlsPendingListeners) {
@@ -921,7 +936,7 @@ ipcRenderer.on(BB_DESKTOP_BROWSER_EXTERNAL_URLS_PENDING_CHANNEL, () => {
 });
 
 ipcRenderer.on(
-  BB_DESKTOP_BROWSER_SNAPSHOT_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_SNAPSHOT_CHANNEL,
   (_event, payload: unknown) => {
     const parsed = patcherDesktopBrowserSnapshotSchema.safeParse(payload);
     if (!parsed.success) {
@@ -934,7 +949,7 @@ ipcRenderer.on(
 );
 
 ipcRenderer.on(
-  BB_DESKTOP_BROWSER_FAVICON_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_FAVICON_CHANNEL,
   (_event, payload: unknown) => {
     const parsed = patcherDesktopBrowserFaviconSchema.safeParse(payload);
     if (!parsed.success) {
@@ -947,7 +962,7 @@ ipcRenderer.on(
 );
 
 ipcRenderer.on(
-  BB_DESKTOP_BROWSER_PAGE_SECURITY_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_PAGE_SECURITY_CHANNEL,
   (_event, payload: unknown) => {
     const parsed = patcherDesktopBrowserPageSecuritySchema.safeParse(payload);
     if (!parsed.success) {
@@ -959,18 +974,21 @@ ipcRenderer.on(
   },
 );
 
-ipcRenderer.on(BB_DESKTOP_BROWSER_ZOOM_CHANNEL, (_event, payload: unknown) => {
-  const parsed = patcherDesktopBrowserZoomSchema.safeParse(payload);
-  if (!parsed.success) {
-    return;
-  }
-  for (const listener of browserZoomListeners) {
-    listener(parsed.data);
-  }
-});
+ipcRenderer.on(
+  PATCHER_DESKTOP_BROWSER_ZOOM_CHANNEL,
+  (_event, payload: unknown) => {
+    const parsed = patcherDesktopBrowserZoomSchema.safeParse(payload);
+    if (!parsed.success) {
+      return;
+    }
+    for (const listener of browserZoomListeners) {
+      listener(parsed.data);
+    }
+  },
+);
 
 ipcRenderer.on(
-  BB_DESKTOP_BROWSER_CONTEXT_MENU_INVOKE_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_CONTEXT_MENU_INVOKE_CHANNEL,
   (_event, payload: unknown) => {
     const parsed =
       patcherDesktopBrowserContextMenuInvokeSchema.safeParse(payload);
@@ -984,7 +1002,7 @@ ipcRenderer.on(
 );
 
 ipcRenderer.on(
-  BB_DESKTOP_BROWSER_SEARCH_SELECTION_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_SEARCH_SELECTION_CHANNEL,
   (_event, payload: unknown) => {
     const parsed =
       patcherDesktopBrowserSearchSelectionSchema.safeParse(payload);
@@ -998,7 +1016,7 @@ ipcRenderer.on(
 );
 
 ipcRenderer.on(
-  BB_DESKTOP_BROWSER_DOWNLOAD_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_DOWNLOAD_CHANNEL,
   (_event, payload: unknown) => {
     const parsed = patcherDesktopBrowserDownloadSchema.safeParse(payload);
     if (!parsed.success) {
@@ -1011,7 +1029,7 @@ ipcRenderer.on(
 );
 
 ipcRenderer.on(
-  BB_DESKTOP_BROWSER_DEV_TOOLS_STATE_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_DEV_TOOLS_STATE_CHANNEL,
   (_event, payload: unknown) => {
     const parsed = patcherDesktopBrowserDevToolsStateSchema.safeParse(payload);
     if (!parsed.success) {
@@ -1023,18 +1041,21 @@ ipcRenderer.on(
   },
 );
 
-ipcRenderer.on(BB_DESKTOP_BROWSER_POPUP_CHANNEL, (_event, payload: unknown) => {
-  const parsed = patcherDesktopBrowserPopupSchema.safeParse(payload);
-  if (!parsed.success) {
-    return;
-  }
-  for (const listener of browserPopupListeners) {
-    listener(parsed.data);
-  }
-});
+ipcRenderer.on(
+  PATCHER_DESKTOP_BROWSER_POPUP_CHANNEL,
+  (_event, payload: unknown) => {
+    const parsed = patcherDesktopBrowserPopupSchema.safeParse(payload);
+    if (!parsed.success) {
+      return;
+    }
+    for (const listener of browserPopupListeners) {
+      listener(parsed.data);
+    }
+  },
+);
 
 ipcRenderer.on(
-  BB_DESKTOP_BROWSER_PAGE_PROMPT_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_PAGE_PROMPT_CHANNEL,
   (_event, payload: unknown) => {
     const parsed = patcherDesktopBrowserPagePromptSchema.safeParse(payload);
     if (!parsed.success) {
@@ -1047,7 +1068,7 @@ ipcRenderer.on(
 );
 
 ipcRenderer.on(
-  BB_DESKTOP_BROWSER_FIND_RESULT_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_FIND_RESULT_CHANNEL,
   (_event, payload: unknown) => {
     const parsed = patcherDesktopBrowserFindResultSchema.safeParse(payload);
     if (!parsed.success) {
@@ -1060,7 +1081,7 @@ ipcRenderer.on(
 );
 
 ipcRenderer.on(
-  BB_DESKTOP_BROWSER_PAGE_SCRIPT_CALL_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_PAGE_SCRIPT_CALL_CHANNEL,
   (_event, payload: unknown) => {
     const parsed = patcherDesktopBrowserPageScriptCallSchema.safeParse(payload);
     if (!parsed.success) {
@@ -1073,7 +1094,7 @@ ipcRenderer.on(
 );
 
 ipcRenderer.on(
-  BB_DESKTOP_BROWSER_DIALOG_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_DIALOG_CHANNEL,
   (_event, payload: unknown) => {
     const parsed = patcherDesktopBrowserDialogSchema.safeParse(payload);
     if (!parsed.success) {
@@ -1085,11 +1106,11 @@ ipcRenderer.on(
   },
 );
 
-void invokeDesktopInfo(BB_DESKTOP_GET_INFO_CHANNEL);
+void invokeDesktopInfo(PATCHER_DESKTOP_GET_INFO_CHANNEL);
 void invokeDesktopWindowState();
 
 contextBridge.exposeInMainWorld(
-  BB_DESKTOP_SPELLCHECK_GLOBAL_NAME,
+  PATCHER_DESKTOP_SPELLCHECK_GLOBAL_NAME,
   patcherSpellcheckApi,
 );
 // Two names, one object. The renderer is served by whichever server the

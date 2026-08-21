@@ -76,7 +76,7 @@ const RECENT_VISITS: readonly BrowserHistoryEntry[] = [
     "ResizeObserver - Web APIs | MDN",
     6 * 60,
   ),
-  storyVisit("https://localhost:38886/", null, 26 * 60),
+  storyVisit("https://localhost:38986/", null, 26 * 60),
 ];
 
 /**

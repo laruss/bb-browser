@@ -21,7 +21,7 @@ const baseProps = {
 
 // ---------------------------------------------------------------------------
 // System rows. Real titles, details and lifecycle shapes drawn from
-// ~/.bb-dev/bb.db events. Each row is the projected shape that the timeline
+// ~/.patcher-dev/patcher.db events. Each row is the projected shape that the timeline
 // renderer consumes — see thread-view/src/build-thread-timeline.ts and
 // parse-operation-message.ts for the upstream construction.
 // ---------------------------------------------------------------------------
@@ -45,9 +45,9 @@ const provisioningPending: TimelineRow = systemRow({
     "HEAD is now at 37eeec85 Refactor timeline row titles\n" +
     "Preparing worktree (new branch 'bb/investigate-thread-timeline-load-thr_sjgc9pafri')\n" +
     "Created worktree (305ms)\n" +
-    "Using workspace: /Users/michael/.bb-dev/worktrees/env_etyr7f84cg/bb\n" +
-    "Running .bb-env-setup.sh\n" +
-    "[bb-env-setup] Running: pnpm install\n" +
+    "Using workspace: /Users/michael/.patcher-dev/worktrees/env_etyr7f84cg/bb\n" +
+    "Running .patcher-env-setup.sh\n" +
+    "[patcher-env-setup] Running: pnpm install\n" +
     "Scope: all 35 workspace projects\n" +
     "Lockfile is up to date, resolution step is skipped\n" +
     "Progress: resolved 1094, reused 1093, downloaded 0, added 877",
@@ -70,8 +70,8 @@ const provisioningCompleted: TimelineRow = systemRow({
   title: "Provisioned thread",
   detail:
     "Created worktree (305ms)\n" +
-    "Using workspace: /Users/michael/.bb-dev/worktrees/env_etyr7f84cg/bb\n" +
-    ".bb-env-setup.sh finished (8.2s)\n" +
+    "Using workspace: /Users/michael/.patcher-dev/worktrees/env_etyr7f84cg/bb\n" +
+    ".patcher-env-setup.sh finished (8.2s)\n" +
     "Using branch: bb/investigate-thread-timeline-load-thr_sjgc9pafri (37eeec8)\n" +
     "Provisioned thread (8.7s)",
   status: "completed",

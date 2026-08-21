@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { threadScope } from "../src/thread-event-scope.js";
 import type { ThreadEvent } from "../src/provider-event.js";
 import {
-  BB_THREAD_NAME_TAG,
+  PATCHER_THREAD_NAME_TAG,
   fromProviderExternalThreadName,
   normalizeProviderThreadNameEvent,
   tagThreadName,
@@ -25,7 +25,7 @@ describe("thread name tags", () => {
       scope: threadScope(),
       threadName: tagThreadName({
         name: "[bb] Literal",
-        tag: BB_THREAD_NAME_TAG,
+        tag: PATCHER_THREAD_NAME_TAG,
       }),
     } satisfies ThreadEvent;
 

@@ -1086,8 +1086,8 @@ describe("bb browser direct control commands", () => {
       ].join("\n"),
       { mode: 0o755 },
     );
-    const previous = process.env.BB_FFMPEG;
-    process.env.BB_FFMPEG = fake;
+    const previous = process.env.PATCHER_FFMPEG;
+    process.env.PATCHER_FFMPEG = fake;
     try {
       await host.harness.runCli(["video-start", "--tab", "tab-1"]);
       const stopped = await host.harness.runCli(
@@ -1111,9 +1111,9 @@ describe("bb browser direct control commands", () => {
       expect(stopped.stdout).toContain("video.mp4");
     } finally {
       if (previous === undefined) {
-        delete process.env.BB_FFMPEG;
+        delete process.env.PATCHER_FFMPEG;
       } else {
-        process.env.BB_FFMPEG = previous;
+        process.env.PATCHER_FFMPEG = previous;
       }
       await rm(directory, { recursive: true, force: true });
     }
@@ -1136,8 +1136,8 @@ describe("bb browser direct control commands", () => {
       ].join("\n"),
       { mode: 0o755 },
     );
-    const previous = process.env.BB_FFMPEG;
-    process.env.BB_FFMPEG = fake;
+    const previous = process.env.PATCHER_FFMPEG;
+    process.env.PATCHER_FFMPEG = fake;
     try {
       await host.harness.runCli(["video-start", "--tab", "tab-1"]);
       const stopped = await host.harness.runCli(
@@ -1155,9 +1155,9 @@ describe("bb browser direct control commands", () => {
       ).toBe("first");
     } finally {
       if (previous === undefined) {
-        delete process.env.BB_FFMPEG;
+        delete process.env.PATCHER_FFMPEG;
       } else {
-        process.env.BB_FFMPEG = previous;
+        process.env.PATCHER_FFMPEG = previous;
       }
       await rm(directory, { recursive: true, force: true });
     }

@@ -40,7 +40,7 @@ const piConfigExtensionFixturePath = resolve(
 );
 const tempRoot = await mkdtemp(join(tmpdir(), "bb-app-tarball-"));
 const smokeProcessEnv = {
-  BB_TELEMETRY: "false",
+  PATCHER_TELEMETRY: "false",
 };
 
 function delay(ms) {
@@ -532,9 +532,9 @@ async function smokePiUserConfiguration(packageDir) {
     cwd: maintenanceDir,
     env: {
       ...process.env,
-      BB_PI_BRIDGE_SESSION_DIR: join(testRoot, "sessions"),
-      BB_PI_E2E_SESSION_MARKER: sessionMarkerPath,
-      BB_PI_E2E_TOOL_MARKER: toolMarkerPath,
+      PATCHER_PI_BRIDGE_SESSION_DIR: join(testRoot, "sessions"),
+      PATCHER_PI_E2E_SESSION_MARKER: sessionMarkerPath,
+      PATCHER_PI_E2E_TOOL_MARKER: toolMarkerPath,
       PI_CODING_AGENT_DIR: agentDir,
       PI_OFFLINE: "1",
     },
@@ -740,11 +740,11 @@ async function smokeConfigCommand(tarballPath) {
       dataDir,
       "config",
       "set",
-      "BB_APP_URL",
+      "PATCHER_APP_URL",
       "https://bb.example.test",
     ]),
     command: "npx",
-    label: "bb-app config BB_APP_URL",
+    label: "bb-app config PATCHER_APP_URL",
   });
 
   const configJson = JSON.parse(
@@ -754,8 +754,8 @@ async function smokeConfigCommand(tarballPath) {
   if (envJson.env?.OPENAI_API_KEY !== "test-openai-key") {
     throw new Error("Expected bb-app env to persist OPENAI_API_KEY");
   }
-  if (configJson.config?.BB_APP_URL !== "https://bb.example.test") {
-    throw new Error("Expected bb-app config to persist BB_APP_URL");
+  if (configJson.config?.PATCHER_APP_URL !== "https://bb.example.test") {
+    throw new Error("Expected bb-app config to persist PATCHER_APP_URL");
   }
 }
 
@@ -793,7 +793,7 @@ async function smokeSdkPackage(tarballPath) {
     [
       'import { BBSdk, PatcherHttpError } from "bb-app";',
       "",
-      'const bb = new BBSdk({ baseUrl: "http://127.0.0.1:38886" });',
+      'const bb = new BBSdk({ baseUrl: "http://127.0.0.1:38986" });',
       "const error: typeof PatcherHttpError = PatcherHttpError;",
       "void bb.status.get();",
       "void error;",
@@ -876,7 +876,7 @@ async function smokeFullStack(tarballPath, sdkDir) {
     ]),
     command: "npx",
     env: {
-      BB_LOG_LEVEL: "warn",
+      PATCHER_LOG_LEVEL: "warn",
     },
     label: "bb-app full stack",
   });
@@ -893,9 +893,9 @@ async function smokeFullStack(tarballPath, sdkDir) {
       url: `http://${DEFAULT_HOST_DAEMON_LOCAL_BIND_HOST}:${daemonPort}/health`,
     });
     const cliEnv = {
-      BB_DATA_DIR: dataDir,
-      BB_HOST_DAEMON_PORT: String(daemonPort),
-      BB_SERVER_URL: serverUrl,
+      PATCHER_DATA_DIR: dataDir,
+      PATCHER_HOST_DAEMON_PORT: String(daemonPort),
+      PATCHER_SERVER_URL: serverUrl,
     };
     await runCommand({
       args: createNpxArgs(tarballPath, "bb", ["status"]),
@@ -910,14 +910,14 @@ async function smokeFullStack(tarballPath, sdkDir) {
         "-e",
         [
           'import { BBSdk } from "bb-app";',
-          "const bb = new BBSdk({ baseUrl: process.env.BB_SERVER_URL });",
+          "const bb = new BBSdk({ baseUrl: process.env.PATCHER_SERVER_URL });",
           "await bb.status.get();",
         ].join("\n"),
       ],
       command: "node",
       cwd: sdkDir,
       env: {
-        BB_SERVER_URL: serverUrl,
+        PATCHER_SERVER_URL: serverUrl,
       },
       label: "bb-app SDK status",
     });
@@ -943,7 +943,7 @@ async function smokeDaemonJoin(tarballPath) {
     ]),
     command: "npx",
     env: {
-      BB_LOG_LEVEL: "warn",
+      PATCHER_LOG_LEVEL: "warn",
     },
     label: "bb-server",
   });
@@ -968,8 +968,8 @@ async function smokeDaemonJoin(tarballPath) {
       ]),
       command: "npx",
       env: {
-        BB_LOG_LEVEL: "warn",
-        BB_SERVER_URL: staleEnvServerUrl,
+        PATCHER_LOG_LEVEL: "warn",
+        PATCHER_SERVER_URL: staleEnvServerUrl,
       },
       label: "bb-app host-daemon join",
     });

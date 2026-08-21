@@ -12,7 +12,7 @@ import { createAutomationService } from "./service.js";
 import { sleep, sweepDueAutomations, SWEEP_INTERVAL_MS } from "./sweep.js";
 
 function resolveServerUrl(): string {
-  return process.env.BB_SERVER_URL?.trim() || "http://127.0.0.1:38886";
+  return process.env.PATCHER_SERVER_URL?.trim() || "http://127.0.0.1:38986";
 }
 
 export default async function plugin(bb: PatcherPluginApi) {

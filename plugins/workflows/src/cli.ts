@@ -268,7 +268,7 @@ function statusSummary(page: WorkflowRunInspectionPage) {
     history: {
       format: "jsonl",
       pageUsage: `bb workflows history ${run.id} --cursor 0 --limit ${DEFAULT_HISTORY_LIMIT}`,
-      fileUsage: `mkdir -p "$BB_THREAD_STORAGE/workflows" && bb workflows history ${run.id} --cursor 0 --limit ${DEFAULT_HISTORY_LIMIT} > "$BB_THREAD_STORAGE/workflows/${run.id}.jsonl"`,
+      fileUsage: `mkdir -p "$PATCHER_THREAD_STORAGE/workflows" && bb workflows history ${run.id} --cursor 0 --limit ${DEFAULT_HISTORY_LIMIT} > "$PATCHER_THREAD_STORAGE/workflows/${run.id}.jsonl"`,
     },
   };
 }

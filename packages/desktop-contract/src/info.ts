@@ -83,7 +83,7 @@ export type PatcherDesktopCloseWindowRequestHandler = () => boolean;
  * An argument rather than an IPC call because the answer has to exist before
  * the first module runs — see {@link PatcherDesktopApi.windowKey}.
  */
-export const BB_DESKTOP_WINDOW_KEY_ARGUMENT_PREFIX = "--bb-window-key=";
+export const PATCHER_DESKTOP_WINDOW_KEY_ARGUMENT_PREFIX = "--bb-window-key=";
 
 export interface PatcherDesktopApi extends PatcherDesktopInfo {
   /**

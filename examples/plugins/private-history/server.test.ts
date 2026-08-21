@@ -19,7 +19,7 @@ async function load(
   const host = createFakePluginHost({
     permissions: pluginPermissionsFromManifest(import.meta.url),
     pluginId: "private-history",
-    loopbackBaseUrl: "http://127.0.0.1:38886",
+    loopbackBaseUrl: "http://127.0.0.1:38986",
     settings,
     sdk: {
       browserHistory: {

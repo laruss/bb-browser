@@ -54,7 +54,7 @@ function resolvePatcherSkillScanRoots(
   if (resolution.cwd !== null) {
     roots.push(
       createPatcherSkillScanRoot(
-        path.join(resolution.cwd, ".bb", "skills"),
+        path.join(resolution.cwd, ".patcher", "skills"),
         "bb-project",
       ),
     );
@@ -214,7 +214,7 @@ function resolveDeletableSkillRoot(
     if (!path.isAbsolute(cwd)) {
       throw new CommandDispatchError("invalid_path", "cwd must be absolute");
     }
-    return path.join(cwd, ".bb", "skills");
+    return path.join(cwd, ".patcher", "skills");
   }
   if (args.rootPath === null || !path.isAbsolute(args.rootPath)) {
     throw new CommandDispatchError(

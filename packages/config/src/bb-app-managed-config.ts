@@ -10,22 +10,22 @@ import {
 } from "@patcher/domain";
 import { z } from "zod";
 
-export const BB_APP_CONFIG_FILE_NAME = "config.json";
-export const BB_APP_ENV_FILE_NAME = "env.json";
+export const PATCHER_APP_CONFIG_FILE_NAME = "config.json";
+export const PATCHER_APP_ENV_FILE_NAME = "env.json";
 
 export type PatcherAppManagedConfigKey =
-  | "BB_APP_URL"
-  | "BB_INFERENCE"
-  | "BB_INFERENCE_FALLBACK"
-  | "BB_LOG_LEVEL"
-  | "BB_TRANSCRIPTION";
+  | "PATCHER_APP_URL"
+  | "PATCHER_INFERENCE"
+  | "PATCHER_INFERENCE_FALLBACK"
+  | "PATCHER_LOG_LEVEL"
+  | "PATCHER_TRANSCRIPTION";
 
-export const BB_APP_MANAGED_CONFIG_KEYS: PatcherAppManagedConfigKey[] = [
-  "BB_APP_URL",
-  "BB_INFERENCE",
-  "BB_INFERENCE_FALLBACK",
-  "BB_LOG_LEVEL",
-  "BB_TRANSCRIPTION",
+export const PATCHER_APP_MANAGED_CONFIG_KEYS: PatcherAppManagedConfigKey[] = [
+  "PATCHER_APP_URL",
+  "PATCHER_INFERENCE",
+  "PATCHER_INFERENCE_FALLBACK",
+  "PATCHER_LOG_LEVEL",
+  "PATCHER_TRANSCRIPTION",
 ];
 
 export const PORTABLE_ENV_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/u;
@@ -42,11 +42,11 @@ export interface ParsePatcherAppManagedConfigOptions {
 
 export const patcherAppManagedConfigValuesSchema = z
   .object({
-    BB_APP_URL: z.string().optional(),
-    BB_INFERENCE: z.string().optional(),
-    BB_INFERENCE_FALLBACK: z.string().optional(),
-    BB_LOG_LEVEL: z.string().optional(),
-    BB_TRANSCRIPTION: z.string().optional(),
+    PATCHER_APP_URL: z.string().optional(),
+    PATCHER_INFERENCE: z.string().optional(),
+    PATCHER_INFERENCE_FALLBACK: z.string().optional(),
+    PATCHER_LOG_LEVEL: z.string().optional(),
+    PATCHER_TRANSCRIPTION: z.string().optional(),
   })
   .strict();
 
@@ -286,9 +286,9 @@ export function parsePatcherAppManagedConfig(
 }
 
 export function formatPatcherAppConfigPath(dataDir: string): string {
-  return join(dataDir, BB_APP_CONFIG_FILE_NAME);
+  return join(dataDir, PATCHER_APP_CONFIG_FILE_NAME);
 }
 
 export function formatPatcherAppEnvPath(dataDir: string): string {
-  return join(dataDir, BB_APP_ENV_FILE_NAME);
+  return join(dataDir, PATCHER_APP_ENV_FILE_NAME);
 }

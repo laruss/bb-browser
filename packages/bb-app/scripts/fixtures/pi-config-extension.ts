@@ -61,9 +61,9 @@ export default function configurePi(pi: ExtensionAPI): void {
     description: "A tool from the user's Pi extension.",
     parameters: Type.Object({ value: Type.String() }),
     async execute(_toolCallId, params) {
-      const markerPath = process.env.BB_PI_E2E_TOOL_MARKER;
+      const markerPath = process.env.PATCHER_PI_E2E_TOOL_MARKER;
       if (!markerPath) {
-        throw new Error("BB_PI_E2E_TOOL_MARKER is not set");
+        throw new Error("PATCHER_PI_E2E_TOOL_MARKER is not set");
       }
       writeFileSync(markerPath, params.value, "utf8");
       return {
@@ -74,9 +74,9 @@ export default function configurePi(pi: ExtensionAPI): void {
   });
 
   pi.on("before_agent_start", (_event, context) => {
-    const markerPath = process.env.BB_PI_E2E_SESSION_MARKER;
+    const markerPath = process.env.PATCHER_PI_E2E_SESSION_MARKER;
     if (!markerPath) {
-      throw new Error("BB_PI_E2E_SESSION_MARKER is not set");
+      throw new Error("PATCHER_PI_E2E_SESSION_MARKER is not set");
     }
     writeFileSync(
       markerPath,

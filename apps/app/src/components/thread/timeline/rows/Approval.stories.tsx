@@ -17,7 +17,7 @@ const baseProps = {
 };
 
 // ---------------------------------------------------------------------------
-// Approval rows aren't persisted as their own events in ~/.bb-dev/bb.db — the
+// Approval rows aren't persisted as their own events in ~/.patcher-dev/patcher.db — the
 // server projects pending-interaction state into TimelineApprovalWorkRows on
 // the fly. So these fixtures inline the projected shape directly, but the
 // `interactionId` / `target.itemId` / `target.toolName` values are real

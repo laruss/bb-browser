@@ -138,7 +138,7 @@ describe("acp adapter command plans", () => {
         approvalReviewer: "user",
         permissionEscalation: "ask",
         instructions: "Stay focused.",
-        envVars: { BB_THREAD_ID: "thread-1" },
+        envVars: { PATCHER_THREAD_ID: "thread-1" },
       },
       instructionMode: "append",
     });
@@ -153,7 +153,7 @@ describe("acp adapter command plans", () => {
         permissionMode: "accept-edits",
         permissionEscalation: "ask",
         workspaceWriteRoots: ["/workspace", "/extra-root"],
-        envVars: { BB_THREAD_ID: "thread-1" },
+        envVars: { PATCHER_THREAD_ID: "thread-1" },
         instructions: "Stay focused.",
       },
     });

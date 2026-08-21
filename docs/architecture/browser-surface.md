@@ -445,7 +445,7 @@ the page's URL**:
   from the shell's **allowlist** rather than from the response. A page cannot put a
   scheme, a URL, or a media type of its choosing into the strip's `<img>`.
 - Candidates are `http(s)` only, the body is capped
-  (`BB_DESKTOP_BROWSER_MAX_FAVICON_BYTES`), and a page that churns its
+  (`PATCHER_DESKTOP_BROWSER_MAX_FAVICON_BYTES`), and a page that churns its
   `<link rel=icon>` hits the same sliding-window limiter the popup policy uses.
 - SVG is refused: a document format with a parser surface a 16px icon does not
   need. `.ico`, PNG, JPEG, GIF, WebP and BMP go through.

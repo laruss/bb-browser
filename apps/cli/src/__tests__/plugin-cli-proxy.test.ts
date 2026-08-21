@@ -21,10 +21,10 @@ import {
   type PluginCliContributionEntry,
 } from "../plugin-cli-proxy.js";
 
-// Mirror of RESERVED_BB_CLI_COMMANDS in
+// Mirror of RESERVED_PATCHER_CLI_COMMANDS in
 // apps/server/src/services/plugins/plugin-api.ts — the server rejects plugin
 // CLI commands shadowing core bb commands. Update both together.
-const RESERVED_BB_CLI_COMMANDS = [
+const RESERVED_PATCHER_CLI_COMMANDS = [
   "environment",
   "guide",
   "help",
@@ -64,11 +64,11 @@ function topLevelCommandNames(program: Command): string[] {
 describe("reserved bb CLI command names", () => {
   it("every core top-level command is on the server's reserved list", () => {
     const names = topLevelCommandNames(buildProgram());
-    const reserved = new Set(RESERVED_BB_CLI_COMMANDS);
+    const reserved = new Set(RESERVED_PATCHER_CLI_COMMANDS);
     for (const name of names) {
       expect(
         reserved,
-        `"${name}" is missing from RESERVED_BB_CLI_COMMANDS`,
+        `"${name}" is missing from RESERVED_PATCHER_CLI_COMMANDS`,
       ).toContain(name);
     }
   });
@@ -76,7 +76,7 @@ describe("reserved bb CLI command names", () => {
   it("the reserved list carries no stale entries", () => {
     const names = new Set(topLevelCommandNames(buildProgram()));
     names.add("help"); // commander built-in
-    for (const reserved of RESERVED_BB_CLI_COMMANDS) {
+    for (const reserved of RESERVED_PATCHER_CLI_COMMANDS) {
       expect(
         names,
         `"${reserved}" is reserved but not a core command`,
@@ -99,7 +99,7 @@ describe("pluginProxyCandidate", () => {
     const names = new Set(topLevelCommandNames(buildProgram()));
     names.add("help");
     for (const moved of ["automation", "connect"]) {
-      expect(RESERVED_BB_CLI_COMMANDS).not.toContain(moved);
+      expect(RESERVED_PATCHER_CLI_COMMANDS).not.toContain(moved);
       expect(pluginProxyCandidate(moved, names)).toBe(moved);
     }
   });
@@ -180,11 +180,11 @@ describe("fetchPluginCliContributions", () => {
 });
 
 describe("describeUnreachableServer", () => {
-  const url = "http://127.0.0.1:38886";
+  const url = "http://127.0.0.1:38986";
 
   function fetchFailed(code: string): Error {
     return new TypeError("fetch failed", {
-      cause: Object.assign(new Error(`connect ${code} 127.0.0.1:38886`), {
+      cause: Object.assign(new Error(`connect ${code} 127.0.0.1:38986`), {
         code,
       }),
     });
@@ -192,7 +192,7 @@ describe("describeUnreachableServer", () => {
 
   function aggregateFetchFailed(codes: string[]): Error {
     const errors = codes.map((code, index) =>
-      Object.assign(new Error(`connect ${code} address-${index + 1}:38886`), {
+      Object.assign(new Error(`connect ${code} address-${index + 1}:38986`), {
         code,
       }),
     );

@@ -1,6 +1,6 @@
 /**
  * When agent shells rewrite PATH, a user-global or stale `bb` may win over the
- * daemon-managed binary. The host daemon injects absolute `BB_CLI` pointing at
+ * daemon-managed binary. The host daemon injects absolute `PATCHER_CLI` pointing at
  * that binary; official CLI entrypoints hop there once so bare `bb` still works.
  */
 
@@ -9,7 +9,7 @@ import { realpathSync } from "node:fs";
 import { resolve } from "node:path";
 
 /** Set on the re-exec child so a shell-script → node hop cannot loop. */
-export const BB_CLI_REEXEC_ENV = "BB_CLI_REEXEC";
+export const PATCHER_CLI_REEXEC_ENV = "PATCHER_CLI_REEXEC";
 
 export interface MaybeReexecViaPatcherCliArgs {
   env?: NodeJS.ProcessEnv;
@@ -37,7 +37,7 @@ function tryRealpath(path: string): string | null {
 }
 
 /**
- * If `BB_CLI` names a different executable than the one currently running,
+ * If `PATCHER_CLI` names a different executable than the one currently running,
  * re-exec it with the same argv. No-op when unset, equal, missing, or already
  * in a re-exec hop.
  */
@@ -45,11 +45,11 @@ export function maybeReexecViaPatcherCli(
   options: MaybeReexecViaPatcherCliArgs = {},
 ): void {
   const env = options.env ?? process.env;
-  if (env[BB_CLI_REEXEC_ENV] === "1") {
+  if (env[PATCHER_CLI_REEXEC_ENV] === "1") {
     return;
   }
 
-  const targetRaw = env.BB_CLI?.trim();
+  const targetRaw = env.PATCHER_CLI?.trim();
   if (!targetRaw) {
     return;
   }
@@ -68,7 +68,7 @@ export function maybeReexecViaPatcherCli(
   const argv = options.argv ?? process.argv.slice(2);
   const childEnv: NodeJS.ProcessEnv = {
     ...env,
-    [BB_CLI_REEXEC_ENV]: "1",
+    [PATCHER_CLI_REEXEC_ENV]: "1",
   };
 
   if (options.reexec) {
@@ -82,7 +82,7 @@ export function maybeReexecViaPatcherCli(
   });
   if (result.error) {
     process.stderr.write(
-      `bb: failed to re-exec BB_CLI=${target}: ${result.error.message}\n`,
+      `bb: failed to re-exec PATCHER_CLI=${target}: ${result.error.message}\n`,
     );
     process.exitCode = 1;
     return;

@@ -10,9 +10,9 @@ export default defineWorkspaceTestConfig({
     include: ["src/**/*.test.ts", "test/**/*.test.ts"],
     exclude: ["dist/**", "node_modules/**"],
     env: {
-      BB_DATA_DIR: "/tmp/bb-host-daemon-test",
-      BB_SERVER_URL: "http://127.0.0.1:49161",
-      BB_HOST_DAEMON_PORT: "49162",
+      PATCHER_DATA_DIR: "/tmp/bb-host-daemon-test",
+      PATCHER_SERVER_URL: "http://127.0.0.1:49161",
+      PATCHER_HOST_DAEMON_PORT: "49162",
     },
     testTimeout: 15_000,
     // Builds real git repositories a process at a time, and starts a real

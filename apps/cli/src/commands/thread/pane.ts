@@ -64,7 +64,7 @@ export function registerPaneCommand(
           ) {
             return;
           }
-          printContextLabel(target, "Thread", "BB_THREAD_ID", opts);
+          printContextLabel(target, "Thread", "PATCHER_THREAD_ID", opts);
           console.log(`Thread: ${target.id}`);
           console.log(`Pane action: ${paneAction}`);
           console.log(`Delivered: ${result.delivered}`);

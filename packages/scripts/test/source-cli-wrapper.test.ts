@@ -21,10 +21,10 @@ interface StatusWrapperPayload {
 const testDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(testDir, "..", "..", "..");
 const contextEnvKeys: string[] = [
-  "BB_ENVIRONMENT_ID",
-  "BB_PROJECT_ID",
-  "BB_THREAD_ID",
-  "BB_THREAD_STORAGE",
+  "PATCHER_ENVIRONMENT_ID",
+  "PATCHER_PROJECT_ID",
+  "PATCHER_THREAD_ID",
+  "PATCHER_THREAD_STORAGE",
 ];
 const spawnedChildren: ChildProcessWithoutNullStreams[] = [];
 
@@ -33,7 +33,7 @@ function buildCleanEnv(): NodeJS.ProcessEnv {
   for (const key of contextEnvKeys) {
     delete env[key];
   }
-  env.BB_SERVER_URL = "http://127.0.0.1:9";
+  env.PATCHER_SERVER_URL = "http://127.0.0.1:9";
   return env;
 }
 

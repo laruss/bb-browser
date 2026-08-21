@@ -1387,10 +1387,10 @@ describe("acp bridge", () => {
     const env = new Map(
       mcpServerConfig.env.map(({ name, value }) => [name, value]),
     );
-    const host = env.get("BB_ACP_DYNAMIC_TOOL_HOST");
-    const port = Number(env.get("BB_ACP_DYNAMIC_TOOL_PORT"));
-    const threadId = env.get("BB_ACP_DYNAMIC_TOOL_THREAD_ID");
-    const token = env.get("BB_ACP_DYNAMIC_TOOL_TOKEN");
+    const host = env.get("PATCHER_ACP_DYNAMIC_TOOL_HOST");
+    const port = Number(env.get("PATCHER_ACP_DYNAMIC_TOOL_PORT"));
+    const threadId = env.get("PATCHER_ACP_DYNAMIC_TOOL_THREAD_ID");
+    const token = env.get("PATCHER_ACP_DYNAMIC_TOOL_TOKEN");
     if (!host || !Number.isInteger(port) || !threadId || !token) {
       throw new Error("MCP server config is missing dynamic tool bridge env");
     }

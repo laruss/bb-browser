@@ -180,8 +180,8 @@ function hasWhitespaceAfterPosition(
 type ZenModeLayout = "thread" | "root-compose";
 
 const ZEN_MODE_STORAGE_KEY: Record<ZenModeLayout, string> = {
-  thread: "bb.promptbox.zen-mode.thread",
-  "root-compose": "bb.promptbox.zen-mode.root-compose",
+  thread: "patcher.promptbox.zen-mode.thread",
+  "root-compose": "patcher.promptbox.zen-mode.root-compose",
 };
 
 const ZEN_MODE_HEIGHT_CLASS: Record<ZenModeLayout, string> = {

@@ -87,15 +87,15 @@ server_host=$(node -e '
 service_slug=$(printf '%s' "$server_host" | tr '.' '-')
 
 # Each server gets its own data dir and daemon instance, so one machine can
-# serve several bb servers and a full local bb install keeps ~/.bb to itself.
-data_dir=${BB_DATA_DIR:-"$HOME/.bb-machines/$server_host"}
+# serve several bb servers and a full local bb install keeps ~/.patcher to itself.
+data_dir=${PATCHER_DATA_DIR:-"$HOME/.patcher-machines/$server_host"}
 mkdir -p "$data_dir"
 mkdir -p "$data_dir/logs"
 canonical_data_dir=$(node -e '
   const fs = require("node:fs");
   process.stdout.write(fs.realpathSync(process.argv[1]));
 ' "$data_dir")
-port_registry_dir="$HOME/.bb-machines/host-daemon-ports"
+port_registry_dir="$HOME/.patcher-machines/host-daemon-ports"
 mkdir -p "$port_registry_dir"
 
 valid_port() {
@@ -185,7 +185,7 @@ release_port_for_data_dir() {
 # per-port mkdir is the allocation lock: concurrent installers cannot claim the
 # same port even after its availability probe closes.
 register_existing_default_ports() {
-  for existing_data_dir in "$HOME/.bb-machines"/*; do
+  for existing_data_dir in "$HOME/.patcher-machines"/*; do
     [ -d "$existing_data_dir" ] || continue
     existing_port_file="$existing_data_dir/host-daemon-port"
     [ -f "$existing_port_file" ] || continue
@@ -345,7 +345,7 @@ join_pid=
 if [ "$already_joined" = no ]; then
   join_log="$data_dir/install-join.log"
   echo "Joining $server_url as $host_id..."
-  BB_DATA_DIR="$data_dir" nohup "$bb_app" host-daemon join \
+  PATCHER_DATA_DIR="$data_dir" nohup "$bb_app" host-daemon join \
     --auto-update \
     --host-daemon-port "$host_daemon_port" \
     --join-code "$join_code" \
@@ -381,7 +381,7 @@ fi
 
 # Tests and source-development smoke runs can leave the enrolled daemon in the
 # foreground-supervised process without modifying the user's service manager.
-if [ "${BB_INSTALL_SKIP_SERVICE:-0}" = 1 ]; then
+if [ "${PATCHER_INSTALL_SKIP_SERVICE:-0}" = 1 ]; then
   if [ -n "$join_pid" ]; then
     echo "Service installation skipped; daemon PID $join_pid is still running."
   else
@@ -436,7 +436,7 @@ if [ "$platform" = darwin ]; then
     <string>$escaped_server</string>
   </array>
   <key>EnvironmentVariables</key>
-  <dict><key>BB_DATA_DIR</key><string>$escaped_data_dir</string></dict>
+  <dict><key>PATCHER_DATA_DIR</key><string>$escaped_data_dir</string></dict>
   <key>RunAtLoad</key><true/>
   <key>KeepAlive</key><true/>
   <key>StandardOutPath</key><string>$escaped_data_dir/logs/launchd.log</string>
@@ -481,7 +481,7 @@ Wants=network-online.target
 
 [Service]
 ExecStart="$escaped_node_bin" "$escaped_bb_app" host-daemon --auto-update --host-daemon-port "$host_daemon_port" --server-url "$escaped_server"
-Environment="BB_DATA_DIR=$escaped_data_dir"
+Environment="PATCHER_DATA_DIR=$escaped_data_dir"
 Restart=always
 RestartSec=2
 

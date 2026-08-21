@@ -1117,7 +1117,7 @@ describe("RuntimeManager", () => {
       createRuntime,
       shellEnv: {
         PATH: "/tmp/bb-bin:/usr/bin",
-        BB_SERVER_URL: "http://127.0.0.1:3334",
+        PATCHER_SERVER_URL: "http://127.0.0.1:3334",
       },
     });
 
@@ -1130,7 +1130,7 @@ describe("RuntimeManager", () => {
       expect.objectContaining({
         shellEnv: {
           PATH: "/tmp/bb-bin:/usr/bin",
-          BB_SERVER_URL: "http://127.0.0.1:3334",
+          PATCHER_SERVER_URL: "http://127.0.0.1:3334",
         },
       }),
     );
@@ -1172,7 +1172,7 @@ describe("RuntimeManager", () => {
       createRuntime,
       shellEnv: {
         PATH: "/tmp/bb-bin:/home/me/.local/bin:/usr/bin",
-        BB_SERVER_URL: "http://127.0.0.1:3334",
+        PATCHER_SERVER_URL: "http://127.0.0.1:3334",
         OPENAI_API_KEY: "test-openai-key",
       },
     });
@@ -1189,7 +1189,7 @@ describe("RuntimeManager", () => {
         },
         shellEnv: {
           PATH: "/tmp/bb-bin:/home/me/.local/bin:/usr/bin",
-          BB_SERVER_URL: "http://127.0.0.1:3334",
+          PATCHER_SERVER_URL: "http://127.0.0.1:3334",
           OPENAI_API_KEY: "test-openai-key",
         },
       }),
@@ -1253,7 +1253,7 @@ describe("RuntimeManager", () => {
     ).resolves.toBe(firstRuntime);
     await manager.replaceBaseShellEnv({
       PATH: "/new/bin:/usr/bin",
-      BB_SERVER_URL: "http://127.0.0.1:3334",
+      PATCHER_SERVER_URL: "http://127.0.0.1:3334",
     });
     await expect(
       manager.ensureProviderMaintenanceRuntime({ dataDir }),
@@ -1268,7 +1268,7 @@ describe("RuntimeManager", () => {
         },
         shellEnv: {
           PATH: "/new/bin:/usr/bin",
-          BB_SERVER_URL: "http://127.0.0.1:3334",
+          PATCHER_SERVER_URL: "http://127.0.0.1:3334",
         },
       }),
     );

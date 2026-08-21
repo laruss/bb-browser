@@ -302,7 +302,7 @@ describe("workflow service policy integration", () => {
     const named = source("return { kind: 'named', args };", "named-child");
     const path = source("return { kind: 'path', args };", "path-child");
     const test = setup(DEFAULT_WORKFLOW_SETTINGS, {
-      "/workspace/.bb/workflows/named-child.js": named,
+      "/workspace/.patcher/workflows/named-child.js": named,
       "/workspace/child.js": path,
     });
     harnesses.push(test.harness);
@@ -328,7 +328,7 @@ describe("workflow service policy integration", () => {
       [
         {
           hostId: "host-1",
-          path: "/workspace/.bb/workflows/named-child.js",
+          path: "/workspace/.patcher/workflows/named-child.js",
           rootPath: "/workspace",
         },
       ],
@@ -349,7 +349,7 @@ describe("workflow service policy integration", () => {
     const named = source("return { kind: 'named', args };", "named-child");
     const path = source("return { kind: 'path', args };", "path-child");
     const test = setup(DEFAULT_WORKFLOW_SETTINGS, {
-      "/workspace/.bb/workflows/named-child.js": named,
+      "/workspace/.patcher/workflows/named-child.js": named,
       "/workspace/child.js": path,
     });
     harnesses.push(test.harness);
@@ -377,7 +377,7 @@ describe("workflow service policy integration", () => {
       [
         {
           hostId: "host-1",
-          path: "/workspace/.bb/workflows/named-child.js",
+          path: "/workspace/.patcher/workflows/named-child.js",
           rootPath: "/workspace",
         },
       ],
@@ -402,11 +402,11 @@ describe("workflow service policy integration", () => {
       releaseFirst = resolve;
     });
     const children: Record<string, string> = {
-      "/workspace/.bb/workflows/first.js": source(
+      "/workspace/.patcher/workflows/first.js": source(
         `return await agent("first-agent");`,
         "first",
       ),
-      "/workspace/.bb/workflows/second.js": source(
+      "/workspace/.patcher/workflows/second.js": source(
         `return await agent("second-agent");`,
         "second",
       ),

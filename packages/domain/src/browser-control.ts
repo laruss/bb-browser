@@ -17,7 +17,7 @@ import { z } from "zod";
  * server serves the SPA, so both ends always ship together.
  */
 
-/** Mirrors BB_DESKTOP_BROWSER_MAX_URL_LENGTH; the two must not drift. */
+/** Mirrors PATCHER_DESKTOP_BROWSER_MAX_URL_LENGTH; the two must not drift. */
 export const BROWSER_COMMAND_MAX_URL_LENGTH = 4096;
 export const BROWSER_COMMAND_MAX_TITLE_LENGTH = 1024;
 /**
@@ -26,7 +26,7 @@ export const BROWSER_COMMAND_MAX_TITLE_LENGTH = 1024;
  * wanting less passes a smaller `maxLength`.
  */
 export const BROWSER_COMMAND_MAX_PAGE_TEXT_LENGTH = 65_536;
-/** Mirrors BB_DESKTOP_BROWSER_MAX_SELECTOR_LENGTH. */
+/** Mirrors PATCHER_DESKTOP_BROWSER_MAX_SELECTOR_LENGTH. */
 export const BROWSER_COMMAND_MAX_SELECTOR_LENGTH = 1024;
 
 /**
@@ -58,7 +58,7 @@ const optionalTabIdSchema = z.string().min(1).nullable();
 
 /**
  * Caps on what an interaction carries. These mirror the desktop contract's
- * (`BB_DESKTOP_BROWSER_MAX_FILL_TEXT_LENGTH` and its neighbours) and must not
+ * (`PATCHER_DESKTOP_BROWSER_MAX_FILL_TEXT_LENGTH` and its neighbours) and must not
  * drift: this schema is the agent-facing wire and that one is the shell wire,
  * and the app translates between them without re-checking sizes.
  */
@@ -144,7 +144,7 @@ export type BrowserInteraction = z.infer<typeof browserInteractionSchema>;
 
 /**
  * Caps on observations. These mirror the desktop contract's
- * (`BB_DESKTOP_BROWSER_MAX_SCREENSHOT_BASE64_LENGTH` and its neighbours) and
+ * (`PATCHER_DESKTOP_BROWSER_MAX_SCREENSHOT_BASE64_LENGTH` and its neighbours) and
  * must not drift, for the same reason the interaction caps must not: the app
  * forwards a value parsed here straight into the schema parsed there.
  */

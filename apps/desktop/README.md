@@ -20,12 +20,12 @@ bunx turbo run dev --filter=@patcher/desktop
 
 The dev script builds `bb-app`, compiles the Electron main/preload files, and
 opens Electron directly. By default it uses the same checkout-scoped
-`~/.bb-dev/<checkout-instance>` data directory and deterministic high ports as
+`~/.patcher-dev/<checkout-instance>` data directory and deterministic high ports as
 the main repo dev launcher; it prints the resolved data dir, server URL, and
 Electron user-data dir at startup. It intentionally overwrites inherited
-`BB_DATA_DIR`, `BB_SERVER_PORT`, `BB_SERVER_URL`, and `BB_HOST_DAEMON_PORT` so a
+`PATCHER_DATA_DIR`, `PATCHER_SERVER_PORT`, `PATCHER_SERVER_URL`, and `PATCHER_HOST_DAEMON_PORT` so a
 desktop dev run launched from an existing bb session still targets the current
-checkout. Set `BB_DESKTOP_USER_DATA_DIR` to override only Electron's user-data
+checkout. Set `PATCHER_DESKTOP_USER_DATA_DIR` to override only Electron's user-data
 directory.
 
 The launcher probes the checkout's Vite app port at startup and adapts:
@@ -39,7 +39,7 @@ The launcher probes the checkout's Vite app port at startup and adapts:
   loads the built UI it serves, so you must rebuild (re-run this task) to pick up
   source changes. The launcher prints `app (own bb-app runtime — …)`.
 
-The override is plumbed via `BB_DESKTOP_APP_URL`, which the launcher only sets
+The override is plumbed via `PATCHER_DESKTOP_APP_URL`, which the launcher only sets
 when Vite is confirmed reachable; it is never set in packaged builds, so
 production always loads the server's own built UI.
 
@@ -135,11 +135,11 @@ npx bb-app@nightly
 
 Stable and nightly desktop bundles can coexist. Electron-owned preferences,
 window state, and process supervision use separate application data
-directories; the embedded bb runtime still uses the normal `~/.bb` data and
+directories; the embedded bb runtime still uses the normal `~/.patcher` data and
 default server port unless the corresponding environment variables are
 overridden.
 
-Nightly builds set `BB_DESKTOP_RELEASE_CHANNEL=nightly` at build time. The value
+Nightly builds set `PATCHER_DESKTOP_RELEASE_CHANNEL=nightly` at build time. The value
 is baked into the Electron main/preload bundles and selects the nightly product
 identity, yellow icon, and update URLs. Omit the variable (or set it to
 `latest`) for stable and local builds.
@@ -178,7 +178,7 @@ checks run in parallel on launch, hourly, and when the app becomes active: the
 JSON feed can show "update available" even when CI has published metadata only,
 while the Electron updater only flips the toast to "ready to install" after a
 signed update has actually downloaded. Local dev builds skip Electron auto-update
-unless `BB_DESKTOP_AUTO_UPDATE=1` is set.
+unless `PATCHER_DESKTOP_AUTO_UPDATE=1` is set.
 
 `bb Nightly` follows the equivalent isolated `desktop-nightly` release and
 `nightly-mac.yml`; it never reads or moves the stable feed. The scheduled
@@ -195,14 +195,14 @@ codesign --verify --deep --strict --verbose=2 /path/to/bb.app
 ## Debugging
 
 Use the View menu to toggle DevTools. To open them automatically on launch, set
-`BB_DESKTOP_OPEN_DEVTOOLS=1`:
+`PATCHER_DESKTOP_OPEN_DEVTOOLS=1`:
 
 ```bash
-BB_DESKTOP_OPEN_DEVTOOLS=1 apps/desktop/release/mac-arm64/bb.app/Contents/MacOS/bb
+PATCHER_DESKTOP_OPEN_DEVTOOLS=1 apps/desktop/release/mac-arm64/bb.app/Contents/MacOS/bb
 ```
 
 When the desktop app spawns `bb-app`, server and daemon logs land under
-`~/.bb/logs/` or `$BB_DATA_DIR/logs/` when `BB_DATA_DIR` is set.
+`~/.patcher/logs/` or `$PATCHER_DATA_DIR/logs/` when `PATCHER_DATA_DIR` is set.
 
 To verify attach-if-found manually, start a compatible bb first, then launch the
 desktop app:

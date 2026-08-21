@@ -108,7 +108,7 @@ describe("discoverProviderCommands (claude-code)", () => {
   it("leaves bb-managed skills to the server catalog", async () => {
     const fixture = await makeWorkspaceFixture();
     await writeFileEnsuringDir(
-      path.join(fixture.cwd, ".bb", "skills", "project-bb", "SKILL.md"),
+      path.join(fixture.cwd, ".patcher", "skills", "project-bb", "SKILL.md"),
       "---\nname: project-bb\ndescription: Project bb skill\n---\n",
     );
     await writeFileEnsuringDir(
@@ -877,7 +877,7 @@ describe("discoverProviderCommands (codex)", () => {
   it("leaves bb-managed skills to the server catalog", async () => {
     const fixture = await makeWorkspaceFixture();
     await writeFileEnsuringDir(
-      path.join(fixture.cwd, ".bb", "skills", "project-bb", "SKILL.md"),
+      path.join(fixture.cwd, ".patcher", "skills", "project-bb", "SKILL.md"),
       "---\nname: project-bb\ndescription: Project bb skill\n---\n",
     );
     await writeFileEnsuringDir(

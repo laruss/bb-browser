@@ -1,6 +1,6 @@
 import { extractErrorMessage } from "@patcher/core-ui";
 
-export const DEFAULT_BB_REQUEST_TIMEOUT_MS = 75_000;
+export const DEFAULT_PATCHER_REQUEST_TIMEOUT_MS = 75_000;
 
 export type FetchImplementation = typeof fetch;
 
@@ -146,7 +146,7 @@ export async function resolveResponse<TResponse extends Response>(
   } catch (error) {
     if (isTypeErrorWithCauseCode(error, "ECONNREFUSED")) {
       throw new Error(
-        "Cannot connect to BB server. Ensure it is running and BB_SERVER_URL is correct.",
+        "Cannot connect to BB server. Ensure it is running and PATCHER_SERVER_URL is correct.",
       );
     }
     throw error;

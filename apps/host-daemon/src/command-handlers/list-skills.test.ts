@@ -88,7 +88,13 @@ describe("resolveSkillScanRoots + discoverSkills (claude-code)", () => {
   it("classifies host-owned project and provider roots only", async () => {
     const fixture = await makeWorkspaceFixture();
     const files = {
-      "proj-bb": path.join(fixture.cwd, ".bb", "skills", "proj-bb", "SKILL.md"),
+      "proj-bb": path.join(
+        fixture.cwd,
+        ".patcher",
+        "skills",
+        "proj-bb",
+        "SKILL.md",
+      ),
       "data-bb": path.join(fixture.dataDir, "skills", "data-bb", "SKILL.md"),
       "builtin-bb": path.join(
         fixture.builtinSkillsRootPath,
@@ -133,8 +139,8 @@ describe("resolveSkillScanRoots + discoverSkills (claude-code)", () => {
   });
 
   it("keeps native skill IDs stable when the workspace root moves", async () => {
-    const firstRoot = path.join(tempRoot, "checkout-a", ".bb", "skills");
-    const secondRoot = path.join(tempRoot, "checkout-b", ".bb", "skills");
+    const firstRoot = path.join(tempRoot, "checkout-a", ".patcher", "skills");
+    const secondRoot = path.join(tempRoot, "checkout-b", ".patcher", "skills");
     await writeSkill(path.join(firstRoot, "review", "SKILL.md"), "review");
     await writeSkill(path.join(secondRoot, "review", "SKILL.md"), "review");
 
@@ -171,7 +177,7 @@ describe("resolveSkillScanRoots + discoverSkills (claude-code)", () => {
   it("drops project roots when cwd is null", async () => {
     const fixture = await makeWorkspaceFixture();
     await writeSkill(
-      path.join(fixture.cwd, ".bb", "skills", "proj-bb", "SKILL.md"),
+      path.join(fixture.cwd, ".patcher", "skills", "proj-bb", "SKILL.md"),
       "proj-bb",
     );
     await writeSkill(
@@ -198,7 +204,7 @@ describe("resolveSkillScanRoots + discoverSkills (codex)", () => {
       "user-codex",
     );
     await writeSkill(
-      path.join(fixture.cwd, ".bb", "skills", "proj-bb", "SKILL.md"),
+      path.join(fixture.cwd, ".patcher", "skills", "proj-bb", "SKILL.md"),
       "proj-bb",
     );
 
@@ -416,9 +422,14 @@ describe("deleteHostSkill", () => {
     expect(result.deletedPath).toContain("doomed");
   });
 
-  it("deletes a bb-project skill directory under cwd/.bb/skills", async () => {
+  it("deletes a bb-project skill directory under cwd/.patcher/skills", async () => {
     const fixture = await makeWorkspaceFixture();
-    const skillDir = path.join(fixture.cwd, ".bb", "skills", "proj-doomed");
+    const skillDir = path.join(
+      fixture.cwd,
+      ".patcher",
+      "skills",
+      "proj-doomed",
+    );
     await writeSkill(path.join(skillDir, "SKILL.md"), "proj-doomed");
 
     await deleteHostSkill(

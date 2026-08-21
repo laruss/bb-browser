@@ -1,9 +1,9 @@
 import {
-  BB_DESKTOP_BROWSER_MAX_COOKIE_NAME_LENGTH,
-  BB_DESKTOP_BROWSER_MAX_COOKIE_VALUE_LENGTH,
-  BB_DESKTOP_BROWSER_MAX_STORAGE_ITEMS,
-  BB_DESKTOP_BROWSER_MAX_STORAGE_TOTAL_LENGTH,
-  BB_DESKTOP_BROWSER_MAX_STORAGE_VALUE_LENGTH,
+  PATCHER_DESKTOP_BROWSER_MAX_COOKIE_NAME_LENGTH,
+  PATCHER_DESKTOP_BROWSER_MAX_COOKIE_VALUE_LENGTH,
+  PATCHER_DESKTOP_BROWSER_MAX_STORAGE_ITEMS,
+  PATCHER_DESKTOP_BROWSER_MAX_STORAGE_TOTAL_LENGTH,
+  PATCHER_DESKTOP_BROWSER_MAX_STORAGE_VALUE_LENGTH,
   type PatcherDesktopBrowserCookie,
   type PatcherDesktopBrowserStorageItem,
   type PatcherDesktopBrowserStorageOperation,
@@ -106,19 +106,19 @@ export function toBrowserCookie(
   return {
     name: truncate(
       String(cookie.name ?? ""),
-      BB_DESKTOP_BROWSER_MAX_COOKIE_NAME_LENGTH,
+      PATCHER_DESKTOP_BROWSER_MAX_COOKIE_NAME_LENGTH,
     ),
     value: truncate(
       String(cookie.value ?? ""),
-      BB_DESKTOP_BROWSER_MAX_COOKIE_VALUE_LENGTH,
+      PATCHER_DESKTOP_BROWSER_MAX_COOKIE_VALUE_LENGTH,
     ),
     domain: truncate(
       String(cookie.domain ?? ""),
-      BB_DESKTOP_BROWSER_MAX_COOKIE_NAME_LENGTH,
+      PATCHER_DESKTOP_BROWSER_MAX_COOKIE_NAME_LENGTH,
     ),
     path: truncate(
       String(cookie.path ?? "/"),
-      BB_DESKTOP_BROWSER_MAX_COOKIE_NAME_LENGTH,
+      PATCHER_DESKTOP_BROWSER_MAX_COOKIE_NAME_LENGTH,
     ),
     expires,
     httpOnly: cookie.httpOnly === true,
@@ -199,17 +199,17 @@ export function buildBrowserStorageScript(
       let total = 0;
       let truncated = false;
       for (let index = 0; index < store.length; index += 1) {
-        if (items.length >= ${BB_DESKTOP_BROWSER_MAX_STORAGE_ITEMS}) {
+        if (items.length >= ${PATCHER_DESKTOP_BROWSER_MAX_STORAGE_ITEMS}) {
           truncated = true;
           break;
         }
         const name = String(store.key(index) ?? "");
         const raw = String(store.getItem(name) ?? "");
-        const value = raw.slice(0, ${BB_DESKTOP_BROWSER_MAX_STORAGE_VALUE_LENGTH});
+        const value = raw.slice(0, ${PATCHER_DESKTOP_BROWSER_MAX_STORAGE_VALUE_LENGTH});
         if (value.length < raw.length) {
           truncated = true;
         }
-        if (total + name.length + value.length > ${BB_DESKTOP_BROWSER_MAX_STORAGE_TOTAL_LENGTH}) {
+        if (total + name.length + value.length > ${PATCHER_DESKTOP_BROWSER_MAX_STORAGE_TOTAL_LENGTH}) {
           truncated = true;
           break;
         }
@@ -272,7 +272,7 @@ export function parseBrowserStorageItems(
     return null;
   }
   const items: PatcherDesktopBrowserStorageItem[] = [];
-  for (const entry of record.items.slice(0, BB_DESKTOP_BROWSER_MAX_STORAGE_ITEMS)) {
+  for (const entry of record.items.slice(0, PATCHER_DESKTOP_BROWSER_MAX_STORAGE_ITEMS)) {
     if (typeof entry !== "object" || entry === null) {
       return null;
     }
@@ -280,11 +280,11 @@ export function parseBrowserStorageItems(
     items.push({
       name: truncate(
         String(item.name ?? ""),
-        BB_DESKTOP_BROWSER_MAX_COOKIE_NAME_LENGTH,
+        PATCHER_DESKTOP_BROWSER_MAX_COOKIE_NAME_LENGTH,
       ),
       value: truncate(
         String(item.value ?? ""),
-        BB_DESKTOP_BROWSER_MAX_STORAGE_VALUE_LENGTH,
+        PATCHER_DESKTOP_BROWSER_MAX_STORAGE_VALUE_LENGTH,
       ),
     });
   }

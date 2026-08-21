@@ -16,7 +16,7 @@ async function load(
   const host = createFakePluginHost({
     permissions: pluginPermissionsFromManifest(import.meta.url),
     pluginId: "omnibox-agent",
-    loopbackBaseUrl: "http://127.0.0.1:38886",
+    loopbackBaseUrl: "http://127.0.0.1:38986",
     settings,
     sdk: { threads: { spawn: async () => ({ id: "th_1" }) } },
   });
@@ -84,7 +84,7 @@ describe("omnibox-agent", () => {
         }),
       ],
     ]);
-    expect(result).toEqual({ navigate: "http://127.0.0.1:38886/threads/th_1" });
+    expect(result).toEqual({ navigate: "http://127.0.0.1:38986/threads/th_1" });
   });
 
   it("refuses to run without a project", async () => {
@@ -105,7 +105,7 @@ describe("omnibox-agent", () => {
         id: "ask-agent",
         name: "Ask an agent",
         urlTemplate:
-          "http://127.0.0.1:38886/api/v1/plugins/omnibox-agent/http/ask?q=%s",
+          "http://127.0.0.1:38986/api/v1/plugins/omnibox-agent/http/ask?q=%s",
       },
       {
         id: "kagi",
@@ -125,7 +125,7 @@ describe("omnibox-agent", () => {
 
     expect(response.status).toBe(302);
     expect(response.headers.get("location")).toBe(
-      "http://127.0.0.1:38886/threads/th_1",
+      "http://127.0.0.1:38986/threads/th_1",
     );
     expect(host.harness.sdk.callsTo("threads.spawn")).toEqual([
       [

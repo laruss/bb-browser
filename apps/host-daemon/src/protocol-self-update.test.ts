@@ -124,7 +124,7 @@ describe("protocol self-update", () => {
   });
 
   it("allows auto-update over loopback HTTP", async () => {
-    const test = await createFixture({ serverUrl: "http://127.0.0.1:38886" });
+    const test = await createFixture({ serverUrl: "http://127.0.0.1:38986" });
     await expect(test.updater.handleProtocolMismatch()).resolves.toBe(
       "updated",
     );

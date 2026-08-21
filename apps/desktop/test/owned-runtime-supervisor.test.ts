@@ -80,7 +80,7 @@ describe("owned runtime supervisor", () => {
     await writeOwnedRuntimePidFile({
       bridgePath,
       pid: 12345,
-      serverUrl: "http://127.0.0.1:38886",
+      serverUrl: "http://127.0.0.1:38986",
       userDataPath: tempDir.path,
     });
 
@@ -112,7 +112,7 @@ describe("owned runtime supervisor", () => {
     await writeOwnedRuntimePidFile({
       bridgePath,
       pid: 12345,
-      serverUrl: "http://127.0.0.1:38886",
+      serverUrl: "http://127.0.0.1:38986",
       userDataPath: tempDir.path,
     });
 
@@ -138,7 +138,7 @@ describe("owned runtime supervisor", () => {
     await writeOwnedRuntimePidFile({
       bridgePath,
       pid: 12345,
-      serverUrl: "http://127.0.0.1:38886",
+      serverUrl: "http://127.0.0.1:38986",
       userDataPath: tempDir.path,
     });
 

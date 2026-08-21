@@ -17,8 +17,8 @@ import {
 } from "../src/shared.js";
 
 const RESTART_PROVIDER_ENV_BLOCK =
-  'case "${BB_QA_OPENAI_API_KEY-}" in *[![:space:]]*) OPENAI_API_KEY="$BB_QA_OPENAI_API_KEY"; export OPENAI_API_KEY ;; *) unset OPENAI_API_KEY ;; esac';
-const DAEMON_ENV_BLOCK_PREFIX = "; BB_DATA_DIR=";
+  'case "${PATCHER_QA_OPENAI_API_KEY-}" in *[![:space:]]*) OPENAI_API_KEY="$PATCHER_QA_OPENAI_API_KEY"; export OPENAI_API_KEY ;; *) unset OPENAI_API_KEY ;; esac';
+const DAEMON_ENV_BLOCK_PREFIX = "; PATCHER_DATA_DIR=";
 
 interface ShellCommandResult {
   processGroupId: number;
@@ -220,17 +220,17 @@ describe("standalone restart command", () => {
   it("clears inherited thread context from env-format setup output", () => {
     expect(
       buildStandaloneShellExports({
-        BB_HOST_DAEMON_PORT: "3334",
-        BB_PROJECT_ID: "proj_standalone",
-        BB_SERVER_URL: "http://127.0.0.1:3333",
+        PATCHER_HOST_DAEMON_PORT: "3334",
+        PATCHER_PROJECT_ID: "proj_standalone",
+        PATCHER_SERVER_URL: "http://127.0.0.1:3333",
       }).split("\n"),
     ).toEqual([
-      "unset BB_THREAD_ID",
-      "unset BB_ENVIRONMENT_ID",
-      "unset BB_THREAD_STORAGE",
-      "export BB_HOST_DAEMON_PORT='3334'",
-      "export BB_PROJECT_ID='proj_standalone'",
-      "export BB_SERVER_URL='http://127.0.0.1:3333'",
+      "unset PATCHER_THREAD_ID",
+      "unset PATCHER_ENVIRONMENT_ID",
+      "unset PATCHER_THREAD_STORAGE",
+      "export PATCHER_HOST_DAEMON_PORT='3334'",
+      "export PATCHER_PROJECT_ID='proj_standalone'",
+      "export PATCHER_SERVER_URL='http://127.0.0.1:3333'",
     ]);
   });
 
@@ -238,17 +238,18 @@ describe("standalone restart command", () => {
     expect(
       buildStandaloneRuntimeEnv({
         baseEnv: {
-          BB_ENVIRONMENT_ID: "env_parent",
-          BB_THREAD_ID: "thr_parent",
-          BB_THREAD_STORAGE: "/home/user/.bb/thread-storage/thr_parent",
+          PATCHER_ENVIRONMENT_ID: "env_parent",
+          PATCHER_THREAD_ID: "thr_parent",
+          PATCHER_THREAD_STORAGE:
+            "/home/user/.patcher/thread-storage/thr_parent",
           PATH: "/usr/bin",
         },
         overrides: {
-          BB_DATA_DIR: "/tmp/standalone/bb-root",
+          PATCHER_DATA_DIR: "/tmp/standalone/bb-root",
         },
       }),
     ).toEqual({
-      BB_DATA_DIR: "/tmp/standalone/bb-root",
+      PATCHER_DATA_DIR: "/tmp/standalone/bb-root",
       PATH: "/usr/bin",
     });
   });
@@ -290,11 +291,11 @@ describe("standalone restart command", () => {
     expect(command).toContain("(kill '123' >/dev/null 2>&1 || true)");
     expect(command).toContain("/repo/.env");
     expect(command).toContain(RESTART_PROVIDER_ENV_BLOCK);
-    expect(command).toContain("BB_DATA_DIR=");
-    expect(command).toContain("BB_STANDALONE_INSTANCE=");
-    expect(command).toContain("BB_RESTART_DAEMON_ENTRYPOINT=");
-    expect(command).toContain("BB_RESTART_DAEMON_CWD=");
-    expect(command).toContain("BB_RESTART_DAEMON_PID_PATH=");
+    expect(command).toContain("PATCHER_DATA_DIR=");
+    expect(command).toContain("PATCHER_STANDALONE_INSTANCE=");
+    expect(command).toContain("PATCHER_RESTART_DAEMON_ENTRYPOINT=");
+    expect(command).toContain("PATCHER_RESTART_DAEMON_CWD=");
+    expect(command).toContain("PATCHER_RESTART_DAEMON_PID_PATH=");
     expect(command).toContain("/repo/apps/host-daemon/dist/index.js");
     expect(command).toContain(
       "</dev/null >> '/tmp/bb logs/host-daemon.log' 2>&1",

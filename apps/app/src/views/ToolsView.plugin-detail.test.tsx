@@ -37,7 +37,7 @@ import type { PluginFrontendDiagnostic } from "@/lib/plugin-frontend";
 const GITHUB_PLUGIN = {
   id: "github",
   source: "builtin:github",
-  rootDir: "/Users/you/.bb/plugins/github",
+  rootDir: "/Users/you/.patcher/plugins/github",
   version: "0.1.0",
   enabled: true,
   status: "running",
@@ -246,7 +246,7 @@ describe("PluginDetail official catalog lifecycle", () => {
         .closest("[data-resource-detail-section]")
         ?.getAttribute("data-resource-detail-section"),
     ).toBe("release");
-    const rootPath = screen.getByText("~/.bb/plugins/github");
+    const rootPath = screen.getByText("~/.patcher/plugins/github");
     expect(rootPath.className).toContain("truncate");
     expect(rootPath.className).not.toContain("break-all");
     expect(rootPath.closest("button")?.className).toContain(
@@ -254,11 +254,13 @@ describe("PluginDetail official catalog lifecycle", () => {
     );
     fireEvent.click(
       screen.getByRole("button", {
-        name: "Copy plugin path: /Users/you/.bb/plugins/github",
+        name: "Copy plugin path: /Users/you/.patcher/plugins/github",
       }),
     );
     await waitFor(() => {
-      expect(writeText).toHaveBeenCalledWith("/Users/you/.bb/plugins/github");
+      expect(writeText).toHaveBeenCalledWith(
+        "/Users/you/.patcher/plugins/github",
+      );
     });
     expect(screen.getByText("Updates with bb")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Check now" })).toBeNull();
@@ -308,7 +310,7 @@ describe("PluginDetail official catalog lifecycle", () => {
       name: "Update GitHub to 1.5.0",
     });
     const activation = screen.getByRole("switch", { name: "Disable GitHub" });
-    const path = screen.getByText("~/.bb/plugins/github");
+    const path = screen.getByText("~/.patcher/plugins/github");
     const releaseSection = document.querySelector(
       '[data-resource-detail-section="release"]',
     );

@@ -614,7 +614,8 @@ function buildPiConfig(
   options?: ProviderExecutionContext,
 ): Record<string, unknown> | undefined {
   const config: Record<string, unknown> = {};
-  if (threadId) config["shell_environment_policy.set.BB_THREAD_ID"] = threadId;
+  if (threadId)
+    config["shell_environment_policy.set.PATCHER_THREAD_ID"] = threadId;
   const shellEnvironmentConfig = buildShellEnvironmentPolicyConfig(
     options?.envVars,
   );

@@ -17,7 +17,7 @@ Spawning:
     --title <title>                Thread title
     --project <id>                 Project (required)
     --parent-thread <id>           Parent thread
-    --parent-self                  Parent to the current thread (BB_THREAD_ID)
+    --parent-self                  Parent to the current thread (PATCHER_THREAD_ID)
     --provider <id>                Provider override
     --model <model>                Model override
     --reasoning-level <level>      Reasoning level: low, medium, high, xhigh, max (provider-dependent)
@@ -80,14 +80,14 @@ Forking:
 Editing a sent message (requires the `editMessages` experiment):
 
   bb thread edit-message <id> --message "Replacement text"
-    --self                              Target the current thread (BB_THREAD_ID)
+    --self                              Target the current thread (PATCHER_THREAD_ID)
     --expected-request-sequence <seq>   Select the message and reject a stale target
 
   Without --expected-request-sequence, the latest eligible message is edited.
   Codex, Claude Code, and Pi threads are supported. The original conversation
   remains unchanged until the provider prepares the replacement history.
   Submitting replaces that turn and every later turn while retaining workspace
-  changes. From an agent thread, the command carries `BB_THREAD_ID` so the
+  changes. From an agent thread, the command carries `PATCHER_THREAD_ID` so the
   replacement runs under agent permission policy.
 
 Listing:
@@ -146,7 +146,7 @@ Opening threads and files in the app:
     --split <placement>                    right, down, left, top, or replace
   bb thread pane <action> [thread-id]      Maximize, restore, or toggle an open thread pane
 
-  Inside a BB thread, BB_THREAD_ID selects the current thread automatically and
+  Inside a BB thread, PATCHER_THREAD_ID selects the current thread automatically and
   the thread ID argument is omitted for file-only opens. Pass an explicit thread
   ID with --split to open another thread. Outside a BB thread, pass the thread ID
   as the first argument. A thread already open in a pane is focused instead of
@@ -155,7 +155,7 @@ Opening threads and files in the app:
   Pane actions broadcast to connected BB app windows and affect the matching
   already-open pane without changing its split tree.
   Paths can be thread-relative workspace paths, or absolute paths inside the
-  target thread workspace. Absolute paths under BB_THREAD_STORAGE open as
+  target thread workspace. Absolute paths under PATCHER_THREAD_STORAGE open as
   thread-storage files for the current thread. Use this for Markdown or HTML
   artifacts you create for the user so they open in the BB IDE.
 

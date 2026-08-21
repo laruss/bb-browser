@@ -99,7 +99,7 @@ interface FoundRepo {
  * Walk `root` breadth-first to `maxDepth`, stopping at each repo root.
  *
  * Dot-directories are skipped deliberately, and not only for speed: on a real
- * machine the repos they hide were inside `.nvm`, `.codex/.tmp`, and `.bb-dev`
+ * machine the repos they hide were inside `.nvm`, `.codex/.tmp`, and `.patcher-dev`
  * — tool internals, never user projects.
  */
 async function walkForRepos(

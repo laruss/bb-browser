@@ -90,7 +90,7 @@ function resolveSpawnParentThreadId(args: {
   if (args.parentSelf) {
     const selfThreadId = resolveContextThreadId();
     if (!selfThreadId) {
-      throw new Error("--parent-self requires BB_THREAD_ID to be set.");
+      throw new Error("--parent-self requires PATCHER_THREAD_ID to be set.");
     }
     return selfThreadId;
   }
@@ -186,7 +186,7 @@ export function registerSpawnCommand(
     )
     .option("--host <id-or-name>", "Alias for --machine")
     .option("--parent-thread <id>", "Parent thread ID for worker thread links")
-    .option("--parent-self", "Parent the new thread to BB_THREAD_ID")
+    .option("--parent-self", "Parent the new thread to PATCHER_THREAD_ID")
     .option(
       "--provider <id>",
       "Provider ID for the thread. Omit to use the project's remembered provider choice",

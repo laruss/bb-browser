@@ -26,7 +26,7 @@ function recordFor(dataDir: string, pid: number) {
     dataDir,
     entryPath: "/opt/bb/bb-app.js",
     pid,
-    serverUrl: "http://127.0.0.1:38886",
+    serverUrl: "http://127.0.0.1:38986",
     startedAt: "2026-08-03T10:00:00.000Z",
     surface: "web",
     version: "0.34.0",

@@ -389,7 +389,7 @@ describe("desktop auto-update service", () => {
   it("allows the dev-mode auto-update override", () => {
     expect(
       shouldEnableDesktopAutoUpdate({
-        env: { BB_DESKTOP_AUTO_UPDATE: "1" },
+        env: { PATCHER_DESKTOP_AUTO_UPDATE: "1" },
         isPackaged: false,
       }),
     ).toBe(true);

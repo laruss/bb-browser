@@ -12,14 +12,14 @@ import { z } from "zod";
  * simply writes nothing; readers must treat a missing file as "unknown", not as
  * "not running".
  */
-export const BB_APP_RUNTIME_FILE_NAME = "bb-app-runtime.json";
+export const PATCHER_APP_RUNTIME_FILE_NAME = "bb-app-runtime.json";
 
 export const patcherAppRuntimeFileSchema = z.object({
   /** Absolute path of the entry module. Readers verify it against `ps`. */
   entryPath: z.string().min(1),
   /** PID of the launcher process that supervises the server and daemon. */
   pid: z.number().int().positive(),
-  /** How the launcher was started, from `BB_APP_SURFACE`. */
+  /** How the launcher was started, from `PATCHER_APP_SURFACE`. */
   surface: z.string().min(1),
   serverUrl: z.string().min(1),
   startedAt: z.string().min(1),
@@ -39,7 +39,7 @@ export interface WritePatcherAppRuntimeFileArgs {
 }
 
 export function formatPatcherAppRuntimeFilePath(dataDir: string): string {
-  return join(dataDir, BB_APP_RUNTIME_FILE_NAME);
+  return join(dataDir, PATCHER_APP_RUNTIME_FILE_NAME);
 }
 
 function defaultIsRunning(pid: number): boolean {

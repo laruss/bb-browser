@@ -1,6 +1,6 @@
 import {
-  BB_DESKTOP_BROWSER_MAX_ZOOM_FACTOR,
-  BB_DESKTOP_BROWSER_MIN_ZOOM_FACTOR,
+  PATCHER_DESKTOP_BROWSER_MAX_ZOOM_FACTOR,
+  PATCHER_DESKTOP_BROWSER_MIN_ZOOM_FACTOR,
 } from "@patcher/desktop-contract";
 
 /**
@@ -59,8 +59,8 @@ export function clampBrowserZoomFactor(factor: number): number {
     return BROWSER_ZOOM_DEFAULT_FACTOR;
   }
   return Math.min(
-    Math.max(factor, BB_DESKTOP_BROWSER_MIN_ZOOM_FACTOR),
-    BB_DESKTOP_BROWSER_MAX_ZOOM_FACTOR,
+    Math.max(factor, PATCHER_DESKTOP_BROWSER_MIN_ZOOM_FACTOR),
+    PATCHER_DESKTOP_BROWSER_MAX_ZOOM_FACTOR,
   );
 }
 

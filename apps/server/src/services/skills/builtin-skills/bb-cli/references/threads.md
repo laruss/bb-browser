@@ -65,11 +65,11 @@ isolated|reuse`, or anchor with `--source-seq-end`. Permission mode inherits
   `bb thread open <thread-id> [path] [--split <placement>]`.
 - Paths can be thread-relative workspace paths, or absolute paths inside the
   target thread workspace.
-- Absolute paths under `BB_THREAD_STORAGE` open as thread-storage files for the
+- Absolute paths under `PATCHER_THREAD_STORAGE` open as thread-storage files for the
   current thread.
 - Use `bb thread pane maximize|restore|toggle [thread-id]` to change a matching
   already-open pane in every connected BB app window. Inside a BB thread, omit
-  the id to use `BB_THREAD_ID`. The command reports how many connected clients
+  the id to use `PATCHER_THREAD_ID`. The command reports how many connected clients
   received the ephemeral action. The SDK equivalent is
   `sdk.threads.paneAction({ threadId, action })`.
 - Users can also toggle the focused pane from its header or with the configurable

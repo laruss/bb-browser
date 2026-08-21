@@ -15,19 +15,19 @@ describe("resolvePatcherAppVersion", () => {
     await rm(tempRoot, { recursive: true, force: true });
   });
 
-  it("prefers BB_APP_VERSION from the env", () => {
+  it("prefers PATCHER_APP_VERSION from the env", () => {
     expect(
       resolvePatcherAppVersion({
-        env: { BB_APP_VERSION: "1.2.3" },
+        env: { PATCHER_APP_VERSION: "1.2.3" },
         fromDir: tempRoot,
       }),
     ).toBe("1.2.3");
   });
 
-  it("trims whitespace around BB_APP_VERSION", () => {
+  it("trims whitespace around PATCHER_APP_VERSION", () => {
     expect(
       resolvePatcherAppVersion({
-        env: { BB_APP_VERSION: "  4.5.6  " },
+        env: { PATCHER_APP_VERSION: "  4.5.6  " },
         fromDir: tempRoot,
       }),
     ).toBe("4.5.6");

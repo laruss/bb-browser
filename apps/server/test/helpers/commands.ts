@@ -138,12 +138,12 @@ interface TestHostRpcSocket {
 
 function isRuntimeWorkspaceFileCommand(command: HostDaemonRpcCommand): boolean {
   if (command.type === "host.list_files") {
-    return command.path.endsWith(path.join(".bb", "skills"));
+    return command.path.endsWith(path.join(".patcher", "skills"));
   }
   if (command.type !== "host.read_file") return false;
   return (
-    command.path.endsWith(path.join(".bb", "AGENTS.md")) ||
-    command.path.includes(`${path.sep}.bb${path.sep}skills${path.sep}`)
+    command.path.endsWith(path.join(".patcher", "AGENTS.md")) ||
+    command.path.includes(`${path.sep}.patcher${path.sep}skills${path.sep}`)
   );
 }
 

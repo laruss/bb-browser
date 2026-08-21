@@ -160,7 +160,7 @@ describe("bb thread tell command output", () => {
   });
 
   it("bb thread tell includes sender thread metadata when run inside another thread", async () => {
-    vi.stubEnv("BB_THREAD_ID", "thread-sender");
+    vi.stubEnv("PATCHER_THREAD_ID", "thread-sender");
     const post = vi.fn(async () => ({ ok: true }));
     stubServerApi({ "v1.threads.:id.send.$post": post });
 
@@ -180,7 +180,7 @@ describe("bb thread tell command output", () => {
   });
 
   it("bb thread tell omits sender metadata when targeting the current thread", async () => {
-    vi.stubEnv("BB_THREAD_ID", "thread-self");
+    vi.stubEnv("PATCHER_THREAD_ID", "thread-self");
     const post = vi.fn(async () => ({ ok: true }));
     stubServerApi({ "v1.threads.:id.send.$post": post });
 

@@ -33,7 +33,7 @@ const voiceTranscriptionSchema = Type.Object({ text: Type.String() });
 
 function parseTranscriptionModel(model: string): ProviderModelInfo {
   return parseProviderModelConfig({
-    name: "BB_TRANSCRIPTION",
+    name: "PATCHER_TRANSCRIPTION",
     value: model,
   });
 }

@@ -7,7 +7,7 @@ import type { z } from "zod";
  * The two host-owned stores `bb` reads through, injected rather than reached.
  *
  * They were `db: DbConnection` until the plugin boundary needed this object to
- * build in a plugin's own process too, where there is no bb.db to open — and
+ * build in a plugin's own process too, where there is no patcher.db to open — and
  * where opening one would be the wrong answer anyway. Everything else about
  * these members stays here: the JSON round-trip, the 256KB limit, the error
  * text. Only the last inch is swapped, so the two sides of the boundary cannot
@@ -342,7 +342,7 @@ export interface PluginAgentToolRecord {
  * sync with apps/cli/src/index.ts by
  * apps/cli/src/__tests__/plugin-cli-proxy.test.ts.
  */
-export const RESERVED_BB_CLI_COMMANDS: readonly string[] = [
+export const RESERVED_PATCHER_CLI_COMMANDS: readonly string[] = [
   // "automation" is intentionally absent: the builtin automations plugin owns it.
   "environment",
   "guide",
@@ -3128,7 +3128,7 @@ export function createPluginApi(options: {
           `invalid cli command name ${JSON.stringify(name)} — use lowercase letters, digits, and "-"`,
         );
       }
-      if (RESERVED_BB_CLI_COMMANDS.includes(name)) {
+      if (RESERVED_PATCHER_CLI_COMMANDS.includes(name)) {
         throw new Error(
           `cli command name "${name}" is reserved by the bb CLI — pick another name`,
         );

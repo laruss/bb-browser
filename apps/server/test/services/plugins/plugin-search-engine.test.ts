@@ -23,7 +23,7 @@ function engineSource(templates: { evil?: string }): string {
     bb.browser.registerSearchEngine({
       id: "ask-agent",
       name: "Ask an agent",
-      urlTemplate: "http://127.0.0.1:38886/api/v1/plugins/engines/http/ask?q=%s",
+      urlTemplate: "http://127.0.0.1:38986/api/v1/plugins/engines/http/ask?q=%s",
     });
     ${
       templates.evil === undefined
@@ -99,7 +99,7 @@ describe("plugin search engines (bb.browser.registerSearchEngine)", () => {
         // A plugin's own loopback route is a legal engine — which is how "Enter
         // asks an agent" is built.
         urlTemplate:
-          "http://127.0.0.1:38886/api/v1/plugins/engines/http/ask?q=%s",
+          "http://127.0.0.1:38986/api/v1/plugins/engines/http/ask?q=%s",
       },
     ]);
   });

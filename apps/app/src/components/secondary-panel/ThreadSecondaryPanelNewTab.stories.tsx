@@ -312,7 +312,7 @@ function makeThreadStoragePathResponse(
 ): ThreadStoragePathListResponse {
   return {
     paths: [...paths],
-    storageRootPath: "/Users/michael/.bb-dev/thread-storage/thr_demo",
+    storageRootPath: "/Users/michael/.patcher-dev/thread-storage/thr_demo",
     truncated: false,
   };
 }

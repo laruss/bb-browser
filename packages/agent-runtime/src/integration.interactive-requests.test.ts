@@ -442,7 +442,7 @@ describe("interactive request scenarios", () => {
       const ctx = createTestRuntime("codex", {
         onInteractiveRequest: createApprovalResolution,
       });
-      const outsideDir = mkdtempSync(join(process.cwd(), ".bb-codex-outside-"));
+      const outsideDir = mkdtempSync(join(process.cwd(), ".patcher-codex-outside-"));
       const filePath = join(
         outsideDir,
         createTempFileName("codex-outside-write"),

@@ -65,7 +65,7 @@ function addWorkspaceOptions(command: Command): Command {
   return command
     .option(
       "--project <id>",
-      "Project ID (defaults to BB_PROJECT_ID or personal)",
+      "Project ID (defaults to PATCHER_PROJECT_ID or personal)",
     )
     .option("--environment <id>", "Project environment workspace")
     .option("--json", "Print machine-readable JSON output");

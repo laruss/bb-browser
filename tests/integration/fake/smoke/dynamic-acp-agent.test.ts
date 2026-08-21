@@ -31,7 +31,7 @@ function buildDynamicAcpAgents(): CustomAcpAgent[] {
       displayName: "Smoke ACP",
       command: fixturePath,
       args: [],
-      env: { BB_DYNAMIC_ACP_SMOKE: "thread" },
+      env: { PATCHER_DYNAMIC_ACP_SMOKE: "thread" },
       modelCli: {
         listArgs: ["--list-models"],
         selectFlag: "--model",

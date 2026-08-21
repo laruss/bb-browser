@@ -29,7 +29,7 @@ export type PluginPlacementInput = Pick<InstalledPluginRow, "provenance">;
 
 export function pluginProcessPolicy(args: {
   /**
-   * `BB_PLUGIN_PROCESS`. False loads every plugin in the server, which is what
+   * `PATCHER_PLUGIN_PROCESS`. False loads every plugin in the server, which is what
    * the server did before this policy existed — the way back if putting
    * plugins in their own process turns out to break something in the field.
    */

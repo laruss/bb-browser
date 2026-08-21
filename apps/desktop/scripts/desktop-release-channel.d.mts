@@ -10,7 +10,7 @@ export interface DesktopReleaseConfig {
   updateMetadataFileName: "latest-mac.yml" | "nightly-mac.yml";
 }
 
-export const DESKTOP_RELEASE_CHANNEL_ENV_NAME: "BB_DESKTOP_RELEASE_CHANNEL";
+export const DESKTOP_RELEASE_CHANNEL_ENV_NAME: "PATCHER_DESKTOP_RELEASE_CHANNEL";
 
 export function resolveDesktopReleaseChannel(
   env: NodeJS.ProcessEnv,

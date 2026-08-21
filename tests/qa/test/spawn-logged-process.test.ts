@@ -248,9 +248,9 @@ describe("spawnLoggedProcess", () => {
   });
 
   it("keeps standalone server runtime env isolated from inherited bb and ambient OpenAI env", async () => {
-    vi.stubEnv("BB_APP_URL", "https://inherited-app.example.test");
-    vi.stubEnv("BB_DATA_DIR", "/Users/example/.bb-dev");
-    vi.stubEnv("BB_SERVER_PORT", "3334");
+    vi.stubEnv("PATCHER_APP_URL", "https://inherited-app.example.test");
+    vi.stubEnv("PATCHER_DATA_DIR", "/Users/example/.patcher-dev");
+    vi.stubEnv("PATCHER_SERVER_PORT", "3334");
     vi.stubEnv("OPENAI_API_KEY", "ambient-openai-key");
     vi.stubGlobal(
       "fetch",
@@ -262,8 +262,8 @@ describe("spawnLoggedProcess", () => {
       env: buildStandaloneRuntimeEnv({
         baseEnv: process.env,
         overrides: {
-          BB_DATA_DIR: "/tmp/leaked-data-dir",
-          BB_SERVER_PORT: "9999",
+          PATCHER_DATA_DIR: "/tmp/leaked-data-dir",
+          PATCHER_SERVER_PORT: "9999",
         },
       }),
       logPath: "/tmp/standalone-server.log",
@@ -271,17 +271,17 @@ describe("spawnLoggedProcess", () => {
     });
 
     expect(spawnMockState.invocations[0]?.options.env).toMatchObject({
-      BB_DATA_DIR: "/tmp/standalone-server-data",
-      BB_SERVER_PORT: "4567",
+      PATCHER_DATA_DIR: "/tmp/standalone-server-data",
+      PATCHER_SERVER_PORT: "4567",
     });
     expect(
       spawnMockState.invocations[0]?.options.env?.OPENAI_API_KEY,
     ).toBeUndefined();
     expect(
-      spawnMockState.invocations[0]?.options.env?.BB_APP_URL,
+      spawnMockState.invocations[0]?.options.env?.PATCHER_APP_URL,
     ).toBeUndefined();
     expect(
-      spawnMockState.invocations[0]?.options.env?.BB_EXTERNAL_URL,
+      spawnMockState.invocations[0]?.options.env?.PATCHER_EXTERNAL_URL,
     ).toBeUndefined();
   });
 
@@ -299,8 +299,8 @@ describe("spawnLoggedProcess", () => {
     });
 
     expect(spawnMockState.invocations[0]?.options.env).toMatchObject({
-      BB_APP_URL: "https://standalone-public.example.test",
-      BB_EXTERNAL_URL: "https://standalone-public.example.test",
+      PATCHER_APP_URL: "https://standalone-public.example.test",
+      PATCHER_EXTERNAL_URL: "https://standalone-public.example.test",
     });
   });
 

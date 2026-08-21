@@ -59,7 +59,7 @@ describe("AddMachineDialog", () => {
       <AddMachineDialog
         open
         onOpenChange={vi.fn()}
-        serverUrl="http://direct.example.test:38886"
+        serverUrl="http://direct.example.test:38986"
       />,
       { wrapper },
     );
@@ -67,10 +67,10 @@ describe("AddMachineDialog", () => {
     const command = await screen.findByText(/--join-code jc_test123/);
     expect(command.textContent).toContain("--host-id host_new");
     expect(command.textContent).toContain(
-      "curl -fsSL http://direct.example.test:38886/install.sh",
+      "curl -fsSL http://direct.example.test:38986/install.sh",
     );
     expect(command.textContent).toContain(
-      "--server http://direct.example.test:38886",
+      "--server http://direct.example.test:38986",
     );
     expect(command.textContent).not.toContain(window.location.origin);
     expect(screen.getByText(/Code expires in \d+:\d{2}/)).toBeDefined();
@@ -115,7 +115,7 @@ describe("AddMachineDialog", () => {
       <AddMachineDialog
         open
         onOpenChange={vi.fn()}
-        serverUrl="http://direct.example.test:38886"
+        serverUrl="http://direct.example.test:38986"
       />,
       { wrapper },
     );

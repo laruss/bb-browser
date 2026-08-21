@@ -33,7 +33,7 @@ import {
 } from "./plugin-cli-proxy.js";
 import { resolvePatcherCliVersion } from "./version.js";
 
-// Hop to the daemon-managed binary when BB_CLI is set (agent shell env). Must
+// Hop to the daemon-managed binary when PATCHER_CLI is set (agent shell env). Must
 // run before Commander so flags/help match the intended build.
 maybeReexecViaPatcherCli();
 
@@ -61,9 +61,9 @@ program.addHelpText("after", () => {
   return `
 
 Current context:
-  BB_PROJECT_ID: ${project}
-  BB_THREAD_ID: ${thread}
-  BB_SERVER_URL: ${context.serverUrl}
+  PATCHER_PROJECT_ID: ${project}
+  PATCHER_THREAD_ID: ${thread}
+  PATCHER_SERVER_URL: ${context.serverUrl}
 
 Quick start:
   bb status

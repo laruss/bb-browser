@@ -21,7 +21,7 @@ import type { ServerLogger } from "../../types.js";
  * bb-app launcher and desktop app set NODE_ENV=production). Dev/source runs
  * never send, even if a test starts them in production mode.
  * Disabled telemetry creates nothing, not even the install-id file. Opt out
- * any run with BB_TELEMETRY=false; override the key with BB_POSTHOG_API_KEY.
+ * any run with PATCHER_TELEMETRY=false; override the key with PATCHER_POSTHOG_API_KEY.
  */
 
 const POSTHOG_INGESTION_URL = "https://us.i.posthog.com/capture/";

@@ -36,7 +36,7 @@ async function resolveHostId(options: ResolveHostIdOptions): Promise<string> {
   if (existing) {
     if (options.providedHostId && existing !== options.providedHostId) {
       throw new Error(
-        `Configured BB_HOST_ID ${options.providedHostId} does not match persisted host ID ${existing}`,
+        `Configured PATCHER_HOST_ID ${options.providedHostId} does not match persisted host ID ${existing}`,
       );
     }
     return existing;
@@ -58,7 +58,7 @@ const defaultExecFile: ExecFileFn = async (file, args = []) => {
 // matches, this is a no-op. Callers must only invoke this once the host has
 // been successfully enrolled — persisting earlier strands the daemon if
 // enrollment fails, because the file then conflicts with any subsequent
-// BB_HOST_ID provided on retry.
+// PATCHER_HOST_ID provided on retry.
 export async function persistHostId(options: {
   dataDir: string;
   hostId: string;

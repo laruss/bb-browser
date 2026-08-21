@@ -452,7 +452,7 @@ interface CreateFakePluginHostOptions {
     pluginId?: string;
     /**
      * Value served by `bb.server.loopbackBaseUrl` (always bound here, like
-     * `bb.sdk`). Defaults to "http://127.0.0.1:38886".
+     * `bb.sdk`). Defaults to "http://127.0.0.1:38986".
      */
     loopbackBaseUrl?: string;
     /**

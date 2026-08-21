@@ -363,7 +363,7 @@ export function createPluginChildRuntime(
             pluginId: config.pluginId,
             key: config.apiKey,
             fetch: patcherSdk.createRequestTimeoutFetch({
-              timeoutMs: patcherSdk.DEFAULT_BB_REQUEST_TIMEOUT_MS,
+              timeoutMs: patcherSdk.DEFAULT_PATCHER_REQUEST_TIMEOUT_MS,
             }),
           }),
           websocket: patcherSdk.createNodeWebsocketFactory({

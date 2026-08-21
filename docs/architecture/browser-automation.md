@@ -533,7 +533,7 @@ Three properties make that acceptable rather than a shrug:
   failing encoder costs the convenience, never the recording — and the failure
   message says so, because the alternative is someone re-recording a session
   they still have on disk.
-- **The lookup is a candidate list, not `PATH`.** `BB_FFMPEG` → `PATH` →
+- **The lookup is a candidate list, not `PATH`.** `PATCHER_FFMPEG` → `PATH` →
   `/opt/homebrew/bin` → `/usr/local/bin`, and each candidate is *run* rather than
   stat-ed, because a path can exist and be the wrong architecture. A server
   started from a macOS GUI inherits `/usr/bin:/bin` and nothing else, so `PATH`

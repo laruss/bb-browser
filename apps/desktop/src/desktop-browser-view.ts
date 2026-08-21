@@ -10,9 +10,9 @@ import {
   type WebContents,
 } from "electron";
 import {
-  BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH,
-  BB_DESKTOP_BROWSER_MAX_MIME_TYPE_LENGTH,
-  BB_DESKTOP_BROWSER_MAX_URL_LENGTH,
+  PATCHER_DESKTOP_BROWSER_MAX_TITLE_LENGTH,
+  PATCHER_DESKTOP_BROWSER_MAX_MIME_TYPE_LENGTH,
+  PATCHER_DESKTOP_BROWSER_MAX_URL_LENGTH,
   clampPatcherDesktopBrowserViewBounds,
   type PatcherDesktopBrowserAttachRequest,
   type PatcherDesktopBrowserNavigateRequest,
@@ -46,12 +46,12 @@ import {
   type PatcherDesktopBrowserZoom,
   type PatcherDesktopBrowserFindRequest,
   type PatcherDesktopBrowserFindResult,
-  BB_DESKTOP_BROWSER_MAX_SNAPSHOT_LENGTH,
-  BB_DESKTOP_BROWSER_MAX_DIALOG_MESSAGE_LENGTH,
+  PATCHER_DESKTOP_BROWSER_MAX_SNAPSHOT_LENGTH,
+  PATCHER_DESKTOP_BROWSER_MAX_DIALOG_MESSAGE_LENGTH,
   type PatcherDesktopBrowserDialog,
   type PatcherDesktopBrowserDialogRespondRequest,
-  BB_DESKTOP_BROWSER_MAX_CLIENT_CERTIFICATES,
-  BB_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH,
+  PATCHER_DESKTOP_BROWSER_MAX_CLIENT_CERTIFICATES,
+  PATCHER_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH,
   type PatcherDesktopBrowserPagePrompt,
   type PatcherDesktopBrowserPagePromptAnswer,
   type PatcherDesktopBrowserPagePromptDetails,
@@ -60,11 +60,11 @@ import {
   type PatcherDesktopBrowserDevToolsRequest,
   type PatcherDesktopBrowserDevToolsVisibleRequest,
   type PatcherDesktopBrowserDevToolsState,
-  BB_DESKTOP_BROWSER_MAX_COOKIES,
-  BB_DESKTOP_BROWSER_MAX_EVAL_RESULT_LENGTH,
-  BB_DESKTOP_BROWSER_MAX_PDF_BASE64_LENGTH,
-  BB_DESKTOP_BROWSER_MAX_ROUTES,
-  BB_DESKTOP_BROWSER_MAX_SCREENSHOT_BASE64_LENGTH,
+  PATCHER_DESKTOP_BROWSER_MAX_COOKIES,
+  PATCHER_DESKTOP_BROWSER_MAX_EVAL_RESULT_LENGTH,
+  PATCHER_DESKTOP_BROWSER_MAX_PDF_BASE64_LENGTH,
+  PATCHER_DESKTOP_BROWSER_MAX_ROUTES,
+  PATCHER_DESKTOP_BROWSER_MAX_SCREENSHOT_BASE64_LENGTH,
   type PatcherDesktopBrowserCaptureFullPageRequest,
   type PatcherDesktopBrowserCaptureFullPageResult,
   type PatcherDesktopBrowserConsoleEntry,
@@ -95,22 +95,22 @@ import {
 import type { AppCommandId, AppShortcutInput } from "@patcher/domain";
 import { matchesBrowserUrlPattern } from "@patcher/domain/browser-url-pattern";
 import {
-  BB_DESKTOP_BROWSER_DIALOG_CHANNEL,
-  BB_DESKTOP_BROWSER_DOWNLOAD_CHANNEL,
-  BB_DESKTOP_BROWSER_FAVICON_CHANNEL,
-  BB_DESKTOP_BROWSER_ZOOM_CHANNEL,
-  BB_DESKTOP_BROWSER_FIND_RESULT_CHANNEL,
-  BB_DESKTOP_BROWSER_PAGE_PROMPT_CHANNEL,
-  BB_DESKTOP_BROWSER_PAGE_SECURITY_CHANNEL,
-  BB_DESKTOP_BROWSER_POPUP_CHANNEL,
-  BB_DESKTOP_BROWSER_DEV_TOOLS_STATE_CHANNEL,
-  BB_DESKTOP_BROWSER_OPEN_TAB_CHANNEL,
-  BB_DESKTOP_BROWSER_SCOPED_OPEN_TAB_CHANNEL,
-  BB_DESKTOP_BROWSER_CONTEXT_MENU_INVOKE_CHANNEL,
-  BB_DESKTOP_BROWSER_PAGE_SCRIPT_CALL_CHANNEL,
-  BB_DESKTOP_BROWSER_SEARCH_SELECTION_CHANNEL,
-  BB_DESKTOP_BROWSER_SNAPSHOT_CHANNEL,
-  BB_DESKTOP_BROWSER_STATE_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_DIALOG_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_DOWNLOAD_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_FAVICON_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_ZOOM_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_FIND_RESULT_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_PAGE_PROMPT_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_PAGE_SECURITY_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_POPUP_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_DEV_TOOLS_STATE_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_OPEN_TAB_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_SCOPED_OPEN_TAB_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_CONTEXT_MENU_INVOKE_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_PAGE_SCRIPT_CALL_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_SEARCH_SELECTION_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_SNAPSHOT_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_STATE_CHANNEL,
 } from "./desktop-browser-ipc.js";
 import {
   resolveBrowserFaviconDataUrl,
@@ -131,13 +131,13 @@ import {
   type AxNode,
 } from "./desktop-browser-snapshot.js";
 import {
-  BB_BROWSER_ACTIONABILITY_SCRIPT,
-  BB_BROWSER_ACTION_POLL_INTERVAL_MS,
-  BB_BROWSER_ACTION_TIMEOUT_MS,
-  BB_BROWSER_AUTOMATION_WORLD_NAME,
-  BB_BROWSER_PREPARE_FILL_SCRIPT,
-  BB_BROWSER_READ_CHECKED_SCRIPT,
-  BB_BROWSER_SELECT_OPTION_SCRIPT,
+  PATCHER_BROWSER_ACTIONABILITY_SCRIPT,
+  PATCHER_BROWSER_ACTION_POLL_INTERVAL_MS,
+  PATCHER_BROWSER_ACTION_TIMEOUT_MS,
+  PATCHER_BROWSER_AUTOMATION_WORLD_NAME,
+  PATCHER_BROWSER_PREPARE_FILL_SCRIPT,
+  PATCHER_BROWSER_READ_CHECKED_SCRIPT,
+  PATCHER_BROWSER_SELECT_OPTION_SCRIPT,
   parseBrowserActionProbe,
   parseBrowserScriptOutcome,
   type BrowserActionBlockedReason,
@@ -152,11 +152,11 @@ import {
   type BrowserKeyEvent,
 } from "./desktop-browser-keyboard.js";
 import {
-  BB_DESKTOP_BROWSER_CONTENT_SIZE_SCRIPT,
+  PATCHER_DESKTOP_BROWSER_CONTENT_SIZE_SCRIPT,
   parseBrowserCaptureRegion,
 } from "./desktop-browser-capture.js";
 import {
-  BB_BROWSER_OBSERVATION_BUFFER_SIZE,
+  PATCHER_BROWSER_OBSERVATION_BUFFER_SIZE,
   BrowserObservationLog,
   toBrowserConsoleEntry,
   toBrowserNetworkEntry,
@@ -164,13 +164,13 @@ import {
   type BrowserNetworkRequestDetails,
 } from "./desktop-browser-observe.js";
 import {
-  BB_DESKTOP_BROWSER_PAGE_READ_SCRIPT,
-  BB_DESKTOP_BROWSER_PAGE_READ_TIMEOUT_MS,
-  BB_DESKTOP_BROWSER_PAGE_READ_WORLD_ID,
+  PATCHER_DESKTOP_BROWSER_PAGE_READ_SCRIPT,
+  PATCHER_DESKTOP_BROWSER_PAGE_READ_TIMEOUT_MS,
+  PATCHER_DESKTOP_BROWSER_PAGE_READ_WORLD_ID,
   parseBrowserPageReadContent,
 } from "./desktop-browser-page-read.js";
 import {
-  BB_DESKTOP_BROWSER_PDF_READ_TIMEOUT_MS,
+  PATCHER_DESKTOP_BROWSER_PDF_READ_TIMEOUT_MS,
   isBrowserPdfContentType,
   readBrowserPdfBytes,
   type DesktopBrowserPdfTextOutcome,
@@ -181,9 +181,9 @@ import {
   toBrowserFulfillHeaders,
 } from "./desktop-browser-control.js";
 import {
-  BB_BROWSER_SCREENCAST_MAX_HEIGHT,
-  BB_BROWSER_SCREENCAST_MAX_WIDTH,
-  BB_BROWSER_SCREENCAST_QUALITY,
+  PATCHER_BROWSER_SCREENCAST_MAX_HEIGHT,
+  PATCHER_BROWSER_SCREENCAST_MAX_WIDTH,
+  PATCHER_BROWSER_SCREENCAST_QUALITY,
   BrowserVideoRecording,
 } from "./desktop-browser-video.js";
 import {
@@ -350,7 +350,7 @@ function truncate(value: string, max: number): string {
  * Isolated, persistent partition for the in-app browser. Cookies/storage never
  * touch the bb app session (`defaultSession`) or the user's real browser.
  */
-export const BB_BROWSER_PARTITION = "persist:bb-browser";
+export const PATCHER_BROWSER_PARTITION = "persist:bb-browser";
 
 /**
  * `did-fail-load` reports aborted main-frame loads (a user navigating away, a
@@ -1135,7 +1135,7 @@ async function ensureAutomationWorld(
   }
   const created = await session.send<{ executionContextId?: number }>(
     "Page.createIsolatedWorld",
-    { frameId, worldName: BB_BROWSER_AUTOMATION_WORLD_NAME },
+    { frameId, worldName: PATCHER_BROWSER_AUTOMATION_WORLD_NAME },
   );
   if (typeof created.executionContextId !== "number") {
     throw new InteractionRefusal(
@@ -1261,14 +1261,14 @@ async function waitForActionable(
     .send("DOM.scrollIntoViewIfNeeded", { backendNodeId: target.backendNodeId })
     .catch(() => undefined);
 
-  const deadline = Date.now() + BB_BROWSER_ACTION_TIMEOUT_MS;
+  const deadline = Date.now() + PATCHER_BROWSER_ACTION_TIMEOUT_MS;
   let blocked: BrowserActionBlockedReason = "detached";
   for (;;) {
     const probe = parseBrowserActionProbe(
       await callOnElement(
         session,
         target.objectId,
-        BB_BROWSER_ACTIONABILITY_SCRIPT,
+        PATCHER_BROWSER_ACTIONABILITY_SCRIPT,
       ),
     );
     if (probe === null) {
@@ -1287,7 +1287,7 @@ async function waitForActionable(
         `Gave up waiting for the element: ${BLOCKED_REASON_TEXT[blocked]}.`,
       );
     }
-    await delay(BB_BROWSER_ACTION_POLL_INTERVAL_MS);
+    await delay(PATCHER_BROWSER_ACTION_POLL_INTERVAL_MS);
   }
 }
 
@@ -1358,7 +1358,7 @@ async function readCheckedState(
   objectId: string,
 ): Promise<boolean> {
   const outcome = parseBrowserScriptOutcome(
-    await callOnElement(session, objectId, BB_BROWSER_READ_CHECKED_SCRIPT),
+    await callOnElement(session, objectId, PATCHER_BROWSER_READ_CHECKED_SCRIPT),
   );
   if (outcome === null || !outcome.ok || outcome.checked === null) {
     throw new InteractionRefusal(
@@ -1448,7 +1448,7 @@ async function performInteraction(
         await callOnElement(
           session,
           target.objectId,
-          BB_BROWSER_SELECT_OPTION_SCRIPT,
+          PATCHER_BROWSER_SELECT_OPTION_SCRIPT,
           [{ value: [...interaction.values] }],
         ),
       );
@@ -1469,7 +1469,7 @@ async function performInteraction(
         await callOnElement(
           session,
           target.objectId,
-          BB_BROWSER_PREPARE_FILL_SCRIPT,
+          PATCHER_BROWSER_PREPARE_FILL_SCRIPT,
         ),
       );
       if (outcome === null || !outcome.ok) {
@@ -1599,7 +1599,7 @@ async function performInteraction(
             `The control did not become ${interaction.checked ? "checked" : "unchecked"}.`,
           );
         }
-        await delay(BB_BROWSER_ACTION_POLL_INTERVAL_MS);
+        await delay(PATCHER_BROWSER_ACTION_POLL_INTERVAL_MS);
       }
     }
 
@@ -1841,7 +1841,7 @@ async function evaluateInPage(
   }
   return formatBrowserEvalValue(
     response.result?.value,
-    BB_DESKTOP_BROWSER_MAX_EVAL_RESULT_LENGTH,
+    PATCHER_DESKTOP_BROWSER_MAX_EVAL_RESULT_LENGTH,
   );
 }
 
@@ -1925,10 +1925,10 @@ async function performControl(
       const existing = entry.routes.filter(
         (route) => route.pattern !== operation.route.pattern,
       );
-      if (existing.length >= BB_DESKTOP_BROWSER_MAX_ROUTES) {
+      if (existing.length >= PATCHER_DESKTOP_BROWSER_MAX_ROUTES) {
         throw new ControlRefusal(
           "too-many-routes",
-          `This tab already holds ${BB_DESKTOP_BROWSER_MAX_ROUTES} routes. Remove one first.`,
+          `This tab already holds ${PATCHER_DESKTOP_BROWSER_MAX_ROUTES} routes. Remove one first.`,
         );
       }
       // Newest first, so the route just added is the one that answers — the
@@ -2084,9 +2084,9 @@ async function performRecord(
       await session.enableDomain("Page");
       await session.send("Page.startScreencast", {
         format: "jpeg",
-        quality: BB_BROWSER_SCREENCAST_QUALITY,
-        maxWidth: BB_BROWSER_SCREENCAST_MAX_WIDTH,
-        maxHeight: BB_BROWSER_SCREENCAST_MAX_HEIGHT,
+        quality: PATCHER_BROWSER_SCREENCAST_QUALITY,
+        maxWidth: PATCHER_BROWSER_SCREENCAST_MAX_WIDTH,
+        maxHeight: PATCHER_BROWSER_SCREENCAST_MAX_HEIGHT,
         everyNthFrame: 1,
       });
     } catch (error) {
@@ -2132,11 +2132,11 @@ function entryPageIdentity(entry: BrowserViewEntry): {
   const rawTitle = entry.view.webContents.getTitle();
   const title = rawTitle.length > 0 && rawTitle !== url ? rawTitle : null;
   return {
-    url: truncate(url, BB_DESKTOP_BROWSER_MAX_URL_LENGTH),
+    url: truncate(url, PATCHER_DESKTOP_BROWSER_MAX_URL_LENGTH),
     title:
       title === null
         ? null
-        : truncate(title, BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH),
+        : truncate(title, PATCHER_DESKTOP_BROWSER_MAX_TITLE_LENGTH),
   };
 }
 
@@ -2183,7 +2183,7 @@ async function captureObservation(
   if (observation.kind === "pdf") {
     const buffer = await entry.view.webContents.printToPDF({});
     const base64 = buffer.toString("base64");
-    if (base64.length > BB_DESKTOP_BROWSER_MAX_PDF_BASE64_LENGTH) {
+    if (base64.length > PATCHER_DESKTOP_BROWSER_MAX_PDF_BASE64_LENGTH) {
       return {
         ok: false,
         reason: "too-large",
@@ -2212,7 +2212,7 @@ async function captureObservation(
       ? image.toPNG()
       : image.toJPEG(observation.quality);
   const base64 = buffer.toString("base64");
-  if (base64.length > BB_DESKTOP_BROWSER_MAX_SCREENSHOT_BASE64_LENGTH) {
+  if (base64.length > PATCHER_DESKTOP_BROWSER_MAX_SCREENSHOT_BASE64_LENGTH) {
     return {
       ok: false,
       reason: "too-large",
@@ -2253,7 +2253,7 @@ async function captureFullPageImage(
 
   const measured = await runIsolatedScript(
     entry.view.webContents,
-    BB_DESKTOP_BROWSER_CONTENT_SIZE_SCRIPT,
+    PATCHER_DESKTOP_BROWSER_CONTENT_SIZE_SCRIPT,
   );
   if (measured.kind === "timeout") {
     return {
@@ -2308,7 +2308,7 @@ async function captureFullPageImage(
       message: "The browser captured nothing.",
     };
   }
-  if (base64.length > BB_DESKTOP_BROWSER_MAX_SCREENSHOT_BASE64_LENGTH) {
+  if (base64.length > PATCHER_DESKTOP_BROWSER_MAX_SCREENSHOT_BASE64_LENGTH) {
     return {
       ok: false,
       reason: "too-large",
@@ -2349,15 +2349,16 @@ async function runIsolatedScript(
   let timer: ReturnType<typeof setTimeout> | undefined;
   return await Promise.race<IsolatedScriptOutcome>([
     webContents
-      .executeJavaScriptInIsolatedWorld(BB_DESKTOP_BROWSER_PAGE_READ_WORLD_ID, [
-        { code },
-      ])
+      .executeJavaScriptInIsolatedWorld(
+        PATCHER_DESKTOP_BROWSER_PAGE_READ_WORLD_ID,
+        [{ code }],
+      )
       .then((value: unknown) => ({ kind: "value" as const, value }))
       .catch(() => ({ kind: "failed" as const })),
     new Promise<{ kind: "timeout" }>((resolve) => {
       timer = setTimeout(
         () => resolve({ kind: "timeout" }),
-        BB_DESKTOP_BROWSER_PAGE_READ_TIMEOUT_MS,
+        PATCHER_DESKTOP_BROWSER_PAGE_READ_TIMEOUT_MS,
       );
     }),
   ]).finally(() => {
@@ -2405,7 +2406,7 @@ async function captureStorage(args: {
       kind: "cookies",
       ...page,
       cookies: found
-        .slice(0, BB_DESKTOP_BROWSER_MAX_COOKIES)
+        .slice(0, PATCHER_DESKTOP_BROWSER_MAX_COOKIES)
         .map((cookie) => toBrowserCookie(cookie)),
     };
   }
@@ -2518,18 +2519,21 @@ function buildBrowserState(
   // always validates and oversized values never reach the renderer/localStorage.
   return {
     tabId,
-    url: truncate(url, BB_DESKTOP_BROWSER_MAX_URL_LENGTH),
+    url: truncate(url, PATCHER_DESKTOP_BROWSER_MAX_URL_LENGTH),
     title:
       title === null
         ? null
-        : truncate(title, BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH),
+        : truncate(title, PATCHER_DESKTOP_BROWSER_MAX_TITLE_LENGTH),
     isLoading: webContents.isLoadingMainFrame(),
     canGoBack: webContents.navigationHistory.canGoBack(),
     canGoForward: webContents.navigationHistory.canGoForward(),
     errorText:
       entry.lastErrorText === null
         ? null
-        : truncate(entry.lastErrorText, BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH),
+        : truncate(
+            entry.lastErrorText,
+            PATCHER_DESKTOP_BROWSER_MAX_TITLE_LENGTH,
+          ),
   };
 }
 
@@ -2563,7 +2567,7 @@ export function isAllowedBrowserPermission(permission: string): boolean {
 export function createDesktopBrowserViewManager(
   args: CreateDesktopBrowserViewManagerArgs,
 ): DesktopBrowserViewManager {
-  const partition = args.partition ?? BB_BROWSER_PARTITION;
+  const partition = args.partition ?? PATCHER_BROWSER_PARTITION;
   const entries = new Map<string, BrowserViewEntry>();
   const entriesByWebContentsId = new Map<number, BrowserViewEntry>();
   // Host webContents ids with a native resize burst in flight: views of these
@@ -2876,13 +2880,13 @@ export function createDesktopBrowserViewManager(
         clearTimeout(timer);
         resolve(answer);
       });
-      send(hostWindow, BB_DESKTOP_BROWSER_PAGE_SCRIPT_CALL_CHANNEL, {
+      send(hostWindow, PATCHER_DESKTOP_BROWSER_PAGE_SCRIPT_CALL_CHANNEL, {
         callId,
         tabId: entry.tabId,
         pluginId,
         method,
         input,
-        url: truncate(callArgs.url, BB_DESKTOP_BROWSER_MAX_URL_LENGTH),
+        url: truncate(callArgs.url, PATCHER_DESKTOP_BROWSER_MAX_URL_LENGTH),
       });
     });
   }
@@ -3019,7 +3023,7 @@ export function createDesktopBrowserViewManager(
     entry: BrowserViewEntry,
     download: Omit<PatcherDesktopBrowserDownload, "tabId">,
   ): void {
-    send(entry.hostWindow, BB_DESKTOP_BROWSER_DOWNLOAD_CHANNEL, {
+    send(entry.hostWindow, PATCHER_DESKTOP_BROWSER_DOWNLOAD_CHANNEL, {
       ...download,
       tabId: entry.tabId,
     });
@@ -3079,7 +3083,7 @@ export function createDesktopBrowserViewManager(
         const dataUrl = `data:image/jpeg;base64,${image
           .toJPEG(RESIZE_SNAPSHOT_JPEG_QUALITY)
           .toString("base64")}`;
-        send(hostWindow, BB_DESKTOP_BROWSER_SNAPSHOT_CHANNEL, {
+        send(hostWindow, PATCHER_DESKTOP_BROWSER_SNAPSHOT_CHANNEL, {
           tabId,
           dataUrl,
         });
@@ -3129,10 +3133,10 @@ export function createDesktopBrowserViewManager(
       // benefit, and a payload the preload's schema drops would cost the user
       // the message about their own download.
       const source = {
-        url: truncate(item.getURL(), BB_DESKTOP_BROWSER_MAX_URL_LENGTH),
+        url: truncate(item.getURL(), PATCHER_DESKTOP_BROWSER_MAX_URL_LENGTH),
         mimeType: truncate(
           item.getMimeType(),
-          BB_DESKTOP_BROWSER_MAX_MIME_TYPE_LENGTH,
+          PATCHER_DESKTOP_BROWSER_MAX_MIME_TYPE_LENGTH,
         ),
       };
       const decision = evaluatePopupRate({
@@ -3253,7 +3257,10 @@ export function createDesktopBrowserViewManager(
     tabId: string,
     dataUrl: string | null,
   ): void {
-    send(hostWindow, BB_DESKTOP_BROWSER_FAVICON_CHANNEL, { tabId, dataUrl });
+    send(hostWindow, PATCHER_DESKTOP_BROWSER_FAVICON_CHANNEL, {
+      tabId,
+      dataUrl,
+    });
   }
 
   /**
@@ -3269,7 +3276,7 @@ export function createDesktopBrowserViewManager(
     if (entry.view.webContents.isDestroyed()) {
       return;
     }
-    send(hostWindow, BB_DESKTOP_BROWSER_ZOOM_CHANNEL, {
+    send(hostWindow, PATCHER_DESKTOP_BROWSER_ZOOM_CHANNEL, {
       tabId,
       factor: entry.view.webContents.getZoomFactor(),
     });
@@ -3293,7 +3300,7 @@ export function createDesktopBrowserViewManager(
       return;
     }
     const host = browserUrlHost(entry.view.webContents.getURL());
-    send(hostWindow, BB_DESKTOP_BROWSER_PAGE_SECURITY_CHANNEL, {
+    send(hostWindow, PATCHER_DESKTOP_BROWSER_PAGE_SECURITY_CHANNEL, {
       tabId,
       certificateTrustedByUser:
         host.length > 0 && hasAcceptedCertificateForHost(host),
@@ -3397,7 +3404,7 @@ export function createDesktopBrowserViewManager(
     }
     send(
       hostWindow,
-      BB_DESKTOP_BROWSER_STATE_CHANNEL,
+      PATCHER_DESKTOP_BROWSER_STATE_CHANNEL,
       buildBrowserState(tabId, entry),
     );
   }
@@ -3511,10 +3518,10 @@ export function createDesktopBrowserViewManager(
         };
       }
       if (fallbackUrl !== null) {
-        send(hostWindow, BB_DESKTOP_BROWSER_OPEN_TAB_CHANNEL, {
+        send(hostWindow, PATCHER_DESKTOP_BROWSER_OPEN_TAB_CHANNEL, {
           url: fallbackUrl,
         });
-        send(hostWindow, BB_DESKTOP_BROWSER_SCOPED_OPEN_TAB_CHANNEL, {
+        send(hostWindow, PATCHER_DESKTOP_BROWSER_SCOPED_OPEN_TAB_CHANNEL, {
           tabId,
           url: fallbackUrl,
         });
@@ -3526,14 +3533,14 @@ export function createDesktopBrowserViewManager(
     // page menu opens them, their own toolbar closes them — and the renderer
     // owns the space they occupy, so both directions are reported.
     webContents.on("devtools-opened", () => {
-      send(hostWindow, BB_DESKTOP_BROWSER_DEV_TOOLS_STATE_CHANNEL, {
+      send(hostWindow, PATCHER_DESKTOP_BROWSER_DEV_TOOLS_STATE_CHANNEL, {
         tabId,
         open: true,
       });
     });
     webContents.on("devtools-closed", () => {
       closeDevToolsView(entry, hostWindow);
-      send(hostWindow, BB_DESKTOP_BROWSER_DEV_TOOLS_STATE_CHANNEL, {
+      send(hostWindow, PATCHER_DESKTOP_BROWSER_DEV_TOOLS_STATE_CHANNEL, {
         tabId,
         open: false,
       });
@@ -3556,7 +3563,7 @@ export function createDesktopBrowserViewManager(
       if (!hostWindow.isDestroyed()) {
         hostWindow.contentView.removeChildView(entry.view);
       }
-      send(hostWindow, BB_DESKTOP_BROWSER_POPUP_CHANNEL, {
+      send(hostWindow, PATCHER_DESKTOP_BROWSER_POPUP_CHANNEL, {
         kind: "closed",
         tabId,
       });
@@ -3590,30 +3597,40 @@ export function createDesktopBrowserViewManager(
             webContents.inspectElement(params.x, params.y);
           },
           invokePluginItem: (item) => {
-            send(hostWindow, BB_DESKTOP_BROWSER_CONTEXT_MENU_INVOKE_CHANNEL, {
-              pluginId: item.pluginId,
-              itemId: item.itemId,
-              tabId,
-              pageUrl: truncate(
-                webContents.getURL(),
-                BB_DESKTOP_BROWSER_MAX_URL_LENGTH,
-              ),
-              linkUrl:
-                params.linkURL.length > 0
-                  ? truncate(params.linkURL, BB_DESKTOP_BROWSER_MAX_URL_LENGTH)
-                  : null,
-              imageUrl:
-                params.mediaType === "image" && params.srcURL.length > 0
-                  ? truncate(params.srcURL, BB_DESKTOP_BROWSER_MAX_URL_LENGTH)
-                  : null,
-              selectionText:
-                params.selectionText.length > 0
-                  ? truncate(
-                      params.selectionText,
-                      BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH,
-                    )
-                  : null,
-            });
+            send(
+              hostWindow,
+              PATCHER_DESKTOP_BROWSER_CONTEXT_MENU_INVOKE_CHANNEL,
+              {
+                pluginId: item.pluginId,
+                itemId: item.itemId,
+                tabId,
+                pageUrl: truncate(
+                  webContents.getURL(),
+                  PATCHER_DESKTOP_BROWSER_MAX_URL_LENGTH,
+                ),
+                linkUrl:
+                  params.linkURL.length > 0
+                    ? truncate(
+                        params.linkURL,
+                        PATCHER_DESKTOP_BROWSER_MAX_URL_LENGTH,
+                      )
+                    : null,
+                imageUrl:
+                  params.mediaType === "image" && params.srcURL.length > 0
+                    ? truncate(
+                        params.srcURL,
+                        PATCHER_DESKTOP_BROWSER_MAX_URL_LENGTH,
+                      )
+                    : null,
+                selectionText:
+                  params.selectionText.length > 0
+                    ? truncate(
+                        params.selectionText,
+                        PATCHER_DESKTOP_BROWSER_MAX_TITLE_LENGTH,
+                      )
+                    : null,
+              },
+            );
           },
           copyImage: () => {
             webContents.copyImageAt(params.x, params.y);
@@ -3633,7 +3650,7 @@ export function createDesktopBrowserViewManager(
           openInNewTab: (url) => {
             // The path popups already take: the renderer owns where a tab goes,
             // and the surface only opens one for a tab it owns.
-            send(hostWindow, BB_DESKTOP_BROWSER_SCOPED_OPEN_TAB_CHANNEL, {
+            send(hostWindow, PATCHER_DESKTOP_BROWSER_SCOPED_OPEN_TAB_CHANNEL, {
               tabId,
               url,
             });
@@ -3647,9 +3664,9 @@ export function createDesktopBrowserViewManager(
             webContents.downloadURL(url);
           },
           searchFor: (query) => {
-            send(hostWindow, BB_DESKTOP_BROWSER_SEARCH_SELECTION_CHANNEL, {
+            send(hostWindow, PATCHER_DESKTOP_BROWSER_SEARCH_SELECTION_CHANNEL, {
               tabId,
-              query: truncate(query, BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH),
+              query: truncate(query, PATCHER_DESKTOP_BROWSER_MAX_TITLE_LENGTH),
             });
           },
         },
@@ -3716,7 +3733,7 @@ export function createDesktopBrowserViewManager(
           kind: "auth",
           host: truncate(
             formatBrowserAuthHost(authInfo),
-            BB_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH,
+            PATCHER_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH,
           ),
           // Basic auth over http puts the password on the wire in the clear.
           insecure: !details.url.startsWith("https:"),
@@ -3765,24 +3782,27 @@ export function createDesktopBrowserViewManager(
         const opened = openPagePrompt({
           details: {
             kind: "certificate",
-            host: truncate(host, BB_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH),
+            host: truncate(
+              host,
+              PATCHER_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH,
+            ),
             errorCode: truncate(
               error,
-              BB_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH,
+              PATCHER_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH,
             ),
             subjectName: truncate(
               certificate.subjectName,
-              BB_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH,
+              PATCHER_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH,
             ),
             issuerName: truncate(
               certificate.issuerName,
-              BB_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH,
+              PATCHER_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH,
             ),
             validFrom: certificate.validStart,
             validTo: certificate.validExpiry,
             fingerprint: truncate(
               certificate.fingerprint,
-              BB_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH,
+              PATCHER_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH,
             ),
           },
           entry,
@@ -3811,7 +3831,7 @@ export function createDesktopBrowserViewManager(
         event.preventDefault();
         const offered = certificateList.slice(
           0,
-          BB_DESKTOP_BROWSER_MAX_CLIENT_CERTIFICATES,
+          PATCHER_DESKTOP_BROWSER_MAX_CLIENT_CERTIFICATES,
         );
         if (offered.length === 0) {
           // Nothing to choose from, and the default is already prevented — so
@@ -3825,17 +3845,17 @@ export function createDesktopBrowserViewManager(
             kind: "client-certificate",
             host: truncate(
               browserUrlHost(url),
-              BB_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH,
+              PATCHER_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH,
             ),
             certificates: offered.map((certificate, index) => ({
               index,
               subjectName: truncate(
                 certificate.subjectName,
-                BB_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH,
+                PATCHER_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH,
               ),
               issuerName: truncate(
                 certificate.issuerName,
-                BB_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH,
+                PATCHER_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH,
               ),
               validTo: certificate.validExpiry,
             })),
@@ -3927,7 +3947,7 @@ export function createDesktopBrowserViewManager(
       if (entry.findRequestId !== result.requestId) {
         return;
       }
-      send(hostWindow, BB_DESKTOP_BROWSER_FIND_RESULT_CHANNEL, {
+      send(hostWindow, PATCHER_DESKTOP_BROWSER_FIND_RESULT_CHANNEL, {
         tabId,
         activeMatchOrdinal: result.activeMatchOrdinal,
         matches: result.matches,
@@ -4047,11 +4067,11 @@ export function createDesktopBrowserViewManager(
       tabId,
       view,
     });
-    send(args.hostWindow, BB_DESKTOP_BROWSER_POPUP_CHANNEL, {
+    send(args.hostWindow, PATCHER_DESKTOP_BROWSER_POPUP_CHANNEL, {
       kind: "opened",
       openerTabId: args.openerTabId,
       tabId,
-      url: truncate(args.url, BB_DESKTOP_BROWSER_MAX_URL_LENGTH),
+      url: truncate(args.url, PATCHER_DESKTOP_BROWSER_MAX_URL_LENGTH),
     });
     return view.webContents;
   }
@@ -4119,8 +4139,12 @@ export function createDesktopBrowserViewManager(
       devToolsVisible: null,
       dialogsWired: false,
       automationWorldId: null,
-      consoleLog: new BrowserObservationLog(BB_BROWSER_OBSERVATION_BUFFER_SIZE),
-      networkLog: new BrowserObservationLog(BB_BROWSER_OBSERVATION_BUFFER_SIZE),
+      consoleLog: new BrowserObservationLog(
+        PATCHER_BROWSER_OBSERVATION_BUFFER_SIZE,
+      ),
+      networkLog: new BrowserObservationLog(
+        PATCHER_BROWSER_OBSERVATION_BUFFER_SIZE,
+      ),
       routes: [],
       routesWired: false,
       routesEnabled: false,
@@ -4265,11 +4289,11 @@ export function createDesktopBrowserViewManager(
             : "alert",
         message: truncate(
           opening.message ?? "",
-          BB_DESKTOP_BROWSER_MAX_DIALOG_MESSAGE_LENGTH,
+          PATCHER_DESKTOP_BROWSER_MAX_DIALOG_MESSAGE_LENGTH,
         ),
         defaultPrompt: truncate(
           opening.defaultPrompt ?? "",
-          BB_DESKTOP_BROWSER_MAX_DIALOG_MESSAGE_LENGTH,
+          PATCHER_DESKTOP_BROWSER_MAX_DIALOG_MESSAGE_LENGTH,
         ),
       };
       // Stand a bitmap of the frozen page in for the hidden view, so the dialog
@@ -4277,7 +4301,7 @@ export function createDesktopBrowserViewManager(
       // the resize burst uses; a capture that fails just leaves the panel bare.
       captureDialogPlaceholder(hostWindow, tabId, entry);
       applyEntryVisibility(entry, hostWindow);
-      send(hostWindow, BB_DESKTOP_BROWSER_DIALOG_CHANNEL, {
+      send(hostWindow, PATCHER_DESKTOP_BROWSER_DIALOG_CHANNEL, {
         tabId,
         dialog: entry.pendingDialog,
       });
@@ -4301,7 +4325,7 @@ export function createDesktopBrowserViewManager(
         if (entry.pendingDialog === null || image.isEmpty()) {
           return;
         }
-        send(hostWindow, BB_DESKTOP_BROWSER_SNAPSHOT_CHANNEL, {
+        send(hostWindow, PATCHER_DESKTOP_BROWSER_SNAPSHOT_CHANNEL, {
           tabId,
           dataUrl: `data:image/jpeg;base64,${image
             .toJPEG(RESIZE_SNAPSHOT_JPEG_QUALITY)
@@ -4325,11 +4349,11 @@ export function createDesktopBrowserViewManager(
     applyEntryVisibility(entry, hostWindow);
     // Reveal first, then drop the placeholder, so the swap never flashes an
     // empty panel — the same ordering `endWindowResize` uses.
-    send(hostWindow, BB_DESKTOP_BROWSER_SNAPSHOT_CHANNEL, {
+    send(hostWindow, PATCHER_DESKTOP_BROWSER_SNAPSHOT_CHANNEL, {
       tabId,
       dataUrl: null,
     });
-    send(hostWindow, BB_DESKTOP_BROWSER_DIALOG_CHANNEL, {
+    send(hostWindow, PATCHER_DESKTOP_BROWSER_DIALOG_CHANNEL, {
       tabId,
       dialog: null,
     });
@@ -4445,7 +4469,7 @@ export function createDesktopBrowserViewManager(
     // being asked.
     capturePagePromptPlaceholder(args.hostWindow, args.tabId, args.entry);
     applyEntryVisibility(args.entry, args.hostWindow);
-    send(args.hostWindow, BB_DESKTOP_BROWSER_PAGE_PROMPT_CHANNEL, {
+    send(args.hostWindow, PATCHER_DESKTOP_BROWSER_PAGE_PROMPT_CHANNEL, {
       tabId: args.tabId,
       prompt: details,
     });
@@ -4463,7 +4487,7 @@ export function createDesktopBrowserViewManager(
         if (entry.pagePrompt === null || image.isEmpty()) {
           return;
         }
-        send(hostWindow, BB_DESKTOP_BROWSER_SNAPSHOT_CHANNEL, {
+        send(hostWindow, PATCHER_DESKTOP_BROWSER_SNAPSHOT_CHANNEL, {
           tabId,
           dataUrl: `data:image/jpeg;base64,${image
             .toJPEG(RESIZE_SNAPSHOT_JPEG_QUALITY)
@@ -4493,11 +4517,11 @@ export function createDesktopBrowserViewManager(
     }
     entry.pagePrompt = null;
     applyEntryVisibility(entry, hostWindow);
-    send(hostWindow, BB_DESKTOP_BROWSER_SNAPSHOT_CHANNEL, {
+    send(hostWindow, PATCHER_DESKTOP_BROWSER_SNAPSHOT_CHANNEL, {
       tabId,
       dataUrl: null,
     });
-    send(hostWindow, BB_DESKTOP_BROWSER_PAGE_PROMPT_CHANNEL, {
+    send(hostWindow, PATCHER_DESKTOP_BROWSER_PAGE_PROMPT_CHANNEL, {
       tabId,
       prompt: null,
     });
@@ -4604,7 +4628,7 @@ export function createDesktopBrowserViewManager(
         nodes,
         ...(root === undefined ? {} : { root }),
         maxDepth: request.maxDepth,
-        maxLength: BB_DESKTOP_BROWSER_MAX_SNAPSHOT_LENGTH,
+        maxLength: PATCHER_DESKTOP_BROWSER_MAX_SNAPSHOT_LENGTH,
       });
 
       // Replacing the table is itself an invalidation: refs from the previous
@@ -4650,7 +4674,7 @@ export function createDesktopBrowserViewManager(
   async function readPdfText(
     url: string,
   ): Promise<DesktopBrowserPdfTextOutcome> {
-    const deadline = Date.now() + BB_DESKTOP_BROWSER_PDF_READ_TIMEOUT_MS;
+    const deadline = Date.now() + PATCHER_DESKTOP_BROWSER_PDF_READ_TIMEOUT_MS;
     let response: Awaited<ReturnType<Session["fetch"]>>;
     try {
       response = await ensureHardenedSession().fetch(url, {
@@ -4658,7 +4682,9 @@ export function createDesktopBrowserViewManager(
         // plainly: a PDF behind a login is fetched with the cookies that
         // already opened it for the viewer.
         credentials: "include",
-        signal: AbortSignal.timeout(BB_DESKTOP_BROWSER_PDF_READ_TIMEOUT_MS),
+        signal: AbortSignal.timeout(
+          PATCHER_DESKTOP_BROWSER_PDF_READ_TIMEOUT_MS,
+        ),
       });
     } catch {
       // A `blob:` URL, a document that only exists as the answer to a POST, a
@@ -4787,7 +4813,7 @@ export function createDesktopBrowserViewManager(
         // Reveal first, then drop the placeholder, so the swap never flashes an
         // empty panel — the ordering `clearPendingDialog` uses.
         applyEntryVisibility(entry, hostWindow);
-        send(hostWindow, BB_DESKTOP_BROWSER_SNAPSHOT_CHANNEL, {
+        send(hostWindow, PATCHER_DESKTOP_BROWSER_SNAPSHOT_CHANNEL, {
           tabId: request.tabId,
           dataUrl: null,
         });
@@ -4804,7 +4830,7 @@ export function createDesktopBrowserViewManager(
             return;
           }
           if (!image.isEmpty()) {
-            send(hostWindow, BB_DESKTOP_BROWSER_SNAPSHOT_CHANNEL, {
+            send(hostWindow, PATCHER_DESKTOP_BROWSER_SNAPSHOT_CHANNEL, {
               tabId: request.tabId,
               dataUrl: `data:image/jpeg;base64,${image
                 .toJPEG(RESIZE_SNAPSHOT_JPEG_QUALITY)
@@ -4964,7 +4990,10 @@ export function createDesktopBrowserViewManager(
         : {
             ok: false,
             reason: "failed",
-            message: truncate(failure, BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH),
+            message: truncate(
+              failure,
+              PATCHER_DESKTOP_BROWSER_MAX_TITLE_LENGTH,
+            ),
           };
     },
     async readPage({ hostWindow, tabId }) {
@@ -4981,7 +5010,7 @@ export function createDesktopBrowserViewManager(
 
       const raw = await runIsolatedScript(
         webContents,
-        BB_DESKTOP_BROWSER_PAGE_READ_SCRIPT,
+        PATCHER_DESKTOP_BROWSER_PAGE_READ_SCRIPT,
       );
 
       if (raw.kind === "timeout") {
@@ -5387,7 +5416,7 @@ export function createDesktopBrowserViewManager(
           applyEntryDesiredBounds(entry, hostWindow);
         }
         applyEntryVisibility(entry, hostWindow);
-        send(hostWindow, BB_DESKTOP_BROWSER_SNAPSHOT_CHANNEL, {
+        send(hostWindow, PATCHER_DESKTOP_BROWSER_SNAPSHOT_CHANNEL, {
           tabId: key.slice(prefix.length),
           dataUrl: null,
         });

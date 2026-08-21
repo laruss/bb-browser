@@ -48,7 +48,7 @@ give non-secrets defaults and handle missing secrets explicitly.
 
 ## bb.storage
 
-- `bb.storage.kv` — namespaced JSON key-value rows in bb.db:
+- `bb.storage.kv` — namespaced JSON key-value rows in patcher.db:
   `get<T>(key)`, `set(key, value)`, `delete(key)`, `list(prefix?)`. Values
   are capped at **256KB each** — kv is for cursors, links, and small state;
   caches and datasets go in the plugin database.
@@ -69,7 +69,7 @@ bb.storage.migrate(db, [
 ## bb.server
 
 Read-only facts about the running server. `bb.server.loopbackBaseUrl` is the
-server's own loopback base URL (e.g. `http://127.0.0.1:38886`), which serves
+server's own loopback base URL (e.g. `http://127.0.0.1:38986`), which serves
 the SPA + `/api` + `/ws` — for plugins that proxy or relay traffic back to
 the server itself. **Bind-gated** like `bb.sdk`: reading it before the server is
 listening throws, so prefer reading it from handlers, services, and timers.

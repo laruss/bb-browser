@@ -47,7 +47,7 @@ async function writeRuntimeFile(args: {
     dataDir: args.dataDir,
     entryPath: args.entryPath ?? "/opt/bb/bb-app.js",
     pid: args.pid ?? 4_242,
-    serverUrl: args.serverUrl ?? "http://127.0.0.1:38886",
+    serverUrl: args.serverUrl ?? "http://127.0.0.1:38986",
     startedAt: args.startedAt ?? STARTED_AT,
     surface: "web",
     version: "0.34.0",
@@ -82,7 +82,7 @@ describe("readForeignRuntimeDetails", () => {
     await expect(
       readForeignRuntimeDetails({
         dataDir,
-        serverUrl: "http://127.0.0.1:38886",
+        serverUrl: "http://127.0.0.1:38986",
       }),
     ).resolves.toEqual(detailsFor(dataDir));
   });
@@ -94,7 +94,7 @@ describe("readForeignRuntimeDetails", () => {
     await expect(
       readForeignRuntimeDetails({
         dataDir,
-        serverUrl: "http://127.0.0.1:38886",
+        serverUrl: "http://127.0.0.1:38986",
       }),
     ).resolves.toBeNull();
   });
@@ -105,7 +105,7 @@ describe("readForeignRuntimeDetails", () => {
     await expect(
       readForeignRuntimeDetails({
         dataDir,
-        serverUrl: "http://127.0.0.1:38886",
+        serverUrl: "http://127.0.0.1:38986",
       }),
     ).resolves.toBeNull();
   });

@@ -22,7 +22,7 @@ that handles both modes.
 ## Where themes live
 
 A custom theme is a folder under the app data dir:
-`<bb-data-dir>/theme/<name>/theme.css` (the packaged app uses `~/.bb/theme/…`).
+`<bb-data-dir>/theme/<name>/theme.css` (the packaged app uses `~/.patcher/theme/…`).
 The folder name is the theme id. Run `bb theme dir` to print the exact directory
 rather than guessing it. Always put custom app-theme CSS here — not in a stray
 `.css` file elsewhere in a repo. To edit a theme, change its `theme.css` in place
@@ -237,7 +237,7 @@ and semantics:
 
 ## Applying a theme
 
-1. `bb theme dir` — print the custom-theme directory (e.g. `~/.bb/theme`).
+1. `bb theme dir` — print the custom-theme directory (e.g. `~/.patcher/theme`).
 2. Write your stylesheet to `<that-dir>/<name>/theme.css` (create the folder;
    `<name>` is the theme id — lowercase/hyphenated, not a built-in id).
 3. `bb theme set <name>` — activate it. To edit later, change the file in place

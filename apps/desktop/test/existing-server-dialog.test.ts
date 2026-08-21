@@ -9,7 +9,7 @@ import {
 const NOW = new Date("2026-08-03T12:00:00.000Z");
 
 const DETAILS = {
-  dataDir: "/Users/example/.bb",
+  dataDir: "/Users/example/.patcher",
   entryPath: "/opt/bb/bb-app.js",
   pid: 4_242,
   startedAt: "2026-08-03T11:30:00.000Z",
@@ -42,7 +42,7 @@ describe("renderExistingServerDialogHtml", () => {
     const html = renderExistingServerDialogHtml({
       details: DETAILS,
       now: NOW,
-      serverUrl: "http://127.0.0.1:38886",
+      serverUrl: "http://127.0.0.1:38986",
     });
 
     for (const choice of EXISTING_SERVER_DIALOG_CHOICES) {
@@ -57,11 +57,11 @@ describe("renderExistingServerDialogHtml", () => {
     const html = renderExistingServerDialogHtml({
       details: DETAILS,
       now: NOW,
-      serverUrl: "http://127.0.0.1:38886",
+      serverUrl: "http://127.0.0.1:38986",
     });
 
-    expect(html).toContain("http://127.0.0.1:38886");
-    expect(html).toContain("/Users/example/.bb");
+    expect(html).toContain("http://127.0.0.1:38986");
+    expect(html).toContain("/Users/example/.patcher");
     expect(html).toContain("0.34.0");
     expect(html).toContain("30 min ago by a terminal (pid 4242)");
   });
@@ -70,7 +70,7 @@ describe("renderExistingServerDialogHtml", () => {
     const html = renderExistingServerDialogHtml({
       details: null,
       now: NOW,
-      serverUrl: "http://127.0.0.1:38886",
+      serverUrl: "http://127.0.0.1:38986",
     });
 
     expect(html).toContain('data-choice="connect"');
@@ -84,7 +84,7 @@ describe("renderExistingServerDialogHtml", () => {
     const html = renderExistingServerDialogHtml({
       details: { ...DETAILS, dataDir: '/tmp/<img src=x onerror="boom">' },
       now: NOW,
-      serverUrl: "http://127.0.0.1:38886",
+      serverUrl: "http://127.0.0.1:38986",
     });
 
     expect(html).not.toContain("<img src=x");

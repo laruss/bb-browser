@@ -952,7 +952,7 @@ describe("bb tasks CLI", () => {
     await harness.dispose();
   });
 
-  it("self-attaches through BB_THREAD_ID and lists the live thread status", async () => {
+  it("self-attaches through PATCHER_THREAD_ID and lists the live thread status", async () => {
     const { bb, harness } = createFakePluginHost({
       permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
@@ -989,15 +989,15 @@ describe("bb tasks CLI", () => {
       ]),
     );
 
-    const previousThreadId = process.env.BB_THREAD_ID;
-    process.env.BB_THREAD_ID = "thr_cli_self";
+    const previousThreadId = process.env.PATCHER_THREAD_ID;
+    process.env.PATCHER_THREAD_ID = "thr_cli_self";
     try {
       expect(
         JSON.parse(stdout(await harness.runCli(["attach", "ATT-1", "--json"]))),
       ).toMatchObject({ task: { key: "ATT-1" }, threadId: "thr_cli_self" });
     } finally {
-      if (previousThreadId === undefined) delete process.env.BB_THREAD_ID;
-      else process.env.BB_THREAD_ID = previousThreadId;
+      if (previousThreadId === undefined) delete process.env.PATCHER_THREAD_ID;
+      else process.env.PATCHER_THREAD_ID = previousThreadId;
     }
 
     const threads = JSON.parse(

@@ -14,12 +14,12 @@ import {
 } from "@/lib/browser-storage";
 import { getProjectScopedStorageKey } from "@/lib/project-scoped-storage";
 
-const MODEL_STORAGE_KEY = "bb.promptbox.model";
-const SERVICE_TIER_STORAGE_KEY = "bb.promptbox.service-tier";
-const REASONING_STORAGE_KEY = "bb.promptbox.reasoning";
-const PERMISSION_MODE_STORAGE_KEY = "bb.promptbox.permission-mode";
-const ENVIRONMENT_STORAGE_KEY = "bb.promptbox.environment";
-const PROVIDER_STORAGE_KEY = "bb.promptbox.provider";
+const MODEL_STORAGE_KEY = "patcher.promptbox.model";
+const SERVICE_TIER_STORAGE_KEY = "patcher.promptbox.service-tier";
+const REASONING_STORAGE_KEY = "patcher.promptbox.reasoning";
+const PERMISSION_MODE_STORAGE_KEY = "patcher.promptbox.permission-mode";
+const ENVIRONMENT_STORAGE_KEY = "patcher.promptbox.environment";
+const PROVIDER_STORAGE_KEY = "patcher.promptbox.provider";
 const PROVIDER_SELECTION_STORAGE_VERSION = "1";
 
 export type StoredServiceTier = "" | ServiceTier;

@@ -524,7 +524,7 @@ export async function writeProjectSkill(
       throw new ApiError(409, "conflict", "Skill changed before it was saved");
     }
     const currentMode = (await fs.stat(skillFilePath)).mode & 0o777;
-    const temporaryPath = `${skillFilePath}.bb-write-${randomUUID()}`;
+    const temporaryPath = `${skillFilePath}.patcher-write-${randomUUID()}`;
     try {
       const handle = await fs.open(temporaryPath, "wx", currentMode);
       try {

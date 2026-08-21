@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  BB_DESKTOP_BROWSER_MAX_FIND_QUERY_LENGTH,
-  BB_DESKTOP_BROWSER_MAX_URL_LENGTH,
+  PATCHER_DESKTOP_BROWSER_MAX_FIND_QUERY_LENGTH,
+  PATCHER_DESKTOP_BROWSER_MAX_URL_LENGTH,
   type PatcherDesktopBrowserCaptureFullPageResult,
   type PatcherDesktopBrowserFindRequest,
   type PatcherDesktopBrowserInteractResult,
@@ -20,29 +20,29 @@ import {
   type PatcherDesktopPageScriptRpcAnswer,
 } from "@patcher/desktop-contract";
 import {
-  BB_DESKTOP_BROWSER_ATTACH_CHANNEL,
-  BB_DESKTOP_BROWSER_CAPTURE_FULL_PAGE_CHANNEL,
-  BB_DESKTOP_BROWSER_DETACH_CHANNEL,
-  BB_DESKTOP_BROWSER_FIND_CHANNEL,
-  BB_DESKTOP_BROWSER_GO_BACK_CHANNEL,
-  BB_DESKTOP_BROWSER_GO_FORWARD_CHANNEL,
-  BB_DESKTOP_BROWSER_NAVIGATE_CHANNEL,
-  BB_DESKTOP_BROWSER_OBSERVE_CHANNEL,
-  BB_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
-  BB_DESKTOP_BROWSER_RELOAD_CHANNEL,
-  BB_DESKTOP_BROWSER_SET_BOUNDS_CHANNEL,
-  BB_DESKTOP_BROWSER_SET_DEV_TOOLS_VISIBLE_CHANNEL,
-  BB_DESKTOP_BROWSER_SET_MUTED_CHANNEL,
-  BB_DESKTOP_BROWSER_SET_VISIBLE_CHANNEL,
-  BB_DESKTOP_BROWSER_STOP_CHANNEL,
-  BB_DESKTOP_BROWSER_CONTROL_CHANNEL,
-  BB_DESKTOP_BROWSER_RECORD_CHANNEL,
-  BB_DESKTOP_BROWSER_SNAPSHOT_IN_CHANNEL,
-  BB_DESKTOP_BROWSER_STORAGE_CHANNEL,
-  BB_DESKTOP_BROWSER_SET_PAGE_SCRIPTS_CHANNEL,
-  BB_DESKTOP_BROWSER_PAGE_SCRIPT_RESULT_CHANNEL,
-  BB_DESKTOP_PAGE_SCRIPT_BOOTSTRAP_CHANNEL,
-  BB_DESKTOP_PAGE_SCRIPT_RPC_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_ATTACH_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_CAPTURE_FULL_PAGE_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_DETACH_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_FIND_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_GO_BACK_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_GO_FORWARD_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_NAVIGATE_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_OBSERVE_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_RELOAD_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_SET_BOUNDS_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_SET_DEV_TOOLS_VISIBLE_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_SET_MUTED_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_SET_VISIBLE_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_STOP_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_CONTROL_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_RECORD_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_SNAPSHOT_IN_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_STORAGE_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_SET_PAGE_SCRIPTS_CHANNEL,
+  PATCHER_DESKTOP_BROWSER_PAGE_SCRIPT_RESULT_CHANNEL,
+  PATCHER_DESKTOP_PAGE_SCRIPT_BOOTSTRAP_CHANNEL,
+  PATCHER_DESKTOP_PAGE_SCRIPT_RPC_CHANNEL,
 } from "../src/desktop-browser-ipc.js";
 import { registerDesktopBrowserIpc } from "../src/desktop-browser-main-ipc.js";
 import type { DesktopBrowserViewManager } from "../src/desktop-browser-view.js";
@@ -539,7 +539,7 @@ async function invokeBrowserIpc(
 }
 
 function oversizedBrowserUrl(): string {
-  return `https://example.com/${"a".repeat(BB_DESKTOP_BROWSER_MAX_URL_LENGTH)}`;
+  return `https://example.com/${"a".repeat(PATCHER_DESKTOP_BROWSER_MAX_URL_LENGTH)}`;
 }
 
 describe("registerDesktopBrowserIpc", () => {
@@ -560,22 +560,22 @@ describe("registerDesktopBrowserIpc", () => {
     };
 
     sendBrowserIpc({
-      channel: BB_DESKTOP_BROWSER_ATTACH_CHANNEL,
+      channel: PATCHER_DESKTOP_BROWSER_ATTACH_CHANNEL,
       payload: attachRequest,
       sender: renderer.sender,
     });
     sendBrowserIpc({
-      channel: BB_DESKTOP_BROWSER_ATTACH_CHANNEL,
+      channel: PATCHER_DESKTOP_BROWSER_ATTACH_CHANNEL,
       payload: attachRequest,
       sender: untrustedSender,
     });
     sendBrowserIpc({
-      channel: BB_DESKTOP_BROWSER_NAVIGATE_CHANNEL,
+      channel: PATCHER_DESKTOP_BROWSER_NAVIGATE_CHANNEL,
       payload: navigateRequest,
       sender: renderer.sender,
     });
     sendBrowserIpc({
-      channel: BB_DESKTOP_BROWSER_RELOAD_CHANNEL,
+      channel: PATCHER_DESKTOP_BROWSER_RELOAD_CHANNEL,
       payload: { tabId: "browser:a" },
       sender: renderer.sender,
     });
@@ -609,7 +609,7 @@ describe("registerDesktopBrowserIpc", () => {
       { ...validAttachRequest, bounds: { x: 0, y: 0, width: -1, height: 600 } },
     ]) {
       sendBrowserIpc({
-        channel: BB_DESKTOP_BROWSER_ATTACH_CHANNEL,
+        channel: PATCHER_DESKTOP_BROWSER_ATTACH_CHANNEL,
         payload,
         sender: renderer.sender,
       });
@@ -621,7 +621,7 @@ describe("registerDesktopBrowserIpc", () => {
       { tabId: "browser:a", url: "https://example.com/", extra: true },
     ]) {
       sendBrowserIpc({
-        channel: BB_DESKTOP_BROWSER_NAVIGATE_CHANNEL,
+        channel: PATCHER_DESKTOP_BROWSER_NAVIGATE_CHANNEL,
         payload,
         sender: renderer.sender,
       });
@@ -645,7 +645,7 @@ describe("registerDesktopBrowserIpc", () => {
     };
 
     sendBrowserIpc({
-      channel: BB_DESKTOP_BROWSER_SET_BOUNDS_CHANNEL,
+      channel: PATCHER_DESKTOP_BROWSER_SET_BOUNDS_CHANNEL,
       payload: {
         ...boundsRequest,
         bounds: { x: 0.5, y: 0, width: 1, height: 1 },
@@ -653,27 +653,27 @@ describe("registerDesktopBrowserIpc", () => {
       sender: renderer.sender,
     });
     sendBrowserIpc({
-      channel: BB_DESKTOP_BROWSER_SET_BOUNDS_CHANNEL,
+      channel: PATCHER_DESKTOP_BROWSER_SET_BOUNDS_CHANNEL,
       payload: boundsRequest,
       sender: renderer.sender,
     });
     sendBrowserIpc({
-      channel: BB_DESKTOP_BROWSER_SET_VISIBLE_CHANNEL,
+      channel: PATCHER_DESKTOP_BROWSER_SET_VISIBLE_CHANNEL,
       payload: { tabId: "browser:a", visible: "yes" },
       sender: renderer.sender,
     });
     sendBrowserIpc({
-      channel: BB_DESKTOP_BROWSER_SET_VISIBLE_CHANNEL,
+      channel: PATCHER_DESKTOP_BROWSER_SET_VISIBLE_CHANNEL,
       payload: visibleRequest,
       sender: renderer.sender,
     });
 
     for (const channel of [
-      BB_DESKTOP_BROWSER_DETACH_CHANNEL,
-      BB_DESKTOP_BROWSER_GO_BACK_CHANNEL,
-      BB_DESKTOP_BROWSER_GO_FORWARD_CHANNEL,
-      BB_DESKTOP_BROWSER_RELOAD_CHANNEL,
-      BB_DESKTOP_BROWSER_STOP_CHANNEL,
+      PATCHER_DESKTOP_BROWSER_DETACH_CHANNEL,
+      PATCHER_DESKTOP_BROWSER_GO_BACK_CHANNEL,
+      PATCHER_DESKTOP_BROWSER_GO_FORWARD_CHANNEL,
+      PATCHER_DESKTOP_BROWSER_RELOAD_CHANNEL,
+      PATCHER_DESKTOP_BROWSER_STOP_CHANNEL,
     ]) {
       sendBrowserIpc({
         channel,
@@ -683,22 +683,22 @@ describe("registerDesktopBrowserIpc", () => {
     }
 
     sendBrowserIpc({
-      channel: BB_DESKTOP_BROWSER_DETACH_CHANNEL,
+      channel: PATCHER_DESKTOP_BROWSER_DETACH_CHANNEL,
       payload: { tabId: "browser:a" },
       sender: renderer.sender,
     });
     sendBrowserIpc({
-      channel: BB_DESKTOP_BROWSER_GO_BACK_CHANNEL,
+      channel: PATCHER_DESKTOP_BROWSER_GO_BACK_CHANNEL,
       payload: { tabId: "browser:a" },
       sender: renderer.sender,
     });
     sendBrowserIpc({
-      channel: BB_DESKTOP_BROWSER_GO_FORWARD_CHANNEL,
+      channel: PATCHER_DESKTOP_BROWSER_GO_FORWARD_CHANNEL,
       payload: { tabId: "browser:a" },
       sender: renderer.sender,
     });
     sendBrowserIpc({
-      channel: BB_DESKTOP_BROWSER_STOP_CHANNEL,
+      channel: PATCHER_DESKTOP_BROWSER_STOP_CHANNEL,
       payload: { tabId: "browser:a" },
       sender: renderer.sender,
     });
@@ -734,13 +734,13 @@ describe("registerDesktopBrowserIpc", () => {
       { tabId: "browser:a", muted: true, extra: true },
     ]) {
       sendBrowserIpc({
-        channel: BB_DESKTOP_BROWSER_SET_MUTED_CHANNEL,
+        channel: PATCHER_DESKTOP_BROWSER_SET_MUTED_CHANNEL,
         payload,
         sender: renderer.sender,
       });
     }
     sendBrowserIpc({
-      channel: BB_DESKTOP_BROWSER_SET_MUTED_CHANNEL,
+      channel: PATCHER_DESKTOP_BROWSER_SET_MUTED_CHANNEL,
       payload: { tabId: "browser:a", muted: true },
       sender: renderer.sender,
     });
@@ -764,12 +764,12 @@ describe("registerDesktopBrowserIpc", () => {
     const renderer = createTrustedRenderer("main-window");
 
     sendBrowserIpc({
-      channel: BB_DESKTOP_BROWSER_SET_DEV_TOOLS_VISIBLE_CHANNEL,
+      channel: PATCHER_DESKTOP_BROWSER_SET_DEV_TOOLS_VISIBLE_CHANNEL,
       payload: { tabId: "browser:a", visible: "yes" },
       sender: renderer.sender,
     });
     sendBrowserIpc({
-      channel: BB_DESKTOP_BROWSER_SET_DEV_TOOLS_VISIBLE_CHANNEL,
+      channel: PATCHER_DESKTOP_BROWSER_SET_DEV_TOOLS_VISIBLE_CHANNEL,
       payload: { tabId: "browser:a", visible: true },
       sender: renderer.sender,
     });
@@ -797,22 +797,22 @@ describe("registerDesktopBrowserIpc", () => {
       { ...request, tabId: "" },
       {
         ...request,
-        query: "q".repeat(BB_DESKTOP_BROWSER_MAX_FIND_QUERY_LENGTH + 1),
+        query: "q".repeat(PATCHER_DESKTOP_BROWSER_MAX_FIND_QUERY_LENGTH + 1),
       },
     ]) {
       sendBrowserIpc({
-        channel: BB_DESKTOP_BROWSER_FIND_CHANNEL,
+        channel: PATCHER_DESKTOP_BROWSER_FIND_CHANNEL,
         payload,
         sender: renderer.sender,
       });
     }
     sendBrowserIpc({
-      channel: BB_DESKTOP_BROWSER_FIND_CHANNEL,
+      channel: PATCHER_DESKTOP_BROWSER_FIND_CHANNEL,
       payload: request,
       sender: createUntrustedSender(),
     });
     sendBrowserIpc({
-      channel: BB_DESKTOP_BROWSER_FIND_CHANNEL,
+      channel: PATCHER_DESKTOP_BROWSER_FIND_CHANNEL,
       payload: request,
       sender: renderer.sender,
     });
@@ -841,7 +841,7 @@ describe("registerDesktopBrowserIpc", () => {
 
     await expect(
       invokeBrowserIpc({
-        channel: BB_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
+        channel: PATCHER_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
         payload: { tabId: "browser:a" },
         sender: renderer.sender,
       }),
@@ -855,14 +855,14 @@ describe("registerDesktopBrowserIpc", () => {
     // renderer as an opaque string it could not branch on.
     await expect(
       invokeBrowserIpc({
-        channel: BB_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
+        channel: PATCHER_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
         payload: { tabId: "browser:a" },
         sender: createUntrustedSender(),
       }),
     ).resolves.toEqual({ ok: false, reason: "no-view" });
     await expect(
       invokeBrowserIpc({
-        channel: BB_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
+        channel: PATCHER_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
         payload: { tabId: "" },
         sender: renderer.sender,
       }),
@@ -890,7 +890,7 @@ describe("registerDesktopBrowserIpc", () => {
 
     await expect(
       invokeBrowserIpc({
-        channel: BB_DESKTOP_BROWSER_OBSERVE_CHANNEL,
+        channel: PATCHER_DESKTOP_BROWSER_OBSERVE_CHANNEL,
         payload: request,
         sender: renderer.sender,
       }),
@@ -903,7 +903,7 @@ describe("registerDesktopBrowserIpc", () => {
     // the caller to go activate a tab would send it after the wrong fix.
     await expect(
       invokeBrowserIpc({
-        channel: BB_DESKTOP_BROWSER_OBSERVE_CHANNEL,
+        channel: PATCHER_DESKTOP_BROWSER_OBSERVE_CHANNEL,
         payload: { tabId: "browser:a", observation: { kind: "video" } },
         sender: renderer.sender,
       }),
@@ -923,7 +923,7 @@ describe("registerDesktopBrowserIpc", () => {
 
     await expect(
       invokeBrowserIpc({
-        channel: BB_DESKTOP_BROWSER_STORAGE_CHANNEL,
+        channel: PATCHER_DESKTOP_BROWSER_STORAGE_CHANNEL,
         payload: request,
         sender: renderer.sender,
       }),
@@ -934,7 +934,7 @@ describe("registerDesktopBrowserIpc", () => {
 
     await expect(
       invokeBrowserIpc({
-        channel: BB_DESKTOP_BROWSER_STORAGE_CHANNEL,
+        channel: PATCHER_DESKTOP_BROWSER_STORAGE_CHANNEL,
         payload: { tabId: "browser:a", operation: { kind: "indexeddb-get" } },
         sender: renderer.sender,
       }),
@@ -966,7 +966,7 @@ describe("registerDesktopBrowserIpc", () => {
 
     await expect(
       invokeBrowserIpc({
-        channel: BB_DESKTOP_BROWSER_CONTROL_CHANNEL,
+        channel: PATCHER_DESKTOP_BROWSER_CONTROL_CHANNEL,
         payload: request,
         sender: renderer.sender,
       }),
@@ -977,7 +977,7 @@ describe("registerDesktopBrowserIpc", () => {
 
     await expect(
       invokeBrowserIpc({
-        channel: BB_DESKTOP_BROWSER_CONTROL_CHANNEL,
+        channel: PATCHER_DESKTOP_BROWSER_CONTROL_CHANNEL,
         payload: { tabId: "browser:a", operation: { kind: "screencast" } },
         sender: renderer.sender,
       }),
@@ -1003,7 +1003,7 @@ describe("registerDesktopBrowserIpc", () => {
 
     await expect(
       invokeBrowserIpc({
-        channel: BB_DESKTOP_BROWSER_SNAPSHOT_IN_CHANNEL,
+        channel: PATCHER_DESKTOP_BROWSER_SNAPSHOT_IN_CHANNEL,
         payload: request,
         sender: renderer.sender,
       }),
@@ -1015,7 +1015,7 @@ describe("registerDesktopBrowserIpc", () => {
     // selector is the request's fault rather than the tab's.
     await expect(
       invokeBrowserIpc({
-        channel: BB_DESKTOP_BROWSER_SNAPSHOT_IN_CHANNEL,
+        channel: PATCHER_DESKTOP_BROWSER_SNAPSHOT_IN_CHANNEL,
         payload: { tabId: "browser:a" },
         sender: renderer.sender,
       }),
@@ -1042,7 +1042,7 @@ describe("registerDesktopBrowserIpc", () => {
 
     await expect(
       invokeBrowserIpc({
-        channel: BB_DESKTOP_BROWSER_CAPTURE_FULL_PAGE_CHANNEL,
+        channel: PATCHER_DESKTOP_BROWSER_CAPTURE_FULL_PAGE_CHANNEL,
         payload: request,
         sender: renderer.sender,
       }),
@@ -1054,7 +1054,7 @@ describe("registerDesktopBrowserIpc", () => {
     // An observation payload sent here is the request's fault, not the tab's.
     await expect(
       invokeBrowserIpc({
-        channel: BB_DESKTOP_BROWSER_CAPTURE_FULL_PAGE_CHANNEL,
+        channel: PATCHER_DESKTOP_BROWSER_CAPTURE_FULL_PAGE_CHANNEL,
         payload: {
           tabId: "browser:a",
           observation: { kind: "screenshot", format: "jpeg", quality: 70 },
@@ -1087,7 +1087,7 @@ describe("registerDesktopBrowserIpc", () => {
 
     await expect(
       invokeBrowserIpc({
-        channel: BB_DESKTOP_BROWSER_RECORD_CHANNEL,
+        channel: PATCHER_DESKTOP_BROWSER_RECORD_CHANNEL,
         payload: request,
         sender: renderer.sender,
       }),
@@ -1101,7 +1101,7 @@ describe("registerDesktopBrowserIpc", () => {
     // the schema says.
     await expect(
       invokeBrowserIpc({
-        channel: BB_DESKTOP_BROWSER_RECORD_CHANNEL,
+        channel: PATCHER_DESKTOP_BROWSER_RECORD_CHANNEL,
         payload: {
           tabId: "browser:a",
           operation: { kind: "trace-start", screenshots: false },
@@ -1120,7 +1120,7 @@ describe("registerDesktopBrowserIpc", () => {
 
     await expect(
       invokeBrowserIpc({
-        channel: BB_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
+        channel: PATCHER_DESKTOP_BROWSER_READ_PAGE_CHANNEL,
         payload: { tabId: "browser:a" },
         sender: renderer.sender,
       }),
@@ -1134,7 +1134,7 @@ describe("registerDesktopBrowserIpc", () => {
     registerDesktopBrowserIpc(manager);
     const page = createUntrustedSender();
     const listener = electronMock.listeners.get(
-      BB_DESKTOP_PAGE_SCRIPT_BOOTSTRAP_CHANNEL,
+      PATCHER_DESKTOP_PAGE_SCRIPT_BOOTSTRAP_CHANNEL,
     );
     expect(listener).toBeDefined();
     const event = {
@@ -1160,7 +1160,7 @@ describe("registerDesktopBrowserIpc", () => {
     const manager = new RecordingDesktopBrowserViewManager();
     registerDesktopBrowserIpc(manager);
     const listener = electronMock.listeners.get(
-      BB_DESKTOP_PAGE_SCRIPT_BOOTSTRAP_CHANNEL,
+      PATCHER_DESKTOP_PAGE_SCRIPT_BOOTSTRAP_CHANNEL,
     );
     const event = {
       sender: createUntrustedSender(),
@@ -1190,7 +1190,7 @@ describe("registerDesktopBrowserIpc", () => {
     registerDesktopBrowserIpc(manager);
     const page = createUntrustedSender();
     const handler = electronMock.handlers.get(
-      BB_DESKTOP_PAGE_SCRIPT_RPC_CHANNEL,
+      PATCHER_DESKTOP_PAGE_SCRIPT_RPC_CHANNEL,
     );
     expect(handler).toBeDefined();
 
@@ -1217,7 +1217,7 @@ describe("registerDesktopBrowserIpc", () => {
     const manager = new RecordingDesktopBrowserViewManager();
     registerDesktopBrowserIpc(manager);
     const handler = electronMock.handlers.get(
-      BB_DESKTOP_PAGE_SCRIPT_RPC_CHANNEL,
+      PATCHER_DESKTOP_PAGE_SCRIPT_RPC_CHANNEL,
     );
     const frame = { url: "https://github.com/" };
 
@@ -1258,7 +1258,7 @@ describe("registerDesktopBrowserIpc", () => {
     manager.pageScriptRpcFailure = new Error("boom");
     registerDesktopBrowserIpc(manager);
     const handler = electronMock.handlers.get(
-      BB_DESKTOP_PAGE_SCRIPT_RPC_CHANNEL,
+      PATCHER_DESKTOP_PAGE_SCRIPT_RPC_CHANNEL,
     );
 
     await expect(
@@ -1290,24 +1290,24 @@ describe("registerDesktopBrowserIpc", () => {
     const result = { callId: "page-script-1", ok: true, result: "{}" };
 
     sendBrowserIpc({
-      channel: BB_DESKTOP_BROWSER_SET_PAGE_SCRIPTS_CHANNEL,
+      channel: PATCHER_DESKTOP_BROWSER_SET_PAGE_SCRIPTS_CHANNEL,
       payload: scripts,
       sender: renderer.sender,
     });
     sendBrowserIpc({
-      channel: BB_DESKTOP_BROWSER_SET_PAGE_SCRIPTS_CHANNEL,
+      channel: PATCHER_DESKTOP_BROWSER_SET_PAGE_SCRIPTS_CHANNEL,
       payload: scripts,
       sender: page,
     });
     sendBrowserIpc({
-      channel: BB_DESKTOP_BROWSER_PAGE_SCRIPT_RESULT_CHANNEL,
+      channel: PATCHER_DESKTOP_BROWSER_PAGE_SCRIPT_RESULT_CHANNEL,
       payload: result,
       sender: renderer.sender,
     });
     // A browsed page answering a call it did not make would be a page speaking
     // for the plugin host.
     sendBrowserIpc({
-      channel: BB_DESKTOP_BROWSER_PAGE_SCRIPT_RESULT_CHANNEL,
+      channel: PATCHER_DESKTOP_BROWSER_PAGE_SCRIPT_RESULT_CHANNEL,
       payload: result,
       sender: page,
     });

@@ -832,7 +832,7 @@ function copyPiAgentFileIfPresent(args: CopyPiAgentFileIfPresentArgs): void {
 }
 
 function preparePiAgentDir(args: PreparePiAgentDirArgs): string {
-  const targetAgentDir = join(args.tmpDir, ".bb-pi-agent");
+  const targetAgentDir = join(args.tmpDir, ".patcher-pi-agent");
   mkdirSync(targetAgentDir, { recursive: true });
 
   const sourceAgentDir = getAgentDir();
@@ -856,7 +856,7 @@ function createRuntimeProcessEnv(
     return undefined;
   }
 
-  const sessionDir = join(args.tmpDir, ".bb-pi-bridge-sessions");
+  const sessionDir = join(args.tmpDir, ".patcher-pi-bridge-sessions");
   mkdirSync(sessionDir, { recursive: true });
   return {
     [PI_BRIDGE_SESSION_DIR_ENV]: sessionDir,

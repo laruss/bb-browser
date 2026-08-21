@@ -11,11 +11,11 @@ afterEach(() => {
 describe("sidebar section preference migration", () => {
   it("preserves manual order and collapsed groups from folder-era storage", async () => {
     window.localStorage.setItem(
-      "bb.sidebar.folderSectionOrder",
+      "patcher.sidebar.folderSectionOrder",
       JSON.stringify(["threads", "folder:release", "folders", "pinned"]),
     );
     window.localStorage.setItem(
-      "bb.sidebar.collapsedFolders",
+      "patcher.sidebar.collapsedFolders",
       JSON.stringify(["project-a::fld_release"]),
     );
 
@@ -34,17 +34,19 @@ describe("sidebar section preference migration", () => {
     expect(store.get(sidebarCollapsedThreadSectionsAtom)).toEqual([
       "project-a::fld_release",
     ]);
-    expect(window.localStorage.getItem("bb.sidebar.manualSectionOrder")).toBe(
+    expect(
+      window.localStorage.getItem("patcher.sidebar.manualSectionOrder"),
+    ).toBe(
       JSON.stringify(["threads", "section:release", "sections", "pinned"]),
     );
     expect(
-      window.localStorage.getItem("bb.sidebar.collapsedThreadSections"),
+      window.localStorage.getItem("patcher.sidebar.collapsedThreadSections"),
     ).toBe(JSON.stringify(["project-a::fld_release"]));
     expect(
-      window.localStorage.getItem("bb.sidebar.folderSectionOrder"),
+      window.localStorage.getItem("patcher.sidebar.folderSectionOrder"),
     ).toBeNull();
     expect(
-      window.localStorage.getItem("bb.sidebar.collapsedFolders"),
+      window.localStorage.getItem("patcher.sidebar.collapsedFolders"),
     ).toBeNull();
   });
 });

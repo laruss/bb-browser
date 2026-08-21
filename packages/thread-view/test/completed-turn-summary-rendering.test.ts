@@ -284,7 +284,7 @@ describe("completed turn summary rendering", () => {
       }),
       event.commandCompleted({
         itemId: "tool-after-steer",
-        command: "sqlite3 ~/.bb-dev/bb.db '.tables'",
+        command: "sqlite3 ~/.patcher-dev/patcher.db '.tables'",
       }),
       event.assistantCompleted({
         itemId: "assistant-1",
@@ -512,7 +512,7 @@ describe("completed turn summary rendering", () => {
       }),
       event.commandCompleted({
         itemId: "tool-after-steer",
-        command: "sqlite3 ~/.bb-dev/bb.db '.tables'",
+        command: "sqlite3 ~/.patcher-dev/patcher.db '.tables'",
       }),
       event.assistantCompleted({
         itemId: "assistant-1",
@@ -560,7 +560,7 @@ describe("completed turn summary rendering", () => {
       }),
       event.commandCompleted({
         itemId: "tool-after-steer",
-        command: "sqlite3 ~/.bb-dev/bb.db '.tables'",
+        command: "sqlite3 ~/.patcher-dev/patcher.db '.tables'",
       }),
       event.assistantCompleted({
         itemId: "assistant-1",

@@ -117,9 +117,9 @@ A faster web app, a more reliable terminal, steadier model catalogs, and a long 
 
 ### The server now default binds to loopback
 
-The server used to listen on every network interface, which exposed its unauthenticated API to any host that could reach the machine. It now binds `127.0.0.1`. Use `--server-bind-host 0.0.0.0` or `BB_SERVER_BIND_HOST` to opt back in, only behind a trusted network boundary.
+The server used to listen on every network interface, which exposed its unauthenticated API to any host that could reach the machine. It now binds `127.0.0.1`. Use `--server-bind-host 0.0.0.0` or `PATCHER_SERVER_BIND_HOST` to opt back in, only behind a trusted network boundary.
 
-- **Action needed before you upgrade** if a browser or an enrolled machine reaches bb at a direct address such as `http://<LAN-IP>:38886` or `http://<machine>.<tailnet>.ts.net:38886`. Move the route first, then upgrade. This release also raises the host daemon protocol, so every enrolled daemon must update itself — and a daemon that lost its route cannot.
+- **Action needed before you upgrade** if a browser or an enrolled machine reaches bb at a direct address such as `http://<LAN-IP>:38986` or `http://<machine>.<tailnet>.ts.net:38986`. Move the route first, then upgrade. This release also raises the host daemon protocol, so every enrolled daemon must update itself — and a daemon that lost its route cannot.
 - Move to bb connect, or put bb behind Tailscale Serve, then remove and re-add each machine in Settings → Machines so its installer records the new route. Setup steps: https://github.com/get-bb/bb/blob/main/docs/multiple-devices.md
 - The desktop app, the `bb` CLI, agents, plugins, and the host daemon on the same machine reach the server over loopback. They need no change.
 
@@ -178,7 +178,7 @@ The server used to listen on every network interface, which exposed its unauthen
 
 Much of this release came from outside the core team. Thank you:
 
-- **[@ben-vargas](https://github.com/ben-vargas)** reported the wildcard bind and shipped the loopback default, the `BB_SERVER_BIND_HOST` setting, and its migration guide.
+- **[@ben-vargas](https://github.com/ben-vargas)** reported the wildcard bind and shipped the loopback default, the `PATCHER_SERVER_BIND_HOST` setting, and its migration guide.
 - **[@Diffuzmetall](https://github.com/Diffuzmetall)** made the built-in terminal more reliable and much faster to replay over a remote connection.
 - **[@kschrader](https://github.com/kschrader)** fixed GitHub pull request sync for a repository with Issues disabled.
 - **[@toasterman234](https://github.com/toasterman234)** helped cut the web app boot payload by 60%.

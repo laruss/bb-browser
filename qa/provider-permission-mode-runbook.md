@@ -151,7 +151,7 @@ Step 3: Test file reads:
 
 Step 4: Test BB CLI read access:
 - bb status
-- bb thread show $BB_THREAD_ID, if BB_THREAD_ID is present
+- bb thread show $PATCHER_THREAD_ID, if PATCHER_THREAD_ID is present
 For Claude Code readonly, BB CLI Bash commands are currently expected to
 request approval in root threads that use ask escalation, or be denied when
 escalation is deny; do not include them in the success path unless the test is
@@ -249,13 +249,13 @@ Expected:
 Spawn fresh managed worktrees:
 
 ```bash
-CODEX_READONLY=$(bb thread spawn --project "$BB_PROJECT_ID" --provider codex --model "$CODEX_MODEL" --reasoning-level low --permission-mode readonly --new-environment worktree --prompt "$CODEX_READONLY_PROMPT" --json | jq -r '.id')
-CODEX_WORKSPACE=$(bb thread spawn --project "$BB_PROJECT_ID" --provider codex --model "$CODEX_MODEL" --reasoning-level low --permission-mode workspace-write --new-environment worktree --prompt "$CODEX_WORKSPACE_PROMPT" --json | jq -r '.id')
-CODEX_FULL=$(bb thread spawn --project "$BB_PROJECT_ID" --provider codex --model "$CODEX_MODEL" --reasoning-level low --permission-mode full --new-environment worktree --prompt "$CODEX_FULL_PROMPT" --json | jq -r '.id')
+CODEX_READONLY=$(bb thread spawn --project "$PATCHER_PROJECT_ID" --provider codex --model "$CODEX_MODEL" --reasoning-level low --permission-mode readonly --new-environment worktree --prompt "$CODEX_READONLY_PROMPT" --json | jq -r '.id')
+CODEX_WORKSPACE=$(bb thread spawn --project "$PATCHER_PROJECT_ID" --provider codex --model "$CODEX_MODEL" --reasoning-level low --permission-mode workspace-write --new-environment worktree --prompt "$CODEX_WORKSPACE_PROMPT" --json | jq -r '.id')
+CODEX_FULL=$(bb thread spawn --project "$PATCHER_PROJECT_ID" --provider codex --model "$CODEX_MODEL" --reasoning-level low --permission-mode full --new-environment worktree --prompt "$CODEX_FULL_PROMPT" --json | jq -r '.id')
 
-CLAUDE_READONLY=$(bb thread spawn --project "$BB_PROJECT_ID" --provider claude-code --model "$CLAUDE_MODEL" --reasoning-level low --permission-mode readonly --new-environment worktree --prompt "$CLAUDE_READONLY_PROMPT" --json | jq -r '.id')
-CLAUDE_WORKSPACE=$(bb thread spawn --project "$BB_PROJECT_ID" --provider claude-code --model "$CLAUDE_MODEL" --reasoning-level low --permission-mode workspace-write --new-environment worktree --prompt "$CLAUDE_WORKSPACE_PROMPT" --json | jq -r '.id')
-CLAUDE_FULL=$(bb thread spawn --project "$BB_PROJECT_ID" --provider claude-code --model "$CLAUDE_MODEL" --reasoning-level low --permission-mode full --new-environment worktree --prompt "$CLAUDE_FULL_PROMPT" --json | jq -r '.id')
+CLAUDE_READONLY=$(bb thread spawn --project "$PATCHER_PROJECT_ID" --provider claude-code --model "$CLAUDE_MODEL" --reasoning-level low --permission-mode readonly --new-environment worktree --prompt "$CLAUDE_READONLY_PROMPT" --json | jq -r '.id')
+CLAUDE_WORKSPACE=$(bb thread spawn --project "$PATCHER_PROJECT_ID" --provider claude-code --model "$CLAUDE_MODEL" --reasoning-level low --permission-mode workspace-write --new-environment worktree --prompt "$CLAUDE_WORKSPACE_PROMPT" --json | jq -r '.id')
+CLAUDE_FULL=$(bb thread spawn --project "$PATCHER_PROJECT_ID" --provider claude-code --model "$CLAUDE_MODEL" --reasoning-level low --permission-mode full --new-environment worktree --prompt "$CLAUDE_FULL_PROMPT" --json | jq -r '.id')
 ```
 
 Wait and save logs:

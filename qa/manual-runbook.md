@@ -72,11 +72,11 @@ sqlite3 --version
 
 Default-path QA must not use generic OpenAI API-key routes. Clear ambient
 `OPENAI_API_KEY` before a normal pass. To intentionally validate API-key routes,
-set `BB_QA_OPENAI_API_KEY` and record that the pass is opt-in.
+set `PATCHER_QA_OPENAI_API_KEY` and record that the pass is opt-in.
 
 ```bash
-if [ -n "${OPENAI_API_KEY:-}" ] && [ -z "${BB_QA_OPENAI_API_KEY:-}" ]; then
-  echo "OPENAI_API_KEY is set. Unset it for default-path QA, or set BB_QA_OPENAI_API_KEY for an explicit API-key route pass."
+if [ -n "${OPENAI_API_KEY:-}" ] && [ -z "${PATCHER_QA_OPENAI_API_KEY:-}" ]; then
+  echo "OPENAI_API_KEY is set. Unset it for default-path QA, or set PATCHER_QA_OPENAI_API_KEY for an explicit API-key route pass."
   false
 fi
 ```
@@ -94,7 +94,7 @@ Start an isolated server + daemon pair and load the exported QA environment:
 ```bash
 eval "$(bun run --silent qa:standalone:start --format env)"
 jq . "$STATE_PATH"
-SERVER_DB_PATH=$(jq -er '.server.dataDir + "/bb.db"' "$STATE_PATH")
+SERVER_DB_PATH=$(jq -er '.server.dataDir + "/patcher.db"' "$STATE_PATH")
 SERVER_LOG_DIR=$(jq -er '(.paths.serverDataDir // .server.dataDir) + "/logs"' "$STATE_PATH")
 DAEMON_LOG_DIR=$(jq -er '(.paths.daemonDataDir // .daemon.dataDir) + "/logs"' "$STATE_PATH")
 
@@ -107,8 +107,8 @@ is the diagnostics contract for humans and debugging.
 Basic health checks:
 
 ```bash
-curl -fsS "$BB_SERVER_URL/api/v1/system/config" | jq
-curl -fsS "$BB_SERVER_URL/api/v1/hosts" | jq
+curl -fsS "$PATCHER_SERVER_URL/api/v1/system/config" | jq
+curl -fsS "$PATCHER_SERVER_URL/api/v1/hosts" | jq
 bb status
 bb provider list
 ```
@@ -138,8 +138,8 @@ printf 'codex: %s\nclaude-code: %s\npi: %s\n' "$CODEX_MODEL" "$CLAUDE_MODEL" "$P
 
 case "$PI_MODEL" in
   openai/*)
-    if [ "${BB_QA_ALLOW_OPENAI_API_KEY_MODELS:-}" != "1" ]; then
-      echo "Pi resolved to generic OpenAI API-key model $PI_MODEL. Pick a subscription-backed model or set BB_QA_ALLOW_OPENAI_API_KEY_MODELS=1 for an explicit API-key route pass."
+    if [ "${PATCHER_QA_ALLOW_OPENAI_API_KEY_MODELS:-}" != "1" ]; then
+      echo "Pi resolved to generic OpenAI API-key model $PI_MODEL. Pick a subscription-backed model or set PATCHER_QA_ALLOW_OPENAI_API_KEY_MODELS=1 for an explicit API-key route pass."
       false
     fi
     ;;
@@ -163,7 +163,7 @@ Validate the upload-and-reference flow before any prompt/timeline attachment QA:
 ```bash
 ATTACHMENT_JSON=$(
   curl -fsS \
-    -X POST "$BB_SERVER_URL/api/v1/projects/$BB_PROJECT_ID/attachments" \
+    -X POST "$PATCHER_SERVER_URL/api/v1/projects/$PATCHER_PROJECT_ID/attachments" \
     -F "file=@$PROJECT_ROOT/alpha.txt"
 )
 echo "$ATTACHMENT_JSON" | jq
@@ -172,7 +172,7 @@ PROMPT_TEXT='Review @alpha.txt and reply exactly ATTACHMENT OK.'
 MENTION_TEXT='@alpha.txt'
 THREAD_CREATE_BODY=$(
   jq -n \
-    --arg projectId "$BB_PROJECT_ID" \
+    --arg projectId "$PATCHER_PROJECT_ID" \
     --arg hostId "$HOST_ID" \
     --arg model "$CODEX_MODEL" \
     --arg text "$PROMPT_TEXT" \
@@ -230,10 +230,10 @@ THREAD_JSON=$(
   curl -fsS \
     -H 'content-type: application/json' \
     -d "$THREAD_CREATE_BODY" \
-    "$BB_SERVER_URL/api/v1/threads"
+    "$PATCHER_SERVER_URL/api/v1/threads"
 )
 THREAD_ID=$(echo "$THREAD_JSON" | jq -er '.id')
-curl -fsS "$BB_SERVER_URL/api/v1/threads/$THREAD_ID/timeline" |
+curl -fsS "$PATCHER_SERVER_URL/api/v1/threads/$THREAD_ID/timeline" |
   jq '.rows[] | select(.kind == "conversation" and .role == "user") | {mentions, attachments}'
 ```
 
@@ -259,7 +259,7 @@ Spawn an unmanaged Codex thread and wait for it to finish:
 
 ```bash
 SMOKE_THREAD_ID=$(bb thread spawn \
-  --project "$BB_PROJECT_ID" \
+  --project "$PATCHER_PROJECT_ID" \
   --provider codex \
   --model "$CODEX_MODEL" \
   --reasoning-level low \
@@ -287,7 +287,7 @@ malformed host-RPC message invariants require automated boundary tests.
 ```bash
 THREAD_PROTOCOL_STARTED_AT=$(date -u +"%Y-%m-%dT%H:%M")
 PROTOCOL_PARENT_ID=$(bb thread spawn \
-  --project "$BB_PROJECT_ID" \
+  --project "$PATCHER_PROJECT_ID" \
   --provider codex \
   --model "$CODEX_MODEL" \
   --reasoning-level low \
@@ -298,7 +298,7 @@ PROTOCOL_PARENT_ID=$(bb thread spawn \
 bb thread wait "$PROTOCOL_PARENT_ID" --status idle --timeout 240
 
 PROTOCOL_CHILD_ID=$(bb thread spawn \
-  --project "$BB_PROJECT_ID" \
+  --project "$PATCHER_PROJECT_ID" \
   --parent-thread "$PROTOCOL_PARENT_ID" \
   --provider codex \
   --model "$CODEX_MODEL" \
@@ -333,7 +333,7 @@ Create a managed worktree thread and inspect workspace status:
 
 ```bash
 WORKTREE_THREAD_ID=$(bb thread spawn \
-  --project "$BB_PROJECT_ID" \
+  --project "$PATCHER_PROJECT_ID" \
   --provider codex \
   --model "$CODEX_MODEL" \
   --reasoning-level low \
@@ -342,7 +342,7 @@ WORKTREE_THREAD_ID=$(bb thread spawn \
   --json | jq -r '.id')
 
 bb thread wait "$WORKTREE_THREAD_ID" --status idle --timeout 120
-WORKTREE_ENV_ID=$(curl -fsS "$BB_SERVER_URL/api/v1/threads/$WORKTREE_THREAD_ID" | jq -r '.environmentId')
+WORKTREE_ENV_ID=$(curl -fsS "$PATCHER_SERVER_URL/api/v1/threads/$WORKTREE_THREAD_ID" | jq -r '.environmentId')
 
 bb thread show "$WORKTREE_THREAD_ID"
 bb thread output "$WORKTREE_THREAD_ID"
@@ -350,9 +350,9 @@ bb thread show "$WORKTREE_THREAD_ID" --work-status
 bb thread show "$WORKTREE_THREAD_ID" --git-diff --diff-target uncommitted
 bb thread show "$WORKTREE_THREAD_ID" --git-diff --diff-target branch_committed
 bb thread show "$WORKTREE_THREAD_ID" --git-diff --diff-target all
-curl -fsS "$BB_SERVER_URL/api/v1/environments/$WORKTREE_ENV_ID" | jq
-curl -fsS "$BB_SERVER_URL/api/v1/environments/$WORKTREE_ENV_ID/status" | jq
-curl -fsS "$BB_SERVER_URL/api/v1/environments/$WORKTREE_ENV_ID/diff/branches" | jq
+curl -fsS "$PATCHER_SERVER_URL/api/v1/environments/$WORKTREE_ENV_ID" | jq
+curl -fsS "$PATCHER_SERVER_URL/api/v1/environments/$WORKTREE_ENV_ID/status" | jq
+curl -fsS "$PATCHER_SERVER_URL/api/v1/environments/$WORKTREE_ENV_ID/diff/branches" | jq
 ```
 
 Verify Codex-backed helper inference for environment commit. This catches
@@ -360,7 +360,7 @@ regressions where the default helper path accidentally falls back to generic
 OpenAI API-key inference.
 
 ```bash
-WORKTREE_ENV_PATH=$(curl -fsS "$BB_SERVER_URL/api/v1/environments/$WORKTREE_ENV_ID" | jq -er '.path')
+WORKTREE_ENV_PATH=$(curl -fsS "$PATCHER_SERVER_URL/api/v1/environments/$WORKTREE_ENV_ID" | jq -er '.path')
 printf 'helper inference commit smoke\n' > "$WORKTREE_ENV_PATH/helper-inference-smoke.txt"
 
 bb environment commit "$WORKTREE_ENV_ID" --json | jq -e '.action == "commit" and (.commitSha | type == "string")'
@@ -369,7 +369,7 @@ bb environment commit "$WORKTREE_ENV_ID" --json | jq -e '.action == "commit" and
 Verify merge-base environment metadata:
 
 ```bash
-MERGE_BASE_BRANCH=$(curl -fsS "$BB_SERVER_URL/api/v1/environments/$WORKTREE_ENV_ID" | jq -er '.defaultBranch // "main"')
+MERGE_BASE_BRANCH=$(curl -fsS "$PATCHER_SERVER_URL/api/v1/environments/$WORKTREE_ENV_ID" | jq -er '.defaultBranch // "main"')
 
 bb environment update "$WORKTREE_ENV_ID" --merge-base-branch "$MERGE_BASE_BRANCH"
 bb environment show "$WORKTREE_ENV_ID" --json | jq -e --arg branch "$MERGE_BASE_BRANCH" '.mergeBaseBranch == $branch'
@@ -383,7 +383,7 @@ Archive and unarchive the smoke thread:
 
 ```bash
 bb thread archive "$SMOKE_THREAD_ID"
-curl -fsS "$BB_SERVER_URL/api/v1/threads/$SMOKE_THREAD_ID" | jq
+curl -fsS "$PATCHER_SERVER_URL/api/v1/threads/$SMOKE_THREAD_ID" | jq
 
 if bb thread tell "$SMOKE_THREAD_ID" "This should fail while archived"; then
   echo "expected archived thread tell to fail"
@@ -402,7 +402,7 @@ Verify archive cleanup for a dirty managed worktree:
 
 ```bash
 DIRTY_ARCHIVE_THREAD_ID=$(bb thread spawn \
-  --project "$BB_PROJECT_ID" \
+  --project "$PATCHER_PROJECT_ID" \
   --provider codex \
   --model "$CODEX_MODEL" \
   --reasoning-level low \
@@ -411,16 +411,16 @@ DIRTY_ARCHIVE_THREAD_ID=$(bb thread spawn \
   --json | jq -r '.id')
 
 bb thread wait "$DIRTY_ARCHIVE_THREAD_ID" --status idle --timeout 120
-DIRTY_ARCHIVE_ENV_ID=$(curl -fsS "$BB_SERVER_URL/api/v1/threads/$DIRTY_ARCHIVE_THREAD_ID" | jq -r '.environmentId')
-DIRTY_ARCHIVE_ENV_PATH=$(curl -fsS "$BB_SERVER_URL/api/v1/environments/$DIRTY_ARCHIVE_ENV_ID" | jq -er '.path')
+DIRTY_ARCHIVE_ENV_ID=$(curl -fsS "$PATCHER_SERVER_URL/api/v1/threads/$DIRTY_ARCHIVE_THREAD_ID" | jq -r '.environmentId')
+DIRTY_ARCHIVE_ENV_PATH=$(curl -fsS "$PATCHER_SERVER_URL/api/v1/environments/$DIRTY_ARCHIVE_ENV_ID" | jq -er '.path')
 printf 'dirty archive safety\n' > "$DIRTY_ARCHIVE_ENV_PATH/dirty-archive.txt"
 bb thread show "$DIRTY_ARCHIVE_THREAD_ID" --work-status
 
 bb thread archive "$DIRTY_ARCHIVE_THREAD_ID"
 
-curl -fsS "$BB_SERVER_URL/api/v1/threads/$DIRTY_ARCHIVE_THREAD_ID" | jq -e '.archivedAt != null'
+curl -fsS "$PATCHER_SERVER_URL/api/v1/threads/$DIRTY_ARCHIVE_THREAD_ID" | jq -e '.archivedAt != null'
 for i in $(seq 1 60); do
-  DIRTY_ARCHIVE_ENV_STATUS=$(curl -fsS "$BB_SERVER_URL/api/v1/environments/$DIRTY_ARCHIVE_ENV_ID" | jq -r '.status')
+  DIRTY_ARCHIVE_ENV_STATUS=$(curl -fsS "$PATCHER_SERVER_URL/api/v1/environments/$DIRTY_ARCHIVE_ENV_ID" | jq -r '.status')
   test "$DIRTY_ARCHIVE_ENV_STATUS" = "destroyed" && break
   sleep 1
 done
@@ -443,7 +443,7 @@ Create thread A and capture its environment:
 
 ```bash
 THREAD_A_ID=$(bb thread spawn \
-  --project "$BB_PROJECT_ID" \
+  --project "$PATCHER_PROJECT_ID" \
   --provider codex \
   --model "$CODEX_MODEL" \
   --reasoning-level low \
@@ -451,7 +451,7 @@ THREAD_A_ID=$(bb thread spawn \
   --json | jq -r '.id')
 
 bb thread wait "$THREAD_A_ID" --status idle --timeout 120
-THREAD_A_ENV_ID=$(curl -fsS "$BB_SERVER_URL/api/v1/threads/$THREAD_A_ID" | jq -r '.environmentId')
+THREAD_A_ENV_ID=$(curl -fsS "$PATCHER_SERVER_URL/api/v1/threads/$THREAD_A_ID" | jq -r '.environmentId')
 bb thread output "$THREAD_A_ID"
 ```
 
@@ -459,7 +459,7 @@ Create thread B in the same project source path and let the server reuse the rea
 
 ```bash
 THREAD_B_ID=$(bb thread spawn \
-  --project "$BB_PROJECT_ID" \
+  --project "$PATCHER_PROJECT_ID" \
   --provider codex \
   --model "$CODEX_MODEL" \
   --reasoning-level low \
@@ -467,7 +467,7 @@ THREAD_B_ID=$(bb thread spawn \
   --json | jq -r '.id')
 
 bb thread wait "$THREAD_B_ID" --status idle --timeout 120
-THREAD_B_ENV_ID=$(curl -fsS "$BB_SERVER_URL/api/v1/threads/$THREAD_B_ID" | jq -r '.environmentId')
+THREAD_B_ENV_ID=$(curl -fsS "$PATCHER_SERVER_URL/api/v1/threads/$THREAD_B_ID" | jq -r '.environmentId')
 
 printf 'thread A env: %s\nthread B env: %s\n' "$THREAD_A_ENV_ID" "$THREAD_B_ENV_ID"
 bb thread output "$THREAD_B_ID"
@@ -502,7 +502,7 @@ Run a mixed-provider pass in separate environments:
 
 ```bash
 CLAUDE_THREAD_ID=$(bb thread spawn \
-  --project "$BB_PROJECT_ID" \
+  --project "$PATCHER_PROJECT_ID" \
   --provider claude-code \
   --model "$CLAUDE_MODEL" \
   --reasoning-level low \
@@ -511,7 +511,7 @@ CLAUDE_THREAD_ID=$(bb thread spawn \
   --json | jq -r '.id')
 
 PI_THREAD_ID=$(bb thread spawn \
-  --project "$BB_PROJECT_ID" \
+  --project "$PATCHER_PROJECT_ID" \
   --provider pi \
   --model "$PI_MODEL" \
   --reasoning-level low \
@@ -521,8 +521,8 @@ PI_THREAD_ID=$(bb thread spawn \
 
 bb thread wait "$CLAUDE_THREAD_ID" --status idle --timeout 120
 bb thread wait "$PI_THREAD_ID" --status idle --timeout 180
-CLAUDE_ENV_ID=$(curl -fsS "$BB_SERVER_URL/api/v1/threads/$CLAUDE_THREAD_ID" | jq -r '.environmentId')
-PI_ENV_ID=$(curl -fsS "$BB_SERVER_URL/api/v1/threads/$PI_THREAD_ID" | jq -r '.environmentId')
+CLAUDE_ENV_ID=$(curl -fsS "$PATCHER_SERVER_URL/api/v1/threads/$CLAUDE_THREAD_ID" | jq -r '.environmentId')
+PI_ENV_ID=$(curl -fsS "$PATCHER_SERVER_URL/api/v1/threads/$PI_THREAD_ID" | jq -r '.environmentId')
 
 printf 'claude env: %s\npi env: %s\n' "$CLAUDE_ENV_ID" "$PI_ENV_ID"
 bb thread output "$CLAUDE_THREAD_ID"
@@ -542,13 +542,13 @@ Graceful daemon restart:
 
 ```bash
 kill -TERM "$DAEMON_PID"
-curl -fsS "$BB_SERVER_URL/api/v1/system/config" | jq
-curl -fsS "$BB_SERVER_URL/api/v1/hosts" | jq
+curl -fsS "$PATCHER_SERVER_URL/api/v1/system/config" | jq
+curl -fsS "$PATCHER_SERVER_URL/api/v1/hosts" | jq
 
 eval "$RESTART_DAEMON_COMMAND"
 DAEMON_PID=$!
 
-curl -fsS "$BB_SERVER_URL/api/v1/hosts" | jq
+curl -fsS "$PATCHER_SERVER_URL/api/v1/hosts" | jq
 bb thread tell "$SMOKE_THREAD_ID" "Check recovery after daemon restart"
 bb thread wait "$SMOKE_THREAD_ID" --status idle --timeout 120
 bb thread output "$SMOKE_THREAD_ID"
@@ -558,7 +558,7 @@ Server restart during environment provisioning:
 
 ```bash
 SERVER_RESTART_THREAD_ID=$(bb thread spawn \
-  --project "$BB_PROJECT_ID" \
+  --project "$PATCHER_PROJECT_ID" \
   --provider codex \
   --model "$CODEX_MODEL" \
   --reasoning-level low \
@@ -566,9 +566,9 @@ SERVER_RESTART_THREAD_ID=$(bb thread spawn \
   --prompt "Say exactly: server restart provisioning recovery" \
   --json | jq -r '.id')
 
-SERVER_RESTART_ENV_ID=$(curl -fsS "$BB_SERVER_URL/api/v1/threads/$SERVER_RESTART_THREAD_ID" | jq -er '.environmentId')
+SERVER_RESTART_ENV_ID=$(curl -fsS "$PATCHER_SERVER_URL/api/v1/threads/$SERVER_RESTART_THREAD_ID" | jq -er '.environmentId')
 for _ in $(seq 1 60); do
-  ENV_STATUS=$(curl -fsS "$BB_SERVER_URL/api/v1/environments/$SERVER_RESTART_ENV_ID" | jq -r '.status')
+  ENV_STATUS=$(curl -fsS "$PATCHER_SERVER_URL/api/v1/environments/$SERVER_RESTART_ENV_ID" | jq -r '.status')
   [ "$ENV_STATUS" = "provisioning" ] && break
   sleep 1
 done
@@ -577,20 +577,20 @@ test "$ENV_STATUS" = "provisioning"
 kill -TERM "$SERVER_PID"
 while kill -0 "$SERVER_PID" 2>/dev/null; do sleep 1; done
 
-BB_DATA_DIR=$(jq -er '.server.dataDir' "$STATE_PATH") \
-BB_SERVER_PORT=$(jq -er '.server.port' "$STATE_PATH") \
+PATCHER_DATA_DIR=$(jq -er '.server.dataDir' "$STATE_PATH") \
+PATCHER_SERVER_PORT=$(jq -er '.server.port' "$STATE_PATH") \
 node apps/server/dist/index.js >> "$(jq -er '.server.logPath' "$STATE_PATH")" 2>&1 &
 SERVER_PID=$!
 
 for _ in $(seq 1 60); do
-  curl -fsS "$BB_SERVER_URL/api/v1/system/config" >/dev/null && break
+  curl -fsS "$PATCHER_SERVER_URL/api/v1/system/config" >/dev/null && break
   sleep 1
 done
 
 eval "$RESTART_DAEMON_COMMAND"
 DAEMON_PID=$!
 
-curl -fsS "$BB_SERVER_URL/api/v1/environments/$SERVER_RESTART_ENV_ID" | jq
+curl -fsS "$PATCHER_SERVER_URL/api/v1/environments/$SERVER_RESTART_ENV_ID" | jq
 bb thread show "$SERVER_RESTART_THREAD_ID"
 bb thread log "$SERVER_RESTART_THREAD_ID" --format json | jq '.[-12:]'
 ```
@@ -609,7 +609,7 @@ Host offline before send:
 ```bash
 kill -TERM "$DAEMON_PID"
 for _ in $(seq 1 60); do
-  HOST_STATUS=$(curl -fsS "$BB_SERVER_URL/api/v1/hosts" | jq -r --arg host "$HOST_ID" '.[] | select(.id == $host) | .status')
+  HOST_STATUS=$(curl -fsS "$PATCHER_SERVER_URL/api/v1/hosts" | jq -r --arg host "$HOST_ID" '.[] | select(.id == $host) | .status')
   [ "$HOST_STATUS" != "connected" ] && break
   sleep 1
 done
@@ -641,7 +641,7 @@ Daemon hot-replace mid-RPC:
 
 ```bash
 HOT_REPLACE_THREAD_ID=$(bb thread spawn \
-  --project "$BB_PROJECT_ID" \
+  --project "$PATCHER_PROJECT_ID" \
   --provider codex \
   --model "$CODEX_MODEL" \
   --reasoning-level low \
@@ -654,7 +654,7 @@ eval "$RESTART_DAEMON_COMMAND"
 DAEMON_PID=$!
 test "$DAEMON_PID" != "$OLD_DAEMON_PID"
 
-curl -fsS "$BB_SERVER_URL/api/v1/hosts" | jq
+curl -fsS "$PATCHER_SERVER_URL/api/v1/hosts" | jq
 bb thread show "$HOT_REPLACE_THREAD_ID"
 bb thread log "$HOT_REPLACE_THREAD_ID" --format json | jq '.[-12:]'
 ```
@@ -680,7 +680,7 @@ bb thread show "$SMOKE_THREAD_ID"
 eval "$RESTART_DAEMON_COMMAND"
 DAEMON_PID=$!
 
-THREAD_STATE=$(curl -fsS "$BB_SERVER_URL/api/v1/threads/$SMOKE_THREAD_ID" | jq -r '.status')
+THREAD_STATE=$(curl -fsS "$PATCHER_SERVER_URL/api/v1/threads/$SMOKE_THREAD_ID" | jq -r '.status')
 
 if [ "$THREAD_STATE" = "active" ]; then
   bb thread wait "$SMOKE_THREAD_ID" --status idle --timeout 180
@@ -700,7 +700,7 @@ Inspect logs and state:
 ```bash
 tail -n 200 "$LOGS_DIR/server.log"
 tail -n 200 "$LOGS_DIR/host-daemon.log"
-curl -fsS "$BB_SERVER_URL/api/v1/threads/$SMOKE_THREAD_ID" | jq
+curl -fsS "$PATCHER_SERVER_URL/api/v1/threads/$SMOKE_THREAD_ID" | jq
 ```
 
 Expected result:
@@ -723,7 +723,7 @@ Use the resolved model for each provider:
 
 ```bash
 PROVIDER_THREAD_ID=$(bb thread spawn \
-  --project "$BB_PROJECT_ID" \
+  --project "$PATCHER_PROJECT_ID" \
   --provider <provider-id> \
   --model <provider-model> \
   --reasoning-level low \
@@ -749,7 +749,7 @@ For workspace interaction, repeat on a worktree thread:
 
 ```bash
 PROVIDER_WORKTREE_THREAD_ID=$(bb thread spawn \
-  --project "$BB_PROJECT_ID" \
+  --project "$PATCHER_PROJECT_ID" \
   --provider <provider-id> \
   --model <provider-model> \
   --reasoning-level low \
@@ -758,17 +758,17 @@ PROVIDER_WORKTREE_THREAD_ID=$(bb thread spawn \
   --json | jq -r '.id')
 
 bb thread wait "$PROVIDER_WORKTREE_THREAD_ID" --status idle --timeout 120
-PROVIDER_WORKTREE_ENV_ID=$(curl -fsS "$BB_SERVER_URL/api/v1/threads/$PROVIDER_WORKTREE_THREAD_ID" | jq -r '.environmentId')
+PROVIDER_WORKTREE_ENV_ID=$(curl -fsS "$PATCHER_SERVER_URL/api/v1/threads/$PROVIDER_WORKTREE_THREAD_ID" | jq -r '.environmentId')
 
 bb thread output "$PROVIDER_WORKTREE_THREAD_ID"
-curl -fsS "$BB_SERVER_URL/api/v1/environments/$PROVIDER_WORKTREE_ENV_ID/status" | jq
+curl -fsS "$PATCHER_SERVER_URL/api/v1/environments/$PROVIDER_WORKTREE_ENV_ID/status" | jq
 ```
 
 Run a pending-interaction pass with permission-restricted turns:
 
 ```bash
 APPROVAL_THREAD_ID=$(bb thread spawn \
-  --project "$BB_PROJECT_ID" \
+  --project "$PATCHER_PROJECT_ID" \
   --provider codex \
   --model "$CODEX_MODEL" \
   --reasoning-level low \
@@ -806,7 +806,7 @@ Verify denial handling with a separate interaction:
 
 ```bash
 DENY_THREAD_ID=$(bb thread spawn \
-  --project "$BB_PROJECT_ID" \
+  --project "$PATCHER_PROJECT_ID" \
   --provider codex \
   --model "$CODEX_MODEL" \
   --reasoning-level low \
@@ -839,7 +839,7 @@ For `claude-code`, also verify grant semantics with a permission-grant interacti
 
 ```bash
 GRANT_THREAD_ID=$(bb thread spawn \
-  --project "$BB_PROJECT_ID" \
+  --project "$PATCHER_PROJECT_ID" \
   --provider claude-code \
   --model "$CLAUDE_MODEL" \
   --reasoning-level low \

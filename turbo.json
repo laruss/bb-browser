@@ -122,7 +122,7 @@
         "bb-app#build"
       ],
       "env": [
-        "BB_DESKTOP_RELEASE_CHANNEL"
+        "PATCHER_DESKTOP_RELEASE_CHANNEL"
       ],
       "inputs": [
         "$TURBO_DEFAULT$",

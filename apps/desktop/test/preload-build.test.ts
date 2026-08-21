@@ -147,7 +147,7 @@ async function startDesktopSmokeServer(
           generalSettings: {
             caffeinate: false,
           },
-          hostDaemonPort: 38887,
+          hostDaemonPort: 38987,
           primaryHostPlatform: null,
           voiceTranscriptionEnabled: false,
         });
@@ -361,10 +361,10 @@ describe("desktop build", () => {
     expect(mainSource).not.toMatch(/^import\s/mu);
 
     // The preload reads its version at *build* time. In a packaged build the
-    // env vars are empty, so any residual `process.env.BB_DESKTOP_VERSION`
+    // env vars are empty, so any residual `process.env.PATCHER_DESKTOP_VERSION`
     // lookup would surface as "undefined" in the title bar / about dialog.
     expect(preloadSource).toContain(desktopVersion);
-    expect(preloadSource).not.toContain("BB_DESKTOP_VERSION");
+    expect(preloadSource).not.toContain("PATCHER_DESKTOP_VERSION");
     expect(preloadSource).not.toContain("getDesktopVersion(process.env");
 
     // The bridge must stay ESM — it pulls bb-app via the package's ESM entry.
@@ -396,14 +396,14 @@ describe("desktop build", () => {
     const stderr: string[] = [];
     const childEnv: NodeJS.ProcessEnv = {
       ...process.env,
-      BB_DATA_DIR: join(smokeRoot, "data"),
-      BB_DESKTOP_AUTO_UPDATE: "0",
-      BB_DESKTOP_OPEN_DEVTOOLS: "0",
-      BB_DESKTOP_VERSION_CHECK: "0",
-      BB_SERVER_PORT: String(smokeServer.port),
+      PATCHER_DATA_DIR: join(smokeRoot, "data"),
+      PATCHER_DESKTOP_AUTO_UPDATE: "0",
+      PATCHER_DESKTOP_OPEN_DEVTOOLS: "0",
+      PATCHER_DESKTOP_VERSION_CHECK: "0",
+      PATCHER_SERVER_PORT: String(smokeServer.port),
     };
-    delete childEnv.BB_DESKTOP_APP_URL;
-    delete childEnv.BB_DESKTOP_NODE_EXEC_PATH;
+    delete childEnv.PATCHER_DESKTOP_APP_URL;
+    delete childEnv.PATCHER_DESKTOP_NODE_EXEC_PATH;
     delete childEnv.ELECTRON_RUN_AS_NODE;
 
     const child = spawn(

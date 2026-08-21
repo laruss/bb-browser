@@ -52,7 +52,7 @@ describe("bb skill commands", () => {
       new Response(
         JSON.stringify({
           ok: true,
-          filePath: "/home/user/.bb/skills/review/SKILL.md",
+          filePath: "/home/user/.patcher/skills/review/SKILL.md",
         }),
         { status: 200, headers: { "content-type": "application/json" } },
       ),

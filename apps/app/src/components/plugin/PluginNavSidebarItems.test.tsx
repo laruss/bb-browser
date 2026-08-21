@@ -276,7 +276,7 @@ describe("PluginNavSidebarItems", () => {
     });
     expect(panelRowNames()).toEqual(["GitHub"]);
     expect(
-      window.localStorage.getItem("bb.sidebar.hiddenPluginPanels"),
+      window.localStorage.getItem("patcher.sidebar.hiddenPluginPanels"),
     ).toContain("docs/main");
 
     fireEvent.click(screen.getByTestId("plugin-nav-sidebar-overflow-toggle"));
@@ -305,7 +305,7 @@ describe("PluginNavSidebarItems", () => {
     registerPanel("docs", "Docs");
     registerPanel("github", "GitHub");
     window.localStorage.setItem(
-      "bb.sidebar.hiddenPluginPanels",
+      "patcher.sidebar.hiddenPluginPanels",
       JSON.stringify(["docs/main"]),
     );
 
@@ -344,7 +344,7 @@ describe("PluginNavSidebarItems", () => {
       screen.getByTestId("plugin-nav-sidebar-overflow-toggle").textContent,
     ).toContain("More (1)");
     expect(
-      window.localStorage.getItem("bb.sidebar.hiddenPluginPanels"),
+      window.localStorage.getItem("patcher.sidebar.hiddenPluginPanels"),
     ).toContain("__builtin__/tools");
   });
 
@@ -389,7 +389,7 @@ describe("PluginNavSidebarItems", () => {
       expect(panelRowNames()).toEqual(["Docs"]);
     });
     expect(
-      window.localStorage.getItem("bb.sidebar.pluginPanelOrder") ?? "",
+      window.localStorage.getItem("patcher.sidebar.pluginPanelOrder") ?? "",
     ).not.toContain("__builtin__/tools");
   });
 });

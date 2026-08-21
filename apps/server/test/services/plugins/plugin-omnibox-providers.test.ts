@@ -329,7 +329,7 @@ describe("omnibox suggest time box", () => {
 
   beforeEach(async () => {
     workDir = await mkdtemp(join(tmpdir(), "bb-omnibox-timeout-"));
-    db = createConnection(join(workDir, "bb.db"));
+    db = createConnection(join(workDir, "patcher.db"));
     migrate(db);
     service = createPluginService({
       db,

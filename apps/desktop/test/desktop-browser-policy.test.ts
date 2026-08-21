@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  BB_DESKTOP_BROWSER_MAX_URL_LENGTH,
+  PATCHER_DESKTOP_BROWSER_MAX_URL_LENGTH,
   patcherDesktopBrowserAttachRequestSchema,
   patcherDesktopBrowserSetBoundsRequestSchema,
   patcherDesktopBrowserStateSchema,
@@ -67,7 +67,7 @@ describe("resolveWindowOpenAction", () => {
     for (const url of [
       "http://localhost:5173/",
       "https://app.localhost/path",
-      "http://127.0.0.1:38886/",
+      "http://127.0.0.1:38986/",
       "http://[::1]:5173/",
       "http://192.168.1.1/",
       "http://printer.local/",
@@ -151,7 +151,7 @@ describe("browser IPC payload schemas", () => {
 
   it("rejects oversized URLs beyond the length cap", () => {
     const longUrl = `https://example.com/${"a".repeat(
-      BB_DESKTOP_BROWSER_MAX_URL_LENGTH,
+      PATCHER_DESKTOP_BROWSER_MAX_URL_LENGTH,
     )}`;
     expect(
       patcherDesktopBrowserAttachRequestSchema.safeParse({
@@ -271,11 +271,11 @@ describe("browser request host classification", () => {
 
 describe("isBlockedBrowserRequestUrl", () => {
   it("blocks requests to loopback/LAN over http(s)/ws(s)", () => {
-    expect(isBlockedBrowserRequestUrl("http://127.0.0.1:38886/")).toBe(true);
+    expect(isBlockedBrowserRequestUrl("http://127.0.0.1:38986/")).toBe(true);
     expect(isBlockedBrowserRequestUrl("https://127.0.0.1/x")).toBe(true);
-    expect(isBlockedBrowserRequestUrl("http://0.0.0.0:38886/")).toBe(true);
+    expect(isBlockedBrowserRequestUrl("http://0.0.0.0:38986/")).toBe(true);
     expect(isBlockedBrowserRequestUrl("https://0.0.0.0/")).toBe(true);
-    expect(isBlockedBrowserRequestUrl("ws://localhost:38886/ws")).toBe(true);
+    expect(isBlockedBrowserRequestUrl("ws://localhost:38986/ws")).toBe(true);
     expect(isBlockedBrowserRequestUrl("wss://10.0.0.5/socket")).toBe(true);
     expect(isBlockedBrowserRequestUrl("http://[::1]/")).toBe(true);
   });
@@ -308,7 +308,7 @@ describe("localRequestOriginKey", () => {
       localRequestOriginKey("https://localhost:5173/"),
     );
     expect(localRequestOriginKey("http://localhost:5173/")).not.toBe(
-      localRequestOriginKey("http://localhost:38886/"),
+      localRequestOriginKey("http://localhost:38986/"),
     );
     expect(localRequestOriginKey("http://localhost:5173/")).not.toBe(
       localRequestOriginKey("http://127.0.0.1:5173/"),
@@ -375,7 +375,7 @@ describe("shouldBlockBrowserRequest", () => {
   it("allows top-level public and loopback http(s) navigations", () => {
     for (const url of [
       "http://localhost:3000/",
-      "http://127.0.0.1:38886/",
+      "http://127.0.0.1:38986/",
       "http://[::1]:5173/",
       "https://example.com/",
     ]) {
@@ -385,7 +385,7 @@ describe("shouldBlockBrowserRequest", () => {
 
   it("blocks top-level private and LAN navigations", () => {
     for (const url of [
-      "http://0.0.0.0:38886/",
+      "http://0.0.0.0:38986/",
       "http://192.168.1.1/",
       "http://printer.local/",
     ]) {
@@ -396,7 +396,7 @@ describe("shouldBlockBrowserRequest", () => {
   it("blocks non-read-only main-frame requests to local targets", () => {
     for (const url of [
       "http://localhost:3000/api",
-      "http://127.0.0.1:38886/api",
+      "http://127.0.0.1:38986/api",
       "http://192.168.1.1/action",
     ]) {
       expect(
@@ -712,7 +712,7 @@ describe("isAllowedBrowserPopupTarget", () => {
       "javascript:alert(1)",
       "file:///etc/passwd",
       "about:srcdoc",
-      "http://127.0.0.1:38886/",
+      "http://127.0.0.1:38986/",
       "https://192.168.1.10/admin",
       "not a url",
     ]) {

@@ -1696,7 +1696,7 @@ describe("codex provider adapter", () => {
     });
     expect(cmd?.params).toMatchObject({
       config: {
-        "shell_environment_policy.set.BB_THREAD_ID": "bb-thread-1",
+        "shell_environment_policy.set.PATCHER_THREAD_ID": "bb-thread-1",
         "shell_environment_policy.set.TEST_VAR": "123",
         model_reasoning_effort: "high",
       },

@@ -105,7 +105,7 @@ describe("probePatcherServer", () => {
             response,
             200,
             JSON.stringify({
-              hostDaemonPort: 38887,
+              hostDaemonPort: 38987,
               primaryHostPlatform: null,
               voiceTranscriptionEnabled: false,
             }),
@@ -131,7 +131,7 @@ describe("probePatcherServer", () => {
       .mockResolvedValueOnce(Response.json({ ok: true }))
       .mockResolvedValueOnce(
         Response.json({
-          dataDir: "/Users/example/.bb",
+          dataDir: "/Users/example/.patcher",
           hostDaemonPort: 4_242,
           voiceTranscriptionEnabled: false,
         }),
@@ -144,7 +144,7 @@ describe("probePatcherServer", () => {
         timeoutMs: 1_000,
       }),
     ).resolves.toEqual({
-      dataDir: "/Users/example/.bb",
+      dataDir: "/Users/example/.patcher",
       kind: "compatible",
       serverUrl: "https://studio.example",
     });
@@ -182,7 +182,7 @@ describe("probePatcherServer", () => {
             response,
             200,
             JSON.stringify({
-              hostDaemonPort: 38887,
+              hostDaemonPort: 38987,
               primaryHostPlatform: null,
               voiceTranscriptionEnabled: false,
             }),

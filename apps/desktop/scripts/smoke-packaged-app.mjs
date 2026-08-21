@@ -174,7 +174,7 @@ async function startSmokeServer({ dataDir, expectedDesktopVersion }) {
         generalSettings: {
           caffeinate: false,
         },
-        hostDaemonPort: 38887,
+        hostDaemonPort: 38987,
         primaryHostPlatform: null,
         voiceTranscriptionEnabled: false,
       });
@@ -372,17 +372,17 @@ async function smokePackagedApp() {
   const stderr = [];
   const childEnv = {
     ...process.env,
-    BB_DATA_DIR: dataDir,
+    PATCHER_DATA_DIR: dataDir,
     // The smoke server answers the bb probe, so a packaged build treats it as a
     // foreign bb and asks before attaching. No one is here to click, so opt out
     // and keep exercising the real attach path.
-    BB_DESKTOP_ATTACH_WITHOUT_PROMPT: "1",
-    BB_DESKTOP_OPEN_DEVTOOLS: "0",
-    BB_DESKTOP_VERSION_FEED_URL: `${serverUrl}/desktop-version.json`,
-    BB_SERVER_PORT: String(smokeServer.port),
+    PATCHER_DESKTOP_ATTACH_WITHOUT_PROMPT: "1",
+    PATCHER_DESKTOP_OPEN_DEVTOOLS: "0",
+    PATCHER_DESKTOP_VERSION_FEED_URL: `${serverUrl}/desktop-version.json`,
+    PATCHER_SERVER_PORT: String(smokeServer.port),
   };
-  delete childEnv.BB_DESKTOP_APP_URL;
-  delete childEnv.BB_DESKTOP_NODE_EXEC_PATH;
+  delete childEnv.PATCHER_DESKTOP_APP_URL;
+  delete childEnv.PATCHER_DESKTOP_NODE_EXEC_PATH;
   delete childEnv.ELECTRON_RUN_AS_NODE;
 
   const child = spawn(appBinary, [`--user-data-dir=${userDataDir}`], {

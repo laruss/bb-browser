@@ -13375,7 +13375,7 @@ interface PluginKvStorage {
     list(prefix?: string): Promise<string[]>;
 }
 interface PluginStorage {
-    /** Namespaced JSON key-value rows in bb.db; values ≤256KB each. */
+    /** Namespaced JSON key-value rows in patcher.db; values ≤256KB each. */
     kv: PluginKvStorage;
     /**
      * Open (or reuse the path of) the plugin's own SQLite database at
@@ -13540,7 +13540,7 @@ interface PluginCliExecutionResult {
 }
 interface PluginCliRegistration {
     /** Top-level command name (`bb <name> …`): lowercase [a-z0-9-]+, and not
-     * a core bb command (see RESERVED_BB_CLI_COMMANDS in the server). */
+     * a core bb command (see RESERVED_PATCHER_CLI_COMMANDS in the server). */
     name: string;
     summary: string;
     /** Subcommand metadata rendered in help and the plugin-commands skill
@@ -15336,7 +15336,7 @@ interface PluginEvents {
 }
 interface PluginServerApi {
     /**
-     * This BB server's own loopback base URL (e.g. "http://127.0.0.1:38886"),
+     * This BB server's own loopback base URL (e.g. "http://127.0.0.1:38986"),
      * which serves the SPA + /api + /ws. For plugins that proxy or relay
      * traffic back to the server itself (e.g. a tunnel). Bind-gated like
      * `bb.sdk`: reading it before the server is listening throws, so prefer

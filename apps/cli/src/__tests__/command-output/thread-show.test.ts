@@ -103,8 +103,8 @@ describe("bb thread show command output", () => {
     expect(lines.some((line) => line.includes("Pinned:"))).toBe(true);
   });
 
-  it("bb thread show --self resolves from BB_THREAD_ID", async () => {
-    vi.stubEnv("BB_THREAD_ID", "thread-show-self");
+  it("bb thread show --self resolves from PATCHER_THREAD_ID", async () => {
+    vi.stubEnv("PATCHER_THREAD_ID", "thread-show-self");
     const thread: domain.Thread = fixtures.makeThread({
       id: "thread-show-self",
       projectId: "proj-1",
@@ -178,7 +178,7 @@ describe("bb thread show command output", () => {
   });
 
   it("bb thread show rejects combining a thread id with --self", async () => {
-    vi.stubEnv("BB_THREAD_ID", "thread-show-self");
+    vi.stubEnv("PATCHER_THREAD_ID", "thread-show-self");
 
     await expect(
       runCommand(["thread", "show", "thread-explicit", "--self"], register),

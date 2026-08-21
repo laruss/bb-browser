@@ -24,7 +24,7 @@ describe("finding an encoder", () => {
   });
 
   it("puts an explicit override first", () => {
-    expect(ffmpegCandidates({ BB_FFMPEG: "/opt/custom/ffmpeg" })[0]).toBe(
+    expect(ffmpegCandidates({ PATCHER_FFMPEG: "/opt/custom/ffmpeg" })[0]).toBe(
       "/opt/custom/ffmpeg",
     );
   });
@@ -32,7 +32,7 @@ describe("finding an encoder", () => {
   it("ignores a relative override rather than resolving it", () => {
     // Against the server's cwd, which has nothing to do with the caller's — the
     // same rule every other bb path override follows.
-    expect(ffmpegCandidates({ BB_FFMPEG: "./ffmpeg" })).toEqual(
+    expect(ffmpegCandidates({ PATCHER_FFMPEG: "./ffmpeg" })).toEqual(
       ffmpegCandidates({}),
     );
   });

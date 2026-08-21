@@ -253,7 +253,7 @@ describe("server skeleton", () => {
   it("warns when startup finds future-dated applied migrations", () => {
     const dataDir = mkdtempSync(join(tmpdir(), "bb-server-db-startup-"));
     try {
-      const dbPath = join(dataDir, "bb.db");
+      const dbPath = join(dataDir, "patcher.db");
       const seedDb = initDb(dbPath);
       let futureCreatedAt: number;
       try {

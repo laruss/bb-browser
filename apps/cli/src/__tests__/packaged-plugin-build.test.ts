@@ -86,9 +86,9 @@ describe("packaged CLI plugin build", () => {
 
     const childEnv: NodeJS.ProcessEnv = {
       ...process.env,
-      BB_CLI_REEXEC: "1",
+      PATCHER_CLI_REEXEC: "1",
     };
-    delete childEnv.BB_CLI;
+    delete childEnv.PATCHER_CLI;
     await execFileAsync(
       process.execPath,
       [cliEntry, "plugin", "build", pluginRoot],

@@ -102,14 +102,14 @@ Bridge provider: `claude-code`
 
 Validated:
 
-- The codex thread reached `idle` after executing `bb status --json`, `bb guide`, `env | sort | grep '^BB_'`, and `bb thread update --self --title 'CLI Self Rename Smoke'` from inside the provider shell.
-- No `command not found: bb` failure occurred. The thread reported `BB_PROJECT_ID=proj_2v4aicwcy5`, `BB_THREAD_ID=thr_4bhd5pbbaj`, `BB_ENVIRONMENT_ID=env_pvtttduv8x`, `BB_SERVER_URL=http://127.0.0.1:50429`, and `BB_HOST_DAEMON_PORT=50430`.
+- The codex thread reached `idle` after executing `bb status --json`, `bb guide`, `env | sort | grep '^PATCHER_'`, and `bb thread update --self --title 'CLI Self Rename Smoke'` from inside the provider shell.
+- No `command not found: bb` failure occurred. The thread reported `PATCHER_PROJECT_ID=proj_2v4aicwcy5`, `PATCHER_THREAD_ID=thr_4bhd5pbbaj`, `PATCHER_ENVIRONMENT_ID=env_pvtttduv8x`, `PATCHER_SERVER_URL=http://127.0.0.1:50429`, and `PATCHER_HOST_DAEMON_PORT=50430`.
 - The thread title changed to `CLI Self Rename Smoke`, confirming that mutating CLI commands work from the injected thread context.
 - A real daemon restart was verified twice:
   - first by manually stopping PID `49755` and starting a fresh daemon session, then sending a follow-up to the same thread
   - again with the repaired standalone restart command, which shut down daemon PID `8819` and produced a fresh connected session (`hses_74jgcwdivb`) in the daemon log before the follow-up completed
-- After both restarts, the same thread resumed and still reported the same `BB_*` values, including the same `BB_ENVIRONMENT_ID`.
-- The `claude-code` bridge-backed thread also reached `idle` and reported the expected `BB_PROJECT_ID`, `BB_THREAD_ID`, `BB_ENVIRONMENT_ID`, `BB_SERVER_URL`, and `BB_HOST_DAEMON_PORT` values from inside its shell.
+- After both restarts, the same thread resumed and still reported the same `PATCHER_*` values, including the same `PATCHER_ENVIRONMENT_ID`.
+- The `claude-code` bridge-backed thread also reached `idle` and reported the expected `PATCHER_PROJECT_ID`, `PATCHER_THREAD_ID`, `PATCHER_ENVIRONMENT_ID`, `PATCHER_SERVER_URL`, and `PATCHER_HOST_DAEMON_PORT` values from inside its shell.
 
 Notes:
 
@@ -481,8 +481,8 @@ Status: passed
 
 Validated:
 
-- Replayed known bad Claude thread `thr_m22cr9ggq7` from the active dev database (`<dev-data-dir>/bb.db`) through the server timeline builder. The rendered timeline had 13 rows, 6 `Unhandled Claude Code event` entries, and 0 such entries in the trailing 30 rendered lines.
-- Spot-checked all 13 unarchived development threads in the active dev database (`<dev-data-dir>/bb.db`) through `buildThreadTimeline`; 0 failed to project.
+- Replayed known bad Claude thread `thr_m22cr9ggq7` from the active dev database (`<dev-data-dir>/patcher.db`) through the server timeline builder. The rendered timeline had 13 rows, 6 `Unhandled Claude Code event` entries, and 0 such entries in the trailing 30 rendered lines.
+- Spot-checked all 13 unarchived development threads in the active dev database (`<dev-data-dir>/patcher.db`) through `buildThreadTimeline`; 0 failed to project.
 - Re-ran malformed turn-scope projection coverage with `bunx turbo run test --filter=@patcher/core-ui -- --run test/to-view-messages.turn-lifecycle.test.ts`; 9 tests passed.
 
 Notes:

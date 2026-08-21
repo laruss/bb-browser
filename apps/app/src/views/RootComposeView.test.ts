@@ -46,13 +46,13 @@ describe("requestRootComposePluginFocus", () => {
   it("routes host focus through the subscriber that reveals the root composer", () => {
     let focusRequests = 0;
     const unsubscribe = subscribeComposerFocusRequests(
-      "bb.promptDraft.new-thread",
+      "patcher.promptDraft.new-thread",
       () => {
         focusRequests += 1;
       },
     );
 
-    requestRootComposePluginFocus("bb.promptDraft.new-thread");
+    requestRootComposePluginFocus("patcher.promptDraft.new-thread");
 
     expect(focusRequests).toBe(1);
     unsubscribe();

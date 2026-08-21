@@ -124,10 +124,10 @@ export function resolvePatcherAppProcessRuntime(
     };
   }
 
-  const rawNodeExecPath = args.env.BB_DESKTOP_NODE_EXEC_PATH?.trim();
+  const rawNodeExecPath = args.env.PATCHER_DESKTOP_NODE_EXEC_PATH?.trim();
   if (rawNodeExecPath === undefined || rawNodeExecPath.length === 0) {
     throw new Error(
-      "BB_DESKTOP_NODE_EXEC_PATH is required in desktop dev mode. Launch through apps/desktop/scripts/run-electron-dev.mjs.",
+      "PATCHER_DESKTOP_NODE_EXEC_PATH is required in desktop dev mode. Launch through apps/desktop/scripts/run-electron-dev.mjs.",
     );
   }
 

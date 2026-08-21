@@ -538,7 +538,7 @@ describe("injected skill source discovery", () => {
       description: "User copy.",
     });
     const projectSkillRoot = await writeSkill({
-      rootPath: path.join(workspacePath, ".bb", "skills"),
+      rootPath: path.join(workspacePath, ".patcher", "skills"),
       name: "bb-cli",
       description: "Project copy.",
     });
@@ -547,7 +547,7 @@ describe("injected skill source discovery", () => {
     const sources = await resolveInjectedSkillSources(logger, {
       builtinSkillsRootPath,
       dataDir,
-      projectSkillsRootPath: path.join(workspacePath, ".bb", "skills"),
+      projectSkillsRootPath: path.join(workspacePath, ".patcher", "skills"),
     });
 
     expect(sources).toEqual([

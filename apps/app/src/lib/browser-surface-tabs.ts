@@ -18,7 +18,7 @@ import {
 // belong to no thread at all, because here the browser is the product rather
 // than a panel inside a thread view.
 
-const BROWSER_SURFACE_TABS_STORAGE_PREFIX = "bb.browserSurface.tabs";
+const BROWSER_SURFACE_TABS_STORAGE_PREFIX = "patcher.browserSurface.tabs";
 const BROWSER_SURFACE_TABS_STORAGE_VERSION = "1";
 
 /**

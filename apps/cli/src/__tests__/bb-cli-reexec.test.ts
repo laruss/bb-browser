@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  BB_CLI_REEXEC_ENV,
+  PATCHER_CLI_REEXEC_ENV,
   maybeReexecViaPatcherCli,
 } from "../bb-cli-reexec.js";
 
@@ -26,7 +26,7 @@ describe("maybeReexecViaPatcherCli", () => {
     return path;
   }
 
-  it("no-ops when BB_CLI is unset", () => {
+  it("no-ops when PATCHER_CLI is unset", () => {
     const reexec = vi.fn();
     maybeReexecViaPatcherCli({
       env: {},
@@ -36,11 +36,11 @@ describe("maybeReexecViaPatcherCli", () => {
     expect(reexec).not.toHaveBeenCalled();
   });
 
-  it("no-ops when BB_CLI equals the current executable", async () => {
+  it("no-ops when PATCHER_CLI equals the current executable", async () => {
     const path = await writeExecutable("bb");
     const reexec = vi.fn();
     maybeReexecViaPatcherCli({
-      env: { BB_CLI: path },
+      env: { PATCHER_CLI: path },
       currentExecutablePath: path,
       reexec,
     });
@@ -52,19 +52,19 @@ describe("maybeReexecViaPatcherCli", () => {
     const target = await writeExecutable("target");
     const reexec = vi.fn();
     maybeReexecViaPatcherCli({
-      env: { BB_CLI: target, [BB_CLI_REEXEC_ENV]: "1" },
+      env: { PATCHER_CLI: target, [PATCHER_CLI_REEXEC_ENV]: "1" },
       currentExecutablePath: current,
       reexec,
     });
     expect(reexec).not.toHaveBeenCalled();
   });
 
-  it("re-execs to BB_CLI when it differs from the current entry", async () => {
+  it("re-execs to PATCHER_CLI when it differs from the current entry", async () => {
     const current = await writeExecutable("current");
     const target = await writeExecutable("target");
     const reexec = vi.fn();
     maybeReexecViaPatcherCli({
-      env: { BB_CLI: target, BB_SERVER_URL: "http://127.0.0.1:1" },
+      env: { PATCHER_CLI: target, PATCHER_SERVER_URL: "http://127.0.0.1:1" },
       currentExecutablePath: current,
       argv: ["status", "--json"],
       reexec,
@@ -74,18 +74,18 @@ describe("maybeReexecViaPatcherCli", () => {
       target: realpathSync(target),
       argv: ["status", "--json"],
       env: expect.objectContaining({
-        BB_CLI: target,
-        BB_SERVER_URL: "http://127.0.0.1:1",
-        [BB_CLI_REEXEC_ENV]: "1",
+        PATCHER_CLI: target,
+        PATCHER_SERVER_URL: "http://127.0.0.1:1",
+        [PATCHER_CLI_REEXEC_ENV]: "1",
       }),
     });
   });
 
-  it("no-ops when BB_CLI path is missing", async () => {
+  it("no-ops when PATCHER_CLI path is missing", async () => {
     const current = await writeExecutable("current");
     const reexec = vi.fn();
     maybeReexecViaPatcherCli({
-      env: { BB_CLI: join(tempRoot, "does-not-exist") },
+      env: { PATCHER_CLI: join(tempRoot, "does-not-exist") },
       currentExecutablePath: current,
       reexec,
     });

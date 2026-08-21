@@ -24,7 +24,7 @@ const app = await loadPluginApp(() => import("../../app"));
 afterEach(cleanup);
 
 const PROJECT_ID = "01HZZZZZZZZZZZZZZZZZZZZZP1";
-const BB_PROJECT_ID = "proj_bb0000000000000000000001";
+const PATCHER_PROJECT_ID = "proj_bb0000000000000000000001";
 
 function projectRow(linkedPatcherProjectId: string | null) {
   return {
@@ -90,7 +90,7 @@ describe("dispatch target rail control", () => {
       {
         rpc: detailRpc(null, {
           listPatcherProjects: () => ({
-            patcherProjects: [{ id: BB_PROJECT_ID, name: "bb monorepo" }],
+            patcherProjects: [{ id: PATCHER_PROJECT_ID, name: "bb monorepo" }],
           }),
           updateProject: (input: Record<string, unknown>) => {
             updateCalls.push(input);
@@ -112,7 +112,7 @@ describe("dispatch target rail control", () => {
     await waitFor(() => expect(updateCalls).toHaveLength(1));
     expect(updateCalls[0]).toEqual({
       projectId: PROJECT_ID,
-      linkedPatcherProjectId: BB_PROJECT_ID,
+      linkedPatcherProjectId: PATCHER_PROJECT_ID,
     });
   });
 
@@ -122,9 +122,9 @@ describe("dispatch target rail control", () => {
       app.navPanels[0]!,
       { subPath: "task/TSK-5" },
       {
-        rpc: detailRpc(BB_PROJECT_ID, {
+        rpc: detailRpc(PATCHER_PROJECT_ID, {
           listPatcherProjects: () => ({
-            patcherProjects: [{ id: BB_PROJECT_ID, name: "bb monorepo" }],
+            patcherProjects: [{ id: PATCHER_PROJECT_ID, name: "bb monorepo" }],
           }),
           updateProject: (input: Record<string, unknown>) => {
             updateCalls.push(input);

@@ -2,7 +2,7 @@ import { availableModelSchema } from "@patcher/domain";
 import { z } from "zod";
 import { createJsonLocalStorage } from "@/lib/browser-storage";
 
-const CLAUDE_MODEL_CATALOG_CACHE_PREFIX = "bb.claude-model-catalog";
+const CLAUDE_MODEL_CATALOG_CACHE_PREFIX = "patcher.claude-model-catalog";
 const CLAUDE_MODEL_CATALOG_CACHE_VERSION = "1";
 
 const cachedClaudeModelCatalogSchema = z.object({

@@ -15,7 +15,7 @@ describe("bb thread output command output", () => {
     registerThreadCommands(program, () => "http://server");
 
   it("bb thread output requires a thread id or --self", async () => {
-    vi.stubEnv("BB_THREAD_ID", "thread-output-context");
+    vi.stubEnv("PATCHER_THREAD_ID", "thread-output-context");
     const getOutput = vi.fn(async () => ({ output: "FINAL" }));
     stubServerApi({ "v1.threads.:id.output.$get": getOutput });
 
@@ -29,8 +29,8 @@ describe("bb thread output command output", () => {
     );
   });
 
-  it("bb thread output --self resolves from BB_THREAD_ID", async () => {
-    vi.stubEnv("BB_THREAD_ID", "thread-output-context");
+  it("bb thread output --self resolves from PATCHER_THREAD_ID", async () => {
+    vi.stubEnv("PATCHER_THREAD_ID", "thread-output-context");
     const getOutput = vi.fn(async () => ({ output: "FINAL" }));
     stubServerApi({ "v1.threads.:id.output.$get": getOutput });
 
@@ -40,7 +40,7 @@ describe("bb thread output command output", () => {
       param: { id: "thread-output-context" },
     });
     expect(collectLogLines(vi.mocked(console.error))).not.toContain(
-      "Thread thread-output-context (from BB_THREAD_ID)",
+      "Thread thread-output-context (from PATCHER_THREAD_ID)",
     );
     expect(collectLogLines(vi.mocked(console.log))).toContain("FINAL");
   });

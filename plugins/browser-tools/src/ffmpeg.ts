@@ -24,7 +24,7 @@ const execFileAsync = promisify(execFile);
  */
 
 /** Point at a specific binary; absolute, like every other bb path override. */
-export const BB_FFMPEG_ENV_VAR = "BB_FFMPEG";
+export const PATCHER_FFMPEG_ENV_VAR = "PATCHER_FFMPEG";
 
 /** A `brew install` can download or compile; it must not die at 30 seconds. */
 export const FFMPEG_INSTALL_TIMEOUT_MS = 900_000;
@@ -57,11 +57,11 @@ function binaryCandidates(
 }
 
 export function ffmpegCandidates(env: NodeJS.ProcessEnv): string[] {
-  return binaryCandidates("ffmpeg", env[BB_FFMPEG_ENV_VAR]);
+  return binaryCandidates("ffmpeg", env[PATCHER_FFMPEG_ENV_VAR]);
 }
 
 export function brewCandidates(env: NodeJS.ProcessEnv): string[] {
-  return binaryCandidates("brew", env.BB_BREW);
+  return binaryCandidates("brew", env.PATCHER_BREW);
 }
 
 /**
@@ -215,4 +215,4 @@ export async function installFfmpegWithBrew(args: {
 
 /** What to say when there is no encoder, wherever the miss happened. */
 export const NO_FFMPEG_MESSAGE =
-  "No ffmpeg found. Run `bb browser install-ffmpeg`, or install it yourself (`brew install ffmpeg`), or point BB_FFMPEG at one.";
+  "No ffmpeg found. Run `bb browser install-ffmpeg`, or install it yourself (`brew install ffmpeg`), or point PATCHER_FFMPEG at one.";

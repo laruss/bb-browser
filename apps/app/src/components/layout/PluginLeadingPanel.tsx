@@ -51,8 +51,8 @@ import {
  * user's judgement, not the plugin's.
  */
 
-const LEADING_PANEL_WIDTH_KEY = "bb.leadingPanel.width";
-const LEADING_PANEL_ACTIVE_KEY = "bb.leadingPanel.active";
+const LEADING_PANEL_WIDTH_KEY = "patcher.leadingPanel.width";
+const LEADING_PANEL_ACTIVE_KEY = "patcher.leadingPanel.active";
 export const LEADING_PANEL_MIN_WIDTH = 200;
 export const LEADING_PANEL_MAX_WIDTH = 640;
 export const LEADING_PANEL_DEFAULT_WIDTH = 280;

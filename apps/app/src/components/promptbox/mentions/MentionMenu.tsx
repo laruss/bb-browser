@@ -238,7 +238,7 @@ function getCommandSectionLabel(kind: CommandSectionKind): string {
 // one (falling back to the generic bolt), everything else a named icon. Skills
 // deliberately do NOT show the thread's agent-provider logo: that logo is a
 // property of the composer, not of where the skill was discovered, so painting
-// it on every non-plugin skill mislabels bb-owned skills (`~/.bb/skills`, bb
+// it on every non-plugin skill mislabels bb-owned skills (`~/.patcher/skills`, bb
 // built-ins) as provider-native ones.
 const ROW_ICON_CLASS = "size-3.5 shrink-0 text-muted-foreground";
 

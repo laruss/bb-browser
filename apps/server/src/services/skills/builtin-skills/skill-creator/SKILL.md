@@ -1,6 +1,6 @@
 ---
 name: skill-creator
-description: Create new bb skills and improve existing ones. Use this whenever the user wants to make, write, author, draft, edit, refine, or optimize a skill — including turning the current conversation or workflow into a reusable skill, fixing a skill that is not triggering, or sharpening a skill's description. Skills live in ~/.bb/skills/<name>/SKILL.md. Trigger on phrases like "create a skill", "make a skill for", "turn this into a skill", "write a SKILL.md", "my skill isn't triggering", or "improve this skill".
+description: Create new bb skills and improve existing ones. Use this whenever the user wants to make, write, author, draft, edit, refine, or optimize a skill — including turning the current conversation or workflow into a reusable skill, fixing a skill that is not triggering, or sharpening a skill's description. Skills live in ~/.patcher/skills/<name>/SKILL.md. Trigger on phrases like "create a skill", "make a skill for", "turn this into a skill", "write a SKILL.md", "my skill isn't triggering", or "improve this skill".
 ---
 
 # Skill Creator
@@ -10,7 +10,7 @@ A skill for creating new bb skills and iteratively improving them.
 At a high level the process looks like this:
 
 - Decide what the skill should do and roughly how it should do it
-- Write a draft of the skill into `~/.bb/skills/<name>/SKILL.md`
+- Write a draft of the skill into `~/.patcher/skills/<name>/SKILL.md`
 - Try it on a few realistic prompts by spawning bb threads, with and without the skill
 - Evaluate the results with the user, both qualitatively and with a few objective checks
 - Rewrite the skill based on what you learned
@@ -21,7 +21,7 @@ Your job is to figure out where the user is in this process and jump in. Maybe t
 
 ## How skills work in bb
 
-- **Location.** A skill is a directory with a `SKILL.md` file. User skills live under `~/.bb/skills/<name>/`. The directory name must exactly match the `name` in the frontmatter.
+- **Location.** A skill is a directory with a `SKILL.md` file. User skills live under `~/.patcher/skills/<name>/`. The directory name must exactly match the `name` in the frontmatter.
 - **Frontmatter.** `SKILL.md` must begin with a plain `---` delimiter on its own line, followed by `name` and `description`, then a closing `---`. `name` must be lowercase letters, numbers, and single hyphens (no double hyphens, no spaces, ≤64 chars). `description` must be non-empty and ≤1024 chars.
 - **Discovery.** bb loads skills per thread at spawn time. A newly written or edited skill is picked up by the **next** thread you spawn, not by threads already running — including the one you are in. So you cannot test a skill in your current thread; spawn a fresh thread to see it take effect.
 - **Bundled resources.** Anything else in the skill directory (e.g. `scripts/`, `references/`, `assets/`) ships with the skill and can be read or executed by the agent using the skill. Reference these files from `SKILL.md` with clear pointers about when to use them. This is the basis of progressive disclosure (below).
@@ -49,7 +49,7 @@ Proactively ask about edge cases, input/output formats, example inputs, success 
 
 ### Write the SKILL.md
 
-Create `~/.bb/skills/<name>/SKILL.md`. Based on the interview, fill in:
+Create `~/.patcher/skills/<name>/SKILL.md`. Based on the interview, fill in:
 
 - **name** — the skill identifier. Must match the directory name and the naming rules above.
 - **description** — the primary triggering mechanism. Include both *what* the skill does and *when* to use it; all "when to use" information goes here, not in the body. Agents tend to *under*-trigger skills, so make the description a little pushy: name concrete contexts and phrasings. For example, instead of "Build a dashboard of internal metrics," write "Build a dashboard of internal metrics. Use this whenever the user mentions dashboards, data visualization, internal metrics, or wants to display company data — even if they don't say 'dashboard'."
@@ -143,14 +143,14 @@ A simple way to keep them is a JSON file in a scratch workspace (e.g. `/tmp/<nam
 
 The cleanest way to test a skill in bb is to spawn a fresh thread on a realistic prompt and observe what it does — remember, only newly spawned threads pick up the skill. See the **bb-cli** skill for the full mechanics of spawning and inspecting threads; the essentials:
 
-- Spawn a run: `bb thread spawn --project "$BB_PROJECT_ID" --prompt "<test prompt>"` (add `--json` to capture the thread id for follow-up).
+- Spawn a run: `bb thread spawn --project "$PATCHER_PROJECT_ID" --prompt "<test prompt>"` (add `--json` to capture the thread id for follow-up).
 - Wait for it: `bb thread wait <thread-id>`.
 - Read the result: `bb thread output <thread-id>`, the full transcript with `bb thread log <thread-id>`, and any file changes with `bb thread show <thread-id> --git-diff`.
 
 **With-skill vs. baseline.** To see whether the skill actually helps, compare two runs of the same prompt:
 
-- *With skill:* write the draft to `~/.bb/skills/<name>/`, then spawn the thread — it will be available.
-- *Baseline:* temporarily move the skill aside so discovery skips it (e.g. `mv ~/.bb/skills/<name> ~/.bb/skills/<name>.off`), spawn the same prompt, then move it back. For a brand-new skill the baseline is "no skill"; for an existing skill, snapshot the old version and use that as the baseline.
+- *With skill:* write the draft to `~/.patcher/skills/<name>/`, then spawn the thread — it will be available.
+- *Baseline:* temporarily move the skill aside so discovery skips it (e.g. `mv ~/.patcher/skills/<name> ~/.patcher/skills/<name>.off`), spawn the same prompt, then move it back. For a brand-new skill the baseline is "no skill"; for an existing skill, snapshot the old version and use that as the baseline.
 
 Launch the runs you can in parallel so they finish around the same time. Read the **transcripts**, not just the final output — that's where you see whether the skill triggered, whether the agent followed it, and where it wasted effort.
 
@@ -204,7 +204,7 @@ Bad: `"Format this data"`. Good: `"my boss sent an xlsx in my downloads ('Q4 sal
 
 ## Quick checklist
 
-- `~/.bb/skills/<name>/SKILL.md` exists; directory name matches frontmatter `name`.
+- `~/.patcher/skills/<name>/SKILL.md` exists; directory name matches frontmatter `name`.
 - Frontmatter starts with a plain `---`, has a valid lowercase-hyphen `name` and a pushy, specific `description` (≤1024 chars).
 - Body is focused; large detail lives in `references/`, repeated code in `scripts/`.
 - Tested in a freshly spawned bb thread (not the current one) on realistic prompts, ideally against a baseline.

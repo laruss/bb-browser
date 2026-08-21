@@ -1,4 +1,5 @@
-export const BB_DESKTOP_SPELLCHECK_GLOBAL_NAME = "__patcherDesktopSpellcheck";
+export const PATCHER_DESKTOP_SPELLCHECK_GLOBAL_NAME =
+  "__patcherDesktopSpellcheck";
 
 export interface PatcherDesktopSpellcheckCorrectionContext {
   dictionarySuggestions: string[];
@@ -38,5 +39,5 @@ export function parsePatcherDesktopSpellcheckCorrectionContext(
 export function buildPatcherDesktopSpellcheckLookupScript(
   word: string,
 ): string {
-  return `globalThis[${JSON.stringify(BB_DESKTOP_SPELLCHECK_GLOBAL_NAME)}]?.getCorrectionContext(${JSON.stringify(word)}) ?? null`;
+  return `globalThis[${JSON.stringify(PATCHER_DESKTOP_SPELLCHECK_GLOBAL_NAME)}]?.getCorrectionContext(${JSON.stringify(word)}) ?? null`;
 }

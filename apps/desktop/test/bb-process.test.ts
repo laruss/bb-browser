@@ -108,12 +108,12 @@ describe("bb app process", () => {
         isPackaged: false,
         processExecPath: "/path/to/electron",
       }),
-    ).toThrow("BB_DESKTOP_NODE_EXEC_PATH is required");
+    ).toThrow("PATCHER_DESKTOP_NODE_EXEC_PATH is required");
 
     expect(
       resolvePatcherAppProcessRuntime({
         env: {
-          BB_DESKTOP_NODE_EXEC_PATH: "/usr/local/bin/node",
+          PATCHER_DESKTOP_NODE_EXEC_PATH: "/usr/local/bin/node",
         },
         isPackaged: false,
         processExecPath: "/path/to/electron",
