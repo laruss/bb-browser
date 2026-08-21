@@ -58,6 +58,12 @@ By tree: `apps` 6 131 / 696 files, `packages` 4 882 / 344, `plugins` 1 886 /
 122, `examples` 478 / 57, `docs` 328 / 13, `tests` 92 / 16, `scripts` 37 / 4,
 `.github` 18 / 2.
 
+After phase 3 the `Bb*` column is **0** and the tree is at **12 306
+occurrences across 1 181 files**: `BB_*` 2 800, `bb.*` 2 461, `bb-plugin-*`
+710, `bb-app` 595, `get-bb` / `getbb.app` 78. `apps` 5 118 / 630 files,
+`packages` 4 170 / 330, `plugins` 1 721 / 121, `examples` 454 / 56, `docs`
+321 / 13, `tests` 92 / 16, `scripts` 37 / 4, `.github` 18 / 2.
+
 ## Traps
 
 These are the reasons this is a phased plan and not one `sed`.
@@ -88,12 +94,12 @@ These are the reasons this is a phased plan and not one `sed`.
 
 Renamed as identifiers, **not** as values.
 
-| What                                                | Where                                                  | Why                                                                                                                                                                                                                                                                            |
-| --------------------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 74 × `"bb-desktop:*"` IPC channel names             | `apps/desktop/src/desktop-browser-ipc.ts` etc.         | bb-migration.md invariant 2, and it applies to Patcher against itself: the shell attaches to any healthy server with **no version handshake**, so renderer and main process routinely come from different builds. Renaming a channel value breaks old-SPA/new-shell instantly. |
-| `exposeInMainWorld("bbDesktop")`, `("bbLogViewer")` | `apps/desktop/src/preload.ts`, `log-viewer-preload.ts` | Same mixed-build boundary.                                                                                                                                                                                                                                                     |
-| `exposeInIsolatedWorld(..., "bb", ...)`             | `apps/desktop/src/page-script-preload.ts:112`          | Public page-script API (`bb.ready`). Same boundary.                                                                                                                                                                                                                            |
-| `persist:bb-browser`                                | `apps/desktop/src/desktop-browser-view.ts:353`         | The partition name is the on-disk directory. Renaming it wipes every site cookie and session. No user-facing value in changing it.                                                                                                                                             |
+| What                                    | Where                                          | Why                                                                                                                                                                                                                                                                                     |
+| --------------------------------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 74 × `"bb-desktop:*"` IPC channel names | `apps/desktop/src/desktop-browser-ipc.ts` etc. | bb-migration.md invariant 2, and it applies to Patcher against itself: the shell attaches to any healthy server with **no version handshake**, so renderer and main process routinely come from different builds. Renaming a channel value breaks old-SPA/new-shell instantly.          |
+| `exposeInMainWorld("bbDesktop")`        | `apps/desktop/src/preload.ts`                  | Same mixed-build boundary. **`bbLogViewer` was listed here and does not belong**: the log viewer's HTML is a template literal built by the same main process that installs its preload and handed to `loadURL`, so both sides are always one build. It was renamed outright in phase 3. |
+| `exposeInIsolatedWorld(..., "bb", ...)` | `apps/desktop/src/page-script-preload.ts:112`  | Public page-script API (`bb.ready`). Same boundary.                                                                                                                                                                                                                                     |
+| `persist:bb-browser`                    | `apps/desktop/src/desktop-browser-view.ts:353` | The partition name is the on-disk directory. Renaming it wipes every site cookie and session. No user-facing value in changing it.                                                                                                                                                      |
 
 **Refinement, not a rename:** where the frozen string is a _developer-facing
 API_ — `bbDesktop` and the page-script `bb` — expose the new name **in addition**
@@ -322,23 +328,79 @@ from `HEAD` and running the repo-pinned prettier 3.8.3 against them. The new
 scope is five characters longer, so 90 import statements overflowed the print
 width; those were formatted and the pre-existing 275 left alone.
 
-### Phase 3 — `Bb*` identifiers and globals
+### Phase 3 — `Bb*` identifiers and globals — **done** (`d745f8def`)
 
-- 173 `Bb*` types → `Patcher*`; `__bb*` globals → `__patcher*`; the two `useBb*`
-  hooks.
-- Additive alias exposures for `bbDesktop` and the page-script `bb`, per the
-  Frozen section. Nothing is removed.
-- Regenerate `packages/plugin-build/src/runtime-export-manifest.ts` and the
-  bundled `.d.ts` set.
+441 distinct tokens, 4 023 replacements across 438 files. More than the 173
+the plan counted, because `Bb` also sits inside identifiers
+(`createCliBbSdk`, `resolveBbAppVersion`, `linkedBbProjectId`) and the zod
+schema constants pair one-for-one with the types they validate.
 
-**Verify:** `bunx turbo run typecheck`; targeted tests for `@patcher/plugin-sdk`,
-`@patcher/plugin-build`, `@patcher/templates`, `@patcher/desktop`.
+**The rule that decided scope:** an identifier moves; a name that is written
+somewhere and read back by something built separately does not. Under it the
+`Bb*` types, their schema constants, the `__bb*` globals, the two `useBb*`
+hooks and every embedded form moved, while SQL columns
+(`linked_bb_project_id`, `rollback_bb_version`), the plugin manifest keys, the
+template keys and the frozen globals stayed. The rule is worth keeping for
+phases 4–6: it is sharper than "identifiers vs strings", because plenty of
+strings are internal to a single build and plenty of identifiers mirror
+something persisted.
+
+**Two things the inventory contradicted.**
+
+1. **`bbLogViewer` was in the Frozen table and does not belong there.** The
+   log viewer's HTML is a template literal built by the same main process
+   that installs `log-viewer-preload.cjs`, handed to `loadURL` — one build on
+   both sides, no server-served renderer, no mixed build. Renamed outright;
+   the Frozen table above is corrected.
+2. **`builtWith.bbVersion` is a serialized key, not an identifier.** It is
+   written into a plugin's `dist/*.meta.json` and validated on read by
+   `apps/server/src/services/plugins/app-bundle.ts`. It moved anyway, with
+   the rest of the `bbVersion` token: the clean break already invalidates
+   artifacts built before the rename, so rejecting them is intended. Phase 5
+   owns the artifact format and the `PLUGIN_SDK_VERSION` 1.0.0 signal.
+
+**The additive aliases,** and what they actually cost:
+
+- `preload.ts` calls `exposeInMainWorld` twice. Renderer-side,
+  `getPatcherDesktopInfo()` and `getAppSurface()` read
+  `patcherDesktop ?? bbDesktop`, so a new SPA works against an older shell.
+- The page-script preload **cannot** expose twice: a second
+  `exposeInIsolatedWorld` for one world throws and aborts the rest of the
+  preload. `patcher` is aliased with a one-line
+  `executeJavaScriptInIsolatedWorld` queued ahead of the page scripts.
+- **Two `exposeInMainWorld` calls with the same object give the renderer two
+  distinct proxies.** They are not reference-equal. The packaged-Electron
+  smoke test caught this and a unit test could not have; it now asserts both
+  names resolve, expose `getInfo`, and report the same version. Identity was
+  never the promise.
+
+Deferred with their phases: `BBSdk*` and `createBBSdk` — the public class of
+the `bb-app` npm package, which would otherwise collide with
+`BbSdk` → `PatcherSdk` (7); `SCREAMING_CASE` `BB_*`, including the IPC
+channel-_name_ constants, which travel with the environment pass (4);
+`engines.bbPluginSdk` (5); `bbGuide*` (6).
+
+Anchoring: an explicit 441-token allow-list matched at identifier boundaries,
+not a pattern. A pattern catches `DAY_ABBREVIATION`, `ABBREV_OPTION_PATTERN`,
+`BUBBLE_ACTIONS`, `BBEdit`, a `sha256/BBBB` test fingerprint, and two base64
+blobs containing `Bb` followed by a capital. All are still in the tree.
+
+**Verified** on Node 22.20.0: `typecheck --force` 54/54, `lint` clean,
+`build` 13/13, `env -u CLAUDE_CONFIG_DIR bun run test` 54/54, generated set
+regenerated with no drift. `@patcher/agent-runtime` failed twice under full
+parallel load and passed alone at 45/45 files and 907/907 — the
+load-sensitivity caveat again. Formatting: 133 of 442 changed files fail
+prettier, 63 already at the parent commit; the 70 the rename broke were
+formatted.
 
 ### Phase 4 — Environment, paths, ports, database
 
 - 297 `BB_*` → `PATCHER_*` across `packages/config` and every consumer,
   including `apps/server/src/assets/install-machine.sh` and the launchd/systemd
-  unit it writes.
+  unit it writes. This also carries the `SCREAMING_CASE` constants that are
+  not environment variables — `BB_DESKTOP_*_CHANNEL`,
+  `BB_DESKTOP_SPELLCHECK_GLOBAL_NAME` — whose _names_ rename while the
+  channel string _values_ stay frozen.
 - `runtime.ts`: data dir names, db file name, prod ports,
   `reservePackagedAppPorts`.
 - localStorage keys in `apps/app` (including the inline bootstrap in
@@ -396,6 +458,9 @@ available default browser, then restore.
   `.github/workflows/publish-bb-app.yml` → `publish-patcher-app.yml`;
   `check-version-lockstep.mjs`. The directory, the published name, the bins,
   the release workflow, and `bb-app-artifact.ts` move together or not at all.
+  `BBSdk` and `createBBSdk` — the package's public class — belong to the same
+  unit: renaming them in phase 3 would have collided with
+  `BbSdk` → `PatcherSdk`.
 - Auto-update feed base URL and the `desktop-latest` / `desktop-nightly` release
   tags in the new repo.
 - Telemetry: new PostHog project for `PATCHER_POSTHOG_API_KEY`, and update the
