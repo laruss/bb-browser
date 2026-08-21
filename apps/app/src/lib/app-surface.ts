@@ -6,7 +6,10 @@ import {
 } from "@patcher/config/app-surface";
 
 export function getAppSurface(): AppSurface {
-  if (typeof window !== "undefined" && window.bbDesktop !== undefined) {
+  if (
+    typeof window !== "undefined" &&
+    (window.patcherDesktop ?? window.bbDesktop) !== undefined
+  ) {
     return APP_SURFACE_DESKTOP;
   }
   return APP_SURFACE_WEB;

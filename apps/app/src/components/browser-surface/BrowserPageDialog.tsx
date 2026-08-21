@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { BbDesktopBrowserDialog } from "@patcher/desktop-contract";
+import type { PatcherDesktopBrowserDialog } from "@patcher/desktop-contract";
 import { Icon } from "@patcher/shared-ui/icon";
 import { cn } from "@patcher/shared-ui/lib/utils";
 
@@ -17,12 +17,12 @@ import { cn } from "@patcher/shared-ui/lib/utils";
  */
 
 export interface BrowserPageDialogProps {
-  dialog: NonNullable<BbDesktopBrowserDialog["dialog"]>;
+  dialog: NonNullable<PatcherDesktopBrowserDialog["dialog"]>;
   onRespond: (args: { accept: boolean; promptText?: string }) => void;
 }
 
 const DIALOG_TITLES: Record<
-  NonNullable<BbDesktopBrowserDialog["dialog"]>["type"],
+  NonNullable<PatcherDesktopBrowserDialog["dialog"]>["type"],
   string
 > = {
   alert: "This page says",

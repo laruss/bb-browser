@@ -19,7 +19,7 @@ import {
 } from "@/components/layout/AppPageHeader";
 import type { ThreadGitActionDialogTarget } from "@/components/dialogs/ThreadGitActionDialog";
 import {
-  getBbDesktopInfo,
+  getPatcherDesktopInfo,
   MACOS_WINDOW_NO_DRAG_CLASS,
   shouldUseMacosDesktopChrome,
 } from "@/lib/bb-desktop";
@@ -81,7 +81,7 @@ export function ThreadDetailHeader({
 }: ThreadDetailHeaderProps) {
   const [primaryAction, ...secondaryActions] = threadHeaderGitActions;
   const renderAsDrawer = useIsCompactViewport();
-  const [desktopInfo] = useState(getBbDesktopInfo);
+  const [desktopInfo] = useState(getPatcherDesktopInfo);
   const panelShortcut = useAppCommandShortcut("panel.toggle");
   const usesDesktopChrome = shouldUseMacosDesktopChrome(desktopInfo);
   const headerRef = useRef<HTMLElement>(null!);

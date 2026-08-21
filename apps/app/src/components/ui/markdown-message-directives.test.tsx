@@ -12,7 +12,7 @@ import {
   type Mock,
 } from "vitest";
 import type { PluginMessageDirectiveProps } from "@patcher/plugin-sdk";
-import { useBbNavigate } from "@/lib/plugin-sdk-hooks";
+import { usePatcherNavigate } from "@/lib/plugin-sdk-hooks";
 import { MarkdownPreview } from "./markdown-preview";
 import {
   buildMessageDirectiveRegistry,
@@ -74,7 +74,7 @@ function WorkspaceFileVis(props: PluginMessageDirectiveProps) {
 }
 
 function ThreadPanelVis(_props: PluginMessageDirectiveProps) {
-  const navigate = useBbNavigate();
+  const navigate = usePatcherNavigate();
   return (
     <button
       type="button"

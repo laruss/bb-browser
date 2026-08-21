@@ -3,10 +3,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import {
-  createBbAppProcessEnv,
-  resolveBbAppProcessRuntime,
-  startBbAppProcess,
-  type BbAppProcess,
+  createPatcherAppProcessEnv,
+  resolvePatcherAppProcessRuntime,
+  startPatcherAppProcess,
+  type PatcherAppProcess,
 } from "../src/bb-process.js";
 
 interface TempScript {
@@ -15,7 +15,7 @@ interface TempScript {
 }
 
 interface WaitForLogArgs {
-  process: BbAppProcess;
+  process: PatcherAppProcess;
   text: string;
   timeoutMs: number;
 }
@@ -25,7 +25,7 @@ interface CreateTempScriptArgs {
 }
 
 const tempScripts: TempScript[] = [];
-const processes: BbAppProcess[] = [];
+const processes: PatcherAppProcess[] = [];
 
 async function createTempScript(
   args: CreateTempScriptArgs,
@@ -72,7 +72,7 @@ afterEach(async () => {
 
 describe("bb app process", () => {
   it("uses the dev Node executable without Electron node mode", () => {
-    const env = createBbAppProcessEnv({
+    const env = createPatcherAppProcessEnv({
       env: {
         ELECTRON_RUN_AS_NODE: "1",
       },
@@ -83,7 +83,7 @@ describe("bb app process", () => {
   });
 
   it("uses Electron node mode for packaged runtimes", () => {
-    const runtime = resolveBbAppProcessRuntime({
+    const runtime = resolvePatcherAppProcessRuntime({
       env: {},
       isPackaged: true,
       processExecPath: "/Applications/bb.app/Contents/MacOS/bb",
@@ -94,7 +94,7 @@ describe("bb app process", () => {
       mode: "electron-node",
     });
     expect(
-      createBbAppProcessEnv({
+      createPatcherAppProcessEnv({
         env: {},
         runtimeMode: runtime.mode,
       }).ELECTRON_RUN_AS_NODE,
@@ -103,7 +103,7 @@ describe("bb app process", () => {
 
   it("requires the host Node executable in desktop dev mode", () => {
     expect(() =>
-      resolveBbAppProcessRuntime({
+      resolvePatcherAppProcessRuntime({
         env: {},
         isPackaged: false,
         processExecPath: "/path/to/electron",
@@ -111,7 +111,7 @@ describe("bb app process", () => {
     ).toThrow("BB_DESKTOP_NODE_EXEC_PATH is required");
 
     expect(
-      resolveBbAppProcessRuntime({
+      resolvePatcherAppProcessRuntime({
         env: {
           BB_DESKTOP_NODE_EXEC_PATH: "/usr/local/bin/node",
         },
@@ -134,7 +134,7 @@ process.stdout.write("ready\\n");
 setInterval(() => undefined, 1000);
 `,
     });
-    const processEntry = startBbAppProcess({
+    const processEntry = startPatcherAppProcess({
       bridgePath: script.path,
       cwd: script.root,
       env: process.env,

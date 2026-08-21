@@ -4,7 +4,7 @@ import {
   hasLiveThreadAtHostPath,
   type DbConnection,
 } from "@patcher/db";
-import { isBbManagedWorkspacePath } from "./worktree-paths.js";
+import { isPatcherManagedWorkspacePath } from "./worktree-paths.js";
 
 /**
  * A workspace path is claimed per project: two projects may each hold their own
@@ -61,7 +61,7 @@ export function unmanagedAttachRefusal(
   // when that environment has not stored its path yet.
   if (
     args.dataDir !== null &&
-    isBbManagedWorkspacePath({ dataDir: args.dataDir, path: args.path }) &&
+    isPatcherManagedWorkspacePath({ dataDir: args.dataDir, path: args.path }) &&
     !findProjectOwnsPath(db, args)
   ) {
     return { reason: "foreign-managed", message: foreignManagedMessage };

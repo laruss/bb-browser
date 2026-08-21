@@ -8,9 +8,9 @@ import {
   screen,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { BbDesktopBrowserApi } from "@patcher/desktop-contract";
+import type { PatcherDesktopBrowserApi } from "@patcher/desktop-contract";
 import {
-  createBbDesktopApi,
+  createPatcherDesktopApi,
   createNoopDesktopBrowserApi,
 } from "@/test/bb-desktop-test-utils";
 import {
@@ -71,7 +71,7 @@ function builtInProviders(): readonly OmniboxProvider[] {
 }
 
 interface RenderChromeResult {
-  browser: BbDesktopBrowserApi;
+  browser: PatcherDesktopBrowserApi;
   input: HTMLInputElement;
   navigate: ReturnType<typeof vi.fn>;
   onActivateTab: ReturnType<typeof vi.fn>;
@@ -88,7 +88,7 @@ function renderChrome(
   const onActivateTab = vi.fn();
   const onPageOverlayChange = vi.fn();
   const browser = { ...createNoopDesktopBrowserApi(), navigate };
-  window.bbDesktop = createBbDesktopApi(desktopInfo, browser);
+  window.bbDesktop = createPatcherDesktopApi(desktopInfo, browser);
 
   // A query client because the site-info panel fetches what plugins know about
   // the site when it opens; the rest of the chrome needs none.
@@ -357,14 +357,14 @@ describe("BrowserSurfaceChrome", () => {
 
   it("enables back and forward from the native view's own state", () => {
     const listeners: ((state: unknown) => void)[] = [];
-    const browser: BbDesktopBrowserApi = {
+    const browser: PatcherDesktopBrowserApi = {
       ...createNoopDesktopBrowserApi(),
       onState(listener) {
         listeners.push(listener as (state: unknown) => void);
         return () => {};
       },
     };
-    window.bbDesktop = createBbDesktopApi(desktopInfo, browser);
+    window.bbDesktop = createPatcherDesktopApi(desktopInfo, browser);
     const { wrapper: Wrapper } = createQueryClientTestHarness();
     render(
       <Wrapper>
@@ -406,7 +406,7 @@ describe("BrowserSurfaceChrome", () => {
 
   it("ignores state pushed for another tab", () => {
     const listeners: ((state: unknown) => void)[] = [];
-    window.bbDesktop = createBbDesktopApi(desktopInfo, {
+    window.bbDesktop = createPatcherDesktopApi(desktopInfo, {
       ...createNoopDesktopBrowserApi(),
       onState(listener) {
         listeners.push(listener as (state: unknown) => void);

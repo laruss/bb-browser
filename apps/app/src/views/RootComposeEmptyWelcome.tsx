@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Icon, type IconName } from "@patcher/shared-ui/icon";
-import bbLogoUrl from "../../../../assets/bb-logo.svg";
+import patcherLogoUrl from "../../../../assets/bb-logo.svg";
 
 interface RootComposeEmptyWelcomeProps {
   /** Reveal the composer, optionally prefilled with a starter prompt. */
@@ -140,7 +140,7 @@ export function RootComposeEmptyWelcome({
         style={{ filter: "url(#bb-gloss)" }}
       >
         <img
-          src={bbLogoUrl}
+          src={patcherLogoUrl}
           alt=""
           aria-hidden
           draggable={false}

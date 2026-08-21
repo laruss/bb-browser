@@ -38,7 +38,7 @@ import {
   PluginProvenancePill,
 } from "@/components/tools/PluginDetail";
 import {
-  BbLogo,
+  PatcherLogo,
   ProviderLogo,
   SkillProvenanceTooltip,
 } from "@/components/tools/SkillsCollection";
@@ -193,7 +193,7 @@ const SKILL_PATH = "/Users/you/.bb/skills/writing-voice/SKILL.md";
  */
 function SkillLeading({ provider }: { provider: SkillProvider | null }) {
   if (provider === null) {
-    return <BbLogo />;
+    return <PatcherLogo />;
   }
   return <ProviderLogo providerId={provider} className="size-4" />;
 }

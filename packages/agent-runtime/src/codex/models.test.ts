@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  mapBbReasoningLevelToCodex,
+  mapPatcherReasoningLevelToCodex,
   mapCodexReasoningLevelToBb,
   parseModelsResponse,
 } from "./models.js";
@@ -13,10 +13,10 @@ describe("mapCodexReasoningLevelToBb", () => {
   });
 });
 
-describe("mapBbReasoningLevelToCodex", () => {
+describe("mapPatcherReasoningLevelToCodex", () => {
   it("returns null for none and ultracode", () => {
-    expect(mapBbReasoningLevelToCodex("none")).toBeNull();
-    expect(mapBbReasoningLevelToCodex("ultracode")).toBeNull();
+    expect(mapPatcherReasoningLevelToCodex("none")).toBeNull();
+    expect(mapPatcherReasoningLevelToCodex("ultracode")).toBeNull();
   });
 });
 

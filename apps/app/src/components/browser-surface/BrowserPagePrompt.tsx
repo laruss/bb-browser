@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import type {
-  BbDesktopBrowserPagePromptAnswer,
-  BbDesktopBrowserPagePromptDetails,
+  PatcherDesktopBrowserPagePromptAnswer,
+  PatcherDesktopBrowserPagePromptDetails,
 } from "@patcher/desktop-contract";
 import { Icon } from "@patcher/shared-ui/icon";
 import { cn } from "@patcher/shared-ui/lib/utils";
@@ -22,16 +22,18 @@ import { cn } from "@patcher/shared-ui/lib/utils";
  */
 
 export interface BrowserPagePromptProps {
-  onRespond: (answer: BbDesktopBrowserPagePromptAnswer["answer"]) => void;
-  prompt: BbDesktopBrowserPagePromptDetails;
+  onRespond: (answer: PatcherDesktopBrowserPagePromptAnswer["answer"]) => void;
+  prompt: PatcherDesktopBrowserPagePromptDetails;
 }
 
-const PROMPT_TITLES: Record<BbDesktopBrowserPagePromptDetails["kind"], string> =
-  {
-    auth: "Sign in",
-    certificate: "This connection is not private",
-    "client-certificate": "Choose a certificate",
-  };
+const PROMPT_TITLES: Record<
+  PatcherDesktopBrowserPagePromptDetails["kind"],
+  string
+> = {
+  auth: "Sign in",
+  certificate: "This connection is not private",
+  "client-certificate": "Choose a certificate",
+};
 
 /** Unix seconds as a plain date; a certificate's dates are the whole point. */
 function formatCertificateDate(unixSeconds: number): string {

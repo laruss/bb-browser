@@ -7,7 +7,7 @@ import {
   type AppShortcut,
 } from "@patcher/domain";
 import { AppCommandShortcutPill } from "@/components/commands/AppCommandShortcutHint";
-import { getBbDesktopInfo } from "@/lib/bb-desktop";
+import { getPatcherDesktopInfo } from "@/lib/bb-desktop";
 import {
   formatAppShortcut,
   formatAppShortcutAria,
@@ -80,7 +80,7 @@ export function PluginShortcutsGroup({
   search,
 }: PluginShortcutsGroupProps) {
   const contributed = usePluginContributions().data?.commands;
-  const isDesktop = getBbDesktopInfo() !== null;
+  const isDesktop = getPatcherDesktopInfo() !== null;
   const isMac = isMacKeyboardPlatform(platform);
   const rows = useMemo(
     () =>

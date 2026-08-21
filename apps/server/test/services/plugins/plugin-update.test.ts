@@ -468,7 +468,7 @@ describe("plugin update service and routes", () => {
     const serviceCrash = new Promise<void>((_resolve, reject) => {
       rejectService = reject;
     });
-    vi.stubGlobal("__bbPluginStabilizationCrash", serviceCrash);
+    vi.stubGlobal("__patcherPluginStabilizationCrash", serviceCrash);
     await service.stop();
     service = createPluginService({
       db,
@@ -495,7 +495,7 @@ describe("plugin update service and routes", () => {
       undefined,
       `export default function plugin(bb: any) {
         bb.background.service("unstable", { async start() {
-          await (globalThis as any).__bbPluginStabilizationCrash;
+          await (globalThis as any).__patcherPluginStabilizationCrash;
         }});
       }`,
     );

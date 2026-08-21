@@ -11,7 +11,10 @@ import {
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Host } from "@patcher/domain";
-import type { BbDesktopApi, BbDesktopInfo } from "@patcher/desktop-contract";
+import type {
+  PatcherDesktopApi,
+  PatcherDesktopInfo,
+} from "@patcher/desktop-contract";
 import { HOST_DAEMON_PROTOCOL_VERSION } from "@patcher/host-daemon-contract";
 import type {
   ProviderCliIssue,
@@ -411,7 +414,7 @@ describe("UpdatesSettingsSection", () => {
   });
 
   it("checks for desktop updates through the desktop bridge", async () => {
-    const desktopInfo: BbDesktopInfo = {
+    const desktopInfo: PatcherDesktopInfo = {
       downloadState: "downloaded",
       lastCheckedAt: null,
       latestVersion: "0.0.6",
@@ -423,7 +426,7 @@ describe("UpdatesSettingsSection", () => {
     };
     const checkForUpdates = vi.fn().mockResolvedValue(desktopInfo);
     useDesktopUpdateInfoMock.mockReturnValue({
-      desktopApi: { checkForUpdates } as unknown as BbDesktopApi,
+      desktopApi: { checkForUpdates } as unknown as PatcherDesktopApi,
       desktopInfo,
       isDesktop: true,
     });
@@ -447,7 +450,7 @@ describe("UpdatesSettingsSection", () => {
   });
 
   it("does not claim a legacy desktop shell is downloading an available update", () => {
-    const desktopInfo: BbDesktopInfo = {
+    const desktopInfo: PatcherDesktopInfo = {
       lastCheckedAt: null,
       latestVersion: "0.0.6",
       pendingVersion: null,
@@ -457,7 +460,7 @@ describe("UpdatesSettingsSection", () => {
       version: "0.0.5",
     };
     useDesktopUpdateInfoMock.mockReturnValue({
-      desktopApi: {} as BbDesktopApi,
+      desktopApi: {} as PatcherDesktopApi,
       desktopInfo,
       isDesktop: true,
     });
@@ -470,7 +473,7 @@ describe("UpdatesSettingsSection", () => {
   });
 
   it("retries a failed desktop download through the desktop bridge", async () => {
-    const desktopInfo: BbDesktopInfo = {
+    const desktopInfo: PatcherDesktopInfo = {
       downloadState: "failed",
       lastCheckedAt: null,
       latestVersion: "0.0.6",
@@ -482,7 +485,7 @@ describe("UpdatesSettingsSection", () => {
     };
     const checkForUpdates = vi.fn().mockResolvedValue(desktopInfo);
     useDesktopUpdateInfoMock.mockReturnValue({
-      desktopApi: { checkForUpdates } as unknown as BbDesktopApi,
+      desktopApi: { checkForUpdates } as unknown as PatcherDesktopApi,
       desktopInfo,
       isDesktop: true,
     });

@@ -72,7 +72,7 @@ export function SidebarUpdatesBadge({ onNavigate }: SidebarUpdatesBadgeProps) {
   const stuckDaemonCount = inventory.machines.filter(
     (machine) => machine.canRetryDaemonUpdate,
   ).length;
-  const bbUpdateCount =
+  const patcherUpdateCount =
     (inventory.appUpdateAvailable ? 1 : 0) +
     (inventory.desktopUpdateReady ? 1 : 0) +
     stuckDaemonCount;
@@ -99,13 +99,13 @@ export function SidebarUpdatesBadge({ onNavigate }: SidebarUpdatesBadgeProps) {
     return stale === undefined ? [] : [stale];
   });
 
-  if (bbUpdateCount === 0 && staleProviders.length === 0) {
+  if (patcherUpdateCount === 0 && staleProviders.length === 0) {
     return null;
   }
 
   const updatesRoutePath = getSettingsRoutePath("updates");
-  const bbLabel =
-    bbUpdateCount === 1 ? "bb update available" : "bb updates available";
+  const patcherLabel =
+    patcherUpdateCount === 1 ? "bb update available" : "bb updates available";
   const providerLabel = `${joinNames(
     staleProviders.map((stale) => stale.displayName),
   )} ${staleProviders.length === 1 ? "update" : "updates"} available`;
@@ -115,13 +115,13 @@ export function SidebarUpdatesBadge({ onNavigate }: SidebarUpdatesBadgeProps) {
     // sidebar footer renders before this item, not from a margin here — a
     // margin would also push the chips right on their own wrapped line.
     <SidebarMenuItem className="flex min-w-0 items-center gap-1">
-      {bbUpdateCount > 0 ? (
+      {patcherUpdateCount > 0 ? (
         <Tooltip>
           <TooltipTrigger asChild>
             <Link
               to={updatesRoutePath}
               onClick={onNavigate}
-              aria-label={bbLabel}
+              aria-label={patcherLabel}
               data-testid="sidebar-updates-badge-bb"
               className={CHIP_CLASS}
             >
@@ -129,7 +129,7 @@ export function SidebarUpdatesBadge({ onNavigate }: SidebarUpdatesBadgeProps) {
               bb
             </Link>
           </TooltipTrigger>
-          <TooltipContent side="top">{bbLabel}</TooltipContent>
+          <TooltipContent side="top">{patcherLabel}</TooltipContent>
         </Tooltip>
       ) : null}
       {staleProviders.length > 0 ? (

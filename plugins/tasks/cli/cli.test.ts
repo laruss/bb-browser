@@ -773,7 +773,7 @@ describe("bb tasks CLI", () => {
       JSON.parse(
         stdout(await harness.runCli(["project", "show", "ATOM", "--json"])),
       ).project,
-    ).toMatchObject({ prefix: "ATOM", linkedBbProjectId: null });
+    ).toMatchObject({ prefix: "ATOM", linkedPatcherProjectId: null });
 
     await expect(
       harness.runCli([

@@ -30,7 +30,7 @@ vi.mock("../../shell/data.js", () => ({
 }));
 
 vi.mock("@patcher/plugin-sdk/app", () => ({
-  useBbNavigate: () => ({ toThread: vi.fn() }),
+  usePatcherNavigate: () => ({ toThread: vi.fn() }),
 }));
 
 vi.mock("../../editor/tasks-editor.js", () => ({

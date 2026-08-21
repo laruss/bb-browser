@@ -180,7 +180,7 @@ export function canonicalPermissions(
  *
  * `subscribe` is deliberately absent: it is a single function whose argument
  * picks the feed, so it goes through {@link permissionForRealtimeEvent}.
- * Whether this covers every area is checked where `BbSdk` is in scope —
+ * Whether this covers every area is checked where `PatcherSdk` is in scope —
  * `@patcher/domain` cannot see that type.
  */
 export const PLUGIN_SDK_AREA_PERMISSIONS = {
@@ -200,7 +200,7 @@ export const PLUGIN_SDK_AREA_PERMISSIONS = {
   threadSections: "threads",
   threads: "threads",
   // `as const` so the literal keys survive: the coverage check in the server's
-  // gate assigns this to a Record keyed by `keyof BbSdk`, and an index
+  // gate assigns this to a Record keyed by `keyof PatcherSdk`, and an index
   // signature would satisfy that vacuously.
 } as const satisfies Record<string, PluginPermission>;
 

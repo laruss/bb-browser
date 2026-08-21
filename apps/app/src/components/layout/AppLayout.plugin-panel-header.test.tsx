@@ -123,7 +123,7 @@ vi.mock("@/lib/bb-desktop", () => ({
   SIDEBAR_TRIGGER_TRAILING_RESERVE_CLASS: "",
   MACOS_WINDOW_DRAG_CLASS: "",
   MACOS_WINDOW_NO_DRAG_CLASS: "",
-  getBbDesktopInfo: () => null,
+  getPatcherDesktopInfo: () => null,
   getDesktopWindowKey: () => null,
   isDesktopBrowserAvailable: () => desktopState.browserAvailable,
   shouldReserveMacosTrafficLights: () => false,

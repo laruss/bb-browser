@@ -1,6 +1,6 @@
 import path from "node:path";
 import type {
-  BbPluginApi,
+  PatcherPluginApi,
   PluginCliContext,
   PluginCliResult,
 } from "@patcher/plugin-sdk";
@@ -134,7 +134,7 @@ function httpStatus(error: unknown): number | null {
 }
 
 async function readSnapshot(
-  bb: BbPluginApi,
+  bb: PatcherPluginApi,
   args: { hostId: string; path: string },
 ): Promise<FileSnapshot> {
   try {
@@ -149,7 +149,7 @@ async function readSnapshot(
 }
 
 async function runRequest(
-  bb: BbPluginApi,
+  bb: PatcherPluginApi,
   argv: string[],
   ctx: PluginCliContext,
 ): Promise<PluginCliResult> {
@@ -234,7 +234,7 @@ async function runRequest(
   throw new Error("Unreachable dotenv write state.");
 }
 
-export default function plugin(bb: BbPluginApi) {
+export default function plugin(bb: PatcherPluginApi) {
   bb.cli.register({
     name: "secret",
     summary: "Securely request credentials and write them to a dotenv file.",

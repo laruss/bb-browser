@@ -40,7 +40,7 @@ describe("plugin manifest", () => {
 
   it("accepts a valid engines.bbPluginSdk range", async () => {
     await writeManifest("^0.2.0 || >=2.0.0");
-    expect((await readPluginManifest(rootDir)).bbPluginSdkRange).toBe(
+    expect((await readPluginManifest(rootDir)).patcherPluginSdkRange).toBe(
       "^0.2.0 || >=2.0.0",
     );
   });
@@ -55,7 +55,7 @@ describe("plugin manifest", () => {
   it("accepts an absent range as a legacy manifest", async () => {
     await writeManifest();
     expect(
-      (await readPluginManifest(rootDir)).bbPluginSdkRange,
+      (await readPluginManifest(rootDir)).patcherPluginSdkRange,
     ).toBeUndefined();
   });
 

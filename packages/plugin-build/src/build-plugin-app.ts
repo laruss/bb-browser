@@ -28,7 +28,7 @@ import { validatePluginBuildManifest } from "./plugin-manifest.js";
  *   shared-runtime modules (react ×5, @patcher/plugin-sdk/app, the portaling
  *   radix families, sonner, vaul — see RUNTIME_SLOT_BY_SPECIFIER) are never
  *   bundled; an esbuild plugin swaps them for shims that read
- *   `globalThis.__bbPluginRuntime` — the host app provides one React, so a
+ *   `globalThis.__patcherPluginRuntime` — the host app provides one React, so a
  *   second copy (and its "Invalid hook call" crashes) is impossible.
  * - `dist/app.css` — a plugin-scoped Tailwind v4 pass over the plugin's own
  *   sources plus its imported CSS. Imported CSS stays unscoped so selectors
@@ -38,7 +38,7 @@ import { validatePluginBuildManifest } from "./plugin-manifest.js";
  */
 
 /**
- * Runtime slot on `globalThis.__bbPluginRuntime` per shimmed specifier.
+ * Runtime slot on `globalThis.__patcherPluginRuntime` per shimmed specifier.
  * Shim policy (plugin design §5.5): ONLY packages with singleton/global
  * behavior — one React, the portaling radix families (shared
  * dismissable-layer/focus/scroll-lock/aria-hidden world), sonner (`toast()`
@@ -128,7 +128,7 @@ async function shimExportsOf(
   return names;
 }
 
-/** ESM shim re-exporting a `globalThis.__bbPluginRuntime` slot. */
+/** ESM shim re-exporting a `globalThis.__patcherPluginRuntime` slot. */
 async function shimModuleSource(
   specifier: string,
   slot: string,
@@ -136,10 +136,10 @@ async function shimModuleSource(
 ): Promise<string> {
   const names = await shimExportsOf(specifier, pluginSdkAppModuleUrl);
   return [
-    `const runtime = globalThis.__bbPluginRuntime;`,
+    `const runtime = globalThis.__patcherPluginRuntime;`,
     `if (runtime == null || runtime.${slot} == null) {`,
     `  throw new Error(${JSON.stringify(
-      `Cannot load "${specifier}": this bundle must be loaded by the BB app, which provides the shared plugin runtime (globalThis.__bbPluginRuntime).`,
+      `Cannot load "${specifier}": this bundle must be loaded by the BB app, which provides the shared plugin runtime (globalThis.__patcherPluginRuntime).`,
     )});`,
     `}`,
     `const mod = runtime.${slot};`,
@@ -448,7 +448,7 @@ export interface PluginAppBuildResult {
  */
 export async function buildPluginApp(
   rootDir: string,
-  bbVersion: string,
+  patcherVersion: string,
   toolchain: PluginBuildToolchain,
 ): Promise<PluginAppBuildResult> {
   const { appEntry, packageName, pluginVersion } =
@@ -519,7 +519,11 @@ export async function buildPluginApp(
     await writeFile(
       stagedMetaPath,
       JSON.stringify(
-        createPluginArtifactMeta({ packageName, pluginVersion, bbVersion }),
+        createPluginArtifactMeta({
+          packageName,
+          pluginVersion,
+          patcherVersion,
+        }),
         null,
         2,
       ) + "\n",

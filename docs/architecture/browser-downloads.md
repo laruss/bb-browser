@@ -91,7 +91,7 @@ event at all — there is no tab to attribute it to and nobody to tell.
 
 ## The wire, and the two events
 
-A new channel plus an optional `onDownload` on `BbDesktopBrowserApi`, which is
+A new channel plus an optional `onDownload` on `PatcherDesktopBrowserApi`, which is
 invariant 2 of [bb-migration.md](bb-migration.md) and the same shape favicons,
 scoped popups and page reads used. Feature detection is the negotiation, and it
 is unusually clean here: a shell that predates downloads has no channel _and_

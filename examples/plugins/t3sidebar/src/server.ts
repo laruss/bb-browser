@@ -4,7 +4,7 @@
 // Putting it on the thread would mean a schema change, a wire change, and a
 // HOST_DAEMON_PROTOCOL_VERSION bump for something only this sidebar
 // understands. Here, uninstalling the plugin removes its state with it.
-import { defineRpcContract, type BbPluginApi } from "@patcher/plugin-sdk";
+import { defineRpcContract, type PatcherPluginApi } from "@patcher/plugin-sdk";
 import { z } from "zod";
 
 const migrations = [
@@ -62,7 +62,7 @@ export const t3sidebarRpcContract = defineRpcContract({
 /** Channel the frontend re-reads on. */
 export const LIFECYCLE_CHANNEL = "lifecycle";
 
-export default function plugin(bb: BbPluginApi) {
+export default function plugin(bb: PatcherPluginApi) {
   const db = bb.storage.database();
   bb.storage.migrate(db, migrations);
 

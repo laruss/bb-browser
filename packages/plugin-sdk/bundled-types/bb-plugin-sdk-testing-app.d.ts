@@ -7,14 +7,14 @@
 
 import { ReactNode, ComponentType } from 'react';
 import { RenderResult } from '@testing-library/react';
-import { PluginHomepageSectionRegistration, PluginSettingsSectionRegistration, PluginNavPanelRegistration, PluginLeadingPanelRegistration, PluginThreadPanelActionRegistration, PluginNewThreadPanelActionRegistration, ComposerCustomization, PluginPendingInteractionRegistration, PluginSidebarFooterActionRegistration, PluginThreadListRegistration, PluginThreadHeaderActionRegistration, PluginFileOpenerRegistration, PluginMessageDirectiveRegistration, PluginMessageActionRegistration, PluginContentScriptRegistration, PluginComposerScope, PluginComposerTextEffect, PluginComposerMention, PluginComposerThreadRowStatus, BbNavigate, PluginAppDefinition, PluginRpcContract, StandardSchemaV1InferInput, PluginRpcResult, PluginRealtimeConnectionState, PluginSidebarThreadsState, PluginSidebarPullRequest, PluginSidebarThreadActions } from '@patcher/plugin-sdk';
+import { PluginHomepageSectionRegistration, PluginSettingsSectionRegistration, PluginNavPanelRegistration, PluginLeadingPanelRegistration, PluginThreadPanelActionRegistration, PluginNewThreadPanelActionRegistration, ComposerCustomization, PluginPendingInteractionRegistration, PluginSidebarFooterActionRegistration, PluginThreadListRegistration, PluginThreadHeaderActionRegistration, PluginFileOpenerRegistration, PluginMessageDirectiveRegistration, PluginMessageActionRegistration, PluginContentScriptRegistration, PluginComposerScope, PluginComposerTextEffect, PluginComposerMention, PluginComposerThreadRowStatus, PatcherNavigate, PluginAppDefinition, PluginRpcContract, StandardSchemaV1InferInput, PluginRpcResult, PluginRealtimeConnectionState, PluginSidebarThreadsState, PluginSidebarPullRequest, PluginSidebarThreadActions } from '@patcher/plugin-sdk';
 
 /**
  * `@patcher/plugin-sdk/testing/app` — the frontend plugin test harness. Tests a
  * plugin's `app.tsx` source directly under vitest + jsdom, without the bb
  * host or the esbuild bundle:
  *
- * - {@link installTestPluginRuntime} fills `globalThis.__bbPluginRuntime.
+ * - {@link installTestPluginRuntime} fills `globalThis.__patcherPluginRuntime.
  *   pluginSdkApp` with a test implementation of the `@patcher/plugin-sdk/app`
  *   surface (the same seam `bb plugin build` shims to the real app). It must
  *   run BEFORE the plugin's `app.tsx` module evaluates, because that module
@@ -58,7 +58,7 @@ type NavigateCall = {
     };
 } | {
     method: "openThreadPanel";
-    options: Parameters<BbNavigate["openThreadPanel"]>[0];
+    options: Parameters<PatcherNavigate["openThreadPanel"]>[0];
 };
 interface ComposerLog {
     /** Latest plain text in this isolated composer scope. */
@@ -87,7 +87,7 @@ interface SidebarActionCall {
     read?: boolean;
 }
 /**
- * Install the test runtime at `globalThis.__bbPluginRuntime.pluginSdkApp`.
+ * Install the test runtime at `globalThis.__patcherPluginRuntime.pluginSdkApp`.
  * Idempotent per module instance; must run before the plugin's `app.tsx`
  * (and therefore `@patcher/plugin-sdk/app`) is imported.
  */
@@ -166,7 +166,7 @@ interface RenderSlotOptions<Contract extends PluginRpcContract = PluginRpcContra
     rpc?: PluginRpcTestHandlers<Contract>;
     /** `useSettings()` values; omitted → `{ values: undefined, isLoading: false }`. */
     settings?: Record<string, string | boolean>;
-    /** `useBbContext()` selection; both default to null. */
+    /** `usePatcherContext()` selection; both default to null. */
     context?: {
         projectId?: string | null;
         threadId?: string | null;
@@ -189,8 +189,8 @@ interface RenderSlotOptions<Contract extends PluginRpcContract = PluginRpcContra
      * by thread id. Omitted → every thread reports none.
      */
     sidebarPullRequests?: Record<string, PluginSidebarPullRequest>;
-    /** Host acceptance for `useBbNavigate().openThreadPanel`. */
-    openThreadPanel?: (options: Parameters<BbNavigate["openThreadPanel"]>[0]) => boolean;
+    /** Host acceptance for `usePatcherNavigate().openThreadPanel`. */
+    openThreadPanel?: (options: Parameters<PatcherNavigate["openThreadPanel"]>[0]) => boolean;
 }
 /** Host-originated inputs a slot test can drive deterministically. */
 interface RenderedSlotBehaviorDrivers {
@@ -210,7 +210,7 @@ interface RenderedSlotBehaviorDrivers {
 interface RenderedSlotInspectionState {
     /** Every `useRpc().call`, in order. */
     readonly rpcCalls: RpcCall[];
-    /** Every `useBbNavigate()` call, in order. */
+    /** Every `usePatcherNavigate()` call, in order. */
     readonly navigateCalls: NavigateCall[];
     /** Every `experimental_useSidebarThreadActions()` call, in order. */
     readonly sidebarActionCalls: SidebarActionCall[];

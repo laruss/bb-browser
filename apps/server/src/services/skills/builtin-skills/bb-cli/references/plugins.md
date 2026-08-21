@@ -79,8 +79,8 @@ use the `bb-plugin-authoring` skill instead.
     `@patcher/plugin-sdk/app` and register UI slots (homepageSection,
     settingsSection, navPanel, threadPanelAction, fileOpener) with hooks
     (useRpc, useRealtime, useRealtimeConnectionState,
-    useSettings, useBbContext,
-    useBbNavigate, useComposer for scoped text editing / quote / mention /
+    useSettings, usePatcherContext,
+    usePatcherNavigate, useComposer for scoped text editing / quote / mention /
     focus access); components are vendored shadcn source the
     plugin owns. Installed
     plugins and their settings also appear under Extensions → Plugins.
@@ -93,7 +93,7 @@ use the `bb-plugin-authoring` skill instead.
   JSON for `--json` callers), never truncated. Use pagination or file/streaming
   commands for large results.
 - **Writing a plugin?** Use the `bb-plugin-authoring` skill — the complete
-  authoring reference for the backend `BbPluginApi` (settings, storage, sdk,
+  authoring reference for the backend `PatcherPluginApi` (settings, storage, sdk,
   http/rpc/realtime, background services and schedules, CLI commands, agent
   tools and context, host-rendered UI, lifecycle) and the frontend
   `@patcher/plugin-sdk/app` contract (slots, hooks, UI kit), with working patterns

@@ -92,7 +92,7 @@ an agent that is told "no" without a reason retries the same call.
 
 The one browser IPC command that answers, so it is an `invoke`/`handle` pair
 rather than a `send`. Per invariant 2 of [bb-migration.md](bb-migration.md) it is
-a **new channel** plus an **optional** method on `BbDesktopBrowserApi`, which is
+a **new channel** plus an **optional** method on `PatcherDesktopBrowserApi`, which is
 the same shape scoped popups and favicons used — this is that pattern's first
 request/response instance, and callers feature-detect `readPage` exactly as they
 feature-detect `onFavicon`.

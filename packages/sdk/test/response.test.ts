@@ -1,6 +1,6 @@
 import { afterEach, describe, it, expect, vi } from "vitest";
 import {
-  BbHttpError,
+  PatcherHttpError,
   createRequestTimeoutFetch,
   DEFAULT_BB_REQUEST_TIMEOUT_MS,
   readJsonResponse,
@@ -8,7 +8,7 @@ import {
 } from "../src/response.js";
 import { createNodeTransport } from "../src/node.js";
 
-const REQUEST_TIMEOUT_ERROR_NAME = "BbRequestTimeoutError";
+const REQUEST_TIMEOUT_ERROR_NAME = "PatcherRequestTimeoutError";
 const REQUEST_TIMEOUT_VALIDATION_MESSAGE =
   "BB request timeout must be a non-negative finite number.";
 
@@ -195,7 +195,7 @@ describe("readJsonResponse()", () => {
     ).rejects.toThrow("HTTP 500: Internal Server Error");
   });
 
-  it("throws BbHttpError carrying status and server code for non-ok response", async () => {
+  it("throws PatcherHttpError carrying status and server code for non-ok response", async () => {
     const response = new Response(
       JSON.stringify({
         code: "thread_not_found",
@@ -216,9 +216,9 @@ describe("readJsonResponse()", () => {
       (caught: unknown) => caught,
     );
 
-    expect(error).toBeInstanceOf(BbHttpError);
-    if (!(error instanceof BbHttpError)) {
-      throw new Error("Expected a BbHttpError");
+    expect(error).toBeInstanceOf(PatcherHttpError);
+    if (!(error instanceof PatcherHttpError)) {
+      throw new Error("Expected a PatcherHttpError");
     }
     expect(error.message).toBe("HTTP 404: Thread thread-1 not found");
     expect(error.status).toBe(404);
@@ -234,7 +234,7 @@ describe("readJsonResponse()", () => {
     await expect(readJson(response)).rejects.toMatchObject({
       code: null,
       message: "HTTP 502: plain failure",
-      name: "BbHttpError",
+      name: "PatcherHttpError",
       status: 502,
     });
   });
@@ -272,7 +272,7 @@ describe("readJsonResponse()", () => {
         details: { reason: "provisioning" },
       },
       code: "environment_not_ready",
-      name: "BbHttpError",
+      name: "PatcherHttpError",
     });
   });
 
@@ -289,7 +289,7 @@ describe("readJsonResponse()", () => {
     await expect(readJson(response)).rejects.toMatchObject({
       body: null,
       message: "HTTP 502: Bad Gateway",
-      name: "BbHttpError",
+      name: "PatcherHttpError",
       status: 502,
     });
   });

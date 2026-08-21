@@ -5,9 +5,9 @@ import {
   BB_DESKTOP_BROWSER_MAX_FULL_PAGE_DIMENSION,
   BB_DESKTOP_BROWSER_MAX_SCREENSHOT_BASE64_LENGTH,
   BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH,
-  type BbDesktopBrowserDownload,
-  type BbDesktopBrowserPageScriptCall,
-  type BbDesktopBrowserViewBounds,
+  type PatcherDesktopBrowserDownload,
+  type PatcherDesktopBrowserPageScriptCall,
+  type PatcherDesktopBrowserViewBounds,
 } from "@patcher/desktop-contract";
 import { BB_DESKTOP_BROWSER_CONTENT_SIZE_SCRIPT } from "../src/desktop-browser-capture.js";
 import {
@@ -1114,7 +1114,7 @@ const electronMock = vi.hoisted(() => {
   let nextWebContentsId = 1;
 
   class FakeWebContentsView {
-    public readonly boundsCalls: BbDesktopBrowserViewBounds[] = [];
+    public readonly boundsCalls: PatcherDesktopBrowserViewBounds[] = [];
     public readonly webContents: FakeWebContents;
     /** What the manager asked for when it created this view. */
     public readonly options: {
@@ -1137,7 +1137,7 @@ const electronMock = vi.hoisted(() => {
       }
     }
 
-    setBounds(bounds: BbDesktopBrowserViewBounds): void {
+    setBounds(bounds: PatcherDesktopBrowserViewBounds): void {
       this.boundsCalls.push(bounds);
     }
 
@@ -1489,12 +1489,12 @@ function startFakeDownload(args: StartFakeDownloadArgs): {
 
 function downloadPayloads(
   hostWindow: FakeHostWindow,
-): BbDesktopBrowserDownload[] {
+): PatcherDesktopBrowserDownload[] {
   return hostWindow.webContents.sentMessages
     .filter(
       (message) => message.channel === BB_DESKTOP_BROWSER_DOWNLOAD_CHANNEL,
     )
-    .map((message) => message.payload as BbDesktopBrowserDownload);
+    .map((message) => message.payload as PatcherDesktopBrowserDownload);
 }
 
 function requireOnBeforeRequestListener(): FakeOnBeforeRequestListener {
@@ -7676,13 +7676,13 @@ describe("plugin page scripts", () => {
 
   function pageScriptCalls(
     hostWindow: FakeHostWindow,
-  ): BbDesktopBrowserPageScriptCall[] {
+  ): PatcherDesktopBrowserPageScriptCall[] {
     return hostWindow.webContents.sentMessages
       .filter(
         (message) =>
           message.channel === BB_DESKTOP_BROWSER_PAGE_SCRIPT_CALL_CHANNEL,
       )
-      .map((message) => message.payload as BbDesktopBrowserPageScriptCall);
+      .map((message) => message.payload as PatcherDesktopBrowserPageScriptCall);
   }
 
   // The property the whole surface rests on: a user with no page-script plugin

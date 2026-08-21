@@ -1,12 +1,12 @@
 import { readFile } from "node:fs/promises";
 import {
-  bbAppManagedEnvFileSchema,
-  formatBbAppConfigPath,
-  formatBbAppEnvPath,
-  parseBbAppManagedConfig,
-  type BbAppManagedConfig,
-  type BbAppManagedEnvConfig,
-  type BbAppManagedEnvFile,
+  patcherAppManagedEnvFileSchema,
+  formatPatcherAppConfigPath,
+  formatPatcherAppEnvPath,
+  parsePatcherAppManagedConfig,
+  type PatcherAppManagedConfig,
+  type PatcherAppManagedEnvConfig,
+  type PatcherAppManagedEnvFile,
 } from "@patcher/config/bb-app-managed-config";
 import {
   validateInferenceFallbackModel,
@@ -17,39 +17,39 @@ import { validateOptionalUrl } from "@patcher/config/public-url";
 import type { ServerLogger, ServerRuntimeConfig } from "../../types.js";
 import type { NotificationHub } from "../../ws/hub.js";
 
-export interface ApplyBbAppManagedConfigArgs {
+export interface ApplyPatcherAppManagedConfigArgs {
   baseConfig: ServerRuntimeConfig;
-  managedConfig: BbAppManagedConfig;
-  managedEnvFile: BbAppManagedEnvFile;
+  managedConfig: PatcherAppManagedConfig;
+  managedEnvFile: PatcherAppManagedEnvFile;
   targetConfig: ServerRuntimeConfig;
 }
 
-export interface ReadBbAppManagedConfigArgs {
+export interface ReadPatcherAppManagedConfigArgs {
   configPath: string;
   logger?: ServerLogger;
 }
 
-export interface ReadBbAppManagedEnvArgs {
+export interface ReadPatcherAppManagedEnvArgs {
   envPath: string;
 }
 
-export interface CreateBbAppManagedConfigReloaderArgs {
+export interface CreatePatcherAppManagedConfigReloaderArgs {
   config: ServerRuntimeConfig;
   hub: NotificationHub;
   logger: ServerLogger;
 }
 
-export interface ReloadBbAppManagedConfigArgs {
+export interface ReloadPatcherAppManagedConfigArgs {
   notify: boolean;
 }
 
-export interface BbAppManagedConfigReloader {
-  reload(args: ReloadBbAppManagedConfigArgs): Promise<void>;
+export interface PatcherAppManagedConfigReloader {
+  reload(args: ReloadPatcherAppManagedConfigArgs): Promise<void>;
 }
 
 interface ApplyManagedProcessEnvArgs {
   baseEnv: NodeJS.ProcessEnv;
-  managedEnv: BbAppManagedEnvConfig;
+  managedEnv: PatcherAppManagedEnvConfig;
   managedKeys: Set<string>;
 }
 
@@ -95,8 +95,8 @@ function applyManagedProcessEnv(args: ApplyManagedProcessEnvArgs): void {
   }
 }
 
-export function applyBbAppManagedConfig(
-  args: ApplyBbAppManagedConfigArgs,
+export function applyPatcherAppManagedConfig(
+  args: ApplyPatcherAppManagedConfigArgs,
 ): void {
   const managedConfig = args.managedConfig.config ?? {};
   const managedEnv = args.managedEnvFile.env ?? {};
@@ -131,12 +131,12 @@ export function applyBbAppManagedConfig(
   );
 }
 
-export async function readBbAppManagedConfig(
-  args: ReadBbAppManagedConfigArgs,
-): Promise<BbAppManagedConfig> {
+export async function readPatcherAppManagedConfig(
+  args: ReadPatcherAppManagedConfigArgs,
+): Promise<PatcherAppManagedConfig> {
   try {
     const rawConfig = await readFile(args.configPath, "utf8");
-    return parseBbAppManagedConfig(JSON.parse(rawConfig), {
+    return parsePatcherAppManagedConfig(JSON.parse(rawConfig), {
       logger: args.logger,
     });
   } catch (error) {
@@ -147,12 +147,12 @@ export async function readBbAppManagedConfig(
   }
 }
 
-export async function readBbAppManagedEnv(
-  args: ReadBbAppManagedEnvArgs,
-): Promise<BbAppManagedEnvFile> {
+export async function readPatcherAppManagedEnv(
+  args: ReadPatcherAppManagedEnvArgs,
+): Promise<PatcherAppManagedEnvFile> {
   try {
     const rawConfig = await readFile(args.envPath, "utf8");
-    return bbAppManagedEnvFileSchema.parse(JSON.parse(rawConfig));
+    return patcherAppManagedEnvFileSchema.parse(JSON.parse(rawConfig));
   } catch (error) {
     if (error instanceof Error && "code" in error && error.code === "ENOENT") {
       return {};
@@ -161,25 +161,25 @@ export async function readBbAppManagedEnv(
   }
 }
 
-export async function createBbAppManagedConfigReloader(
-  args: CreateBbAppManagedConfigReloaderArgs,
-): Promise<BbAppManagedConfigReloader> {
+export async function createPatcherAppManagedConfigReloader(
+  args: CreatePatcherAppManagedConfigReloaderArgs,
+): Promise<PatcherAppManagedConfigReloader> {
   const baseConfig = cloneRuntimeConfig(args.config);
   const baseEnv = { ...process.env };
-  const configPath = formatBbAppConfigPath(args.config.dataDir);
-  const envPath = formatBbAppEnvPath(args.config.dataDir);
+  const configPath = formatPatcherAppConfigPath(args.config.dataDir);
+  const envPath = formatPatcherAppEnvPath(args.config.dataDir);
   const managedEnvKeys = new Set<string>();
 
   async function reload(
-    reloadArgs: ReloadBbAppManagedConfigArgs,
+    reloadArgs: ReloadPatcherAppManagedConfigArgs,
   ): Promise<void> {
-    const managedConfig = await readBbAppManagedConfig({
+    const managedConfig = await readPatcherAppManagedConfig({
       configPath,
       logger: args.logger,
     });
-    const managedEnvFile = await readBbAppManagedEnv({ envPath });
+    const managedEnvFile = await readPatcherAppManagedEnv({ envPath });
     const nextConfig = cloneRuntimeConfig(args.config);
-    applyBbAppManagedConfig({
+    applyPatcherAppManagedConfig({
       baseConfig,
       managedConfig,
       managedEnvFile,

@@ -80,9 +80,9 @@ vi.mock("@/lib/bb-desktop", () => ({
   SIDEBAR_TRIGGER_TRAILING_RESERVE_CLASS: "",
   MACOS_WINDOW_DRAG_CLASS: "",
   MACOS_WINDOW_NO_DRAG_CLASS: "",
-  getBbDesktopInfo: () => null,
+  getPatcherDesktopInfo: () => null,
   getDesktopWindowKey: () => null,
-  // No desktop: the layout hosts no browser surface, matching getBbDesktopInfo.
+  // No desktop: the layout hosts no browser surface, matching getPatcherDesktopInfo.
   isDesktopBrowserAvailable: () => false,
   shouldReserveMacosTrafficLights: () => false,
   shouldUseMacosDesktopChrome: () => false,

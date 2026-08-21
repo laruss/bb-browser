@@ -101,7 +101,7 @@ export function createPluginActivation(context: PluginActivationContext) {
     if (
       snapshot.rollbackCandidateVersion === null ||
       snapshot.rollbackSourceFingerprint === null ||
-      snapshot.rollbackBbVersion === null ||
+      snapshot.rollbackPatcherVersion === null ||
       snapshot.rollbackSdkVersion === null ||
       snapshot.rollbackDetail === null
     ) {
@@ -112,7 +112,7 @@ export function createPluginActivation(context: PluginActivationContext) {
     return {
       candidateVersion: snapshot.rollbackCandidateVersion,
       sourceFingerprint: snapshot.rollbackSourceFingerprint,
-      bbVersion: snapshot.rollbackBbVersion,
+      patcherVersion: snapshot.rollbackPatcherVersion,
       sdkVersion: snapshot.rollbackSdkVersion,
       detail: snapshot.rollbackDetail,
     };
@@ -316,7 +316,7 @@ export function createPluginActivation(context: PluginActivationContext) {
           !setPluginStateSnapshotRollbackPending(deps.db, snapshot.id, {
             candidateVersion,
             sourceFingerprint: sourceFingerprint(args.row),
-            bbVersion: deps.appVersion,
+            patcherVersion: deps.appVersion,
             sdkVersion: PLUGIN_SDK_VERSION,
             detail,
             updatedAt: now(),

@@ -37,7 +37,7 @@ import { useIsCompactViewport } from "@patcher/shared-ui/hooks/use-compact-viewp
 import { useOptionalIsSidebarShowing } from "@/components/ui/sidebar.js";
 import {
   CHROME_ROW_HEIGHT_CLASS,
-  getBbDesktopInfo,
+  getPatcherDesktopInfo,
   MACOS_TRAFFIC_LIGHT_LEADING_RESERVE_CLASS,
   MACOS_WINDOW_DRAG_CLASS,
   MACOS_WINDOW_NO_DRAG_CLASS,
@@ -516,7 +516,7 @@ export function BrowserSurfaceTabStrip({
   onSetPinned,
   tabs,
 }: BrowserSurfaceTabStripProps) {
-  const [desktopInfo] = useState(getBbDesktopInfo);
+  const [desktopInfo] = useState(getPatcherDesktopInfo);
   // Which tab's menu is open, rather than a plain boolean: right-clicking a
   // second tab opens its menu and closes the first one's, and the two callbacks
   // can arrive in either order. Keyed by id, a stale close cannot cancel a live

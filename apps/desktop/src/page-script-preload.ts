@@ -27,9 +27,9 @@
 // rest of the preload**, which is why every step below is contained.
 import { contextBridge, ipcRenderer, webFrame } from "electron";
 import type {
-  BbDesktopPageScriptBootstrap,
-  BbDesktopPageScriptRpcAnswer,
-  BbDesktopPageScriptWorld,
+  PatcherDesktopPageScriptBootstrap,
+  PatcherDesktopPageScriptRpcAnswer,
+  PatcherDesktopPageScriptWorld,
 } from "@patcher/desktop-contract";
 import {
   BB_DESKTOP_PAGE_SCRIPT_BOOTSTRAP_CHANNEL,
@@ -73,7 +73,7 @@ function buildApi(pluginId: string): PageScriptApi {
       const answer = (await ipcRenderer.invoke(
         BB_DESKTOP_PAGE_SCRIPT_RPC_CHANNEL,
         { pluginId, method, input: serialized },
-      )) as BbDesktopPageScriptRpcAnswer | undefined;
+      )) as PatcherDesktopPageScriptRpcAnswer | undefined;
       if (answer === undefined || answer.ok !== true) {
         throw new Error(
           answer?.ok === false
@@ -105,7 +105,7 @@ function buildApi(pluginId: string): PageScriptApi {
   };
 }
 
-function runWorld(world: BbDesktopPageScriptWorld): void {
+function runWorld(world: PatcherDesktopPageScriptWorld): void {
   try {
     contextBridge.exposeInIsolatedWorld(
       world.worldId,
@@ -115,6 +115,20 @@ function runWorld(world: BbDesktopPageScriptWorld): void {
   } catch {
     // Nothing to run in a world that has no `bb`; the next plugin still gets its.
     return;
+  }
+  // `patcher` is the name page scripts should use; `bb` is frozen because a
+  // script written against an older shell keeps working. It is an assignment
+  // rather than a second `exposeInIsolatedWorld` because a second expose for
+  // the same world throws and aborts the rest of this preload (see the header).
+  // It is queued before the scripts below, so they see both names.
+  try {
+    void webFrame
+      .executeJavaScriptInIsolatedWorld(world.worldId, [
+        { code: "globalThis.patcher ??= globalThis.bb;" },
+      ])
+      .catch(() => {});
+  } catch {
+    // A world that will not take the alias still runs its scripts under `bb`.
   }
   for (const script of world.scripts) {
     try {
@@ -132,10 +146,10 @@ function runWorld(world: BbDesktopPageScriptWorld): void {
 }
 
 function bootstrap(): void {
-  let answer: BbDesktopPageScriptBootstrap | undefined;
+  let answer: PatcherDesktopPageScriptBootstrap | undefined;
   try {
     answer = ipcRenderer.sendSync(BB_DESKTOP_PAGE_SCRIPT_BOOTSTRAP_CHANNEL) as
-      | BbDesktopPageScriptBootstrap
+      | PatcherDesktopPageScriptBootstrap
       | undefined;
   } catch {
     return;

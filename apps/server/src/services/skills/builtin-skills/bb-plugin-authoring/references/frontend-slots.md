@@ -25,8 +25,8 @@ import {
   useRealtime,
   useRealtimeConnectionState,
   useSettings,
-  useBbContext,
-  useBbNavigate,
+  usePatcherContext,
+  usePatcherNavigate,
   useComposer,
   useComposerView,
 } from "@patcher/plugin-sdk/app";
@@ -348,7 +348,7 @@ Versioned and additive-only:
   `{ id, title?, description?, component }`; `title` is an optional host-rendered
   section heading and `description` is optional supporting copy rendered with
   that heading. Use the existing hooks (`useRpc`, `useRealtime`,
-  `useRealtimeConnectionState`, `useSettings`, `useBbNavigate`, `useBbContext`)
+  `useRealtimeConnectionState`, `useSettings`, `usePatcherNavigate`, `usePatcherContext`)
   for data. Enabled plugins appear in the
   settings sidebar when they declare settings descriptors OR register
   settings sections.
@@ -376,7 +376,7 @@ Versioned and additive-only:
   is the route remainder after the panel root (`""` at the root), so deep
   links like `/plugins/notes/notes/work/ideas.md` land with
   `subPath: "work/ideas.md"`. Navigate within the panel via
-  `useBbNavigate().toPluginPanel(path, { subPath, replace? })` — browser
+  `usePatcherNavigate().toPluginPanel(path, { subPath, replace? })` — browser
   back/forward then walks panel-internal history (prefer this over hash
   routing).
   Registration:
@@ -480,7 +480,7 @@ openWorkspaceFile }` — register a leaf
   surface has no workspace viewer, and it returns whether the host accepted
   the path. To open one of the same plugin's registered `threadPanelAction`
   components, call
-  `useBbNavigate().openThreadPanel({ actionId, title?, params? })`.
+  `usePatcherNavigate().openThreadPanel({ actionId, title?, params? })`.
   `params` is typed as `JsonValue`; use normal plugin navigation as the
   fallback when it returns false.
   **Host behavior / fallbacks:** only assistant and
@@ -507,7 +507,7 @@ openWorkspaceFile }` — register a leaf
   `openPanel({ actionId, title?, params? })` opens one of the same plugin's
   registered `threadPanelAction` components in the current thread's side
   panel — same semantics and boolean return as
-  `useBbNavigate().openThreadPanel`. Errors from `run` (sync or
+  `usePatcherNavigate().openThreadPanel`. Errors from `run` (sync or
   async) are contained and
   logged, never breaking the timeline.
 

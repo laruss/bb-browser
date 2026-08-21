@@ -10,7 +10,7 @@ import { SectionSidebarIcon, SectionSidebarRow } from "./SectionSidebar";
 import { SidebarHistoryNavigationControls } from "./SidebarHistoryNavigationControls";
 import {
   CHROME_ROW_CLASS,
-  getBbDesktopInfo,
+  getPatcherDesktopInfo,
   MACOS_CHROME_CONTROL_NO_DRAG_CLASS,
   MACOS_WINDOW_DRAG_CLASS,
   shouldUseMacosDesktopChrome,
@@ -46,7 +46,7 @@ export function AgentPanelSidebar({
   onResizeMouseDown: (event: ReactMouseEvent<HTMLDivElement>) => void;
 }) {
   const closeOnMobile = useCloseMobileSidebar();
-  const [desktopInfo] = useState(getBbDesktopInfo);
+  const [desktopInfo] = useState(getPatcherDesktopInfo);
   const usesDesktopChrome = shouldUseMacosDesktopChrome(desktopInfo);
 
   return (

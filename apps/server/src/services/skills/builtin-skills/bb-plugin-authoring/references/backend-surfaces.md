@@ -39,7 +39,7 @@ the handler and output before serialization; handler parameters and return
 values are inferred from the schemas.
 
 ```ts
-import { defineRpcContract, type BbPluginApi } from "@patcher/plugin-sdk";
+import { defineRpcContract, type PatcherPluginApi } from "@patcher/plugin-sdk";
 import { z } from "zod";
 
 export const rpcContract = defineRpcContract({
@@ -53,7 +53,7 @@ export const rpcContract = defineRpcContract({
   },
 });
 
-export default function plugin(bb: BbPluginApi) {
+export default function plugin(bb: PatcherPluginApi) {
   bb.rpc.register(rpcContract, {
     listIssues({ filter }) {
       return { issues: listCachedIssues(filter) };

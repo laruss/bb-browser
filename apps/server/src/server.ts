@@ -71,8 +71,8 @@ import {
   onTerminalSocketOpen,
 } from "./ws/terminal-protocol.js";
 import {
-  createBbAppArtifactService,
-  type BbAppArtifactService,
+  createPatcherAppArtifactService,
+  type PatcherAppArtifactService,
 } from "./services/install/bb-app-artifact.js";
 import { HOST_DAEMON_PROTOCOL_VERSION } from "@patcher/host-daemon-contract";
 import {
@@ -118,7 +118,7 @@ function normalizeInternalAuthPath(path: string): string {
 }
 
 interface CreateAppOptions {
-  bbAppArtifactService?: BbAppArtifactService;
+  patcherAppArtifactService?: PatcherAppArtifactService;
   /**
    * Which plugins run in a plugin process rather than in the server. Omitted
    * loads every plugin here; the shipped policy is `pluginProcessPolicy` and
@@ -281,9 +281,9 @@ export function createApp(
   });
   const slowApiRequestLogThresholdMs =
     options?.slowApiRequestLogThresholdMs ?? SLOW_API_REQUEST_LOG_THRESHOLD_MS;
-  const bbAppArtifactService =
-    options?.bbAppArtifactService ??
-    createBbAppArtifactService({
+  const patcherAppArtifactService =
+    options?.patcherAppArtifactService ??
+    createPatcherAppArtifactService({
       dataDir: deps.config.dataDir,
       serverEntryUrl: import.meta.url,
     });
@@ -332,7 +332,7 @@ export function createApp(
   });
   app.get("/install/version", async (context) => {
     return context.json({
-      version: await bbAppArtifactService.getVersion(),
+      version: await patcherAppArtifactService.getVersion(),
       protocolVersion: HOST_DAEMON_PROTOCOL_VERSION,
     });
   });
@@ -340,7 +340,9 @@ export function createApp(
   // slightly before release; serving the exact server build is an accepted
   // tradeoff so remote daemons cannot be stranded by protocol skew.
   app.get("/install/bb-app.tgz", async (context) => {
-    const tarball = await readFile(await bbAppArtifactService.getTarballPath());
+    const tarball = await readFile(
+      await patcherAppArtifactService.getTarballPath(),
+    );
     return new Response(tarball, {
       headers: {
         "cache-control": "public, max-age=300",

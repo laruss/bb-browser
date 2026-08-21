@@ -1,6 +1,6 @@
 ---
 name: bb-plugin-authoring
-description: Write, build, and install bb plugins. Use whenever the task is to create a bb plugin, extend bb itself, or add a bb CLI command, agent tool, background service, settings, panel, mention provider, or other bb surface via a plugin. Covers the entire backend BbPluginApi and the frontend @patcher/plugin-sdk/app contract with working patterns.
+description: Write, build, and install bb plugins. Use whenever the task is to create a bb plugin, extend bb itself, or add a bb CLI command, agent tool, background service, settings, panel, mention provider, or other bb surface via a plugin. Covers the entire backend PatcherPluginApi and the frontend @patcher/plugin-sdk/app contract with working patterns.
 ---
 
 # Authoring bb plugins
@@ -88,9 +88,9 @@ to step 1.
 ## The backend factory
 
 ```ts
-import type { BbPluginApi } from "@patcher/plugin-sdk";
+import type { PatcherPluginApi } from "@patcher/plugin-sdk";
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(bb: PatcherPluginApi) {
   // Register surfaces here. Load-safe: settings, storage, http, rpc,
   // realtime, background, cli, agents, ui, events, status, onDispose.
   // bb.sdk works here in the real server, but prefer it in handlers/services
@@ -112,7 +112,7 @@ are additive, so registering multiple listeners is supported.
 Backend API imports normally stay type-only; the root runtime exports are
 `defineRpcContract`, supplied by BB for shared schema contracts, and the
 numeric `PLUGIN_CLI_OUTPUT_MAX_BYTES` ceiling:
-`import { defineRpcContract, type BbPluginApi } from "@patcher/plugin-sdk"`.
+`import { defineRpcContract, type PatcherPluginApi } from "@patcher/plugin-sdk"`.
 Validator imports such as Zod are normal plugin runtime dependencies (and are
 bundled by `bb plugin build`).
 

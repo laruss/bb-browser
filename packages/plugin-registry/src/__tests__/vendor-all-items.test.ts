@@ -148,7 +148,7 @@ describe("plugin component registry", () => {
 
     const js = await readFile(result.jsPath, "utf8");
     // Shared singletons resolve through the runtime, never bundled copies.
-    expect(js).toContain("globalThis.__bbPluginRuntime");
+    expect(js).toContain("globalThis.__patcherPluginRuntime");
     // (sonner has no vendored component — plugins import { toast } directly;
     // that shim is asserted in apps/cli plugin-build.test.ts.)
     for (const slot of ["radixDialog", "radixAlertDialog", "vaul"]) {

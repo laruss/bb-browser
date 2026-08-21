@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   BB_DESKTOP_BROWSER_MAX_PAGE_SELECTION_LENGTH,
   BB_DESKTOP_BROWSER_MAX_PAGE_TEXT_LENGTH,
-  bbDesktopBrowserPageReadResultSchema,
+  patcherDesktopBrowserPageReadResultSchema,
 } from "@patcher/desktop-contract";
 import {
   BB_DESKTOP_BROWSER_PAGE_READ_SCRIPT,
@@ -131,7 +131,7 @@ describe("parseBrowserPageReadContent", () => {
     });
 
     expect(
-      bbDesktopBrowserPageReadResultSchema.safeParse({
+      patcherDesktopBrowserPageReadResultSchema.safeParse({
         ok: true,
         tabId: "browser:a",
         url: "https://example.com/",

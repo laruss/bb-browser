@@ -6,7 +6,7 @@ import {
 } from "@patcher/config/app-surface";
 import type { Context } from "hono";
 
-export const TRUSTED_REMOTE_ADDRESS_CONTEXT_KEY = "bbTrustedRemoteAddress";
+export const TRUSTED_REMOTE_ADDRESS_CONTEXT_KEY = "patcherTrustedRemoteAddress";
 export interface TrustedRemoteAddressReader {
   get(key: typeof TRUSTED_REMOTE_ADDRESS_CONTEXT_KEY): string | undefined;
 }

@@ -26,7 +26,7 @@ import {
   type UserQuestionPendingInteractionResolution,
 } from "@patcher/domain";
 import { action } from "../../action.js";
-import { createCliBbSdk } from "../../client.js";
+import { createCliPatcherSdk } from "../../client.js";
 import { renderBorderlessTable } from "../../table.js";
 import {
   outputJson,
@@ -317,7 +317,7 @@ function printInteraction(interaction: PendingInteraction): void {
 async function fetchInteraction(
   args: FetchInteractionArgs,
 ): Promise<PendingInteraction> {
-  const sdk = createCliBbSdk(args.getUrl());
+  const sdk = createCliPatcherSdk(args.getUrl());
   return sdk.threads.interactions.get({
     interactionId: args.interactionId,
     threadId: args.threadId,
@@ -549,7 +549,7 @@ async function resolveInteraction(args: ResolveInteractionArgs): Promise<void> {
     threadId: args.threadId,
   });
   const resolution = args.buildResolution(interaction);
-  const sdk = createCliBbSdk(args.getUrl());
+  const sdk = createCliPatcherSdk(args.getUrl());
   const updated = await sdk.threads.interactions
     .resolve({
       interactionId: args.interactionId,
@@ -689,7 +689,7 @@ export function registerInteractionCommands(
           opts: ThreadInteractionTargetOptions,
         ) => {
           const threadId = requireThreadIdOrSelf(id, opts);
-          const sdk = createCliBbSdk(getUrl());
+          const sdk = createCliPatcherSdk(getUrl());
 
           const items = await sdk.threads.interactions.list({
             threadId,

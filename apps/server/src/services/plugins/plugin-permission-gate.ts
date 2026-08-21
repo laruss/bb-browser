@@ -7,7 +7,7 @@ import {
   PLUGIN_SDK_METHOD_EXTRA_PERMISSIONS,
   type PluginPermission,
 } from "@patcher/domain/plugin-permissions";
-import type { BbSdk } from "@patcher/sdk";
+import type { PatcherSdk } from "@patcher/sdk";
 
 /**
  * Enforcement for the permissions a plugin declared in `bb.permissions`.
@@ -79,7 +79,7 @@ export function createPluginPermissionGate(
  * missing area fails to compile here.
  */
 const SDK_AREA_PERMISSIONS: Readonly<
-  Record<Exclude<keyof BbSdk, "subscribe">, PluginPermission>
+  Record<Exclude<keyof PatcherSdk, "subscribe">, PluginPermission>
 > = PLUGIN_SDK_AREA_PERMISSIONS;
 
 /**
@@ -87,7 +87,7 @@ const SDK_AREA_PERMISSIONS: Readonly<
  * so `bb.sdk.terminals` fails where it is reached rather than where it is
  * called — the stack then points at the plugin's own line.
  *
- * The target is a function because one member of `BbSdk` is one: `subscribe`
+ * The target is a function because one member of `PatcherSdk` is one: `subscribe`
  * is called directly, and a plain object would fail it as "not a function"
  * instead of saying what is missing.
  *
@@ -115,23 +115,23 @@ function deniedSdkArea(
 
 /** Replace every `bb.sdk` area the plugin did not declare. */
 export function applySdkPermissions(
-  sdk: BbSdk,
+  sdk: PatcherSdk,
   pluginId: string,
   gate: PluginPermissionGate,
-): BbSdk {
+): PatcherSdk {
   const gated: Record<string, unknown> = { ...sdk };
   for (const [area, permission] of Object.entries(SDK_AREA_PERMISSIONS)) {
     if (!gate.has(permission)) {
       gated[area] = deniedSdkArea(pluginId, area, permission);
     }
   }
-  gated.subscribe = ((args: Parameters<BbSdk["subscribe"]>[0]) => {
+  gated.subscribe = ((args: Parameters<PatcherSdk["subscribe"]>[0]) => {
     gate.assert(
       permissionForRealtimeEvent(args.event),
       `bb.sdk.subscribe({ event: "${args.event}" })`,
     );
     return sdk.subscribe(args);
-  }) satisfies BbSdk["subscribe"];
+  }) satisfies PatcherSdk["subscribe"];
   // A few methods cost more than their area, because what they touch straddles
   // two. Charged here as well as on the HTTP path they use, so a plugin cannot
   // pass this gate and then be refused by the other one.
@@ -160,5 +160,5 @@ export function applySdkPermissions(
       },
     });
   }
-  return gated as unknown as BbSdk;
+  return gated as unknown as PatcherSdk;
 }

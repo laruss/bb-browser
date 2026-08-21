@@ -17,7 +17,7 @@ import {
 const execFileAsync = promisify(execFile);
 const SCRIPT_OUTPUT_MAX_BYTES = 1024 * 1024;
 
-let resolvedBbPath: string | null = null;
+let resolvedPatcherPath: string | null = null;
 
 /** Warning prepended to a script's output when bb could not be injected. */
 export const BB_NOT_INJECTED_WARNING =
@@ -51,7 +51,7 @@ async function commandWorks(command: string, args: string[]): Promise<boolean> {
  * The trailing paths are macOS-only install locations, kept as a last resort.
  * Relying on them alone is what left Linux hosts unable to resolve bb at all.
  */
-export function bbBinaryCandidates(env: NodeJS.ProcessEnv): string[] {
+export function patcherBinaryCandidates(env: NodeJS.ProcessEnv): string[] {
   const candidates: string[] = [];
   const pushIfAbsolute = (candidate: string): void => {
     if (isAbsolute(candidate)) {
@@ -100,14 +100,14 @@ async function isExecutableFile(candidate: string): Promise<boolean> {
  * long, and spawning a process per entry — each with its own timeout — would
  * make a host without bb pay seconds on every run.
  */
-export async function resolveBbBinary(
+export async function resolvePatcherBinary(
   env: NodeJS.ProcessEnv = process.env,
 ): Promise<string | null> {
-  if (resolvedBbPath !== null) return resolvedBbPath;
-  for (const candidate of bbBinaryCandidates(env)) {
+  if (resolvedPatcherPath !== null) return resolvedPatcherPath;
+  for (const candidate of patcherBinaryCandidates(env)) {
     if (!(await isExecutableFile(candidate))) continue;
     if (await commandWorks(candidate, ["--version"])) {
-      resolvedBbPath = candidate;
+      resolvedPatcherPath = candidate;
       return candidate;
     }
   }
@@ -117,20 +117,20 @@ export async function resolveBbBinary(
 /**
  * PATH for a script run, with bb's directory prepended when it is known.
  *
- * The absolute-path guard is belt and braces: bbBinaryCandidates only yields
+ * The absolute-path guard is belt and braces: patcherBinaryCandidates only yields
  * absolute paths, so a relative one would mean dirname() could return ".",
  * putting the automation scripts directory ahead of the system PATH.
  */
 export function scriptPathEnv(
-  bbPath: string | null,
+  patcherPath: string | null,
   inheritedPath: string | undefined,
 ): string {
   const basePath = inheritedPath ?? "";
-  if (bbPath === null || !isAbsolute(bbPath)) {
+  if (patcherPath === null || !isAbsolute(patcherPath)) {
     return basePath;
   }
-  const bbDir = dirname(bbPath);
-  return basePath.length > 0 ? `${bbDir}${delimiter}${basePath}` : bbDir;
+  const patcherDir = dirname(patcherPath);
+  return basePath.length > 0 ? `${patcherDir}${delimiter}${basePath}` : patcherDir;
 }
 
 export function isWakeAgentSuppressed(output: string): boolean {
@@ -254,14 +254,14 @@ export async function executeStoredScript(args: {
   });
   const interpreter = args.interpreter ?? resolveDefaultInterpreter(args.scriptFile);
   const command = resolveInterpreterCommand(interpreter);
-  const bbPath = await resolveBbBinary();
+  const patcherPath = await resolvePatcherBinary();
   // A script that never calls bb must still run, so an unresolved CLI only
   // costs the PATH injection and leaves a note in the captured output.
-  const warning = bbPath === null ? `${BB_NOT_INJECTED_WARNING}\n` : "";
+  const warning = patcherPath === null ? `${BB_NOT_INJECTED_WARNING}\n` : "";
   const scriptEnv: NodeJS.ProcessEnv = {
     ...process.env,
     ...(args.env ?? {}),
-    PATH: scriptPathEnv(bbPath, process.env.PATH),
+    PATH: scriptPathEnv(patcherPath, process.env.PATH),
     BB_SERVER_URL: args.serverUrl,
     BB_PROJECT_ID: args.projectId,
     BB_AUTOMATION_ID: args.automationId,
@@ -269,8 +269,8 @@ export async function executeStoredScript(args: {
   };
   // Scripts are told where bb is the same way agent shells are, so `"$BB_CLI"`
   // works even when the directory is already on PATH.
-  if (bbPath !== null) {
-    scriptEnv.BB_CLI = bbPath;
+  if (patcherPath !== null) {
+    scriptEnv.BB_CLI = patcherPath;
   }
   const cwd = scriptsRoot(args.pluginDataDir);
   await mkdir(cwd, { recursive: true });

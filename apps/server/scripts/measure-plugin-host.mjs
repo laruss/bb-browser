@@ -88,7 +88,7 @@ const PARTS = [
   ],
   [
     "@patcher/sdk (pulls the API client)",
-    `import {createNodeBbSdk} from "@patcher/sdk"; console.error(typeof createNodeBbSdk);`,
+    `import {createNodePatcherSdk} from "@patcher/sdk"; console.error(typeof createNodePatcherSdk);`,
   ],
 ];
 

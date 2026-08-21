@@ -1,15 +1,15 @@
 import type {
-  BbDesktopApi,
-  BbDesktopBrowserApi,
-  BbDesktopInfo,
+  PatcherDesktopApi,
+  PatcherDesktopBrowserApi,
+  PatcherDesktopInfo,
 } from "@patcher/desktop-contract";
 
 /**
- * A no-op {@link BbDesktopBrowserApi} for tests that build a full
- * `BbDesktopApi` stub. The browser control surface is exercised separately; here
+ * A no-op {@link PatcherDesktopBrowserApi} for tests that build a full
+ * `PatcherDesktopApi` stub. The browser control surface is exercised separately; here
  * it just needs to satisfy the contract.
  */
-export function createNoopDesktopBrowserApi(): BbDesktopBrowserApi {
+export function createNoopDesktopBrowserApi(): PatcherDesktopBrowserApi {
   return {
     attach() {},
     detach() {},
@@ -30,15 +30,15 @@ export function createNoopDesktopBrowserApi(): BbDesktopBrowserApi {
 }
 
 /**
- * A full {@link BbDesktopApi} stub for tests that need `window.bbDesktop`. The
+ * A full {@link PatcherDesktopApi} stub for tests that need `window.bbDesktop`. The
  * update/info methods echo `info`; theme and external-open are no-ops. Pass a
  * custom `browser` to exercise the browser control surface. Tests that drive
  * live info changes or assert on method spies build their own stub instead.
  */
-export function createBbDesktopApi(
-  info: BbDesktopInfo,
-  browser: BbDesktopBrowserApi = createNoopDesktopBrowserApi(),
-): BbDesktopApi {
+export function createPatcherDesktopApi(
+  info: PatcherDesktopInfo,
+  browser: PatcherDesktopBrowserApi = createNoopDesktopBrowserApi(),
+): PatcherDesktopApi {
   return {
     ...info,
     browser,

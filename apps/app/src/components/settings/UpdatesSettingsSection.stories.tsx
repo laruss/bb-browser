@@ -6,7 +6,7 @@ import { HOST_DAEMON_PROTOCOL_VERSION } from "@patcher/host-daemon-contract";
 import type { ProviderCliIssue } from "@/components/provider-cli/provider-cli-install";
 import type { UpdateInventoryMachine } from "@/hooks/useUpdateInventory";
 import {
-  BbAppUpdateRows,
+  PatcherAppUpdateRows,
   MachineUpdatesRows,
   UpdatesRowList,
   UpdatesSection,
@@ -193,7 +193,7 @@ export function HealthyFleet() {
         }
       >
         <UpdatesRowList>
-          <BbAppUpdateRows
+          <PatcherAppUpdateRows
             systemVersion={{
               currentVersion: "0.0.33",
               latestVersion: "0.0.33",
@@ -271,7 +271,7 @@ export function MixedFleet() {
         }
       >
         <UpdatesRowList>
-          <BbAppUpdateRows
+          <PatcherAppUpdateRows
             systemVersion={{
               currentVersion: "0.0.32",
               latestVersion: "0.0.33",
@@ -344,7 +344,7 @@ export function WebAppUpdateAvailable() {
     <Stage>
       <UpdatesSection title="bb">
         <UpdatesRowList>
-          <BbAppUpdateRows
+          <PatcherAppUpdateRows
             systemVersion={{
               currentVersion: "0.0.32",
               latestVersion: "0.0.33",
@@ -369,7 +369,7 @@ export function DesktopUpdateReady() {
     <Stage>
       <UpdatesSection title="bb">
         <UpdatesRowList>
-          <BbAppUpdateRows
+          <PatcherAppUpdateRows
             systemVersion={undefined}
             desktopInfo={{
               downloadState: "downloaded",
@@ -396,7 +396,7 @@ export function DesktopDownloading() {
     <Stage>
       <UpdatesSection title="bb">
         <UpdatesRowList>
-          <BbAppUpdateRows
+          <PatcherAppUpdateRows
             systemVersion={undefined}
             desktopInfo={{
               downloadState: "downloading",

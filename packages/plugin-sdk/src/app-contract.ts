@@ -69,7 +69,7 @@ export interface PluginNavPanelProps {
    * route is `/plugins/<pluginId>/<path>/*`, so a deep link like
    * `/plugins/notes/notes/work/ideas.md` renders the panel with
    * `subPath: "work/ideas.md"`. Navigate within the panel via
-   * `useBbNavigate().toPluginPanel(path, { subPath })` — browser
+   * `usePatcherNavigate().toPluginPanel(path, { subPath })` — browser
    * back/forward then walks panel-internal history.
    */
   subPath: string;
@@ -777,7 +777,7 @@ export interface PluginMessageActionContext {
   /**
    * Open one of this plugin's `threadPanelAction` components in the current
    * thread's side panel — the registration-callback equivalent of
-   * `useBbNavigate().openThreadPanel`. Returns true when the host
+   * `usePatcherNavigate().openThreadPanel`. Returns true when the host
    * accepted (the action id exists and the surface has a panel); false
    * otherwise.
    */
@@ -944,7 +944,7 @@ export type PluginAppSetup = (app: PluginAppBuilder) => void;
  */
 export interface PluginAppDefinition {
   /** Brand the host checks before interpreting a bundle's default export. */
-  readonly __bbPluginApp: true;
+  readonly __patcherPluginApp: true;
   readonly setup: PluginAppSetup;
 }
 
@@ -1390,12 +1390,12 @@ export interface MarkdownProps {
 }
 
 /** Current app selection, derived from the route. */
-export interface BbContext {
+export interface PatcherContext {
   projectId: string | null;
   threadId: string | null;
 }
 
-export interface BbNavigate {
+export interface PatcherNavigate {
   toThread(threadId: string): void;
   toProject(projectId: string): void;
   /**
@@ -1442,7 +1442,7 @@ export interface BbNavigate {
 /**
  * Everything `@patcher/plugin-sdk/app` resolves to at runtime. The BB app builds
  * the real implementation and `satisfies` this interface; `bb plugin build`
- * shims the specifier to that object on `globalThis.__bbPluginRuntime`.
+ * shims the specifier to that object on `globalThis.__patcherPluginRuntime`.
  */
 export interface PluginSdkApp {
   definePluginApp(setup: PluginAppSetup): PluginAppDefinition;
@@ -1458,8 +1458,8 @@ export interface PluginSdkApp {
    */
   useRealtimeConnectionState(): PluginRealtimeConnectionState;
   useSettings(): PluginSettingsState;
-  useBbContext(): BbContext;
-  useBbNavigate(): BbNavigate;
+  usePatcherContext(): PatcherContext;
+  usePatcherNavigate(): PatcherNavigate;
   useComposer(): PluginComposerApi;
   /**
    * The sidebar's live thread view (see {@link PluginSidebarThreadsState}).

@@ -193,7 +193,7 @@ describe.sequential("fake provider smoke lifecycle integration", () => {
         expect(parentRuntimeCommand.instructions).not.toContain("manager");
         expect(childRuntimeCommand.instructions).not.toContain("manager");
 
-        const parentHasBbCliSkill = await Promise.all(
+        const parentHasPatcherCliSkill = await Promise.all(
           parentRuntimeCommand.skillRootPaths.map(async (rootPath) => {
             try {
               await fs.access(path.join(rootPath, "bb-cli", "SKILL.md"));
@@ -203,7 +203,7 @@ describe.sequential("fake provider smoke lifecycle integration", () => {
             }
           }),
         );
-        const childHasBbCliSkill = await Promise.all(
+        const childHasPatcherCliSkill = await Promise.all(
           childRuntimeCommand.skillRootPaths.map(async (rootPath) => {
             try {
               await fs.access(path.join(rootPath, "bb-cli", "SKILL.md"));
@@ -213,8 +213,8 @@ describe.sequential("fake provider smoke lifecycle integration", () => {
             }
           }),
         );
-        expect(parentHasBbCliSkill).toContain(true);
-        expect(childHasBbCliSkill).toContain(true);
+        expect(parentHasPatcherCliSkill).toContain(true);
+        expect(childHasPatcherCliSkill).toContain(true);
       },
     );
   });

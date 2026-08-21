@@ -16,11 +16,11 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import {
-  bbAppRuntimeVerifyTokens,
-  claimBbAppRuntimeFile,
-  clearOwnBbAppRuntimeFile,
-  formatBbAppRuntimeFilePath,
-  readBbAppRuntimeFile,
+  patcherAppRuntimeVerifyTokens,
+  claimPatcherAppRuntimeFile,
+  clearOwnPatcherAppRuntimeFile,
+  formatPatcherAppRuntimeFilePath,
+  readPatcherAppRuntimeFile,
 } from "@patcher/config/app-runtime-file";
 import { stopVerifiedProcess } from "@patcher/config/verified-process-stop";
 import {
@@ -31,16 +31,16 @@ import {
 } from "@patcher/config/app-surface";
 import {
   BB_APP_MANAGED_CONFIG_KEYS,
-  bbAppManagedEnvFileSchema,
-  formatBbAppConfigPath,
-  formatBbAppEnvPath,
+  patcherAppManagedEnvFileSchema,
+  formatPatcherAppConfigPath,
+  formatPatcherAppEnvPath,
   formatCustomAcpAgentProviderId,
-  parseBbAppManagedConfig,
-  type BbAppManagedConfig,
-  type BbAppManagedConfigKey,
-  type BbAppManagedConfigValues,
-  type BbAppManagedEnvConfig,
-  type BbAppManagedEnvFile,
+  parsePatcherAppManagedConfig,
+  type PatcherAppManagedConfig,
+  type PatcherAppManagedConfigKey,
+  type PatcherAppManagedConfigValues,
+  type PatcherAppManagedEnvConfig,
+  type PatcherAppManagedEnvFile,
 } from "@patcher/config/bb-app-managed-config";
 import {
   formatClientConfigPath,
@@ -92,7 +92,7 @@ const CONFIG_UNSET_COMMAND = "unset";
 const CONFIG_LIST_COMMAND = "list";
 const CONFIG_REFRESH_COMMAND = "refresh";
 
-type ManagedConfigValueKey = BbAppManagedConfigKey;
+type ManagedConfigValueKey = PatcherAppManagedConfigKey;
 type ManagedConfigKey = "BB_SERVER_URL" | "serverUrl" | ManagedConfigValueKey;
 
 const MANAGED_CONFIG_KEYS = BB_APP_MANAGED_CONFIG_KEYS;
@@ -124,7 +124,7 @@ const PORTABLE_ENV_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/u;
 const SECRET_SHAPED_ENV_NAME_PATTERN =
   /(?:^|_)(?:API_KEY|TOKEN|SECRET|PASSWORD)$/u;
 
-const bbAppPackageJsonSchema = z
+const patcherAppPackageJsonSchema = z
   .object({
     version: z.string().min(1),
   })
@@ -166,10 +166,10 @@ const apiErrorResponseSchema = z.object({
 
 export type HostEnrollKeyResponse = z.infer<typeof hostEnrollKeyResponseSchema>;
 type ClientHost = z.infer<typeof clientHostSchema>;
-export type ManagedConfigValues = BbAppManagedConfigValues;
-export type ManagedEnvConfig = BbAppManagedEnvConfig;
-export type ManagedEnvFile = BbAppManagedEnvFile;
-export type ManagedConfig = BbAppManagedConfig;
+export type ManagedConfigValues = PatcherAppManagedConfigValues;
+export type ManagedEnvConfig = PatcherAppManagedEnvConfig;
+export type ManagedEnvFile = PatcherAppManagedEnvFile;
+export type ManagedConfig = PatcherAppManagedConfig;
 // Write flows carry customAcpAgents and customModels as raw JSON: the parser
 // skips invalid entries with a warning, and a rewrite from the parsed view
 // would silently delete them from the user's file.
@@ -200,13 +200,13 @@ export interface ResolvePortArgs {
   name: string;
 }
 
-export interface ResolveBbAppStartContextArgs {
+export interface ResolvePatcherAppStartContextArgs {
   entrypointUrl: string;
   env: NodeJS.ProcessEnv;
   homeDir: string;
 }
 
-export interface ResolveBbAppRuntimeContextArgs {
+export interface ResolvePatcherAppRuntimeContextArgs {
   entrypointUrl: string;
   env: NodeJS.ProcessEnv;
   homeDir: string;
@@ -214,7 +214,7 @@ export interface ResolveBbAppRuntimeContextArgs {
   serverUrlMode: "local" | "managed";
 }
 
-export interface BbAppStartContext {
+export interface PatcherAppStartContext {
   appDistDir: string;
   appVersion: string;
   configFile: string;
@@ -233,9 +233,9 @@ export interface BbAppStartContext {
   serverUrl: string;
 }
 
-export interface BbAppRuntimeState {
+export interface PatcherAppRuntimeState {
   config: ManagedConfig;
-  context: BbAppStartContext;
+  context: PatcherAppStartContext;
   env: NodeJS.ProcessEnv;
   serverEnv: NodeJS.ProcessEnv;
 }
@@ -330,7 +330,7 @@ export type FullStackSupervisionResult = "shutdown" | "stopped";
 type ResolveWaitForProcessExitWithTimeout = (
   result: WaitForProcessExitWithTimeoutResult,
 ) => void;
-type BbAppCommand =
+type PatcherAppCommand =
   | ClientCommand
   | ConfigCommand
   | EnvCommand
@@ -384,7 +384,7 @@ interface SpawnNamedManagedProcessArgs {
 }
 
 interface StartFullStackServerProcessArgs {
-  context: BbAppStartContext;
+  context: PatcherAppStartContext;
   env: NodeJS.ProcessEnv;
   outputBuffer: OutputBuffer;
   processes: ManagedFullStackProcesses;
@@ -392,13 +392,13 @@ interface StartFullStackServerProcessArgs {
 
 interface StartFullStackDaemonProcessArgs {
   autoJoinEnv: NodeJS.ProcessEnv;
-  context: BbAppStartContext;
+  context: PatcherAppStartContext;
   outputBuffer: OutputBuffer;
   processes: ManagedFullStackProcesses;
 }
 
 interface RestartManagedProcessArgs {
-  context: BbAppStartContext;
+  context: PatcherAppStartContext;
   delayMilliseconds: DelayMillisecondsFn;
   isShutdownRequested: () => boolean;
   processName: ManagedProcessName;
@@ -406,7 +406,7 @@ interface RestartManagedProcessArgs {
 }
 
 export interface SuperviseFullStackProcessesArgs {
-  context: BbAppStartContext;
+  context: PatcherAppStartContext;
   delayMilliseconds: DelayMillisecondsFn;
   isShutdownRequested: () => boolean;
   processes: ManagedFullStackProcesses;
@@ -425,7 +425,7 @@ export interface CompleteFullStackSupervisionArgs {
 }
 
 interface LogManagedProcessStartupFailureContextArgs {
-  context: BbAppStartContext;
+  context: PatcherAppStartContext;
   processName: ManagedProcessName;
 }
 
@@ -464,17 +464,17 @@ interface ArtifactPath {
 }
 
 interface CreateCliEnvArgs {
-  context: BbAppStartContext;
+  context: PatcherAppStartContext;
   env: NodeJS.ProcessEnv;
 }
 
 interface CreateSharedEnvArgs {
-  context: BbAppStartContext;
+  context: PatcherAppStartContext;
   env: NodeJS.ProcessEnv;
 }
 
 interface CreateServerEnvArgs {
-  context: BbAppStartContext;
+  context: PatcherAppStartContext;
   env: NodeJS.ProcessEnv;
 }
 
@@ -486,7 +486,7 @@ interface CreateServerBaseEnvArgs {
 }
 
 interface CreateHostDaemonOnlyEnvArgs {
-  context: BbAppStartContext;
+  context: PatcherAppStartContext;
   env: NodeJS.ProcessEnv;
   serverUrl: string;
 }
@@ -497,17 +497,17 @@ interface EnrollmentRequirements {
 }
 
 interface ResolveEnrollmentRequirementsArgs {
-  context: BbAppStartContext;
+  context: PatcherAppStartContext;
   env: NodeJS.ProcessEnv;
 }
 
 interface ResolveHostDaemonServerUrlArgs {
-  context: BbAppStartContext;
+  context: PatcherAppStartContext;
   env: NodeJS.ProcessEnv;
 }
 
 interface CreateHostDaemonJoinEnvArgs {
-  context: BbAppStartContext;
+  context: PatcherAppStartContext;
   env: NodeJS.ProcessEnv;
   serverUrl: string;
 }
@@ -554,7 +554,7 @@ interface ApplyManagedConfigEnvArgs {
   envFile: ManagedEnvFile;
 }
 
-interface ResolveBbAppRuntimeStateArgs {
+interface ResolvePatcherAppRuntimeStateArgs {
   entrypointUrl: string;
   env: NodeJS.ProcessEnv;
   homeDir: string;
@@ -591,13 +591,13 @@ interface RefreshRunningServerConfigArgs {
 
 interface RunHostDaemonOnlyArgs {
   args: string[];
-  context: BbAppStartContext;
+  context: PatcherAppStartContext;
   env: NodeJS.ProcessEnv;
 }
 
 interface RunBundledCliCommandArgs {
   args: string[];
-  context: BbAppStartContext;
+  context: PatcherAppStartContext;
   env: NodeJS.ProcessEnv;
 }
 
@@ -658,7 +658,7 @@ function warnExistingDaemonLock(lockDir: string): void {
 
 function warnExistingRuntimeRecord(dataDir: string): void {
   log(yellow("!"), "Another bb already runs on this data directory");
-  log(" ", dim(`record: ${formatBbAppRuntimeFilePath(dataDir)}`));
+  log(" ", dim(`record: ${formatPatcherAppRuntimeFilePath(dataDir)}`));
   log(" ", dim("Run `bb-app stop` to stop it."));
   process.stdout.write("\n");
 }
@@ -875,21 +875,21 @@ async function readManagedConfig(
 ): Promise<ManagedConfig> {
   try {
     const rawConfig = await readFile(
-      formatBbAppConfigPath(args.dataDir),
+      formatPatcherAppConfigPath(args.dataDir),
       "utf8",
     );
-    return parseBbAppManagedConfig(JSON.parse(rawConfig), {
+    return parsePatcherAppManagedConfig(JSON.parse(rawConfig), {
       logger: launcherConfigWarningLogger,
     });
   } catch (error) {
     if (error instanceof SyntaxError) {
       throw new Error(
-        `Invalid bb-app config JSON at ${formatBbAppConfigPath(args.dataDir)}`,
+        `Invalid bb-app config JSON at ${formatPatcherAppConfigPath(args.dataDir)}`,
       );
     }
     if (error instanceof z.ZodError) {
       throw new Error(
-        `Invalid bb-app config at ${formatBbAppConfigPath(args.dataDir)}: ${error.message}`,
+        `Invalid bb-app config at ${formatPatcherAppConfigPath(args.dataDir)}: ${error.message}`,
       );
     }
     if (error instanceof Error && "code" in error && error.code === "ENOENT") {
@@ -914,11 +914,11 @@ async function readManagedConfigForWrite(
 ): Promise<ManagedConfigForWrite> {
   try {
     const rawConfig = await readFile(
-      formatBbAppConfigPath(args.dataDir),
+      formatPatcherAppConfigPath(args.dataDir),
       "utf8",
     );
     const parsedJson: unknown = JSON.parse(rawConfig);
-    const parsedConfig = parseBbAppManagedConfig(parsedJson, {
+    const parsedConfig = parsePatcherAppManagedConfig(parsedJson, {
       logger: launcherConfigWarningLogger,
     });
     if (!isJsonObject(parsedJson)) {
@@ -935,12 +935,12 @@ async function readManagedConfigForWrite(
   } catch (error) {
     if (error instanceof SyntaxError) {
       throw new Error(
-        `Invalid bb-app config JSON at ${formatBbAppConfigPath(args.dataDir)}`,
+        `Invalid bb-app config JSON at ${formatPatcherAppConfigPath(args.dataDir)}`,
       );
     }
     if (error instanceof z.ZodError) {
       throw new Error(
-        `Invalid bb-app config at ${formatBbAppConfigPath(args.dataDir)}: ${error.message}`,
+        `Invalid bb-app config at ${formatPatcherAppConfigPath(args.dataDir)}: ${error.message}`,
       );
     }
     if (error instanceof Error && "code" in error && error.code === "ENOENT") {
@@ -954,17 +954,20 @@ async function readManagedEnvFile(
   args: ResolveManagedConfigArgs,
 ): Promise<ManagedEnvFile> {
   try {
-    const rawConfig = await readFile(formatBbAppEnvPath(args.dataDir), "utf8");
-    return bbAppManagedEnvFileSchema.parse(JSON.parse(rawConfig));
+    const rawConfig = await readFile(
+      formatPatcherAppEnvPath(args.dataDir),
+      "utf8",
+    );
+    return patcherAppManagedEnvFileSchema.parse(JSON.parse(rawConfig));
   } catch (error) {
     if (error instanceof SyntaxError) {
       throw new Error(
-        `Invalid bb-app env JSON at ${formatBbAppEnvPath(args.dataDir)}`,
+        `Invalid bb-app env JSON at ${formatPatcherAppEnvPath(args.dataDir)}`,
       );
     }
     if (error instanceof z.ZodError) {
       throw new Error(
-        `Invalid bb-app env at ${formatBbAppEnvPath(args.dataDir)}: ${error.message}`,
+        `Invalid bb-app env at ${formatPatcherAppEnvPath(args.dataDir)}: ${error.message}`,
       );
     }
     if (error instanceof Error && "code" in error && error.code === "ENOENT") {
@@ -1096,7 +1099,7 @@ async function writeManagedConfigFile(
   validateManagedConfigForWrite(args.config);
   await mkdir(args.dataDir, { recursive: true });
   const nextConfig = pruneManagedConfig(args.config);
-  const configPath = formatBbAppConfigPath(args.dataDir);
+  const configPath = formatPatcherAppConfigPath(args.dataDir);
   const tempPath = join(
     args.dataDir,
     `.config.json.${process.pid}.${randomUUID()}.tmp`,
@@ -1162,7 +1165,7 @@ async function writeManagedEnvFile(
 ): Promise<void> {
   await mkdir(args.dataDir, { recursive: true });
   const nextConfig = pruneManagedEnvFile(args.config);
-  const envPath = formatBbAppEnvPath(args.dataDir);
+  const envPath = formatPatcherAppEnvPath(args.dataDir);
   const tempPath = join(
     args.dataDir,
     `.env.json.${process.pid}.${randomUUID()}.tmp`,
@@ -1204,19 +1207,19 @@ async function writeClientConfigFile(
 
 const BB_APP_VERSION_DEV_FALLBACK = "0.0.0-dev";
 
-export function readBbAppPackageVersion(packageRoot: string): string {
+export function readPatcherAppPackageVersion(packageRoot: string): string {
   try {
     const packageJsonPath = join(packageRoot, "package.json");
     const rawContents = readFileSync(packageJsonPath, "utf8");
-    return bbAppPackageJsonSchema.parse(JSON.parse(rawContents)).version;
+    return patcherAppPackageJsonSchema.parse(JSON.parse(rawContents)).version;
   } catch {
     return BB_APP_VERSION_DEV_FALLBACK;
   }
 }
 
-export function resolveBbAppStartContext(
-  args: ResolveBbAppStartContextArgs,
-): BbAppStartContext {
+export function resolvePatcherAppStartContext(
+  args: ResolvePatcherAppStartContextArgs,
+): PatcherAppStartContext {
   const entrypointDir = dirname(fileURLToPath(args.entrypointUrl));
   const packageRoot = resolve(entrypointDir, "..");
   const workspaceRoot = resolve(packageRoot, "..", "..");
@@ -1244,8 +1247,8 @@ export function resolveBbAppStartContext(
 
   return {
     appDistDir,
-    appVersion: readBbAppPackageVersion(packageRoot),
-    configFile: formatBbAppConfigPath(dataDir),
+    appVersion: readPatcherAppPackageVersion(packageRoot),
+    configFile: formatPatcherAppConfigPath(dataDir),
     daemonBundleDir,
     daemonEntry: resolve(daemonBundleDir, "daemon-bundle.mjs"),
     daemonLockDir: `${join(dataDir, "daemon.lock")}.lock`,
@@ -1253,7 +1256,7 @@ export function resolveBbAppStartContext(
     daemonPort,
     dataDir,
     dbPath: resolveDataDirDatabasePath({ dataDir }),
-    envFile: formatBbAppEnvPath(dataDir),
+    envFile: formatPatcherAppEnvPath(dataDir),
     logDir: join(dataDir, "logs"),
     packageRoot,
     serverEntry,
@@ -1264,14 +1267,14 @@ export function resolveBbAppStartContext(
   };
 }
 
-export async function resolveBbAppRuntimeState(
-  args: ResolveBbAppRuntimeStateArgs,
-): Promise<BbAppRuntimeState> {
+export async function resolvePatcherAppRuntimeState(
+  args: ResolvePatcherAppRuntimeStateArgs,
+): Promise<PatcherAppRuntimeState> {
   const initialEnv = createEnvFromOptions({
     env: args.env,
     options: args.options,
   });
-  const initialContext = resolveBbAppStartContext({
+  const initialContext = resolvePatcherAppStartContext({
     entrypointUrl: args.entrypointUrl,
     env: initialEnv,
     homeDir: args.homeDir,
@@ -1298,7 +1301,7 @@ export async function resolveBbAppRuntimeState(
     delete localServerEnv.BB_SERVER_URL;
     return {
       config,
-      context: resolveBbAppStartContext({
+      context: resolvePatcherAppStartContext({
         entrypointUrl: args.entrypointUrl,
         env: localEnv,
         homeDir: args.homeDir,
@@ -1319,7 +1322,7 @@ export async function resolveBbAppRuntimeState(
   };
   return {
     config,
-    context: resolveBbAppStartContext({
+    context: resolvePatcherAppStartContext({
       entrypointUrl: args.entrypointUrl,
       env: finalEnv,
       homeDir: args.homeDir,
@@ -1336,10 +1339,10 @@ export async function resolveBbAppRuntimeState(
   };
 }
 
-export async function resolveBbAppRuntimeContext(
-  args: ResolveBbAppRuntimeContextArgs,
-): Promise<BbAppStartContext> {
-  return (await resolveBbAppRuntimeState(args)).context;
+export async function resolvePatcherAppRuntimeContext(
+  args: ResolvePatcherAppRuntimeContextArgs,
+): Promise<PatcherAppStartContext> {
+  return (await resolvePatcherAppRuntimeState(args)).context;
 }
 
 export function createHostEnrollKeyRequestBody(
@@ -1363,7 +1366,7 @@ function resolveLauncherEntryPath(): string {
   return scriptArgument ?? fileURLToPath(import.meta.url);
 }
 
-export function resolveBbAppCommand(args: string[]): BbAppCommand {
+export function resolvePatcherAppCommand(args: string[]): PatcherAppCommand {
   if (args.length === 0) {
     return { kind: "start" };
   }
@@ -1432,7 +1435,7 @@ Startup-only:
   bb-app stop && bb-app start, or a desktop app restart.
 
 Config file:
-  ${formatBbAppConfigPath(dataDir)}
+  ${formatPatcherAppConfigPath(dataDir)}
 `);
 }
 
@@ -1458,7 +1461,7 @@ Startup-only server and launcher keys:
   with bb-app config.
 
 Env file:
-  ${formatBbAppEnvPath(dataDir)}
+  ${formatPatcherAppEnvPath(dataDir)}
 `);
 }
 
@@ -1827,7 +1830,7 @@ async function runConfigCommand(args: RunConfigCommandArgs): Promise<void> {
       dataDir: args.dataDir,
     });
     process.stdout.write(
-      `Unset ${key} in ${formatBbAppConfigPath(args.dataDir)}\n`,
+      `Unset ${key} in ${formatPatcherAppConfigPath(args.dataDir)}\n`,
     );
     await refreshRunningServerConfigAfterWrite(args.serverUrl, "config", key);
     return;
@@ -1846,7 +1849,7 @@ async function runConfigCommand(args: RunConfigCommandArgs): Promise<void> {
     dataDir: args.dataDir,
   });
   process.stdout.write(
-    `Set ${key} in ${formatBbAppConfigPath(args.dataDir)}\n`,
+    `Set ${key} in ${formatPatcherAppConfigPath(args.dataDir)}\n`,
   );
   await refreshRunningServerConfigAfterWrite(args.serverUrl, "config", key);
 }
@@ -1882,7 +1885,7 @@ async function runEnvCommand(args: RunEnvCommandArgs): Promise<void> {
       dataDir: args.dataDir,
     });
     process.stdout.write(
-      `Unset ${key} in ${formatBbAppEnvPath(args.dataDir)}\n`,
+      `Unset ${key} in ${formatPatcherAppEnvPath(args.dataDir)}\n`,
     );
     await refreshRunningServerConfigAfterWrite(args.serverUrl, "env", key);
     return;
@@ -1903,7 +1906,9 @@ async function runEnvCommand(args: RunEnvCommandArgs): Promise<void> {
     config: createManagedEnvPatch(key, value),
     dataDir: args.dataDir,
   });
-  process.stdout.write(`Set ${key} in ${formatBbAppEnvPath(args.dataDir)}\n`);
+  process.stdout.write(
+    `Set ${key} in ${formatPatcherAppEnvPath(args.dataDir)}\n`,
+  );
   await refreshRunningServerConfigAfterWrite(args.serverUrl, "env", key);
 }
 
@@ -1992,7 +1997,9 @@ async function runClientCommand(args: RunClientCommandArgs): Promise<void> {
   );
 }
 
-function requiredArtifactPaths(context: BbAppStartContext): ArtifactPath[] {
+function requiredArtifactPaths(
+  context: PatcherAppStartContext,
+): ArtifactPath[] {
   return [
     { label: "server entry", path: context.serverEntry },
     { label: "host daemon entry", path: context.daemonEntry },
@@ -2017,7 +2024,9 @@ function requiredArtifactPaths(context: BbAppStartContext): ArtifactPath[] {
   ];
 }
 
-export function assertBbAppArtifacts(context: BbAppStartContext): void {
+export function assertPatcherAppArtifacts(
+  context: PatcherAppStartContext,
+): void {
   const missingArtifact = requiredArtifactPaths(context).find(
     (artifact) => !existsSync(artifact.path),
   );
@@ -2428,7 +2437,7 @@ function createServerEnv(args: CreateServerEnvArgs): NodeJS.ProcessEnv {
 }
 
 export function createDaemonEnv(
-  context: BbAppStartContext,
+  context: PatcherAppStartContext,
   autoJoinEnv: NodeJS.ProcessEnv,
 ): NodeJS.ProcessEnv {
   return {
@@ -2559,8 +2568,9 @@ export async function runBundledCliCommand(
 ): Promise<number> {
   // Prefer the daemon-injected absolute CLI when present so packaged `bb`
   // trampolines match the running host daemon (dev workspace or this install).
-  const bbCliOverride = trimToUndefined(args.env.BB_CLI);
-  const cliPath = bbCliOverride ?? join(args.context.daemonBundleDir, "bb");
+  const patcherCliOverride = trimToUndefined(args.env.BB_CLI);
+  const cliPath =
+    patcherCliOverride ?? join(args.context.daemonBundleDir, "bb");
   const childProcess = spawn(cliPath, args.args, {
     cwd: process.cwd(),
     env: createCliEnv({ context: args.context, env: args.env }),
@@ -2570,17 +2580,17 @@ export async function runBundledCliCommand(
   return toExitCode(await waitForProcessExit(childProcess));
 }
 
-export async function runBbCli(
+export async function runPatcherCli(
   cliArgs: string[] = process.argv.slice(2),
 ): Promise<void> {
-  const runtime = await resolveBbAppRuntimeState({
+  const runtime = await resolvePatcherAppRuntimeState({
     entrypointUrl: import.meta.url,
     env: process.env,
     homeDir: homedir(),
     options: createDefaultLauncherOptions(),
     serverUrlMode: "managed",
   });
-  assertBbAppArtifacts(runtime.context);
+  assertPatcherAppArtifacts(runtime.context);
   process.exitCode = await runBundledCliCommand({
     args: cliArgs,
     context: runtime.context,
@@ -2588,7 +2598,7 @@ export async function runBbCli(
   });
 }
 
-export async function runBbServer(
+export async function runPatcherServer(
   cliArgs: string[] = process.argv.slice(2),
 ): Promise<void> {
   const parsedArgs = parseLauncherArgs(cliArgs);
@@ -2604,7 +2614,7 @@ Usage:
     throw new Error("bb-server does not accept arguments.");
   }
 
-  const runtime = await resolveBbAppRuntimeState({
+  const runtime = await resolvePatcherAppRuntimeState({
     entrypointUrl: import.meta.url,
     env: process.env,
     homeDir: homedir(),
@@ -2631,7 +2641,7 @@ Usage:
       throw error;
     }
   }
-  assertBbAppArtifacts(runtime.context);
+  assertPatcherAppArtifacts(runtime.context);
 
   const childProcess = spawn(process.execPath, [runtime.context.serverEntry], {
     cwd: process.cwd(),
@@ -2773,7 +2783,7 @@ async function runHostDaemonOnly(args: RunHostDaemonOnlyArgs): Promise<void> {
   }
 }
 
-export async function runBbHostDaemon(
+export async function runPatcherHostDaemon(
   cliArgs: string[] = process.argv.slice(2),
 ): Promise<void> {
   const parsedArgs = parseLauncherArgs(cliArgs);
@@ -2787,14 +2797,14 @@ Usage:
     return;
   }
 
-  const runtime = await resolveBbAppRuntimeState({
+  const runtime = await resolvePatcherAppRuntimeState({
     entrypointUrl: import.meta.url,
     env: process.env,
     homeDir: homedir(),
     options: parsedArgs.options,
     serverUrlMode: "managed",
   });
-  assertBbAppArtifacts(runtime.context);
+  assertPatcherAppArtifacts(runtime.context);
   await runHostDaemonOnly({
     args: parsedArgs.positionals,
     context: runtime.context,
@@ -2829,7 +2839,7 @@ export function isMainModule(args: IsMainModuleArgs): boolean {
   }
 }
 
-function printBbAppHelp(): void {
+function printPatcherAppHelp(): void {
   process.stdout.write(`bb-app
 
 Usage:
@@ -3061,7 +3071,7 @@ export async function completeFullStackSupervision(
  * that launcher, then sends SIGTERM and escalates to SIGKILL.
  */
 async function runStopCommand(args: { dataDir: string }): Promise<void> {
-  const runtimeFile = await readBbAppRuntimeFile(args.dataDir);
+  const runtimeFile = await readPatcherAppRuntimeFile(args.dataDir);
   if (runtimeFile === null) {
     log(dim("●"), `No running bb recorded in ${args.dataDir}`);
     return;
@@ -3073,11 +3083,11 @@ async function runStopCommand(args: { dataDir: string }): Promise<void> {
     signal: "SIGTERM",
     startedAt: runtimeFile.startedAt,
     timeoutMs: STOP_TIMEOUT_MS,
-    verifyTokens: bbAppRuntimeVerifyTokens(runtimeFile.entryPath),
+    verifyTokens: patcherAppRuntimeVerifyTokens(runtimeFile.entryPath),
   });
 
   if (result.kind === "not-running") {
-    await clearOwnBbAppRuntimeFile({
+    await clearOwnPatcherAppRuntimeFile({
       dataDir: args.dataDir,
       pid: runtimeFile.pid,
     });
@@ -3109,7 +3119,7 @@ async function runStopCommand(args: { dataDir: string }): Promise<void> {
     return;
   }
 
-  await clearOwnBbAppRuntimeFile({
+  await clearOwnPatcherAppRuntimeFile({
     dataDir: args.dataDir,
     pid: runtimeFile.pid,
   });
@@ -3119,29 +3129,29 @@ async function runStopCommand(args: { dataDir: string }): Promise<void> {
   );
 }
 
-export async function runBbApp(
+export async function runPatcherApp(
   cliArgs: string[] = process.argv.slice(2),
 ): Promise<void> {
   const parsedArgs = parseLauncherArgs(cliArgs);
 
   if (parsedArgs.options.help) {
-    printBbAppHelp();
+    printPatcherAppHelp();
     return;
   }
 
-  const command = resolveBbAppCommand(parsedArgs.positionals);
+  const command = resolvePatcherAppCommand(parsedArgs.positionals);
   if (command.kind === "help") {
-    printBbAppHelp();
+    printPatcherAppHelp();
     return;
   }
   if (command.kind === "invalid") {
     process.stderr.write(`Unknown bb-app command: ${command.command}\n\n`);
-    printBbAppHelp();
+    printPatcherAppHelp();
     process.exitCode = 1;
     return;
   }
 
-  const runtime = await resolveBbAppRuntimeState({
+  const runtime = await resolvePatcherAppRuntimeState({
     entrypointUrl: import.meta.url,
     env: process.env,
     homeDir: homedir(),
@@ -3209,7 +3219,7 @@ export async function runBbApp(
     return;
   }
 
-  assertBbAppArtifacts(runtime.context);
+  assertPatcherAppArtifacts(runtime.context);
 
   if (command.kind === "host-daemon") {
     await runHostDaemonOnly({
@@ -3241,7 +3251,7 @@ export async function runBbApp(
   // that probes the port can always describe and stop whatever it finds. A live
   // record from another launcher stays untouched: this start is about to fail on
   // the port anyway, and overwriting would hide the bb that actually runs.
-  const runtimeRecordOwned = await claimBbAppRuntimeFile({
+  const runtimeRecordOwned = await claimPatcherAppRuntimeFile({
     dataDir: context.dataDir,
     entryPath: resolveLauncherEntryPath(),
     pid: process.pid,
@@ -3365,7 +3375,7 @@ export async function runBbApp(
   } finally {
     removeSignalForwarding();
     if (runtimeRecordOwned) {
-      await clearOwnBbAppRuntimeFile({
+      await clearOwnPatcherAppRuntimeFile({
         dataDir: context.dataDir,
         pid: process.pid,
       });

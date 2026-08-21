@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   BB_DESKTOP_BROWSER_MAX_URL_LENGTH,
-  bbDesktopBrowserAttachRequestSchema,
-  bbDesktopBrowserSetBoundsRequestSchema,
-  bbDesktopBrowserStateSchema,
+  patcherDesktopBrowserAttachRequestSchema,
+  patcherDesktopBrowserSetBoundsRequestSchema,
+  patcherDesktopBrowserStateSchema,
 } from "@patcher/desktop-contract";
 import {
   browserUrlHost,
@@ -83,7 +83,7 @@ describe("browser IPC payload schemas", () => {
   // keep accepting exactly the historical bounds-only payloads.
   it("accepts a well-formed attach request and rejects bad shapes", () => {
     expect(
-      bbDesktopBrowserAttachRequestSchema.safeParse({
+      patcherDesktopBrowserAttachRequestSchema.safeParse({
         tabId: "browser:abc",
         url: "",
         bounds: { x: 0, y: 0, width: 800, height: 600 },
@@ -93,7 +93,7 @@ describe("browser IPC payload schemas", () => {
 
     // Empty tabId, negative size, and unknown keys are all rejected.
     expect(
-      bbDesktopBrowserAttachRequestSchema.safeParse({
+      patcherDesktopBrowserAttachRequestSchema.safeParse({
         tabId: "",
         url: "",
         bounds: { x: 0, y: 0, width: 800, height: 600 },
@@ -101,13 +101,13 @@ describe("browser IPC payload schemas", () => {
       }).success,
     ).toBe(false);
     expect(
-      bbDesktopBrowserSetBoundsRequestSchema.safeParse({
+      patcherDesktopBrowserSetBoundsRequestSchema.safeParse({
         tabId: "browser:abc",
         bounds: { x: 0, y: 0, width: -1, height: 600 },
       }).success,
     ).toBe(false);
     expect(
-      bbDesktopBrowserAttachRequestSchema.safeParse({
+      patcherDesktopBrowserAttachRequestSchema.safeParse({
         tabId: "browser:abc",
         url: "",
         bounds: { x: 0, y: 0, width: 800, height: 600 },
@@ -118,7 +118,7 @@ describe("browser IPC payload schemas", () => {
     // A layout descriptor never crosses the IPC boundary; older shells'
     // strict parsers would drop the whole request if a renderer sent one.
     expect(
-      bbDesktopBrowserAttachRequestSchema.safeParse({
+      patcherDesktopBrowserAttachRequestSchema.safeParse({
         tabId: "browser:abc",
         url: "",
         bounds: { x: 0, y: 0, width: 800, height: 600 },
@@ -130,7 +130,7 @@ describe("browser IPC payload schemas", () => {
 
   it("accepts a well-formed state push and rejects non-integer bounds", () => {
     expect(
-      bbDesktopBrowserStateSchema.safeParse({
+      patcherDesktopBrowserStateSchema.safeParse({
         tabId: "browser:abc",
         url: "https://example.com",
         title: "Example",
@@ -142,7 +142,7 @@ describe("browser IPC payload schemas", () => {
     ).toBe(true);
 
     expect(
-      bbDesktopBrowserSetBoundsRequestSchema.safeParse({
+      patcherDesktopBrowserSetBoundsRequestSchema.safeParse({
         tabId: "browser:abc",
         bounds: { x: 0.5, y: 0, width: 800, height: 600 },
       }).success,
@@ -154,7 +154,7 @@ describe("browser IPC payload schemas", () => {
       BB_DESKTOP_BROWSER_MAX_URL_LENGTH,
     )}`;
     expect(
-      bbDesktopBrowserAttachRequestSchema.safeParse({
+      patcherDesktopBrowserAttachRequestSchema.safeParse({
         tabId: "browser:abc",
         url: longUrl,
         bounds: { x: 0, y: 0, width: 800, height: 600 },

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bbDesktopBrowserStorageOperationSchema } from "@patcher/desktop-contract";
+import { patcherDesktopBrowserStorageOperationSchema } from "@patcher/desktop-contract";
 import { browserStorageOperationSchema } from "@patcher/domain";
 
 /**
@@ -56,7 +56,7 @@ describe("the storage union, on both wires", () => {
         `domain: ${JSON.stringify(value)}`,
       ).toBe(true);
       expect(
-        bbDesktopBrowserStorageOperationSchema.safeParse(value).success,
+        patcherDesktopBrowserStorageOperationSchema.safeParse(value).success,
         `desktop: ${JSON.stringify(value)}`,
       ).toBe(true);
     }
@@ -69,7 +69,7 @@ describe("the storage union, on both wires", () => {
         `domain: ${JSON.stringify(value)}`,
       ).toBe(false);
       expect(
-        bbDesktopBrowserStorageOperationSchema.safeParse(value).success,
+        patcherDesktopBrowserStorageOperationSchema.safeParse(value).success,
         `desktop: ${JSON.stringify(value)}`,
       ).toBe(false);
     }

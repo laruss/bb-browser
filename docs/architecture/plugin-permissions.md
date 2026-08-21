@@ -369,7 +369,7 @@ never checked.
 Three pieces make it one decision rather than two:
 
 - **The `bb.sdk` area map lives in `@patcher/domain`**, read by both hosts. The
-  server keeps the compile-time check that its keys cover `keyof BbSdk`, which
+  server keeps the compile-time check that its keys cover `keyof PatcherSdk`, which
   `@patcher/domain` cannot do without depending on `@patcher/sdk`.
 - **The browser permission is named at each fake call site**, not in a table
   keyed by the fake's own labels. The fake speaks the SDK's vocabulary

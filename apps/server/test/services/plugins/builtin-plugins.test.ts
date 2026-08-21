@@ -713,7 +713,7 @@ describe("builtin plugin reconciliation", () => {
     const { sourceModuleDir } = await writePackagedBuiltinSource(workDir);
     const targetRoot = join(workDir, "builtin-plugins");
     await copyBuiltinPlugins({
-      bbVersion: "0.9.0-test",
+      patcherVersion: "0.9.0-test",
       build: false,
       plugins: BUILTIN_PLUGINS,
       sourceModuleDir,
@@ -752,7 +752,7 @@ describe("builtin plugin reconciliation", () => {
     const incompatibleMajor = PLUGIN_SDK_MAJOR + 1;
     const targetRoot = join(workDir, "builtin-plugins");
     await copyBuiltinPlugins({
-      bbVersion: "0.9.0-test",
+      patcherVersion: "0.9.0-test",
       build: false,
       plugins: BUILTIN_PLUGINS,
       sourceModuleDir,
@@ -793,7 +793,7 @@ describe("builtin plugin reconciliation", () => {
     const { sourceModuleDir } = await writePackagedBuiltinSource(workDir);
     const targetRoot = join(workDir, "builtin-plugins");
     await copyBuiltinPlugins({
-      bbVersion: "0.9.0-test",
+      patcherVersion: "0.9.0-test",
       build: false,
       plugins: BUILTIN_PLUGINS,
       sourceModuleDir,
@@ -836,7 +836,7 @@ describe("builtin plugin packaging", () => {
     const targetRoot = join(workDir, "builtin-plugins");
 
     await copyBuiltinPlugins({
-      bbVersion: "0.9.0-test",
+      patcherVersion: "0.9.0-test",
       build: false,
       plugins: BUILTIN_PLUGINS,
       sourceModuleDir,

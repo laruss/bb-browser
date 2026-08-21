@@ -223,7 +223,7 @@ vi.mock("@/lib/app-command-metadata", async (importOriginal) => {
 });
 
 vi.mock("@/lib/bb-desktop", () => ({
-  getBbDesktopInfo: () => (testState.isDesktop ? {} : null),
+  getPatcherDesktopInfo: () => (testState.isDesktop ? {} : null),
 }));
 
 afterEach(() => {

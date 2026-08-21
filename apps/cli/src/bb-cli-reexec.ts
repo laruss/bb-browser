@@ -11,7 +11,7 @@ import { resolve } from "node:path";
 /** Set on the re-exec child so a shell-script → node hop cannot loop. */
 export const BB_CLI_REEXEC_ENV = "BB_CLI_REEXEC";
 
-export interface MaybeReexecViaBbCliArgs {
+export interface MaybeReexecViaPatcherCliArgs {
   env?: NodeJS.ProcessEnv;
   /** Arguments after the node/script path (default: process.argv.slice(2)). */
   argv?: string[];
@@ -41,8 +41,8 @@ function tryRealpath(path: string): string | null {
  * re-exec it with the same argv. No-op when unset, equal, missing, or already
  * in a re-exec hop.
  */
-export function maybeReexecViaBbCli(
-  options: MaybeReexecViaBbCliArgs = {},
+export function maybeReexecViaPatcherCli(
+  options: MaybeReexecViaPatcherCliArgs = {},
 ): void {
   const env = options.env ?? process.env;
   if (env[BB_CLI_REEXEC_ENV] === "1") {

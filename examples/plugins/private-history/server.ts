@@ -19,7 +19,7 @@
 //
 // The type-only import is erased at load time; this file runs as-is.
 import type {
-  BbPluginApi,
+  PatcherPluginApi,
   PluginBrowserHistoryRewrite,
 } from "@patcher/plugin-sdk";
 
@@ -77,7 +77,7 @@ function stripTrackingParameters(url: URL): boolean {
   return changed;
 }
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(bb: PatcherPluginApi) {
   const settings = bb.settings.define({
     hosts: {
       type: "string",

@@ -4,7 +4,7 @@ import path, { delimiter } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   prepareRuntimeShellEnv,
-  resolveLocalBbExecutableDirectory,
+  resolveLocalPatcherExecutableDirectory,
   resolveUserShellPath,
   type SpawnUserShellEnv,
   type SpawnUserShellEnvArgs,
@@ -144,14 +144,14 @@ afterEach(async () => {
   );
 });
 
-describe("resolveLocalBbExecutableDirectory", () => {
+describe("resolveLocalPatcherExecutableDirectory", () => {
   it("returns the built CLI executable directory", async () => {
     const { cliEntryPath } = await createFakeCliPackage({
       executable: true,
     });
 
     await expect(
-      resolveLocalBbExecutableDirectory({
+      resolveLocalPatcherExecutableDirectory({
         cliExecutablePath: cliEntryPath,
       }),
     ).resolves.toBe(path.dirname(cliEntryPath));
@@ -163,7 +163,7 @@ describe("resolveLocalBbExecutableDirectory", () => {
     });
 
     await expect(
-      resolveLocalBbExecutableDirectory({
+      resolveLocalPatcherExecutableDirectory({
         cliExecutablePath: cliEntryPath,
       }),
     ).rejects.toThrow(
@@ -177,7 +177,7 @@ describe("resolveLocalBbExecutableDirectory", () => {
     });
 
     await expect(
-      resolveLocalBbExecutableDirectory({
+      resolveLocalPatcherExecutableDirectory({
         cliExecutablePath: cliEntryPath,
       }),
     ).rejects.toThrow(
@@ -192,7 +192,7 @@ describe("resolveLocalBbExecutableDirectory", () => {
 
     await expect(
       withPlatform("win32", () =>
-        resolveLocalBbExecutableDirectory({
+        resolveLocalPatcherExecutableDirectory({
           cliExecutablePath: cliEntryPath,
         }),
       ),
@@ -356,7 +356,7 @@ describe("prepareRuntimeShellEnv", () => {
     vi.stubEnv("BB_CONNECT_MACHINE_CREDENTIAL", "bbcm_durable_secret");
 
     const env = prepareRuntimeShellEnv({
-      bbExecutableDirectory: "/tmp/bb-bin",
+      patcherExecutableDirectory: "/tmp/bb-bin",
       inheritedPath: "/usr/bin",
       serverUrl: "http://127.0.0.1:43123",
     });
@@ -368,7 +368,7 @@ describe("prepareRuntimeShellEnv", () => {
   it("prepends the configured bb executable directory to PATH and sets BB_CLI", () => {
     expect(
       prepareRuntimeShellEnv({
-        bbExecutableDirectory: "/tmp/bb-bin",
+        patcherExecutableDirectory: "/tmp/bb-bin",
         hostDaemonPort: 3002,
         inheritedPath: "/usr/bin",
         serverUrl: "http://127.0.0.1:3334",
@@ -381,11 +381,11 @@ describe("prepareRuntimeShellEnv", () => {
     });
   });
 
-  it("uses an explicit bbExecutablePath for BB_CLI", () => {
+  it("uses an explicit patcherExecutablePath for BB_CLI", () => {
     expect(
       prepareRuntimeShellEnv({
-        bbExecutableDirectory: "/tmp/bb-bin",
-        bbExecutablePath: "/opt/custom/bb",
+        patcherExecutableDirectory: "/tmp/bb-bin",
+        patcherExecutablePath: "/opt/custom/bb",
         inheritedPath: "/usr/bin",
         serverUrl: "http://127.0.0.1:3334",
       }),
@@ -400,7 +400,7 @@ describe("prepareRuntimeShellEnv", () => {
 
     expect(
       prepareRuntimeShellEnv({
-        bbExecutableDirectory: "/tmp/bb-bin",
+        patcherExecutableDirectory: "/tmp/bb-bin",
         hostDaemonPort: 3002,
         serverUrl: "http://127.0.0.1:3334",
       }),
@@ -415,7 +415,7 @@ describe("prepareRuntimeShellEnv", () => {
   it("omits the host daemon port when the local API is disabled", () => {
     expect(
       prepareRuntimeShellEnv({
-        bbExecutableDirectory: "/tmp/bb-bin",
+        patcherExecutableDirectory: "/tmp/bb-bin",
         inheritedPath: "/usr/bin",
         serverUrl: "http://127.0.0.1:3334",
       }),

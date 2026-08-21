@@ -1,4 +1,7 @@
-import type { BbPluginApi, PluginAgentToolResult } from "@patcher/plugin-sdk";
+import type {
+  PatcherPluginApi,
+  PluginAgentToolResult,
+} from "@patcher/plugin-sdk";
 import { z } from "zod";
 import { registerWorkflowCli } from "./cli.js";
 import { migrations } from "./data.js";
@@ -79,7 +82,7 @@ function errorResult(error: string): PluginAgentToolResult {
   return { content: [{ type: "text", text: error }], isError: true };
 }
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(bb: PatcherPluginApi) {
   const settings = registerWorkflowSettings(bb);
   const db = bb.storage.database();
   bb.storage.migrate(db, migrations);

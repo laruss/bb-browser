@@ -11,7 +11,7 @@ const { rpc, rpcCall } = vi.hoisted(() => {
 
 vi.mock("@patcher/plugin-sdk/app", () => ({
   definePluginApp: vi.fn((setup) => ({ setup })),
-  useBbNavigate: vi.fn(),
+  usePatcherNavigate: vi.fn(),
   useRealtime: vi.fn(),
   useRpc: () => rpc,
 }));

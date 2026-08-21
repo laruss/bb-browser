@@ -49,7 +49,7 @@ describe("task delegation", () => {
       name: "Tasks plugin",
       prefix: "TASK",
       color: "blue",
-      linkedBbProjectId: "proj_bb",
+      linkedPatcherProjectId: "proj_bb",
     });
     const task = store.tasks.createTask({
       projectId: project.id,
@@ -144,7 +144,7 @@ describe("task delegation", () => {
       name: "Fast delegation",
       prefix: "FAST",
       color: "blue",
-      linkedBbProjectId: "proj_bb",
+      linkedPatcherProjectId: "proj_bb",
     });
     const task = store.tasks.createTask({
       projectId: project.id,
@@ -188,7 +188,7 @@ describe("task delegation", () => {
       name: "Worktree delegation",
       prefix: "WT",
       color: "blue",
-      linkedBbProjectId: "proj_demo",
+      linkedPatcherProjectId: "proj_demo",
     });
     const task = store.tasks.createTask({
       projectId: project.id,
@@ -248,7 +248,7 @@ describe("task delegation", () => {
       name: "Default worktree target",
       prefix: "DWT",
       color: "blue",
-      linkedBbProjectId: "proj_demo",
+      linkedPatcherProjectId: "proj_demo",
     });
     const task = store.tasks.createTask({
       projectId: project.id,
@@ -304,7 +304,7 @@ describe("task delegation", () => {
       name: "Invalid target",
       prefix: "BAD",
       color: "blue",
-      linkedBbProjectId: "proj_demo",
+      linkedPatcherProjectId: "proj_demo",
     });
     const task = store.tasks.createTask({
       projectId: project.id,
@@ -426,7 +426,7 @@ describe("delegation seed prompt", () => {
       nextTaskNumber: 4,
       color: "blue",
       folderId: null,
-      linkedBbProjectId: "proj_tasks",
+      linkedPatcherProjectId: "proj_tasks",
       createdAt: "2026-07-15T17:00:00.000Z",
     };
     const task: Task = {

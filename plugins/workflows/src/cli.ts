@@ -1,5 +1,5 @@
 import type {
-  BbPluginApi,
+  PatcherPluginApi,
   PluginCliContext,
   PluginCliResult,
 } from "@patcher/plugin-sdk";
@@ -347,7 +347,7 @@ function callLogRecord(call: WorkflowCallInspection, exportedAt: number) {
 }
 
 export function registerWorkflowCli(
-  bb: BbPluginApi,
+  bb: PatcherPluginApi,
   service: WorkflowService,
 ): void {
   bb.cli.register({

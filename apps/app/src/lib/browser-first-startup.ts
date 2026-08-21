@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { getBbDesktopInfo } from "@/lib/bb-desktop";
+import { getPatcherDesktopInfo } from "@/lib/bb-desktop";
 import {
   APP_ROOT_ROUTE_PATH,
   BROWSER_SURFACE_ROUTE_PATH,
@@ -52,7 +52,7 @@ export function useBrowserFirstStartupRoute(): void {
     hasRunRef.current = true;
     if (
       !shouldStartOnBrowserSurface({
-        isDesktop: getBbDesktopInfo() !== null,
+        isDesktop: getPatcherDesktopInfo() !== null,
         pathname: location.pathname,
       })
     ) {

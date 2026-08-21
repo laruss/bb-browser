@@ -34,10 +34,10 @@ import {
   PROJECT_PREFIX_PATTERN,
 } from "./shared.js";
 import {
-  BbProjectLinkPicker,
-  emptyBbProjectLinkState,
-  resolveBbProjectLink,
-  type BbProjectLinkState,
+  PatcherProjectLinkPicker,
+  emptyPatcherProjectLinkState,
+  resolvePatcherProjectLink,
+  type PatcherProjectLinkState,
 } from "./bb-project-link.js";
 
 const NO_FOLDER = "__none__";
@@ -61,18 +61,18 @@ export function NewProjectDialog({ open, onOpenChange }: NewProjectDialogProps) 
   const [folderId, setFolderId] = useState<string | null>(null);
   const [newFolderMode, setNewFolderMode] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
-  const [linkState, setLinkState] = useState<BbProjectLinkState>(
-    emptyBbProjectLinkState,
+  const [linkState, setLinkState] = useState<PatcherProjectLinkState>(
+    emptyPatcherProjectLinkState,
   );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // BB workspace projects, including Personal, for the linked-project picker.
-  const bbProjects = useTasksQuery(
-    async (rpc) => (await rpc.call("listBbProjects")).bbProjects,
+  const patcherProjects = useTasksQuery(
+    async (rpc) => (await rpc.call("listPatcherProjects")).patcherProjects,
     [],
   );
-  const bbProjectList = bbProjects.data ?? [];
+  const patcherProjectList = patcherProjects.data ?? [];
 
   useEffect(() => {
     if (!open) return;
@@ -83,7 +83,7 @@ export function NewProjectDialog({ open, onOpenChange }: NewProjectDialogProps) 
     setFolderId(null);
     setNewFolderMode(false);
     setNewFolderName("");
-    setLinkState(emptyBbProjectLinkState());
+    setLinkState(emptyPatcherProjectLinkState());
     setError(null);
   }, [open]);
 
@@ -98,7 +98,7 @@ export function NewProjectDialog({ open, onOpenChange }: NewProjectDialogProps) 
     return clash ? `Already used by ${clash.name}.` : null;
   }, [prefix, projects.data]);
 
-  const linkedTrimmed = resolveBbProjectLink(linkState);
+  const linkedTrimmed = resolvePatcherProjectLink(linkState);
 
   const canSubmit =
     name.trim().length > 0 &&
@@ -147,7 +147,7 @@ export function NewProjectDialog({ open, onOpenChange }: NewProjectDialogProps) 
         prefix,
         color,
         folderId,
-        linkedBbProjectId: linkedTrimmed === "" ? null : linkedTrimmed,
+        linkedPatcherProjectId: linkedTrimmed === "" ? null : linkedTrimmed,
       });
       onOpenChange(false);
       navigation.go({ kind: "project", projectId: project.id, view: "list" });
@@ -277,10 +277,10 @@ export function NewProjectDialog({ open, onOpenChange }: NewProjectDialogProps) 
             label="Linked bb project"
             hint="Optional. Linking a bb project enables dispatching to agents."
           >
-            <BbProjectLinkPicker
+            <PatcherProjectLinkPicker
               state={linkState}
               onStateChange={setLinkState}
-              bbProjects={bbProjectList}
+              patcherProjects={patcherProjectList}
             />
           </Field>
         </div>

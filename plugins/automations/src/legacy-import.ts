@@ -1,7 +1,7 @@
 import { mkdir, readFile, rename, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { z } from "zod";
-import type { BbPluginApi } from "@patcher/plugin-sdk";
+import type { PatcherPluginApi } from "@patcher/plugin-sdk";
 import type { Db } from "./data.js";
 import {
   automationOriginSchema,
@@ -133,8 +133,8 @@ export const legacyImportFileSchema = z
 export type LegacyImportFile = z.infer<typeof legacyImportFileSchema>;
 
 type LegacyImportApi = {
-  storage: { kv: Pick<BbPluginApi["storage"]["kv"], "get" | "set"> };
-  log: Pick<BbPluginApi["log"], "info">;
+  storage: { kv: Pick<PatcherPluginApi["storage"]["kv"], "get" | "set"> };
+  log: Pick<PatcherPluginApi["log"], "info">;
 };
 
 async function fileExists(path: string): Promise<boolean> {

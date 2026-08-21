@@ -1,19 +1,19 @@
 import type Database from "better-sqlite3";
 import type { Context } from "hono";
 import type * as z from "zod";
-import type { BbSdk } from "@patcher/sdk";
+import type { PatcherSdk } from "@patcher/sdk";
 import type { ThreadResponse } from "@patcher/server-contract";
 import type { JsonValue } from "./json-value.js";
 import type { PluginRpcContract, PluginRpcHandlers } from "./rpc-contract.js";
 
 /**
  * The backend plugin API contract — the `bb` object handed to a plugin's
- * `server.ts` factory (`export default function plugin(bb: BbPluginApi)`).
+ * `server.ts` factory (`export default function plugin(bb: PatcherPluginApi)`).
  *
  * Types only: the implementation lives in the BB server
  * (apps/server/src/services/plugins/plugin-api.ts), which imports these
  * shapes so the contract and the implementation cannot drift. Plugin authors
- * import them type-only (`import type { BbPluginApi } from
+ * import them type-only (`import type { PatcherPluginApi } from
  * "@patcher/plugin-sdk"`); the import is erased when BB loads the file.
  *
  * Runtime classes stay host-side. NeedsConfigurationError in particular is
@@ -2287,7 +2287,7 @@ export interface PluginStatusApi {
  * the BB server; this contract is what plugin `server.ts` files compile
  * against.
  */
-export interface BbPluginApi {
+export interface PatcherPluginApi {
   /** The plugin's own id (namespaces storage, routes, commands). */
   readonly pluginId: string;
   /** Leveled, plugin-scoped logger. */
@@ -2328,7 +2328,7 @@ export interface BbPluginApi {
    * `threads.spawn` defaults `origin` to "plugin" and `originPluginId` to
    * this plugin's id so spawned threads are attributed automatically.
    */
-  readonly sdk: BbSdk;
+  readonly sdk: PatcherSdk;
   /**
    * Register cleanup to run on reload/disable/shutdown. Hooks run LIFO.
    * The sanctioned place to clear timers and close connections.

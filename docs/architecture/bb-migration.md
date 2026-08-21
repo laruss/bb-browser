@@ -173,7 +173,7 @@ systems before their dependencies are understood; neither has been audited.
    against an old shell's strict parser. Change only alongside explicit
    capability negotiation in the preload bridge. The sanctioned shape, used twice
    now — scoped popup requests and tab favicons — is a **new channel** plus an
-   **optional** method on `BbDesktopBrowserApi`: the old parser never sees the new
+   **optional** method on `PatcherDesktopBrowserApi`: the old parser never sees the new
    payload, and feature-detecting the method is the negotiation.
 3. **Server / host-daemon ownership.** The server owns product policy — defaults,
    instructions, manager behaviour, tool lists, thread behaviour. The daemon owns

@@ -4,11 +4,11 @@ import { cleanup, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   BB_DESKTOP_BROWSER_MAX_PAGE_STYLES,
-  type BbDesktopBrowserApi,
-  type BbDesktopBrowserPageStyles,
+  type PatcherDesktopBrowserApi,
+  type PatcherDesktopBrowserPageStyles,
 } from "@patcher/desktop-contract";
 import {
-  createBbDesktopApi,
+  createPatcherDesktopApi,
   createNoopDesktopBrowserApi,
 } from "@/test/bb-desktop-test-utils";
 import type { PluginBrowserPageStyleContribution } from "@/hooks/queries/plugin-contribution-queries";
@@ -38,10 +38,10 @@ const STYLE: PluginBrowserPageStyleContribution = {
 };
 
 function installShell(
-  overrides: Partial<BbDesktopBrowserApi> = {},
-): BbDesktopBrowserPageStyles[] {
-  const pushes: BbDesktopBrowserPageStyles[] = [];
-  window.bbDesktop = createBbDesktopApi(desktopInfo, {
+  overrides: Partial<PatcherDesktopBrowserApi> = {},
+): PatcherDesktopBrowserPageStyles[] {
+  const pushes: PatcherDesktopBrowserPageStyles[] = [];
+  window.bbDesktop = createPatcherDesktopApi(desktopInfo, {
     ...createNoopDesktopBrowserApi(),
     setPageStyles(request) {
       pushes.push(request);
@@ -119,7 +119,7 @@ describe("useBrowserPageStyles", () => {
     contributions.value = { browserPageStyles: [STYLE] };
     // No `setPageStyles`: an older shell, whose strict parser would drop the
     // payload anyway.
-    window.bbDesktop = createBbDesktopApi(
+    window.bbDesktop = createPatcherDesktopApi(
       desktopInfo,
       createNoopDesktopBrowserApi(),
     );

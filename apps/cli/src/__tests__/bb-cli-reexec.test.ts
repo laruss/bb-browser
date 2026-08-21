@@ -5,10 +5,10 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   BB_CLI_REEXEC_ENV,
-  maybeReexecViaBbCli,
+  maybeReexecViaPatcherCli,
 } from "../bb-cli-reexec.js";
 
-describe("maybeReexecViaBbCli", () => {
+describe("maybeReexecViaPatcherCli", () => {
   let tempRoot: string;
 
   beforeEach(async () => {
@@ -28,7 +28,7 @@ describe("maybeReexecViaBbCli", () => {
 
   it("no-ops when BB_CLI is unset", () => {
     const reexec = vi.fn();
-    maybeReexecViaBbCli({
+    maybeReexecViaPatcherCli({
       env: {},
       currentExecutablePath: "/tmp/current-bb",
       reexec,
@@ -39,7 +39,7 @@ describe("maybeReexecViaBbCli", () => {
   it("no-ops when BB_CLI equals the current executable", async () => {
     const path = await writeExecutable("bb");
     const reexec = vi.fn();
-    maybeReexecViaBbCli({
+    maybeReexecViaPatcherCli({
       env: { BB_CLI: path },
       currentExecutablePath: path,
       reexec,
@@ -51,7 +51,7 @@ describe("maybeReexecViaBbCli", () => {
     const current = await writeExecutable("current");
     const target = await writeExecutable("target");
     const reexec = vi.fn();
-    maybeReexecViaBbCli({
+    maybeReexecViaPatcherCli({
       env: { BB_CLI: target, [BB_CLI_REEXEC_ENV]: "1" },
       currentExecutablePath: current,
       reexec,
@@ -63,7 +63,7 @@ describe("maybeReexecViaBbCli", () => {
     const current = await writeExecutable("current");
     const target = await writeExecutable("target");
     const reexec = vi.fn();
-    maybeReexecViaBbCli({
+    maybeReexecViaPatcherCli({
       env: { BB_CLI: target, BB_SERVER_URL: "http://127.0.0.1:1" },
       currentExecutablePath: current,
       argv: ["status", "--json"],
@@ -84,7 +84,7 @@ describe("maybeReexecViaBbCli", () => {
   it("no-ops when BB_CLI path is missing", async () => {
     const current = await writeExecutable("current");
     const reexec = vi.fn();
-    maybeReexecViaBbCli({
+    maybeReexecViaPatcherCli({
       env: { BB_CLI: join(tempRoot, "does-not-exist") },
       currentExecutablePath: current,
       reexec,

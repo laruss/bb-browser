@@ -11,7 +11,7 @@
 //
 // The type-only import is erased at load time; this file runs as-is.
 import { createHmac, timingSafeEqual } from "node:crypto";
-import type { BbPluginApi } from "@patcher/plugin-sdk";
+import type { PatcherPluginApi } from "@patcher/plugin-sdk";
 
 const SIGNATURE_VERSION = "v0";
 /** Slack replays are rejected past this age (Slack's own recommendation). */
@@ -61,7 +61,7 @@ interface SlackTarget {
   threadTs: string;
 }
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(bb: PatcherPluginApi) {
   const settings = bb.settings.define({
     botToken: {
       type: "string",

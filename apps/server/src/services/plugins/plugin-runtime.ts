@@ -14,11 +14,11 @@ import {
 import { buildPluginApp } from "@patcher/plugin-build";
 import { getPluginBuildToolchain } from "./build-toolchain.js";
 import {
-  createNodeBbSdk,
+  createNodePatcherSdk,
   createNodeWebsocketFactory,
   createRequestTimeoutFetch,
   DEFAULT_BB_REQUEST_TIMEOUT_MS,
-  type BbSdk,
+  type PatcherSdk,
 } from "@patcher/sdk";
 import {
   createPluginApiFetch,
@@ -65,7 +65,7 @@ import { readPluginManifest, type PluginManifest } from "./manifest.js";
 import {
   createPluginApi,
   isNeedsConfigurationError,
-  type BbPluginApi,
+  type PatcherPluginApi,
   type PluginApiHandle,
   type PluginThreadEventName,
   type PluginThreadEventPayloads,
@@ -97,7 +97,7 @@ interface MutableRoot {
 
 const mutableRoots = new Map<string, MutableRoot>();
 /** Marker shape: `<root id>.<epoch>`. */
-const MUTABLE_ROOT_MARKER = /[?&]bbPluginLoad=(\d+)\.(\d+)/;
+const MUTABLE_ROOT_MARKER = /[?&]patcherPluginLoad=(\d+)\.(\d+)/;
 let nextMutableRootId = 1;
 let nextMutableRootEpoch = 1;
 let mutableRootHooks: { deregister: () => void } | null = null;
@@ -133,7 +133,7 @@ function registerMutableRootHooks(): void {
       const separator = resolved.url.includes("?") ? "&" : "?";
       return {
         ...resolved,
-        url: `${resolved.url}${separator}bbPluginLoad=${match.id}.${epoch}`,
+        url: `${resolved.url}${separator}patcherPluginLoad=${match.id}.${epoch}`,
         shortCircuit: true,
       };
     },
@@ -371,7 +371,7 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
   // identity headers, so the API can apply its permissions to traffic that
   // arrives as HTTP — which is what `bb.sdk` is. See plugin-api-identity.ts.
   let boundLoopbackBaseUrl: string | undefined;
-  const pluginSdks = new Map<string, BbSdk>();
+  const pluginSdks = new Map<string, PatcherSdk>();
   // Owned here rather than injected: it is the loader that knows which plugins
   // exist, and a dep would have to be threaded through every hand-built test
   // deps object for something none of them exercise.
@@ -379,12 +379,12 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
   /** Correlates a cancel message with the call it cancels. */
   let callSequence = 0;
 
-  function sdkFor(pluginId: string): BbSdk | undefined {
+  function sdkFor(pluginId: string): PatcherSdk | undefined {
     if (boundLoopbackBaseUrl === undefined) return undefined;
     let sdk = pluginSdks.get(pluginId);
     if (sdk === undefined) {
       const key = apiIdentities.keyFor(pluginId);
-      sdk = createNodeBbSdk({
+      sdk = createNodePatcherSdk({
         baseUrl: boundLoopbackBaseUrl,
         // Wrapped around the timeout fetch, not instead of it: supplying
         // `fetch` opts out of the one createNodeTransport would have added,
@@ -823,7 +823,7 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
   }
 
   function checkEngineRange(manifest: PluginManifest): string | undefined {
-    if (!manifest.bbEngineRange) return undefined;
+    if (!manifest.patcherEngineRange) return undefined;
     const version = semver.coerce(deps.appVersion);
     if (!version) {
       // Dev builds may carry a non-semver version; do not block on it.
@@ -838,16 +838,16 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
       // incompatible in development.
       return undefined;
     }
-    if (!semver.satisfies(version, manifest.bbEngineRange)) {
-      return `requires bb ${manifest.bbEngineRange}, this is ${version.version}`;
+    if (!semver.satisfies(version, manifest.patcherEngineRange)) {
+      return `requires bb ${manifest.patcherEngineRange}, this is ${version.version}`;
     }
     return undefined;
   }
 
   function checkPluginSdkRange(manifest: PluginManifest): string | undefined {
-    if (!manifest.bbPluginSdkRange) return undefined;
-    if (!semver.satisfies(PLUGIN_SDK_VERSION, manifest.bbPluginSdkRange)) {
-      return `requires bb plugin SDK ${manifest.bbPluginSdkRange}, running SDK is ${PLUGIN_SDK_VERSION}`;
+    if (!manifest.patcherPluginSdkRange) return undefined;
+    if (!semver.satisfies(PLUGIN_SDK_VERSION, manifest.patcherPluginSdkRange)) {
+      return `requires bb plugin SDK ${manifest.patcherPluginSdkRange}, running SDK is ${PLUGIN_SDK_VERSION}`;
     }
     return undefined;
   }
@@ -877,8 +877,8 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
   }
 
   async function runFactoryTimeBoxed(
-    factory: (api: BbPluginApi) => unknown,
-    api: BbPluginApi,
+    factory: (api: PatcherPluginApi) => unknown,
+    api: PatcherPluginApi,
   ): Promise<void> {
     await withLoadTimeout(Promise.resolve(factory(api)));
   }
@@ -1288,7 +1288,7 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
           );
         }
         await runFactoryTimeBoxed(
-          factory as (api: BbPluginApi) => unknown,
+          factory as (api: PatcherPluginApi) => unknown,
           handle.api,
         );
       } catch (error) {

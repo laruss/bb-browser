@@ -1,4 +1,4 @@
-import type { BbPluginApi, PluginRpcHandlers } from "@patcher/plugin-sdk";
+import type { PatcherPluginApi, PluginRpcHandlers } from "@patcher/plugin-sdk";
 import {
   createTasksStore,
   type Attachment as StoredAttachment,
@@ -27,7 +27,7 @@ import {
   type CommentProvider,
 } from "../shared/contract";
 
-type PluginDatabase = ReturnType<BbPluginApi["storage"]["database"]>;
+type PluginDatabase = ReturnType<PatcherPluginApi["storage"]["database"]>;
 
 interface TaskLabelIdRow {
   task_id: string;
@@ -68,7 +68,7 @@ export interface TasksApiStore {
   sidebarSummary(): SidebarProjectSummary[];
 }
 
-export function createStore(bb: BbPluginApi): TasksApiStore {
+export function createStore(bb: PatcherPluginApi): TasksApiStore {
   const database = bb.storage.database();
   const tasks = createTasksStore(database);
 
@@ -196,7 +196,7 @@ function priorityName(priority: StoredTask["priority"]): string {
 }
 
 function publishTasksChanged(
-  bb: BbPluginApi,
+  bb: PatcherPluginApi,
   taskId: string,
   projectId: string,
 ): void {
@@ -205,7 +205,7 @@ function publishTasksChanged(
 }
 
 export function publishProjectsChanged(
-  bb: BbPluginApi,
+  bb: PatcherPluginApi,
   projectId: string | null,
 ): void {
   const payload: ProjectsChangedEvent = { projectId };
@@ -213,7 +213,7 @@ export function publishProjectsChanged(
 }
 
 export function publishCommentsChanged(
-  bb: BbPluginApi,
+  bb: PatcherPluginApi,
   taskId: string,
   notifiedCount?: number,
 ): void {
@@ -392,7 +392,7 @@ interface AgentThreadInfo {
  * SDK so renames are reflected.
  */
 async function resolveAgentThreadInfo(
-  bb: BbPluginApi,
+  bb: PatcherPluginApi,
   comments: readonly StoredComment[],
 ): Promise<Map<string, AgentThreadInfo>> {
   const threadIds = new Set<string>();
@@ -436,7 +436,7 @@ async function resolveAgentThreadInfo(
  * the raw provider id so the UI can still render a brand glyph by id.
  */
 async function resolveProviderBadges(
-  bb: BbPluginApi,
+  bb: PatcherPluginApi,
   threadInfo: ReadonlyMap<string, AgentThreadInfo>,
 ): Promise<Map<string, CommentProvider>> {
   const providerIds = new Set(
@@ -474,7 +474,7 @@ interface CreateCommentInput {
 }
 
 export async function createComment(
-  bb: BbPluginApi,
+  bb: PatcherPluginApi,
   store: TasksApiStore,
   input: CreateCommentInput,
 ): Promise<StoredComment> {
@@ -554,7 +554,7 @@ async function mapWithConcurrency<T, R>(
  * genuinely absent PR simply produce nothing.
  */
 async function listTaskPullRequests(
-  bb: BbPluginApi,
+  bb: PatcherPluginApi,
   store: TasksApiStore,
   taskId: string,
 ): Promise<TaskPullRequestsResult> {
@@ -584,7 +584,7 @@ async function listTaskPullRequests(
     PULL_REQUEST_LOOKUP_CONCURRENCY,
     async ([environmentId, threadIds]) => {
       let result: Awaited<
-        ReturnType<BbPluginApi["sdk"]["environments"]["pullRequest"]>
+        ReturnType<PatcherPluginApi["sdk"]["environments"]["pullRequest"]>
       >;
       try {
         result = await bb.sdk.environments.pullRequest({ environmentId });
@@ -655,7 +655,7 @@ async function listTaskPullRequests(
 }
 
 export function registerHandlers(
-  bb: BbPluginApi,
+  bb: PatcherPluginApi,
   store: TasksApiStore,
 ): PluginRpcHandlers<typeof tasksRpcContract> {
   return {
@@ -1101,10 +1101,10 @@ export function registerHandlers(
           })),
       };
     },
-    async listBbProjects() {
+    async listPatcherProjects() {
       const projects = await bb.sdk.projects.list({ includePersonal: true });
       return {
-        bbProjects: projects.map((project) => ({
+        patcherProjects: projects.map((project) => ({
           id: project.id,
           name: project.name,
         })),
@@ -1119,6 +1119,9 @@ export function registerHandlers(
   };
 }
 
-export function registerTasksApi(bb: BbPluginApi, store: TasksApiStore): void {
+export function registerTasksApi(
+  bb: PatcherPluginApi,
+  store: TasksApiStore,
+): void {
   bb.rpc.register(tasksRpcContract, registerHandlers(bb, store));
 }

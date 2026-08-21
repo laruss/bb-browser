@@ -9,7 +9,7 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  createBbDesktopApi,
+  createPatcherDesktopApi,
   createNoopDesktopBrowserApi,
 } from "@/test/bb-desktop-test-utils";
 import type { PluginOmniboxSuggestGroup } from "@/hooks/queries/plugin-contribution-queries";
@@ -90,7 +90,7 @@ function stubPluginEndpoints(): FetchCall[] {
 
 function renderChrome() {
   const navigate = vi.fn();
-  window.bbDesktop = createBbDesktopApi(desktopInfo, {
+  window.bbDesktop = createPatcherDesktopApi(desktopInfo, {
     ...createNoopDesktopBrowserApi(),
     navigate,
   });

@@ -60,7 +60,7 @@ async function runHostDaemonEntrypoint(): Promise<void> {
   // Keep this import after diagnostics so ESM evaluation failures are reported.
   const hostDaemonModule = await import("./start-host-daemon.js");
   const daemon = await hostDaemonModule.startHostDaemon({
-    bbExecutableDirectory: hostDaemonEntrypointConfig.BB_CLI_DIR,
+    patcherExecutableDirectory: hostDaemonEntrypointConfig.BB_CLI_DIR,
     bridgeBundleDir:
       hostDaemonEntrypointConfig.BB_BRIDGE_DIR ??
       resolveEntrypointBridgeBundleDir(),

@@ -63,7 +63,7 @@ import {
 } from "./ThreadSecondaryPanelTabContent";
 import {
   CHROME_ROW_CLASS,
-  getBbDesktopInfo,
+  getPatcherDesktopInfo,
   MACOS_APP_REGION_NO_DRAG_CLASS,
   MACOS_CHROME_CONTROL_AXIS_CLASS,
   MACOS_TRAFFIC_LIGHT_LEADING_RESERVE_CLASS,
@@ -500,7 +500,7 @@ export function ThreadSecondaryPanel({
   const isSecondaryPanelResizing = useAtomValue(
     threadSecondaryPanelResizingAtom,
   );
-  const [desktopInfo] = useState(getBbDesktopInfo);
+  const [desktopInfo] = useState(getPatcherDesktopInfo);
   const [gitDiffLineOverflowMode, setGitDiffLineOverflowMode] =
     useState<CodeOverflowMode>(DEFAULT_CODE_OVERFLOW_MODE);
   const usesDesktopChrome = shouldUseMacosDesktopChrome(desktopInfo);

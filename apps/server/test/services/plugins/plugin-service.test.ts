@@ -119,7 +119,7 @@ describe("plugin service", () => {
     const rootDir = await writePlugin(workDir, {
       name: "bb-plugin-greeter",
       serverSource: `
-        import type { BbPluginApi } from "@patcher/plugin-sdk";
+        import type { PatcherPluginApi } from "@patcher/plugin-sdk";
         export default function plugin(bb: any) {
           (globalThis as any).__greeterLoads = ((globalThis as any).__greeterLoads ?? 0) + 1;
           bb.log.info("hello from greeter");

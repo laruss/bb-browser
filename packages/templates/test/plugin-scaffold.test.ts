@@ -27,14 +27,14 @@ describe("scaffoldPlugin bundled types", () => {
     await scaffoldPlugin({
       targetDir,
       packageName: "bb-plugin-headless",
-      bbVersion: "0.9.0",
+      patcherVersion: "0.9.0",
     });
 
     const rootDts = await readFile(
       join(targetDir, "types", "bb-plugin-sdk.d.ts"),
       "utf8",
     );
-    expect(rootDts).toContain("interface BbPluginApi");
+    expect(rootDts).toContain("interface PatcherPluginApi");
     expect(rootDts).toContain("interface TerminalsArea");
     expect(rootDts).toContain("terminals: TerminalsArea;");
     expect(rootDts).not.toContain("ThreadTerminalsArea");
@@ -85,7 +85,7 @@ describe("scaffoldPlugin bundled types", () => {
     await scaffoldPlugin({
       targetDir,
       packageName: "bb-plugin-ui",
-      bbVersion: "0.9.0",
+      patcherVersion: "0.9.0",
       app: true,
     });
 
@@ -116,7 +116,7 @@ describe("scaffoldPlugin bundled types", () => {
     await scaffoldPlugin({
       targetDir,
       packageName: "@acme/bb-plugin-scoped",
-      bbVersion: "0.9.0",
+      patcherVersion: "0.9.0",
     });
 
     const pkg = JSON.parse(

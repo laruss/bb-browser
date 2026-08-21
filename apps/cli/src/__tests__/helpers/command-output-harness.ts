@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, expect, vi } from "vitest";
 import { Command } from "commander";
 import { createApiClient, type ApiClient } from "@patcher/server-contract";
-import type { BbSdkContext } from "@patcher/sdk";
+import type { PatcherSdkContext } from "@patcher/sdk";
 
 const readlineState = vi.hoisted(() => ({
   question: vi.fn(),
@@ -18,7 +18,7 @@ vi.mock("../../client.js", async () => {
   // cliFetch stays real — it delegates to global fetch, which tests stub.
   const { cliFetch } =
     await vi.importActual<typeof import("../../client.js")>("../../client.js");
-  const { createBbSdk } =
+  const { createPatcherSdk } =
     await vi.importActual<typeof import("@patcher/sdk/core")>(
       "@patcher/sdk/core",
     );
@@ -33,10 +33,10 @@ vi.mock("../../client.js", async () => {
           status: 200,
           headers: { "Content-Type": "application/json" },
         });
-  const createCliBbSdk = vi.fn(
-    (baseUrl: string, options: MockCliBbSdkOptions = {}) => {
+  const createCliPatcherSdk = vi.fn(
+    (baseUrl: string, options: MockCliPatcherSdkOptions = {}) => {
       const realTransport = createHttpTransport({ baseUrl, runtime: "node" });
-      return createBbSdk({
+      return createPatcherSdk({
         context: options.context,
         transport: {
           ...realTransport,
@@ -49,7 +49,7 @@ vi.mock("../../client.js", async () => {
       });
     },
   );
-  return { cliFetch, createCliBbSdk };
+  return { cliFetch, createCliPatcherSdk };
 });
 
 vi.mock("node:readline/promises", () => ({
@@ -82,8 +82,8 @@ interface ServerClientOverride {
   api: object;
 }
 
-interface MockCliBbSdkOptions {
-  context?: BbSdkContext;
+interface MockCliPatcherSdkOptions {
+  context?: PatcherSdkContext;
 }
 
 export const createClientMock = serverClientState.createClient;

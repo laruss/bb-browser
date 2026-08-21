@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { BbDesktopVersionFeed } from "@patcher/desktop-contract";
+import type { PatcherDesktopVersionFeed } from "@patcher/desktop-contract";
 import {
   createDesktopUpdateService,
   DESKTOP_UPDATE_ACTIVE_MIN_INTERVAL_MS,
@@ -9,7 +9,7 @@ import {
 
 const checkedAt = "2026-05-21T00:00:00.000Z";
 
-function createFeed(version: string): BbDesktopVersionFeed {
+function createFeed(version: string): PatcherDesktopVersionFeed {
   return {
     channel: "latest",
     files: [

@@ -1,11 +1,11 @@
-import type { BbPluginApi } from "@patcher/plugin-sdk";
+import type { PatcherPluginApi } from "@patcher/plugin-sdk";
 
 export type AutomationSignalKind =
   | "automations-changed"
   | "automation-runs-changed";
 
 export function publishAutomationChange(
-  bb: Pick<BbPluginApi, "realtime">,
+  bb: Pick<PatcherPluginApi, "realtime">,
   projectId: string,
   kinds: AutomationSignalKind | AutomationSignalKind[],
 ): void {

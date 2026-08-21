@@ -16,7 +16,7 @@ import {
 import {
   resolveCurrentDevInstanceConfig,
   resolveRuntimeDataDir,
-  type BbRuntimeMode,
+  type PatcherRuntimeMode,
 } from "@patcher/config/runtime";
 import { resolveScriptMode } from "../lib/script-config.js";
 
@@ -24,11 +24,11 @@ const commandDir = dirname(fileURLToPath(import.meta.url));
 const packageRoot = resolve(commandDir, "..", "..");
 const repoRoot = resolve(packageRoot, "..", "..");
 
-function resolveMode(): BbRuntimeMode {
+function resolveMode(): PatcherRuntimeMode {
   return resolveScriptMode();
 }
 
-export function resolveResetDataDir(mode: BbRuntimeMode): string {
+export function resolveResetDataDir(mode: PatcherRuntimeMode): string {
   if (mode === "dev") {
     return resolveCurrentDevInstanceConfig(repoRoot).dataDir;
   }

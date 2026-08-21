@@ -10,7 +10,7 @@ import {
   invalidateCachedThreadTabs,
   setCachedThreadTabs,
 } from "@/hooks/cache-owners/thread-tabs-cache-owner";
-import { BbHttpError, sdk } from "./sdk";
+import { PatcherHttpError, sdk } from "./sdk";
 import {
   areFixedPanelTabsEquivalent,
   type FixedPanelTab,
@@ -135,7 +135,7 @@ async function readCurrentThreadTabs({
 
 function isThreadTabsConflict(error: unknown): boolean {
   return (
-    error instanceof BbHttpError &&
+    error instanceof PatcherHttpError &&
     error.status === 409 &&
     error.code === "thread_tabs_conflict"
   );

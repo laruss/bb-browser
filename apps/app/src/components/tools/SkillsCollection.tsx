@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import type { SkillProvider, SkillSummary } from "@patcher/server-contract";
-import bbLogoUrl from "../../../../../assets/bb-logo.svg";
+import patcherLogoUrl from "../../../../../assets/bb-logo.svg";
 import {
   ResourcePagination,
   useResourcePagination,
@@ -134,10 +134,10 @@ export function ProviderLogo({
   );
 }
 
-export function BbLogo({ className = "size-4" }: { className?: string }) {
+export function PatcherLogo({ className = "size-4" }: { className?: string }) {
   return (
     <img
-      src={bbLogoUrl}
+      src={patcherLogoUrl}
       alt=""
       aria-hidden="true"
       className={cn(className, "object-contain dark:invert")}
@@ -159,7 +159,7 @@ export function SkillProvenanceTooltip({
       <span>{prefix}</span>
       <span data-provider-icon={providerId ?? "bb"} aria-hidden="true">
         {providerId === null ? (
-          <BbLogo className="size-3.5 brightness-0 invert" />
+          <PatcherLogo className="size-3.5 brightness-0 invert" />
         ) : (
           <ProviderLogo
             providerId={providerId}
@@ -176,7 +176,7 @@ function SkillLeading({ skill }: { skill: SkillSummary }) {
   if (skill.provider !== null) {
     return <ProviderLogo providerId={skill.provider} className="size-6" />;
   }
-  return <BbLogo className="size-6" />;
+  return <PatcherLogo className="size-6" />;
 }
 
 function skillDescription(skill: SkillSummary): string {
@@ -305,7 +305,7 @@ export function SkillsOverview({
       label: providerFilterLabel(provider),
       leading:
         provider === "bb" ? (
-          <BbLogo className="size-4" />
+          <PatcherLogo className="size-4" />
         ) : (
           <ProviderLogo providerId={provider} className="size-4" />
         ),

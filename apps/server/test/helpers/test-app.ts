@@ -15,7 +15,7 @@ import {
   createAppVersionService,
   type AppVersionService,
 } from "../../src/services/system/app-version.js";
-import { createBbAppManagedConfigReloader } from "../../src/services/system/bb-app-managed-config.js";
+import { createPatcherAppManagedConfigReloader } from "../../src/services/system/bb-app-managed-config.js";
 import { createNoopTelemetryService } from "../../src/services/system/telemetry.js";
 import { TerminalSessionLifecycle } from "../../src/services/terminals/terminal-session-lifecycle.js";
 import { resolveThreadStorageRootPath } from "../../src/services/threads/thread-storage.js";
@@ -163,7 +163,7 @@ export async function createTestAppHarness(
     logger: testLogger,
     openTimeoutMs: 50,
   });
-  const bbAppManagedConfig = await createBbAppManagedConfigReloader({
+  const patcherAppManagedConfig = await createPatcherAppManagedConfigReloader({
     config,
     hub,
     logger: testLogger,
@@ -190,7 +190,7 @@ export async function createTestAppHarness(
     });
   const deps: ServerAppDeps = {
     appVersion,
-    bbAppManagedConfig,
+    patcherAppManagedConfig,
     config,
     db,
     hub,

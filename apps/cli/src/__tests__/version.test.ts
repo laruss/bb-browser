@@ -2,9 +2,9 @@ import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { resolveBbAppVersion } from "../version.js";
+import { resolvePatcherAppVersion } from "../version.js";
 
-describe("resolveBbAppVersion", () => {
+describe("resolvePatcherAppVersion", () => {
   let tempRoot: string;
 
   beforeEach(async () => {
@@ -17,7 +17,7 @@ describe("resolveBbAppVersion", () => {
 
   it("prefers BB_APP_VERSION from the env", () => {
     expect(
-      resolveBbAppVersion({
+      resolvePatcherAppVersion({
         env: { BB_APP_VERSION: "1.2.3" },
         fromDir: tempRoot,
       }),
@@ -26,7 +26,7 @@ describe("resolveBbAppVersion", () => {
 
   it("trims whitespace around BB_APP_VERSION", () => {
     expect(
-      resolveBbAppVersion({
+      resolvePatcherAppVersion({
         env: { BB_APP_VERSION: "  4.5.6  " },
         fromDir: tempRoot,
       }),
@@ -42,7 +42,7 @@ describe("resolveBbAppVersion", () => {
       JSON.stringify({ name: "bb-app", version: "0.0.7" }),
     );
     expect(
-      resolveBbAppVersion({
+      resolvePatcherAppVersion({
         env: {},
         fromDir: binDir,
       }),
@@ -61,14 +61,14 @@ describe("resolveBbAppVersion", () => {
       join(repoRoot, "apps", "cli", "package.json"),
       JSON.stringify({ name: "@patcher/cli", version: "0.0.1" }),
     );
-    const bbAppDir = join(repoRoot, "packages", "bb-app");
-    await mkdir(bbAppDir, { recursive: true });
+    const patcherAppDir = join(repoRoot, "packages", "bb-app");
+    await mkdir(patcherAppDir, { recursive: true });
     await writeFile(
-      join(bbAppDir, "package.json"),
+      join(patcherAppDir, "package.json"),
       JSON.stringify({ name: "bb-app", version: "0.1.2" }),
     );
     expect(
-      resolveBbAppVersion({
+      resolvePatcherAppVersion({
         env: {},
         fromDir: cliDistDir,
       }),
@@ -77,7 +77,7 @@ describe("resolveBbAppVersion", () => {
 
   it("falls back to the dev sentinel when no bb-app package.json is found", () => {
     expect(
-      resolveBbAppVersion({
+      resolvePatcherAppVersion({
         env: {},
         fromDir: tempRoot,
       }),

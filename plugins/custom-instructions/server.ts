@@ -1,4 +1,4 @@
-import { defineRpcContract, type BbPluginApi } from "@patcher/plugin-sdk";
+import { defineRpcContract, type PatcherPluginApi } from "@patcher/plugin-sdk";
 import { z } from "zod";
 
 export const MAX_CUSTOM_INSTRUCTIONS_LENGTH = 4096;
@@ -45,7 +45,7 @@ function parseInstructionsInput(input: unknown): string {
   return instructions;
 }
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(bb: PatcherPluginApi) {
   let customInstructions = (await bb.storage.kv.get<string>(STORAGE_KEY)) ?? "";
 
   bb.rpc.register(customInstructionsRpcContract, {

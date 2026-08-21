@@ -1,7 +1,7 @@
-import type { BbSdkTransport } from "./transport.js";
+import type { PatcherSdkTransport } from "./transport.js";
 
 export interface ResolveRealtimeUrlArgs {
-  transport: BbSdkTransport;
+  transport: PatcherSdkTransport;
 }
 
 interface WebsocketUrlFromHttpUrlArgs {

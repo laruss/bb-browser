@@ -25,8 +25,8 @@ import {
   BB_DESKTOP_BROWSER_MAX_CONSOLE_TEXT_LENGTH,
   BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH,
   BB_DESKTOP_BROWSER_MAX_URL_LENGTH,
-  type BbDesktopBrowserConsoleEntry,
-  type BbDesktopBrowserNetworkEntry,
+  type PatcherDesktopBrowserConsoleEntry,
+  type PatcherDesktopBrowserNetworkEntry,
 } from "@patcher/desktop-contract";
 
 /**
@@ -79,7 +79,7 @@ function truncate(value: string, max: number): string {
 }
 
 /** Chromium's four levels; anything else is treated as ordinary output. */
-function consoleLevel(raw: unknown): BbDesktopBrowserConsoleEntry["level"] {
+function consoleLevel(raw: unknown): PatcherDesktopBrowserConsoleEntry["level"] {
   return raw === "debug" || raw === "warning" || raw === "error" ? raw : "info";
 }
 
@@ -94,7 +94,7 @@ export interface BrowserConsoleMessageDetails {
 export function toBrowserConsoleEntry(
   details: BrowserConsoleMessageDetails,
   now: number,
-): BbDesktopBrowserConsoleEntry {
+): PatcherDesktopBrowserConsoleEntry {
   const line = details.lineNumber;
   return {
     level: consoleLevel(details.level),
@@ -128,7 +128,7 @@ export interface BrowserNetworkRequestDetails {
 export function toBrowserNetworkEntry(
   details: BrowserNetworkRequestDetails,
   now: number,
-): BbDesktopBrowserNetworkEntry {
+): PatcherDesktopBrowserNetworkEntry {
   const status = details.statusCode;
   const timestamp = details.timestamp;
   // A `webRequest` error string is the raw `net::ERR_*` name. Left as it is:

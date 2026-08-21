@@ -1,8 +1,8 @@
 import { useCallback, useEffect } from "react";
 import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
 import type {
-  BbDesktopBrowserDownload,
-  BbDesktopBrowserDownloadState,
+  PatcherDesktopBrowserDownload,
+  PatcherDesktopBrowserDownloadState,
 } from "@patcher/desktop-contract";
 import { appToast, type AppToastTone } from "@/components/ui/app-toast";
 import { reportPluginBrowserDownload } from "@/hooks/queries/plugin-contribution-queries";
@@ -53,7 +53,7 @@ export const EMPTY_BROWSER_DOWNLOADS_STATE: BrowserDownloadsState = {
 };
 
 export function browserDownloadOutcome(
-  state: BbDesktopBrowserDownloadState,
+  state: PatcherDesktopBrowserDownloadState,
 ): BrowserDownloadOutcome {
   if (state === "started") return "pending";
   return state === "completed" ? "done" : "error";
@@ -68,7 +68,7 @@ export function browserDownloadOutcome(
  */
 export function recordBrowserDownload(
   state: BrowserDownloadsState,
-  download: BbDesktopBrowserDownload,
+  download: PatcherDesktopBrowserDownload,
 ): BrowserDownloadsState {
   const outcome = browserDownloadOutcome(download.state);
   const entry: BrowserDownloadEntry = {
@@ -228,10 +228,10 @@ function downloadDirectory(savePath: string): string | null {
  * appeared would be worse than saying nothing.
  */
 export function describeBrowserDownload(
-  download: BbDesktopBrowserDownload,
+  download: PatcherDesktopBrowserDownload,
 ): BrowserDownloadNotice {
   const notice = { description: null as string | null, id: download.id };
-  const state: BbDesktopBrowserDownloadState = download.state;
+  const state: PatcherDesktopBrowserDownloadState = download.state;
   switch (state) {
     case "started":
       return {

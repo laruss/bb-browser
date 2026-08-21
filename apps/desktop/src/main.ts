@@ -23,10 +23,10 @@ import {
 } from "@patcher/config/app-surface";
 import type { AppKeybindings } from "@patcher/domain";
 import {
-  bbDesktopThemeSchema,
-  type BbDesktopDefaultBrowserStatus,
-  type BbDesktopInfo,
-  type BbDesktopWindowState,
+  patcherDesktopThemeSchema,
+  type PatcherDesktopDefaultBrowserStatus,
+  type PatcherDesktopInfo,
+  type PatcherDesktopWindowState,
 } from "@patcher/desktop-contract";
 import {
   serverMessageLenientSchema,
@@ -41,10 +41,10 @@ import {
   type DesktopPathContext,
 } from "./app-paths.js";
 import {
-  resolveBbAppProcessRuntime,
-  type BbAppProcess,
-  type BbAppProcessExit,
-  startBbAppProcess,
+  resolvePatcherAppProcessRuntime,
+  type PatcherAppProcess,
+  type PatcherAppProcessExit,
+  startPatcherAppProcess,
 } from "./bb-process.js";
 import { openExistingServerDialog } from "./existing-server-dialog.js";
 import {
@@ -63,7 +63,7 @@ import {
   writeOwnedRuntimePidFile,
 } from "./owned-runtime-supervisor.js";
 import {
-  probeBbServer,
+  probePatcherServer,
   waitForCompatibleServer,
   type CompatibleServerProbeResult,
   type ServerProbeResult,
@@ -177,7 +177,7 @@ const FOREIGN_RUNTIME_KILL_TIMEOUT_MS = 3_000;
 const REMOTE_SYSTEM_CONFIG_POLL_INTERVAL_MS = 5 * 60 * 1000;
 
 interface DesktopRuntime {
-  bbProcess: BbAppProcess | null;
+  patcherProcess: PatcherAppProcess | null;
   ownership: RuntimeOwnership;
   serverUrl: string;
   userDataPath: string | null;
@@ -228,7 +228,7 @@ type StartupRaceResult =
   | ServerProbeStartupRaceResult;
 
 interface ProcessExitedStartupRaceResult {
-  exit: BbAppProcessExit;
+  exit: PatcherAppProcessExit;
   kind: "process-exited";
 }
 
@@ -296,7 +296,7 @@ let systemConfigSync: SystemConfigSync | null = null;
 let systemConfigRefreshToken = 0;
 let refreshRemoteSystemConfig: (() => void) | null = null;
 const applicationWindowWebContentsIds = new Set<number>();
-let bbAppLoaded = false;
+let patcherAppLoaded = false;
 let stoppingForQuit = false;
 let quitting = false;
 let serverTargetStore: ServerTargetStore | null = null;
@@ -363,7 +363,7 @@ function getDesktopVersion(version: string | undefined): string {
   return version;
 }
 
-function getCurrentDesktopInfo(): BbDesktopInfo | null {
+function getCurrentDesktopInfo(): PatcherDesktopInfo | null {
   return mergeDesktopUpdateInfo({
     autoInfo: desktopAutoUpdateService?.getInfo() ?? null,
     feedInfo: desktopUpdateService?.getInfo() ?? null,
@@ -427,7 +427,7 @@ function sendDesktopInfoChanged(): void {
 
 function getDesktopWindowState(
   browserWindow: Pick<DesktopBrowserWindow, "isFullScreen"> | null,
-): BbDesktopWindowState {
+): PatcherDesktopWindowState {
   return {
     isFullScreen: browserWindow?.isFullScreen() ?? false,
   };
@@ -435,7 +435,7 @@ function getDesktopWindowState(
 
 function getSenderDesktopWindowState(
   event: IpcMainInvokeEvent,
-): BbDesktopWindowState {
+): PatcherDesktopWindowState {
   return getDesktopWindowState(resolveApplicationWindow(event.sender));
 }
 
@@ -487,7 +487,7 @@ function formatLogDirectory(): string {
   );
 }
 
-function formatExitResult(result: BbAppProcessExit): string {
+function formatExitResult(result: PatcherAppProcessExit): string {
   if (result.code !== null) {
     return `exit code ${result.code}`;
   }
@@ -528,7 +528,7 @@ const defaultBrowserEnvironment: DefaultBrowserEnvironment = {
 };
 
 /** Last status pushed to renderers, so an unchanged one is not pushed twice. */
-let lastDefaultBrowserStatus: BbDesktopDefaultBrowserStatus | null = null;
+let lastDefaultBrowserStatus: PatcherDesktopDefaultBrowserStatus | null = null;
 
 /**
  * Links macOS handed us because bb is the user's default browser, waiting for a
@@ -1006,14 +1006,14 @@ async function ensureBuiltinRuntimeAttached(): Promise<boolean> {
     return false;
   }
 
-  const existingProbe = await probeBbServer({
+  const existingProbe = await probePatcherServer({
     serverUrl: builtinServerUrl,
     timeoutMs: ATTACH_PROBE_TIMEOUT_MS,
   });
 
   if (existingProbe.kind === "compatible") {
     setCurrentRuntime({
-      bbProcess: null,
+      patcherProcess: null,
       ownership: "attached",
       serverUrl: existingProbe.serverUrl,
       userDataPath: null,
@@ -1069,7 +1069,7 @@ async function applyServerTarget(): Promise<void> {
     // Switching back from a remote target leaves that target's config poll
     // running, so re-pin the sync to the local server here.
     startSystemConfigSync(localServerUrl);
-    await loadBbApp(
+    await loadPatcherApp(
       resolveDesktopWindowUrl({
         env: process.env,
         serverUrl: localServerUrl,
@@ -1077,7 +1077,7 @@ async function applyServerTarget(): Promise<void> {
     );
   } else {
     // A custom server is a plain web load.
-    bbAppLoaded = true;
+    patcherAppLoaded = true;
     await loadWindowUrl({ url: target.url });
     if (!isCurrent()) {
       return;
@@ -1287,7 +1287,7 @@ async function loadWindowUrl(args: LoadWindowUrlArgs): Promise<void> {
 }
 
 async function loadLoadingView(): Promise<void> {
-  bbAppLoaded = false;
+  patcherAppLoaded = false;
   await loadWindowUrl({
     url: createLocalViewUrl({
       viewModel: {
@@ -1300,7 +1300,7 @@ async function loadLoadingView(): Promise<void> {
 }
 
 async function loadStartupError(args: LoadStartupErrorArgs): Promise<void> {
-  bbAppLoaded = false;
+  patcherAppLoaded = false;
   await loadWindowUrl({
     url: createLocalViewUrl({
       viewModel: {
@@ -1313,8 +1313,8 @@ async function loadStartupError(args: LoadStartupErrorArgs): Promise<void> {
   });
 }
 
-async function loadBbApp(serverUrl: string): Promise<void> {
-  bbAppLoaded = true;
+async function loadPatcherApp(serverUrl: string): Promise<void> {
+  patcherAppLoaded = true;
   await loadWindowUrl({ url: serverUrl });
   if (shouldOpenDevTools()) {
     desktopWindowFactory?.openDevTools();
@@ -1337,7 +1337,7 @@ async function createApplicationWindow(
     stateKey: args.stateKey,
   });
   registerApplicationWindow(browserWindow);
-  if (bbAppLoaded && shouldOpenDevTools()) {
+  if (patcherAppLoaded && shouldOpenDevTools()) {
     browserWindow.webContents.openDevTools({ mode: "detach" });
   }
   return browserWindow;
@@ -1352,7 +1352,7 @@ async function stopOwnedRuntime(): Promise<void> {
 
   setCurrentRuntime(null);
   try {
-    await runtime.bbProcess?.stop({
+    await runtime.patcherProcess?.stop({
       killSignal: "SIGKILL",
       killTimeoutMs: OWNED_RUNTIME_KILL_TIMEOUT_MS,
       signal: "SIGTERM",
@@ -1419,7 +1419,7 @@ function registerDesktopUpdateIpc(): void {
   // theme or the OS when set to system. `themeSource` is app-global so a
   // single assignment covers every BrowserWindow, including the log viewer.
   ipcMain.on(BB_DESKTOP_SET_THEME_CHANNEL, (_event, payload: unknown) => {
-    const parsed = bbDesktopThemeSchema.safeParse(payload);
+    const parsed = patcherDesktopThemeSchema.safeParse(payload);
     if (!parsed.success) {
       return;
     }
@@ -1521,7 +1521,7 @@ function registerDesktopBrowserWindowLifecycle({
 async function startOwnedRuntime(
   args: StartOwnedRuntimeArgs,
 ): Promise<DesktopRuntime | null> {
-  const bbProcess = startBbAppProcess({
+  const patcherProcess = startPatcherAppProcess({
     bridgePath: args.bridgePath,
     cwd: homedir(),
     env: {
@@ -1529,27 +1529,27 @@ async function startOwnedRuntime(
       [APP_SURFACE_ENV_NAME]: APP_SURFACE_DESKTOP,
     },
     logLineLimit: PROCESS_LOG_LINE_LIMIT,
-    runtime: resolveBbAppProcessRuntime({
+    runtime: resolvePatcherAppProcessRuntime({
       env: process.env,
       isPackaged: app.isPackaged,
       processExecPath: process.execPath,
     }),
   });
   const runtime: DesktopRuntime = {
-    bbProcess,
+    patcherProcess,
     ownership: "spawned",
     serverUrl: args.serverUrl,
     userDataPath: args.userDataPath,
   };
   await writeOwnedRuntimePidFile({
     bridgePath: args.bridgePath,
-    pid: bbProcess.pid,
+    pid: patcherProcess.pid,
     serverUrl: args.serverUrl,
     userDataPath: args.userDataPath,
   });
   setCurrentRuntime(runtime);
 
-  void bbProcess.exit.then((exit) => {
+  void patcherProcess.exit.then((exit) => {
     void clearOwnedRuntimePidFile({ userDataPath: args.userDataPath });
     if (quitting || currentRuntime !== runtime) {
       return;
@@ -1559,7 +1559,7 @@ async function startOwnedRuntime(
       details: `The Electron-owned bb-app process stopped with ${formatExitResult(
         exit,
       )}.`,
-      logs: bbProcess.logs.text(),
+      logs: patcherProcess.logs.text(),
       title: "bb stopped",
     });
   });
@@ -1573,7 +1573,7 @@ async function startOwnedRuntime(
       kind: "server-probe",
       result,
     })),
-    bbProcess.exit.then((exit) => ({
+    patcherProcess.exit.then((exit) => ({
       exit,
       kind: "process-exited",
     })),
@@ -1584,7 +1584,7 @@ async function startOwnedRuntime(
       details: `bb-app exited before the server was ready with ${formatExitResult(
         raceResult.exit,
       )}.`,
-      logs: bbProcess.logs.text(),
+      logs: patcherProcess.logs.text(),
       title: "Could not start bb",
     });
     setCurrentRuntime(null);
@@ -1600,7 +1600,7 @@ async function startOwnedRuntime(
       raceResult.result.kind === "incompatible"
         ? `Port ${args.serverUrl} is responding, but it does not look like bb: ${raceResult.result.reason}.`
         : `Timed out waiting for bb at ${args.serverUrl}: ${raceResult.result.reason}.`,
-    logs: bbProcess.logs.text(),
+    logs: patcherProcess.logs.text(),
     title: "Could not start bb",
   });
   await stopOwnedRuntime();
@@ -1640,7 +1640,7 @@ function shouldAskBeforeAttaching(): boolean {
 async function waitForServerToStop(serverUrl: string): Promise<boolean> {
   const deadline = Date.now() + FOREIGN_RUNTIME_STOP_TIMEOUT_MS;
   while (Date.now() <= deadline) {
-    const probe = await probeBbServer({
+    const probe = await probePatcherServer({
       serverUrl,
       timeoutMs: ATTACH_PROBE_TIMEOUT_MS,
     });
@@ -1731,7 +1731,7 @@ async function decideOnExistingServer(
 }
 
 async function initializeRuntime(args: InitializeRuntimeArgs): Promise<void> {
-  const existingProbe = await probeBbServer({
+  const existingProbe = await probePatcherServer({
     serverUrl: args.serverUrl,
     timeoutMs: ATTACH_PROBE_TIMEOUT_MS,
   });
@@ -1750,7 +1750,7 @@ async function initializeRuntime(args: InitializeRuntimeArgs): Promise<void> {
         userDataPath: args.userDataPath,
       });
       if (freshRuntime !== null) {
-        await loadBbApp(freshRuntime.serverUrl);
+        await loadPatcherApp(freshRuntime.serverUrl);
         startSystemConfigSync(freshRuntime.serverUrl);
         refreshApplicationMenu();
       }
@@ -1758,7 +1758,7 @@ async function initializeRuntime(args: InitializeRuntimeArgs): Promise<void> {
     }
 
     setCurrentRuntime({
-      bbProcess: null,
+      patcherProcess: null,
       ownership: "attached",
       serverUrl: existingProbe.serverUrl,
       userDataPath: null,
@@ -1766,7 +1766,7 @@ async function initializeRuntime(args: InitializeRuntimeArgs): Promise<void> {
     // When attaching to an already-running server (the `bun run dev` case) load the
     // Vite dev URL if the launcher provided one, so the shell gets live source
     // and HMR. The attached server still handles every API/WS request.
-    await loadBbApp(
+    await loadPatcherApp(
       resolveDesktopWindowUrl({
         env: process.env,
         serverUrl: existingProbe.serverUrl,
@@ -1792,7 +1792,7 @@ async function initializeRuntime(args: InitializeRuntimeArgs): Promise<void> {
     userDataPath: args.userDataPath,
   });
   if (runtime !== null) {
-    await loadBbApp(runtime.serverUrl);
+    await loadPatcherApp(runtime.serverUrl);
     startSystemConfigSync(runtime.serverUrl);
     refreshApplicationMenu();
   }

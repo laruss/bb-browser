@@ -61,7 +61,7 @@ describe("server skeleton", () => {
   it("serves install version metadata without auth", async () => {
     const harness = await createTestAppHarness();
     const { app } = createApp(harness.deps, {
-      bbAppArtifactService: {
+      patcherAppArtifactService: {
         getTarballPath: async () => "/unused",
         getVersion: async () => "3.2.1-test",
       },
@@ -84,7 +84,10 @@ describe("server skeleton", () => {
     writeFileSync(tarballPath, "tarball-bytes");
     const getTarballPath = vi.fn(async () => tarballPath);
     const { app } = createApp(harness.deps, {
-      bbAppArtifactService: { getTarballPath, getVersion: async () => "test" },
+      patcherAppArtifactService: {
+        getTarballPath,
+        getVersion: async () => "test",
+      },
     });
     try {
       const response = await app.request("/install/bb-app.tgz");

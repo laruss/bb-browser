@@ -5,7 +5,7 @@
 // Confused by the API, or need a symbol that isn't here? Clone the BB repo
 // and read the real source: https://github.com/get-bb/bb
 
-import { BbPluginApi, PluginSettingValue, PluginAgentToolExperimentalStatusLabels, PluginAgentToolContext, PluginAgentToolResult, PluginCliCommandInfo, PluginCliContext, PluginCliResult, PluginHttpAuthMode, PluginHttpHandler, PluginMentionTrigger, PluginMentionSearchContext, PluginMentionItem, PluginBrowserConsoleEntry, PluginBrowserNetworkEntry, PluginBrowserCookie, PluginBrowserStorageItem, PluginBrowserErrorCode, JsonValue, PluginCliExecutionResult, PluginThreadEventName, PluginThreadEventPayloads, PluginAgentConfigurationContext, PluginSettingDescriptors, PluginAgentConfiguration, PluginOmniboxSuggestContext, PluginOmniboxSuggestion, PluginOmniboxRunContext, PluginOmniboxRunResult, PluginKeybinding, PluginBrowserDownloadHandler, PluginBrowserContextMenuItemRegistration, PluginBrowserFindActionRegistration, PluginBrowserTabActionRegistration, PluginBrowserSiteInfoProviderRegistration, PluginBrowserToolbarItemRegistration, PluginBrowserNewTabWidgetRegistration, PluginCommandRegistration, PluginBrowserSearchEngineRegistration, PluginBrowserPageStyleRegistration, PluginBrowserPageScriptRegistration, PluginBrowserAuthProvider, PluginBrowserPdfTextProvider, PluginBrowserExternalLinkHandler, PluginBrowserHistoryFilter, PluginInteractionRequest } from '@patcher/plugin-sdk';
+import { PatcherPluginApi, PluginSettingValue, PluginAgentToolExperimentalStatusLabels, PluginAgentToolContext, PluginAgentToolResult, PluginCliCommandInfo, PluginCliContext, PluginCliResult, PluginHttpAuthMode, PluginHttpHandler, PluginMentionTrigger, PluginMentionSearchContext, PluginMentionItem, PluginBrowserConsoleEntry, PluginBrowserNetworkEntry, PluginBrowserCookie, PluginBrowserStorageItem, PluginBrowserErrorCode, JsonValue, PluginCliExecutionResult, PluginThreadEventName, PluginThreadEventPayloads, PluginAgentConfigurationContext, PluginSettingDescriptors, PluginAgentConfiguration, PluginOmniboxSuggestContext, PluginOmniboxSuggestion, PluginOmniboxRunContext, PluginOmniboxRunResult, PluginKeybinding, PluginBrowserDownloadHandler, PluginBrowserContextMenuItemRegistration, PluginBrowserFindActionRegistration, PluginBrowserTabActionRegistration, PluginBrowserSiteInfoProviderRegistration, PluginBrowserToolbarItemRegistration, PluginBrowserNewTabWidgetRegistration, PluginCommandRegistration, PluginBrowserSearchEngineRegistration, PluginBrowserPageStyleRegistration, PluginBrowserPageScriptRegistration, PluginBrowserAuthProvider, PluginBrowserPdfTextProvider, PluginBrowserExternalLinkHandler, PluginBrowserHistoryFilter, PluginInteractionRequest } from '@patcher/plugin-sdk';
 
 /**
  * What a plugin declares it will use, and what the host lets it reach.
@@ -81,7 +81,7 @@ interface FakePermissionGate {
     readonly granted: readonly PluginPermission[];
 }
 
-type BbSdk = BbPluginApi["sdk"];
+type PatcherSdk = PatcherPluginApi["sdk"];
 /**
  * Recordable `bb.sdk` stand-in for {@link createFakePluginHost}. Every call
  * through the fake is recorded (post plugin-attribution defaulting, so
@@ -100,13 +100,13 @@ interface FakeSdkCall {
  */
 type LooseStub<F> = F extends (...args: infer A) => unknown ? (...args: A) => unknown : never;
 /**
- * Stub implementations keyed like `BbSdk`: an object per area with a subset
+ * Stub implementations keyed like `PatcherSdk`: an object per area with a subset
  * of its methods, or a function for the root-level members (`on`).
  */
 type FakeSdkOverrideTree<T> = {
     [K in keyof T]?: T[K] extends (...args: never[]) => unknown ? LooseStub<T[K]> : FakeSdkOverrideTree<T[K]>;
 };
-type FakeSdkOverrides = FakeSdkOverrideTree<BbSdk>;
+type FakeSdkOverrides = FakeSdkOverrideTree<PatcherSdk>;
 interface FakeSdkHarness {
     /** Every `bb.sdk` call in order, including ones whose stub threw. */
     readonly calls: FakeSdkCall[];
@@ -120,14 +120,14 @@ declare function createFakeSdk(options: {
     overrides?: FakeSdkOverrides;
     permissions: FakePermissionGate;
 }): {
-    sdk: BbSdk;
+    sdk: PatcherSdk;
     harness: FakeSdkHarness;
 };
 
 /**
  * `createFakePluginHost` — an in-process stand-in for the BB server's plugin
  * runtime (apps/server/src/services/plugins/plugin-api.ts), for unit-testing
- * a plugin's `server.ts` without a server. `bb` satisfies {@link BbPluginApi};
+ * a plugin's `server.ts` without a server. `bb` satisfies {@link PatcherPluginApi};
  * `harness` drives and inspects it.
  *
  * Faithful where a plugin can observe it: registration name validation and
@@ -429,7 +429,7 @@ interface FakePluginLifecycleControls {
      * The current host remains live when the factory throws; on success its
      * services/hooks are disposed and the returned host becomes current.
      */
-    reload(factory: (bb: BbPluginApi) => void | Promise<void>): Promise<FakePluginHost>;
+    reload(factory: (bb: PatcherPluginApi) => void | Promise<void>): Promise<FakePluginHost>;
     /**
      * Dispose like a host reload/disable: abort services started via
      * runService, run onDispose hooks LIFO (isolated), close database handles,
@@ -486,7 +486,7 @@ interface CreateFakePluginHostOptions {
     sites?: readonly string[];
 }
 interface FakePluginHost {
-    bb: BbPluginApi;
+    bb: PatcherPluginApi;
     harness: FakePluginHarness;
 }
 declare function createFakePluginHost(options?: CreateFakePluginHostOptions): FakePluginHost;

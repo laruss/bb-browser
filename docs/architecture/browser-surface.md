@@ -1341,7 +1341,7 @@ a `3/12` counter, arrows, Escape to close. Chromium does the searching —
 `found-in-page`.
 
 It rides a new channel pair and an optional `find` / `onFindResult` on
-`BbDesktopBrowserApi` (invariant 2 in [bb-migration.md](bb-migration.md)). Two
+`PatcherDesktopBrowserApi` (invariant 2 in [bb-migration.md](bb-migration.md)). Two
 channels rather than an invoke pair, because **one query answers many times**:
 Chromium reports the count while it is still scanning, so a request/response
 shape could carry only the first of those answers or only the last.

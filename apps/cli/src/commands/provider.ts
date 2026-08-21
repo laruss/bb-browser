@@ -3,7 +3,7 @@ import type { AvailableModel } from "@patcher/domain";
 import type { ProviderHostRoutingArgs } from "@patcher/sdk";
 import type { SystemProviderInfo } from "@patcher/server-contract";
 import { action } from "../action.js";
-import { createCliBbSdk } from "../client.js";
+import { createCliPatcherSdk } from "../client.js";
 import { renderBorderlessTable } from "../table.js";
 import { outputJson } from "./helpers.js";
 import { resolveMachineEnvironmentRouting } from "./machine.js";
@@ -60,7 +60,7 @@ export function registerProviderCommands(
     .action(
       action(async (opts: ProviderListCommandOptions) => {
         const serverUrl = getUrl();
-        const sdk = createCliBbSdk(serverUrl);
+        const sdk = createCliPatcherSdk(serverUrl);
         const providers = await sdk.providers.list(
           await resolveProviderRouting(opts, serverUrl),
         );
@@ -87,7 +87,7 @@ export function registerProviderCommands(
           opts: ProviderModelsCommandOptions,
         ) => {
           const serverUrl = getUrl();
-          const sdk = createCliBbSdk(serverUrl);
+          const sdk = createCliPatcherSdk(serverUrl);
           const executionOptions = await sdk.providers.models({
             ...(await resolveProviderRouting(opts, serverUrl)),
             ...(providerId ? { providerId } : {}),

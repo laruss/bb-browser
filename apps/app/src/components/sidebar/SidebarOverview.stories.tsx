@@ -74,7 +74,7 @@ interface SidebarFrameProps {
 const noop = () => {};
 const SIDEBAR_NAVIGATION_STORY_QUERY_KEY = sidebarNavigationQueryKey();
 
-const bbProject = makeProject({
+const patcherProject = makeProject({
   id: "proj_story_bb",
   name: "bb",
 });
@@ -129,12 +129,12 @@ const loadedSidebarNavigation = {
   },
   projects: [
     {
-      ...bbProject,
+      ...patcherProject,
       defaultExecutionOptions: null,
       threads: [
         makeThreadListEntry({
           id: "thr_story_pinned",
-          projectId: bbProject.id,
+          projectId: patcherProject.id,
           title: "Improve sidebar loading state",
           titleFallback: "Improve sidebar loading state",
           pinnedAt: 200,
@@ -145,7 +145,7 @@ const loadedSidebarNavigation = {
         }),
         makeThreadListEntry({
           id: "thr_story_pinned_child",
-          projectId: bbProject.id,
+          projectId: patcherProject.id,
           parentThreadId: "thr_story_pinned",
           title: "Verify Ladle coverage",
           titleFallback: "Verify Ladle coverage",
@@ -155,7 +155,7 @@ const loadedSidebarNavigation = {
         }),
         makeThreadListEntry({
           id: "thr_story_active",
-          projectId: bbProject.id,
+          projectId: patcherProject.id,
           title: "Ship realtime sidebar updates",
           titleFallback: "Ship realtime sidebar updates",
           status: "active",
@@ -172,7 +172,7 @@ const loadedSidebarNavigation = {
         // running under the expanded child.
         makeThreadListEntry({
           id: "thr_story_ancestor",
-          projectId: bbProject.id,
+          projectId: patcherProject.id,
           title: "Rework the command palette",
           titleFallback: "Rework the command palette",
           latestAttentionAt: 176,
@@ -181,7 +181,7 @@ const loadedSidebarNavigation = {
         }),
         makeThreadListEntry({
           id: "thr_story_ancestor_child",
-          projectId: bbProject.id,
+          projectId: patcherProject.id,
           parentThreadId: "thr_story_ancestor",
           title: "Wire async command loading",
           titleFallback: "Wire async command loading",
@@ -191,7 +191,7 @@ const loadedSidebarNavigation = {
         }),
         makeThreadListEntry({
           id: "thr_story_worktree_a",
-          projectId: bbProject.id,
+          projectId: patcherProject.id,
           environmentId: "env_story_sidebar",
           environmentName: "Sidebar polish",
           environmentBranchName: BRANCH_NAMES.feature,
@@ -204,7 +204,7 @@ const loadedSidebarNavigation = {
         }),
         makeThreadListEntry({
           id: "thr_story_worktree_b",
-          projectId: bbProject.id,
+          projectId: patcherProject.id,
           environmentId: "env_story_sidebar",
           environmentName: "Sidebar polish",
           environmentBranchName: BRANCH_NAMES.feature,
@@ -279,7 +279,7 @@ const searchResponse = {
       {
         thread: makeThreadListEntry({
           id: "thr_story_search_active",
-          projectId: bbProject.id,
+          projectId: patcherProject.id,
           title: "Search result handoff",
           titleFallback: "Search result handoff",
           environmentName: "Sidebar polish",
@@ -321,7 +321,7 @@ const searchResponse = {
         thread: makeThreadListEntry({
           archivedAt: 220,
           id: "thr_story_search_archived",
-          projectId: bbProject.id,
+          projectId: patcherProject.id,
           title: "Archived needle investigation",
           titleFallback: "Archived needle investigation",
         }),
@@ -339,7 +339,7 @@ const searchResponse = {
 } satisfies ThreadSearchResponse;
 
 const searchProjectNamesById = new Map([
-  [bbProject.id, bbProject.name],
+  [patcherProject.id, patcherProject.name],
   [docsProject.id, docsProject.name],
   [PERSONAL_PROJECT_ID, personalProject.name],
 ]);

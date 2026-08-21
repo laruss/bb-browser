@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
-  bbAppManagedConfigSchema,
+  patcherAppManagedConfigSchema,
   formatCustomAcpAgentProviderId,
-  parseBbAppManagedConfig,
+  parsePatcherAppManagedConfig,
 } from "../src/bb-app-managed-config.js";
 
-describe("bbAppManagedConfigSchema", () => {
+describe("patcherAppManagedConfigSchema", () => {
   it("parses shared user and project skill roots", () => {
     expect(
-      parseBbAppManagedConfig({
+      parsePatcherAppManagedConfig({
         sharedSkillRoots: {
           user: [".agents/skills"],
           project: [".agents/skills"],
@@ -21,7 +21,7 @@ describe("bbAppManagedConfigSchema", () => {
   });
 
   it("parses custom models with a known provider", () => {
-    const parsed = bbAppManagedConfigSchema.parse({
+    const parsed = patcherAppManagedConfigSchema.parse({
       customModels: [
         {
           providerId: "claude-code",
@@ -38,7 +38,7 @@ describe("bbAppManagedConfigSchema", () => {
   });
 
   it("parses custom models with dynamic ACP provider ids", () => {
-    const parsed = bbAppManagedConfigSchema.parse({
+    const parsed = patcherAppManagedConfigSchema.parse({
       customModels: [
         {
           providerId: "acp-opencode",
@@ -57,7 +57,7 @@ describe("bbAppManagedConfigSchema", () => {
   it("rejects malformed acp-* custom model provider ids", () => {
     for (const providerId of ["acp-", "acp-Bad-Agent", "acp--x"]) {
       expect(
-        bbAppManagedConfigSchema.safeParse({
+        patcherAppManagedConfigSchema.safeParse({
           customModels: [{ providerId, model: "provider/model" }],
         }).success,
       ).toBe(false);
@@ -66,7 +66,7 @@ describe("bbAppManagedConfigSchema", () => {
 
   it("drops invalid custom model entries with warnings at the config boundary", () => {
     const warnings: Record<string, unknown>[] = [];
-    const parsed = parseBbAppManagedConfig(
+    const parsed = parsePatcherAppManagedConfig(
       {
         customModels: [
           { providerId: "acp-opencode", model: "my-proxy/custom-model" },
@@ -91,7 +91,7 @@ describe("bbAppManagedConfigSchema", () => {
   });
 
   it("rejects custom models with an unknown provider", () => {
-    const result = bbAppManagedConfigSchema.safeParse({
+    const result = patcherAppManagedConfigSchema.safeParse({
       customModels: [
         { providerId: "not-a-provider", model: "claude-example-preview" },
       ],
@@ -108,7 +108,7 @@ describe("bbAppManagedConfigSchema", () => {
   });
 
   it("rejects custom models with an empty model id", () => {
-    const result = bbAppManagedConfigSchema.safeParse({
+    const result = patcherAppManagedConfigSchema.safeParse({
       customModels: [{ providerId: "claude-code", model: "" }],
     });
 
@@ -116,7 +116,7 @@ describe("bbAppManagedConfigSchema", () => {
   });
 
   it("parses custom ACP agents, applies local defaults, and drops empty modelCli", () => {
-    const parsed = bbAppManagedConfigSchema.parse({
+    const parsed = patcherAppManagedConfigSchema.parse({
       customAcpAgents: [
         {
           id: "my-agent",
@@ -140,7 +140,7 @@ describe("bbAppManagedConfigSchema", () => {
   });
 
   it("keeps non-empty custom ACP modelCli config", () => {
-    const parsed = bbAppManagedConfigSchema.parse({
+    const parsed = patcherAppManagedConfigSchema.parse({
       customAcpAgents: [
         {
           id: "my-agent",
@@ -170,7 +170,7 @@ describe("bbAppManagedConfigSchema", () => {
   });
 
   it("keeps a supported custom ACP logo path", () => {
-    const parsed = bbAppManagedConfigSchema.parse({
+    const parsed = patcherAppManagedConfigSchema.parse({
       customAcpAgents: [
         {
           id: "my-agent",
@@ -185,7 +185,7 @@ describe("bbAppManagedConfigSchema", () => {
   });
 
   it("rejects an unsupported custom ACP logo format", () => {
-    const parsed = bbAppManagedConfigSchema.safeParse({
+    const parsed = patcherAppManagedConfigSchema.safeParse({
       customAcpAgents: [
         {
           id: "my-agent",
@@ -200,7 +200,7 @@ describe("bbAppManagedConfigSchema", () => {
   });
 
   it("keeps custom ACP reasoningCli config", () => {
-    const parsed = bbAppManagedConfigSchema.parse({
+    const parsed = patcherAppManagedConfigSchema.parse({
       customAcpAgents: [
         {
           id: "my-agent",
@@ -232,7 +232,7 @@ describe("bbAppManagedConfigSchema", () => {
   });
 
   it("keeps custom ACP nativeReasoning config", () => {
-    const parsed = bbAppManagedConfigSchema.parse({
+    const parsed = patcherAppManagedConfigSchema.parse({
       customAcpAgents: [
         {
           id: "my-agent",
@@ -262,7 +262,7 @@ describe("bbAppManagedConfigSchema", () => {
   });
 
   it("keeps portable custom ACP native skill roots", () => {
-    const parsed = bbAppManagedConfigSchema.parse({
+    const parsed = patcherAppManagedConfigSchema.parse({
       customAcpAgents: [
         {
           id: "amp",
@@ -285,7 +285,7 @@ describe("bbAppManagedConfigSchema", () => {
   it("rejects unsafe custom ACP native skill roots", () => {
     for (const root of ["/tmp/skills", "../skills", "skills/../other"]) {
       expect(
-        bbAppManagedConfigSchema.safeParse({
+        patcherAppManagedConfigSchema.safeParse({
           customAcpAgents: [
             {
               id: "amp",
@@ -301,7 +301,7 @@ describe("bbAppManagedConfigSchema", () => {
 
   it("rejects custom ACP reasoningCli defaults outside supported levels", () => {
     expect(
-      bbAppManagedConfigSchema.safeParse({
+      patcherAppManagedConfigSchema.safeParse({
         customAcpAgents: [
           {
             id: "my-agent",
@@ -320,26 +320,26 @@ describe("bbAppManagedConfigSchema", () => {
 
   it("rejects custom ACP agents with invalid ids, missing commands, collisions, and duplicates", () => {
     expect(
-      bbAppManagedConfigSchema.safeParse({
+      patcherAppManagedConfigSchema.safeParse({
         customAcpAgents: [
           { id: "Bad-Agent", displayName: "Bad", command: "bad" },
         ],
       }).success,
     ).toBe(false);
     expect(
-      bbAppManagedConfigSchema.safeParse({
+      patcherAppManagedConfigSchema.safeParse({
         customAcpAgents: [{ id: "missing-command", displayName: "Missing" }],
       }).success,
     ).toBe(false);
     expect(
-      bbAppManagedConfigSchema.safeParse({
+      patcherAppManagedConfigSchema.safeParse({
         customAcpAgents: [
           { id: "cursor", displayName: "Cursor Collision", command: "agent" },
         ],
       }).success,
     ).toBe(false);
     expect(
-      bbAppManagedConfigSchema.safeParse({
+      patcherAppManagedConfigSchema.safeParse({
         customAcpAgents: [
           { id: "one", displayName: "One", command: "one" },
           { id: "one", displayName: "Duplicate", command: "duplicate" },
@@ -350,7 +350,7 @@ describe("bbAppManagedConfigSchema", () => {
 
   it("drops invalid custom ACP agent entries with warnings at the config boundary", () => {
     const warnings: Record<string, unknown>[] = [];
-    const parsed = parseBbAppManagedConfig(
+    const parsed = parsePatcherAppManagedConfig(
       {
         customAcpAgents: [
           { id: "good", displayName: "Good", command: "good" },

@@ -16,7 +16,7 @@ import type {
   ProviderCliStatusResponse,
 } from "@patcher/host-daemon-contract";
 import type { ProviderUsageResponse } from "@patcher/host-daemon-contract";
-import { BbHttpError, sdk } from "@/lib/sdk";
+import { PatcherHttpError, sdk } from "@/lib/sdk";
 import {
   claudeModelCatalogCacheKey,
   readCachedClaudeModelCatalog,
@@ -103,7 +103,7 @@ function shouldRetrySystemExecutionOptions(
     return false;
   }
 
-  if (error instanceof BbHttpError) {
+  if (error instanceof PatcherHttpError) {
     return error.status === 408 || error.status === 429 || error.status >= 500;
   }
 

@@ -23,7 +23,7 @@ import {
   useHostPathExistence,
 } from "@/hooks/queries/host-path-queries";
 import { useHostCloneDefaultPath } from "@/hooks/queries/host-queries";
-import { BbHttpError } from "@patcher/sdk/browser";
+import { PatcherHttpError } from "@patcher/sdk/browser";
 import { getMutationErrorMessage } from "@/lib/mutation-errors";
 
 export interface ProjectMachineSetupDialogTarget {
@@ -207,7 +207,7 @@ export function ProjectMachineSetupDialogContent({
       })
     : null;
   const isTargetNotEmptyError =
-    addSource.error instanceof BbHttpError &&
+    addSource.error instanceof PatcherHttpError &&
     addSource.error.code === "target_not_empty";
 
   const submitDisabled =

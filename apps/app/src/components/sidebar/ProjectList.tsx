@@ -44,7 +44,7 @@ import { getCollapsedChildActivity } from "@/lib/thread-activity";
 import { getRootComposeRoutePath } from "@/lib/route-paths";
 import { getThreadDisplayTitle } from "@/lib/thread-title";
 import { getMutationErrorMessage } from "@/lib/mutation-errors";
-import { BbHttpError } from "@patcher/sdk/browser";
+import { PatcherHttpError } from "@patcher/sdk/browser";
 import { useSetRootComposeProjectId } from "@/lib/root-compose-selection";
 import { cn } from "@patcher/shared-ui/lib/utils";
 import { Button } from "@patcher/shared-ui/button";
@@ -507,7 +507,10 @@ function getSectionMutationErrorMessage(
   error: unknown,
   fallbackMessage: string,
 ): string {
-  if (error instanceof BbHttpError && error.code === "section_name_conflict") {
+  if (
+    error instanceof PatcherHttpError &&
+    error.code === "section_name_conflict"
+  ) {
     return "Section name already exists.";
   }
   return getMutationErrorMessage({ error, fallbackMessage });

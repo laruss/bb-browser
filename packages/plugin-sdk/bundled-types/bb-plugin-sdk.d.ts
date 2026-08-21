@@ -2913,8 +2913,8 @@ declare const environmentDiffFileResponseSchema: z$1.ZodObject<{
     path: z$1.ZodString;
     content: z$1.ZodString;
     contentEncoding: z$1.ZodEnum<{
-        utf8: "utf8";
         base64: "base64";
+        utf8: "utf8";
     }>;
     mimeType: z$1.ZodOptional<z$1.ZodString>;
     sizeBytes: z$1.ZodNumber;
@@ -3607,8 +3607,8 @@ declare const hostDaemonCommandRegistry: {
         }, z$1.core.$strict>], "kind">>;
         disallowedTools: z$1.ZodOptional<z$1.ZodArray<z$1.ZodString>>;
         instructionMode: z$1.ZodEnum<{
-            replace: "replace";
             append: "append";
+            replace: "replace";
         }>;
         type: z$1.ZodLiteral<"thread.rewind.prepare">;
         leaseId: z$1.ZodString;
@@ -3808,8 +3808,8 @@ declare const hostDaemonCommandRegistry: {
         }, z$1.core.$strict>], "kind">>;
         disallowedTools: z$1.ZodOptional<z$1.ZodArray<z$1.ZodString>>;
         instructionMode: z$1.ZodEnum<{
-            replace: "replace";
             append: "append";
+            replace: "replace";
         }>;
         type: z$1.ZodLiteral<"thread.start">;
         requestId: z$1.ZodString;
@@ -4301,8 +4301,8 @@ declare const hostDaemonCommandRegistry: {
                 }>;
             }, z$1.core.$strip>;
             instructionMode: z$1.ZodEnum<{
-                replace: "replace";
                 append: "append";
+                replace: "replace";
             }>;
             projectId: z$1.ZodString;
             providerId: z$1.ZodString;
@@ -4615,8 +4615,8 @@ declare const hostDaemonCommandRegistry: {
                 }>;
             }, z$1.core.$strip>;
             instructionMode: z$1.ZodEnum<{
-                replace: "replace";
                 append: "append";
+                replace: "replace";
             }>;
             projectId: z$1.ZodString;
             providerId: z$1.ZodString;
@@ -5646,9 +5646,9 @@ declare const hostDaemonCommandRegistry: {
         executablePath: z$1.ZodNullable<z$1.ZodString>;
         installed: z$1.ZodBoolean;
         installSource: z$1.ZodEnum<{
+            external: "external";
             notInstalled: "notInstalled";
             npmGlobal: "npmGlobal";
-            external: "external";
         }>;
         currentVersion: z$1.ZodNullable<z$1.ZodString>;
         latestVersion: z$1.ZodNullable<z$1.ZodString>;
@@ -5821,13 +5821,13 @@ declare const hostDaemonCommandRegistry: {
         outcome: z$1.ZodLiteral<"unavailable">;
         failure: z$1.ZodObject<{
             code: z$1.ZodEnum<{
-                unknown: "unknown";
                 path_not_found: "path_not_found";
                 not_git_repo: "not_git_repo";
                 not_worktree: "not_worktree";
                 workspace_type_mismatch: "workspace_type_mismatch";
                 permission_denied: "permission_denied";
                 unknown_environment: "unknown_environment";
+                unknown: "unknown";
             }>;
             workspacePath: z$1.ZodString;
             message: z$1.ZodString;
@@ -5871,13 +5871,13 @@ declare const hostDaemonCommandRegistry: {
         outcome: z$1.ZodLiteral<"unavailable">;
         failure: z$1.ZodObject<{
             code: z$1.ZodEnum<{
-                unknown: "unknown";
                 path_not_found: "path_not_found";
                 not_git_repo: "not_git_repo";
                 not_worktree: "not_worktree";
                 workspace_type_mismatch: "workspace_type_mismatch";
                 permission_denied: "permission_denied";
                 unknown_environment: "unknown_environment";
+                unknown: "unknown";
             }>;
             workspacePath: z$1.ZodString;
             message: z$1.ZodString;
@@ -5933,13 +5933,13 @@ declare const hostDaemonCommandRegistry: {
         outcome: z$1.ZodLiteral<"unavailable">;
         failure: z$1.ZodObject<{
             code: z$1.ZodEnum<{
-                unknown: "unknown";
                 path_not_found: "path_not_found";
                 not_git_repo: "not_git_repo";
                 not_worktree: "not_worktree";
                 workspace_type_mismatch: "workspace_type_mismatch";
                 permission_denied: "permission_denied";
                 unknown_environment: "unknown_environment";
+                unknown: "unknown";
             }>;
             workspacePath: z$1.ZodString;
             message: z$1.ZodString;
@@ -5981,13 +5981,13 @@ declare const hostDaemonCommandRegistry: {
         outcome: z$1.ZodLiteral<"unavailable">;
         failure: z$1.ZodObject<{
             code: z$1.ZodEnum<{
-                unknown: "unknown";
                 path_not_found: "path_not_found";
                 not_git_repo: "not_git_repo";
                 not_worktree: "not_worktree";
                 workspace_type_mismatch: "workspace_type_mismatch";
                 permission_denied: "permission_denied";
                 unknown_environment: "unknown_environment";
+                unknown: "unknown";
             }>;
             workspacePath: z$1.ZodString;
             message: z$1.ZodString;
@@ -6106,9 +6106,9 @@ declare const providerCliStatusResponseSchema: z$1.ZodRecord<z$1.ZodEnum<{
     executablePath: z$1.ZodNullable<z$1.ZodString>;
     installed: z$1.ZodBoolean;
     installSource: z$1.ZodEnum<{
+        external: "external";
         notInstalled: "notInstalled";
         npmGlobal: "npmGlobal";
-        external: "external";
     }>;
     currentVersion: z$1.ZodNullable<z$1.ZodString>;
     latestVersion: z$1.ZodNullable<z$1.ZodString>;
@@ -6411,6 +6411,7 @@ declare const installedPluginSchema: z$1.ZodObject<{
         threads: "threads";
         "page.interact": "page.interact";
         "page.record": "page.record";
+        shell: "shell";
         history: "history";
         "tabs.read": "tabs.read";
         "page.read": "page.read";
@@ -6434,7 +6435,6 @@ declare const installedPluginSchema: z$1.ZodObject<{
         "externalLink.handle": "externalLink.handle";
         "pdf.provide": "pdf.provide";
         filesystem: "filesystem";
-        shell: "shell";
         plugins: "plugins";
     }>>>;
     sites: z$1.ZodDefault<z$1.ZodArray<z$1.ZodString>>;
@@ -6551,6 +6551,7 @@ declare const pluginListResponseSchema: z$1.ZodObject<{
             threads: "threads";
             "page.interact": "page.interact";
             "page.record": "page.record";
+            shell: "shell";
             history: "history";
             "tabs.read": "tabs.read";
             "page.read": "page.read";
@@ -6574,7 +6575,6 @@ declare const pluginListResponseSchema: z$1.ZodObject<{
             "externalLink.handle": "externalLink.handle";
             "pdf.provide": "pdf.provide";
             filesystem: "filesystem";
-            shell: "shell";
             plugins: "plugins";
         }>>>;
         sites: z$1.ZodDefault<z$1.ZodArray<z$1.ZodString>>;
@@ -6693,6 +6693,7 @@ declare const pluginReloadResponseSchema: z$1.ZodObject<{
             threads: "threads";
             "page.interact": "page.interact";
             "page.record": "page.record";
+            shell: "shell";
             history: "history";
             "tabs.read": "tabs.read";
             "page.read": "page.read";
@@ -6716,7 +6717,6 @@ declare const pluginReloadResponseSchema: z$1.ZodObject<{
             "externalLink.handle": "externalLink.handle";
             "pdf.provide": "pdf.provide";
             filesystem: "filesystem";
-            shell: "shell";
             plugins: "plugins";
         }>>>;
         sites: z$1.ZodDefault<z$1.ZodArray<z$1.ZodString>>;
@@ -10703,7 +10703,7 @@ interface PluginNavPanelProps {
      * route is `/plugins/<pluginId>/<path>/*`, so a deep link like
      * `/plugins/notes/notes/work/ideas.md` renders the panel with
      * `subPath: "work/ideas.md"`. Navigate within the panel via
-     * `useBbNavigate().toPluginPanel(path, { subPath })` — browser
+     * `usePatcherNavigate().toPluginPanel(path, { subPath })` — browser
      * back/forward then walks panel-internal history.
      */
     subPath: string;
@@ -11354,7 +11354,7 @@ interface PluginMessageActionContext {
     /**
      * Open one of this plugin's `threadPanelAction` components in the current
      * thread's side panel — the registration-callback equivalent of
-     * `useBbNavigate().openThreadPanel`. Returns true when the host
+     * `usePatcherNavigate().openThreadPanel`. Returns true when the host
      * accepted (the action id exists and the surface has a panel); false
      * otherwise.
      */
@@ -11490,7 +11490,7 @@ type PluginAppSetup = (app: PluginAppBuilder) => void;
  */
 interface PluginAppDefinition {
     /** Brand the host checks before interpreting a bundle's default export. */
-    readonly __bbPluginApp: true;
+    readonly __patcherPluginApp: true;
     readonly setup: PluginAppSetup;
 }
 interface PluginRpcClient<Contract extends PluginRpcContract = PluginRpcContract> {
@@ -11908,11 +11908,11 @@ interface MarkdownProps {
     className?: string;
 }
 /** Current app selection, derived from the route. */
-interface BbContext {
+interface PatcherContext {
     projectId: string | null;
     threadId: string | null;
 }
-interface BbNavigate {
+interface PatcherNavigate {
     toThread(threadId: string): void;
     toProject(projectId: string): void;
     /**
@@ -11949,7 +11949,7 @@ interface BbNavigate {
 /**
  * Everything `@patcher/plugin-sdk/app` resolves to at runtime. The BB app builds
  * the real implementation and `satisfies` this interface; `bb plugin build`
- * shims the specifier to that object on `globalThis.__bbPluginRuntime`.
+ * shims the specifier to that object on `globalThis.__patcherPluginRuntime`.
  */
 interface PluginSdkApp {
     definePluginApp(setup: PluginAppSetup): PluginAppDefinition;
@@ -11963,8 +11963,8 @@ interface PluginSdkApp {
      */
     useRealtimeConnectionState(): PluginRealtimeConnectionState;
     useSettings(): PluginSettingsState;
-    useBbContext(): BbContext;
-    useBbNavigate(): BbNavigate;
+    usePatcherContext(): PatcherContext;
+    usePatcherNavigate(): PatcherNavigate;
     useComposer(): PluginComposerApi;
     /**
      * The sidebar's live thread view (see {@link PluginSidebarThreadsState}).
@@ -12578,8 +12578,8 @@ interface PluginsArea {
     updateSettings(args: PluginSettingsUpdateArgs): Promise<PluginUpdateSettingsResult>;
 }
 
-type BbRealtimeUnsubscribe = () => void;
-type BbRealtimeEventName = "thread:changed" | "project:changed" | "environment:changed" | "host:changed" | "system:changed" | "system:config-changed" | "realtime:connection";
+type PatcherRealtimeUnsubscribe = () => void;
+type PatcherRealtimeEventName = "thread:changed" | "project:changed" | "environment:changed" | "host:changed" | "system:changed" | "system:config-changed" | "realtime:connection";
 type ThreadRealtimeEvent = Extract<ChangedMessage, {
     entity: "thread";
 }>;
@@ -12595,53 +12595,53 @@ type HostRealtimeEvent = Extract<ChangedMessage, {
 type SystemRealtimeEvent = Extract<ChangedMessage, {
     entity: "system";
 }>;
-type BbRealtimeConnectionState = "connecting" | "connected" | "disconnected";
-interface BbRealtimeConnectionEvent {
+type PatcherRealtimeConnectionState = "connecting" | "connected" | "disconnected";
+interface PatcherRealtimeConnectionEvent {
     reconnectDelayMs: number | null;
     reconnected: boolean;
-    state: BbRealtimeConnectionState;
+    state: PatcherRealtimeConnectionState;
 }
 /**
  * Entity-changed events are delivered as one shared object to every matching
  * listener; their payload types are readonly so a listener cannot mutate what
  * the next listener receives.
  */
-interface BbRealtimeEventMap {
+interface PatcherRealtimeEventMap {
     "thread:changed": ThreadRealtimeEvent;
     "project:changed": ProjectRealtimeEvent;
     "environment:changed": EnvironmentRealtimeEvent;
     "host:changed": HostRealtimeEvent;
     "system:changed": SystemRealtimeEvent;
     "system:config-changed": SystemRealtimeEvent;
-    "realtime:connection": BbRealtimeConnectionEvent;
+    "realtime:connection": PatcherRealtimeConnectionEvent;
 }
-type BbRealtimeCallback<TEventName extends BbRealtimeEventName> = (event: BbRealtimeEventMap[TEventName]) => void;
+type PatcherRealtimeCallback<TEventName extends PatcherRealtimeEventName> = (event: PatcherRealtimeEventMap[TEventName]) => void;
 interface ThreadRealtimeSubscribeArgs {
-    callback: BbRealtimeCallback<"thread:changed">;
+    callback: PatcherRealtimeCallback<"thread:changed">;
     event: "thread:changed";
     threadId?: string;
 }
 interface ProjectRealtimeSubscribeArgs {
-    callback: BbRealtimeCallback<"project:changed">;
+    callback: PatcherRealtimeCallback<"project:changed">;
     event: "project:changed";
     projectId?: string;
 }
 interface EnvironmentRealtimeSubscribeArgs {
-    callback: BbRealtimeCallback<"environment:changed">;
+    callback: PatcherRealtimeCallback<"environment:changed">;
     environmentId?: string;
     event: "environment:changed";
 }
 interface HostRealtimeSubscribeArgs {
-    callback: BbRealtimeCallback<"host:changed">;
+    callback: PatcherRealtimeCallback<"host:changed">;
     event: "host:changed";
     hostId?: string;
 }
 interface SystemRealtimeSubscribeArgs {
-    callback: BbRealtimeCallback<"system:changed">;
+    callback: PatcherRealtimeCallback<"system:changed">;
     event: "system:changed";
 }
 interface SystemConfigRealtimeSubscribeArgs {
-    callback: BbRealtimeCallback<"system:config-changed">;
+    callback: PatcherRealtimeCallback<"system:config-changed">;
     event: "system:config-changed";
 }
 /**
@@ -12651,15 +12651,15 @@ interface SystemConfigRealtimeSubscribeArgs {
  * UI mounted after connect still learns the current state.
  */
 interface RealtimeConnectionSubscribeArgs {
-    callback: BbRealtimeCallback<"realtime:connection">;
+    callback: PatcherRealtimeCallback<"realtime:connection">;
     event: "realtime:connection";
 }
-type BbRealtimeSubscribeArgsUnion = ThreadRealtimeSubscribeArgs | ProjectRealtimeSubscribeArgs | EnvironmentRealtimeSubscribeArgs | HostRealtimeSubscribeArgs | SystemRealtimeSubscribeArgs | SystemConfigRealtimeSubscribeArgs | RealtimeConnectionSubscribeArgs;
-type BbRealtimeSubscribeArgs<TEventName extends BbRealtimeEventName = BbRealtimeEventName> = Extract<BbRealtimeSubscribeArgsUnion, {
+type PatcherRealtimeSubscribeArgsUnion = ThreadRealtimeSubscribeArgs | ProjectRealtimeSubscribeArgs | EnvironmentRealtimeSubscribeArgs | HostRealtimeSubscribeArgs | SystemRealtimeSubscribeArgs | SystemConfigRealtimeSubscribeArgs | RealtimeConnectionSubscribeArgs;
+type PatcherRealtimeSubscribeArgs<TEventName extends PatcherRealtimeEventName = PatcherRealtimeEventName> = Extract<PatcherRealtimeSubscribeArgsUnion, {
     event: TEventName;
 }>;
-interface BbRealtime {
-    subscribe<TEventName extends BbRealtimeEventName>(args: BbRealtimeSubscribeArgs<TEventName>): BbRealtimeUnsubscribe;
+interface PatcherRealtime {
+    subscribe<TEventName extends PatcherRealtimeEventName>(args: PatcherRealtimeSubscribeArgs<TEventName>): PatcherRealtimeUnsubscribe;
 }
 
 interface StatusGetArgs {
@@ -13281,7 +13281,7 @@ interface ThreadSectionsArea {
     update(args: UpdateThreadSectionRequest): Promise<ThreadSectionUpdateResult>;
 }
 
-interface BbSdk extends BbRealtime {
+interface PatcherSdk extends PatcherRealtime {
     browserHistory: BrowserHistoryArea;
     environments: EnvironmentsArea;
     files: FilesArea;
@@ -13301,12 +13301,12 @@ interface BbSdk extends BbRealtime {
 
 /**
  * The backend plugin API contract — the `bb` object handed to a plugin's
- * `server.ts` factory (`export default function plugin(bb: BbPluginApi)`).
+ * `server.ts` factory (`export default function plugin(bb: PatcherPluginApi)`).
  *
  * Types only: the implementation lives in the BB server
  * (apps/server/src/services/plugins/plugin-api.ts), which imports these
  * shapes so the contract and the implementation cannot drift. Plugin authors
- * import them type-only (`import type { BbPluginApi } from
+ * import them type-only (`import type { PatcherPluginApi } from
  * "@patcher/plugin-sdk"`); the import is erased when BB loads the file.
  *
  * Runtime classes stay host-side. NeedsConfigurationError in particular is
@@ -15359,7 +15359,7 @@ interface PluginStatusApi {
  * the BB server; this contract is what plugin `server.ts` files compile
  * against.
  */
-interface BbPluginApi {
+interface PatcherPluginApi {
     /** The plugin's own id (namespaces storage, routes, commands). */
     readonly pluginId: string;
     /** Leveled, plugin-scoped logger. */
@@ -15400,7 +15400,7 @@ interface BbPluginApi {
      * `threads.spawn` defaults `origin` to "plugin" and `originPluginId` to
      * this plugin's id so spawned threads are attributed automatically.
      */
-    readonly sdk: BbSdk;
+    readonly sdk: PatcherSdk;
     /**
      * Register cleanup to run on reload/disable/shutdown. Hooks run LIFO.
      * The sanctioned place to clear timers and close connections.
@@ -15409,4 +15409,4 @@ interface BbPluginApi {
 }
 
 export { PLUGIN_CLI_OUTPUT_MAX_BYTES, defineRpcContract };
-export type { BbContext, BbNavigate, BbPluginApi, ComposerCustomization, ComposerPlusMenuItem, ComposerRichTextSpec, ComposerStructuredDraft, ComposerView, JsonValue, MarkdownProps, NewThreadComposerProps, NewThreadRequest, PluginAgentConfiguration, PluginAgentConfigurationContext, PluginAgentToolContentPart, PluginAgentToolContext, PluginAgentToolExperimentalStatusLabels, PluginAgentToolRegistrationBase, PluginAgentToolResult, PluginAgentToolSelection, PluginAgents, PluginAppBuilder, PluginAppComposer, PluginAppContentScripts, PluginAppDefinition, PluginAppSetup, PluginAppSlots, PluginBackground, PluginBrowser, PluginBrowserAction, PluginBrowserAuthChallenge, PluginBrowserAuthCredentials, PluginBrowserAuthProvider, PluginBrowserCallOptions, PluginBrowserConsoleEntry, PluginBrowserContextMenuContext, PluginBrowserContextMenuItemRegistration, PluginBrowserContextMenuWhen, PluginBrowserControl, PluginBrowserCookie, PluginBrowserCookieInput, PluginBrowserCookies, PluginBrowserDownload, PluginBrowserDownloadHandler, PluginBrowserDownloadState, PluginBrowserErrorCode, PluginBrowserEvaluated, PluginBrowserExternalLink, PluginBrowserExternalLinkDecision, PluginBrowserExternalLinkHandler, PluginBrowserFindActionRegistration, PluginBrowserFindContext, PluginBrowserHistoryFilter, PluginBrowserHistoryRewrite, PluginBrowserHistoryVisit, PluginBrowserKeyModifier, PluginBrowserLog, PluginBrowserNavigation, PluginBrowserNetworkEntry, PluginBrowserNewTabContext, PluginBrowserNewTabRow, PluginBrowserNewTabWidgetRegistration, PluginBrowserPage, PluginBrowserPageScriptRegistration, PluginBrowserPageSnapshot, PluginBrowserPageState, PluginBrowserPageStyleRegistration, PluginBrowserPdf, PluginBrowserPdfDocument, PluginBrowserPdfTextProvider, PluginBrowserRecording, PluginBrowserRoute, PluginBrowserRouteState, PluginBrowserRoutes, PluginBrowserScreenshot, PluginBrowserSearchEngineRegistration, PluginBrowserSiteInfoContext, PluginBrowserSiteInfoProviderRegistration, PluginBrowserSiteInfoRow, PluginBrowserStatus, PluginBrowserStorage, PluginBrowserStorageArea, PluginBrowserStorageItem, PluginBrowserStorageItems, PluginBrowserStorageWrite, PluginBrowserTab, PluginBrowserTabActionContext, PluginBrowserTabActionRegistration, PluginBrowserTabStatus, PluginBrowserTabs, PluginBrowserToolbarContext, PluginBrowserToolbarItemRegistration, PluginBrowserToolbarState, PluginBrowserTrace, PluginBrowserTraceStep, PluginBrowserVideo, PluginCli, PluginCliCommandInfo, PluginCliContext, PluginCliExecutionResult, PluginCliOutputLimitError, PluginCliRegistration, PluginCliResult, PluginCommandRegistration, PluginComposerApi, PluginComposerMention, PluginComposerScope, PluginComposerTextEffect, PluginComposerThreadRowStatus, PluginContentScriptContext, PluginContentScriptDisposer, PluginContentScriptRegistration, PluginEvents, PluginFileOpenerProps, PluginFileOpenerRegistration, PluginFileOpenerSource, PluginHomepageSectionProps, PluginHomepageSectionRegistration, PluginHttp, PluginHttpAuthMode, PluginHttpHandler, PluginInteractionCancelReason, PluginInteractionRequest, PluginInteractionResult, PluginKeybinding, PluginKeybindingShortcut, PluginKvStorage, PluginLeadingPanelProps, PluginLeadingPanelRegistration, PluginLogger, PluginMentionItem, PluginMentionProviderRegistration, PluginMentionSearchContext, PluginMentionTrigger, PluginMessageActionContext, PluginMessageActionRegistration, PluginMessageActionThreadPanelOptions, PluginMessageDirectiveMessage, PluginMessageDirectiveOpenWorkspaceFile, PluginMessageDirectiveProps, PluginMessageDirectiveRegistration, PluginNavPanelProps, PluginNavPanelRegistration, PluginNewThreadPanelActionContext, PluginNewThreadPanelActionRegistration, PluginNewThreadPanelProps, PluginOmniboxAction, PluginOmniboxProviderRegistration, PluginOmniboxRunContext, PluginOmniboxRunResult, PluginOmniboxSuggestContext, PluginOmniboxSuggestion, PluginPageScriptApi, PluginPendingInteractionProps, PluginPendingInteractionRegistration, PluginPendingInteractionView, PluginRealtime, PluginRealtimeConnectionState, PluginRpc, PluginRpcCallArgs, PluginRpcClient, PluginRpcContract, PluginRpcError, PluginRpcErrorCode, PluginRpcHandlers, PluginRpcIssuePathSegment, PluginRpcMethodContract, PluginRpcResult, PluginRpcValidationIssue, PluginSdkApp, PluginServerApi, PluginSettingDescriptor, PluginSettingDescriptors, PluginSettingValue, PluginSettings, PluginSettingsHandle, PluginSettingsSectionProps, PluginSettingsSectionRegistration, PluginSettingsState, PluginSettingsValues, PluginSidebarFooterActionContext, PluginSidebarFooterActionProps, PluginSidebarFooterActionRegistration, PluginSidebarProject, PluginSidebarPullRequest, PluginSidebarSplitPane, PluginSidebarThread, PluginSidebarThreadActions, PluginSidebarThreadActivity, PluginSidebarThreadIndicator, PluginSidebarThreadPullRequestState, PluginSidebarThreadSplit, PluginSidebarThreadsState, PluginSidebarWorkspaceKind, PluginStatusApi, PluginStorage, PluginThreadEventHandler, PluginThreadEventName, PluginThreadEventPayloads, PluginThreadHeaderActionProps, PluginThreadHeaderActionRegistration, PluginThreadListProps, PluginThreadListRegistration, PluginThreadPanelActionContext, PluginThreadPanelActionRegistration, PluginThreadPanelProps, PluginUi, StandardSchemaV1, StandardSchemaV1InferInput, StandardSchemaV1InferOutput, StandardSchemaV1Issue, StandardSchemaV1Result, ThreadChatMessageAction, ThreadChatMessageReference, ThreadChatProps };
+export type { ComposerCustomization, ComposerPlusMenuItem, ComposerRichTextSpec, ComposerStructuredDraft, ComposerView, JsonValue, MarkdownProps, NewThreadComposerProps, NewThreadRequest, PatcherContext, PatcherNavigate, PatcherPluginApi, PluginAgentConfiguration, PluginAgentConfigurationContext, PluginAgentToolContentPart, PluginAgentToolContext, PluginAgentToolExperimentalStatusLabels, PluginAgentToolRegistrationBase, PluginAgentToolResult, PluginAgentToolSelection, PluginAgents, PluginAppBuilder, PluginAppComposer, PluginAppContentScripts, PluginAppDefinition, PluginAppSetup, PluginAppSlots, PluginBackground, PluginBrowser, PluginBrowserAction, PluginBrowserAuthChallenge, PluginBrowserAuthCredentials, PluginBrowserAuthProvider, PluginBrowserCallOptions, PluginBrowserConsoleEntry, PluginBrowserContextMenuContext, PluginBrowserContextMenuItemRegistration, PluginBrowserContextMenuWhen, PluginBrowserControl, PluginBrowserCookie, PluginBrowserCookieInput, PluginBrowserCookies, PluginBrowserDownload, PluginBrowserDownloadHandler, PluginBrowserDownloadState, PluginBrowserErrorCode, PluginBrowserEvaluated, PluginBrowserExternalLink, PluginBrowserExternalLinkDecision, PluginBrowserExternalLinkHandler, PluginBrowserFindActionRegistration, PluginBrowserFindContext, PluginBrowserHistoryFilter, PluginBrowserHistoryRewrite, PluginBrowserHistoryVisit, PluginBrowserKeyModifier, PluginBrowserLog, PluginBrowserNavigation, PluginBrowserNetworkEntry, PluginBrowserNewTabContext, PluginBrowserNewTabRow, PluginBrowserNewTabWidgetRegistration, PluginBrowserPage, PluginBrowserPageScriptRegistration, PluginBrowserPageSnapshot, PluginBrowserPageState, PluginBrowserPageStyleRegistration, PluginBrowserPdf, PluginBrowserPdfDocument, PluginBrowserPdfTextProvider, PluginBrowserRecording, PluginBrowserRoute, PluginBrowserRouteState, PluginBrowserRoutes, PluginBrowserScreenshot, PluginBrowserSearchEngineRegistration, PluginBrowserSiteInfoContext, PluginBrowserSiteInfoProviderRegistration, PluginBrowserSiteInfoRow, PluginBrowserStatus, PluginBrowserStorage, PluginBrowserStorageArea, PluginBrowserStorageItem, PluginBrowserStorageItems, PluginBrowserStorageWrite, PluginBrowserTab, PluginBrowserTabActionContext, PluginBrowserTabActionRegistration, PluginBrowserTabStatus, PluginBrowserTabs, PluginBrowserToolbarContext, PluginBrowserToolbarItemRegistration, PluginBrowserToolbarState, PluginBrowserTrace, PluginBrowserTraceStep, PluginBrowserVideo, PluginCli, PluginCliCommandInfo, PluginCliContext, PluginCliExecutionResult, PluginCliOutputLimitError, PluginCliRegistration, PluginCliResult, PluginCommandRegistration, PluginComposerApi, PluginComposerMention, PluginComposerScope, PluginComposerTextEffect, PluginComposerThreadRowStatus, PluginContentScriptContext, PluginContentScriptDisposer, PluginContentScriptRegistration, PluginEvents, PluginFileOpenerProps, PluginFileOpenerRegistration, PluginFileOpenerSource, PluginHomepageSectionProps, PluginHomepageSectionRegistration, PluginHttp, PluginHttpAuthMode, PluginHttpHandler, PluginInteractionCancelReason, PluginInteractionRequest, PluginInteractionResult, PluginKeybinding, PluginKeybindingShortcut, PluginKvStorage, PluginLeadingPanelProps, PluginLeadingPanelRegistration, PluginLogger, PluginMentionItem, PluginMentionProviderRegistration, PluginMentionSearchContext, PluginMentionTrigger, PluginMessageActionContext, PluginMessageActionRegistration, PluginMessageActionThreadPanelOptions, PluginMessageDirectiveMessage, PluginMessageDirectiveOpenWorkspaceFile, PluginMessageDirectiveProps, PluginMessageDirectiveRegistration, PluginNavPanelProps, PluginNavPanelRegistration, PluginNewThreadPanelActionContext, PluginNewThreadPanelActionRegistration, PluginNewThreadPanelProps, PluginOmniboxAction, PluginOmniboxProviderRegistration, PluginOmniboxRunContext, PluginOmniboxRunResult, PluginOmniboxSuggestContext, PluginOmniboxSuggestion, PluginPageScriptApi, PluginPendingInteractionProps, PluginPendingInteractionRegistration, PluginPendingInteractionView, PluginRealtime, PluginRealtimeConnectionState, PluginRpc, PluginRpcCallArgs, PluginRpcClient, PluginRpcContract, PluginRpcError, PluginRpcErrorCode, PluginRpcHandlers, PluginRpcIssuePathSegment, PluginRpcMethodContract, PluginRpcResult, PluginRpcValidationIssue, PluginSdkApp, PluginServerApi, PluginSettingDescriptor, PluginSettingDescriptors, PluginSettingValue, PluginSettings, PluginSettingsHandle, PluginSettingsSectionProps, PluginSettingsSectionRegistration, PluginSettingsState, PluginSettingsValues, PluginSidebarFooterActionContext, PluginSidebarFooterActionProps, PluginSidebarFooterActionRegistration, PluginSidebarProject, PluginSidebarPullRequest, PluginSidebarSplitPane, PluginSidebarThread, PluginSidebarThreadActions, PluginSidebarThreadActivity, PluginSidebarThreadIndicator, PluginSidebarThreadPullRequestState, PluginSidebarThreadSplit, PluginSidebarThreadsState, PluginSidebarWorkspaceKind, PluginStatusApi, PluginStorage, PluginThreadEventHandler, PluginThreadEventName, PluginThreadEventPayloads, PluginThreadHeaderActionProps, PluginThreadHeaderActionRegistration, PluginThreadListProps, PluginThreadListRegistration, PluginThreadPanelActionContext, PluginThreadPanelActionRegistration, PluginThreadPanelProps, PluginUi, StandardSchemaV1, StandardSchemaV1InferInput, StandardSchemaV1InferOutput, StandardSchemaV1Issue, StandardSchemaV1Result, ThreadChatMessageAction, ThreadChatMessageReference, ThreadChatProps };

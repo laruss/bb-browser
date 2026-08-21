@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@patcher/plugin-sdk";
+import type { PatcherPluginApi } from "@patcher/plugin-sdk";
 import {
   resolveWorkflowSource,
   type ResolvedWorkflowSource,
@@ -15,7 +15,7 @@ export interface PreparedWorkflowSource extends ResolvedWorkflowSource {
 }
 
 export async function prepareWorkflowSource(
-  bb: BbPluginApi,
+  bb: PatcherPluginApi,
   context: WorkflowSourceContext,
   input: WorkflowSourceInput,
 ): Promise<PreparedWorkflowSource> {

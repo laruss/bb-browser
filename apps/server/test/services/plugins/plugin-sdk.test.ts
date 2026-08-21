@@ -14,7 +14,7 @@ import {
   createPluginService,
   type PluginService,
 } from "../../../src/services/plugins/plugin-service.js";
-import type { BbPluginApi } from "../../../src/services/plugins/plugin-api.js";
+import type { PatcherPluginApi } from "../../../src/services/plugins/plugin-api.js";
 import {
   seedHostSession,
   seedEnvironment,
@@ -51,7 +51,10 @@ async function writePlugin(
   return rootDir;
 }
 
-function requireApi(service: PluginService, pluginId: string): BbPluginApi {
+function requireApi(
+  service: PluginService,
+  pluginId: string,
+): PatcherPluginApi {
   const api = service.getApi(pluginId);
   if (!api) throw new Error(`plugin ${pluginId} is not running`);
   return api;

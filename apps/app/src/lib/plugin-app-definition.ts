@@ -78,7 +78,7 @@ export function definePluginApp(setup: PluginAppSetup): PluginAppDefinition {
   if (typeof setup !== "function") {
     throw new Error("definePluginApp expects a setup function");
   }
-  return Object.freeze({ __bbPluginApp: true as const, setup });
+  return Object.freeze({ __patcherPluginApp: true as const, setup });
 }
 
 export function isPluginAppDefinition(
@@ -87,7 +87,7 @@ export function isPluginAppDefinition(
   return (
     typeof value === "object" &&
     value !== null &&
-    (value as { __bbPluginApp?: unknown }).__bbPluginApp === true &&
+    (value as { __patcherPluginApp?: unknown }).__patcherPluginApp === true &&
     typeof (value as { setup?: unknown }).setup === "function"
   );
 }

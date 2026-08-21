@@ -24,7 +24,7 @@ export type {
  *
  * This module's runtime is never bundled into plugins: `bb plugin build`
  * swaps the specifier for a shim reading
- * `globalThis.__bbPluginRuntime.pluginSdkApp` (which the BB app fills with
+ * `globalThis.__patcherPluginRuntime.pluginSdkApp` (which the BB app fills with
  * its real implementation before importing any plugin bundle). The re-export
  * below mirrors that shim so code importing this package directly (plugin
  * unit tests, tooling) resolves the same objects when a runtime is
@@ -37,12 +37,12 @@ export type {
  */
 
 interface PluginRuntimeHost {
-  __bbPluginRuntime?: { pluginSdkApp?: unknown };
+  __patcherPluginRuntime?: { pluginSdkApp?: unknown };
 }
 
 // The global is the genuinely unknowable boundary here: the host app
 // guarantees the shape via its own `satisfies PluginSdkApp` check.
-const runtime = ((globalThis as PluginRuntimeHost).__bbPluginRuntime
+const runtime = ((globalThis as PluginRuntimeHost).__patcherPluginRuntime
   ?.pluginSdkApp ?? {}) as Partial<PluginSdkApp> as PluginSdkApp;
 
 export const definePluginApp = runtime.definePluginApp;
@@ -54,8 +54,8 @@ export const useRpc = runtime.useRpc;
 export const useRealtime = runtime.useRealtime;
 export const useRealtimeConnectionState = runtime.useRealtimeConnectionState;
 export const useSettings = runtime.useSettings;
-export const useBbContext = runtime.useBbContext;
-export const useBbNavigate = runtime.useBbNavigate;
+export const usePatcherContext = runtime.usePatcherContext;
+export const usePatcherNavigate = runtime.usePatcherNavigate;
 export const useComposer = runtime.useComposer;
 export const useComposerView = runtime.useComposerView;
 // Sidebar surfaces for plugins that replace the thread list (experimental —

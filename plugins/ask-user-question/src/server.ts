@@ -1,4 +1,7 @@
-import type { BbPluginApi, PluginAgentToolResult } from "@patcher/plugin-sdk";
+import type {
+  PatcherPluginApi,
+  PluginAgentToolResult,
+} from "@patcher/plugin-sdk";
 import { interactionResponseSchema, toolInputSchema } from "./contracts.js";
 import {
   TOOL_DESCRIPTION,
@@ -32,7 +35,7 @@ function errorResult(message: string): PluginAgentToolResult {
   return { content: [{ type: "text", text: message }], isError: true };
 }
 
-export default function plugin(bb: BbPluginApi) {
+export default function plugin(bb: PatcherPluginApi) {
   bb.agents.registerTool({
     name: TOOL_NAME,
     description: TOOL_DESCRIPTION,

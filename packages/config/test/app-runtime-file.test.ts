@@ -3,9 +3,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import {
-  claimBbAppRuntimeFile,
-  clearOwnBbAppRuntimeFile,
-  readBbAppRuntimeFile,
+  claimPatcherAppRuntimeFile,
+  clearOwnPatcherAppRuntimeFile,
+  readPatcherAppRuntimeFile,
 } from "../src/app-runtime-file.js";
 import {
   parseElapsedSeconds,
@@ -42,70 +42,70 @@ afterEach(async () => {
   }
 });
 
-describe("claimBbAppRuntimeFile", () => {
+describe("claimPatcherAppRuntimeFile", () => {
   it("refuses to overwrite a record whose launcher still runs", async () => {
     const dataDir = await createDataDir();
-    await claimBbAppRuntimeFile({
+    await claimPatcherAppRuntimeFile({
       ...recordFor(dataDir, 1_111),
       isRunning: () => true,
     });
 
     await expect(
-      claimBbAppRuntimeFile({
+      claimPatcherAppRuntimeFile({
         ...recordFor(dataDir, 2_222),
         isRunning: () => true,
       }),
     ).resolves.toBe(false);
     // The live launcher keeps the record, so `bb-app stop` can still find it.
-    await expect(readBbAppRuntimeFile(dataDir)).resolves.toMatchObject({
+    await expect(readPatcherAppRuntimeFile(dataDir)).resolves.toMatchObject({
       pid: 1_111,
     });
   });
 
   it("replaces a record whose launcher is gone", async () => {
     const dataDir = await createDataDir();
-    await claimBbAppRuntimeFile({
+    await claimPatcherAppRuntimeFile({
       ...recordFor(dataDir, 1_111),
       isRunning: () => true,
     });
 
     await expect(
-      claimBbAppRuntimeFile({
+      claimPatcherAppRuntimeFile({
         ...recordFor(dataDir, 2_222),
         isRunning: () => false,
       }),
     ).resolves.toBe(true);
-    await expect(readBbAppRuntimeFile(dataDir)).resolves.toMatchObject({
+    await expect(readPatcherAppRuntimeFile(dataDir)).resolves.toMatchObject({
       pid: 2_222,
     });
   });
 });
 
-describe("clearOwnBbAppRuntimeFile", () => {
+describe("clearOwnPatcherAppRuntimeFile", () => {
   it("leaves a record that belongs to another launcher", async () => {
     const dataDir = await createDataDir();
-    await claimBbAppRuntimeFile({
+    await claimPatcherAppRuntimeFile({
       ...recordFor(dataDir, 1_111),
       isRunning: () => true,
     });
 
     await expect(
-      clearOwnBbAppRuntimeFile({ dataDir, pid: 2_222 }),
+      clearOwnPatcherAppRuntimeFile({ dataDir, pid: 2_222 }),
     ).resolves.toBe(false);
-    await expect(readBbAppRuntimeFile(dataDir)).resolves.not.toBeNull();
+    await expect(readPatcherAppRuntimeFile(dataDir)).resolves.not.toBeNull();
   });
 
   it("removes its own record", async () => {
     const dataDir = await createDataDir();
-    await claimBbAppRuntimeFile({
+    await claimPatcherAppRuntimeFile({
       ...recordFor(dataDir, 1_111),
       isRunning: () => true,
     });
 
     await expect(
-      clearOwnBbAppRuntimeFile({ dataDir, pid: 1_111 }),
+      clearOwnPatcherAppRuntimeFile({ dataDir, pid: 1_111 }),
     ).resolves.toBe(true);
-    await expect(readBbAppRuntimeFile(dataDir)).resolves.toBeNull();
+    await expect(readPatcherAppRuntimeFile(dataDir)).resolves.toBeNull();
   });
 });
 

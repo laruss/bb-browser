@@ -75,14 +75,28 @@ function renderSmokePage(expectedDesktopVersion: string): string {
   let ok = false;
   let reason = "";
   try {
-    if (typeof window.bbDesktop !== "object" || window.bbDesktop === null) {
-      reason = "missing window.bbDesktop";
+    // Both names must work: \`patcherDesktop\` for renderers built after the
+    // rename, the frozen \`bbDesktop\` for ones built before it. They are not
+    // reference-equal — contextBridge hands each exposeInMainWorld call its own
+    // proxy — so this checks behaviour, which is what the alias actually
+    // promises.
+    if (typeof window.patcherDesktop !== "object" || window.patcherDesktop === null) {
+      reason = "missing window.patcherDesktop";
+    } else if (typeof window.bbDesktop !== "object" || window.bbDesktop === null) {
+      reason = "missing the frozen window.bbDesktop alias";
+    } else if (typeof window.patcherDesktop.getInfo !== "function") {
+      reason = "missing window.patcherDesktop.getInfo";
     } else if (typeof window.bbDesktop.getInfo !== "function") {
       reason = "missing window.bbDesktop.getInfo";
     } else {
-      const info = await window.bbDesktop.getInfo();
+      const info = await window.patcherDesktop.getInfo();
+      const aliasInfo = await window.bbDesktop.getInfo();
       const expectedVersion = ${JSON.stringify(expectedDesktopVersion)};
-      ok = window.bbDesktop.version === expectedVersion && info.version === expectedVersion;
+      ok =
+        window.patcherDesktop.version === expectedVersion &&
+        window.bbDesktop.version === expectedVersion &&
+        info.version === expectedVersion &&
+        aliasInfo.version === expectedVersion;
       reason = ok ? "" : "unexpected desktop version";
     }
   } catch (error) {

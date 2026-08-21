@@ -33,7 +33,7 @@ describe("RuntimeThreadIdentityRegistry", () => {
     expect(registry.resolveProviderForThread("thread-1")).toBe("codex");
     expect(registry.getProviderThreadId("thread-1")).toBe("provider-thread-1");
     expect(
-      registry.resolveBbThreadIdForProviderThread({
+      registry.resolvePatcherThreadIdForProviderThread({
         providerState,
         providerThreadId: "provider-thread-1",
       }),

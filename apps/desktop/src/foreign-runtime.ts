@@ -1,8 +1,8 @@
 import {
-  bbAppRuntimeVerifyTokens,
-  clearOwnBbAppRuntimeFile,
-  readBbAppRuntimeFile,
-  type BbAppRuntimeFile,
+  patcherAppRuntimeVerifyTokens,
+  clearOwnPatcherAppRuntimeFile,
+  readPatcherAppRuntimeFile,
+  type PatcherAppRuntimeFile,
 } from "@patcher/config/app-runtime-file";
 import { stopVerifiedProcess } from "@patcher/config/verified-process-stop";
 import type { VerifiedProcessOps } from "@patcher/config/verified-process-stop";
@@ -46,7 +46,7 @@ export type StopForeignRuntimeResult =
   | { kind: "unverified"; pid: number };
 
 function matchesProbedServer(
-  runtimeFile: BbAppRuntimeFile,
+  runtimeFile: PatcherAppRuntimeFile,
   serverUrl: string,
 ): boolean {
   try {
@@ -69,7 +69,7 @@ export async function readForeignRuntimeDetails(
     return null;
   }
 
-  const runtimeFile = await readBbAppRuntimeFile(args.dataDir);
+  const runtimeFile = await readPatcherAppRuntimeFile(args.dataDir);
   if (runtimeFile === null) {
     return null;
   }
@@ -98,7 +98,7 @@ export async function readForeignRuntimeDetails(
 export async function stopForeignRuntime(
   args: StopForeignRuntimeArgs,
 ): Promise<StopForeignRuntimeResult> {
-  const current = await readBbAppRuntimeFile(args.details.dataDir);
+  const current = await readPatcherAppRuntimeFile(args.details.dataDir);
   if (
     current !== null &&
     (current.pid !== args.details.pid ||
@@ -114,7 +114,7 @@ export async function stopForeignRuntime(
     signal: "SIGTERM",
     startedAt: args.details.startedAt,
     timeoutMs: args.timeoutMs,
-    verifyTokens: bbAppRuntimeVerifyTokens(args.details.entryPath),
+    verifyTokens: patcherAppRuntimeVerifyTokens(args.details.entryPath),
   });
 
   if (stopResult.kind === "unverified") {
@@ -128,7 +128,7 @@ export async function stopForeignRuntime(
   }
   // A SIGKILLed launcher never runs its own cleanup, so clear the record it
   // left behind, but only while it still names the process that was stopped.
-  await clearOwnBbAppRuntimeFile({
+  await clearOwnPatcherAppRuntimeFile({
     dataDir: args.details.dataDir,
     pid: args.details.pid,
   });

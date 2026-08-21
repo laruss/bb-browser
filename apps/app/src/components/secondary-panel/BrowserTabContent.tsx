@@ -9,21 +9,21 @@ import {
   type RefObject,
 } from "react";
 import type {
-  BbDesktopBrowserDialog,
-  BbDesktopBrowserPagePromptDetails,
-  BbDesktopBrowserApi,
-  BbDesktopBrowserState,
-  BbDesktopBrowserViewportBounds,
-  BbDesktopBrowserViewBounds,
+  PatcherDesktopBrowserDialog,
+  PatcherDesktopBrowserPagePromptDetails,
+  PatcherDesktopBrowserApi,
+  PatcherDesktopBrowserState,
+  PatcherDesktopBrowserViewportBounds,
+  PatcherDesktopBrowserViewBounds,
 } from "@patcher/desktop-contract";
-import { clampBbDesktopBrowserViewBounds } from "@patcher/desktop-contract";
+import { clampPatcherDesktopBrowserViewBounds } from "@patcher/desktop-contract";
 import {
   COARSE_POINTER_COMPACT_ICON_SIZE_SHRINK_CLASS,
   COARSE_POINTER_HEADER_ICON_BUTTON_CLASS,
   COARSE_POINTER_TEXT_SM_CLASS,
 } from "@patcher/shared-ui/coarse-pointer-sizing";
 import { Icon } from "@patcher/shared-ui/icon";
-import { getBbDesktopInfo, getDesktopBrowserApi } from "@/lib/bb-desktop";
+import { getPatcherDesktopInfo, getDesktopBrowserApi } from "@/lib/bb-desktop";
 import { cn } from "@patcher/shared-ui/lib/utils";
 import {
   getBrowserUrlSecurity,
@@ -113,7 +113,7 @@ export interface BrowserAddressFocusRequest {
 interface BrowserChromeProps {
   addressDraft: string;
   isEditing: boolean;
-  state: BbDesktopBrowserState | null;
+  state: PatcherDesktopBrowserState | null;
   currentUrl: string;
   addressInputRef: RefObject<HTMLInputElement | null>;
   onAddressChange: (value: string) => void;
@@ -147,8 +147,8 @@ interface BrowserViewBoundsFromElementArgs {
 }
 
 interface BrowserViewBoundsEqualArgs {
-  a: BbDesktopBrowserViewBounds;
-  b: BbDesktopBrowserViewBounds;
+  a: PatcherDesktopBrowserViewBounds;
+  b: PatcherDesktopBrowserViewBounds;
 }
 
 interface SyncBrowserViewPlacementArgs {
@@ -174,14 +174,14 @@ interface BrowserPageLoadErrorProps {
   url: string;
 }
 
-const EMPTY_BROWSER_VIEW_BOUNDS: BbDesktopBrowserViewBounds = {
+const EMPTY_BROWSER_VIEW_BOUNDS: PatcherDesktopBrowserViewBounds = {
   x: 0,
   y: 0,
   width: 0,
   height: 0,
 };
 
-function roundedBoundsFromRect(rect: DOMRect): BbDesktopBrowserViewBounds {
+function roundedBoundsFromRect(rect: DOMRect): PatcherDesktopBrowserViewBounds {
   return {
     x: Math.round(rect.left),
     y: Math.round(rect.top),
@@ -190,7 +190,7 @@ function roundedBoundsFromRect(rect: DOMRect): BbDesktopBrowserViewBounds {
   };
 }
 
-function browserViewportBounds(): BbDesktopBrowserViewportBounds {
+function browserViewportBounds(): PatcherDesktopBrowserViewportBounds {
   return {
     width: window.innerWidth,
     height: window.innerHeight,
@@ -211,8 +211,8 @@ function browserViewportBounds(): BbDesktopBrowserViewportBounds {
  */
 function browserViewBoundsFromElement(
   args: BrowserViewBoundsFromElementArgs,
-): BbDesktopBrowserViewBounds {
-  return clampBbDesktopBrowserViewBounds({
+): PatcherDesktopBrowserViewBounds {
+  return clampPatcherDesktopBrowserViewBounds({
     bounds: roundedBoundsFromRect(args.element.getBoundingClientRect()),
     viewport: browserViewportBounds(),
   });
@@ -504,7 +504,7 @@ export function BrowserTabContent({
 }: BrowserTabContentProps) {
   const locationShortcut = useAppCommandShortcut("browser.focusLocation");
   const reloadShortcut = useAppCommandShortcut("browser.reload");
-  const desktopBrowser = useMemo<BbDesktopBrowserApi | null>(
+  const desktopBrowser = useMemo<PatcherDesktopBrowserApi | null>(
     () => getDesktopBrowserApi(),
     [],
   );
@@ -517,18 +517,18 @@ export function BrowserTabContent({
     clear: clearRecent,
   } = useBrowserHistory(threadId);
 
-  const [state, setState] = useState<BbDesktopBrowserState | null>(null);
+  const [state, setState] = useState<PatcherDesktopBrowserState | null>(null);
   const [currentUrl, setCurrentUrl] = useState(initialUrl);
   const [addressDraft, setAddressDraft] = useState(initialUrl);
   const [isEditing, setIsEditing] = useState(false);
   // Bitmap stand-in pushed by the desktop main process while the native view
   // is hidden during a native window resize; null outside resize bursts.
   const [pageDialog, setPageDialog] =
-    useState<BbDesktopBrowserDialog["dialog"]>(null);
+    useState<PatcherDesktopBrowserDialog["dialog"]>(null);
   // A question from the network — authentication, an untrusted certificate, a
   // client certificate — that the shell is holding the page open for.
   const [pagePrompt, setPagePrompt] =
-    useState<BbDesktopBrowserPagePromptDetails | null>(null);
+    useState<PatcherDesktopBrowserPagePromptDetails | null>(null);
   // Hosts a plugin has already answered for in this tab. A second challenge
   // from the same host means the first answer was wrong, so the user is asked
   // rather than the same credentials being replayed forever.
@@ -573,7 +573,9 @@ export function BrowserTabContent({
   // hide the view and fall back to the DOM new-tab screen so the backdrop dims
   // the whole panel.
   const isBrowserDimmingModalOpen = useIsBrowserDimmingModalOpen();
-  const lastSentBoundsRef = useRef<BbDesktopBrowserViewBounds | null>(null);
+  const lastSentBoundsRef = useRef<PatcherDesktopBrowserViewBounds | null>(
+    null,
+  );
 
   const readBounds = useCallback(() => {
     const element = contentRef.current;
@@ -584,7 +586,7 @@ export function BrowserTabContent({
   }, []);
 
   const sendBounds = useCallback(
-    (bounds: BbDesktopBrowserViewBounds) => {
+    (bounds: PatcherDesktopBrowserViewBounds) => {
       if (desktopBrowser === null) {
         return;
       }
@@ -951,7 +953,7 @@ export function BrowserTabContent({
   const canOpenExternal = !defaultBrowserStatus.isDefault;
 
   const handleOpenExternal = useCallback(() => {
-    getBbDesktopInfo()?.openExternalUrl(currentUrl);
+    getPatcherDesktopInfo()?.openExternalUrl(currentUrl);
   }, [currentUrl]);
 
   if (desktopBrowser === null) {

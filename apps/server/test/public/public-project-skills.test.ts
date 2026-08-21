@@ -849,7 +849,7 @@ describe("public project skills route", () => {
       });
       // The same bb skill (identical filePath) is discovered under both
       // providers; it must be listed once with provider:null.
-      const bbSkill = discovered(
+      const patcherSkill = discovered(
         "bb-helper",
         "bb-data-dir",
         "/data/skills/bb-helper/SKILL.md",
@@ -859,7 +859,7 @@ describe("public project skills route", () => {
         sessionId: session.id,
         skillsByProvider: {
           "claude-code": [
-            bbSkill,
+            patcherSkill,
             discovered(
               "cp",
               "provider-project",
@@ -872,7 +872,7 @@ describe("public project skills route", () => {
             ),
           ],
           codex: [
-            bbSkill,
+            patcherSkill,
             discovered(
               "cx",
               "provider-user",
@@ -1415,21 +1415,21 @@ describe("public project skills route", () => {
         hostId: host.id,
         path: "/tmp/stale-skill-edit-project",
       });
-      const bbPath = "/data/skills/review/SKILL.md";
+      const patcherPath = "/data/skills/review/SKILL.md";
       const providerPath = "/home/.claude/skills/review/SKILL.md";
       const stub = registerSkillRpc(harness, {
         hostId: host.id,
         sessionId: session.id,
         skillsByProvider: {
           "claude-code": [
-            discovered("review", "bb-data-dir", bbPath),
+            discovered("review", "bb-data-dir", patcherPath),
             discovered("review", "provider-user", providerPath),
           ],
         },
         writeConflicts: true,
       });
 
-      for (const id of [skillId(bbPath), skillId(providerPath)]) {
+      for (const id of [skillId(patcherPath), skillId(providerPath)]) {
         const response = await harness.app.request(
           `/api/v1/projects/${project.id}/skills/content`,
           {

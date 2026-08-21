@@ -25,7 +25,7 @@ import { useThread } from "@/hooks/queries/thread-queries";
 import { useHostDaemon } from "@/hooks/useHostDaemon";
 import { getEnvironmentWorkspaceLabelIconName } from "@/lib/environment-workspace-display";
 import { formatWorkspaceCheckoutDisplay } from "@/lib/workspace-checkout-display";
-import { BbHttpError } from "@/lib/sdk";
+import { PatcherHttpError } from "@/lib/sdk";
 import {
   getProjectComposeRoutePath,
   getThreadRoutePath,
@@ -201,7 +201,7 @@ function PluginThreadChatBody({
   }, [environment, isLocalDaemonHost]);
 
   const isThreadMissing =
-    threadQuery.error instanceof BbHttpError &&
+    threadQuery.error instanceof PatcherHttpError &&
     threadQuery.error.status === 404;
   if (isThreadMissing) {
     return (

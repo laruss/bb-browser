@@ -106,7 +106,7 @@ export default defineConfig({
 `;
 
 const REPRESENTATIVE_SERVER = `
-import { defineRpcContract, type BbPluginApi } from "@patcher/plugin-sdk";
+import { defineRpcContract, type PatcherPluginApi } from "@patcher/plugin-sdk";
 import { z } from "zod";
 
 export const rpcContract = defineRpcContract({
@@ -116,7 +116,7 @@ export const rpcContract = defineRpcContract({
   },
 });
 
-async function verifyFullSdk(bb: BbPluginApi) {
+async function verifyFullSdk(bb: PatcherPluginApi) {
   const thread = await bb.sdk.threads.spawn({
     projectId: "proj_fixture",
     environment: { type: "project-default" },
@@ -147,7 +147,7 @@ async function verifyFullSdk(bb: BbPluginApi) {
   return { attachmentPath, outcome, projectName, sha256, sourceId, threadId };
 }
 
-export default function plugin(bb: BbPluginApi) {
+export default function plugin(bb: PatcherPluginApi) {
   void verifyFullSdk;
   bb.rpc.register(rpcContract, {
     async projectName({ projectId }) {
@@ -268,7 +268,7 @@ describe("external plugin scaffold types", () => {
     await scaffoldPlugin({
       targetDir,
       packageName: "bb-plugin-external",
-      bbVersion: "0.9.0",
+      patcherVersion: "0.9.0",
       app: true,
     });
     await writeFile(join(targetDir, "server.ts"), REPRESENTATIVE_SERVER);
@@ -321,7 +321,7 @@ describe("external plugin scaffold types", () => {
     await scaffoldPlugin({
       targetDir: backendDir,
       packageName: "bb-plugin-external-backend",
-      bbVersion: "0.9.0",
+      patcherVersion: "0.9.0",
     });
     await execFileAsync(
       "npm",
@@ -379,10 +379,10 @@ describe("external plugin scaffold types", () => {
         join(installedSdk, entry.types.replace(/^\.\//u, "")),
         "utf8",
       );
-      const bbImports = [
+      const patcherImports = [
         ...declarations.matchAll(/from ['"](@patcher\/[^'"]+)['"]/gu),
       ].map((match) => match[1]);
-      expect(new Set(bbImports)).toEqual(new Set(["@patcher/plugin-sdk"]));
+      expect(new Set(patcherImports)).toEqual(new Set(["@patcher/plugin-sdk"]));
       expect(declarations).not.toContain("@patcher/sdk");
       expect(declarations).not.toContain("@patcher/server-contract");
     }
@@ -421,7 +421,7 @@ describe("external plugin scaffold types", () => {
     await scaffoldPlugin({
       targetDir: frontendDir,
       packageName: "bb-plugin-external-frontend",
-      bbVersion: "0.9.0",
+      patcherVersion: "0.9.0",
       app: true,
     });
     const frontendSdk = join(

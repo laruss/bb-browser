@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { BbDesktopBrowserContextMenuItem } from "@patcher/desktop-contract";
+import type { PatcherDesktopBrowserContextMenuItem } from "@patcher/desktop-contract";
 import {
   buildBrowserContextMenuTemplate,
   matchesContextMenuTarget,
@@ -53,8 +53,8 @@ function labels(
 }
 
 function pluginItem(
-  overrides: Partial<BbDesktopBrowserContextMenuItem> = {},
-): BbDesktopBrowserContextMenuItem {
+  overrides: Partial<PatcherDesktopBrowserContextMenuItem> = {},
+): PatcherDesktopBrowserContextMenuItem {
   return {
     pluginId: "notes",
     itemId: "save",

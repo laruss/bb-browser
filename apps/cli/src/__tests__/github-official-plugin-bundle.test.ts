@@ -48,7 +48,7 @@ describe("GitHub official plugin frontend bundle", () => {
 
   afterEach(async () => {
     await rm(root, { recursive: true, force: true });
-    delete (globalThis as { __bbPluginRuntime?: unknown }).__bbPluginRuntime;
+    delete (globalThis as { __patcherPluginRuntime?: unknown }).__patcherPluginRuntime;
   });
 
   it("registers a single GitHub nav panel with header content", async () => {
@@ -89,7 +89,7 @@ describe("GitHub official plugin frontend bundle", () => {
           : (componentStub as object),
       set: () => true,
     });
-    (globalThis as { __bbPluginRuntime?: unknown }).__bbPluginRuntime = {
+    (globalThis as { __patcherPluginRuntime?: unknown }).__patcherPluginRuntime = {
       // Bundled radix primitives (slot, tabs) call these at module scope.
       react: {
         forwardRef: (render: unknown) => render,
@@ -100,7 +100,7 @@ describe("GitHub official plugin frontend bundle", () => {
       reactDomClient: componentStub,
       jsxRuntime: { jsx: () => ({}), jsxs: () => ({}), Fragment: {} },
       pluginSdkApp: {
-        definePluginApp: (setup: unknown) => ({ __bbPluginApp: true, setup }),
+        definePluginApp: (setup: unknown) => ({ __patcherPluginApp: true, setup }),
       },
       // Shimmed singleton packages the vendored components import.
       sonner: componentStub,
@@ -114,13 +114,13 @@ describe("GitHub official plugin frontend bundle", () => {
       /* @vite-ignore */ pathToFileURL(jsPath).href
     )) as {
       default: {
-        __bbPluginApp: boolean;
+        __patcherPluginApp: boolean;
         setup: (app: {
           slots: Record<string, (registration: SlotRegistration) => void>;
         }) => void;
       };
     };
-    expect(mod.default.__bbPluginApp).toBe(true);
+    expect(mod.default.__patcherPluginApp).toBe(true);
     mod.default.setup({
       slots: {
         homepageSection: (r) => registered.homepageSection.push(r),

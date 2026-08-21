@@ -2,8 +2,8 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
-  readBbAppRuntimeFile,
-  writeBbAppRuntimeFile,
+  readPatcherAppRuntimeFile,
+  writePatcherAppRuntimeFile,
 } from "@patcher/config/app-runtime-file";
 import type { VerifiedProcessOps } from "@patcher/config/verified-process-stop";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -43,7 +43,7 @@ async function writeRuntimeFile(args: {
   serverUrl?: string;
   startedAt?: string;
 }): Promise<void> {
-  await writeBbAppRuntimeFile({
+  await writePatcherAppRuntimeFile({
     dataDir: args.dataDir,
     entryPath: args.entryPath ?? "/opt/bb/bb-app.js",
     pid: args.pid ?? 4_242,
@@ -126,7 +126,7 @@ describe("stopForeignRuntime", () => {
       }),
     ).resolves.toEqual({ kind: "stopped" });
     expect(processOps.kill).toHaveBeenCalledWith(4_242, "SIGTERM");
-    await expect(readBbAppRuntimeFile(dataDir)).resolves.toBeNull();
+    await expect(readPatcherAppRuntimeFile(dataDir)).resolves.toBeNull();
   });
 
   it("recognises a launcher that was started with a relative path", async () => {
@@ -221,7 +221,7 @@ describe("stopForeignRuntime", () => {
         timeoutMs: 1_000,
       }),
     ).resolves.toEqual({ kind: "still-running", pid: 4_242 });
-    await expect(readBbAppRuntimeFile(dataDir)).resolves.not.toBeNull();
+    await expect(readPatcherAppRuntimeFile(dataDir)).resolves.not.toBeNull();
   });
 
   it("refuses to signal a recycled pid that no longer looks like bb", async () => {

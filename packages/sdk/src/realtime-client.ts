@@ -10,21 +10,21 @@ import {
 } from "@patcher/server-contract";
 import { resolveRealtimeUrl } from "./realtime-url.js";
 import type {
-  BbRealtime,
-  BbRealtimeCallback,
-  BbRealtimeConnectionEvent,
-  BbRealtimeEventMap,
-  BbRealtimeEventName,
-  BbRealtimeSubscribeArgs,
-  BbRealtimeSubscribeArgsUnion,
-  BbRealtimeUnsubscribe,
+  PatcherRealtime,
+  PatcherRealtimeCallback,
+  PatcherRealtimeConnectionEvent,
+  PatcherRealtimeEventMap,
+  PatcherRealtimeEventName,
+  PatcherRealtimeSubscribeArgs,
+  PatcherRealtimeSubscribeArgsUnion,
+  PatcherRealtimeUnsubscribe,
   SystemRealtimeEvent,
 } from "./realtime-types.js";
 import type {
-  BbRealtimeSocket,
-  BbRealtimeSocketFactory,
-  BbRealtimeSocketMessageEvent,
-  BbSdkTransport,
+  PatcherRealtimeSocket,
+  PatcherRealtimeSocketFactory,
+  PatcherRealtimeSocketMessageEvent,
+  PatcherSdkTransport,
 } from "./transport.js";
 
 const SOCKET_CONNECTING = 0;
@@ -33,8 +33,8 @@ const INITIAL_RECONNECT_DELAY_MS = 1000;
 const MAX_RECONNECT_DELAY_MS = 30_000;
 const RECONNECT_DELAY_MULTIPLIER = 1.5;
 
-interface CreateBbRealtimeClientArgs {
-  transport: BbSdkTransport;
+interface CreatePatcherRealtimeClientArgs {
+  transport: PatcherSdkTransport;
 }
 
 interface TargetSubscription {
@@ -63,7 +63,7 @@ interface IdScopedChangedListenerRecord<
   TEventName extends IdScopedChangedEventName,
 > {
   active: boolean;
-  callback: BbRealtimeCallback<TEventName>;
+  callback: PatcherRealtimeCallback<TEventName>;
   event: TEventName;
   selectorId?: string;
   target: RealtimeSubscriptionTarget;
@@ -73,7 +73,7 @@ interface UnscopedChangedListenerRecord<
   TEventName extends UnscopedChangedEventName,
 > {
   active: boolean;
-  callback: BbRealtimeCallback<TEventName>;
+  callback: PatcherRealtimeCallback<TEventName>;
   event: TEventName;
   target: RealtimeSubscriptionTarget;
 }
@@ -88,7 +88,7 @@ type ChangedListenerRecord =
 
 interface ConnectionListenerRecord {
   active: boolean;
-  callback: BbRealtimeCallback<"realtime:connection">;
+  callback: PatcherRealtimeCallback<"realtime:connection">;
   event: "realtime:connection";
 }
 
@@ -140,8 +140,8 @@ function optionalTargetIdMatches(args: OptionalTargetIdMatchesArgs): boolean {
  * Adapts a standard (browser/Node-global) WebSocket to the runtime-agnostic
  * socket shape the realtime client consumes.
  */
-export function wrapStandardWebsocket(socket: WebSocket): BbRealtimeSocket {
-  const adapter: BbRealtimeSocket = {
+export function wrapStandardWebsocket(socket: WebSocket): PatcherRealtimeSocket {
+  const adapter: PatcherRealtimeSocket = {
     close: () => socket.close(),
     onclose: null,
     onerror: null,
@@ -159,7 +159,7 @@ export function wrapStandardWebsocket(socket: WebSocket): BbRealtimeSocket {
   return adapter;
 }
 
-function resolveDefaultWebsocketFactory(): BbRealtimeSocketFactory | null {
+function resolveDefaultWebsocketFactory(): PatcherRealtimeSocketFactory | null {
   if (typeof WebSocket === "undefined") {
     return null;
   }
@@ -188,32 +188,32 @@ function isIdScopedChangedListenerFor<
   return listener.event === event;
 }
 
-export class BbRealtimeClient implements BbRealtime {
+export class PatcherRealtimeClient implements PatcherRealtime {
   private readonly listeners = new Set<RealtimeListenerRecord>();
   private readonly targetSubscriptions = new Map<string, TargetSubscription>();
-  private readonly transport: BbSdkTransport;
-  private lastConnectionEvent: BbRealtimeConnectionEvent | null = null;
+  private readonly transport: PatcherSdkTransport;
+  private lastConnectionEvent: PatcherRealtimeConnectionEvent | null = null;
   private reconnectDelayMs = INITIAL_RECONNECT_DELAY_MS;
   private reconnectingAfterUnexpectedClose = false;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private rejectSocketReady: ((error: Error) => void) | null = null;
   private resolveSocketReady: (() => void) | null = null;
-  private socket: BbRealtimeSocket | null = null;
+  private socket: PatcherRealtimeSocket | null = null;
   private socketReadyPromise: Promise<void> | null = null;
 
-  constructor(args: CreateBbRealtimeClientArgs) {
+  constructor(args: CreatePatcherRealtimeClientArgs) {
     this.transport = args.transport;
   }
 
-  subscribe<TEventName extends BbRealtimeEventName>(
-    args: BbRealtimeSubscribeArgs<TEventName>,
-  ): BbRealtimeUnsubscribe {
+  subscribe<TEventName extends PatcherRealtimeEventName>(
+    args: PatcherRealtimeSubscribeArgs<TEventName>,
+  ): PatcherRealtimeUnsubscribe {
     return this.addListener(args);
   }
 
   private addListener(
-    args: BbRealtimeSubscribeArgsUnion,
-  ): BbRealtimeUnsubscribe {
+    args: PatcherRealtimeSubscribeArgsUnion,
+  ): PatcherRealtimeUnsubscribe {
     switch (args.event) {
       case "thread:changed":
         return this.addChangedListener({
@@ -272,13 +272,13 @@ export class BbRealtimeClient implements BbRealtime {
 
   private addChangedListener(
     listener: ChangedListenerRecord,
-  ): BbRealtimeUnsubscribe {
+  ): PatcherRealtimeUnsubscribe {
     return this.activateListener(listener);
   }
 
   private addConnectionListener(
     listener: ConnectionListenerRecord,
-  ): BbRealtimeUnsubscribe {
+  ): PatcherRealtimeUnsubscribe {
     const unsubscribe = this.activateListener(listener);
     const snapshot = this.lastConnectionEvent;
     if (snapshot) {
@@ -295,7 +295,7 @@ export class BbRealtimeClient implements BbRealtime {
 
   private activateListener(
     listener: RealtimeListenerRecord,
-  ): BbRealtimeUnsubscribe {
+  ): PatcherRealtimeUnsubscribe {
     this.listeners.add(listener);
     if (isTargetedListener(listener)) {
       this.addTarget(listener.target);
@@ -543,7 +543,7 @@ export class BbRealtimeClient implements BbRealtime {
     }
   }
 
-  private handleSocketMessage(event: BbRealtimeSocketMessageEvent): void {
+  private handleSocketMessage(event: PatcherRealtimeSocketMessageEvent): void {
     if (typeof event.data !== "string") {
       return;
     }
@@ -606,7 +606,7 @@ export class BbRealtimeClient implements BbRealtime {
 
   private dispatchIdScopedChangedMessage<
     TEventName extends IdScopedChangedEventName,
-  >(event: TEventName, message: BbRealtimeEventMap[TEventName]): void {
+  >(event: TEventName, message: PatcherRealtimeEventMap[TEventName]): void {
     for (const listener of this.listenerSnapshot()) {
       if (
         !isIdScopedChangedListenerFor(listener, event) ||
@@ -693,7 +693,7 @@ export class BbRealtimeClient implements BbRealtime {
     this.socket.send(JSON.stringify(message));
   }
 
-  private emitConnection(event: BbRealtimeConnectionEvent): void {
+  private emitConnection(event: PatcherRealtimeConnectionEvent): void {
     this.lastConnectionEvent = event;
     for (const listener of this.listenerSnapshot()) {
       if (listener.event !== "realtime:connection" || !listener.active) {
@@ -711,9 +711,9 @@ export class BbRealtimeClient implements BbRealtime {
     return [...this.listeners];
   }
 
-  private callListener<TEventName extends BbRealtimeEventName>(
-    callback: BbRealtimeCallback<TEventName>,
-    event: Parameters<BbRealtimeCallback<TEventName>>[0],
+  private callListener<TEventName extends PatcherRealtimeEventName>(
+    callback: PatcherRealtimeCallback<TEventName>,
+    event: Parameters<PatcherRealtimeCallback<TEventName>>[0],
   ): void {
     try {
       callback(event);
@@ -723,8 +723,8 @@ export class BbRealtimeClient implements BbRealtime {
   }
 }
 
-export function createBbRealtimeClient(
-  args: CreateBbRealtimeClientArgs,
-): BbRealtimeClient {
-  return new BbRealtimeClient(args);
+export function createPatcherRealtimeClient(
+  args: CreatePatcherRealtimeClientArgs,
+): PatcherRealtimeClient {
+  return new PatcherRealtimeClient(args);
 }

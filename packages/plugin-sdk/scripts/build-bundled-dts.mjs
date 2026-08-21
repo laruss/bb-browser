@@ -1,10 +1,10 @@
 // Generates the self-contained `.d.ts` bundles that `bb plugin new` ships into
-// a scaffolded plugin's `types/` directory, so authors get real BbPluginApi /
+// a scaffolded plugin's `types/` directory, so authors get real PatcherPluginApi /
 // @patcher/plugin-sdk/app types WITHOUT the (unpublished) @patcher/* workspace packages
 // on disk.
 //
 // rollup-plugin-dts flattens @patcher/plugin-sdk's own contracts plus every @patcher/*
-// type it references (BbSdk, PromptInput, ThreadResponse, …) into the root
+// type it references (PatcherSdk, PromptInput, ThreadResponse, …) into the root
 // file. Testing subpaths reuse that already-portable root declaration through
 // the package's own public name instead of flattening the same contracts a
 // second time. Genuine npm packages remain external imports and resolve from
@@ -53,7 +53,7 @@ const EXTERNAL = [
 ];
 
 /** Resolve any `@patcher/<pkg>[/<sub>]` to its `source` export target on disk. */
-function resolveBbSource(id) {
+function resolvePatcherSource(id) {
   const match = /^@patcher\/([^/]+)(\/.*)?$/.exec(id);
   if (!match) return null;
   const pkgDir = path.join(pkgsDir, match[1]);
@@ -82,7 +82,7 @@ const inlineWorkspace = {
       if (asTs === publicApiModule) return publicApiStub;
     }
     if (id === publicApiModule) return publicApiStub;
-    return resolveBbSource(id);
+    return resolvePatcherSource(id);
   },
 };
 

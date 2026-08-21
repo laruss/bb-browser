@@ -21,26 +21,26 @@ import {
   createHostEnrollKeyRequestBody,
   isMainModule,
   parseLauncherArgs,
-  resolveBbAppRuntimeContext,
-  resolveBbAppRuntimeState,
+  resolvePatcherAppRuntimeContext,
+  resolvePatcherAppRuntimeState,
   resolveDataDir,
   resolvePort,
-  resolveBbAppStartContext,
-  resolveBbAppCommand,
-  runBbApp,
+  resolvePatcherAppStartContext,
+  resolvePatcherAppCommand,
+  runPatcherApp,
 } from "../src/index.js";
 import {
   completeFullStackSupervision,
   createDaemonEnv,
   createHostDaemonJoinEnv,
-  readBbAppPackageVersion,
+  readPatcherAppPackageVersion,
   runBundledCliCommand,
   superviseFullStackProcesses,
   terminateManagedFullStackProcesses,
   waitForHostDaemonStatus,
   waitForProcessExit,
 } from "../src/launcher.js";
-import type { BbAppStartContext } from "../src/index.js";
+import type { PatcherAppStartContext } from "../src/index.js";
 import type {
   DelayMillisecondsArgs,
   DelayMillisecondsFn,
@@ -242,7 +242,7 @@ const immediateDelay: DelayMillisecondsFn = () => {
   return Promise.resolve();
 };
 
-function createTestStartContext(): BbAppStartContext {
+function createTestStartContext(): PatcherAppStartContext {
   return {
     appDistDir: "/tmp/bb-app-test/app/dist",
     appVersion: "0.0.0-test",
@@ -569,7 +569,7 @@ describe("bb-app launcher", () => {
   });
 
   it("resolves production defaults for npx startup", () => {
-    const context = resolveBbAppStartContext({
+    const context = resolvePatcherAppStartContext({
       entrypointUrl: pathToFileURL("/repo/packages/bb-app/dist/bb-app.js").href,
       env: {},
       homeDir: "/home/tester",
@@ -591,7 +591,7 @@ describe("bb-app launcher", () => {
   });
 
   it("uses workspace build outputs when run from a source checkout", () => {
-    const context = resolveBbAppStartContext({
+    const context = resolvePatcherAppStartContext({
       entrypointUrl: pathToFileURL("/repo/packages/bb-app/src/launcher.ts")
         .href,
       env: {},
@@ -614,11 +614,11 @@ describe("bb-app launcher", () => {
       .parse(
         JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8")),
       ).version;
-    expect(readBbAppPackageVersion(packageRoot)).toBe(expectedVersion);
+    expect(readPatcherAppPackageVersion(packageRoot)).toBe(expectedVersion);
   });
 
   it("falls back to the dev sentinel when package.json is missing", () => {
-    expect(readBbAppPackageVersion("/nonexistent/bb-app/path")).toBe(
+    expect(readPatcherAppPackageVersion("/nonexistent/bb-app/path")).toBe(
       "0.0.0-dev",
     );
   });
@@ -655,35 +655,35 @@ describe("bb-app launcher", () => {
   });
 
   it("starts bb when no command or the explicit start command is provided", () => {
-    expect(resolveBbAppCommand([])).toEqual({ kind: "start" });
-    expect(resolveBbAppCommand(["start"])).toEqual({ kind: "start" });
+    expect(resolvePatcherAppCommand([])).toEqual({ kind: "start" });
+    expect(resolvePatcherAppCommand(["start"])).toEqual({ kind: "start" });
   });
 
   it("stops bb on the explicit stop command only", () => {
-    expect(resolveBbAppCommand(["stop"])).toEqual({ kind: "stop" });
-    expect(resolveBbAppCommand(["stop", "now"])).toEqual({
+    expect(resolvePatcherAppCommand(["stop"])).toEqual({ kind: "stop" });
+    expect(resolvePatcherAppCommand(["stop", "now"])).toEqual({
       command: "stop",
       kind: "invalid",
     });
   });
 
   it("keeps CLI commands on the bb binary", () => {
-    expect(resolveBbAppCommand(["status"])).toEqual({
+    expect(resolvePatcherAppCommand(["status"])).toEqual({
       command: "status",
       kind: "invalid",
     });
-    expect(resolveBbAppCommand(["thread", "list"])).toEqual({
+    expect(resolvePatcherAppCommand(["thread", "list"])).toEqual({
       command: "thread",
       kind: "invalid",
     });
   });
 
   it("starts only the host daemon for the explicit host-daemon start command", () => {
-    expect(resolveBbAppCommand(["host-daemon"])).toEqual({
+    expect(resolvePatcherAppCommand(["host-daemon"])).toEqual({
       args: [],
       kind: "host-daemon",
     });
-    expect(resolveBbAppCommand(["host-daemon", "join"])).toEqual({
+    expect(resolvePatcherAppCommand(["host-daemon", "join"])).toEqual({
       args: ["join"],
       kind: "host-daemon",
     });
@@ -691,7 +691,12 @@ describe("bb-app launcher", () => {
 
   it("resolves config commands", () => {
     expect(
-      resolveBbAppCommand(["config", "set", "BB_APP_URL", "https://bb.test"]),
+      resolvePatcherAppCommand([
+        "config",
+        "set",
+        "BB_APP_URL",
+        "https://bb.test",
+      ]),
     ).toEqual({
       args: ["set", "BB_APP_URL", "https://bb.test"],
       kind: "config",
@@ -700,7 +705,7 @@ describe("bb-app launcher", () => {
 
   it("resolves env commands", () => {
     expect(
-      resolveBbAppCommand(["env", "set", "OPENAI_API_KEY", "test-key"]),
+      resolvePatcherAppCommand(["env", "set", "OPENAI_API_KEY", "test-key"]),
     ).toEqual({
       args: ["set", "OPENAI_API_KEY", "test-key"],
       kind: "env",
@@ -709,7 +714,7 @@ describe("bb-app launcher", () => {
 
   it("resolves client commands", () => {
     expect(
-      resolveBbAppCommand([
+      resolvePatcherAppCommand([
         "client",
         "ssh-target",
         "set",
@@ -723,8 +728,8 @@ describe("bb-app launcher", () => {
   });
 
   it("prints help for help requests", () => {
-    expect(resolveBbAppCommand(["--help"])).toEqual({ kind: "help" });
-    expect(resolveBbAppCommand(["help"])).toEqual({ kind: "help" });
+    expect(resolvePatcherAppCommand(["--help"])).toEqual({ kind: "help" });
+    expect(resolvePatcherAppCommand(["help"])).toEqual({ kind: "help" });
   });
 
   it("parses launcher flags separately from commands", () => {
@@ -765,7 +770,7 @@ describe("bb-app launcher", () => {
   it("passes the server bind host flag to the server environment", async () => {
     const parsedArgs = parseLauncherArgs(["--server-bind-host", "0.0.0.0"]);
     const dataDir = mkdtempSync(join(tmpdir(), "bb-app-bind-host-"));
-    const runtime = await resolveBbAppRuntimeState({
+    const runtime = await resolvePatcherAppRuntimeState({
       entrypointUrl: pathToFileURL("/repo/packages/bb-app/dist/bb-app.js").href,
       env: { BB_DATA_DIR: dataDir },
       homeDir: "/home/tester",
@@ -779,7 +784,7 @@ describe("bb-app launcher", () => {
 
   it("strips parent thread context from the production server without stripping the CLI", async () => {
     const dataDir = mkdtempSync(join(tmpdir(), "bb-app-thread-context-"));
-    const runtime = await resolveBbAppRuntimeState({
+    const runtime = await resolvePatcherAppRuntimeState({
       entrypointUrl: pathToFileURL("/repo/packages/bb-app/dist/bb-app.js").href,
       env: {
         BB_DATA_DIR: dataDir,
@@ -829,7 +834,7 @@ describe("bb-app launcher", () => {
     const dataDir = mkdtempSync(join(tmpdir(), "bb-app-invalid-bind-host-"));
 
     await expect(
-      runBbApp(["--data-dir", dataDir, "--server-bind-host", "localhost"]),
+      runPatcherApp(["--data-dir", dataDir, "--server-bind-host", "localhost"]),
     ).rejects.toThrow('BB_SERVER_BIND_HOST must be "127.0.0.1" or "0.0.0.0"');
   });
 
@@ -889,7 +894,7 @@ describe("bb-app launcher", () => {
       "utf8",
     );
 
-    const context = await resolveBbAppRuntimeContext({
+    const context = await resolvePatcherAppRuntimeContext({
       entrypointUrl: pathToFileURL("/repo/packages/bb-app/dist/bb-app.js").href,
       env: { BB_DATA_DIR: dataDir },
       homeDir: "/home/tester",
@@ -908,7 +913,7 @@ describe("bb-app launcher", () => {
       "utf8",
     );
 
-    const runtime = await resolveBbAppRuntimeState({
+    const runtime = await resolvePatcherAppRuntimeState({
       entrypointUrl: pathToFileURL("/repo/packages/bb-app/dist/bb-app.js").href,
       env: {
         BB_DATA_DIR: dataDir,
@@ -931,7 +936,7 @@ describe("bb-app launcher", () => {
       "utf8",
     );
 
-    const context = await resolveBbAppRuntimeContext({
+    const context = await resolvePatcherAppRuntimeContext({
       entrypointUrl: pathToFileURL("/repo/packages/bb-app/dist/bb-app.js").href,
       env: { BB_DATA_DIR: dataDir },
       homeDir: "/home/tester",
@@ -964,7 +969,7 @@ describe("bb-app launcher", () => {
       "utf8",
     );
 
-    const runtime = await resolveBbAppRuntimeState({
+    const runtime = await resolvePatcherAppRuntimeState({
       entrypointUrl: pathToFileURL("/repo/packages/bb-app/dist/bb-app.js").href,
       env: { BB_DATA_DIR: dataDir, OPENAI_API_KEY: "ambient-openai-key" },
       homeDir: "/home/tester",
@@ -987,7 +992,7 @@ describe("bb-app launcher", () => {
       "utf8",
     );
 
-    const runtime = await resolveBbAppRuntimeState({
+    const runtime = await resolvePatcherAppRuntimeState({
       entrypointUrl: pathToFileURL("/repo/packages/bb-app/dist/bb-app.js").href,
       env: {
         BB_DATA_DIR: dataDir,
@@ -1008,7 +1013,7 @@ describe("bb-app launcher", () => {
   it("stores managed config values from the config command", async () => {
     const dataDir = mkdtempSync(join(tmpdir(), "bb-app-config-command-"));
 
-    await runBbApp([
+    await runPatcherApp([
       "--data-dir",
       dataDir,
       "config",
@@ -1016,7 +1021,7 @@ describe("bb-app launcher", () => {
       "BB_APP_URL",
       "https://bb.example.test",
     ]);
-    await runBbApp([
+    await runPatcherApp([
       "--data-dir",
       dataDir,
       "config",
@@ -1024,7 +1029,7 @@ describe("bb-app launcher", () => {
       "BB_INFERENCE",
       "anthropic/claude-sonnet-4-5",
     ]);
-    await runBbApp([
+    await runPatcherApp([
       "--data-dir",
       dataDir,
       "config",
@@ -1032,7 +1037,7 @@ describe("bb-app launcher", () => {
       "BB_INFERENCE_FALLBACK",
       "codex/gpt-5.4-mini",
     ]);
-    await runBbApp([
+    await runPatcherApp([
       "--data-dir",
       dataDir,
       "env",
@@ -1072,7 +1077,7 @@ describe("bb-app launcher", () => {
     ]);
 
     try {
-      await runBbApp([
+      await runPatcherApp([
         "--data-dir",
         dataDir,
         "client",
@@ -1098,7 +1103,7 @@ describe("bb-app launcher", () => {
       });
       expect(statSync(join(dataDir, "client.json")).mode & 0o777).toBe(0o600);
 
-      await runBbApp([
+      await runPatcherApp([
         "--data-dir",
         dataDir,
         "client",
@@ -1132,7 +1137,7 @@ describe("bb-app launcher", () => {
       "utf8",
     );
 
-    await runBbApp([
+    await runPatcherApp([
       "--data-dir",
       dataDir,
       "config",
@@ -1165,7 +1170,7 @@ describe("bb-app launcher", () => {
       "utf8",
     );
 
-    await runBbApp([
+    await runPatcherApp([
       "--data-dir",
       dataDir,
       "config",
@@ -1203,7 +1208,7 @@ describe("bb-app launcher", () => {
       "utf8",
     );
 
-    await runBbApp([
+    await runPatcherApp([
       "--data-dir",
       dataDir,
       "config",
@@ -1239,7 +1244,7 @@ describe("bb-app launcher", () => {
       "utf8",
     );
 
-    await runBbApp([
+    await runPatcherApp([
       "--data-dir",
       dataDir,
       "config",
@@ -1278,7 +1283,13 @@ describe("bb-app launcher", () => {
       "utf8",
     );
 
-    await runBbApp(["--data-dir", dataDir, "config", "unset", "BB_APP_URL"]);
+    await runPatcherApp([
+      "--data-dir",
+      dataDir,
+      "config",
+      "unset",
+      "BB_APP_URL",
+    ]);
 
     expect(
       JSON.parse(readFileSync(join(dataDir, "config.json"), "utf8")),
@@ -1291,7 +1302,7 @@ describe("bb-app launcher", () => {
     const dataDir = mkdtempSync(join(tmpdir(), "bb-app-secret-config-"));
 
     await expect(
-      runBbApp([
+      runPatcherApp([
         "--data-dir",
         dataDir,
         "config",
@@ -1305,7 +1316,7 @@ describe("bb-app launcher", () => {
   it("stores managed env values from the env command", async () => {
     const dataDir = mkdtempSync(join(tmpdir(), "bb-app-env-command-"));
 
-    await runBbApp([
+    await runPatcherApp([
       "--data-dir",
       dataDir,
       "env",
@@ -1333,7 +1344,7 @@ describe("bb-app launcher", () => {
     writeFileSync(envPath, JSON.stringify(initialEnvFile), "utf8");
 
     await expect(
-      runBbApp([
+      runPatcherApp([
         "--data-dir",
         dataDir,
         "env",
@@ -1355,7 +1366,7 @@ describe("bb-app launcher", () => {
       "utf8",
     );
 
-    await runBbApp([
+    await runPatcherApp([
       "--data-dir",
       dataDir,
       "env",
@@ -1375,7 +1386,9 @@ describe("bb-app launcher", () => {
       "utf8",
     );
 
-    await expect(runBbApp(["--data-dir", dataDir])).rejects.toThrow(envPath);
+    await expect(runPatcherApp(["--data-dir", dataDir])).rejects.toThrow(
+      envPath,
+    );
   });
 
   it("blames the flag, not the env file, for an invalid flag value", async () => {
@@ -1387,7 +1400,7 @@ describe("bb-app launcher", () => {
       "utf8",
     );
 
-    const failure = await runBbApp([
+    const failure = await runPatcherApp([
       "--data-dir",
       dataDir,
       "--server-bind-host",
@@ -1403,7 +1416,7 @@ describe("bb-app launcher", () => {
     const dataDir = mkdtempSync(join(tmpdir(), "bb-app-invalid-env-"));
 
     await expect(
-      runBbApp(["--data-dir", dataDir, "env", "set", "1BAD", "value"]),
+      runPatcherApp(["--data-dir", dataDir, "env", "set", "1BAD", "value"]),
     ).rejects.toThrow(/Invalid env key/u);
   });
 
@@ -1416,7 +1429,7 @@ describe("bb-app launcher", () => {
     );
     const parsedArgs = parseLauncherArgs(["--server-bind-host", "127.0.0.1"]);
 
-    const runtime = await resolveBbAppRuntimeState({
+    const runtime = await resolvePatcherAppRuntimeState({
       entrypointUrl: pathToFileURL("/repo/packages/bb-app/dist/bb-app.js").href,
       env: { BB_DATA_DIR: dataDir },
       homeDir: "/home/tester",
@@ -1439,7 +1452,13 @@ describe("bb-app launcher", () => {
       "utf8",
     );
 
-    await runBbApp(["--data-dir", dataDir, "env", "unset", "OPENAI_API_KEY"]);
+    await runPatcherApp([
+      "--data-dir",
+      dataDir,
+      "env",
+      "unset",
+      "OPENAI_API_KEY",
+    ]);
 
     expect(JSON.parse(readFileSync(join(dataDir, "env.json"), "utf8"))).toEqual(
       {},
@@ -1464,7 +1483,7 @@ describe("bb-app launcher", () => {
         );
 
         await expect(
-          runBbApp([
+          runPatcherApp([
             "--data-dir",
             dataDir,
             "--server-port",
@@ -1493,7 +1512,7 @@ describe("bb-app launcher", () => {
 
     try {
       const output = await captureStdout(() =>
-        runBbApp([
+        runPatcherApp([
           "--data-dir",
           dataDir,
           "--server-port",
@@ -1524,7 +1543,7 @@ describe("bb-app launcher", () => {
       for (const testCase of startupOnlyManagedEnvCases) {
         const dataDir = mkdtempSync(join(tmpdir(), "bb-app-startup-env-set-"));
         const output = await captureStdout(() =>
-          runBbApp([
+          runPatcherApp([
             "--data-dir",
             dataDir,
             "--server-port",
@@ -1558,7 +1577,7 @@ describe("bb-app launcher", () => {
 
     try {
       const output = await captureStdout(() =>
-        runBbApp([
+        runPatcherApp([
           "--data-dir",
           dataDir,
           "--server-port",
@@ -1590,7 +1609,7 @@ describe("bb-app launcher", () => {
 
     try {
       const output = await captureStdout(() =>
-        runBbApp([
+        runPatcherApp([
           "--data-dir",
           dataDir,
           "--server-port",
@@ -1616,7 +1635,7 @@ describe("bb-app launcher", () => {
     await unavailableServer.close();
 
     const output = await captureStdout(() =>
-      runBbApp([
+      runPatcherApp([
         "--data-dir",
         dataDir,
         "--server-port",
@@ -1655,7 +1674,7 @@ describe("bb-app launcher", () => {
 
     try {
       const output = await captureStdout(() =>
-        runBbApp([
+        runPatcherApp([
           "--data-dir",
           dataDir,
           "--server-port",
@@ -1679,7 +1698,7 @@ describe("bb-app launcher", () => {
     const server = await startConfigReloadTestServer();
 
     try {
-      await runBbApp([
+      await runPatcherApp([
         "--data-dir",
         dataDir,
         "--server-port",
@@ -1703,7 +1722,7 @@ describe("bb-app launcher", () => {
     const server = await startConfigReloadTestServer();
 
     try {
-      await runBbApp([
+      await runPatcherApp([
         "--data-dir",
         dataDir,
         "--server-port",
@@ -1728,7 +1747,7 @@ describe("bb-app launcher", () => {
     try {
       process.env.BB_SERVER_URL = server.url;
 
-      await runBbApp(["--data-dir", dataDir, "config", "refresh"]);
+      await runPatcherApp(["--data-dir", dataDir, "config", "refresh"]);
 
       expect(server.reloadRequests()).toEqual([
         expectedConfigReloadRequest(server),
@@ -1748,7 +1767,7 @@ describe("bb-app launcher", () => {
     const server = await startConfigReloadTestServer();
 
     try {
-      await runBbApp([
+      await runPatcherApp([
         "--data-dir",
         dataDir,
         "config",
@@ -1764,7 +1783,7 @@ describe("bb-app launcher", () => {
       });
       expect(server.reloadRequests()).toEqual([]);
 
-      await runBbApp(["--data-dir", dataDir, "config", "refresh"]);
+      await runPatcherApp(["--data-dir", dataDir, "config", "refresh"]);
 
       expect(server.reloadRequests()).toEqual([
         expectedConfigReloadRequest(server),
@@ -1782,7 +1801,7 @@ describe("bb-app launcher", () => {
     const previousServerUrl = process.env.BB_SERVER_URL;
 
     try {
-      await runBbApp([
+      await runPatcherApp([
         "--data-dir",
         dataDir,
         "config",
@@ -1792,7 +1811,7 @@ describe("bb-app launcher", () => {
       ]);
 
       process.env.BB_SERVER_URL = envServer.url;
-      await runBbApp([
+      await runPatcherApp([
         "--data-dir",
         dataDir,
         "--server-url",

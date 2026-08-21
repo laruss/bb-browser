@@ -26,7 +26,7 @@ import { dispatchBrowserViewBoundsSync } from "@/lib/browser-view-bounds-sync";
 import { COARSE_POINTER_HEADER_ICON_BUTTON_CLASS } from "@patcher/shared-ui/coarse-pointer-sizing";
 import {
   CHROME_ROW_HEIGHT_CLASS,
-  getBbDesktopInfo,
+  getPatcherDesktopInfo,
   MACOS_APP_REGION_NO_DRAG_CLASS,
   MACOS_WINDOW_DRAG_CLASS,
   shouldUseMacosDesktopChrome,
@@ -128,7 +128,7 @@ export function RootComposeSecondaryContent({
     isDrawerOpen: isSecondaryPanelOpen,
     rendersAsDrawer: renderAsDrawer,
   });
-  const [desktopInfo] = useState(getBbDesktopInfo);
+  const [desktopInfo] = useState(getPatcherDesktopInfo);
   const usesDesktopChrome = shouldUseMacosDesktopChrome(desktopInfo);
   // A bounded pane below a horizontal split is not part of the native window
   // chrome. Marking the top of every RootComposeView as draggable creates an

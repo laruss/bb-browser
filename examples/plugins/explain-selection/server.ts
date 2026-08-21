@@ -24,7 +24,7 @@
 // reload to show up, which is what CONFIGURE_HINT says.
 //
 // The type-only import is erased at load time; this file runs as-is.
-import type { BbPluginApi } from "@patcher/plugin-sdk";
+import type { PatcherPluginApi } from "@patcher/plugin-sdk";
 
 const CONFIGURE_HINT =
   "Set project with `bb plugin config explain-selection`, " +
@@ -78,7 +78,7 @@ function threadTitle(selection: string): string {
   return `Explain: ${selection.replace(/\s+/gu, " ").slice(0, 60)}`;
 }
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(bb: PatcherPluginApi) {
   const settings = bb.settings.define({
     project: {
       type: "project",

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import {
   PLUGIN_CLI_OUTPUT_MAX_BYTES,
-  type BbPluginApi,
+  type PatcherPluginApi,
   type PluginAgentConfigurationContext,
 } from "../../backend-contract.js";
 import { defineRpcContract } from "../../rpc-contract.js";
@@ -113,7 +113,7 @@ describe("storage", () => {
 });
 
 describe("settings", () => {
-  function defineSettings(bb: BbPluginApi) {
+  function defineSettings(bb: PatcherPluginApi) {
     return bb.settings.define({
       token: { type: "string", label: "Token", secret: true },
       mode: {

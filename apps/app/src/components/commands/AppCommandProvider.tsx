@@ -26,7 +26,7 @@ import {
   type PluginCommandContribution,
 } from "@/hooks/queries/plugin-contribution-queries";
 import { useSystemConfig } from "@/hooks/queries/system-queries";
-import { getBbDesktopInfo } from "@/lib/bb-desktop";
+import { getPatcherDesktopInfo } from "@/lib/bb-desktop";
 import {
   formatAppShortcut,
   formatAppShortcutAria,
@@ -103,7 +103,7 @@ export function AppCommandProvider({ children }: { children: ReactNode }) {
   const showKeyboardHints =
     systemConfig.data?.generalSettings?.showKeyboardHints ??
     defaultAppSettings.showKeyboardHints;
-  const isDesktop = getBbDesktopInfo() !== null;
+  const isDesktop = getPatcherDesktopInfo() !== null;
   const [isShortcutHintModifierHeld, setIsShortcutHintModifierHeld] =
     useState(false);
   const modifierHoldTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
@@ -362,7 +362,7 @@ export function AppCommandProvider({ children }: { children: ReactNode }) {
   }, [handleKeyboardEvent]);
 
   useEffect(() => {
-    const desktop = getBbDesktopInfo();
+    const desktop = getPatcherDesktopInfo();
     if (!desktop?.onAppCommand) return;
     return desktop.onAppCommand((command) => {
       // Native menu actions intentionally execute as explicit commands. Their

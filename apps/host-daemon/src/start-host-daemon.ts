@@ -32,8 +32,8 @@ import {
 } from "./local-api-config.js";
 import {
   prepareRuntimeShellEnv,
-  resolveBbExecutablePathInDirectory,
-  resolveLocalBbExecutablePath,
+  resolvePatcherExecutablePathInDirectory,
+  resolveLocalPatcherExecutablePath,
   resolveUserShellPath,
 } from "./runtime-shell-env.js";
 import type { HostDaemonLogger } from "./logger.js";
@@ -46,7 +46,7 @@ export interface StartHostDaemonOptions {
   enrollKey?: string;
   hostId?: string;
   hostName?: string;
-  bbExecutableDirectory?: string;
+  patcherExecutableDirectory?: string;
   bridgeBundleDir?: string;
   hostType?: HostType;
   enableLocalApi?: boolean;
@@ -191,11 +191,13 @@ export async function startHostDaemon(
           localApi: options.localApi,
         })
       : null;
-    const bbExecutablePath =
-      options.bbExecutableDirectory !== undefined
-        ? resolveBbExecutablePathInDirectory(options.bbExecutableDirectory)
-        : await resolveLocalBbExecutablePath();
-    const bbExecutableDirectory = dirname(bbExecutablePath);
+    const patcherExecutablePath =
+      options.patcherExecutableDirectory !== undefined
+        ? resolvePatcherExecutablePathInDirectory(
+            options.patcherExecutableDirectory,
+          )
+        : await resolveLocalPatcherExecutablePath();
+    const patcherExecutableDirectory = dirname(patcherExecutablePath);
     const logger =
       options.logger ??
       createLogger({
@@ -227,8 +229,8 @@ export async function startHostDaemon(
     }
     const resolveRuntimeShellEnv = async () =>
       prepareRuntimeShellEnv({
-        bbExecutableDirectory,
-        bbExecutablePath,
+        patcherExecutableDirectory,
+        patcherExecutablePath,
         hostDaemonPort: localApiConfig?.port,
         inheritedPath: (await resolveUserShellPath()) ?? process.env.PATH,
         serverUrl,

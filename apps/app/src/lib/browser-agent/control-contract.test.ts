@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bbDesktopBrowserControlOperationSchema } from "@patcher/desktop-contract";
+import { patcherDesktopBrowserControlOperationSchema } from "@patcher/desktop-contract";
 import { browserControlOperationSchema } from "@patcher/domain";
 
 /**
@@ -61,7 +61,7 @@ describe("the control union, on both wires", () => {
         `domain: ${JSON.stringify(value)}`,
       ).toBe(true);
       expect(
-        bbDesktopBrowserControlOperationSchema.safeParse(value).success,
+        patcherDesktopBrowserControlOperationSchema.safeParse(value).success,
         `desktop: ${JSON.stringify(value)}`,
       ).toBe(true);
     }
@@ -74,7 +74,7 @@ describe("the control union, on both wires", () => {
         `domain: ${JSON.stringify(value)}`,
       ).toBe(false);
       expect(
-        bbDesktopBrowserControlOperationSchema.safeParse(value).success,
+        patcherDesktopBrowserControlOperationSchema.safeParse(value).success,
         `desktop: ${JSON.stringify(value)}`,
       ).toBe(false);
     }

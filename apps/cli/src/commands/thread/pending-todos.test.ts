@@ -2,8 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 import type { ThreadTimelinePendingTodos } from "@patcher/domain";
 import type { ThreadTimelineResponse } from "@patcher/server-contract";
 import {
-  createNodeBbSdk,
-  type BbSdk,
+  createNodePatcherSdk,
+  type PatcherSdk,
   type FetchImplementation,
 } from "@patcher/sdk/node";
 
@@ -126,7 +126,7 @@ describe("fetchThreadPendingTodos", () => {
 
   interface SdkOverHttpBoundary {
     requestUrls: string[];
-    sdk: BbSdk;
+    sdk: PatcherSdk;
   }
 
   function makeSdkOverHttpBoundary(
@@ -140,7 +140,10 @@ describe("fetchThreadPendingTodos", () => {
     };
     return {
       requestUrls,
-      sdk: createNodeBbSdk({ baseUrl: "http://bb.test", fetch: fetchMock }),
+      sdk: createNodePatcherSdk({
+        baseUrl: "http://bb.test",
+        fetch: fetchMock,
+      }),
     };
   }
 

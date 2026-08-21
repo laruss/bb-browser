@@ -119,7 +119,7 @@ describe("buildPluginApp", () => {
     // Every shared-runtime module resolves through the global runtime — the
     // production jsx-runtime included (the automatic JSX transform's import
     // must not survive as a bare specifier or bundle React's own copy).
-    expect(js).toContain("globalThis.__bbPluginRuntime");
+    expect(js).toContain("globalThis.__patcherPluginRuntime");
     for (const slot of [
       "react",
       "reactDomClient",
@@ -164,7 +164,7 @@ describe("buildPluginApp", () => {
       pluginId: "fixture",
       pluginVersion: "0.1.0",
       builtWith: {
-        bbVersion: TEST_BB_VERSION,
+        patcherVersion: TEST_BB_VERSION,
         pluginSdkVersion: PLUGIN_SDK_VERSION,
       },
     });
@@ -200,7 +200,7 @@ describe("buildPluginApp", () => {
       /must be loaded by the BB app/,
     );
 
-    (globalThis as { __bbPluginRuntime?: unknown }).__bbPluginRuntime = {
+    (globalThis as { __patcherPluginRuntime?: unknown }).__patcherPluginRuntime = {
       react: { useState: () => [0, () => {}] },
       reactDomClient: { createRoot: () => ({}) },
       jsxRuntime: { jsx: () => ({}), jsxs: () => ({}), Fragment: {} },
@@ -211,7 +211,7 @@ describe("buildPluginApp", () => {
       const mod = await import(/* @vite-ignore */ `${url}?with-runtime`);
       expect(mod.default).toBeDefined();
     } finally {
-      delete (globalThis as { __bbPluginRuntime?: unknown }).__bbPluginRuntime;
+      delete (globalThis as { __patcherPluginRuntime?: unknown }).__patcherPluginRuntime;
     }
   });
 
@@ -346,7 +346,7 @@ describe("buildPluginApp", () => {
     await scaffoldPlugin({
       targetDir,
       packageName: "bb-plugin-scaffolded",
-      bbVersion: "0.9.0",
+      patcherVersion: "0.9.0",
       app: true,
     });
     // The vendored starter components bundle real npm deps (`bb plugin new`
@@ -362,33 +362,33 @@ describe("buildPluginApp", () => {
     ]);
     const result = await buildPluginApp(targetDir, TEST_BB_VERSION, await testToolchain());
     const js = await readFile(result.jsPath, "utf8");
-    expect(js).toContain("globalThis.__bbPluginRuntime");
+    expect(js).toContain("globalThis.__patcherPluginRuntime");
     const css = await readFile(result.cssPath, "utf8");
     expect(css).toContain(".rounded-md");
 
     // The scaffold's default export must be a definePluginApp product the
     // host interpreter accepts (a stub runtime stands in for the BB app).
-    (globalThis as { __bbPluginRuntime?: unknown }).__bbPluginRuntime = {
+    (globalThis as { __patcherPluginRuntime?: unknown }).__patcherPluginRuntime = {
       // The vendored starter components bundle radix Slot, which calls
       // forwardRef at module scope — the stub must provide it.
       react: { forwardRef: (render: unknown) => render },
       jsxRuntime: { jsx: () => ({}), jsxs: () => ({}), Fragment: {} },
       pluginSdkApp: {
         definePluginApp: (setup: unknown) => ({
-          __bbPluginApp: true,
+          __patcherPluginApp: true,
           setup,
         }),
-        useBbContext: () => ({ projectId: null, threadId: null }),
+        usePatcherContext: () => ({ projectId: null, threadId: null }),
       },
     };
     try {
       const mod = (await import(
         /* @vite-ignore */ pathToFileURL(result.jsPath).href
-      )) as { default?: { __bbPluginApp?: unknown; setup?: unknown } };
-      expect(mod.default?.__bbPluginApp).toBe(true);
+      )) as { default?: { __patcherPluginApp?: unknown; setup?: unknown } };
+      expect(mod.default?.__patcherPluginApp).toBe(true);
       expect(typeof mod.default?.setup).toBe("function");
     } finally {
-      delete (globalThis as { __bbPluginRuntime?: unknown }).__bbPluginRuntime;
+      delete (globalThis as { __patcherPluginRuntime?: unknown }).__patcherPluginRuntime;
     }
   });
 });

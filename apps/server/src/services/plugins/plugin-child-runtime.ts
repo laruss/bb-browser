@@ -19,14 +19,14 @@
 import { createRequire } from "node:module";
 import { Hono } from "hono";
 import type { PluginPermission } from "@patcher/domain";
-import type { BbSdk } from "@patcher/sdk";
+import type { PatcherSdk } from "@patcher/sdk";
 import type {
   AppKeybindingOverrides,
   BrowserSearchEngine,
 } from "@patcher/domain";
 import type { PluginSettingDescriptors } from "@patcher/plugin-sdk";
 import type {
-  BbPluginApi,
+  PatcherPluginApi,
   PluginAgentToolExperimentalStatusLabels,
   PluginApiHandle,
   PluginCliCommandInfo,
@@ -189,7 +189,7 @@ export interface PluginRegistrationSnapshot {
 export const BOOTSTRAP_METHOD = "bootstrap";
 
 /** The plugin factory a server entry default-exports. */
-export type PluginFactory = (bb: BbPluginApi) => unknown;
+export type PluginFactory = (bb: PatcherPluginApi) => unknown;
 
 export interface PluginChildRuntimeOptions {
   port: PluginPort;
@@ -251,7 +251,7 @@ export function createPluginChildRuntime(
   let agentToolOwners: Record<string, string> = {};
   let loopbackBaseUrl: string | null = null;
   /** Dropped when the loopback URL changes, mirroring `pluginSdks.clear()`. */
-  let sdk: BbSdk | undefined;
+  let sdk: PatcherSdk | undefined;
 
   const channel = createPluginChannel<PluginHostCallPath, PluginCallbackKind>({
     port: options.port,
@@ -353,8 +353,8 @@ export function createPluginChildRuntime(
         if (loopbackBaseUrl === null) return undefined;
         // Built once, lazily: the SDK opens a websocket, and a plugin that
         // never touches bb.sdk should not have one.
-        const bbSdk = loadBbSdk();
-        sdk ??= bbSdk.createNodeBbSdk({
+        const patcherSdk = loadPatcherSdk();
+        sdk ??= patcherSdk.createNodePatcherSdk({
           baseUrl: loopbackBaseUrl,
           // The same two identity wrappers the in-process client gets, for the
           // same two reasons: the timeout fetch must not be dropped, and /ws
@@ -362,11 +362,11 @@ export function createPluginChildRuntime(
           fetch: createPluginApiFetch({
             pluginId: config.pluginId,
             key: config.apiKey,
-            fetch: bbSdk.createRequestTimeoutFetch({
-              timeoutMs: bbSdk.DEFAULT_BB_REQUEST_TIMEOUT_MS,
+            fetch: patcherSdk.createRequestTimeoutFetch({
+              timeoutMs: patcherSdk.DEFAULT_BB_REQUEST_TIMEOUT_MS,
             }),
           }),
-          websocket: bbSdk.createNodeWebsocketFactory({
+          websocket: patcherSdk.createNodeWebsocketFactory({
             headers: pluginApiHeaders({
               pluginId: config.pluginId,
               key: config.apiKey,
@@ -887,14 +887,14 @@ function snapshot(handle: PluginApiHandle): PluginRegistrationSnapshot {
  * `createRequire` resolves it from the workspace. Both branches load the same
  * module — only who resolves it differs.
  */
-let bbSdkModule: typeof import("@patcher/sdk") | undefined;
+let patcherSdkModule: typeof import("@patcher/sdk") | undefined;
 
-function loadBbSdk(): typeof import("@patcher/sdk") {
-  bbSdkModule ??=
+function loadPatcherSdk(): typeof import("@patcher/sdk") {
+  patcherSdkModule ??=
     typeof require === "function"
       ? (require("@patcher/sdk") as typeof import("@patcher/sdk"))
       : (createRequire(import.meta.url)(
           "@patcher/sdk",
         ) as typeof import("@patcher/sdk"));
-  return bbSdkModule;
+  return patcherSdkModule;
 }

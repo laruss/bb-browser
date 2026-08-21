@@ -7,23 +7,23 @@ import { HOST_DAEMON_PROTOCOL_VERSION } from "@patcher/host-daemon-contract";
 
 const execFileAsync = promisify(execFile);
 
-export interface BbAppArtifactService {
+export interface PatcherAppArtifactService {
   getTarballPath(): Promise<string>;
   getVersion(): Promise<string>;
 }
 
-export interface BbAppArtifactCommandRunner {
+export interface PatcherAppArtifactCommandRunner {
   (command: string, args: readonly string[], cwd: string): Promise<string>;
 }
 
-export interface CreateBbAppArtifactServiceOptions {
+export interface CreatePatcherAppArtifactServiceOptions {
   dataDir: string;
-  commandRunner?: BbAppArtifactCommandRunner;
+  commandRunner?: PatcherAppArtifactCommandRunner;
   protocolVersion?: number;
   serverEntryUrl?: string;
 }
 
-interface BbAppPackageJson {
+interface PatcherAppPackageJson {
   name: string;
   version: string;
 }
@@ -40,9 +40,9 @@ async function defaultCommandRunner(
   return result.stdout;
 }
 
-async function readBbAppPackageJson(
+async function readPatcherAppPackageJson(
   packageRoot: string,
-): Promise<BbAppPackageJson> {
+): Promise<PatcherAppPackageJson> {
   const parsed: unknown = JSON.parse(
     await readFile(join(packageRoot, "package.json"), "utf8"),
   );
@@ -59,9 +59,9 @@ async function readBbAppPackageJson(
   return { name: parsed.name, version: parsed.version };
 }
 
-export interface ResolvedBbAppPackage {
+export interface ResolvedPatcherAppPackage {
   layout: "packaged" | "repo";
-  packageJson: BbAppPackageJson;
+  packageJson: PatcherAppPackageJson;
   root: string;
 }
 
@@ -73,9 +73,9 @@ export interface ResolvedBbAppPackage {
  * entry. The layout also decides the build strategy — a repo checkout must
  * build bb-app before packing, a packaged install just packs itself.
  */
-export async function resolveBbAppPackage(
+export async function resolvePatcherAppPackage(
   serverEntryUrl: string,
-): Promise<ResolvedBbAppPackage> {
+): Promise<ResolvedPatcherAppPackage> {
   const serverEntryDir = dirname(fileURLToPath(serverEntryUrl));
   const candidates: readonly { layout: "packaged" | "repo"; root: string }[] = [
     { layout: "packaged", root: resolve(serverEntryDir, "../..") },
@@ -86,7 +86,7 @@ export async function resolveBbAppPackage(
   ];
   for (const candidate of candidates) {
     try {
-      const packageJson = await readBbAppPackageJson(candidate.root);
+      const packageJson = await readPatcherAppPackageJson(candidate.root);
       return { ...candidate, packageJson };
     } catch {
       // Try the next layout.
@@ -103,19 +103,19 @@ function safeVersionFilePart(version: string): string {
   return version.replace(/[^a-zA-Z0-9._-]/gu, "_");
 }
 
-export function createBbAppArtifactService(
-  options: CreateBbAppArtifactServiceOptions,
-): BbAppArtifactService {
+export function createPatcherAppArtifactService(
+  options: CreatePatcherAppArtifactServiceOptions,
+): PatcherAppArtifactService {
   const commandRunner = options.commandRunner ?? defaultCommandRunner;
   const serverEntryUrl = options.serverEntryUrl ?? import.meta.url;
   const cacheDir = join(options.dataDir, "install-cache");
   const protocolVersion =
     options.protocolVersion ?? HOST_DAEMON_PROTOCOL_VERSION;
-  let resolvedPackagePromise: Promise<ResolvedBbAppPackage> | undefined;
+  let resolvedPackagePromise: Promise<ResolvedPatcherAppPackage> | undefined;
   let artifactPromise: Promise<string> | undefined;
 
-  function getResolvedPackage(): Promise<ResolvedBbAppPackage> {
-    resolvedPackagePromise ??= resolveBbAppPackage(serverEntryUrl);
+  function getResolvedPackage(): Promise<ResolvedPatcherAppPackage> {
+    resolvedPackagePromise ??= resolvePatcherAppPackage(serverEntryUrl);
     return resolvedPackagePromise;
   }
 

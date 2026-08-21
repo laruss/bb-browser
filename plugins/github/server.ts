@@ -8,7 +8,7 @@
 // mutations (comment, create, close/reopen, assign, label) and detail views go
 // straight through `gh`.
 import { execFile } from "node:child_process";
-import { defineRpcContract, type BbPluginApi } from "@patcher/plugin-sdk";
+import { defineRpcContract, type PatcherPluginApi } from "@patcher/plugin-sdk";
 import { z } from "zod";
 
 const SYNC_INTERVAL_MS = 5 * 60_000;
@@ -295,7 +295,7 @@ interface ThreadLink {
   createdAt: string;
 }
 
-interface BbProjectSummary {
+interface PatcherProjectSummary {
   id: string;
   sources?: Array<{ type: string; path: string }>;
 }
@@ -452,7 +452,7 @@ export async function fetchRepoItems(
   ];
 }
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(bb: PatcherPluginApi) {
   const settings = bb.settings.define({
     extraRepos: {
       type: "string",
@@ -518,7 +518,7 @@ export default async function plugin(bb: BbPluginApi) {
     }
     const byRepo = new Map<string, RepoInfo>();
     try {
-      const projects = (await bb.sdk.projects.list()) as unknown as BbProjectSummary[];
+      const projects = (await bb.sdk.projects.list()) as unknown as PatcherProjectSummary[];
       for (const project of projects) {
         for (const source of project.sources ?? []) {
           if (source.type !== "local_path") continue;

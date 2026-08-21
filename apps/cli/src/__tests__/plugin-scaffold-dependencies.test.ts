@@ -85,7 +85,7 @@ async function scaffoldWithDependencies(args: {
   await scaffoldPlugin({
     targetDir,
     packageName,
-    bbVersion: "0.9.0",
+    patcherVersion: "0.9.0",
     app: args.app,
   });
   const manifest: { dependencies?: Record<string, string> } = JSON.parse(

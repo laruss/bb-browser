@@ -5,7 +5,7 @@ import {
   resolveContextSnapshot,
   type ContextSnapshot,
 } from "../context-env.js";
-import { cliFetch, createCliBbSdk } from "../client.js";
+import { cliFetch, createCliPatcherSdk } from "../client.js";
 import { outputJson } from "./helpers.js";
 import {
   type ThreadEnvironmentInfo,
@@ -80,7 +80,7 @@ export function registerStatusCommand(
 
         // Try to fetch enriched data from the server
         if (context.projectId || context.threadId) {
-          const sdk = createCliBbSdk(getUrl());
+          const sdk = createCliPatcherSdk(getUrl());
           const status = await sdk.status.get({
             projectId: context.projectId,
             threadId: context.threadId,

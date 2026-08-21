@@ -314,8 +314,8 @@ same plugin's thread-panel actions). Hooks:
 useRpc, useRealtime, useRealtimeConnectionState (the shared realtime socket's
 connecting/connected/reconnecting lifecycle; reconcile on later connected
 transitions, not the initial connection), useSettings (secrets excluded),
-useBbContext,
-useBbNavigate, useComposer (read/replace/update/clear scoped composer text,
+usePatcherContext,
+usePatcherNavigate, useComposer (read/replace/update/clear scoped composer text,
 apply a class-based text effect, lock input, quote selections, insert mention
 pills, and focus the composer), and useComposerView (reactive bound scope,
 layout, draft, and run state). Plain-text edits preserve attachments and
@@ -394,8 +394,8 @@ the plugin to pick up branding changes.
 
 The backend entry default-exports a factory receiving the full plugin API:
 
-  import type { BbPluginApi } from "@patcher/plugin-sdk";
-  export default async function plugin(bb: BbPluginApi) { ... }
+  import type { PatcherPluginApi } from "@patcher/plugin-sdk";
+  export default async function plugin(bb: PatcherPluginApi) { ... }
 
 The import is type-only and erased at load; the scaffold ships the full API
 as bundled .d.ts in types/ (tsconfig maps @patcher/plugin-sdk to them), so

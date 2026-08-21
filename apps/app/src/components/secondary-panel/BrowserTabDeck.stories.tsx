@@ -1,6 +1,6 @@
 import { useRef, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import type { BbDesktopBrowserState } from "@patcher/desktop-contract";
+import type { PatcherDesktopBrowserState } from "@patcher/desktop-contract";
 import type { BrowserHistoryEntry } from "@/lib/browser-history";
 import { browserHistoryQueryKey } from "@/hooks/queries/query-keys";
 import type { BrowserFixedPanelTab } from "@/lib/fixed-panel-tabs-state";
@@ -35,7 +35,7 @@ const LOADING_TAB: BrowserFixedPanelTab = {
   title: "Example Docs",
   url: "https://example.com/docs",
 };
-const LOADING_BROWSER_STATE: BbDesktopBrowserState = {
+const LOADING_BROWSER_STATE: PatcherDesktopBrowserState = {
   tabId: LOADING_TAB.id,
   url: LOADING_TAB.url,
   title: LOADING_TAB.title,

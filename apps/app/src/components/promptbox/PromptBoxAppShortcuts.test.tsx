@@ -55,7 +55,7 @@ vi.mock("@/hooks/queries/system-queries", () => ({
 }));
 
 vi.mock("@/lib/bb-desktop", () => ({
-  getBbDesktopInfo: () => null,
+  getPatcherDesktopInfo: () => null,
 }));
 
 vi.mock("@/lib/plugin-sdk-hooks", async (importOriginal) => ({

@@ -1,5 +1,5 @@
-import type { BbPluginApi } from "@patcher/plugin-sdk";
+import type { PatcherPluginApi } from "@patcher/plugin-sdk";
 
-export default function contentScriptExample(bb: BbPluginApi) {
+export default function contentScriptExample(bb: PatcherPluginApi) {
   bb.log.info("Content script example loaded");
 }

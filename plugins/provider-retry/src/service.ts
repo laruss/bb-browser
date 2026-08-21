@@ -1,8 +1,8 @@
-import type { BbPluginApi } from "@patcher/plugin-sdk";
+import type { PatcherPluginApi } from "@patcher/plugin-sdk";
 import type { ProviderRetryView } from "./contract.js";
 
 type RecoveryStatus = Awaited<
-  ReturnType<BbPluginApi["sdk"]["threads"]["rateLimitRecovery"]>
+  ReturnType<PatcherPluginApi["sdk"]["threads"]["rateLimitRecovery"]>
 >;
 type RecoveryCandidate = NonNullable<RecoveryStatus["candidate"]>;
 
@@ -64,7 +64,7 @@ export class ProviderRetryService {
   private disposed = false;
 
   constructor(
-    private readonly bb: BbPluginApi,
+    private readonly bb: PatcherPluginApi,
     private readonly sources: ProviderRetrySources = {
       now: () => Date.now(),
       random: () => Math.random(),

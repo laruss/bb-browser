@@ -1,6 +1,6 @@
 import {
   resolveRuntimeMode,
-  type BbRuntimeMode,
+  type PatcherRuntimeMode,
 } from "@patcher/config/runtime";
 
 // Matches @patcher/config runtime mode resolution: anything other than "production"
@@ -8,12 +8,12 @@ import {
 // load-bearing because they derive the same data dir, ports, and server URL.
 export function resolveScriptMode(
   nodeEnv: string | undefined = process.env.NODE_ENV,
-): BbRuntimeMode {
+): PatcherRuntimeMode {
   return resolveRuntimeMode(nodeEnv);
 }
 
 export function resolveNodeEnvironment(
-  mode: BbRuntimeMode,
+  mode: PatcherRuntimeMode,
 ): "development" | "production" {
   return mode === "dev" ? "development" : "production";
 }

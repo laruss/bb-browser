@@ -6,7 +6,7 @@ import {
   type ReactNode,
 } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import type { BbDesktopInfo } from "@patcher/desktop-contract";
+import type { PatcherDesktopInfo } from "@patcher/desktop-contract";
 import type { SystemVersionResponse } from "@patcher/server-contract";
 import { Button, type ButtonProps } from "@patcher/shared-ui/button";
 import { Icon } from "@patcher/shared-ui/icon";
@@ -222,9 +222,9 @@ function RowActions({ children }: { children: ReactNode }) {
   );
 }
 
-export interface BbAppUpdateRowsProps {
+export interface PatcherAppUpdateRowsProps {
   systemVersion: SystemVersionResponse | undefined;
-  desktopInfo: BbDesktopInfo | null;
+  desktopInfo: PatcherDesktopInfo | null;
   isDesktop: boolean;
   onRelaunchDesktop: (() => void) | null;
   onRetryDesktop: (() => void) | null;
@@ -235,13 +235,13 @@ export interface BbAppUpdateRowsProps {
  * relaunch; on web/npm installs the server can't replace itself, so the row
  * surfaces the upgrade command instead of a fake update button.
  */
-export function BbAppUpdateRows({
+export function PatcherAppUpdateRows({
   systemVersion,
   desktopInfo,
   isDesktop,
   onRelaunchDesktop,
   onRetryDesktop,
-}: BbAppUpdateRowsProps) {
+}: PatcherAppUpdateRowsProps) {
   if (isDesktop && desktopInfo === null) {
     return (
       <UpdatesRow>
@@ -787,7 +787,7 @@ export function UpdatesSettingsSection() {
         }
       >
         <UpdatesRowList>
-          <BbAppUpdateRows
+          <PatcherAppUpdateRows
             systemVersion={inventory.systemVersion}
             desktopInfo={desktopInfo}
             isDesktop={isDesktop}

@@ -8,16 +8,16 @@ import {
   type BrowserTabSnapshot,
 } from "@patcher/domain";
 import type {
-  BbDesktopBrowserApi,
-  BbDesktopBrowserCaptureFullPageResult,
-  BbDesktopBrowserControlResult,
-  BbDesktopBrowserRecordResult,
-  BbDesktopBrowserInteractResult,
-  BbDesktopBrowserObserveResult,
-  BbDesktopBrowserPageReadResult,
-  BbDesktopBrowserSnapshotResult,
-  BbDesktopBrowserState,
-  BbDesktopBrowserStorageResult,
+  PatcherDesktopBrowserApi,
+  PatcherDesktopBrowserCaptureFullPageResult,
+  PatcherDesktopBrowserControlResult,
+  PatcherDesktopBrowserRecordResult,
+  PatcherDesktopBrowserInteractResult,
+  PatcherDesktopBrowserObserveResult,
+  PatcherDesktopBrowserPageReadResult,
+  PatcherDesktopBrowserSnapshotResult,
+  PatcherDesktopBrowserState,
+  PatcherDesktopBrowserStorageResult,
 } from "@patcher/desktop-contract";
 import type { BrowserFixedPanelTab } from "../fixed-panel-tabs-state";
 import { normalizeBrowserUrl } from "../browser-url";
@@ -63,8 +63,8 @@ export interface BrowserCommandDeps {
     update: (current: BrowserSurfaceTabsState) => BrowserSurfaceTabsState,
   ) => void;
   /** Null on the web build, where there is no browser at all. */
-  desktopBrowser: BbDesktopBrowserApi | null;
-  getLiveState: (tabId: string) => BbDesktopBrowserState | null;
+  desktopBrowser: PatcherDesktopBrowserApi | null;
+  getLiveState: (tabId: string) => PatcherDesktopBrowserState | null;
   waitForSettled: (tabId: string) => Promise<{ timedOut: boolean }>;
   /** Seam so tests get predictable tab ids. */
   createTab?: (url: string) => BrowserFixedPanelTab;
@@ -77,7 +77,7 @@ export interface BrowserCommandDeps {
   recordMuted?: (args: { muted: boolean; tabId: string }) => void;
   /** Called when a tab is closed, so its native view is torn down too. */
   destroyView?: (args: {
-    desktopBrowser: BbDesktopBrowserApi;
+    desktopBrowser: PatcherDesktopBrowserApi;
     tabId: string;
   }) => void;
   /**
@@ -118,7 +118,7 @@ function success(value: BrowserCommandValue): BrowserCommandOutcome {
 function toSnapshot(
   tab: BrowserFixedPanelTab,
   state: BrowserSurfaceTabsState,
-  live: BbDesktopBrowserState | null,
+  live: PatcherDesktopBrowserState | null,
 ): BrowserTabSnapshot {
   return {
     tabId: tab.id,
@@ -195,7 +195,7 @@ const NOT_LIVE_HINT =
 
 /** Maps the shell's typed refusals onto the codes the agent tools speak. */
 function pageReadFailure(
-  result: Extract<BbDesktopBrowserPageReadResult, { ok: false }>,
+  result: Extract<PatcherDesktopBrowserPageReadResult, { ok: false }>,
   tabId: string,
 ): BrowserCommandOutcome {
   switch (result.reason) {
@@ -224,7 +224,7 @@ function pageReadFailure(
 
 /** Maps the shell's snapshot refusals onto the codes the agent tools speak. */
 function snapshotFailure(
-  result: Extract<BbDesktopBrowserSnapshotResult, { ok: false }>,
+  result: Extract<PatcherDesktopBrowserSnapshotResult, { ok: false }>,
   tabId: string,
 ): BrowserCommandOutcome {
   switch (result.reason) {
@@ -267,7 +267,7 @@ function snapshotFailure(
 
 /** Maps the shell's interaction refusals onto the codes the agent tools speak. */
 function interactFailure(
-  result: Extract<BbDesktopBrowserInteractResult, { ok: false }>,
+  result: Extract<PatcherDesktopBrowserInteractResult, { ok: false }>,
   tabId: string,
 ): BrowserCommandOutcome {
   const detail = result.message === undefined ? "" : ` ${result.message}`;
@@ -318,7 +318,8 @@ function interactFailure(
  */
 function observeFailure(
   result: Extract<
-    BbDesktopBrowserObserveResult | BbDesktopBrowserCaptureFullPageResult,
+    | PatcherDesktopBrowserObserveResult
+    | PatcherDesktopBrowserCaptureFullPageResult,
     { ok: false }
   >,
   tabId: string,
@@ -355,7 +356,7 @@ function observeFailure(
 
 /** Maps the shell's storage refusals onto the codes the agent tools speak. */
 function storageFailure(
-  result: Extract<BbDesktopBrowserStorageResult, { ok: false }>,
+  result: Extract<PatcherDesktopBrowserStorageResult, { ok: false }>,
   tabId: string,
 ): BrowserCommandOutcome {
   const detail = result.message === undefined ? "" : ` ${result.message}`;
@@ -385,7 +386,7 @@ function storageFailure(
 
 /** Maps the shell's direct-control refusals onto the agent tools' codes. */
 function controlFailure(
-  result: Extract<BbDesktopBrowserControlResult, { ok: false }>,
+  result: Extract<PatcherDesktopBrowserControlResult, { ok: false }>,
   tabId: string,
 ): BrowserCommandOutcome {
   const detail = result.message === undefined ? "" : ` ${result.message}`;
@@ -431,7 +432,7 @@ function controlFailure(
 
 /** Maps the shell's filming refusals onto the codes the agent tools speak. */
 function recordFailure(
-  result: Extract<BbDesktopBrowserRecordResult, { ok: false }>,
+  result: Extract<PatcherDesktopBrowserRecordResult, { ok: false }>,
   tabId: string,
 ): BrowserCommandOutcome {
   const detail = result.message === undefined ? "" : ` ${result.message}`;
@@ -550,9 +551,12 @@ async function recordTraceStep(
 
 async function readPage(
   tabId: string,
-  desktopBrowser: BbDesktopBrowserApi,
+  desktopBrowser: PatcherDesktopBrowserApi,
 ): Promise<
-  | { ok: true; content: Extract<BbDesktopBrowserPageReadResult, { ok: true }> }
+  | {
+      ok: true;
+      content: Extract<PatcherDesktopBrowserPageReadResult, { ok: true }>;
+    }
   | { ok: false; outcome: BrowserCommandOutcome }
 > {
   // Feature-detected: an older desktop shell has no read-page channel at all.
@@ -866,7 +870,7 @@ async function runBrowserCommand(
       }
       const depth =
         command.maxDepth === null ? {} : { maxDepth: command.maxDepth };
-      let result: BbDesktopBrowserSnapshotResult;
+      let result: PatcherDesktopBrowserSnapshotResult;
       if (command.selector === null) {
         result = await desktopBrowser.snapshot({ tabId: tab.id, ...depth });
       } else {

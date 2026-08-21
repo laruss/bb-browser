@@ -38,10 +38,10 @@ const FIXTURE_PACKAGE_JSON = JSON.stringify(
 // be fully erased (no runtime `@patcher/plugin-sdk` import in the bundle).
 const FIXTURE_LIB_TS = `export const greeting = "PREBUILT_LIB_MARKER";\n`;
 const FIXTURE_SERVER_TS = `
-import type { BbPluginApi } from "@patcher/plugin-sdk";
+import type { PatcherPluginApi } from "@patcher/plugin-sdk";
 import { greeting } from "./lib.ts";
 
-export default function plugin(bb: BbPluginApi): void {
+export default function plugin(bb: PatcherPluginApi): void {
   bb.log.info(greeting);
 }
 `;
@@ -88,7 +88,7 @@ describe("buildPluginServer", () => {
       pluginId: "server-fixture",
       pluginVersion: "0.1.0",
       builtWith: {
-        bbVersion: TEST_BB_VERSION,
+        patcherVersion: TEST_BB_VERSION,
         pluginSdkVersion: PLUGIN_SDK_VERSION,
       },
     });

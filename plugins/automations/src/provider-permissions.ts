@@ -1,9 +1,9 @@
-import type { BbPluginApi } from "@patcher/plugin-sdk";
+import type { PatcherPluginApi } from "@patcher/plugin-sdk";
 import type { AgentEnvironment, PermissionMode } from "./rpc-types.js";
 
 type ProviderPermissionApi = {
   sdk: {
-    providers: Pick<BbPluginApi["sdk"]["providers"], "list">;
+    providers: Pick<PatcherPluginApi["sdk"]["providers"], "list">;
   };
 };
 

@@ -23,7 +23,7 @@ import { readdir, readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
-import type { BbPluginApi } from "@patcher/plugin-sdk";
+import type { PatcherPluginApi } from "@patcher/plugin-sdk";
 
 const docsDir = join(dirname(fileURLToPath(import.meta.url)), "docs");
 
@@ -41,7 +41,7 @@ interface LastSearch {
   at: number;
 }
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(bb: PatcherPluginApi) {
   const settings = bb.settings.define({
     caseSensitive: {
       type: "boolean",

@@ -7,7 +7,7 @@
 import { randomBytes } from "node:crypto";
 import {
   defineRpcContract,
-  type BbPluginApi,
+  type PatcherPluginApi,
   type PluginCliContext,
 } from "@patcher/plugin-sdk";
 import { z } from "zod";
@@ -29,7 +29,7 @@ const MEMORY_KINDS = [
 type MemoryKind = (typeof MEMORY_KINDS)[number];
 type MemoryScope = "global" | "project";
 type ReadScope = MemoryScope | "all";
-type PluginDatabase = ReturnType<BbPluginApi["storage"]["database"]>;
+type PluginDatabase = ReturnType<PatcherPluginApi["storage"]["database"]>;
 
 interface MemoryRecord {
   id: string;
@@ -871,7 +871,7 @@ function parseRpcTags(record: Record<string, unknown>): string[] {
   return value;
 }
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(bb: PatcherPluginApi) {
   const db = bb.storage.database();
   bb.storage.migrate(db, [
     `CREATE TABLE IF NOT EXISTS memories (

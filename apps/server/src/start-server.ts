@@ -14,7 +14,7 @@ import { pluginProcessPolicy } from "./services/plugins/plugin-placement.js";
 import { resolveBuiltinSkillsRootPath } from "./services/skills/builtin-skills-copy.js";
 import { SkillTreeRegistry } from "./services/skills/injected-skills.js";
 import { createAppVersionService } from "./services/system/app-version.js";
-import { createBbAppManagedConfigReloader } from "./services/system/bb-app-managed-config.js";
+import { createPatcherAppManagedConfigReloader } from "./services/system/bb-app-managed-config.js";
 import { startEventLoopStallMonitor } from "./services/system/event-loop-stall-monitor.js";
 import {
   runPeriodicSweeps,
@@ -98,7 +98,7 @@ export async function runServer(serverConfig: ServerConfig): Promise<void> {
     hub,
     logger,
   });
-  const bbAppManagedConfig = await createBbAppManagedConfigReloader({
+  const patcherAppManagedConfig = await createPatcherAppManagedConfigReloader({
     config: runtimeConfig,
     hub,
     logger,
@@ -142,7 +142,7 @@ export async function runServer(serverConfig: ServerConfig): Promise<void> {
   const { app, closeWebSockets, injectWebSocket, pluginService } = createApp(
     {
       appVersion,
-      bbAppManagedConfig,
+      patcherAppManagedConfig,
       config: runtimeConfig,
       db,
       hub,

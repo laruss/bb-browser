@@ -1,4 +1,4 @@
-import type { BbDesktopDefaultBrowserStatus } from "@patcher/desktop-contract";
+import type { PatcherDesktopDefaultBrowserStatus } from "@patcher/desktop-contract";
 
 // Being the user's browser is a Launch Services registration, not a capability:
 // macOS builds its "Default web browser" list from the bundles that declare
@@ -39,7 +39,7 @@ export interface DefaultBrowserEnvironment {
 
 export function readDefaultBrowserStatus(
   environment: DefaultBrowserEnvironment,
-): BbDesktopDefaultBrowserStatus {
+): PatcherDesktopDefaultBrowserStatus {
   const isDefault = DEFAULT_BROWSER_PROTOCOLS.every((protocol) =>
     environment.isDefaultProtocolClient(protocol),
   );
@@ -60,7 +60,7 @@ export function readDefaultBrowserStatus(
  */
 export function requestDefaultBrowser(
   environment: DefaultBrowserEnvironment,
-): BbDesktopDefaultBrowserStatus {
+): PatcherDesktopDefaultBrowserStatus {
   const before = readDefaultBrowserStatus(environment);
   if (!before.canRequest) {
     return before;

@@ -14,7 +14,7 @@ import type {
   PluginUpdateCheckEntry as PluginUpdateResult,
 } from "@patcher/server-contract";
 import { installedPluginSchema } from "@patcher/server-contract";
-import { BbHttpError } from "@patcher/sdk";
+import { PatcherHttpError } from "@patcher/sdk";
 import {
   parseDataDirEnvValue,
   resolveProdDataDir,
@@ -24,7 +24,7 @@ import {
   syncPluginTypes,
 } from "@patcher/templates/plugin-scaffold";
 import { action } from "../action.js";
-import { cliFetch, createCliBbSdk } from "../client.js";
+import { cliFetch, createCliPatcherSdk } from "../client.js";
 import {
   buildPluginApp,
   buildPluginServer,
@@ -34,7 +34,7 @@ import {
   type PluginBuildToolchain,
 } from "@patcher/plugin-build";
 import { runPluginCliCommand } from "../plugin-cli-proxy.js";
-import { resolveBbCliVersion } from "../version.js";
+import { resolvePatcherCliVersion } from "../version.js";
 
 import { outputJson, type JsonOutputOptions } from "./helpers.js";
 import { renderBorderlessTable } from "../table.js";
@@ -106,7 +106,7 @@ async function searchCatalog(
   baseUrl: string,
   query: string,
 ): Promise<PluginCatalogSearchResult[]> {
-  return createCliBbSdk(baseUrl).plugins.catalog.search({ query });
+  return createCliPatcherSdk(baseUrl).plugins.catalog.search({ query });
 }
 
 const pluginSettingDescriptorSchema = z.object({
@@ -526,7 +526,7 @@ function exitWithError(result: { error?: string }): never {
 }
 
 function sdkErrorMessage(error: unknown): string {
-  if (error instanceof BbHttpError) {
+  if (error instanceof PatcherHttpError) {
     return error.message.replace(/^HTTP \d+: /u, "");
   }
   return error instanceof Error ? error.message : String(error);
@@ -636,7 +636,7 @@ export function registerPluginCommands(
     .option("--json", "Output JSON")
     .action(
       action(async (opts: JsonOutputOptions) => {
-        const result = await createCliBbSdk(getUrl()).plugins.list();
+        const result = await createCliPatcherSdk(getUrl()).plugins.list();
         if (opts.json) {
           outputJson(opts, result);
           return;
@@ -657,7 +657,7 @@ export function registerPluginCommands(
     .option("--json", "Output JSON")
     .action(
       action(async (id: string, opts: JsonOutputOptions) => {
-        const source = await createCliBbSdk(getUrl()).plugins.getSource({
+        const source = await createCliPatcherSdk(getUrl()).plugins.getSource({
           pluginId: id,
         });
         if (opts.json) {
@@ -780,10 +780,10 @@ export function registerPluginCommands(
           }
           const plugin =
             intent.kind === "source"
-              ? await createCliBbSdk(getUrl()).plugins.install({
+              ? await createCliPatcherSdk(getUrl()).plugins.install({
                   source: intent.source,
                 })
-              : await createCliBbSdk(getUrl()).plugins.catalog.install({
+              : await createCliPatcherSdk(getUrl()).plugins.catalog.install({
                   entryId: intent.entry.entryId,
                 });
           const result = { ok: true as const, plugin };
@@ -803,7 +803,8 @@ export function registerPluginCommands(
     .option("--json", "Output the raw update results as JSON")
     .action(
       action(async (opts: JsonOutputOptions) => {
-        const results = await createCliBbSdk(getUrl()).plugins.checkUpdates();
+        const results =
+          await createCliPatcherSdk(getUrl()).plugins.checkUpdates();
         if (opts.json) {
           outputJson(opts, results);
           return;
@@ -852,7 +853,7 @@ export function registerPluginCommands(
             console.error("Specify exactly one plugin id or --all.");
             process.exit(1);
           }
-          const sdk = createCliBbSdk(getUrl());
+          const sdk = createCliPatcherSdk(getUrl());
           const results = await sdk.plugins.checkUpdates(
             id === undefined ? {} : { pluginId: id },
           );
@@ -944,7 +945,7 @@ export function registerPluginCommands(
         await scaffoldPlugin({
           targetDir,
           packageName,
-          bbVersion: resolveBbCliVersion(),
+          patcherVersion: resolvePatcherCliVersion(),
           app: opts.app ?? false,
         });
         console.log(`Created ${directoryName}/ (${packageName}).`);
@@ -1012,7 +1013,7 @@ export function registerPluginCommands(
     .action(
       action(async (path: string | undefined) => {
         const rootDir = resolve(process.cwd(), path ?? ".");
-        const bbVersion = resolveBbCliVersion();
+        const patcherVersion = resolvePatcherCliVersion();
         // Read the manifest before building: buildPluginServer errors legibly
         // on a missing/invalid bb.server, so a null manifest here is only the
         // unreachable case where that read also fails.
@@ -1026,10 +1027,14 @@ export function registerPluginCommands(
           await refreshPluginTypes(rootDir, hasApp);
         }
         const toolchain = await cliBuildToolchain();
-        const server = await buildPluginServer(rootDir, bbVersion, toolchain);
+        const server = await buildPluginServer(
+          rootDir,
+          patcherVersion,
+          toolchain,
+        );
         const files = [server.jsPath, server.mapPath, server.metaPath];
         if (hasApp) {
-          const app = await buildPluginApp(rootDir, bbVersion, toolchain);
+          const app = await buildPluginApp(rootDir, patcherVersion, toolchain);
           files.push(app.jsPath, app.cssPath, app.metaPath);
         }
         for (const file of files) {
@@ -1067,7 +1072,7 @@ export function registerPluginCommands(
         // against the server's installed rows (realpath tolerates symlinked
         // checkouts).
         const realDir = await realpath(rootDir).catch(() => rootDir);
-        const list = await createCliBbSdk(getUrl()).plugins.list();
+        const list = await createCliPatcherSdk(getUrl()).plugins.list();
         const entry = list.plugins.find(
           (candidate) =>
             candidate.rootDir === rootDir || candidate.rootDir === realDir,
@@ -1084,7 +1089,7 @@ export function registerPluginCommands(
           buildApp: async () => {
             await buildPluginApp(
               rootDir,
-              resolveBbCliVersion(),
+              resolvePatcherCliVersion(),
               await cliBuildToolchain(),
             );
           },

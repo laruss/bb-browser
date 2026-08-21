@@ -10,9 +10,9 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
-import type { BbDesktopBrowserStateHandler } from "@patcher/desktop-contract";
+import type { PatcherDesktopBrowserStateHandler } from "@patcher/desktop-contract";
 import {
-  createBbDesktopApi,
+  createPatcherDesktopApi,
   createNoopDesktopBrowserApi,
 } from "@/test/bb-desktop-test-utils";
 import { createQueryClientTestHarness } from "@/test/queryClientTestHarness";
@@ -39,7 +39,7 @@ function renderSurface(
   }: { appScreen?: ReactNode; closeWindow?: () => void } = {},
 ) {
   window.bbDesktop = {
-    ...createBbDesktopApi(desktopInfo, browserApi),
+    ...createPatcherDesktopApi(desktopInfo, browserApi),
     // Absent by default, which is a shell older than the call and the web
     // build — both of which must keep the older behaviour.
     ...(closeWindow === undefined ? {} : { closeWindow }),
@@ -156,7 +156,7 @@ describe("BrowserSurfaceView", () => {
     const attach = vi.fn();
     const detach = vi.fn();
     const setVisible = vi.fn();
-    const stateListeners: BbDesktopBrowserStateHandler[] = [];
+    const stateListeners: PatcherDesktopBrowserStateHandler[] = [];
     const { setAppScreen } = renderSurface({
       ...createNoopDesktopBrowserApi(),
       attach,
@@ -242,7 +242,7 @@ describe("BrowserSurfaceView", () => {
 
   // The fallback, and what the web build always gets: with no shell to ask,
   // closing the last tab must leave the new-tab screen rather than an empty
-  // surface. `createBbDesktopApi` has no `closeWindow`, which is the shape of a
+  // surface. `createPatcherDesktopApi` has no `closeWindow`, which is the shape of a
   // shell that predates it.
   it("reopens an empty tab after the last one closes, with no shell to close", () => {
     renderSurface();

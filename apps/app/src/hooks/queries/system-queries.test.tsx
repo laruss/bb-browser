@@ -27,7 +27,7 @@ import {
 } from "./system-queries";
 
 vi.mock("@/lib/sdk", () => ({
-  BbHttpError: class BbHttpError extends Error {},
+  PatcherHttpError: class PatcherHttpError extends Error {},
   sdk: {
     hosts: { providerCliStatus: vi.fn() },
     system: {

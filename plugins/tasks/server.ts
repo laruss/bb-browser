@@ -1,4 +1,4 @@
-import { defineRpcContract, type BbPluginApi } from "@patcher/plugin-sdk";
+import { defineRpcContract, type PatcherPluginApi } from "@patcher/plugin-sdk";
 import { z } from "zod";
 
 import { createStore, registerTasksApi } from "./api";
@@ -22,7 +22,7 @@ function statusPayload() {
   return { name: TASKS_PLUGIN_NAME, version: TASKS_PLUGIN_VERSION };
 }
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(bb: PatcherPluginApi) {
   bb.log.info(`${TASKS_PLUGIN_NAME} ${TASKS_PLUGIN_VERSION} loaded`);
 
   const store = createStore(bb);

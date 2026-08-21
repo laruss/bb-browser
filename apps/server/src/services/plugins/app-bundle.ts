@@ -12,7 +12,7 @@ export interface PluginArtifactMeta {
   pluginId?: string;
   pluginVersion?: string;
   builtWith?: {
-    bbVersion: string;
+    patcherVersion: string;
     pluginSdkVersion: string;
   };
 }
@@ -227,15 +227,15 @@ export function parsePluginArtifactMeta(
   }
   const builtWith = Object.fromEntries(Object.entries(meta.builtWith));
   if (
-    typeof builtWith.bbVersion !== "string" ||
-    builtWith.bbVersion.length === 0 ||
+    typeof builtWith.patcherVersion !== "string" ||
+    builtWith.patcherVersion.length === 0 ||
     typeof builtWith.pluginSdkVersion !== "string" ||
     semver.valid(builtWith.pluginSdkVersion) === null
   ) {
     return {
       meta: null,
       error:
-        "builtWith.bbVersion must be non-empty and builtWith.pluginSdkVersion must be a valid semver",
+        "builtWith.patcherVersion must be non-empty and builtWith.pluginSdkVersion must be a valid semver",
     };
   }
   if (builtWith.pluginSdkVersion !== meta.sdkVersion) {
@@ -252,7 +252,7 @@ export function parsePluginArtifactMeta(
       pluginId: meta.pluginId,
       pluginVersion: meta.pluginVersion,
       builtWith: {
-        bbVersion: builtWith.bbVersion,
+        patcherVersion: builtWith.patcherVersion,
         pluginSdkVersion: builtWith.pluginSdkVersion,
       },
     },

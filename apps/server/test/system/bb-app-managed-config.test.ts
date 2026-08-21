@@ -2,14 +2,14 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
-  formatBbAppConfigPath,
-  formatBbAppEnvPath,
+  formatPatcherAppConfigPath,
+  formatPatcherAppEnvPath,
 } from "@patcher/config/bb-app-managed-config";
 import { defaultFeatureFlags } from "@patcher/domain";
 import { describe, expect, it } from "vitest";
 import {
-  applyBbAppManagedConfig,
-  createBbAppManagedConfigReloader,
+  applyPatcherAppManagedConfig,
+  createPatcherAppManagedConfigReloader,
 } from "../../src/services/system/bb-app-managed-config.js";
 import { NotificationHub } from "../../src/ws/hub.js";
 import type { ServerLogger, ServerRuntimeConfig } from "../../src/types.js";
@@ -87,7 +87,7 @@ describe("bb-app managed config", () => {
     const baseConfig = createRuntimeConfig();
     const targetConfig = createRuntimeConfig();
 
-    applyBbAppManagedConfig({
+    applyPatcherAppManagedConfig({
       baseConfig,
       managedConfig: {
         config: {
@@ -118,7 +118,7 @@ describe("bb-app managed config", () => {
     const baseConfig = createRuntimeConfig();
     const targetConfig = createRuntimeConfig();
 
-    applyBbAppManagedConfig({
+    applyPatcherAppManagedConfig({
       baseConfig,
       managedConfig: {
         config: {
@@ -132,7 +132,7 @@ describe("bb-app managed config", () => {
       },
       targetConfig,
     });
-    applyBbAppManagedConfig({
+    applyPatcherAppManagedConfig({
       baseConfig,
       managedConfig: {},
       managedEnvFile: {},
@@ -147,7 +147,7 @@ describe("bb-app managed config", () => {
     const baseConfig = createRuntimeConfig();
     const targetConfig = createRuntimeConfig();
 
-    applyBbAppManagedConfig({
+    applyPatcherAppManagedConfig({
       baseConfig,
       managedConfig: {
         customModels: [
@@ -175,7 +175,7 @@ describe("bb-app managed config", () => {
     const baseConfig = createRuntimeConfig();
     const targetConfig = createRuntimeConfig();
 
-    applyBbAppManagedConfig({
+    applyPatcherAppManagedConfig({
       baseConfig,
       managedConfig: {
         sharedSkillRoots: {
@@ -197,7 +197,7 @@ describe("bb-app managed config", () => {
     const baseConfig = createRuntimeConfig();
     const targetConfig = createRuntimeConfig();
 
-    applyBbAppManagedConfig({
+    applyPatcherAppManagedConfig({
       baseConfig,
       managedConfig: {
         customAcpAgents: [
@@ -229,7 +229,7 @@ describe("bb-app managed config", () => {
     const baseConfig = createRuntimeConfig();
     const targetConfig = createRuntimeConfig();
 
-    applyBbAppManagedConfig({
+    applyPatcherAppManagedConfig({
       baseConfig,
       managedConfig: {
         customAcpAgents: [
@@ -245,7 +245,7 @@ describe("bb-app managed config", () => {
       managedEnvFile: {},
       targetConfig,
     });
-    applyBbAppManagedConfig({
+    applyPatcherAppManagedConfig({
       baseConfig,
       managedConfig: {},
       managedEnvFile: {},
@@ -259,7 +259,7 @@ describe("bb-app managed config", () => {
     const baseConfig = createRuntimeConfig();
     const targetConfig = createRuntimeConfig();
 
-    applyBbAppManagedConfig({
+    applyPatcherAppManagedConfig({
       baseConfig,
       managedConfig: {
         customModels: [
@@ -269,7 +269,7 @@ describe("bb-app managed config", () => {
       managedEnvFile: {},
       targetConfig,
     });
-    applyBbAppManagedConfig({
+    applyPatcherAppManagedConfig({
       baseConfig,
       managedConfig: {},
       managedEnvFile: {},
@@ -284,7 +284,7 @@ describe("bb-app managed config", () => {
     const targetConfig = createRuntimeConfig();
 
     expect(() =>
-      applyBbAppManagedConfig({
+      applyPatcherAppManagedConfig({
         baseConfig,
         managedConfig: {
           config: {
@@ -302,7 +302,7 @@ describe("bb-app managed config", () => {
     const targetConfig = createRuntimeConfig();
 
     expect(() =>
-      applyBbAppManagedConfig({
+      applyPatcherAppManagedConfig({
         baseConfig,
         managedConfig: {
           config: {
@@ -325,7 +325,7 @@ describe("bb-app managed config", () => {
     const hub = new NotificationHub();
     hub.subscribe(socket, { kind: "system" });
 
-    const reloader = await createBbAppManagedConfigReloader({
+    const reloader = await createPatcherAppManagedConfigReloader({
       config,
       hub,
       logger: createTestLogger(),
@@ -333,14 +333,14 @@ describe("bb-app managed config", () => {
 
     try {
       writeFileSync(
-        formatBbAppConfigPath(dataDir),
+        formatPatcherAppConfigPath(dataDir),
         `${JSON.stringify({
           config: { BB_INFERENCE_FALLBACK: "codex/gpt-5.4-mini" },
         })}\n`,
         "utf8",
       );
       writeFileSync(
-        formatBbAppEnvPath(dataDir),
+        formatPatcherAppEnvPath(dataDir),
         `${JSON.stringify({ env: { OPENAI_API_KEY: "live-openai-key" } })}\n`,
         "utf8",
       );
@@ -368,7 +368,7 @@ describe("bb-app managed config", () => {
     const logger = createCountingLogger();
     hub.subscribe(socket, { kind: "system" });
 
-    const reloader = await createBbAppManagedConfigReloader({
+    const reloader = await createPatcherAppManagedConfigReloader({
       config,
       hub,
       logger: logger.logger,
@@ -376,7 +376,7 @@ describe("bb-app managed config", () => {
 
     try {
       writeFileSync(
-        formatBbAppConfigPath(dataDir),
+        formatPatcherAppConfigPath(dataDir),
         `${JSON.stringify({
           customAcpAgents: [
             {
@@ -429,10 +429,10 @@ describe("bb-app managed config", () => {
     const logger = createCountingLogger();
 
     try {
-      writeFileSync(formatBbAppConfigPath(dataDir), "{", "utf8");
+      writeFileSync(formatPatcherAppConfigPath(dataDir), "{", "utf8");
 
       await expect(
-        createBbAppManagedConfigReloader({
+        createPatcherAppManagedConfigReloader({
           config,
           hub: new NotificationHub(),
           logger: logger.logger,
@@ -453,7 +453,7 @@ describe("bb-app managed config", () => {
       ...createRuntimeConfig(),
       dataDir,
     };
-    const reloader = await createBbAppManagedConfigReloader({
+    const reloader = await createPatcherAppManagedConfigReloader({
       config,
       hub: new NotificationHub(),
       logger: createTestLogger(),
@@ -461,7 +461,7 @@ describe("bb-app managed config", () => {
 
     try {
       writeFileSync(
-        formatBbAppConfigPath(dataDir),
+        formatPatcherAppConfigPath(dataDir),
         `${JSON.stringify({ config: { BB_INFERENCE: "gpt-4o-mini" } })}\n`,
         "utf8",
       );

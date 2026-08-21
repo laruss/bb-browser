@@ -6,7 +6,7 @@ import type {
   TimelineUserConversationRow,
 } from "@patcher/server-contract";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { BbHttpError, sdk } from "@/lib/sdk";
+import { PatcherHttpError, sdk } from "@/lib/sdk";
 import { OPTIMISTIC_TIMELINE_ROW_ID_PREFIX } from "@/lib/optimistic-timeline-row";
 import { threadTimelineQueryKey } from "@/hooks/queries/query-keys";
 import { createQueryClientTestHarness } from "@/test/queryClientTestHarness";
@@ -132,7 +132,7 @@ describe("useThreadTimelineController", () => {
     let resolveRefetch: (value: ThreadTimelineResponse) => void = () => {};
     vi.mocked(sdk.threads.timeline)
       .mockRejectedValueOnce(
-        new BbHttpError({
+        new PatcherHttpError({
           body: null,
           code: null,
           status: 500,
@@ -153,7 +153,7 @@ describe("useThreadTimelineController", () => {
     );
 
     await waitFor(() => {
-      expect(result.current.timelineError).toBeInstanceOf(BbHttpError);
+      expect(result.current.timelineError).toBeInstanceOf(PatcherHttpError);
     });
 
     act(() => {

@@ -30,7 +30,7 @@ export interface ScaffoldPluginArgs {
   /** Full package name, e.g. "bb-plugin-hello". */
   packageName: string;
   /** BB app version; engines.bb is pinned to ">=<major.minor>". */
-  bbVersion: string;
+  patcherVersion: string;
   /**
    * Also scaffold a frontend entry (`app.tsx`, wired as `bb.app` and built
    * by `bb plugin build`). Off by default so headless plugins stay lean.
@@ -197,8 +197,8 @@ function pluginNameOf(packageName: string): string {
     .join(" ");
 }
 
-function enginesRange(bbVersion: string): string {
-  const match = /^(\d+)\.(\d+)/.exec(bbVersion);
+function enginesRange(patcherVersion: string): string {
+  const match = /^(\d+)\.(\d+)/.exec(patcherVersion);
   return match ? `>=${match[1]}.${match[2]}` : ">=0.0";
 }
 
@@ -208,8 +208,8 @@ function enginesRange(bbVersion: string): string {
  * source version-matched to this install by construction. Dev builds
  * (0.0.0) track main.
  */
-function registryRef(bbVersion: string): string {
-  return bbVersion === "0.0.0" ? "main" : `desktop-v${bbVersion}`;
+function registryRef(patcherVersion: string): string {
+  return patcherVersion === "0.0.0" ? "main" : `desktop-v${patcherVersion}`;
 }
 
 /**
@@ -219,7 +219,7 @@ function registryRef(bbVersion: string): string {
  * components/ui/ + lib/ + hooks/ via the aliases below; `bb plugin build`
  * resolves the `@/*` alias through tsconfig paths.
  */
-function componentsJsonSource(bbVersion: string): string {
+function componentsJsonSource(patcherVersion: string): string {
   return `${JSON.stringify(
     {
       $schema: "https://ui.shadcn.com/schema.json",
@@ -239,7 +239,7 @@ function componentsJsonSource(bbVersion: string): string {
         hooks: "@/hooks",
       },
       registries: {
-        "@patcher": `https://raw.githubusercontent.com/get-bb/bb/${registryRef(bbVersion)}/packages/plugin-registry/r/{name}.json`,
+        "@patcher": `https://raw.githubusercontent.com/get-bb/bb/${registryRef(patcherVersion)}/packages/plugin-registry/r/{name}.json`,
       },
     },
     null,
@@ -253,7 +253,7 @@ function serverEntrySource(packageName: string): string {
 //
 // The default export is a factory that receives the plugin API. BB supplies
 // the tiny defineRpcContract runtime helper; the API type remains type-only.
-import { defineRpcContract, type BbPluginApi } from "@patcher/plugin-sdk";
+import { defineRpcContract, type PatcherPluginApi } from "@patcher/plugin-sdk";
 import { z } from "zod";
 
 export const rpcContract = defineRpcContract({
@@ -263,7 +263,7 @@ export const rpcContract = defineRpcContract({
   },
 });
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(bb: PatcherPluginApi) {
   bb.log.info("loaded");
 
   // Declarative settings — rendered in BB's settings UI and editable with
@@ -327,7 +327,7 @@ function appEntrySource(packageName: string): string {
 // tables, the full shadcn set, version-matched to this BB install. Run
 // \`npm install\` once before \`bb plugin build\`.
 import { useState } from "react";
-import { definePluginApp, useBbContext, useRpc } from "@patcher/plugin-sdk/app";
+import { definePluginApp, usePatcherContext, useRpc } from "@patcher/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import { Button } from "@/components/ui/button";
 import {
@@ -338,7 +338,7 @@ import {
 } from "@/components/ui/card";
 
 function HelloCard() {
-  const { projectId } = useBbContext();
+  const { projectId } = usePatcherContext();
   const rpc = useRpc<typeof rpcContract>();
   const [greeting, setGreeting] = useState("Say hello");
   // Tailwind classes compile against the host theme's live CSS variables —
@@ -385,7 +385,7 @@ export default definePluginApp((app) => {
 }
 
 /**
- * Typecheck-only tsconfig: server.ts compiles against the BbPluginApi contract
+ * Typecheck-only tsconfig: server.ts compiles against the PatcherPluginApi contract
  * (type-only, erased at load time); app.tsx is included when the plugin
  * declares a frontend entry. `@patcher/plugin-sdk` resolves to the bundled `.d.ts`
  * files shipped in `types/`, so authors get the root/app types without a
@@ -553,7 +553,7 @@ repo and read the source: <https://github.com/get-bb/bb>.
  * The generated server.ts loads cleanly against the live plugin API.
  */
 export async function scaffoldPlugin(args: ScaffoldPluginArgs): Promise<void> {
-  const { targetDir, packageName, bbVersion, app = false } = args;
+  const { targetDir, packageName, patcherVersion, app = false } = args;
   try {
     await mkdir(targetDir, { recursive: false });
   } catch (error) {
@@ -570,7 +570,7 @@ export async function scaffoldPlugin(args: ScaffoldPluginArgs): Promise<void> {
         version: "0.1.0",
         type: "module",
         engines: {
-          bb: enginesRange(bbVersion),
+          bb: enginesRange(patcherVersion),
           bbPluginSdk: `^${PLUGIN_SDK_VERSION}`,
         },
         bb: {
@@ -598,7 +598,7 @@ export async function scaffoldPlugin(args: ScaffoldPluginArgs): Promise<void> {
           ...(app ? PLUGIN_STARTER_DEPENDENCIES : {}),
           zod: "^4.3.6",
         },
-        // Typecheck-only. The BbPluginApi/SDK types come from the bundled
+        // Typecheck-only. The PatcherPluginApi/SDK types come from the bundled
         // `.d.ts` in `types/` (tsconfig maps @patcher/plugin-sdk to them), so the
         // package is not needed for normal plugin source. These supply the real
         // npm types those declarations reference (hono/better-sqlite3 and the
@@ -643,7 +643,7 @@ export async function scaffoldPlugin(args: ScaffoldPluginArgs): Promise<void> {
     }
     await writeFile(
       join(targetDir, "components.json"),
-      componentsJsonSource(bbVersion),
+      componentsJsonSource(patcherVersion),
     );
   }
   const skillDir = join(targetDir, "skills", "example-skill");

@@ -305,12 +305,12 @@ export function createPluginUpdates(
           ? {}
           : { registry: row.sourceNpmRegistry }),
         engines: {
-          ...(manifest?.bbEngineRange === undefined
+          ...(manifest?.patcherEngineRange === undefined
             ? {}
-            : { bb: manifest.bbEngineRange }),
-          ...(manifest?.bbPluginSdkRange === undefined
+            : { bb: manifest.patcherEngineRange }),
+          ...(manifest?.patcherPluginSdkRange === undefined
             ? {}
-            : { bbPluginSdk: manifest.bbPluginSdkRange }),
+            : { bbPluginSdk: manifest.patcherPluginSdkRange }),
         },
         installedAt: row.installedAt,
         history: artifacts.map((artifact) => ({

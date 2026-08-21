@@ -1,6 +1,6 @@
 import { resolve } from "node:path";
 import type {
-  BbPluginApi,
+  PatcherPluginApi,
   PluginCliContext,
   PluginCliResult,
 } from "@patcher/plugin-sdk";
@@ -144,7 +144,7 @@ function unwrapTask(result: TaskMutationResult): Task {
 // environment (or an explicit --machine override); node:fs would silently
 // read or write the server's disk in a multi-machine setup.
 async function resolveClientHostId(
-  bb: BbPluginApi,
+  bb: PatcherPluginApi,
   domain: TasksDomain,
   args: ParsedArgs,
   ctx: PluginCliContext,
@@ -166,7 +166,7 @@ function isMissingClientFileError(error: unknown): boolean {
 }
 
 async function readClientFile(
-  bb: BbPluginApi,
+  bb: PatcherPluginApi,
   hostId: string | undefined,
   path: string,
 ): Promise<{ bytes: Buffer; text: string | null }> {
@@ -184,7 +184,7 @@ async function readClientFile(
 }
 
 async function readAttachmentSource(
-  bb: BbPluginApi,
+  bb: PatcherPluginApi,
   hostId: string | undefined,
   path: string,
 ): Promise<Buffer> {
@@ -199,7 +199,7 @@ async function readAttachmentSource(
 }
 
 async function writeClientFile(
-  bb: BbPluginApi,
+  bb: PatcherPluginApi,
   hostId: string | undefined,
   path: string,
   content: Buffer,
@@ -218,7 +218,7 @@ function attachmentFileName(path: string): string {
 }
 
 async function readFileOption(
-  bb: BbPluginApi,
+  bb: PatcherPluginApi,
   args: ParsedArgs,
   ctx: PluginCliContext,
   hostId: string | undefined,
@@ -304,7 +304,7 @@ async function defaultProject(
     return undefined;
   }
   const matches = (await listProjects(domain)).filter(
-    (project) => project.linkedBbProjectId === ctx.projectId,
+    (project) => project.linkedPatcherProjectId === ctx.projectId,
   );
   if (matches.length === 0) {
     throw new CliError(
@@ -515,7 +515,7 @@ function projectTable(
       project.folderId
         ? (folderNames.get(project.folderId) ?? project.folderId)
         : "-",
-      project.linkedBbProjectId ?? "-",
+      project.linkedPatcherProjectId ?? "-",
       project.id,
     ]),
     "No projects.",
@@ -527,7 +527,7 @@ function taskAuthor(ctx: PluginCliContext): string {
 }
 
 async function runProject(
-  bb: BbPluginApi,
+  bb: PatcherPluginApi,
   store: TasksApiStore,
   domain: TasksDomain,
   argv: string[],
@@ -561,7 +561,7 @@ async function runProject(
             : derivePrefix(name, projects),
           color: option(args, "color") ?? DEFAULT_PROJECT_COLOR,
           folderId: folder?.id ?? null,
-          linkedBbProjectId: option(args, "link-bb-project") ?? null,
+          linkedPatcherProjectId: option(args, "link-bb-project") ?? null,
         }),
       ),
     );
@@ -599,7 +599,7 @@ async function runProject(
       ["ID", project.id],
       ["Color", project.color],
       ["Folder", folder?.name ?? "-"],
-      ["BB project", project.linkedBbProjectId ?? "-"],
+      ["BB project", project.linkedPatcherProjectId ?? "-"],
       ["Next task", `${project.prefix}-${project.nextTaskNumber}`],
       ["Created", project.createdAt],
     ]);
@@ -618,7 +618,7 @@ async function runProject(
     );
     const project = await resolveProject(domain, address!);
     const folderAddress = option(args, "folder");
-    const linkedBbProjectId = option(args, "link-bb-project");
+    const linkedPatcherProjectId = option(args, "link-bb-project");
     validateSingleFlagChoice(
       folderAddress,
       args.flags.has("no-folder"),
@@ -626,7 +626,7 @@ async function runProject(
       "no-folder",
     );
     validateSingleFlagChoice(
-      linkedBbProjectId,
+      linkedPatcherProjectId,
       args.flags.has("unlink-bb-project"),
       "link-bb-project",
       "unlink-bb-project",
@@ -638,9 +638,9 @@ async function runProject(
       name: option(args, "name"),
       color: option(args, "color"),
       folderId: args.flags.has("no-folder") ? null : folder?.id,
-      linkedBbProjectId: args.flags.has("unlink-bb-project")
+      linkedPatcherProjectId: args.flags.has("unlink-bb-project")
         ? null
-        : linkedBbProjectId,
+        : linkedPatcherProjectId,
     };
     const renamePrefix = option(args, "rename-prefix");
     if (
@@ -648,7 +648,7 @@ async function runProject(
       changes.name === undefined &&
       changes.color === undefined &&
       changes.folderId === undefined &&
-      changes.linkedBbProjectId === undefined
+      changes.linkedPatcherProjectId === undefined
     ) {
       throw new CliError("no project changes were provided");
     }
@@ -663,7 +663,7 @@ async function runProject(
       changes.name !== undefined ||
       changes.color !== undefined ||
       changes.folderId !== undefined ||
-      changes.linkedBbProjectId !== undefined;
+      changes.linkedPatcherProjectId !== undefined;
     const updateInput = hasFieldChanges
       ? tasksRpcContract.updateProject.input.parse({
           projectId: project.id,
@@ -684,7 +684,7 @@ async function runProject(
         name: updateInput?.name,
         color: updateInput?.color,
         folderId: updateInput?.folderId,
-        linkedBbProjectId: updateInput?.linkedBbProjectId,
+        linkedPatcherProjectId: updateInput?.linkedPatcherProjectId,
       }),
     );
     publishProjectsChanged(bb, updated.id);
@@ -697,7 +697,7 @@ async function runProject(
 }
 
 async function runFolder(
-  bb: BbPluginApi,
+  bb: PatcherPluginApi,
   store: TasksApiStore,
   domain: TasksDomain,
   argv: string[],
@@ -811,7 +811,7 @@ async function runFolder(
 }
 
 async function runCreate(
-  bb: BbPluginApi,
+  bb: PatcherPluginApi,
   store: TasksApiStore,
   domain: TasksDomain,
   ctx: PluginCliContext,
@@ -1193,7 +1193,7 @@ async function runShow(domain: TasksDomain, argv: string[]): Promise<string> {
 }
 
 async function runUpdate(
-  bb: BbPluginApi,
+  bb: PatcherPluginApi,
   domain: TasksDomain,
   ctx: PluginCliContext,
   argv: string[],
@@ -1298,7 +1298,7 @@ async function runUpdate(
 }
 
 async function runComment(
-  bb: BbPluginApi,
+  bb: PatcherPluginApi,
   store: TasksApiStore,
   domain: TasksDomain,
   ctx: PluginCliContext,
@@ -1421,7 +1421,7 @@ async function runLabel(domain: TasksDomain, argv: string[]): Promise<string> {
 }
 
 async function runAttachment(
-  bb: BbPluginApi,
+  bb: PatcherPluginApi,
   store: TasksApiStore,
   domain: TasksDomain,
   ctx: PluginCliContext,
@@ -1755,7 +1755,7 @@ async function runPreset(domain: TasksDomain, argv: string[]): Promise<string> {
 }
 
 async function runDispatch(
-  bb: BbPluginApi,
+  bb: PatcherPluginApi,
   store: TasksApiStore,
   domain: TasksDomain,
   argv: string[],
@@ -1784,7 +1784,7 @@ async function runDispatch(
 }
 
 async function runAttach(
-  bb: BbPluginApi,
+  bb: PatcherPluginApi,
   store: TasksApiStore,
   domain: TasksDomain,
   ctx: PluginCliContext,
@@ -1868,7 +1868,7 @@ function singleLine(value: string): string {
 }
 
 export function registerTasksCli(
-  bb: BbPluginApi,
+  bb: PatcherPluginApi,
   store: TasksApiStore,
   status: PluginStatus,
 ): void {
@@ -2035,7 +2035,7 @@ export function registerTasksCli(
                   ["Labels", result.labelsCreated],
                   ["Tasks", result.tasksCreated],
                   ["Comments", result.commentsCreated],
-                  ["BB project", result.linkedBbProjectId ?? "-"],
+                  ["BB project", result.linkedPatcherProjectId ?? "-"],
                 ]);
             break;
           }

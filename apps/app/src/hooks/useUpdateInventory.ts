@@ -3,7 +3,7 @@ import { useQueries } from "@tanstack/react-query";
 import type { Host } from "@patcher/domain";
 import type { ProviderCliStatusResponse } from "@patcher/host-daemon-contract";
 import type { SystemVersionResponse } from "@patcher/server-contract";
-import type { BbDesktopInfo } from "@patcher/desktop-contract";
+import type { PatcherDesktopInfo } from "@patcher/desktop-contract";
 import {
   buildProviderCliIssue,
   isProviderCliIssue,
@@ -36,7 +36,7 @@ export interface UpdateInventoryMachine {
 export interface UpdateInventory {
   isLoading: boolean;
   systemVersion: SystemVersionResponse | undefined;
-  desktopInfo: BbDesktopInfo | null;
+  desktopInfo: PatcherDesktopInfo | null;
   /** bb-app (web/npm) has a newer release on the registry. */
   appUpdateAvailable: boolean;
   /** Desktop shell downloaded an update; a relaunch applies it. */

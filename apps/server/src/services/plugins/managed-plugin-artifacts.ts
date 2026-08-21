@@ -845,8 +845,8 @@ export function createManagedPluginArtifacts(
       );
       const manifest = await readPluginManifest(targetRealRoot);
       const compatibility = evaluateCompatibility({
-        bbRange: manifest.bbEngineRange,
-        sdkRange: manifest.bbPluginSdkRange,
+        patcherRange: manifest.patcherEngineRange,
+        sdkRange: manifest.patcherPluginSdkRange,
         appVersion: deps.appVersion,
       });
       if (args.activationRefKind === undefined) {
@@ -942,8 +942,8 @@ export function createManagedPluginArtifacts(
         };
       }
       const compatibility = evaluateCompatibility({
-        bbRange: manifest.bbEngineRange,
-        sdkRange: manifest.bbPluginSdkRange,
+        patcherRange: manifest.patcherEngineRange,
+        sdkRange: manifest.patcherPluginSdkRange,
         appVersion: deps.appVersion,
       });
       if (compatibility.effective.length > 0) {

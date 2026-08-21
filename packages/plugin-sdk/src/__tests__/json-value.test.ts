@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { describe, expect, expectTypeOf, it } from "vitest";
 import type {
-  BbNavigate,
+  PatcherNavigate,
   JsonValue,
   PluginThreadPanelActionContext,
   PluginThreadPanelProps,
@@ -11,7 +11,7 @@ import type { JsonValue as AppJsonValue } from "../app.js";
 type OpenPanelOptions = NonNullable<
   Parameters<PluginThreadPanelActionContext["openPanel"]>[0]
 >;
-type NavigatePanelOptions = Parameters<BbNavigate["openThreadPanel"]>[0];
+type NavigatePanelOptions = Parameters<PatcherNavigate["openThreadPanel"]>[0];
 
 describe("plugin SDK JsonValue contract", () => {
   it("types parameter writes as JsonValue and persisted reads as JsonValue or null", () => {

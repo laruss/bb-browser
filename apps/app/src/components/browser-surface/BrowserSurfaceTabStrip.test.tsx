@@ -2,8 +2,8 @@
 
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { BbDesktopInfo } from "@patcher/desktop-contract";
-import { createBbDesktopApi } from "@/test/bb-desktop-test-utils";
+import type { PatcherDesktopInfo } from "@patcher/desktop-contract";
+import { createPatcherDesktopApi } from "@/test/bb-desktop-test-utils";
 import type { BrowserFixedPanelTab } from "@/lib/fixed-panel-tabs-state";
 import { createAppSurfaceTab } from "@/lib/browser-surface-tabs";
 import {
@@ -83,7 +83,7 @@ function tabBox(name: string | RegExp): HTMLElement {
   return box;
 }
 
-const MACOS_DESKTOP_INFO: BbDesktopInfo = {
+const MACOS_DESKTOP_INFO: PatcherDesktopInfo = {
   lastCheckedAt: null,
   latestVersion: null,
   pendingVersion: null,
@@ -278,7 +278,7 @@ describe("browser surface tab strip hit target", () => {
   // tailwind-merge applied over the close control's `absolute` and dropped the
   // control into the strip's flow, outside the tab it belongs to.
   it("keeps the close control positioned inside its tab in desktop chrome", () => {
-    window.bbDesktop = createBbDesktopApi(MACOS_DESKTOP_INFO);
+    window.bbDesktop = createPatcherDesktopApi(MACOS_DESKTOP_INFO);
     renderStrip([browserTab("tab-1", "One")]);
 
     const close = screen.getByRole("button", { name: "Close One" });

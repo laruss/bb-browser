@@ -38,7 +38,10 @@ import type { ThreadStartParams } from "./generated/codex-app-server/schema/v2/T
 import type { UserInput as CodexUserInput } from "./generated/codex-app-server/schema/v2/UserInput.js";
 import type { AskForApproval } from "./generated/codex-app-server/schema/v2/AskForApproval.js";
 import type { ApprovalsReviewer } from "./generated/codex-app-server/schema/v2/ApprovalsReviewer.js";
-import { mapBbReasoningLevelToCodex, parseModelsResponse } from "./models.js";
+import {
+  mapPatcherReasoningLevelToCodex,
+  parseModelsResponse,
+} from "./models.js";
 import {
   buildShellEnvironmentPolicyConfig,
   extractResultText,
@@ -98,11 +101,11 @@ interface CodexThreadPermissionSettings {
   sandbox: CodexSandboxMode;
 }
 
-type BbThreadStartParams = ThreadStartParams & {
+type PatcherThreadStartParams = ThreadStartParams & {
   experimentalRawEvents?: boolean;
 };
 
-type BbThreadForkParams = {
+type PatcherThreadForkParams = {
   threadId: string;
   lastTurnId?: string | null;
   model?: string | null;
@@ -179,7 +182,7 @@ interface ActivateThreadGitWritableRootsArgs {
   threadId: string;
 }
 
-interface ClearGitWritableRootsByBbThreadIdArgs {
+interface ClearGitWritableRootsByPatcherThreadIdArgs {
   threadId: string;
 }
 
@@ -667,7 +670,7 @@ function toCodexServiceTier(tier: ServiceTier | undefined): "fast" | undefined {
 function toCodexReasoningEffort(
   reasoningLevel: ReasoningLevel,
 ): CodexReasoningEffort {
-  const codexEffort = mapBbReasoningLevelToCodex(reasoningLevel);
+  const codexEffort = mapPatcherReasoningLevelToCodex(reasoningLevel);
   if (codexEffort == null) {
     // "none" is Cursor-only; "ultracode" is Claude-specific. Codex models
     // never expose either, so model-switch reconciliation maps them away
@@ -1046,7 +1049,7 @@ export function createCodexProviderAdapter(
     string[]
   >();
   const workspaceWriteGitWritableRootsByThreadId = new Map<string, string[]>();
-  const bbThreadIdByProviderThreadId = new Map<string, string>();
+  const patcherThreadIdByProviderThreadId = new Map<string, string>();
   const rawCommandOutputStateByProviderThreadId = new Map<
     string,
     CodexRawCommandOutputState
@@ -1085,17 +1088,20 @@ export function createCodexProviderAdapter(
     workspaceWriteGitWritableRootsByThreadId.set(args.threadId, [
       ...writableRoots,
     ]);
-    bbThreadIdByProviderThreadId.set(args.providerThreadId, args.threadId);
+    patcherThreadIdByProviderThreadId.set(args.providerThreadId, args.threadId);
   }
 
-  function clearGitWritableRootsByBbThreadId(
-    args: ClearGitWritableRootsByBbThreadIdArgs,
+  function clearGitWritableRootsByPatcherThreadId(
+    args: ClearGitWritableRootsByPatcherThreadIdArgs,
   ): void {
     pendingWorkspaceWriteGitWritableRootsByThreadId.delete(args.threadId);
     workspaceWriteGitWritableRootsByThreadId.delete(args.threadId);
-    for (const [providerThreadId, threadId] of bbThreadIdByProviderThreadId) {
+    for (const [
+      providerThreadId,
+      threadId,
+    ] of patcherThreadIdByProviderThreadId) {
       if (threadId === args.threadId) {
-        bbThreadIdByProviderThreadId.delete(providerThreadId);
+        patcherThreadIdByProviderThreadId.delete(providerThreadId);
       }
     }
   }
@@ -1103,12 +1109,14 @@ export function createCodexProviderAdapter(
   function clearGitWritableRootsByProviderThreadId(
     args: ClearGitWritableRootsByProviderThreadIdArgs,
   ): void {
-    const threadId = bbThreadIdByProviderThreadId.get(args.providerThreadId);
-    bbThreadIdByProviderThreadId.delete(args.providerThreadId);
+    const threadId = patcherThreadIdByProviderThreadId.get(
+      args.providerThreadId,
+    );
+    patcherThreadIdByProviderThreadId.delete(args.providerThreadId);
     if (!threadId) {
       return;
     }
-    clearGitWritableRootsByBbThreadId({ threadId });
+    clearGitWritableRootsByPatcherThreadId({ threadId });
   }
 
   function prepareWorkspaceWriteGitRoots(
@@ -1127,7 +1135,7 @@ export function createCodexProviderAdapter(
         writableRoots,
       });
     } else {
-      clearGitWritableRootsByBbThreadId({ threadId: command.threadId });
+      clearGitWritableRootsByPatcherThreadId({ threadId: command.threadId });
     }
     return {
       config: buildCodexConfig({
@@ -1855,7 +1863,7 @@ export function createCodexProviderAdapter(
         case "thread/start": {
           const dynamicTools = toCodexDynamicTools(command.dynamicTools);
           const preparedGitRoots = prepareWorkspaceWriteGitRoots({ command });
-          const params: BbThreadStartParams = {
+          const params: PatcherThreadStartParams = {
             approvalPolicy: preparedGitRoots.permissionSettings.approvalPolicy,
             approvalsReviewer:
               preparedGitRoots.permissionSettings.approvalsReviewer,
@@ -1909,7 +1917,7 @@ export function createCodexProviderAdapter(
         case "thread/fork": {
           const dynamicTools = toCodexDynamicTools(command.dynamicTools);
           const preparedGitRoots = prepareWorkspaceWriteGitRoots({ command });
-          const params: BbThreadForkParams = {
+          const params: PatcherThreadForkParams = {
             threadId: command.sourceProviderThreadId,
             ...(command.sourceProviderCheckpointId !== undefined
               ? { lastTurnId: command.sourceProviderCheckpointId }

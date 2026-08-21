@@ -7,7 +7,7 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from "react";
-import type { BbDesktopBrowserState } from "@patcher/desktop-contract";
+import type { PatcherDesktopBrowserState } from "@patcher/desktop-contract";
 import { COARSE_POINTER_HEADER_ICON_BUTTON_CLASS } from "@patcher/shared-ui/coarse-pointer-sizing";
 import { Icon } from "@patcher/shared-ui/icon";
 import { cn } from "@patcher/shared-ui/lib/utils";
@@ -18,7 +18,7 @@ import {
 import { CHROME_SUBTLE_ICON_BUTTON_FOREGROUND_CLASS } from "@/components/ui/chromeStyleTokens";
 import { runPluginOmniboxAction } from "@/hooks/queries/plugin-contribution-queries";
 import { useDefaultBrowserStatus } from "@/hooks/useDefaultBrowserStatus";
-import { getBbDesktopInfo, getDesktopBrowserApi } from "@/lib/bb-desktop";
+import { getPatcherDesktopInfo, getDesktopBrowserApi } from "@/lib/bb-desktop";
 import { resolveBrowserPageSecurity } from "@/lib/browser-page-security";
 import { useBrowserSearchEngine } from "@/lib/browser-search-engine";
 import {
@@ -148,9 +148,8 @@ export function BrowserSurfaceChrome({
   const desktopBrowser = useMemo(() => getDesktopBrowserApi(), []);
   const inputRef = useRef<HTMLInputElement>(null);
   const locationShortcut = useAppCommandShortcut("browser.focusLocation");
-  const [pushedState, setPushedState] = useState<BbDesktopBrowserState | null>(
-    null,
-  );
+  const [pushedState, setPushedState] =
+    useState<PatcherDesktopBrowserState | null>(null);
   const [draft, setDraft] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [highlight, setHighlight] = useState(NO_OMNIBOX_HIGHLIGHT);
@@ -525,7 +524,7 @@ export function BrowserSurfaceChrome({
             label="Open in external browser"
             disabled={url.length === 0}
             onClick={() => {
-              getBbDesktopInfo()?.openExternalUrl(url);
+              getPatcherDesktopInfo()?.openExternalUrl(url);
             }}
           />
         )}

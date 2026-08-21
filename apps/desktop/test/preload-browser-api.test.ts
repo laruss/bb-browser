@@ -1,15 +1,15 @@
 import { describe, expect, it, vi } from "vitest";
 import type { AppCommandId } from "@patcher/domain";
 import type {
-  BbDesktopApi,
-  BbDesktopBrowserFindResult,
-  BbDesktopBrowserOpenTabRequest,
-  BbDesktopBrowserPagePrompt,
-  BbDesktopBrowserScopedOpenTabRequest,
-  BbDesktopBrowserSnapshot,
-  BbDesktopBrowserState,
-  BbDesktopInfo,
-  BbDesktopWindowState,
+  PatcherDesktopApi,
+  PatcherDesktopBrowserFindResult,
+  PatcherDesktopBrowserOpenTabRequest,
+  PatcherDesktopBrowserPagePrompt,
+  PatcherDesktopBrowserScopedOpenTabRequest,
+  PatcherDesktopBrowserSnapshot,
+  PatcherDesktopBrowserState,
+  PatcherDesktopInfo,
+  PatcherDesktopWindowState,
 } from "@patcher/desktop-contract";
 import {
   BB_DESKTOP_CHECK_FOR_UPDATES_CHANNEL,
@@ -71,7 +71,7 @@ const electronMock = vi.hoisted(() => {
     payload: unknown,
   ) => void;
 
-  const desktopInfo: BbDesktopInfo = {
+  const desktopInfo: PatcherDesktopInfo = {
     lastCheckedAt: null,
     latestVersion: null,
     pendingVersion: null,
@@ -80,7 +80,7 @@ const electronMock = vi.hoisted(() => {
     updateDownloaded: false,
     version: "0.0.0-test",
   };
-  const desktopWindowState: BbDesktopWindowState = {
+  const desktopWindowState: PatcherDesktopWindowState = {
     isFullScreen: false,
   };
   const invokeCalls: string[] = [];
@@ -91,8 +91,7 @@ const electronMock = vi.hoisted(() => {
   const listeners = new Map<string, IpcRendererListener>();
   const sendCalls: SendCall[] = [];
   const exposedNames: string[] = [];
-  let exposedApi: BbDesktopApi | null = null;
-  let exposedName: string | null = null;
+  let exposedApi: PatcherDesktopApi | null = null;
   let exposedSpellcheckApi: {
     getCorrectionContext(word: string): unknown;
   } | null = null;
@@ -101,9 +100,6 @@ const electronMock = vi.hoisted(() => {
   return {
     get exposedApi() {
       return exposedApi;
-    },
-    get exposedName() {
-      return exposedName;
     },
     exposedNames,
     get exposedSpellcheckApi() {
@@ -120,7 +116,6 @@ const electronMock = vi.hoisted(() => {
       invokePayloads.length = 0;
       readPageReply = null;
       exposedApi = null;
-      exposedName = null;
       exposedSpellcheckApi = null;
       exposedNames.length = 0;
       invokeCalls.length = 0;
@@ -134,16 +129,13 @@ const electronMock = vi.hoisted(() => {
     contextBridge: {
       exposeInMainWorld(name: string, api: unknown): void {
         exposedNames.push(name);
-        if (name === "bbDesktop") {
-          exposedName = name;
-          exposedApi = api as BbDesktopApi;
+        if (name === "bbDesktop" || name === "patcherDesktop") {
+          exposedApi = api as PatcherDesktopApi;
           return;
         }
-        if (name !== "bbDesktop") {
-          exposedSpellcheckApi = api as {
-            getCorrectionContext(word: string): unknown;
-          };
-        }
+        exposedSpellcheckApi = api as {
+          getCorrectionContext(word: string): unknown;
+        };
       },
     },
     ipcRenderer: {
@@ -192,16 +184,19 @@ interface EmitIpcPayloadArgs {
   payload: unknown;
 }
 
-async function loadPreload(): Promise<BbDesktopApi> {
+async function loadPreload(): Promise<PatcherDesktopApi> {
   electronMock.reset();
   vi.resetModules();
   process.env.BB_DESKTOP_VERSION = "0.0.0-test";
   await import("../src/preload.js");
   const api = electronMock.exposedApi;
-  expect(electronMock.exposedName).toBe("bbDesktop");
+  // Both names carry the same object: `patcherDesktop` for new renderers and
+  // the frozen `bbDesktop` for ones built before the rename.
+  expect(electronMock.exposedNames).toContain("bbDesktop");
+  expect(electronMock.exposedNames).toContain("patcherDesktop");
   expect(api).not.toBeNull();
   if (api === null) {
-    throw new Error("Expected preload to expose window.bbDesktop.");
+    throw new Error("Expected preload to expose the desktop API.");
   }
   return api;
 }
@@ -522,15 +517,15 @@ describe("desktop preload browser API", () => {
 
   it("validates browser event payloads before notifying renderer listeners", async () => {
     const api = await loadPreload();
-    const states: BbDesktopBrowserState[] = [];
-    const openTabs: BbDesktopBrowserOpenTabRequest[] = [];
-    const scopedOpenTabs: BbDesktopBrowserScopedOpenTabRequest[] = [];
-    const snapshots: BbDesktopBrowserSnapshot[] = [];
+    const states: PatcherDesktopBrowserState[] = [];
+    const openTabs: PatcherDesktopBrowserOpenTabRequest[] = [];
+    const scopedOpenTabs: PatcherDesktopBrowserScopedOpenTabRequest[] = [];
+    const snapshots: PatcherDesktopBrowserSnapshot[] = [];
     let closeWindowRequestCount = 0;
     let openNewTabCount = 0;
     const appCommands: AppCommandId[] = [];
-    const windowStates: BbDesktopWindowState[] = [];
-    const state: BbDesktopBrowserState = {
+    const windowStates: PatcherDesktopWindowState[] = [];
+    const state: PatcherDesktopBrowserState = {
       tabId: "browser:a",
       url: "https://example.com/",
       title: "Example",
@@ -539,14 +534,14 @@ describe("desktop preload browser API", () => {
       canGoForward: true,
       errorText: null,
     };
-    const openTab: BbDesktopBrowserOpenTabRequest = {
+    const openTab: PatcherDesktopBrowserOpenTabRequest = {
       url: "https://example.com/popup",
     };
-    const scopedOpenTab: BbDesktopBrowserScopedOpenTabRequest = {
+    const scopedOpenTab: PatcherDesktopBrowserScopedOpenTabRequest = {
       tabId: "browser:a",
       url: "https://example.com/scoped-popup",
     };
-    const snapshot: BbDesktopBrowserSnapshot = {
+    const snapshot: PatcherDesktopBrowserSnapshot = {
       tabId: "browser:a",
       dataUrl: null,
     };
@@ -650,7 +645,7 @@ describe("desktop preload browser API", () => {
 
   it("validates the network questions before showing them to the app", async () => {
     const api = await loadPreload();
-    const prompts: Array<BbDesktopBrowserPagePrompt["prompt"]> = [];
+    const prompts: Array<PatcherDesktopBrowserPagePrompt["prompt"]> = [];
     const prompt = {
       kind: "auth" as const,
       id: "page-prompt-1",
@@ -720,8 +715,8 @@ describe("desktop preload browser API", () => {
 
   it("forwards find commands and validates the counts coming back", async () => {
     const api = await loadPreload();
-    const results: BbDesktopBrowserFindResult[] = [];
-    const result: BbDesktopBrowserFindResult = {
+    const results: PatcherDesktopBrowserFindResult[] = [];
+    const result: PatcherDesktopBrowserFindResult = {
       tabId: "browser:a",
       activeMatchOrdinal: 2,
       matches: 7,

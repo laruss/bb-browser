@@ -1,7 +1,7 @@
 # @patcher/plugin-sdk
 
 The typed facade BB plugin authors compile against. The root preserves the
-complete `BbPluginApi` and `BbSdk` contract; `./app` is the frontend runtime
+complete `PatcherPluginApi` and `PatcherSdk` contract; `./app` is the frontend runtime
 that `bb plugin build` replaces with BB's shared implementation.
 
 The authoritative contracts are the exported declarations in
@@ -17,7 +17,7 @@ host-rendered `ComposerPlusMenuItem` rows, and `ComposerRichTextSpec` rules.
 Mounted components use `useComposer()` for writes, effects, and input locking,
 and `useComposerView()` for the reactive scope, layout, draft, and run state.
 Any mounted plugin component can use
-`useBbNavigate().openThreadPanel(...)` to request one of the
+`usePatcherNavigate().openThreadPanel(...)` to request one of the
 same plugin's registered thread-panel actions; it returns false when the
 current surface has no thread side panel.
 

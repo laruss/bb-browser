@@ -7,7 +7,7 @@
 // Server-owned policy lives here: the reply-anchor seed rule and the
 // empty-fork cleanup sweep. The archive cascade is BB's own: a hidden fork
 // retires with its source thread whether or not this plugin is enabled.
-import { defineRpcContract, type BbPluginApi } from "@patcher/plugin-sdk";
+import { defineRpcContract, type PatcherPluginApi } from "@patcher/plugin-sdk";
 import { z } from "zod";
 
 export const REPLY_SEED_PREFIX =
@@ -173,7 +173,7 @@ export const sideChatRpcContract = defineRpcContract({
   },
 });
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(bb: PatcherPluginApi) {
   bb.rpc.register(sideChatRpcContract, {
     async createSideChat({ sourceThreadId, sourceSeqEnd, anchorText }) {
       const timeline = await bb.sdk.threads.timeline({

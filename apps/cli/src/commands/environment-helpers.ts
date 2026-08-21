@@ -2,7 +2,7 @@ import {
   type EnvironmentDisplayInfo,
   formatEnvironmentDisplay,
 } from "@patcher/core-ui";
-import type { BbSdk } from "@patcher/sdk";
+import type { PatcherSdk } from "@patcher/sdk";
 
 export interface ThreadEnvironmentInfo {
   display: EnvironmentDisplayInfo;
@@ -11,7 +11,7 @@ export interface ThreadEnvironmentInfo {
 
 export async function fetchEnvironmentInfo(args: {
   environmentId: string;
-  sdk: BbSdk;
+  sdk: PatcherSdk;
 }): Promise<ThreadEnvironmentInfo | null> {
   try {
     const env = await args.sdk.environments.get({

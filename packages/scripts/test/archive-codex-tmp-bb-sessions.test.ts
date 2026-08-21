@@ -6,7 +6,7 @@ import {
   buildMatchingThreadIdsSql,
   buildMatchingThreadPreviewSql,
   escapeSqlString,
-  parseArchiveTmpBbSessionsArgs,
+  parseArchiveTmpPatcherSessionsArgs,
   parseThreadPreviewRows,
   renderHelpText,
   resolveCodexStateDbPath,
@@ -22,7 +22,7 @@ afterEach(() => {
 
 describe("archive-codex-tmp-bb-sessions", () => {
   it("defaults to archiving bb test temp dirs from ~/.codex", () => {
-    const parsedArgs = parseArchiveTmpBbSessionsArgs(
+    const parsedArgs = parseArchiveTmpPatcherSessionsArgs(
       [],
       { CODEX_BIN: "/custom/codex" },
       "/Users/tester",
@@ -45,7 +45,7 @@ describe("archive-codex-tmp-bb-sessions", () => {
   });
 
   it("respects CODEX_HOME when choosing the default Codex state directory", () => {
-    const parsedArgs = parseArchiveTmpBbSessionsArgs(
+    const parsedArgs = parseArchiveTmpPatcherSessionsArgs(
       [],
       { CODEX_HOME: "~/custom-codex" },
       "/Users/tester",
@@ -57,7 +57,7 @@ describe("archive-codex-tmp-bb-sessions", () => {
   });
 
   it("parses explicit cleanup options", () => {
-    const parsedArgs = parseArchiveTmpBbSessionsArgs(
+    const parsedArgs = parseArchiveTmpPatcherSessionsArgs(
       [
         "--",
         "--dry-run",
@@ -84,7 +84,7 @@ describe("archive-codex-tmp-bb-sessions", () => {
   });
 
   it("accumulates repeated --pattern flags and replaces the defaults", () => {
-    const parsedArgs = parseArchiveTmpBbSessionsArgs(
+    const parsedArgs = parseArchiveTmpPatcherSessionsArgs(
       ["--pattern", "*/bb-foo-*", "--pattern=*/bb-bar-*"],
       {},
       "/Users/tester",
@@ -94,14 +94,14 @@ describe("archive-codex-tmp-bb-sessions", () => {
   });
 
   it("rejects unknown or incomplete options", () => {
-    expect(() => parseArchiveTmpBbSessionsArgs(["--wat"], {}, "/tmp")).toThrow(
-      "Unknown option: --wat",
-    );
     expect(() =>
-      parseArchiveTmpBbSessionsArgs(["--pattern"], {}, "/tmp"),
+      parseArchiveTmpPatcherSessionsArgs(["--wat"], {}, "/tmp"),
+    ).toThrow("Unknown option: --wat");
+    expect(() =>
+      parseArchiveTmpPatcherSessionsArgs(["--pattern"], {}, "/tmp"),
     ).toThrow("Missing value for --pattern");
     expect(() =>
-      parseArchiveTmpBbSessionsArgs(["--concurrency", "0"], {}, "/tmp"),
+      parseArchiveTmpPatcherSessionsArgs(["--concurrency", "0"], {}, "/tmp"),
     ).toThrow("--concurrency must be a positive integer");
   });
 

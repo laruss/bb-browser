@@ -4,7 +4,7 @@
 // from SDK source/build metadata and the host app's installed copies.
 // Consumed by
 // `bb plugin build` to emit static ESM re-export shims over
-// globalThis.__bbPluginRuntime. Regenerate after upgrading a shimmed package:
+// globalThis.__patcherPluginRuntime. Regenerate after upgrading a shimmed package:
 //   node packages/plugin-build/scripts/generate-runtime-export-manifest.mjs
 
 export const RUNTIME_EXPORT_MANIFEST: Record<string, readonly string[]> = {
@@ -17,10 +17,10 @@ export const RUNTIME_EXPORT_MANIFEST: Record<string, readonly string[]> = {
     "experimental_useSidebarThreadPullRequest",
     "experimental_useSidebarThreadSplit",
     "experimental_useSidebarThreads",
-    "useBbContext",
-    "useBbNavigate",
     "useComposer",
     "useComposerView",
+    "usePatcherContext",
+    "usePatcherNavigate",
     "useRealtime",
     "useRealtimeConnectionState",
     "useRpc",

@@ -1,5 +1,5 @@
 import type { MenuItemConstructorOptions } from "electron";
-import type { BbDesktopBrowserContextMenuItem } from "@patcher/desktop-contract";
+import type { PatcherDesktopBrowserContextMenuItem } from "@patcher/desktop-contract";
 
 // The right-click menu for a browsed page.
 //
@@ -63,7 +63,7 @@ export interface BrowserContextMenuActions {
    */
   inspect?: () => void;
   /** Hand a picked plugin entry back to the renderer, which owns plugin calls. */
-  invokePluginItem: (item: BbDesktopBrowserContextMenuItem) => void;
+  invokePluginItem: (item: PatcherDesktopBrowserContextMenuItem) => void;
   copyText: (text: string) => void;
   goBack: () => void;
   goForward: () => void;
@@ -85,7 +85,7 @@ export interface BuildBrowserContextMenuArgs {
    */
   canOpenExternally?: boolean;
   /** Contributed by plugins; already capped by the wire schema. */
-  pluginItems?: readonly BbDesktopBrowserContextMenuItem[];
+  pluginItems?: readonly PatcherDesktopBrowserContextMenuItem[];
   target: BrowserContextMenuTarget;
 }
 
@@ -97,7 +97,7 @@ export interface BuildBrowserContextMenuArgs {
  * everywhere, which is the honest reading of "no condition".
  */
 export function matchesContextMenuTarget(
-  when: BbDesktopBrowserContextMenuItem["when"],
+  when: PatcherDesktopBrowserContextMenuItem["when"],
   target: BrowserContextMenuTarget,
 ): boolean {
   const asked = when.image || when.link || when.page || when.selection;

@@ -12,7 +12,7 @@ types, so add `@patcher/plugin-sdk` as a devDependency when tests import the
 testing harness (plus its optional peers: `better-sqlite3` for backend tests;
 React, React DOM, Testing Library, and jsdom for frontend tests).
 
-The fake plugin host's `bb` satisfies `BbPluginApi` with host-faithful
+The fake plugin host's `bb` satisfies `PatcherPluginApi` with host-faithful
 semantics: real better-sqlite3 temporary storage (never mock the db), the kv
 256KB cap, schema-RPC validation/error/strict-JSON behavior, additive events,
 keyed registration failures, atomic reload, conditional agent configuration,
@@ -101,7 +101,7 @@ const slot = renderSlot(
       listNotes: () => ({ root: "/notes", notes: [], error: null }),
     }, // method → handler, calls logged
     settings: { greeting: "hi" }, // useSettings() values
-    context: { projectId: "p1", threadId: null }, // useBbContext()
+    context: { projectId: "p1", threadId: null }, // usePatcherContext()
     realtimeConnectionState: "reconnecting", // useRealtimeConnectionState()
   },
 );

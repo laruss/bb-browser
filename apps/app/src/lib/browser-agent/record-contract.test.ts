@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bbDesktopBrowserRecordOperationSchema } from "@patcher/desktop-contract";
+import { patcherDesktopBrowserRecordOperationSchema } from "@patcher/desktop-contract";
 import { browserRecordOperationSchema } from "@patcher/domain";
 
 /**
@@ -47,7 +47,7 @@ describe("the recording union, on both wires", () => {
         `domain: ${JSON.stringify(value)}`,
       ).toBe(true);
       expect(
-        bbDesktopBrowserRecordOperationSchema.safeParse(value).success,
+        patcherDesktopBrowserRecordOperationSchema.safeParse(value).success,
         `desktop: ${JSON.stringify(value)}`,
       ).toBe(true);
     }
@@ -60,7 +60,7 @@ describe("the recording union, on both wires", () => {
         `domain: ${JSON.stringify(value)}`,
       ).toBe(true);
       expect(
-        bbDesktopBrowserRecordOperationSchema.safeParse(value).success,
+        patcherDesktopBrowserRecordOperationSchema.safeParse(value).success,
         `desktop: ${JSON.stringify(value)}`,
       ).toBe(false);
     }
@@ -73,7 +73,7 @@ describe("the recording union, on both wires", () => {
         `domain: ${JSON.stringify(value)}`,
       ).toBe(false);
       expect(
-        bbDesktopBrowserRecordOperationSchema.safeParse(value).success,
+        patcherDesktopBrowserRecordOperationSchema.safeParse(value).success,
         `desktop: ${JSON.stringify(value)}`,
       ).toBe(false);
     }

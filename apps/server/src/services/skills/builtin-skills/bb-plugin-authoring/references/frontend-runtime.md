@@ -135,8 +135,8 @@ serviceTier?, executionInputSources, environment, input }`. Forward it
   connection) because plugin signals are ephemeral and are not replayed.
 - `useSettings()` → `{ values, isLoading }` — effective non-secret values
   (secret settings are excluded; read them server-side only).
-- `useBbContext()` → `{ projectId, threadId }` from the current route.
-- `useBbNavigate()` → `{ toThread(id), toProject(id), toPluginPanel(path,
+- `usePatcherContext()` → `{ projectId, threadId }` from the current route.
+- `usePatcherNavigate()` → `{ toThread(id), toProject(id), toPluginPanel(path,
 { subPath?, replace? }?), toCompose({ initialPrompt?, focusPrompt? }?),
 openThreadPanel({ actionId, title?, params? }) }`.
   `toCompose` opens the root compose screen; pass `initialPrompt` to seed the

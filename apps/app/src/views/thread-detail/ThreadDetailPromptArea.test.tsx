@@ -23,7 +23,7 @@ import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { workflowRow } from "@/test/fixtures/thread-timeline-rows";
 import { THREAD_HANDOFF_CREATE_SEED_LOCATION_STATE_KEY } from "@/lib/thread-handoff-request";
-import { BbHttpError } from "@/lib/sdk";
+import { PatcherHttpError } from "@/lib/sdk";
 import type { PluginComposerHost } from "@/components/plugin/plugin-composer-host";
 import { setComposerTextEffect } from "@/lib/composer-text-effects";
 import {
@@ -1368,7 +1368,7 @@ describe("ThreadDetailPromptArea", () => {
   it("dismisses a missing queued message but keeps a stale edit recoverable", async () => {
     mocks.queuedMessages = [makeQueuedMessage()];
     mocks.updateQueuedMessageMutateAsync.mockRejectedValueOnce(
-      new BbHttpError({
+      new PatcherHttpError({
         body: null,
         code: "invalid_request",
         status: 409,
@@ -1394,7 +1394,7 @@ describe("ThreadDetailPromptArea", () => {
     ).toBeTruthy();
 
     mocks.updateQueuedMessageMutateAsync.mockRejectedValueOnce(
-      new BbHttpError({
+      new PatcherHttpError({
         body: null,
         code: "invalid_request",
         status: 404,

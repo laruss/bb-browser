@@ -302,7 +302,7 @@ cost is not the storage key, it is that **the renderer has no window identity at
 all** — neither `desktop-contract` nor `bb-desktop.ts` carries one. Since browser
 IPC schemas are wire-frozen ([bb-migration.md](bb-migration.md), Invariant 2),
 that identity arrives as a new channel plus an optional method on
-`BbDesktopBrowserApi`, feature-detected — the shape already used for scoped popup
+`PatcherDesktopBrowserApi`, feature-detected — the shape already used for scoped popup
 requests and tab favicons. Scoping the tab store then follows, and two things
 have to be decided rather than derived: which window the agent's `browser_tabs_*`
 addresses (the focused one), and what session restore does with more than one
@@ -322,7 +322,7 @@ The one new thing is how that key reaches the renderer. It cannot be a method,
 because the answer is needed while modules initialise — the tabs atom picks its
 storage key before anything can await — so it rides in as
 `--bb-window-key=<stateKey>` in the window's `additionalArguments` and lands as
-an optional `windowKey` on `BbDesktopApi`. Optional is the negotiation: a web
+an optional `windowKey` on `PatcherDesktopApi`. Optional is the negotiation: a web
 build or an older shell has none, and per-window state falls back to the single
 shared store, which is exactly what every build did before. One migration comes
 with it: whichever window opens first adopts the pre-split list and deletes it,

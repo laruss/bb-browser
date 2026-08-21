@@ -23,7 +23,7 @@
 // point the browser at the BB app the plugin itself runs inside.
 //
 // The type-only import is erased at load time; this file runs as-is.
-import type { BbPluginApi } from "@patcher/plugin-sdk";
+import type { PatcherPluginApi } from "@patcher/plugin-sdk";
 
 const CONFIGURE_HINT =
   "Set project with `bb plugin config omnibox-agent`, " +
@@ -36,7 +36,7 @@ function githubSearchUrl(query: string): string {
   return `https://github.com/search?q=${encodeURIComponent(query)}&type=repositories`;
 }
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(bb: PatcherPluginApi) {
   const settings = bb.settings.define({
     project: {
       type: "project",

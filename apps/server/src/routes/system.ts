@@ -259,7 +259,7 @@ export function registerSystemRoutes(
 
   post(routes.reloadConfig, async (context) => {
     try {
-      await deps.bbAppManagedConfig.reload({ notify: true });
+      await deps.patcherAppManagedConfig.reload({ notify: true });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       throw new ApiError(422, "invalid_config", message);

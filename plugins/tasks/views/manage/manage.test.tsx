@@ -51,7 +51,7 @@ const project = {
   nextTaskNumber: 5,
   color: "blue",
   folderId: null,
-  linkedBbProjectId: null,
+  linkedPatcherProjectId: null,
   createdAt: "2026-07-15T00:00:00.000Z",
 };
 
@@ -775,7 +775,7 @@ describe("NewProjectDialog", () => {
       name: "Home Lab",
       prefix: "HL",
       folderId: null,
-      linkedBbProjectId: null,
+      linkedPatcherProjectId: null,
     });
     await waitFor(() =>
       expect(slot.navigateCalls).toContainEqual({
@@ -809,8 +809,8 @@ describe("NewProjectDialog", () => {
   it("links the personal project from the discovered project picker", async () => {
     const createCalls: Array<Record<string, unknown>> = [];
     const slot = renderEmptyState({
-      listBbProjects: () => ({
-        bbProjects: [{ id: "proj_personal", name: "Personal" }],
+      listPatcherProjects: () => ({
+        patcherProjects: [{ id: "proj_personal", name: "Personal" }],
       }),
       createProject: (input: Record<string, unknown>) => {
         createCalls.push(input);
@@ -827,7 +827,7 @@ describe("NewProjectDialog", () => {
 
     await waitFor(() => expect(createCalls).toHaveLength(1));
     expect(createCalls[0]).toMatchObject({
-      linkedBbProjectId: "proj_personal",
+      linkedPatcherProjectId: "proj_personal",
     });
     expect(slot.queryByPlaceholderText("proj_…")).toBeNull();
   });

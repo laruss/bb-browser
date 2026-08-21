@@ -70,7 +70,7 @@ import {
 import { listBundledPluginRegistrations } from "./builtin-registry.js";
 import {
   RESERVED_AGENT_TOOL_NAMES,
-  type BbPluginApi,
+  type PatcherPluginApi,
   type PluginAgentConfigurationContext,
   type PluginAgentToolContext,
   type PluginAgentToolRecord,
@@ -234,7 +234,7 @@ export interface PluginService {
   ): Promise<PluginListEntry | undefined>;
   reload(id?: string): Promise<void>;
   /** Live API handle for a running plugin (used by later phases and tests). */
-  getApi(id: string): BbPluginApi | undefined;
+  getApi(id: string): PatcherPluginApi | undefined;
   /**
    * On-disk asset backing GET /plugins/:id/assets/app.{js,css}: file path
    * plus the current content hash (the route compares ?h against it for

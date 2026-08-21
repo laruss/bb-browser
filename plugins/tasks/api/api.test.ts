@@ -442,10 +442,10 @@ describe("Tasks RPC domain API", () => {
     });
     registerTasksApi(bb, createStore(bb));
 
-    const result = tasksRpcContract.listBbProjects.output.parse(
-      await harness.callRpc("listBbProjects", null),
+    const result = tasksRpcContract.listPatcherProjects.output.parse(
+      await harness.callRpc("listPatcherProjects", null),
     );
-    expect(result.bbProjects).toEqual([
+    expect(result.patcherProjects).toEqual([
       { id: "proj_personal", name: "Personal" },
       { id: "proj_bb", name: "bb" },
     ]);

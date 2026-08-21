@@ -27,7 +27,7 @@ function createPackageJson({ name, version }) {
   return `${JSON.stringify({ name, version, type: "module" }, null, 2)}\n`;
 }
 
-function createTestRepo({ bbAppVersion, desktopVersion }) {
+function createTestRepo({ patcherAppVersion, desktopVersion }) {
   const repoRoot = mkdtempSync(join(tmpdir(), "bb-bump-version-"));
   testRoots.push(repoRoot);
 
@@ -35,7 +35,7 @@ function createTestRepo({ bbAppVersion, desktopVersion }) {
   mkdirSync(join(repoRoot, "apps", "desktop"), { recursive: true });
   writeFileSync(
     join(repoRoot, "packages", "bb-app", "package.json"),
-    createPackageJson({ name: "bb-app", version: bbAppVersion }),
+    createPackageJson({ name: "bb-app", version: patcherAppVersion }),
   );
   writeFileSync(
     join(repoRoot, "apps", "desktop", "package.json"),
@@ -72,7 +72,7 @@ afterEach(() => {
 describe("bump-version", () => {
   it("exits non-zero for an invalid version argument", () => {
     const repoRoot = createTestRepo({
-      bbAppVersion: "0.0.6",
+      patcherAppVersion: "0.0.6",
       desktopVersion: "0.0.6",
     });
     const result = runScript(repoRoot, ["not-semver"]);
@@ -85,10 +85,10 @@ describe("bump-version", () => {
 
   it("rejects a bump lower than the highest current target version", () => {
     const repoRoot = createTestRepo({
-      bbAppVersion: "0.0.6",
+      patcherAppVersion: "0.0.6",
       desktopVersion: "0.0.9",
     });
-    const originalBbAppContent = readPackageContent(
+    const originalPatcherAppContent = readPackageContent(
       repoRoot,
       "packages/bb-app/package.json",
     );
@@ -103,7 +103,7 @@ describe("bump-version", () => {
       "New version 0.0.7 must be greater than current max 0.0.9 across bb-app=0.0.6 @patcher/desktop=0.0.9.",
     );
     expect(readPackageContent(repoRoot, "packages/bb-app/package.json")).toBe(
-      originalBbAppContent,
+      originalPatcherAppContent,
     );
     expect(readPackageContent(repoRoot, "apps/desktop/package.json")).toBe(
       originalDesktopContent,
@@ -112,7 +112,7 @@ describe("bump-version", () => {
 
   it("updates both package versions for a valid version argument", () => {
     const repoRoot = createTestRepo({
-      bbAppVersion: "0.0.6",
+      patcherAppVersion: "0.0.6",
       desktopVersion: "0.0.6",
     });
     const result = runScript(repoRoot, ["0.0.7"]);
@@ -127,10 +127,10 @@ describe("bump-version", () => {
 
   it("restores the first package file when the second rename fails", async () => {
     const repoRoot = createTestRepo({
-      bbAppVersion: "0.0.6",
+      patcherAppVersion: "0.0.6",
       desktopVersion: "0.0.6",
     });
-    const originalBbAppContent = readPackageContent(
+    const originalPatcherAppContent = readPackageContent(
       repoRoot,
       "packages/bb-app/package.json",
     );
@@ -164,7 +164,7 @@ describe("bump-version", () => {
 
     expect(renameCalls).toBe(2);
     expect(readPackageContent(repoRoot, "packages/bb-app/package.json")).toBe(
-      originalBbAppContent,
+      originalPatcherAppContent,
     );
     expect(readPackageContent(repoRoot, "apps/desktop/package.json")).toBe(
       originalDesktopContent,
@@ -199,7 +199,7 @@ describe("prepare-nightly-version", () => {
 
   it("updates bb-app and desktop to the same nightly version", async () => {
     const repoRoot = createTestRepo({
-      bbAppVersion: "1.2.3",
+      patcherAppVersion: "1.2.3",
       desktopVersion: "1.2.3",
     });
 

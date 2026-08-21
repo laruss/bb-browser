@@ -2,7 +2,7 @@ import { Command } from "commander";
 import type { Host } from "@patcher/domain";
 import type { HostProviderCliStatusResponse } from "@patcher/server-contract";
 import { action } from "../action.js";
-import { createCliBbSdk } from "../client.js";
+import { createCliPatcherSdk } from "../client.js";
 import { renderBorderlessTable } from "../table.js";
 import { outputJson } from "./helpers.js";
 import { resolveMachineId } from "./machine.js";
@@ -58,7 +58,7 @@ function isActionableProviderStatus(status: ProviderCliStatus): boolean {
 }
 
 async function collectMachineUpdates(
-  sdk: ReturnType<typeof createCliBbSdk>,
+  sdk: ReturnType<typeof createCliPatcherSdk>,
   hosts: readonly Host[],
 ): Promise<MachineUpdatesEntry[]> {
   return Promise.all(
@@ -158,7 +158,7 @@ export function registerUpdatesCommands(
     .option("--json", "Print machine-readable JSON output")
     .action(
       action(async (opts: UpdatesCommandOptions) => {
-        const sdk = createCliBbSdk(getUrl());
+        const sdk = createCliPatcherSdk(getUrl());
         const [version, hosts] = await Promise.all([
           sdk.system.version(),
           sdk.hosts.list(),
@@ -207,7 +207,7 @@ export function registerUpdatesCommands(
     .option("--json", "Print machine-readable JSON output")
     .action(
       action(async (opts: UpdatesCommandOptions) => {
-        const sdk = createCliBbSdk(getUrl());
+        const sdk = createCliPatcherSdk(getUrl());
         const hosts = await sdk.hosts.list();
         const selectedHosts =
           opts.machine === undefined

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { BbSdk } from "@patcher/sdk";
+import type { PatcherSdk } from "@patcher/sdk";
 import {
   applySdkPermissions,
   createPluginPermissionGate,
@@ -61,7 +61,7 @@ describe("applySdkPermissions", () => {
       terminals: { create: vi.fn() },
       threads: { list: vi.fn(() => []) },
       subscribe: vi.fn(() => () => {}),
-    } as unknown as BbSdk;
+    } as unknown as PatcherSdk;
   }
 
   it("passes through an area the plugin declared", () => {
@@ -96,7 +96,7 @@ describe("applySdkPermissions", () => {
   it("charges archiving an environment's threads to threads as well", () => {
     const sdk = {
       environments: { archiveThreads: vi.fn(() => "archived"), diff: vi.fn() },
-    } as unknown as BbSdk;
+    } as unknown as PatcherSdk;
     const workspaceOnly = applySdkPermissions(
       sdk,
       "p",
@@ -112,7 +112,7 @@ describe("applySdkPermissions", () => {
   it("lets it through when both are declared", () => {
     const sdk = {
       environments: { archiveThreads: vi.fn(() => "archived") },
-    } as unknown as BbSdk;
+    } as unknown as PatcherSdk;
     const both = applySdkPermissions(
       sdk,
       "p",
@@ -128,7 +128,7 @@ describe("applySdkPermissions", () => {
   it("charges listing thread sections to workspace as well", () => {
     const sdk = {
       threadSections: { list: vi.fn(() => []) },
-    } as unknown as BbSdk;
+    } as unknown as PatcherSdk;
     const threadsOnly = applySdkPermissions(
       sdk,
       "p",

@@ -4,9 +4,9 @@ import {
   BB_DESKTOP_BROWSER_MAX_STORAGE_ITEMS,
   BB_DESKTOP_BROWSER_MAX_STORAGE_TOTAL_LENGTH,
   BB_DESKTOP_BROWSER_MAX_STORAGE_VALUE_LENGTH,
-  type BbDesktopBrowserCookie,
-  type BbDesktopBrowserStorageItem,
-  type BbDesktopBrowserStorageOperation,
+  type PatcherDesktopBrowserCookie,
+  type PatcherDesktopBrowserStorageItem,
+  type PatcherDesktopBrowserStorageOperation,
 } from "@patcher/desktop-contract";
 
 /**
@@ -83,7 +83,7 @@ function toCookieSameSite(sameSite: string | undefined): "Strict" | "Lax" | "Non
 }
 
 const SAME_SITE_TO_SESSION: Record<
-  BbDesktopBrowserCookie["sameSite"],
+  PatcherDesktopBrowserCookie["sameSite"],
   BrowserSessionCookieDetails["sameSite"]
 > = {
   Strict: "strict",
@@ -94,7 +94,7 @@ const SAME_SITE_TO_SESSION: Record<
 /** Electron's cookie, in the shape a `storageState` file uses. */
 export function toBrowserCookie(
   cookie: BrowserSessionCookie,
-): BbDesktopBrowserCookie {
+): PatcherDesktopBrowserCookie {
   // A cookie with no expiry is a session cookie, and Playwright spells that
   // -1 rather than by omitting the field.
   const expires =
@@ -137,7 +137,7 @@ export function toBrowserCookie(
  * and `fallbackUrl` is that tab's URL.
  */
 export function toBrowserSessionCookieDetails(
-  cookie: BbDesktopBrowserCookie,
+  cookie: PatcherDesktopBrowserCookie,
   fallbackUrl: string,
 ): BrowserSessionCookieDetails {
   const host = cookie.domain.replace(/^\./u, "");
@@ -162,7 +162,7 @@ export function toBrowserSessionCookieDetails(
 }
 
 type BrowserStorageScriptOperation = Extract<
-  BbDesktopBrowserStorageOperation,
+  PatcherDesktopBrowserStorageOperation,
   { kind: "items-get" | "items-set" | "items-clear" }
 >;
 
@@ -263,7 +263,7 @@ export function readBrowserStorageScriptError(raw: unknown): string | null {
  */
 export function parseBrowserStorageItems(
   raw: unknown,
-): { items: BbDesktopBrowserStorageItem[]; truncated: boolean } | null {
+): { items: PatcherDesktopBrowserStorageItem[]; truncated: boolean } | null {
   if (typeof raw !== "object" || raw === null) {
     return null;
   }
@@ -271,7 +271,7 @@ export function parseBrowserStorageItems(
   if (!Array.isArray(record.items)) {
     return null;
   }
-  const items: BbDesktopBrowserStorageItem[] = [];
+  const items: PatcherDesktopBrowserStorageItem[] = [];
   for (const entry of record.items.slice(0, BB_DESKTOP_BROWSER_MAX_STORAGE_ITEMS)) {
     if (typeof entry !== "object" || entry === null) {
       return null;

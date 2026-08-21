@@ -8,7 +8,7 @@ import { useConnectionAwareQueryState } from "@/hooks/queries/connection-aware-q
 import { isTransientReadError } from "@/hooks/queries/query-helpers";
 import { useThreadTimeline } from "@/hooks/queries/thread-queries";
 import { isOptimisticTimelineRowId } from "@/lib/optimistic-timeline-row";
-import { BbHttpError, sdk } from "@/lib/sdk";
+import { PatcherHttpError, sdk } from "@/lib/sdk";
 
 export type ThreadTimelineRowFilter = (row: TimelineRow) => boolean;
 
@@ -401,7 +401,7 @@ export function recoverLoadedTimelineAfterStaleCursor({
 
 export function isStaleTimelinePaginationCursorError(error: Error): boolean {
   return (
-    error instanceof BbHttpError &&
+    error instanceof PatcherHttpError &&
     error.status === 400 &&
     error.code === "invalid_request"
   );

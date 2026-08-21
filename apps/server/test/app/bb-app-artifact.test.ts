@@ -6,9 +6,9 @@ import { pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 import { afterEach, describe, expect, it } from "vitest";
 import {
-  createBbAppArtifactService,
-  resolveBbAppPackage,
-  type BbAppArtifactCommandRunner,
+  createPatcherAppArtifactService,
+  resolvePatcherAppPackage,
+  type PatcherAppArtifactCommandRunner,
 } from "../../src/services/install/bb-app-artifact.js";
 
 const execFileAsync = promisify(execFile);
@@ -64,7 +64,11 @@ describe.each(MODES)("bb-app artifact service (%s)", (mode) => {
       args: readonly string[];
       cwd: string;
     }> = [];
-    const runner: BbAppArtifactCommandRunner = async (command, args, cwd) => {
+    const runner: PatcherAppArtifactCommandRunner = async (
+      command,
+      args,
+      cwd,
+    ) => {
       calls.push({ command, args, cwd });
       if (command === "bunx") {
         return "built";
@@ -72,12 +76,12 @@ describe.each(MODES)("bb-app artifact service (%s)", (mode) => {
       const result = await execFileAsync(command, [...args], { cwd });
       return result.stdout;
     };
-    const resolved = await resolveBbAppPackage(
+    const resolved = await resolvePatcherAppPackage(
       pathToFileURL(test.serverEntry).href,
     );
     expect(resolved.root).toBe(test.packageRoot);
     expect(resolved.layout).toBe(isRepoMode(mode) ? "repo" : "packaged");
-    const service = createBbAppArtifactService({
+    const service = createPatcherAppArtifactService({
       dataDir: join(test.root, "data"),
       commandRunner: runner,
       serverEntryUrl: pathToFileURL(test.serverEntry).href,
@@ -111,7 +115,11 @@ describe.each(MODES)("bb-app artifact service (%s)", (mode) => {
       args: readonly string[];
       cwd: string;
     }> = [];
-    const runner: BbAppArtifactCommandRunner = async (command, args, cwd) => {
+    const runner: PatcherAppArtifactCommandRunner = async (
+      command,
+      args,
+      cwd,
+    ) => {
       calls.push({ command, args, cwd });
       if (command === "bunx") return "built";
       return (await execFileAsync(command, [...args], { cwd })).stdout;
@@ -123,14 +131,16 @@ describe.each(MODES)("bb-app artifact service (%s)", (mode) => {
       protocolVersion: 51,
     };
 
-    const first = await createBbAppArtifactService(options).getTarballPath();
+    const first =
+      await createPatcherAppArtifactService(options).getTarballPath();
     expect(
       (await execFileAsync("tar", ["-xOzf", first, "package/README.md"]))
         .stdout,
     ).toBe("fixture\n");
 
     await writeFile(join(test.packageRoot, "README.md"), "updated\n");
-    const second = await createBbAppArtifactService(options).getTarballPath();
+    const second =
+      await createPatcherAppArtifactService(options).getTarballPath();
 
     expect(second).toBe(first);
     expect(
@@ -150,7 +160,11 @@ describe.each(MODES)("bb-app artifact service (%s)", (mode) => {
       args: readonly string[];
       cwd: string;
     }> = [];
-    const runner: BbAppArtifactCommandRunner = async (command, args, cwd) => {
+    const runner: PatcherAppArtifactCommandRunner = async (
+      command,
+      args,
+      cwd,
+    ) => {
       calls.push({ command, args, cwd });
       if (command === "bunx") return "built";
       return (await execFileAsync(command, [...args], { cwd })).stdout;
@@ -161,11 +175,11 @@ describe.each(MODES)("bb-app artifact service (%s)", (mode) => {
       serverEntryUrl: pathToFileURL(test.serverEntry).href,
     };
 
-    const first = await createBbAppArtifactService({
+    const first = await createPatcherAppArtifactService({
       ...baseOptions,
       protocolVersion: 51,
     }).getTarballPath();
-    const second = await createBbAppArtifactService({
+    const second = await createPatcherAppArtifactService({
       ...baseOptions,
       protocolVersion: 52,
     }).getTarballPath();
@@ -180,7 +194,11 @@ describe.each(MODES)("bb-app artifact service (%s)", (mode) => {
   it("keeps serving the previous artifact when a rebuild fails, and retries after", async () => {
     const test = await fixture(mode);
     let failNextPack = false;
-    const runner: BbAppArtifactCommandRunner = async (command, args, cwd) => {
+    const runner: PatcherAppArtifactCommandRunner = async (
+      command,
+      args,
+      cwd,
+    ) => {
       if (command === "bunx") return "built";
       if (failNextPack) throw new Error("npm pack exploded");
       return (await execFileAsync(command, [...args], { cwd })).stdout;
@@ -192,14 +210,15 @@ describe.each(MODES)("bb-app artifact service (%s)", (mode) => {
       protocolVersion: 51,
     };
 
-    const tarball = await createBbAppArtifactService(options).getTarballPath();
+    const tarball =
+      await createPatcherAppArtifactService(options).getTarballPath();
 
     // A later process restarts, its rebuild fails, and the artifact it would
     // have replaced must survive: daemons keep an installable package instead
     // of a 404 with nothing on disk.
     failNextPack = true;
     await writeFile(join(test.packageRoot, "README.md"), "updated\n");
-    const service = createBbAppArtifactService(options);
+    const service = createPatcherAppArtifactService(options);
     await expect(service.getTarballPath()).rejects.toThrow("npm pack exploded");
     expect(
       (await execFileAsync("tar", ["-xOzf", tarball, "package/README.md"]))

@@ -27,7 +27,7 @@ const SKILL_FILE_NAME = "SKILL.md";
 
 type SkillRootResolution = CommandRootResolution;
 
-function createBbSkillScanRoot(
+function createPatcherSkillScanRoot(
   rootPath: string,
   rootKind: Extract<SkillRootKind, `bb-${string}`>,
 ): SkillScanRoot {
@@ -47,13 +47,13 @@ function createBbSkillScanRoot(
  * bb-builtin skills remain server-owned so remote hosts never interpret server
  * filesystem paths or create a second, divergent user catalog.
  */
-function resolveBbSkillScanRoots(
+function resolvePatcherSkillScanRoots(
   resolution: SkillRootResolution,
 ): SkillScanRoot[] {
   const roots: SkillScanRoot[] = [];
   if (resolution.cwd !== null) {
     roots.push(
-      createBbSkillScanRoot(
+      createPatcherSkillScanRoot(
         path.join(resolution.cwd, ".bb", "skills"),
         "bb-project",
       ),
@@ -67,7 +67,7 @@ function resolveBbSkillScanRoots(
  * product scope. Plugin roots are tagged structurally (they always carry a
  * `namePrefix`); provider base roots are matched by exact path against the same
  * resolution that produced them. bb roots arrive already tagged from
- * `resolveBbSkillScanRoots`. Returns `null` for legacy command roots or an
+ * `resolvePatcherSkillScanRoots`. Returns `null` for legacy command roots or an
  * unrecognized root.
  */
 function classifySkillRoot(
@@ -144,7 +144,7 @@ function classifySkillRoot(
 export async function resolveSkillScanRoots(
   resolution: SkillRootResolution,
 ): Promise<SkillScanRoot[]> {
-  const skillRoots = resolveBbSkillScanRoots(resolution);
+  const skillRoots = resolvePatcherSkillScanRoots(resolution);
   const providerRoots = await resolveProviderCommandScanRoots(resolution);
   for (const root of providerRoots) {
     const classification = classifySkillRoot(root, resolution);

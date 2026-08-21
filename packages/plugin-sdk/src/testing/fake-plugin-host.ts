@@ -7,7 +7,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { PLUGIN_CLI_OUTPUT_MAX_BYTES } from "../backend-contract.js";
 import type {
-  BbPluginApi,
+  PatcherPluginApi,
   PluginAgentConfiguration,
   PluginAgentConfigurationContext,
   PluginAgentToolContext,
@@ -100,7 +100,7 @@ import {
 /**
  * `createFakePluginHost` — an in-process stand-in for the BB server's plugin
  * runtime (apps/server/src/services/plugins/plugin-api.ts), for unit-testing
- * a plugin's `server.ts` without a server. `bb` satisfies {@link BbPluginApi};
+ * a plugin's `server.ts` without a server. `bb` satisfies {@link PatcherPluginApi};
  * `harness` drives and inspects it.
  *
  * Faithful where a plugin can observe it: registration name validation and
@@ -607,7 +607,7 @@ export interface FakePluginLifecycleControls {
    * services/hooks are disposed and the returned host becomes current.
    */
   reload(
-    factory: (bb: BbPluginApi) => void | Promise<void>,
+    factory: (bb: PatcherPluginApi) => void | Promise<void>,
   ): Promise<FakePluginHost>;
   /**
    * Dispose like a host reload/disable: abort services started via
@@ -672,7 +672,7 @@ export interface CreateFakePluginHostOptions {
 }
 
 export interface FakePluginHost {
-  bb: BbPluginApi;
+  bb: PatcherPluginApi;
   harness: FakePluginHarness;
 }
 
@@ -3126,7 +3126,7 @@ function createFakePluginHostInternal(
     },
   };
 
-  const bb: BbPluginApi = {
+  const bb: PatcherPluginApi = {
     pluginId,
     log,
     settings,

@@ -29,7 +29,7 @@ vi.mock("@/lib/browser-view-bounds-sync", () => ({
 
 vi.mock("@/lib/bb-desktop", () => ({
   DEFAULT_DESKTOP_WINDOW_STATE: { isFullScreen: false },
-  getBbDesktopInfo: () => null,
+  getPatcherDesktopInfo: () => null,
   // Reached through the leading panel, which reads the browser strip to decide
   // whether a site-scoped panel applies; the strip is keyed per window.
   getDesktopWindowKey: () => null,

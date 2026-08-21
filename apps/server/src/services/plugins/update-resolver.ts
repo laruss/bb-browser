@@ -194,7 +194,7 @@ function allowedNpmVersions(
 }
 
 export function evaluateCompatibility(args: {
-  bbRange: string | undefined;
+  patcherRange: string | undefined;
   sdkRange: string | undefined;
   appVersion: string;
 }): {
@@ -207,21 +207,21 @@ export function evaluateCompatibility(args: {
     throw new Error(`cannot parse running bb version "${args.appVersion}"`);
   }
   const devMode = appVersion.version === "0.0.0";
-  const bbProblems: CompatibilityProblem[] = [];
-  if (args.bbRange !== undefined) {
-    if (semver.validRange(args.bbRange) === null) {
-      bbProblems.push({
+  const patcherProblems: CompatibilityProblem[] = [];
+  if (args.patcherRange !== undefined) {
+    if (semver.validRange(args.patcherRange) === null) {
+      patcherProblems.push({
         engine: "bb",
-        required: args.bbRange,
+        required: args.patcherRange,
         actual: appVersion.version,
-        message: `declares invalid engines.bb range ${JSON.stringify(args.bbRange)}`,
+        message: `declares invalid engines.bb range ${JSON.stringify(args.patcherRange)}`,
       });
-    } else if (!semver.satisfies(appVersion, args.bbRange)) {
-      bbProblems.push({
+    } else if (!semver.satisfies(appVersion, args.patcherRange)) {
+      patcherProblems.push({
         engine: "bb",
-        required: args.bbRange,
+        required: args.patcherRange,
         actual: appVersion.version,
-        message: `requires bb ${args.bbRange}, running bb is ${appVersion.version}`,
+        message: `requires bb ${args.patcherRange}, running bb is ${appVersion.version}`,
       });
     }
   }
@@ -244,8 +244,8 @@ export function evaluateCompatibility(args: {
     }
   }
   return {
-    effective: devMode ? sdkProblems : [...bbProblems, ...sdkProblems],
-    packaged: bbProblems,
+    effective: devMode ? sdkProblems : [...patcherProblems, ...sdkProblems],
+    packaged: patcherProblems,
     devMode,
   };
 }
@@ -322,7 +322,7 @@ export async function selectNpmCandidate(args: {
       },
     };
     const problems = evaluateCompatibility({
-      bbRange: candidate.engines.bb,
+      patcherRange: candidate.engines.bb,
       sdkRange: candidate.engines.bbPluginSdk,
       appVersion: args.appVersion,
     });

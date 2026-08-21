@@ -7,7 +7,7 @@
 //
 // It deliberately does NOT proxy thread content: the frontend renders the
 // host's own `ThreadChat`, which loads and streams its own timeline.
-import { defineRpcContract, type BbPluginApi } from "@patcher/plugin-sdk";
+import { defineRpcContract, type PatcherPluginApi } from "@patcher/plugin-sdk";
 import type { NewThreadRequest } from "@patcher/plugin-sdk/app";
 import { z } from "zod";
 
@@ -151,7 +151,7 @@ export const rpcContract = defineRpcContract({
   deleteSection: { input: z.object({ id: z.string().min(1) }), output: okSchema },
 });
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(bb: PatcherPluginApi) {
   async function readLayout(): Promise<Layout> {
     const stored = await bb.storage.kv.get<unknown>(LAYOUT_KEY);
     const parsed = layoutSchema.safeParse(stored);

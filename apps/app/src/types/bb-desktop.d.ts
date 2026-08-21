@@ -1,8 +1,10 @@
-import type { BbDesktopApi } from "@patcher/desktop-contract";
+import type { PatcherDesktopApi } from "@patcher/desktop-contract";
 
 declare global {
   interface Window {
-    bbDesktop?: BbDesktopApi;
+    /** Deprecated alias kept for shells built before the Patcher rename. */
+    bbDesktop?: PatcherDesktopApi;
+    patcherDesktop?: PatcherDesktopApi;
   }
 }
 

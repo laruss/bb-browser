@@ -9,7 +9,7 @@ import {
   waitFor,
 } from "@testing-library/react";
 import type { ProjectSource } from "@patcher/domain";
-import { BbHttpError } from "@patcher/sdk/browser";
+import { PatcherHttpError } from "@patcher/sdk/browser";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { sdk } from "@/lib/sdk";
 import {
@@ -139,7 +139,7 @@ describe("ProjectMachineSetupDialog", () => {
     const gitStderr =
       "git clone failed: fatal: could not read Username for 'https://github.com'";
     vi.mocked(sdk.projects.sources.add).mockRejectedValue(
-      new BbHttpError({
+      new PatcherHttpError({
         status: 502,
         code: "git_command_failed",
         message: gitStderr,
@@ -161,7 +161,7 @@ describe("ProjectMachineSetupDialog", () => {
       path: DEFAULT_CLONE_PATH,
     });
     vi.mocked(sdk.projects.sources.add).mockRejectedValue(
-      new BbHttpError({
+      new PatcherHttpError({
         status: 409,
         code: "target_not_empty",
         message: "Target directory is not empty",

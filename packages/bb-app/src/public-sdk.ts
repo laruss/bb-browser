@@ -1,24 +1,24 @@
 import {
-  BbHttpError,
-  BbRequestTimeoutError,
+  PatcherHttpError,
+  PatcherRequestTimeoutError,
   ThreadWaitTimeoutError,
   ThreadWaitUnreachableError,
-  createNodeBbSdk,
-  type BbSdk,
-  type CreateNodeBbSdkArgs,
+  createNodePatcherSdk,
+  type PatcherSdk,
+  type CreateNodePatcherSdkArgs,
 } from "@patcher/sdk/node";
 import type {
-  BbRealtimeSubscribeArgs,
-  BbRealtimeSocket,
-  BbRealtimeSocketFactory,
-  BbRealtimeSocketMessageEvent,
+  PatcherRealtimeSubscribeArgs,
+  PatcherRealtimeSocket,
+  PatcherRealtimeSocketFactory,
+  PatcherRealtimeSocketMessageEvent,
   ThreadGetResult,
   ThreadStatusArgs,
 } from "@patcher/sdk/node";
 
 export {
-  BbHttpError,
-  BbRequestTimeoutError,
+  PatcherHttpError,
+  PatcherRequestTimeoutError,
   ThreadWaitTimeoutError,
   ThreadWaitUnreachableError,
 };
@@ -42,19 +42,20 @@ export type {
 } from "@patcher/sdk/node";
 export type { CallerExecutionInputSource as ExecutionInputSource } from "@patcher/sdk/node";
 
-export type BBSdkOptions = CreateNodeBbSdkArgs;
-export type BBSdkRealtimeSubscribeArgs = BbRealtimeSubscribeArgs;
-export type BBSdkRealtimeSocket = BbRealtimeSocket;
-export type BBSdkRealtimeSocketFactory = BbRealtimeSocketFactory;
-export type BBSdkRealtimeSocketMessageEvent = BbRealtimeSocketMessageEvent;
-export type BBSdkStatusArea = BbSdk["status"];
-export type BBSdkSkillsArea = BbSdk["skills"];
-export type BBSdkTerminalsArea = BbSdk["terminals"];
+export type BBSdkOptions = CreateNodePatcherSdkArgs;
+export type BBSdkRealtimeSubscribeArgs = PatcherRealtimeSubscribeArgs;
+export type BBSdkRealtimeSocket = PatcherRealtimeSocket;
+export type BBSdkRealtimeSocketFactory = PatcherRealtimeSocketFactory;
+export type BBSdkRealtimeSocketMessageEvent = PatcherRealtimeSocketMessageEvent;
+export type BBSdkStatusArea = PatcherSdk["status"];
+export type BBSdkSkillsArea = PatcherSdk["skills"];
+export type BBSdkTerminalsArea = PatcherSdk["terminals"];
 export type BBSdkThread = ThreadGetResult;
-export type BBSdkThreadsArea = BbSdk["threads"];
+export type BBSdkThreadsArea = PatcherSdk["threads"];
 export type ThreadIdArgs = ThreadStatusArgs;
-export type BbHttpErrorConstructor = typeof BbHttpError;
-export type BbRequestTimeoutErrorConstructor = typeof BbRequestTimeoutError;
+export type PatcherHttpErrorConstructor = typeof PatcherHttpError;
+export type PatcherRequestTimeoutErrorConstructor =
+  typeof PatcherRequestTimeoutError;
 export type ThreadWaitTimeoutErrorConstructor = typeof ThreadWaitTimeoutError;
 export type ThreadWaitUnreachableErrorConstructor =
   typeof ThreadWaitUnreachableError;
@@ -63,26 +64,26 @@ export type ThreadWaitUnreachableErrorConstructor =
  * Public npm façade over the canonical BB SDK. Keep every area typed from
  * `@patcher/sdk` so the packaged SDK cannot drift behind the CLI or web app.
  */
-export class BBSdk implements BbSdk {
-  readonly browserHistory: BbSdk["browserHistory"];
-  readonly environments: BbSdk["environments"];
-  readonly files: BbSdk["files"];
-  readonly guide: BbSdk["guide"];
-  readonly hosts: BbSdk["hosts"];
-  readonly plugins: BbSdk["plugins"];
-  readonly projects: BbSdk["projects"];
-  readonly providers: BbSdk["providers"];
-  readonly skills: BbSdk["skills"];
-  readonly status: BbSdk["status"];
-  readonly system: BbSdk["system"];
-  readonly terminals: BbSdk["terminals"];
-  readonly theme: BbSdk["theme"];
-  readonly threadSections: BbSdk["threadSections"];
-  readonly threads: BbSdk["threads"];
-  readonly subscribe: BbSdk["subscribe"];
+export class BBSdk implements PatcherSdk {
+  readonly browserHistory: PatcherSdk["browserHistory"];
+  readonly environments: PatcherSdk["environments"];
+  readonly files: PatcherSdk["files"];
+  readonly guide: PatcherSdk["guide"];
+  readonly hosts: PatcherSdk["hosts"];
+  readonly plugins: PatcherSdk["plugins"];
+  readonly projects: PatcherSdk["projects"];
+  readonly providers: PatcherSdk["providers"];
+  readonly skills: PatcherSdk["skills"];
+  readonly status: PatcherSdk["status"];
+  readonly system: PatcherSdk["system"];
+  readonly terminals: PatcherSdk["terminals"];
+  readonly theme: PatcherSdk["theme"];
+  readonly threadSections: PatcherSdk["threadSections"];
+  readonly threads: PatcherSdk["threads"];
+  readonly subscribe: PatcherSdk["subscribe"];
 
   constructor(options: BBSdkOptions = {}) {
-    const sdk = createNodeBbSdk(options);
+    const sdk = createNodePatcherSdk(options);
     this.browserHistory = sdk.browserHistory;
     this.environments = sdk.environments;
     this.files = sdk.files;

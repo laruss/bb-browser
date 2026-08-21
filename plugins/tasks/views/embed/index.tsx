@@ -3,7 +3,7 @@ import type {
   PluginMessageDirectiveProps,
   PluginThreadPanelProps,
 } from "@patcher/plugin-sdk";
-import { useBbNavigate, useRealtime } from "@patcher/plugin-sdk/app";
+import { usePatcherNavigate, useRealtime } from "@patcher/plugin-sdk/app";
 import { Button } from "@patcher/shared-ui/button";
 import { Icon } from "@patcher/shared-ui/icon";
 import { Skeleton } from "@patcher/shared-ui/skeleton";
@@ -106,7 +106,7 @@ function OpenInTasksButton({
   label: string;
   subPath?: string;
 }) {
-  const navigate = useBbNavigate();
+  const navigate = usePatcherNavigate();
   return (
     <Button
       className="size-8 shrink-0"
@@ -157,7 +157,7 @@ function embedAriaLabel(task: Task): string {
 }
 
 export function TaskDirectiveCard({ attributes }: PluginMessageDirectiveProps) {
-  const navigate = useBbNavigate();
+  const navigate = usePatcherNavigate();
   const taskKey = attributes.key?.trim() ?? "";
   const fallbackTitle = attributes.title?.trim() || null;
   const validKey = TASK_KEY_PATTERN.test(taskKey);

@@ -13,84 +13,84 @@ import {
   BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH,
   BB_DESKTOP_BROWSER_MAX_MIME_TYPE_LENGTH,
   BB_DESKTOP_BROWSER_MAX_URL_LENGTH,
-  clampBbDesktopBrowserViewBounds,
-  type BbDesktopBrowserAttachRequest,
-  type BbDesktopBrowserNavigateRequest,
-  type BbDesktopBrowserOpenTabRequest,
-  type BbDesktopBrowserScopedOpenTabRequest,
-  type BbDesktopBrowserSetBoundsRequest,
-  type BbDesktopBrowserSetVisibleRequest,
-  type BbDesktopBrowserDownload,
-  type BbDesktopBrowserDownloadActionRequest,
-  type BbDesktopBrowserDownloadActionResult,
-  type BbDesktopBrowserContextMenuInvoke,
-  type BbDesktopBrowserContextMenuItem,
-  type BbDesktopBrowserPageStyle,
-  type BbDesktopBrowserPageStyles,
-  type BbDesktopBrowserPageScript,
-  type BbDesktopBrowserPageScripts,
-  type BbDesktopBrowserPageScriptCall,
-  type BbDesktopBrowserPageScriptResult,
-  type BbDesktopPageScriptBootstrap,
-  type BbDesktopPageScriptRpcAnswer,
-  type BbDesktopPageScriptRpcRequest,
-  type BbDesktopPageScriptWorld,
-  type BbDesktopBrowserContextMenuItems,
-  type BbDesktopBrowserSearchSelection,
-  type BbDesktopBrowserSetOverlayRequest,
-  type BbDesktopBrowserSetFullscreenRequest,
-  type BbDesktopBrowserFavicon,
-  type BbDesktopBrowserPageSecurity,
-  type BbDesktopBrowserSetMutedRequest,
-  type BbDesktopBrowserSetZoomRequest,
-  type BbDesktopBrowserZoom,
-  type BbDesktopBrowserFindRequest,
-  type BbDesktopBrowserFindResult,
+  clampPatcherDesktopBrowserViewBounds,
+  type PatcherDesktopBrowserAttachRequest,
+  type PatcherDesktopBrowserNavigateRequest,
+  type PatcherDesktopBrowserOpenTabRequest,
+  type PatcherDesktopBrowserScopedOpenTabRequest,
+  type PatcherDesktopBrowserSetBoundsRequest,
+  type PatcherDesktopBrowserSetVisibleRequest,
+  type PatcherDesktopBrowserDownload,
+  type PatcherDesktopBrowserDownloadActionRequest,
+  type PatcherDesktopBrowserDownloadActionResult,
+  type PatcherDesktopBrowserContextMenuInvoke,
+  type PatcherDesktopBrowserContextMenuItem,
+  type PatcherDesktopBrowserPageStyle,
+  type PatcherDesktopBrowserPageStyles,
+  type PatcherDesktopBrowserPageScript,
+  type PatcherDesktopBrowserPageScripts,
+  type PatcherDesktopBrowserPageScriptCall,
+  type PatcherDesktopBrowserPageScriptResult,
+  type PatcherDesktopPageScriptBootstrap,
+  type PatcherDesktopPageScriptRpcAnswer,
+  type PatcherDesktopPageScriptRpcRequest,
+  type PatcherDesktopPageScriptWorld,
+  type PatcherDesktopBrowserContextMenuItems,
+  type PatcherDesktopBrowserSearchSelection,
+  type PatcherDesktopBrowserSetOverlayRequest,
+  type PatcherDesktopBrowserSetFullscreenRequest,
+  type PatcherDesktopBrowserFavicon,
+  type PatcherDesktopBrowserPageSecurity,
+  type PatcherDesktopBrowserSetMutedRequest,
+  type PatcherDesktopBrowserSetZoomRequest,
+  type PatcherDesktopBrowserZoom,
+  type PatcherDesktopBrowserFindRequest,
+  type PatcherDesktopBrowserFindResult,
   BB_DESKTOP_BROWSER_MAX_SNAPSHOT_LENGTH,
   BB_DESKTOP_BROWSER_MAX_DIALOG_MESSAGE_LENGTH,
-  type BbDesktopBrowserDialog,
-  type BbDesktopBrowserDialogRespondRequest,
+  type PatcherDesktopBrowserDialog,
+  type PatcherDesktopBrowserDialogRespondRequest,
   BB_DESKTOP_BROWSER_MAX_CLIENT_CERTIFICATES,
   BB_DESKTOP_BROWSER_MAX_PROMPT_TEXT_LENGTH,
-  type BbDesktopBrowserPagePrompt,
-  type BbDesktopBrowserPagePromptAnswer,
-  type BbDesktopBrowserPagePromptDetails,
-  type BbDesktopBrowserPopup,
-  type BbDesktopBrowserPopupTabs,
-  type BbDesktopBrowserDevToolsRequest,
-  type BbDesktopBrowserDevToolsVisibleRequest,
-  type BbDesktopBrowserDevToolsState,
+  type PatcherDesktopBrowserPagePrompt,
+  type PatcherDesktopBrowserPagePromptAnswer,
+  type PatcherDesktopBrowserPagePromptDetails,
+  type PatcherDesktopBrowserPopup,
+  type PatcherDesktopBrowserPopupTabs,
+  type PatcherDesktopBrowserDevToolsRequest,
+  type PatcherDesktopBrowserDevToolsVisibleRequest,
+  type PatcherDesktopBrowserDevToolsState,
   BB_DESKTOP_BROWSER_MAX_COOKIES,
   BB_DESKTOP_BROWSER_MAX_EVAL_RESULT_LENGTH,
   BB_DESKTOP_BROWSER_MAX_PDF_BASE64_LENGTH,
   BB_DESKTOP_BROWSER_MAX_ROUTES,
   BB_DESKTOP_BROWSER_MAX_SCREENSHOT_BASE64_LENGTH,
-  type BbDesktopBrowserCaptureFullPageRequest,
-  type BbDesktopBrowserCaptureFullPageResult,
-  type BbDesktopBrowserConsoleEntry,
-  type BbDesktopBrowserControlRequest,
-  type BbDesktopBrowserControlResult,
-  type BbDesktopBrowserRecordRequest,
-  type BbDesktopBrowserSnapshotInRequest,
-  type BbDesktopBrowserRecordResult,
-  type BbDesktopBrowserRouteState,
-  type BbDesktopBrowserInteraction,
-  type BbDesktopBrowserInteractRequest,
-  type BbDesktopBrowserInteractResult,
-  type BbDesktopBrowserNetworkEntry,
-  type BbDesktopBrowserObservation,
-  type BbDesktopBrowserObserveRequest,
-  type BbDesktopBrowserObserveResult,
-  type BbDesktopBrowserPageReadResult,
-  type BbDesktopBrowserSnapshot,
-  type BbDesktopBrowserSnapshotRequest,
-  type BbDesktopBrowserSnapshotResult,
-  type BbDesktopBrowserStorageOperation,
-  type BbDesktopBrowserStorageRequest,
-  type BbDesktopBrowserStorageResult,
-  type BbDesktopBrowserState,
-  type BbDesktopBrowserViewportBounds,
-  type BbDesktopBrowserViewBounds,
+  type PatcherDesktopBrowserCaptureFullPageRequest,
+  type PatcherDesktopBrowserCaptureFullPageResult,
+  type PatcherDesktopBrowserConsoleEntry,
+  type PatcherDesktopBrowserControlRequest,
+  type PatcherDesktopBrowserControlResult,
+  type PatcherDesktopBrowserRecordRequest,
+  type PatcherDesktopBrowserSnapshotInRequest,
+  type PatcherDesktopBrowserRecordResult,
+  type PatcherDesktopBrowserRouteState,
+  type PatcherDesktopBrowserInteraction,
+  type PatcherDesktopBrowserInteractRequest,
+  type PatcherDesktopBrowserInteractResult,
+  type PatcherDesktopBrowserNetworkEntry,
+  type PatcherDesktopBrowserObservation,
+  type PatcherDesktopBrowserObserveRequest,
+  type PatcherDesktopBrowserObserveResult,
+  type PatcherDesktopBrowserPageReadResult,
+  type PatcherDesktopBrowserSnapshot,
+  type PatcherDesktopBrowserSnapshotRequest,
+  type PatcherDesktopBrowserSnapshotResult,
+  type PatcherDesktopBrowserStorageOperation,
+  type PatcherDesktopBrowserStorageRequest,
+  type PatcherDesktopBrowserStorageResult,
+  type PatcherDesktopBrowserState,
+  type PatcherDesktopBrowserViewportBounds,
+  type PatcherDesktopBrowserViewBounds,
 } from "@patcher/desktop-contract";
 import type { AppCommandId, AppShortcutInput } from "@patcher/domain";
 import { matchesBrowserUrlPattern } from "@patcher/domain/browser-url-pattern";
@@ -288,9 +288,9 @@ const PAGE_UNRESPONSIVE_ERROR_TEXT = "This page is not responding.";
 
 /** A network question a tab is stopped on, and how to answer it. */
 interface PendingPagePrompt {
-  details: BbDesktopBrowserPagePromptDetails;
+  details: PatcherDesktopBrowserPagePromptDetails;
   /** Hands the decision back to Chromium. Called exactly once. */
-  settle: (answer: BbDesktopBrowserPagePromptAnswer["answer"]) => void;
+  settle: (answer: PatcherDesktopBrowserPagePromptAnswer["answer"]) => void;
 }
 
 /** Electron's `login` answer: called with credentials, or with nothing to cancel. */
@@ -321,7 +321,7 @@ function declineClientCertificate(
  * one kind different from the next.
  */
 type OpenPagePromptDetails =
-  BbDesktopBrowserPagePromptDetails extends infer TDetails
+  PatcherDesktopBrowserPagePromptDetails extends infer TDetails
     ? TDetails extends { kind: string }
       ? Omit<TDetails, "id">
       : never
@@ -379,7 +379,7 @@ interface BrowserViewEntry {
    * {@link DesktopBrowserViewManager.clampVisibleBoundsForWindow}) without
    * losing the renderer's intent.
    */
-  desiredBounds: BbDesktopBrowserViewBounds;
+  desiredBounds: PatcherDesktopBrowserViewBounds;
   popupTimestamps: number[];
   /**
    * This view is a popup the shell created, and the renderer has not adopted it
@@ -455,7 +455,7 @@ interface BrowserViewEntry {
    * a WebContentsView composites above the DOM, so there is no other way to put
    * UI in front of the page.
    */
-  pendingDialog: BbDesktopBrowserDialog["dialog"];
+  pendingDialog: PatcherDesktopBrowserDialog["dialog"];
   /**
    * The network question this tab is stopped on — an authentication challenge,
    * an untrusted certificate, a request for a client certificate. Hides the
@@ -537,8 +537,8 @@ interface BrowserViewEntry {
    * tab nobody has automated still has an answer — see
    * `desktop-browser-observe.ts` for why that decides the mechanism.
    */
-  consoleLog: BrowserObservationLog<BbDesktopBrowserConsoleEntry>;
-  networkLog: BrowserObservationLog<BbDesktopBrowserNetworkEntry>;
+  consoleLog: BrowserObservationLog<PatcherDesktopBrowserConsoleEntry>;
+  networkLog: BrowserObservationLog<PatcherDesktopBrowserNetworkEntry>;
   /**
    * Requests this tab answers itself instead of fetching, newest first, and
    * whether it is pretending to be offline.
@@ -547,7 +547,7 @@ interface BrowserViewEntry {
    * interception and the emulation when the client detaches — so both are
    * cleared with it rather than left describing a tab that is no longer routed.
    */
-  routes: BbDesktopBrowserRouteState[];
+  routes: PatcherDesktopBrowserRouteState[];
   /** Guards one-time `Fetch.requestPaused` wiring per CDP session. */
   routesWired: boolean;
   /** Whether the `Fetch` domain is currently on for this tab. */
@@ -579,22 +579,22 @@ interface BrowserViewEntry {
 }
 
 export type DesktopBrowserHostWebContentsPayload =
-  | BbDesktopBrowserState
-  | BbDesktopBrowserOpenTabRequest
-  | BbDesktopBrowserScopedOpenTabRequest
-  | BbDesktopBrowserSnapshot
-  | BbDesktopBrowserDialog
-  | BbDesktopBrowserDownload
-  | BbDesktopBrowserFavicon
-  | BbDesktopBrowserZoom
-  | BbDesktopBrowserPageSecurity
-  | BbDesktopBrowserFindResult
-  | BbDesktopBrowserPagePrompt
-  | BbDesktopBrowserPopup
-  | BbDesktopBrowserDevToolsState
-  | BbDesktopBrowserSearchSelection
-  | BbDesktopBrowserContextMenuInvoke
-  | BbDesktopBrowserPageScriptCall;
+  | PatcherDesktopBrowserState
+  | PatcherDesktopBrowserOpenTabRequest
+  | PatcherDesktopBrowserScopedOpenTabRequest
+  | PatcherDesktopBrowserSnapshot
+  | PatcherDesktopBrowserDialog
+  | PatcherDesktopBrowserDownload
+  | PatcherDesktopBrowserFavicon
+  | PatcherDesktopBrowserZoom
+  | PatcherDesktopBrowserPageSecurity
+  | PatcherDesktopBrowserFindResult
+  | PatcherDesktopBrowserPagePrompt
+  | PatcherDesktopBrowserPopup
+  | PatcherDesktopBrowserDevToolsState
+  | PatcherDesktopBrowserSearchSelection
+  | PatcherDesktopBrowserContextMenuInvoke
+  | PatcherDesktopBrowserPageScriptCall;
 
 export interface DesktopBrowserHostContentBounds {
   height: number;
@@ -698,7 +698,7 @@ interface HostScopedTabArgs {
 }
 
 interface CreateEntryArgs {
-  desiredBounds: BbDesktopBrowserViewBounds;
+  desiredBounds: PatcherDesktopBrowserViewBounds;
   hostWindow: DesktopBrowserHostWindow;
   tabId: string;
   /**
@@ -715,13 +715,13 @@ interface HostWindowViewportBoundsArgs {
 }
 
 interface SetEntryDesiredBoundsArgs {
-  bounds: BbDesktopBrowserViewBounds;
+  bounds: PatcherDesktopBrowserViewBounds;
   entry: BrowserViewEntry;
   hostWindow: DesktopBrowserHostWindow;
 }
 
 export interface DesktopBrowserViewManager {
-  attach(args: HostScopedRequestArgs<BbDesktopBrowserAttachRequest>): void;
+  attach(args: HostScopedRequestArgs<PatcherDesktopBrowserAttachRequest>): void;
   detach(args: HostScopedTabArgs): void;
   /**
    * Print a tab's page through the OS dialog.
@@ -732,7 +732,9 @@ export interface DesktopBrowserViewManager {
    * user action may reach it (see the call site's comment).
    */
   print(args: HostScopedTabArgs): void;
-  navigate(args: HostScopedRequestArgs<BbDesktopBrowserNavigateRequest>): void;
+  navigate(
+    args: HostScopedRequestArgs<PatcherDesktopBrowserNavigateRequest>,
+  ): void;
   goBack(args: HostScopedTabArgs): void;
   goForward(args: HostScopedTabArgs): void;
   reload(args: HostScopedTabArgs): void;
@@ -742,51 +744,57 @@ export interface DesktopBrowserViewManager {
    * here that answers; it never rejects, reporting every failure as a typed
    * `ok: false` so the renderer can tell "no view" from "page would not talk".
    */
-  readPage(args: HostScopedTabArgs): Promise<BbDesktopBrowserPageReadResult>;
+  readPage(
+    args: HostScopedTabArgs,
+  ): Promise<PatcherDesktopBrowserPageReadResult>;
   /**
    * Search the tab's page, step through what was found, or stop. The count
    * comes back on its own channel rather than from here, because one query
    * answers many times while Chromium scans.
    */
-  find(args: HostScopedRequestArgs<BbDesktopBrowserFindRequest>): void;
+  find(args: HostScopedRequestArgs<PatcherDesktopBrowserFindRequest>): void;
   /**
    * Give the page the whole window, or give the chrome back. Whether that is
    * something to offer is the renderer's call — see
-   * {@link bbDesktopBrowserSetFullscreenRequestSchema}.
+   * {@link patcherDesktopBrowserSetFullscreenRequestSchema}.
    */
   setFullscreen(
-    args: HostScopedRequestArgs<BbDesktopBrowserSetFullscreenRequest>,
+    args: HostScopedRequestArgs<PatcherDesktopBrowserSetFullscreenRequest>,
   ): void;
   /**
    * Open or close Chromium's own DevTools for a tab, and place the view they
    * draw into. Re-sending with `open: true` reports a resize.
    */
   setDevTools(
-    args: HostScopedRequestArgs<BbDesktopBrowserDevToolsRequest>,
+    args: HostScopedRequestArgs<PatcherDesktopBrowserDevToolsRequest>,
   ): void;
   /**
    * Report whether the app's DevTools panel is on screen for a tab — see
    * {@link BrowserViewEntry.devToolsVisible}.
    */
   setDevToolsVisible(
-    args: HostScopedRequestArgs<BbDesktopBrowserDevToolsVisibleRequest>,
+    args: HostScopedRequestArgs<PatcherDesktopBrowserDevToolsVisibleRequest>,
   ): void;
   /**
    * Replace the set of tabs whose pages get real popups — see
-   * {@link bbDesktopBrowserPopupTabsSchema}.
+   * {@link patcherDesktopBrowserPopupTabsSchema}.
    */
-  setPopupTabs(args: HostScopedRequestArgs<BbDesktopBrowserPopupTabs>): void;
+  setPopupTabs(
+    args: HostScopedRequestArgs<PatcherDesktopBrowserPopupTabs>,
+  ): void;
   /** Replace the plugin entries offered on a browsed page's context menu. */
   setContextMenuItems(
-    args: HostScopedRequestArgs<BbDesktopBrowserContextMenuItems>,
+    args: HostScopedRequestArgs<PatcherDesktopBrowserContextMenuItems>,
   ): void;
   /**
    * Replace the plugin stylesheets applied to browsed pages, and bring every
    * open page in line with the new set.
    */
-  setPageStyles(args: HostScopedRequestArgs<BbDesktopBrowserPageStyles>): void;
+  setPageStyles(
+    args: HostScopedRequestArgs<PatcherDesktopBrowserPageStyles>,
+  ): void;
   setPageScripts(
-    args: HostScopedRequestArgs<BbDesktopBrowserPageScripts>,
+    args: HostScopedRequestArgs<PatcherDesktopBrowserPageScripts>,
   ): void;
   /**
    * What a browsed frame's preload should run, answered synchronously at document
@@ -795,23 +803,23 @@ export interface DesktopBrowserViewManager {
   pageScriptBootstrap(args: {
     webContentsId: number;
     url: string;
-  }): BbDesktopPageScriptBootstrap;
+  }): PatcherDesktopPageScriptBootstrap;
   /** One `bb.rpc` from a page script, routed through this window's renderer. */
   pageScriptRpc(args: {
     webContentsId: number;
     url: string;
-    request: BbDesktopPageScriptRpcRequest;
-  }): Promise<BbDesktopPageScriptRpcAnswer>;
+    request: PatcherDesktopPageScriptRpcRequest;
+  }): Promise<PatcherDesktopPageScriptRpcAnswer>;
   /** The renderer's answer to one, on its way back to the page. */
   respondToPageScriptCall(args: {
-    result: BbDesktopBrowserPageScriptResult;
+    result: PatcherDesktopBrowserPageScriptResult;
   }): void;
   /**
    * Freeze the page to a bitmap and hide the view so the app can draw over it,
    * or reveal it again. The only way React can put anything over a page.
    */
   setOverlay(
-    args: HostScopedRequestArgs<BbDesktopBrowserSetOverlayRequest>,
+    args: HostScopedRequestArgs<PatcherDesktopBrowserSetOverlayRequest>,
   ): void;
   /**
    * Open a finished download or show it in the file manager. Refuses any path
@@ -819,26 +827,26 @@ export interface DesktopBrowserViewManager {
    * "open this file" primitive. Never rejects.
    */
   downloadAction(
-    request: BbDesktopBrowserDownloadActionRequest,
-  ): Promise<BbDesktopBrowserDownloadActionResult>;
+    request: PatcherDesktopBrowserDownloadActionRequest,
+  ): Promise<PatcherDesktopBrowserDownloadActionResult>;
   /**
    * Accessibility snapshot with a ref on every interactive element — the
    * primitive the interaction commands address elements through. Attaches the
    * tab's CDP session on first use. Never rejects.
    */
   snapshot(
-    args: HostScopedRequestArgs<BbDesktopBrowserSnapshotRequest>,
-  ): Promise<BbDesktopBrowserSnapshotResult>;
+    args: HostScopedRequestArgs<PatcherDesktopBrowserSnapshotRequest>,
+  ): Promise<PatcherDesktopBrowserSnapshotResult>;
   /** The same snapshot, of what a CSS selector matches. Never rejects. */
   snapshotIn(
-    args: HostScopedRequestArgs<BbDesktopBrowserSnapshotInRequest>,
-  ): Promise<BbDesktopBrowserSnapshotResult>;
+    args: HostScopedRequestArgs<PatcherDesktopBrowserSnapshotInRequest>,
+  ): Promise<PatcherDesktopBrowserSnapshotResult>;
   /**
    * Answer the JavaScript dialog a tab is blocked on. False when there is none —
    * including when a human answered it first.
    */
   respondToDialog(
-    args: HostScopedRequestArgs<BbDesktopBrowserDialogRespondRequest>,
+    args: HostScopedRequestArgs<PatcherDesktopBrowserDialogRespondRequest>,
   ): Promise<boolean>;
   /**
    * Answer the network question a tab is stopped on. False when there was
@@ -846,54 +854,54 @@ export interface DesktopBrowserViewManager {
    * moved past.
    */
   respondToPagePrompt(
-    args: HostScopedRequestArgs<BbDesktopBrowserPagePromptAnswer>,
+    args: HostScopedRequestArgs<PatcherDesktopBrowserPagePromptAnswer>,
   ): Promise<boolean>;
   /**
    * Act on the page through a ref from the last snapshot, waiting for the
    * element to be actionable first. Never rejects.
    */
   interact(
-    args: HostScopedRequestArgs<BbDesktopBrowserInteractRequest>,
-  ): Promise<BbDesktopBrowserInteractResult>;
+    args: HostScopedRequestArgs<PatcherDesktopBrowserInteractRequest>,
+  ): Promise<PatcherDesktopBrowserInteractResult>;
   /**
    * Look at a tab — screenshot, PDF, console log, network log — without
    * attaching the browser debugger to it. Never rejects.
    */
   observe(
-    args: HostScopedRequestArgs<BbDesktopBrowserObserveRequest>,
-  ): Promise<BbDesktopBrowserObserveResult>;
+    args: HostScopedRequestArgs<PatcherDesktopBrowserObserveRequest>,
+  ): Promise<PatcherDesktopBrowserObserveResult>;
   /**
    * Capture the whole document, however far it scrolls. The one capture that
    * does attach the debugger — see {@link captureFullPage}. Never rejects.
    */
   captureFullPage(
-    args: HostScopedRequestArgs<BbDesktopBrowserCaptureFullPageRequest>,
-  ): Promise<BbDesktopBrowserCaptureFullPageResult>;
+    args: HostScopedRequestArgs<PatcherDesktopBrowserCaptureFullPageRequest>,
+  ): Promise<PatcherDesktopBrowserCaptureFullPageResult>;
   /**
    * Read or write a tab's cookies and web storage. Attaches no debugger either,
    * and never rejects.
    */
   storage(
-    args: HostScopedRequestArgs<BbDesktopBrowserStorageRequest>,
-  ): Promise<BbDesktopBrowserStorageResult>;
+    args: HostScopedRequestArgs<PatcherDesktopBrowserStorageRequest>,
+  ): Promise<PatcherDesktopBrowserStorageResult>;
   /**
    * Drive a tab directly — evaluate the caller's JavaScript in it, act at raw
    * coordinates, mock its network, take it offline. Never rejects.
    */
   control(
-    args: HostScopedRequestArgs<BbDesktopBrowserControlRequest>,
-  ): Promise<BbDesktopBrowserControlResult>;
+    args: HostScopedRequestArgs<PatcherDesktopBrowserControlRequest>,
+  ): Promise<PatcherDesktopBrowserControlResult>;
   /**
    * Film a tab and hand the frames back when it stops. Never rejects.
    */
   record(
-    args: HostScopedRequestArgs<BbDesktopBrowserRecordRequest>,
-  ): Promise<BbDesktopBrowserRecordResult>;
+    args: HostScopedRequestArgs<PatcherDesktopBrowserRecordRequest>,
+  ): Promise<PatcherDesktopBrowserRecordResult>;
   setBounds(
-    args: HostScopedRequestArgs<BbDesktopBrowserSetBoundsRequest>,
+    args: HostScopedRequestArgs<PatcherDesktopBrowserSetBoundsRequest>,
   ): void;
   setVisible(
-    args: HostScopedRequestArgs<BbDesktopBrowserSetVisibleRequest>,
+    args: HostScopedRequestArgs<PatcherDesktopBrowserSetVisibleRequest>,
   ): void;
   /**
    * Scale a tab's page.
@@ -902,7 +910,9 @@ export interface DesktopBrowserViewManager {
    * not only a property of the tab: setting it here is also what a *later* tab
    * on the same site will come up with.
    */
-  setZoom(args: HostScopedRequestArgs<BbDesktopBrowserSetZoomRequest>): void;
+  setZoom(
+    args: HostScopedRequestArgs<PatcherDesktopBrowserSetZoomRequest>,
+  ): void;
   /**
    * Silence a tab's page, or let it speak again.
    *
@@ -911,7 +921,9 @@ export interface DesktopBrowserViewManager {
    * to silence, and this call finds no entry and does nothing. The renderer
    * re-applies it once the view exists; see `browser-tab-mute.ts` there.
    */
-  setMuted(args: HostScopedRequestArgs<BbDesktopBrowserSetMutedRequest>): void;
+  setMuted(
+    args: HostScopedRequestArgs<PatcherDesktopBrowserSetMutedRequest>,
+  ): void;
   /**
    * Hide every visible view owned by the window for the duration of a native
    * resize burst. During an interactive window resize the host chrome
@@ -981,7 +993,7 @@ function send(
 
 function hostWindowViewportBounds(
   args: HostWindowViewportBoundsArgs,
-): BbDesktopBrowserViewportBounds {
+): PatcherDesktopBrowserViewportBounds {
   const contentBounds = args.hostWindow.getContentBounds();
   return {
     width: contentBounds.width,
@@ -1016,7 +1028,7 @@ function applyEntryDesiredBounds(
     return;
   }
   entry.view.setBounds(
-    clampBbDesktopBrowserViewBounds({
+    clampPatcherDesktopBrowserViewBounds({
       bounds: entry.desiredBounds,
       viewport,
     }),
@@ -1077,7 +1089,7 @@ function invalidateSnapshotRefs(entry: BrowserViewEntry): void {
 }
 
 type InteractionRefusalReason = Extract<
-  BbDesktopBrowserInteractResult,
+  PatcherDesktopBrowserInteractResult,
   { ok: false }
 >["reason"];
 
@@ -1363,9 +1375,9 @@ const CHECKED_SETTLE_TIMEOUT_MS = 500;
 async function performInteraction(
   session: CdpSession,
   entry: BrowserViewEntry,
-  request: BbDesktopBrowserInteractRequest,
+  request: PatcherDesktopBrowserInteractRequest,
 ): Promise<void> {
-  const interaction: BbDesktopBrowserInteraction = request.interaction;
+  const interaction: PatcherDesktopBrowserInteraction = request.interaction;
 
   if (interaction.action === "resize") {
     // Device metrics rather than the view's bounds: the panel's size belongs to
@@ -1630,7 +1642,7 @@ async function performInteraction(
 }
 
 type ControlRefusalReason = Extract<
-  BbDesktopBrowserControlResult,
+  PatcherDesktopBrowserControlResult,
   { ok: false }
 >["reason"];
 
@@ -1737,7 +1749,7 @@ function wireRouteInterception(
 function entryRoutes(
   entry: BrowserViewEntry,
   tabId: string,
-): Extract<BbDesktopBrowserControlResult, { kind: "routes" }> {
+): Extract<PatcherDesktopBrowserControlResult, { kind: "routes" }> {
   return {
     ok: true,
     kind: "routes",
@@ -1845,10 +1857,10 @@ async function performControl(
   session: CdpSession,
   entry: BrowserViewEntry,
   tabId: string,
-  request: BbDesktopBrowserControlRequest,
-): Promise<BbDesktopBrowserControlResult> {
+  request: PatcherDesktopBrowserControlRequest,
+): Promise<PatcherDesktopBrowserControlResult> {
   const operation = request.operation;
-  const acted = (): BbDesktopBrowserControlResult => ({
+  const acted = (): PatcherDesktopBrowserControlResult => ({
     ok: true,
     kind: "acted",
     tabId,
@@ -2051,8 +2063,8 @@ async function performRecord(
   session: CdpSession,
   entry: BrowserViewEntry,
   tabId: string,
-  operation: BbDesktopBrowserRecordRequest["operation"],
-): Promise<BbDesktopBrowserRecordResult> {
+  operation: PatcherDesktopBrowserRecordRequest["operation"],
+): Promise<PatcherDesktopBrowserRecordResult> {
   const page = { tabId, ...entryPageIdentity(entry) };
 
   if (operation.kind === "video-start") {
@@ -2139,8 +2151,8 @@ function entryPageIdentity(entry: BrowserViewEntry): {
 async function captureObservation(
   entry: BrowserViewEntry,
   tabId: string,
-  observation: BbDesktopBrowserObservation,
-): Promise<BbDesktopBrowserObserveResult> {
+  observation: PatcherDesktopBrowserObservation,
+): Promise<PatcherDesktopBrowserObserveResult> {
   const page = { tabId, ...entryPageIdentity(entry) };
 
   // The two logs answer without touching the page at all: whatever the tab has
@@ -2235,8 +2247,8 @@ async function captureObservation(
 async function captureFullPageImage(
   entry: BrowserViewEntry,
   session: CdpSession,
-  request: BbDesktopBrowserCaptureFullPageRequest,
-): Promise<BbDesktopBrowserCaptureFullPageResult> {
+  request: PatcherDesktopBrowserCaptureFullPageRequest,
+): Promise<PatcherDesktopBrowserCaptureFullPageResult> {
   const page = { tabId: request.tabId, ...entryPageIdentity(entry) };
 
   const measured = await runIsolatedScript(
@@ -2373,9 +2385,9 @@ async function runIsolatedScript(
 async function captureStorage(args: {
   entry: BrowserViewEntry;
   tabId: string;
-  operation: BbDesktopBrowserStorageOperation;
+  operation: PatcherDesktopBrowserStorageOperation;
   cookies: Session["cookies"];
-}): Promise<BbDesktopBrowserStorageResult> {
+}): Promise<PatcherDesktopBrowserStorageResult> {
   const { cookies, entry, operation, tabId } = args;
   const webContents = entry.view.webContents;
   const url = webContents.getURL();
@@ -2497,7 +2509,7 @@ async function captureStorage(args: {
 function buildBrowserState(
   tabId: string,
   entry: BrowserViewEntry,
-): BbDesktopBrowserState {
+): PatcherDesktopBrowserState {
   const webContents = entry.view.webContents;
   const url = webContents.getURL();
   const rawTitle = webContents.getTitle();
@@ -2576,14 +2588,14 @@ export function createDesktopBrowserViewManager(
    * so a right-click composes its menu from data already in hand — asking the
    * server first would put a round trip in front of every menu.
    */
-  let contextMenuItems: readonly BbDesktopBrowserContextMenuItem[] = [];
+  let contextMenuItems: readonly PatcherDesktopBrowserContextMenuItem[] = [];
   /**
    * Plugin page styles, as the renderer last declared them. Held here for a
    * sharper reason than the menu entries above: this is where navigation
    * happens, and inserted CSS lasts exactly one document, so re-applying it is
    * something only the shell can do at the moment the page commits.
    */
-  let pageStyles: readonly BbDesktopBrowserPageStyle[] = [];
+  let pageStyles: readonly PatcherDesktopBrowserPageStyle[] = [];
 
   /**
    * Bring one view's applied stylesheets in line with what should be applied to
@@ -2605,7 +2617,7 @@ export function createDesktopBrowserViewManager(
       return;
     }
     const url = webContents.getURL();
-    const wanted = new Map<string, BbDesktopBrowserPageStyle>();
+    const wanted = new Map<string, PatcherDesktopBrowserPageStyle>();
     // Only a real page: `about:blank` and the empty URL of a fresh view are not
     // sites, and a pattern like `https://**/**` must not be read as claiming them.
     if (url.startsWith("https://") || url.startsWith("http://")) {
@@ -2682,7 +2694,7 @@ export function createDesktopBrowserViewManager(
    * to reach a document *as it is created*, before the page's own first script
    * runs, and this is the only process present at that moment.
    */
-  let pageScripts: readonly BbDesktopBrowserPageScript[] = [];
+  let pageScripts: readonly PatcherDesktopBrowserPageScript[] = [];
   /**
    * Whether the browsing session currently carries the page-script preload.
    *
@@ -2712,7 +2724,7 @@ export function createDesktopBrowserViewManager(
    */
   const pendingPageScriptCalls = new Map<
     string,
-    (answer: BbDesktopPageScriptRpcAnswer) => void
+    (answer: PatcherDesktopPageScriptRpcAnswer) => void
   >();
 
   function pageScriptWorldId(pluginId: string): number {
@@ -2732,11 +2744,11 @@ export function createDesktopBrowserViewManager(
    * the same refusal to treat a blank page as a site: `https://**` must not be
    * read as claiming `about:blank`.
    */
-  function pageScriptWorldsFor(url: string): BbDesktopPageScriptWorld[] {
+  function pageScriptWorldsFor(url: string): PatcherDesktopPageScriptWorld[] {
     if (!url.startsWith("https://") && !url.startsWith("http://")) {
       return [];
     }
-    const worlds = new Map<string, BbDesktopPageScriptWorld>();
+    const worlds = new Map<string, PatcherDesktopPageScriptWorld>();
     for (const script of pageScripts) {
       if (
         !script.matches.some((pattern) =>
@@ -2792,7 +2804,9 @@ export function createDesktopBrowserViewManager(
     }
   }
 
-  function refusePageScriptCall(message: string): BbDesktopPageScriptRpcAnswer {
+  function refusePageScriptCall(
+    message: string,
+  ): PatcherDesktopPageScriptRpcAnswer {
     return { ok: false, message };
   }
 
@@ -2809,8 +2823,8 @@ export function createDesktopBrowserViewManager(
   async function callPageScriptRpc(callArgs: {
     webContentsId: number;
     url: string;
-    request: BbDesktopPageScriptRpcRequest;
-  }): Promise<BbDesktopPageScriptRpcAnswer> {
+    request: PatcherDesktopPageScriptRpcRequest;
+  }): Promise<PatcherDesktopPageScriptRpcAnswer> {
     const entry = entriesByWebContentsId.get(callArgs.webContentsId);
     if (entry === undefined) {
       return refusePageScriptCall("bb.rpc is not available in this page.");
@@ -2844,7 +2858,7 @@ export function createDesktopBrowserViewManager(
       return refusePageScriptCall("bb.rpc: this tab's bb window is gone.");
     }
     const callId = `page-script-${(pageScriptCallSequence += 1)}`;
-    return await new Promise<BbDesktopPageScriptRpcAnswer>((resolve) => {
+    return await new Promise<PatcherDesktopPageScriptRpcAnswer>((resolve) => {
       const timer = setTimeout(() => {
         if (pendingPageScriptCalls.delete(callId)) {
           resolve(
@@ -3003,7 +3017,7 @@ export function createDesktopBrowserViewManager(
 
   function sendDownload(
     entry: BrowserViewEntry,
-    download: Omit<BbDesktopBrowserDownload, "tabId">,
+    download: Omit<PatcherDesktopBrowserDownload, "tabId">,
   ): void {
     send(entry.hostWindow, BB_DESKTOP_BROWSER_DOWNLOAD_CHANNEL, {
       ...download,
@@ -4424,7 +4438,7 @@ export function createDesktopBrowserViewManager(
     const details = {
       ...args.details,
       id: `page-prompt-${pagePromptSequence}`,
-    } as BbDesktopBrowserPagePromptDetails;
+    } as PatcherDesktopBrowserPagePromptDetails;
     args.entry.pagePrompt = { details, settle: args.settle };
     // Stand a bitmap of the stopped page in behind the question, the way the
     // dialog path does — a prompt over an empty panel says less about what is
@@ -4471,7 +4485,7 @@ export function createDesktopBrowserViewManager(
     hostWindow: DesktopBrowserHostWindow,
     tabId: string,
     entry: BrowserViewEntry,
-    answer: BbDesktopBrowserPagePromptAnswer["answer"],
+    answer: PatcherDesktopBrowserPagePromptAnswer["answer"],
   ): void {
     const pending = entry.pagePrompt;
     if (pending === null) {
@@ -4497,8 +4511,8 @@ export function createDesktopBrowserViewManager(
    * a certificate handed to a server.
    */
   function pagePromptAnswerFits(
-    details: BbDesktopBrowserPagePromptDetails,
-    answer: BbDesktopBrowserPagePromptAnswer["answer"],
+    details: PatcherDesktopBrowserPagePromptDetails,
+    answer: PatcherDesktopBrowserPagePromptAnswer["answer"],
   ): boolean {
     if (answer.kind === "cancel") return true;
     if (details.kind === "auth") return answer.kind === "credentials";
@@ -4527,9 +4541,9 @@ export function createDesktopBrowserViewManager(
   async function captureTabSnapshot(args: {
     hostWindow: DesktopBrowserHostWindow;
     request:
-      | BbDesktopBrowserSnapshotRequest
-      | BbDesktopBrowserSnapshotInRequest;
-  }): Promise<BbDesktopBrowserSnapshotResult> {
+      | PatcherDesktopBrowserSnapshotRequest
+      | PatcherDesktopBrowserSnapshotInRequest;
+  }): Promise<PatcherDesktopBrowserSnapshotResult> {
     const { hostWindow, request } = args;
     const entry = entries.get(browserViewKey(hostWindow, request.tabId));
     if (!entry || entry.view.webContents.isDestroyed()) {
@@ -4854,7 +4868,7 @@ export function createDesktopBrowserViewManager(
         // Re-sent on every resize, which is what makes this both the open and
         // the placement command.
         devToolsView?.setBounds(
-          clampBbDesktopBrowserViewBounds({
+          clampPatcherDesktopBrowserViewBounds({
             bounds: request.bounds,
             viewport: hostWindowViewportBounds({ hostWindow }),
           }),

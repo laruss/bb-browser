@@ -5,7 +5,7 @@ import path from "node:path";
 import { parseMarkdownDocument } from "./markdown-document.js";
 import {
   defineRpcContract,
-  type BbPluginApi,
+  type PatcherPluginApi,
   type PluginCliContext,
   type PluginRpcHandlers,
 } from "@patcher/plugin-sdk";
@@ -760,7 +760,7 @@ function waitForDelay(ms: number, signal: AbortSignal): Promise<void> {
   });
 }
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(bb: PatcherPluginApi) {
   const db = bb.storage.database();
   bb.storage.migrate(db, [
     `CREATE TABLE IF NOT EXISTS vaults (
@@ -1724,7 +1724,7 @@ export default async function plugin(bb: BbPluginApi) {
   bb.rpc.register(docsRpcContract, handlers);
 
   async function readHttpInput<Schema extends z.ZodType>(
-    context: Parameters<Parameters<BbPluginApi["http"]["route"]>[2]>[0],
+    context: Parameters<Parameters<PatcherPluginApi["http"]["route"]>[2]>[0],
     schema: Schema,
   ): Promise<
     { ok: true; value: z.output<Schema> } | { ok: false; response: Response }

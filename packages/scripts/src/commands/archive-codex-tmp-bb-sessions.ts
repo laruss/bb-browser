@@ -28,7 +28,7 @@ interface JsonObject {
   [key: string]: JsonValue;
 }
 
-interface ArchiveTmpBbSessionsOptions {
+interface ArchiveTmpPatcherSessionsOptions {
   codexBin: string;
   codexHome: string;
   concurrency: number;
@@ -37,9 +37,9 @@ interface ArchiveTmpBbSessionsOptions {
   yes: boolean;
 }
 
-interface ParseArchiveTmpBbSessionsArgsResult {
+interface ParseArchiveTmpPatcherSessionsArgsResult {
   help: boolean;
-  options: ArchiveTmpBbSessionsOptions;
+  options: ArchiveTmpPatcherSessionsOptions;
 }
 
 interface ParsedOptionValue {
@@ -219,12 +219,12 @@ export function resolveCodexStateDbPath(codexHome: string): string {
   return candidate.path;
 }
 
-export function parseArchiveTmpBbSessionsArgs(
+export function parseArchiveTmpPatcherSessionsArgs(
   argv: string[] = process.argv.slice(2),
   env: NodeJS.ProcessEnv = process.env,
   homeDirectory: string = homedir(),
-): ParseArchiveTmpBbSessionsArgsResult {
-  const options: ArchiveTmpBbSessionsOptions = {
+): ParseArchiveTmpPatcherSessionsArgsResult {
+  const options: ArchiveTmpPatcherSessionsOptions = {
     codexBin: resolveDefaultCodexBin(env, homeDirectory),
     codexHome: resolvePathOption(
       resolveCodexHome(homeDirectory, env),
@@ -671,7 +671,7 @@ function formatPatternList(patterns: readonly string[]): string {
 }
 
 async function confirmArchive(
-  options: ArchiveTmpBbSessionsOptions,
+  options: ArchiveTmpPatcherSessionsOptions,
   previews: MatchingThreadPreview[],
   total: number,
 ): Promise<boolean> {
@@ -719,7 +719,7 @@ function ensureCodexStateDbExists(dbPath: string): void {
 export async function main(
   argv: string[] = process.argv.slice(2),
 ): Promise<void> {
-  const parsedArgs = parseArchiveTmpBbSessionsArgs(argv);
+  const parsedArgs = parseArchiveTmpPatcherSessionsArgs(argv);
   if (parsedArgs.help) {
     process.stdout.write(renderHelpText());
     return;

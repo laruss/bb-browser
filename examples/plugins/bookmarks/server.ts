@@ -17,7 +17,7 @@
 //
 // See docs/architecture/browser-surface.md for the surfaces and docs/TODO.md for
 // why this is an example rather than a feature.
-import type { BbPluginApi } from "@patcher/plugin-sdk";
+import type { PatcherPluginApi } from "@patcher/plugin-sdk";
 
 interface BookmarkRow {
   url: string;
@@ -60,7 +60,7 @@ function isSaveable(url: string): boolean {
   }
 }
 
-export default function plugin(bb: BbPluginApi) {
+export default function plugin(bb: PatcherPluginApi) {
   const db = bb.storage.database();
   bb.storage.migrate(db, MIGRATIONS);
 

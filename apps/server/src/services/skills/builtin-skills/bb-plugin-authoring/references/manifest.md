@@ -190,7 +190,7 @@ The complete manifest, with the optional fields SKILL.md leaves out:
 - `bb plugin build` stamps authoritative metadata into both
   `dist/server.meta.json` and `dist/app.meta.json`: `sdkMajor`, `sdkVersion`,
   `artifactFormatVersion` (currently `1`), `pluginId`, `pluginVersion`, and
-  `builtWith: { bbVersion, pluginSdkVersion }`. Managed installs reject
+  `builtWith: { patcherVersion, pluginSdkVersion }`. Managed installs reject
   artifacts whose `pluginId`/`pluginVersion` disagree with the package
   manifest, or whose SDK major does not match the host.
 - Default to `bb-plugin-hello` for the package name. Scoped names such as

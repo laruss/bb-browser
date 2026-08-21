@@ -4,8 +4,8 @@
 // panel and a messageAction rendering the SDK ThreadChat component), but
 // every plugin manifest requires a server entry. The type-only import is
 // erased at load time, so this file runs as-is.
-import type { BbPluginApi } from "@patcher/plugin-sdk";
+import type { PatcherPluginApi } from "@patcher/plugin-sdk";
 
-export default function plugin(bb: BbPluginApi) {
+export default function plugin(bb: PatcherPluginApi) {
   bb.log.info("thread-chat-demo loaded (frontend-only demo)");
 }

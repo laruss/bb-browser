@@ -5,7 +5,7 @@ import {
   resolveResponse,
 } from "./response.js";
 import type {
-  BbSdkTransport,
+  PatcherSdkTransport,
   CreateHttpTransportArgs,
 } from "./transport.js";
 
@@ -13,7 +13,7 @@ const SAME_ORIGIN_BASE_URL = "";
 
 export function createHttpTransport(
   args: CreateHttpTransportArgs,
-): BbSdkTransport {
+): PatcherSdkTransport {
   const baseUrl = args.baseUrl ?? SAME_ORIGIN_BASE_URL;
   const fetchImpl = args.fetch ?? fetch;
   const client = createApiClient(baseUrl, { fetch: fetchImpl });

@@ -791,10 +791,10 @@ async function smokeSdkPackage(tarballPath) {
   await writeFile(
     join(sdkDir, "sdk-smoke.ts"),
     [
-      'import { BBSdk, BbHttpError } from "bb-app";',
+      'import { BBSdk, PatcherHttpError } from "bb-app";',
       "",
       'const bb = new BBSdk({ baseUrl: "http://127.0.0.1:38886" });',
-      "const error: typeof BbHttpError = BbHttpError;",
+      "const error: typeof PatcherHttpError = PatcherHttpError;",
       "void bb.status.get();",
       "void error;",
       "",

@@ -161,7 +161,7 @@ export const BROWSER_COMMAND_MAX_CONSOLE_TEXT_LENGTH = 4096;
  * screenshot member instead of forwarding it: the shell's copy of this union is
  * frozen and does not have it, and a shell would *strip* it rather than refuse
  * it, which is the failure mode a mirrored union exists to prevent. A full-page
- * capture goes down its own channel; see `bbDesktopBrowserCaptureFullPageRequestSchema`.
+ * capture goes down its own channel; see `patcherDesktopBrowserCaptureFullPageRequestSchema`.
  */
 export const browserObservationSchema = z.discriminatedUnion("kind", [
   z.object({

@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { homedir } from "node:os";
 import { delimiter, isAbsolute, join, relative, resolve } from "node:path";
 
-export type BbRuntimeMode = "dev" | "prod";
+export type PatcherRuntimeMode = "dev" | "prod";
 
 export interface DevPortSet {
   appPort: number;
@@ -52,7 +52,7 @@ export interface ResolveProdDataDirArgs {
 export interface ResolveRuntimeDataDirArgs {
   env: NodeJS.ProcessEnv;
   homeDir: string;
-  mode: BbRuntimeMode;
+  mode: PatcherRuntimeMode;
   repoRoot?: string;
 }
 
@@ -157,7 +157,7 @@ function expandHomeDirectory(pathValue: string, homeDir: string): string {
 
 export function resolveRuntimeMode(
   nodeEnv: string | undefined = process.env.NODE_ENV,
-): BbRuntimeMode {
+): PatcherRuntimeMode {
   return nodeEnv === "production" ? "prod" : "dev";
 }
 

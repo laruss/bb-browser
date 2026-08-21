@@ -13,14 +13,14 @@ import { z } from "zod";
 export const BB_APP_CONFIG_FILE_NAME = "config.json";
 export const BB_APP_ENV_FILE_NAME = "env.json";
 
-export type BbAppManagedConfigKey =
+export type PatcherAppManagedConfigKey =
   | "BB_APP_URL"
   | "BB_INFERENCE"
   | "BB_INFERENCE_FALLBACK"
   | "BB_LOG_LEVEL"
   | "BB_TRANSCRIPTION";
 
-export const BB_APP_MANAGED_CONFIG_KEYS: BbAppManagedConfigKey[] = [
+export const BB_APP_MANAGED_CONFIG_KEYS: PatcherAppManagedConfigKey[] = [
   "BB_APP_URL",
   "BB_INFERENCE",
   "BB_INFERENCE_FALLBACK",
@@ -32,15 +32,15 @@ export const PORTABLE_ENV_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/u;
 const CUSTOM_ACP_AGENT_ID_PATTERN = /^[a-z0-9][a-z0-9-]*$/u;
 const CUSTOM_ACP_AGENT_LOGO_PATTERN = /\.(?:svg|png|webp)$/iu;
 
-export interface BbAppManagedConfigWarningLogger {
+export interface PatcherAppManagedConfigWarningLogger {
   warn(fields: Record<string, unknown>, message: string): void;
 }
 
-export interface ParseBbAppManagedConfigOptions {
-  logger?: BbAppManagedConfigWarningLogger;
+export interface ParsePatcherAppManagedConfigOptions {
+  logger?: PatcherAppManagedConfigWarningLogger;
 }
 
-export const bbAppManagedConfigValuesSchema = z
+export const patcherAppManagedConfigValuesSchema = z
   .object({
     BB_APP_URL: z.string().optional(),
     BB_INFERENCE: z.string().optional(),
@@ -71,12 +71,12 @@ export const customProviderModelSchema = z
   })
   .strict();
 
-export const bbAppManagedEnvNameSchema = z
+export const patcherAppManagedEnvNameSchema = z
   .string()
   .regex(PORTABLE_ENV_NAME_PATTERN);
 
-export const bbAppManagedEnvConfigSchema = z.record(
-  bbAppManagedEnvNameSchema,
+export const patcherAppManagedEnvConfigSchema = z.record(
+  patcherAppManagedEnvNameSchema,
   z.string(),
 );
 
@@ -111,7 +111,7 @@ export const customAcpAgentSchema = z
       )
       .optional(),
     args: z.array(z.string()).default([]),
-    env: z.record(bbAppManagedEnvNameSchema, z.string()).default({}),
+    env: z.record(patcherAppManagedEnvNameSchema, z.string()).default({}),
     cwd: z.string().min(1).optional(),
     modelCli: customAcpAgentModelCliSchema.optional(),
     reasoningCli: acpReasoningCliSchema.optional(),
@@ -150,9 +150,9 @@ const customAcpAgentsSchema = z
     }
   });
 
-export const bbAppManagedConfigSchema = z
+export const patcherAppManagedConfigSchema = z
   .object({
-    config: bbAppManagedConfigValuesSchema.optional(),
+    config: patcherAppManagedConfigValuesSchema.optional(),
     customAcpAgents: customAcpAgentsSchema.optional(),
     customModels: z.array(customProviderModelSchema).optional(),
     sharedSkillRoots: providerNativeSkillRootsSchema.optional(),
@@ -160,9 +160,9 @@ export const bbAppManagedConfigSchema = z
   })
   .strict();
 
-const bbAppManagedConfigBoundarySchema = z
+const patcherAppManagedConfigBoundarySchema = z
   .object({
-    config: bbAppManagedConfigValuesSchema.optional(),
+    config: patcherAppManagedConfigValuesSchema.optional(),
     customAcpAgents: z.array(z.unknown()).optional(),
     customModels: z.array(z.unknown()).optional(),
     sharedSkillRoots: providerNativeSkillRootsSchema.optional(),
@@ -170,23 +170,29 @@ const bbAppManagedConfigBoundarySchema = z
   })
   .strict();
 
-export const bbAppManagedEnvFileSchema = z
+export const patcherAppManagedEnvFileSchema = z
   .object({
-    env: bbAppManagedEnvConfigSchema.optional(),
+    env: patcherAppManagedEnvConfigSchema.optional(),
   })
   .strict();
 
-export type BbAppManagedConfigValues = z.infer<
-  typeof bbAppManagedConfigValuesSchema
+export type PatcherAppManagedConfigValues = z.infer<
+  typeof patcherAppManagedConfigValuesSchema
 >;
 export type CustomAcpAgent = z.infer<typeof customAcpAgentSchema>;
 export type CustomProviderModel = z.infer<typeof customProviderModelSchema>;
-export type BbAppManagedConfig = z.infer<typeof bbAppManagedConfigSchema>;
-export type BbAppManagedEnvConfig = z.infer<typeof bbAppManagedEnvConfigSchema>;
-export type BbAppManagedEnvFile = z.infer<typeof bbAppManagedEnvFileSchema>;
+export type PatcherAppManagedConfig = z.infer<
+  typeof patcherAppManagedConfigSchema
+>;
+export type PatcherAppManagedEnvConfig = z.infer<
+  typeof patcherAppManagedEnvConfigSchema
+>;
+export type PatcherAppManagedEnvFile = z.infer<
+  typeof patcherAppManagedEnvFileSchema
+>;
 
 function warnInvalidCustomAcpAgent(
-  logger: BbAppManagedConfigWarningLogger | undefined,
+  logger: PatcherAppManagedConfigWarningLogger | undefined,
   fields: Record<string, unknown>,
 ): void {
   logger?.warn(fields, "Ignoring invalid custom ACP agent config entry");
@@ -194,7 +200,7 @@ function warnInvalidCustomAcpAgent(
 
 function parseCustomAcpAgents(
   entries: readonly unknown[] | undefined,
-  options: ParseBbAppManagedConfigOptions,
+  options: ParsePatcherAppManagedConfigOptions,
 ): CustomAcpAgent[] | undefined {
   if (entries === undefined) {
     return undefined;
@@ -231,7 +237,7 @@ function parseCustomAcpAgents(
 
 function parseCustomModels(
   entries: readonly unknown[] | undefined,
-  options: ParseBbAppManagedConfigOptions,
+  options: ParsePatcherAppManagedConfigOptions,
 ): CustomProviderModel[] | undefined {
   if (entries === undefined) {
     return undefined;
@@ -253,14 +259,14 @@ function parseCustomModels(
   return customModels;
 }
 
-export function parseBbAppManagedConfig(
+export function parsePatcherAppManagedConfig(
   rawConfig: unknown,
-  options: ParseBbAppManagedConfigOptions = {},
-): BbAppManagedConfig {
-  const parsed = bbAppManagedConfigBoundarySchema.parse(rawConfig);
+  options: ParsePatcherAppManagedConfigOptions = {},
+): PatcherAppManagedConfig {
+  const parsed = patcherAppManagedConfigBoundarySchema.parse(rawConfig);
   const customAcpAgents = parseCustomAcpAgents(parsed.customAcpAgents, options);
   const customModels = parseCustomModels(parsed.customModels, options);
-  const config: BbAppManagedConfig = {};
+  const config: PatcherAppManagedConfig = {};
   if (parsed.config !== undefined) {
     config.config = parsed.config;
   }
@@ -279,10 +285,10 @@ export function parseBbAppManagedConfig(
   return config;
 }
 
-export function formatBbAppConfigPath(dataDir: string): string {
+export function formatPatcherAppConfigPath(dataDir: string): string {
   return join(dataDir, BB_APP_CONFIG_FILE_NAME);
 }
 
-export function formatBbAppEnvPath(dataDir: string): string {
+export function formatPatcherAppEnvPath(dataDir: string): string {
   return join(dataDir, BB_APP_ENV_FILE_NAME);
 }

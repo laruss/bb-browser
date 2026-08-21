@@ -1,8 +1,8 @@
 import { readFile } from "node:fs/promises";
 import { describe, expect, expectTypeOf, it } from "vitest";
-import type { BbPluginApi } from "../index.js";
+import type { PatcherPluginApi } from "../index.js";
 
-type ExpectedBbPluginApiKey =
+type ExpectedPatcherPluginApiKey =
   | "agents"
   | "background"
   | "browser"
@@ -22,7 +22,7 @@ type ExpectedBbPluginApiKey =
   | "ui";
 
 const EXPECTED_BACKEND_ROOT_TYPE_EXPORTS = [
-  "BbPluginApi",
+  "PatcherPluginApi",
   "PluginAgents",
   "PluginAgentConfiguration",
   "PluginAgentConfigurationContext",
@@ -189,8 +189,10 @@ function rootExportNames(
 }
 
 describe("backend plugin SDK public surface", () => {
-  it("snapshots every BbPluginApi root member", () => {
-    expectTypeOf<keyof BbPluginApi>().toEqualTypeOf<ExpectedBbPluginApiKey>();
+  it("snapshots every PatcherPluginApi root member", () => {
+    expectTypeOf<
+      keyof PatcherPluginApi
+    >().toEqualTypeOf<ExpectedPatcherPluginApiKey>();
   });
 
   it("keeps every backend contract export in the root declaration bundle", async () => {

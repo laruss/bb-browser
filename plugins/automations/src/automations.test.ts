@@ -30,7 +30,7 @@ import {
   validateOnceDefinition,
 } from "./schedule-helpers.js";
 import {
-  bbBinaryCandidates,
+  patcherBinaryCandidates,
   isWakeAgentSuppressed,
   mapScriptResultToRun,
   scriptPathEnv,
@@ -681,13 +681,13 @@ describe("automation service", () => {
 describe("bb CLI injection for script runs", () => {
   it("prefers the env pointers over PATH and macOS install locations", () => {
     expect(
-      bbBinaryCandidates({
+      patcherBinaryCandidates({
         BB_CLI: "/daemon/bundle/bb",
         BB_CLI_DIR: "/other/dir",
       })[0],
     ).toBe("/daemon/bundle/bb");
     // The server process gets BB_CLI_DIR, not BB_CLI, from the launcher.
-    expect(bbBinaryCandidates({ BB_CLI_DIR: "/daemon/bundle" })[0]).toBe(
+    expect(patcherBinaryCandidates({ BB_CLI_DIR: "/daemon/bundle" })[0]).toBe(
       "/daemon/bundle/bb",
     );
   });
@@ -695,21 +695,23 @@ describe("bb CLI injection for script runs", () => {
   it("expands PATH itself so every candidate is absolute", () => {
     // The resolved value is handed to scripts as BB_CLI, which is documented
     // as absolute; a bare "bb" would re-resolve if a script edits PATH.
-    expect(bbBinaryCandidates({ PATH: "/usr/bin:/opt/tools" })).toEqual([
+    expect(patcherBinaryCandidates({ PATH: "/usr/bin:/opt/tools" })).toEqual([
       "/usr/bin/bb",
       "/opt/tools/bb",
       "/opt/homebrew/bin/bb",
       "/usr/local/bin/bb",
     ]);
     expect(
-      bbBinaryCandidates({ PATH: "/usr/bin" }).every((c) => c.startsWith("/")),
+      patcherBinaryCandidates({ PATH: "/usr/bin" }).every((c) =>
+        c.startsWith("/"),
+      ),
     ).toBe(true);
   });
 
   it("drops entries that would resolve against the wrong directory", () => {
     // An empty PATH entry means the cwd, which for a script run is the
     // automation scripts directory — a `bb` dropped there is not the CLI.
-    expect(bbBinaryCandidates({ PATH: "/usr/bin::/bin" })).toEqual([
+    expect(patcherBinaryCandidates({ PATH: "/usr/bin::/bin" })).toEqual([
       "/usr/bin/bb",
       "/bin/bb",
       "/opt/homebrew/bin/bb",
@@ -717,10 +719,14 @@ describe("bb CLI injection for script runs", () => {
     ]);
     // Blank or relative env pointers are skipped, not resolved against cwd.
     expect(
-      bbBinaryCandidates({ BB_CLI: "  ", BB_CLI_DIR: "", PATH: "" }),
+      patcherBinaryCandidates({ BB_CLI: "  ", BB_CLI_DIR: "", PATH: "" }),
     ).toEqual(["/opt/homebrew/bin/bb", "/usr/local/bin/bb"]);
     expect(
-      bbBinaryCandidates({ BB_CLI: "./bb", BB_CLI_DIR: "rel/dir", PATH: "" }),
+      patcherBinaryCandidates({
+        BB_CLI: "./bb",
+        BB_CLI_DIR: "rel/dir",
+        PATH: "",
+      }),
     ).toEqual(["/opt/homebrew/bin/bb", "/usr/local/bin/bb"]);
   });
 

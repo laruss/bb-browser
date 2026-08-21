@@ -27,7 +27,7 @@ describe("@task mention provider", () => {
         name: "Linked project",
         prefix: "TSK",
         color: "blue",
-        linkedBbProjectId: "proj_linked",
+        linkedPatcherProjectId: "proj_linked",
       });
       const other = store.tasks.createProject({
         name: "Other project",

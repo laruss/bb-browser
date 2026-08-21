@@ -155,7 +155,7 @@ describe("plugin app bundles (build policy, inventory, asset routes)", () => {
       "public, max-age=31536000, immutable",
     );
     const jsText = await js.text();
-    expect(jsText).toContain("__bbPluginRuntime");
+    expect(jsText).toContain("__patcherPluginRuntime");
     expect(js.headers.get("content-encoding")).toBeNull();
     expect(js.headers.get("content-length")).toBe(
       String(Buffer.byteLength(jsText)),

@@ -225,7 +225,7 @@ function listServerOwnedSkills(deps: AppDeps): SkillSummary[] {
 }
 
 /** List active skills contributed by running bb plugins from the runtime catalog. */
-function listBbPluginSkills(deps: AppDeps): SkillSummary[] {
+function listPatcherPluginSkills(deps: AppDeps): SkillSummary[] {
   return resolveSkillCatalog(deps)
     .map(({ provenance, runtimeSource }): SkillSummary | null => {
       if (provenance.kind !== "plugin" || runtimeSource.kind !== "tree") {
@@ -281,7 +281,7 @@ export async function listProjectSkills(
     ...assembleSkillList(perProvider),
     ...sharedSkills.summaries,
     ...listServerOwnedSkills(deps),
-    ...listBbPluginSkills(deps),
+    ...listPatcherPluginSkills(deps),
   ].sort(compareSkillSummaries);
 }
 

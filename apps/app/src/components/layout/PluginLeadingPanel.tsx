@@ -23,7 +23,7 @@ import {
 import { useDesktopWindowState } from "@/hooks/useDesktopWindowState";
 import {
   CHROME_ROW_HEIGHT_CLASS,
-  getBbDesktopInfo,
+  getPatcherDesktopInfo,
   MACOS_TRAFFIC_LIGHT_TOP_RESERVE_CLASS,
   MACOS_WINDOW_DRAG_CLASS,
   shouldReserveMacosTrafficLights,
@@ -185,7 +185,7 @@ export function PluginLeadingPanel() {
   const [activeId, setActiveId] = useState(readStoredActiveId);
   const [isResizing, setIsResizing] = useState(false);
 
-  const [desktopInfo] = useState(getBbDesktopInfo);
+  const [desktopInfo] = useState(getPatcherDesktopInfo);
   const desktopWindowState = useDesktopWindowState();
   const usesDesktopChrome = shouldUseMacosDesktopChrome(desktopInfo);
   const reserveMacosTrafficLights = shouldReserveMacosTrafficLights({

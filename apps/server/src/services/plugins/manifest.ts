@@ -43,9 +43,9 @@ export interface PluginManifest {
    */
   sites: readonly string[] | undefined;
   /** semver range from engines.bb, when declared. */
-  bbEngineRange: string | undefined;
+  patcherEngineRange: string | undefined;
   /** semver range from engines.bbPluginSdk; absent manifests are legacy. */
-  bbPluginSdkRange: string | undefined;
+  patcherPluginSdkRange: string | undefined;
   /** Absolute path of the backend entry file. */
   serverEntry: string;
   /** Absolute path of the frontend entry file, when declared. */
@@ -264,8 +264,8 @@ export async function readPluginManifest(
     },
     permissions: bb.permissions,
     sites: bb.sites,
-    bbEngineRange: engines?.bb,
-    bbPluginSdkRange: engines?.bbPluginSdk,
+    patcherEngineRange: engines?.bb,
+    patcherPluginSdkRange: engines?.bbPluginSdk,
     serverEntry,
     appEntry: bb.app ? resolveEntry(rootDir, bb.app, "bb.app") : undefined,
     themes,

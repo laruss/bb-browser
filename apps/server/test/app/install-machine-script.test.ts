@@ -134,7 +134,7 @@ function writeJoinedState(
   );
 }
 
-function createEnrollingBbAppScript(args: {
+function createEnrollingPatcherAppScript(args: {
   hostId: string;
   invocationPath?: string;
   statusServerUrl?: string;
@@ -187,7 +187,7 @@ function writeServerInstallTools(
   artifactStatus: 200 | 404,
 ): void {
   const npmLog = join(fixture.dataDir, "npm.log");
-  const bbAppPath = join(fixture.binDir, "bb-app");
+  const patcherAppPath = join(fixture.binDir, "bb-app");
   writeExecutable(
     join(fixture.binDir, "curl"),
     `#!/bin/sh
@@ -203,22 +203,22 @@ case "$*" in
 esac
 `,
   );
-  const bbAppTemplatePath = join(fixture.dataDir, "bb-app-template");
+  const patcherAppTemplatePath = join(fixture.dataDir, "bb-app-template");
   writeExecutable(
-    bbAppTemplatePath,
-    createEnrollingBbAppScript({ hostId: "host-test" }),
+    patcherAppTemplatePath,
+    createEnrollingPatcherAppScript({ hostId: "host-test" }),
   );
   writeExecutable(
     join(fixture.binDir, "npm"),
     `#!/bin/sh
 printf '%s\n' "$*" >>"${npmLog}"
-cp "${bbAppTemplatePath}" "${bbAppPath}"
-chmod +x "${bbAppPath}"
+cp "${patcherAppTemplatePath}" "${patcherAppPath}"
+chmod +x "${patcherAppPath}"
 `,
   );
 }
 
-function writeEnrollingBbApp(
+function writeEnrollingPatcherApp(
   fixture: ReturnType<typeof createFixture>,
   invocationPath: string,
   hostId = "host-test",
@@ -226,7 +226,7 @@ function writeEnrollingBbApp(
 ): void {
   writeExecutable(
     join(fixture.binDir, "bb-app"),
-    createEnrollingBbAppScript({ hostId, invocationPath, statusServerUrl }),
+    createEnrollingPatcherAppScript({ hostId, invocationPath, statusServerUrl }),
   );
 }
 
@@ -311,7 +311,7 @@ describe("machine install script", () => {
     const fixture = createFixture();
     const invocationPath = join(fixture.dataDir, "invocation");
     writeCurlArtifactMock(fixture, 404);
-    writeEnrollingBbApp(fixture, invocationPath);
+    writeEnrollingPatcherApp(fixture, invocationPath);
     const result = runScript(JOIN_ARGS, fixture, {
       BB_INSTALL_SKIP_SERVICE: "1",
     });
@@ -340,7 +340,7 @@ describe("machine install script", () => {
     const fixture = createFixture();
     const invocationPath = join(fixture.dataDir, "invocation");
     writeCurlArtifactMock(fixture, 404);
-    writeEnrollingBbApp(
+    writeEnrollingPatcherApp(
       fixture,
       invocationPath,
       "host-test",
@@ -463,7 +463,7 @@ describe("machine install script", () => {
     const fixture = createFixture();
     const invocationPath = join(fixture.dataDir, "invocation");
     writeCurlArtifactMock(fixture, 404);
-    writeEnrollingBbApp(fixture, invocationPath);
+    writeEnrollingPatcherApp(fixture, invocationPath);
 
     try {
       const result = runScript(JOIN_ARGS, fixture, {
@@ -534,7 +534,7 @@ describe("machine install script", () => {
     const fixture = createFixture();
     writeJoinedState(fixture);
     writeCurlArtifactMock(fixture, 404);
-    writeEnrollingBbApp(fixture, join(fixture.dataDir, "service-invocation"));
+    writeEnrollingPatcherApp(fixture, join(fixture.dataDir, "service-invocation"));
     writeExecutable(join(fixture.binDir, "uname"), "#!/bin/sh\necho Darwin\n");
     writeExecutable(
       join(fixture.binDir, "launchctl"),
@@ -591,7 +591,7 @@ fi
     const fixture = createFixture();
     writeJoinedState(fixture);
     writeCurlArtifactMock(fixture, 404);
-    writeEnrollingBbApp(fixture, join(fixture.dataDir, "service-invocation"));
+    writeEnrollingPatcherApp(fixture, join(fixture.dataDir, "service-invocation"));
     writeExecutable(join(fixture.binDir, "uname"), "#!/bin/sh\necho Linux\n");
     writeExecutable(
       join(fixture.binDir, "systemctl"),

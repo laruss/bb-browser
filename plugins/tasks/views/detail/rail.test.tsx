@@ -26,7 +26,7 @@ afterEach(cleanup);
 const PROJECT_ID = "01HZZZZZZZZZZZZZZZZZZZZZP1";
 const BB_PROJECT_ID = "proj_bb0000000000000000000001";
 
-function projectRow(linkedBbProjectId: string | null) {
+function projectRow(linkedPatcherProjectId: string | null) {
   return {
     id: PROJECT_ID,
     name: "Tasks Plugin",
@@ -34,7 +34,7 @@ function projectRow(linkedBbProjectId: string | null) {
     nextTaskNumber: 6,
     color: "blue",
     folderId: null,
-    linkedBbProjectId,
+    linkedPatcherProjectId,
     createdAt: "2026-07-15T00:00:00.000Z",
   };
 }
@@ -57,11 +57,11 @@ const task = {
 };
 
 function detailRpc(
-  linkedBbProjectId: string | null,
+  linkedPatcherProjectId: string | null,
   overrides: Record<string, unknown> = {},
 ) {
   return {
-    listProjects: () => ({ projects: [projectRow(linkedBbProjectId)] }),
+    listProjects: () => ({ projects: [projectRow(linkedPatcherProjectId)] }),
     listFolders: () => ({ folders: [] }),
     listPresets: () => ({ presets: [] }),
     sidebarSummary: () => ({ projects: [] }),
@@ -76,7 +76,7 @@ function detailRpc(
       unavailableThreadIds: [],
     }),
     listComments: () => ({ comments: [] }),
-    listBbProjects: () => ({ bbProjects: [] }),
+    listPatcherProjects: () => ({ patcherProjects: [] }),
     ...overrides,
   };
 }
@@ -89,14 +89,14 @@ describe("dispatch target rail control", () => {
       { subPath: "task/TSK-5" },
       {
         rpc: detailRpc(null, {
-          listBbProjects: () => ({
-            bbProjects: [{ id: BB_PROJECT_ID, name: "bb monorepo" }],
+          listPatcherProjects: () => ({
+            patcherProjects: [{ id: BB_PROJECT_ID, name: "bb monorepo" }],
           }),
           updateProject: (input: Record<string, unknown>) => {
             updateCalls.push(input);
             return {
               project: {
-                ...projectRow(input.linkedBbProjectId as string | null),
+                ...projectRow(input.linkedPatcherProjectId as string | null),
               },
             };
           },
@@ -112,7 +112,7 @@ describe("dispatch target rail control", () => {
     await waitFor(() => expect(updateCalls).toHaveLength(1));
     expect(updateCalls[0]).toEqual({
       projectId: PROJECT_ID,
-      linkedBbProjectId: BB_PROJECT_ID,
+      linkedPatcherProjectId: BB_PROJECT_ID,
     });
   });
 
@@ -123,14 +123,14 @@ describe("dispatch target rail control", () => {
       { subPath: "task/TSK-5" },
       {
         rpc: detailRpc(BB_PROJECT_ID, {
-          listBbProjects: () => ({
-            bbProjects: [{ id: BB_PROJECT_ID, name: "bb monorepo" }],
+          listPatcherProjects: () => ({
+            patcherProjects: [{ id: BB_PROJECT_ID, name: "bb monorepo" }],
           }),
           updateProject: (input: Record<string, unknown>) => {
             updateCalls.push(input);
             return {
               project: {
-                ...projectRow(input.linkedBbProjectId as string | null),
+                ...projectRow(input.linkedPatcherProjectId as string | null),
               },
             };
           },
@@ -147,7 +147,7 @@ describe("dispatch target rail control", () => {
     await waitFor(() => expect(updateCalls).toHaveLength(1));
     expect(updateCalls[0]).toEqual({
       projectId: PROJECT_ID,
-      linkedBbProjectId: null,
+      linkedPatcherProjectId: null,
     });
   });
 });

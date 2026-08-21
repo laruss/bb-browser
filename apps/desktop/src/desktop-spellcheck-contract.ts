@@ -1,23 +1,23 @@
-export const BB_DESKTOP_SPELLCHECK_GLOBAL_NAME = "__bbDesktopSpellcheck";
+export const BB_DESKTOP_SPELLCHECK_GLOBAL_NAME = "__patcherDesktopSpellcheck";
 
-export interface BbDesktopSpellcheckCorrectionContext {
+export interface PatcherDesktopSpellcheckCorrectionContext {
   dictionarySuggestions: string[];
   misspelledWord: string;
 }
 
-export interface BbDesktopSpellcheckApi {
+export interface PatcherDesktopSpellcheckApi {
   getCorrectionContext(
     word: string,
-  ): BbDesktopSpellcheckCorrectionContext | null;
+  ): PatcherDesktopSpellcheckCorrectionContext | null;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-export function parseBbDesktopSpellcheckCorrectionContext(
+export function parsePatcherDesktopSpellcheckCorrectionContext(
   value: unknown,
-): BbDesktopSpellcheckCorrectionContext | null {
+): PatcherDesktopSpellcheckCorrectionContext | null {
   if (!isRecord(value)) {
     return null;
   }
@@ -35,6 +35,8 @@ export function parseBbDesktopSpellcheckCorrectionContext(
   };
 }
 
-export function buildBbDesktopSpellcheckLookupScript(word: string): string {
+export function buildPatcherDesktopSpellcheckLookupScript(
+  word: string,
+): string {
   return `globalThis[${JSON.stringify(BB_DESKTOP_SPELLCHECK_GLOBAL_NAME)}]?.getCorrectionContext(${JSON.stringify(word)}) ?? null`;
 }

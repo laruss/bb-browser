@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-import { runBbHostDaemon } from "../launcher.js";
+import { runPatcherHostDaemon } from "../launcher.js";
 
-void runBbHostDaemon().catch((error) => {
+void runPatcherHostDaemon().catch((error) => {
   const message =
     error instanceof Error ? (error.stack ?? error.message) : String(error);
   process.stderr.write(`${message}\n`);

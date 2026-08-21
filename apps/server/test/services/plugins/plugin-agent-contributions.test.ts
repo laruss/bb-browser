@@ -55,7 +55,7 @@ async function writePlugin(
   options: {
     name: string;
     serverSource?: string;
-    bbSkills?: string[];
+    patcherSkills?: string[];
     skillNames?: string[];
     skillsDirName?: string;
   },
@@ -72,7 +72,7 @@ async function writePlugin(
         description: "Agent contributions plugin fixture.",
         branding: { icon: "Zap" },
         server: "./server.ts",
-        ...(options.bbSkills ? { skills: options.bbSkills } : {}),
+        ...(options.patcherSkills ? { skills: options.patcherSkills } : {}),
       },
     }),
   );
@@ -174,7 +174,7 @@ describe("plugin skills tier", () => {
   it("manifest bb.skills relocates the convention root and the experiment gates the tier", async () => {
     const rootDir = await writePlugin(workDir, {
       name: "bb-plugin-relocated",
-      bbSkills: ["./custom/*"],
+      patcherSkills: ["./custom/*"],
       skillNames: ["relocated-skill"],
       skillsDirName: "custom",
     });

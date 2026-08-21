@@ -7,7 +7,7 @@
 // Ships disabled. An agent driving this browser acts inside the user's real
 // logged-in session, and BB has no plugin permission model yet, so turning it on
 // is the user's decision (`bb plugin enable browser-tools`).
-import type { BbPluginApi, PluginAgentToolResult } from "@patcher/plugin-sdk";
+import type { PatcherPluginApi, PluginAgentToolResult } from "@patcher/plugin-sdk";
 import { registerBrowserToolsCli } from "./cli.js";
 import {
   BROWSER_TOOLS_INSTRUCTIONS,
@@ -40,7 +40,7 @@ async function run(
   }
 }
 
-export default function plugin(bb: BbPluginApi) {
+export default function plugin(bb: PatcherPluginApi) {
   // `bb browser …` drives the same API the tools below do, without an agent.
   // It is the fast way to tell a broken bridge from a broken tool.
   registerBrowserToolsCli(bb);

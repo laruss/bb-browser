@@ -14,7 +14,7 @@ import { MemoryRouter, useLocation, useNavigate } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { PERSONAL_PROJECT_ID } from "@patcher/domain";
 import { TooltipProvider } from "@patcher/shared-ui/tooltip";
-import type { BbDesktopInfo } from "@patcher/desktop-contract";
+import type { PatcherDesktopInfo } from "@patcher/desktop-contract";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createQueryClientTestHarness } from "@/test/queryClientTestHarness";
 import { maximizedPaneIdAtom, splitLayoutAtom } from "@/lib/split-layout/atoms";
@@ -26,7 +26,7 @@ import {
 } from "@/lib/split-layout";
 import type { PaneContent, SplitLayout } from "@/lib/split-layout";
 import { usePromptDraftStorage } from "@/hooks/usePromptDraftStorage";
-import { createBbDesktopApi } from "@/test/bb-desktop-test-utils";
+import { createPatcherDesktopApi } from "@/test/bb-desktop-test-utils";
 import { resourceRouteLabelAtom } from "@/components/layout/resourceRouteLabelAtom";
 import {
   resetPluginSlotStoreForTest,
@@ -1638,7 +1638,7 @@ describe("SplitThreadArea", () => {
   });
 
   it("carves a plugin pane drag handle out of the macOS window-drag region", async () => {
-    const desktopInfo: BbDesktopInfo = {
+    const desktopInfo: PatcherDesktopInfo = {
       lastCheckedAt: null,
       latestVersion: null,
       pendingVersion: null,
@@ -1647,7 +1647,7 @@ describe("SplitThreadArea", () => {
       updateDownloaded: false,
       version: "0.0.0-test",
     };
-    window.bbDesktop = createBbDesktopApi(desktopInfo);
+    window.bbDesktop = createPatcherDesktopApi(desktopInfo);
     setPluginSlotRegistrations("docs", {
       homepageSections: [],
       settingsSections: [],
@@ -1681,7 +1681,7 @@ describe("SplitThreadArea", () => {
   });
 
   it("makes only top-row split headers desktop window-drag regions", async () => {
-    const desktopInfo: BbDesktopInfo = {
+    const desktopInfo: PatcherDesktopInfo = {
       lastCheckedAt: null,
       latestVersion: null,
       pendingVersion: null,
@@ -1690,7 +1690,7 @@ describe("SplitThreadArea", () => {
       updateDownloaded: false,
       version: "0.0.0-test",
     };
-    window.bbDesktop = createBbDesktopApi(desktopInfo);
+    window.bbDesktop = createPatcherDesktopApi(desktopInfo);
     setPluginSlotRegistrations("test-plugin", {
       homepageSections: [],
       settingsSections: [],
@@ -1729,7 +1729,7 @@ describe("SplitThreadArea", () => {
   });
 
   it("reserves collapsed window-left chrome only for the structural top-left plugin pane", async () => {
-    const desktopInfo: BbDesktopInfo = {
+    const desktopInfo: PatcherDesktopInfo = {
       lastCheckedAt: null,
       latestVersion: null,
       pendingVersion: null,
@@ -1738,7 +1738,7 @@ describe("SplitThreadArea", () => {
       updateDownloaded: false,
       version: "0.0.0-test",
     };
-    window.bbDesktop = createBbDesktopApi(desktopInfo);
+    window.bbDesktop = createPatcherDesktopApi(desktopInfo);
     sidebarState.showing = false;
     setPluginSlotRegistrations("test-plugin", {
       homepageSections: [],

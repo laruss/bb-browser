@@ -1,45 +1,45 @@
 import { BrowserWindow, ipcMain, type IpcMainEvent } from "electron";
 import {
-  bbDesktopBrowserAttachRequestSchema,
-  bbDesktopBrowserContextMenuItemsSchema,
-  bbDesktopBrowserPageStylesSchema,
-  bbDesktopBrowserPageScriptsSchema,
-  bbDesktopBrowserPageScriptResultSchema,
-  bbDesktopPageScriptRpcRequestSchema,
-  bbDesktopBrowserDownloadActionRequestSchema,
-  bbDesktopBrowserSetOverlayRequestSchema,
-  bbDesktopBrowserSetFullscreenRequestSchema,
-  bbDesktopBrowserFindRequestSchema,
-  bbDesktopBrowserNavigateRequestSchema,
-  bbDesktopBrowserSetBoundsRequestSchema,
-  bbDesktopBrowserSetVisibleRequestSchema,
-  bbDesktopBrowserSetMutedRequestSchema,
-  bbDesktopBrowserSetZoomRequestSchema,
-  bbDesktopBrowserDialogRespondRequestSchema,
-  bbDesktopBrowserPagePromptAnswerSchema,
-  bbDesktopBrowserPopupTabsSchema,
-  bbDesktopBrowserDevToolsRequestSchema,
-  bbDesktopBrowserDevToolsVisibleRequestSchema,
-  bbDesktopBrowserCaptureFullPageRequestSchema,
-  bbDesktopBrowserControlRequestSchema,
-  bbDesktopBrowserRecordRequestSchema,
-  bbDesktopBrowserInteractRequestSchema,
-  bbDesktopBrowserObserveRequestSchema,
-  bbDesktopBrowserSnapshotRequestSchema,
-  bbDesktopBrowserSnapshotInRequestSchema,
-  bbDesktopBrowserStorageRequestSchema,
-  bbDesktopBrowserTabRefSchema,
-  type BbDesktopBrowserCaptureFullPageResult,
-  type BbDesktopBrowserDownloadActionResult,
-  type BbDesktopBrowserControlResult,
-  type BbDesktopBrowserRecordResult,
-  type BbDesktopBrowserInteractResult,
-  type BbDesktopBrowserObserveResult,
-  type BbDesktopBrowserPageReadResult,
-  type BbDesktopBrowserSnapshotResult,
-  type BbDesktopBrowserStorageResult,
-  type BbDesktopPageScriptBootstrap,
-  type BbDesktopPageScriptRpcAnswer,
+  patcherDesktopBrowserAttachRequestSchema,
+  patcherDesktopBrowserContextMenuItemsSchema,
+  patcherDesktopBrowserPageStylesSchema,
+  patcherDesktopBrowserPageScriptsSchema,
+  patcherDesktopBrowserPageScriptResultSchema,
+  patcherDesktopPageScriptRpcRequestSchema,
+  patcherDesktopBrowserDownloadActionRequestSchema,
+  patcherDesktopBrowserSetOverlayRequestSchema,
+  patcherDesktopBrowserSetFullscreenRequestSchema,
+  patcherDesktopBrowserFindRequestSchema,
+  patcherDesktopBrowserNavigateRequestSchema,
+  patcherDesktopBrowserSetBoundsRequestSchema,
+  patcherDesktopBrowserSetVisibleRequestSchema,
+  patcherDesktopBrowserSetMutedRequestSchema,
+  patcherDesktopBrowserSetZoomRequestSchema,
+  patcherDesktopBrowserDialogRespondRequestSchema,
+  patcherDesktopBrowserPagePromptAnswerSchema,
+  patcherDesktopBrowserPopupTabsSchema,
+  patcherDesktopBrowserDevToolsRequestSchema,
+  patcherDesktopBrowserDevToolsVisibleRequestSchema,
+  patcherDesktopBrowserCaptureFullPageRequestSchema,
+  patcherDesktopBrowserControlRequestSchema,
+  patcherDesktopBrowserRecordRequestSchema,
+  patcherDesktopBrowserInteractRequestSchema,
+  patcherDesktopBrowserObserveRequestSchema,
+  patcherDesktopBrowserSnapshotRequestSchema,
+  patcherDesktopBrowserSnapshotInRequestSchema,
+  patcherDesktopBrowserStorageRequestSchema,
+  patcherDesktopBrowserTabRefSchema,
+  type PatcherDesktopBrowserCaptureFullPageResult,
+  type PatcherDesktopBrowserDownloadActionResult,
+  type PatcherDesktopBrowserControlResult,
+  type PatcherDesktopBrowserRecordResult,
+  type PatcherDesktopBrowserInteractResult,
+  type PatcherDesktopBrowserObserveResult,
+  type PatcherDesktopBrowserPageReadResult,
+  type PatcherDesktopBrowserSnapshotResult,
+  type PatcherDesktopBrowserStorageResult,
+  type PatcherDesktopPageScriptBootstrap,
+  type PatcherDesktopPageScriptRpcAnswer,
 } from "@patcher/desktop-contract";
 import {
   BB_DESKTOP_BROWSER_ATTACH_CHANNEL,
@@ -105,7 +105,7 @@ function registerTabCommand(args: RegisterDesktopBrowserTabCommandArgs): void {
     if (hostWindow === null) {
       return;
     }
-    const parsed = bbDesktopBrowserTabRefSchema.safeParse(payload);
+    const parsed = patcherDesktopBrowserTabRefSchema.safeParse(payload);
     if (!parsed.success) {
       return;
     }
@@ -125,7 +125,7 @@ export function registerDesktopBrowserIpc(
     if (hostWindow === null) {
       return;
     }
-    const parsed = bbDesktopBrowserAttachRequestSchema.safeParse(payload);
+    const parsed = patcherDesktopBrowserAttachRequestSchema.safeParse(payload);
     if (!parsed.success) {
       return;
     }
@@ -137,7 +137,8 @@ export function registerDesktopBrowserIpc(
     if (hostWindow === null) {
       return;
     }
-    const parsed = bbDesktopBrowserNavigateRequestSchema.safeParse(payload);
+    const parsed =
+      patcherDesktopBrowserNavigateRequestSchema.safeParse(payload);
     if (!parsed.success) {
       return;
     }
@@ -151,7 +152,8 @@ export function registerDesktopBrowserIpc(
       if (hostWindow === null) {
         return;
       }
-      const parsed = bbDesktopBrowserSetBoundsRequestSchema.safeParse(payload);
+      const parsed =
+        patcherDesktopBrowserSetBoundsRequestSchema.safeParse(payload);
       if (!parsed.success) {
         return;
       }
@@ -166,7 +168,8 @@ export function registerDesktopBrowserIpc(
       if (hostWindow === null) {
         return;
       }
-      const parsed = bbDesktopBrowserSetVisibleRequestSchema.safeParse(payload);
+      const parsed =
+        patcherDesktopBrowserSetVisibleRequestSchema.safeParse(payload);
       if (!parsed.success) {
         return;
       }
@@ -179,7 +182,7 @@ export function registerDesktopBrowserIpc(
     if (hostWindow === null) {
       return;
     }
-    const parsed = bbDesktopBrowserSetZoomRequestSchema.safeParse(payload);
+    const parsed = patcherDesktopBrowserSetZoomRequestSchema.safeParse(payload);
     if (!parsed.success) {
       return;
     }
@@ -193,7 +196,8 @@ export function registerDesktopBrowserIpc(
       if (hostWindow === null) {
         return;
       }
-      const parsed = bbDesktopBrowserSetMutedRequestSchema.safeParse(payload);
+      const parsed =
+        patcherDesktopBrowserSetMutedRequestSchema.safeParse(payload);
       if (!parsed.success) {
         return;
       }
@@ -238,7 +242,8 @@ export function registerDesktopBrowserIpc(
       if (hostWindow === null) {
         return;
       }
-      const parsed = bbDesktopBrowserSetOverlayRequestSchema.safeParse(payload);
+      const parsed =
+        patcherDesktopBrowserSetOverlayRequestSchema.safeParse(payload);
       if (!parsed.success) {
         return;
       }
@@ -254,7 +259,7 @@ export function registerDesktopBrowserIpc(
         return;
       }
       const parsed =
-        bbDesktopBrowserSetFullscreenRequestSchema.safeParse(payload);
+        patcherDesktopBrowserSetFullscreenRequestSchema.safeParse(payload);
       if (!parsed.success) {
         return;
       }
@@ -267,7 +272,7 @@ export function registerDesktopBrowserIpc(
     if (hostWindow === null) {
       return;
     }
-    const parsed = bbDesktopBrowserFindRequestSchema.safeParse(payload);
+    const parsed = patcherDesktopBrowserFindRequestSchema.safeParse(payload);
     if (!parsed.success) {
       return;
     }
@@ -281,7 +286,8 @@ export function registerDesktopBrowserIpc(
       if (hostWindow === null) {
         return;
       }
-      const parsed = bbDesktopBrowserDevToolsRequestSchema.safeParse(payload);
+      const parsed =
+        patcherDesktopBrowserDevToolsRequestSchema.safeParse(payload);
       if (!parsed.success) {
         return;
       }
@@ -297,7 +303,7 @@ export function registerDesktopBrowserIpc(
         return;
       }
       const parsed =
-        bbDesktopBrowserDevToolsVisibleRequestSchema.safeParse(payload);
+        patcherDesktopBrowserDevToolsVisibleRequestSchema.safeParse(payload);
       if (!parsed.success) {
         return;
       }
@@ -312,7 +318,7 @@ export function registerDesktopBrowserIpc(
       if (hostWindow === null) {
         return;
       }
-      const parsed = bbDesktopBrowserPopupTabsSchema.safeParse(payload);
+      const parsed = patcherDesktopBrowserPopupTabsSchema.safeParse(payload);
       if (!parsed.success) {
         return;
       }
@@ -327,7 +333,8 @@ export function registerDesktopBrowserIpc(
       if (hostWindow === null) {
         return;
       }
-      const parsed = bbDesktopBrowserContextMenuItemsSchema.safeParse(payload);
+      const parsed =
+        patcherDesktopBrowserContextMenuItemsSchema.safeParse(payload);
       if (!parsed.success) {
         return;
       }
@@ -342,7 +349,7 @@ export function registerDesktopBrowserIpc(
       if (hostWindow === null) {
         return;
       }
-      const parsed = bbDesktopBrowserPageStylesSchema.safeParse(payload);
+      const parsed = patcherDesktopBrowserPageStylesSchema.safeParse(payload);
       if (!parsed.success) {
         return;
       }
@@ -357,7 +364,7 @@ export function registerDesktopBrowserIpc(
       if (hostWindow === null) {
         return;
       }
-      const parsed = bbDesktopBrowserPageScriptsSchema.safeParse(payload);
+      const parsed = patcherDesktopBrowserPageScriptsSchema.safeParse(payload);
       if (!parsed.success) {
         return;
       }
@@ -374,7 +381,8 @@ export function registerDesktopBrowserIpc(
       if (hostWindowFromBrowserIpcEvent(event) === null) {
         return;
       }
-      const parsed = bbDesktopBrowserPageScriptResultSchema.safeParse(payload);
+      const parsed =
+        patcherDesktopBrowserPageScriptResultSchema.safeParse(payload);
       if (!parsed.success) {
         return;
       }
@@ -393,7 +401,7 @@ export function registerDesktopBrowserIpc(
   // is blocked at document start, so any path that failed to set a return value
   // would hang the page rather than merely skip its scripts.
   ipcMain.on(BB_DESKTOP_PAGE_SCRIPT_BOOTSTRAP_CHANNEL, (event) => {
-    const empty: BbDesktopPageScriptBootstrap = { worlds: [] };
+    const empty: PatcherDesktopPageScriptBootstrap = { worlds: [] };
     try {
       const url = event.senderFrame?.url ?? "";
       event.returnValue =
@@ -410,8 +418,12 @@ export function registerDesktopBrowserIpc(
 
   ipcMain.handle(
     BB_DESKTOP_PAGE_SCRIPT_RPC_CHANNEL,
-    async (event, payload: unknown): Promise<BbDesktopPageScriptRpcAnswer> => {
-      const parsed = bbDesktopPageScriptRpcRequestSchema.safeParse(payload);
+    async (
+      event,
+      payload: unknown,
+    ): Promise<PatcherDesktopPageScriptRpcAnswer> => {
+      const parsed =
+        patcherDesktopPageScriptRpcRequestSchema.safeParse(payload);
       if (!parsed.success) {
         return { ok: false, message: "bb.rpc: that call was not understood." };
       }
@@ -441,9 +453,9 @@ export function registerDesktopBrowserIpc(
     async (
       _event,
       payload: unknown,
-    ): Promise<BbDesktopBrowserDownloadActionResult> => {
+    ): Promise<PatcherDesktopBrowserDownloadActionResult> => {
       const parsed =
-        bbDesktopBrowserDownloadActionRequestSchema.safeParse(payload);
+        patcherDesktopBrowserDownloadActionRequestSchema.safeParse(payload);
       if (!parsed.success) {
         return {
           ok: false,
@@ -470,12 +482,12 @@ export function registerDesktopBrowserIpc(
     async (
       event,
       payload: unknown,
-    ): Promise<BbDesktopBrowserPageReadResult> => {
+    ): Promise<PatcherDesktopBrowserPageReadResult> => {
       const hostWindow = BrowserWindow.fromWebContents(event.sender);
       if (hostWindow === null) {
         return { ok: false, reason: "no-view" };
       }
-      const parsed = bbDesktopBrowserTabRefSchema.safeParse(payload);
+      const parsed = patcherDesktopBrowserTabRefSchema.safeParse(payload);
       if (!parsed.success) {
         return { ok: false, reason: "no-view" };
       }
@@ -497,12 +509,13 @@ export function registerDesktopBrowserIpc(
     async (
       event,
       payload: unknown,
-    ): Promise<BbDesktopBrowserSnapshotResult> => {
+    ): Promise<PatcherDesktopBrowserSnapshotResult> => {
       const hostWindow = BrowserWindow.fromWebContents(event.sender);
       if (hostWindow === null) {
         return { ok: false, reason: "no-view" };
       }
-      const parsed = bbDesktopBrowserSnapshotRequestSchema.safeParse(payload);
+      const parsed =
+        patcherDesktopBrowserSnapshotRequestSchema.safeParse(payload);
       if (!parsed.success) {
         return { ok: false, reason: "no-view" };
       }
@@ -522,12 +535,13 @@ export function registerDesktopBrowserIpc(
     async (
       event,
       payload: unknown,
-    ): Promise<BbDesktopBrowserSnapshotResult> => {
+    ): Promise<PatcherDesktopBrowserSnapshotResult> => {
       const hostWindow = BrowserWindow.fromWebContents(event.sender);
       if (hostWindow === null) {
         return { ok: false, reason: "no-view" };
       }
-      const parsed = bbDesktopBrowserSnapshotInRequestSchema.safeParse(payload);
+      const parsed =
+        patcherDesktopBrowserSnapshotInRequestSchema.safeParse(payload);
       if (!parsed.success) {
         return {
           ok: false,
@@ -551,12 +565,13 @@ export function registerDesktopBrowserIpc(
     async (
       event,
       payload: unknown,
-    ): Promise<BbDesktopBrowserInteractResult> => {
+    ): Promise<PatcherDesktopBrowserInteractResult> => {
       const hostWindow = BrowserWindow.fromWebContents(event.sender);
       if (hostWindow === null) {
         return { ok: false, reason: "no-view" };
       }
-      const parsed = bbDesktopBrowserInteractRequestSchema.safeParse(payload);
+      const parsed =
+        patcherDesktopBrowserInteractRequestSchema.safeParse(payload);
       if (!parsed.success) {
         return {
           ok: false,
@@ -576,12 +591,16 @@ export function registerDesktopBrowserIpc(
   // payload is the request's fault, not the tab's.
   ipcMain.handle(
     BB_DESKTOP_BROWSER_OBSERVE_CHANNEL,
-    async (event, payload: unknown): Promise<BbDesktopBrowserObserveResult> => {
+    async (
+      event,
+      payload: unknown,
+    ): Promise<PatcherDesktopBrowserObserveResult> => {
       const hostWindow = BrowserWindow.fromWebContents(event.sender);
       if (hostWindow === null) {
         return { ok: false, reason: "no-view" };
       }
-      const parsed = bbDesktopBrowserObserveRequestSchema.safeParse(payload);
+      const parsed =
+        patcherDesktopBrowserObserveRequestSchema.safeParse(payload);
       if (!parsed.success) {
         return {
           ok: false,
@@ -604,13 +623,13 @@ export function registerDesktopBrowserIpc(
     async (
       event,
       payload: unknown,
-    ): Promise<BbDesktopBrowserCaptureFullPageResult> => {
+    ): Promise<PatcherDesktopBrowserCaptureFullPageResult> => {
       const hostWindow = BrowserWindow.fromWebContents(event.sender);
       if (hostWindow === null) {
         return { ok: false, reason: "no-view" };
       }
       const parsed =
-        bbDesktopBrowserCaptureFullPageRequestSchema.safeParse(payload);
+        patcherDesktopBrowserCaptureFullPageRequestSchema.safeParse(payload);
       if (!parsed.success) {
         return {
           ok: false,
@@ -633,12 +652,16 @@ export function registerDesktopBrowserIpc(
   // malformed payload is not `no-view`.
   ipcMain.handle(
     BB_DESKTOP_BROWSER_STORAGE_CHANNEL,
-    async (event, payload: unknown): Promise<BbDesktopBrowserStorageResult> => {
+    async (
+      event,
+      payload: unknown,
+    ): Promise<PatcherDesktopBrowserStorageResult> => {
       const hostWindow = BrowserWindow.fromWebContents(event.sender);
       if (hostWindow === null) {
         return { ok: false, reason: "no-view" };
       }
-      const parsed = bbDesktopBrowserStorageRequestSchema.safeParse(payload);
+      const parsed =
+        patcherDesktopBrowserStorageRequestSchema.safeParse(payload);
       if (!parsed.success) {
         return {
           ok: false,
@@ -659,12 +682,16 @@ export function registerDesktopBrowserIpc(
   // request's fault.
   ipcMain.handle(
     BB_DESKTOP_BROWSER_CONTROL_CHANNEL,
-    async (event, payload: unknown): Promise<BbDesktopBrowserControlResult> => {
+    async (
+      event,
+      payload: unknown,
+    ): Promise<PatcherDesktopBrowserControlResult> => {
       const hostWindow = BrowserWindow.fromWebContents(event.sender);
       if (hostWindow === null) {
         return { ok: false, reason: "no-view" };
       }
-      const parsed = bbDesktopBrowserControlRequestSchema.safeParse(payload);
+      const parsed =
+        patcherDesktopBrowserControlRequestSchema.safeParse(payload);
       if (!parsed.success) {
         return {
           ok: false,
@@ -685,12 +712,16 @@ export function registerDesktopBrowserIpc(
   // applied while it films rather than discovered at the end.
   ipcMain.handle(
     BB_DESKTOP_BROWSER_RECORD_CHANNEL,
-    async (event, payload: unknown): Promise<BbDesktopBrowserRecordResult> => {
+    async (
+      event,
+      payload: unknown,
+    ): Promise<PatcherDesktopBrowserRecordResult> => {
       const hostWindow = BrowserWindow.fromWebContents(event.sender);
       if (hostWindow === null) {
         return { ok: false, reason: "no-view" };
       }
-      const parsed = bbDesktopBrowserRecordRequestSchema.safeParse(payload);
+      const parsed =
+        patcherDesktopBrowserRecordRequestSchema.safeParse(payload);
       if (!parsed.success) {
         return {
           ok: false,
@@ -716,7 +747,8 @@ export function registerDesktopBrowserIpc(
       if (hostWindow === null) {
         return false;
       }
-      const parsed = bbDesktopBrowserPagePromptAnswerSchema.safeParse(payload);
+      const parsed =
+        patcherDesktopBrowserPagePromptAnswerSchema.safeParse(payload);
       if (!parsed.success) {
         return false;
       }
@@ -741,7 +773,7 @@ export function registerDesktopBrowserIpc(
         return false;
       }
       const parsed =
-        bbDesktopBrowserDialogRespondRequestSchema.safeParse(payload);
+        patcherDesktopBrowserDialogRespondRequestSchema.safeParse(payload);
       if (!parsed.success) {
         return false;
       }

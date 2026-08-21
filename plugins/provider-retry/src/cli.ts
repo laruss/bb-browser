@@ -1,4 +1,4 @@
-import type { BbPluginApi, PluginCliContext } from "@patcher/plugin-sdk";
+import type { PatcherPluginApi, PluginCliContext } from "@patcher/plugin-sdk";
 import type { ProviderRetryView } from "./contract.js";
 import type { ProviderRetryService } from "./service.js";
 
@@ -20,7 +20,7 @@ function textView(view: ProviderRetryView): string {
 }
 
 export function registerProviderRetryCli(
-  bb: BbPluginApi,
+  bb: PatcherPluginApi,
   service: ProviderRetryService,
 ): void {
   bb.cli.register({

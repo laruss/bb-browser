@@ -11,7 +11,7 @@ import {
 } from "react";
 import {
   definePluginApp,
-  useBbNavigate,
+  usePatcherNavigate,
   useRpc,
   useRealtime,
   type PluginFileOpenerProps,
@@ -689,7 +689,7 @@ function parseDocumentRef(value: unknown): DocumentRef | null {
 }
 
 function DocsDirectiveCard({ attributes }: PluginMessageDirectiveProps) {
-  const navigate = useBbNavigate();
+  const navigate = usePatcherNavigate();
   const document = parseDocumentRef(attributes);
   if (!document) {
     return (
@@ -786,7 +786,7 @@ function HtmlDocumentPanelBody({ document }: { document: DocumentRef }) {
 
 function DocumentPanel({ params }: PluginThreadPanelProps) {
   const document = parseDocumentRef(params);
-  const navigate = useBbNavigate();
+  const navigate = usePatcherNavigate();
   if (!document)
     return (
       <div className="text-sm text-muted-foreground">
@@ -2014,7 +2014,7 @@ function parseRoute(subPath: string): {
 
 function NotesPanel({ subPath }: PluginNavPanelProps) {
   const rpc = useRpc<typeof docsRpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = usePatcherNavigate();
   const route = parseRoute(subPath);
   const [vaultId, setVaultId] = useState<string | null>(route.vaultId);
   const [folderDialogOpen, setFolderDialogOpen] = useState(false);

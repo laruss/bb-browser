@@ -48,7 +48,7 @@ export const pluginBrandingSchema = z
     },
   );
 
-export const pluginBbManifestSchema = z
+export const pluginPatcherManifestSchema = z
   .object({
     name: requiredManifestString,
     description: requiredManifestString,
@@ -136,7 +136,7 @@ export const pluginPackageJsonSchema = z
         bbPluginSdk: requiredManifestString.optional(),
       })
       .optional(),
-    bb: pluginBbManifestSchema,
+    bb: pluginPatcherManifestSchema,
   })
   .passthrough();
 

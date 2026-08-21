@@ -156,7 +156,7 @@ export async function createPluginStateSnapshotOnDisk(args: {
     status: "pending",
     rollbackCandidateVersion: null,
     rollbackSourceFingerprint: null,
-    rollbackBbVersion: null,
+    rollbackPatcherVersion: null,
     rollbackSdkVersion: null,
     rollbackDetail: null,
     createdAt: args.now,

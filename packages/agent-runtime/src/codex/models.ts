@@ -39,7 +39,7 @@ export function mapCodexReasoningLevelToBb(
  * offer it for Codex models. "ultra" is the Codex-native top tier and passes
  * through as-is.
  */
-export function mapBbReasoningLevelToCodex(
+export function mapPatcherReasoningLevelToCodex(
   level: ReasoningLevel,
 ): string | null {
   switch (level) {

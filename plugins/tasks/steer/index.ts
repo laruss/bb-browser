@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@patcher/plugin-sdk";
+import type { PatcherPluginApi } from "@patcher/plugin-sdk";
 import type { TasksStore } from "../db";
 import { isSideChatShapedThread } from "../shared/side-chat";
 
@@ -36,7 +36,7 @@ function errorMessage(error: unknown): string {
 }
 
 export async function deliverCommentToLatestAgent(
-  bb: BbPluginApi,
+  bb: PatcherPluginApi,
   store: TasksStore,
   input: DeliverCommentInput,
 ): Promise<CommentDeliveryResult> {

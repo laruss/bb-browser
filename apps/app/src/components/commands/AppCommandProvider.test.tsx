@@ -199,7 +199,7 @@ vi.mock("@/hooks/queries/system-queries", () => ({
 }));
 
 vi.mock("@/lib/bb-desktop", () => ({
-  getBbDesktopInfo: () => null,
+  getPatcherDesktopInfo: () => null,
 }));
 vi.mock("@/hooks/queries/plugin-contribution-queries", () => ({
   usePluginContributions: () => ({

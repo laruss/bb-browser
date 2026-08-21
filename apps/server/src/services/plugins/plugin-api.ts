@@ -71,7 +71,7 @@ import {
 } from "@patcher/domain/plugin-permissions";
 import type { JsonValue } from "@patcher/domain/json-value";
 import type {
-  BbPluginApi,
+  PatcherPluginApi,
   PluginAgentConfiguration,
   PluginAgentConfigurationContext,
   PluginAgentToolContext,
@@ -129,7 +129,7 @@ import type {
   PluginUi,
   StandardSchemaV1,
 } from "@patcher/plugin-sdk";
-import type { BbSdk, ThreadForkArgs, ThreadSpawnArgs } from "@patcher/sdk";
+import type { PatcherSdk, ThreadForkArgs, ThreadSpawnArgs } from "@patcher/sdk";
 import type { ServerLogger } from "../../types.js";
 import type { PluginInteractionResult } from "../interactions/pending-interactions.js";
 import { appendPluginLogLine } from "./plugin-log.js";
@@ -147,7 +147,7 @@ import { registerSettingDescriptors } from "./plugin-setting-descriptors.js";
 // compile against it); this module implements it. Re-exported so server code
 // keeps one import site for plugin API types.
 export type {
-  BbPluginApi,
+  PatcherPluginApi,
   PluginAgentConfiguration,
   PluginAgentConfigurationContext,
   PluginAgentToolContentPart,
@@ -514,7 +514,7 @@ export type PluginSettingsListener = (
 ) => void;
 
 export interface PluginApiHandle {
-  api: BbPluginApi;
+  api: PatcherPluginApi;
   /** Dispose hooks in registration order (runner executes them LIFO). */
   disposeHooks: Array<() => void | Promise<void>>;
   /** Settings schema + change listeners recorded by `settings.define`. */
@@ -786,14 +786,14 @@ function summarizeParseIssues(error: unknown): string {
  * unless the plugin sets those fields explicitly.
  */
 function wrapSdkForPlugin(
-  sdk: BbSdk,
+  sdk: PatcherSdk,
   pluginId: string,
   gate: PluginPermissionGate,
-): BbSdk {
+): PatcherSdk {
   // Attribution first, then the gate: a denied `threads` area replaces this
   // wrapper wholesale, and doing it the other way round would hand the plugin
   // an attribution wrapper over a proxy that throws on every read.
-  const attributed: BbSdk = {
+  const attributed: PatcherSdk = {
     ...sdk,
     threads: {
       ...sdk.threads,
@@ -844,7 +844,7 @@ export function createPluginApi(options: {
   readSettingsValues: PluginSettingsReader;
   dataDir: string;
   /** Undefined until the server is listening (bb.sdk is bind-gated). */
-  getSdk: () => BbSdk | undefined;
+  getSdk: () => PatcherSdk | undefined;
   /** Undefined until the server is listening (bb.server is bind-gated too). */
   getLoopbackBaseUrl: () => string | undefined;
   /** Broadcasts a plugin-signal WS message (hub.notifyPluginSignal). */
@@ -895,7 +895,7 @@ export function createPluginApi(options: {
   const permissionGate = createPluginPermissionGate(pluginId, permissions);
   let invalidated = false;
   let activated = false;
-  let wrappedSdk: BbSdk | undefined;
+  let wrappedSdk: PatcherSdk | undefined;
   let pendingNeedsConfiguration: string | null = null;
   const pendingAgentToolProblems: string[] = [];
   const disposeHooks: Array<() => void | Promise<void>> = [];
@@ -3222,7 +3222,7 @@ export function createPluginApi(options: {
     },
   };
 
-  const api: BbPluginApi = {
+  const api: PatcherPluginApi = {
     pluginId,
     log,
     settings,
@@ -3238,7 +3238,7 @@ export function createPluginApi(options: {
     events,
     status,
     server,
-    get sdk(): BbSdk {
+    get sdk(): PatcherSdk {
       assertLive();
       const sdk = getSdk();
       if (!sdk) {
@@ -3326,7 +3326,7 @@ export function createPluginApi(options: {
  * contract — `bb.background.schedule()` rejects a bad cron expression before it
  * returns, and the browser argument checks answer inside functions that must
  * not become async. The mechanics, and why a literal specifier is required for
- * this to survive bundling, are written out once at `loadBbSdk` in
+ * this to survive bundling, are written out once at `loadPatcherSdk` in
  * plugin-child-runtime.ts.
  */
 let cronParserModule: typeof import("cron-parser") | undefined;

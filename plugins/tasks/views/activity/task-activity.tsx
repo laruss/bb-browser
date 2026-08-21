@@ -16,7 +16,7 @@ import {
 } from "@patcher/shared-ui/tooltip";
 import { cn } from "@patcher/shared-ui/lib/utils";
 import { TasksEditor } from "../../editor/tasks-editor.js";
-import { useBbNavigate } from "@patcher/plugin-sdk/app";
+import { usePatcherNavigate } from "@patcher/plugin-sdk/app";
 import {
   useMentionItems,
   useTasksQuery,
@@ -248,7 +248,7 @@ function SystemEvent({ comment, nowMs }: { comment: Comment; nowMs: number }) {
 function CommentCard({ entry, nowMs }: { entry: FeedEntry; nowMs: number }) {
   const { comment, attachments } = entry;
   const agent = comment.kind === "agent";
-  const navigate = useBbNavigate();
+  const navigate = usePatcherNavigate();
   const [lightbox, setLightbox] = useState<Attachment | null>(null);
   return (
     <div className="relative mb-3.5 flex gap-2.5">
@@ -300,7 +300,7 @@ interface ComposerProps {
 
 export function CommentComposer({ taskId, notificationTarget }: ComposerProps) {
   const rpc = useTasksRpc();
-  const navigate = useBbNavigate();
+  const navigate = usePatcherNavigate();
   const mentionItems = useMentionItems();
   const [body, setBody] = useState("");
   const [notify, setNotify] = useState(true);

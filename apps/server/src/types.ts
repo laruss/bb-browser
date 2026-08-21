@@ -9,7 +9,7 @@ import type { Logger } from "@patcher/logger";
 import type { PendingInteractionLifecycle } from "./services/interactions/pending-interactions.js";
 import type { MachineAuthService } from "./services/machine-auth.js";
 import type { AppVersionService } from "./services/system/app-version.js";
-import type { BbAppManagedConfigReloader } from "./services/system/bb-app-managed-config.js";
+import type { PatcherAppManagedConfigReloader } from "./services/system/bb-app-managed-config.js";
 import type { TelemetryService } from "./services/system/telemetry.js";
 import type { TerminalSessionLifecycle } from "./services/terminals/terminal-session-lifecycle.js";
 import type { LifecycleDedupers } from "./lifecycle-dedupers.js";
@@ -64,7 +64,7 @@ export interface AppDeps {
 
 export interface ServerAppDeps extends AppDeps {
   appVersion: AppVersionService;
-  bbAppManagedConfig: BbAppManagedConfigReloader;
+  patcherAppManagedConfig: PatcherAppManagedConfigReloader;
 }
 
 export type LifecycleDeps = Pick<

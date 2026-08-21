@@ -58,7 +58,7 @@ import {
   filterPluginCommands,
   PluginShortcutsGroup,
 } from "./PluginShortcutsGroup";
-import { getBbDesktopInfo } from "@/lib/bb-desktop";
+import { getPatcherDesktopInfo } from "@/lib/bb-desktop";
 
 const EMPTY_KEYBINDINGS: AppDefaultKeybindings = [];
 const EMPTY_PLUGIN_COMMANDS: readonly PluginCommandContribution[] = [];
@@ -472,7 +472,7 @@ export function KeyboardSettingsSection() {
     isPending: isKeyboardSettingsPending,
     mutate: mutateKeyboardSettings,
   } = useUpdateKeyboardSettings();
-  const isDesktop = getBbDesktopInfo() !== null;
+  const isDesktop = getPatcherDesktopInfo() !== null;
   const platform = browserPlatform();
   const generalSettings =
     systemConfig.data?.generalSettings ?? defaultAppSettings;

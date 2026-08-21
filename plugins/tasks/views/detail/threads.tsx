@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useBbNavigate, useRpc } from "@patcher/plugin-sdk/app";
+import { usePatcherNavigate, useRpc } from "@patcher/plugin-sdk/app";
 import type { DelegationRpcContract } from "../../delegate/contract.js";
 import type {
   Preset,
@@ -80,7 +80,7 @@ function ThreadCard({
   pullRequest: TaskPullRequest | undefined;
   pullRequestUnavailable: boolean;
 }) {
-  const navigate = useBbNavigate();
+  const navigate = usePatcherNavigate();
   const meta = THREAD_STATUS_META[thread.liveStatus];
   return (
     <div className="mb-2 flex items-center gap-3 rounded-md border border-border bg-card px-3 py-2 shadow-2xs">

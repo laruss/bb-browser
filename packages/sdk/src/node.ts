@@ -3,7 +3,7 @@ import {
   createHostDaemonLocalClient,
   DEFAULT_HOST_DAEMON_LOCAL_BIND_HOST,
 } from "@patcher/host-daemon-contract";
-import { createBbSdk, type BbSdk } from "./core.js";
+import { createPatcherSdk, type PatcherSdk } from "./core.js";
 import { createNodeWebsocketFactory } from "./node-websocket.js";
 import {
   createRequestTimeoutFetch,
@@ -12,9 +12,9 @@ import {
 } from "./response.js";
 import { createHttpTransport } from "./transport-http.js";
 import type {
-  BbRealtimeSocketFactory,
-  BbSdkContext,
-  BbSdkTransport,
+  PatcherRealtimeSocketFactory,
+  PatcherSdkContext,
+  PatcherSdkTransport,
 } from "./transport.js";
 
 export interface CreateNodeTransportArgs {
@@ -23,11 +23,11 @@ export interface CreateNodeTransportArgs {
   fetch?: FetchImplementation;
   realtimeUrl?: string;
   timeoutMs?: number;
-  websocket?: BbRealtimeSocketFactory;
+  websocket?: PatcherRealtimeSocketFactory;
 }
 
-export interface CreateNodeBbSdkArgs extends CreateNodeTransportArgs {
-  context?: BbSdkContext;
+export interface CreateNodePatcherSdkArgs extends CreateNodeTransportArgs {
+  context?: PatcherSdkContext;
 }
 
 export interface FetchLocalHostIdArgs {
@@ -46,7 +46,7 @@ function resolveHostDaemonUrl(cliConfig?: CliConfig): string {
 
 export function createNodeTransport(
   args: CreateNodeTransportArgs = {},
-): BbSdkTransport {
+): PatcherSdkTransport {
   return createHttpTransport({
     // Only fall back to CLI config when no base URL is given, so explicitly
     // configured SDKs work in environments without BB_SERVER_URL.
@@ -62,8 +62,10 @@ export function createNodeTransport(
   });
 }
 
-export function createNodeBbSdk(args: CreateNodeBbSdkArgs = {}): BbSdk {
-  return createBbSdk({
+export function createNodePatcherSdk(
+  args: CreateNodePatcherSdkArgs = {},
+): PatcherSdk {
+  return createPatcherSdk({
     context: args.context,
     transport: createNodeTransport(args),
   });
@@ -88,13 +90,13 @@ export async function fetchLocalHostId(
 }
 
 export {
-  createBbSdk,
+  createPatcherSdk,
   createHttpTransport,
   createNodeWebsocketFactory,
   createRequestTimeoutFetch,
   DEFAULT_BB_REQUEST_TIMEOUT_MS,
 };
-export { BbHttpError, BbRequestTimeoutError } from "./response.js";
+export { PatcherHttpError, PatcherRequestTimeoutError } from "./response.js";
 export { createGuideArea } from "./areas/guide.js";
 export {
   DEFAULT_THREAD_WAIT_POLL_INTERVAL_MS,
@@ -102,12 +104,17 @@ export {
   ThreadWaitTimeoutError,
   ThreadWaitUnreachableError,
 } from "./areas/threads.js";
-export type { BbSdk, BbSdkContext, BbSdkTransport, FetchImplementation };
+export type {
+  PatcherSdk,
+  PatcherSdkContext,
+  PatcherSdkTransport,
+  FetchImplementation,
+};
 export type * from "./areas/skills.js";
 export type {
-  BbRealtimeSocket,
-  BbRealtimeSocketFactory,
-  BbRealtimeSocketMessageEvent,
+  PatcherRealtimeSocket,
+  PatcherRealtimeSocketFactory,
+  PatcherRealtimeSocketMessageEvent,
 } from "./transport.js";
-export type { BbHttpErrorArgs } from "./response.js";
+export type { PatcherHttpErrorArgs } from "./response.js";
 export type * from "./public-types.js";

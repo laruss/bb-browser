@@ -40,14 +40,14 @@ describe("syncPluginTypes", () => {
       join(rootDir, "types", "bb-plugin-sdk.d.ts"),
       "utf8",
     );
-    expect(written).toContain("interface BbPluginApi");
+    expect(written).toContain("interface PatcherPluginApi");
 
     await writeFile(join(rootDir, "types", "bb-plugin-sdk.d.ts"), "// stale\n");
     const refreshed = await syncPluginTypes({ rootDir, app: false });
     expect(refreshed[0]?.outcome).toBe("written");
     expect(
       await readFile(join(rootDir, "types", "bb-plugin-sdk.d.ts"), "utf8"),
-    ).toContain("interface BbPluginApi");
+    ).toContain("interface PatcherPluginApi");
   });
 
   it("reports unchanged instead of rewriting a current declaration", async () => {

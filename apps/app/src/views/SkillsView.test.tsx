@@ -621,11 +621,11 @@ describe("SkillsOverview", () => {
     });
 
     fireEvent.pointerDown(screen.getByRole("button", { name: /^Filters/ }));
-    const bbFilter = screen.getByRole("menuitemcheckbox", { name: "bb" });
-    expect(bbFilter.getAttribute("aria-checked")).toBe("true");
-    expect(bbFilter.getAttribute("aria-disabled")).toBeNull();
+    const patcherFilter = screen.getByRole("menuitemcheckbox", { name: "bb" });
+    expect(patcherFilter.getAttribute("aria-checked")).toBe("true");
+    expect(patcherFilter.getAttribute("aria-disabled")).toBeNull();
 
-    fireEvent.click(bbFilter);
+    fireEvent.click(patcherFilter);
 
     expect(await screen.findByText("codex-skill")).toBeTruthy();
   });

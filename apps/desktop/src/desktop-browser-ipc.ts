@@ -218,7 +218,7 @@ export const BB_DESKTOP_BROWSER_EXTERNAL_URLS_PENDING_CHANNEL =
 // --- Channels a browsed page's own preload uses ---
 //
 // These two are the only ones reachable from the preload the shell installs in
-// the browsing session, and neither is on `BbDesktopBrowserApi`: the bb app has
+// the browsing session, and neither is on `PatcherDesktopBrowserApi`: the bb app has
 // no use for them, and a browsed renderer must not be able to reach anything
 // else. Both are answered from the sender frame's URL as the shell resolved it,
 // never from anything the payload claims about where it is.

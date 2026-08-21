@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { BbDesktopBrowserDownload } from "@patcher/desktop-contract";
+import type { PatcherDesktopBrowserDownload } from "@patcher/desktop-contract";
 import {
   acknowledgeBrowserDownloads,
   describeBrowserDownload,
@@ -11,8 +11,8 @@ import {
 } from "./browser-downloads";
 
 function download(
-  overrides: Partial<BbDesktopBrowserDownload> = {},
-): BbDesktopBrowserDownload {
+  overrides: Partial<PatcherDesktopBrowserDownload> = {},
+): PatcherDesktopBrowserDownload {
   return {
     id: "download-1",
     tabId: "browser:a",
@@ -106,7 +106,7 @@ describe("describeBrowserDownload", () => {
 
 describe("browser downloads state", () => {
   function fold(
-    ...events: BbDesktopBrowserDownload[]
+    ...events: PatcherDesktopBrowserDownload[]
   ): BrowserDownloadsState {
     return events.reduce(recordBrowserDownload, EMPTY_BROWSER_DOWNLOADS_STATE);
   }

@@ -4,7 +4,10 @@ import {
   type ServerResponse,
 } from "node:http";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { probeBbServer, type ServerProbeFetch } from "../src/server-probe.js";
+import {
+  probePatcherServer,
+  type ServerProbeFetch,
+} from "../src/server-probe.js";
 
 interface TestServer {
   close(): Promise<void>;
@@ -64,7 +67,7 @@ afterEach(async () => {
   }
 });
 
-describe("probeBbServer", () => {
+describe("probePatcherServer", () => {
   it("uses the provided authenticated fetch implementation", async () => {
     const fetchImpl = vi
       .fn<ServerProbeFetch>()
@@ -77,7 +80,7 @@ describe("probeBbServer", () => {
       );
 
     await expect(
-      probeBbServer({
+      probePatcherServer({
         fetchImpl,
         serverUrl: "https://studio.example",
         timeoutMs: 1_000,
@@ -114,7 +117,7 @@ describe("probeBbServer", () => {
     });
 
     await expect(
-      probeBbServer({ serverUrl: testServer.url, timeoutMs: 500 }),
+      probePatcherServer({ serverUrl: testServer.url, timeoutMs: 500 }),
     ).resolves.toEqual({
       dataDir: null,
       kind: "compatible",
@@ -135,7 +138,7 @@ describe("probeBbServer", () => {
       );
 
     await expect(
-      probeBbServer({
+      probePatcherServer({
         fetchImpl,
         serverUrl: "https://studio.example",
         timeoutMs: 1_000,
@@ -158,7 +161,7 @@ describe("probeBbServer", () => {
       },
     });
 
-    const result = await probeBbServer({
+    const result = await probePatcherServer({
       serverUrl: testServer.url,
       timeoutMs: 500,
     });
@@ -196,7 +199,7 @@ describe("probeBbServer", () => {
     });
 
     await expect(
-      probeBbServer({ serverUrl: testServer.url, timeoutMs: 500 }),
+      probePatcherServer({ serverUrl: testServer.url, timeoutMs: 500 }),
     ).resolves.toEqual({
       dataDir: null,
       kind: "compatible",
@@ -215,7 +218,7 @@ describe("probeBbServer", () => {
     await testServer.close();
     testServers.pop();
 
-    const result = await probeBbServer({
+    const result = await probePatcherServer({
       serverUrl: unavailableUrl,
       timeoutMs: 500,
     });

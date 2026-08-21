@@ -12,8 +12,8 @@ import {
 } from "react";
 import { act, render, type RenderResult } from "@testing-library/react";
 import {
-  type BbContext,
-  type BbNavigate,
+  type PatcherContext,
+  type PatcherNavigate,
   type ComposerCustomization,
   type ComposerView,
   type PluginAppDefinition,
@@ -73,7 +73,7 @@ import {
  * plugin's `app.tsx` source directly under vitest + jsdom, without the bb
  * host or the esbuild bundle:
  *
- * - {@link installTestPluginRuntime} fills `globalThis.__bbPluginRuntime.
+ * - {@link installTestPluginRuntime} fills `globalThis.__patcherPluginRuntime.
  *   pluginSdkApp` with a test implementation of the `@patcher/plugin-sdk/app`
  *   surface (the same seam `bb plugin build` shims to the real app). It must
  *   run BEFORE the plugin's `app.tsx` module evaluates, because that module
@@ -116,7 +116,7 @@ export type NavigateCall =
     }
   | {
       method: "openThreadPanel";
-      options: Parameters<BbNavigate["openThreadPanel"]>[0];
+      options: Parameters<PatcherNavigate["openThreadPanel"]>[0];
     };
 
 export interface ComposerLog {
@@ -152,8 +152,8 @@ interface SlotEnv {
   realtimeHandlers: Map<string, Set<(payload: unknown) => void>>;
   realtimeConnection: TestRealtimeConnectionStore;
   settingsState: PluginSettingsState;
-  bbContext: BbContext;
-  navigate: BbNavigate;
+  patcherContext: PatcherContext;
+  navigate: PatcherNavigate;
   navigateCalls: NavigateCall[];
   composer: TestComposerStore;
   composerLog: ComposerLog;
@@ -211,14 +211,14 @@ function definePluginApp(setup: PluginAppSetup): PluginAppDefinition {
   if (typeof setup !== "function") {
     throw new Error("definePluginApp expects a setup function");
   }
-  return Object.freeze({ __bbPluginApp: true as const, setup });
+  return Object.freeze({ __patcherPluginApp: true as const, setup });
 }
 
 function isPluginAppDefinition(value: unknown): value is PluginAppDefinition {
   return (
     typeof value === "object" &&
     value !== null &&
-    (value as { __bbPluginApp?: unknown }).__bbPluginApp === true &&
+    (value as { __patcherPluginApp?: unknown }).__patcherPluginApp === true &&
     typeof (value as { setup?: unknown }).setup === "function"
   );
 }
@@ -410,11 +410,11 @@ const testPluginSdkApp = {
   useSettings(): PluginSettingsState {
     return useSlotEnv("useSettings").settingsState;
   },
-  useBbContext(): BbContext {
-    return useSlotEnv("useBbContext").bbContext;
+  usePatcherContext(): PatcherContext {
+    return useSlotEnv("usePatcherContext").patcherContext;
   },
-  useBbNavigate(): BbNavigate {
-    return useSlotEnv("useBbNavigate").navigate;
+  usePatcherNavigate(): PatcherNavigate {
+    return useSlotEnv("usePatcherNavigate").navigate;
   },
   useComposer(): PluginComposerApi {
     const composer = useSlotEnv("useComposer").composer;
@@ -493,18 +493,18 @@ const testPluginSdkApp = {
 } satisfies PluginSdkApp;
 
 interface PluginRuntimeHost {
-  __bbPluginRuntime?: { pluginSdkApp?: unknown };
+  __patcherPluginRuntime?: { pluginSdkApp?: unknown };
 }
 
 /**
- * Install the test runtime at `globalThis.__bbPluginRuntime.pluginSdkApp`.
+ * Install the test runtime at `globalThis.__patcherPluginRuntime.pluginSdkApp`.
  * Idempotent per module instance; must run before the plugin's `app.tsx`
  * (and therefore `@patcher/plugin-sdk/app`) is imported.
  */
 export function installTestPluginRuntime(): void {
   const host = globalThis as PluginRuntimeHost;
-  host.__bbPluginRuntime = {
-    ...host.__bbPluginRuntime,
+  host.__patcherPluginRuntime = {
+    ...host.__patcherPluginRuntime,
     pluginSdkApp: testPluginSdkApp,
   };
 }
@@ -1034,7 +1034,7 @@ export interface RenderSlotOptions<
   rpc?: PluginRpcTestHandlers<Contract>;
   /** `useSettings()` values; omitted → `{ values: undefined, isLoading: false }`. */
   settings?: Record<string, string | boolean>;
-  /** `useBbContext()` selection; both default to null. */
+  /** `usePatcherContext()` selection; both default to null. */
   context?: { projectId?: string | null; threadId?: string | null };
   /** Initial `useRealtimeConnectionState()` value; defaults to `connected`. */
   realtimeConnectionState?: PluginRealtimeConnectionState;
@@ -1054,9 +1054,9 @@ export interface RenderSlotOptions<
    * by thread id. Omitted → every thread reports none.
    */
   sidebarPullRequests?: Record<string, PluginSidebarPullRequest>;
-  /** Host acceptance for `useBbNavigate().openThreadPanel`. */
+  /** Host acceptance for `usePatcherNavigate().openThreadPanel`. */
   openThreadPanel?: (
-    options: Parameters<BbNavigate["openThreadPanel"]>[0],
+    options: Parameters<PatcherNavigate["openThreadPanel"]>[0],
   ) => boolean;
 }
 
@@ -1081,7 +1081,7 @@ export interface RenderedSlotBehaviorDrivers {
 export interface RenderedSlotInspectionState {
   /** Every `useRpc().call`, in order. */
   readonly rpcCalls: RpcCall[];
-  /** Every `useBbNavigate()` call, in order. */
+  /** Every `usePatcherNavigate()` call, in order. */
   readonly navigateCalls: NavigateCall[];
   /** Every `experimental_useSidebarThreadActions()` call, in order. */
   readonly sidebarActionCalls: SidebarActionCall[];
@@ -1243,7 +1243,7 @@ export function renderSlot<
       sidebarActionCalls.push({ method: "requestDelete", threadId });
     },
   };
-  const navigate: BbNavigate = {
+  const navigate: PatcherNavigate = {
     toThread(threadId) {
       navigateCalls.push({ method: "toThread", threadId });
     },
@@ -1375,7 +1375,7 @@ export function renderSlot<
     realtimeHandlers,
     realtimeConnection,
     settingsState: { values: options.settings, isLoading: false },
-    bbContext: { projectId, threadId },
+    patcherContext: { projectId, threadId },
     navigate,
     navigateCalls,
     composer,

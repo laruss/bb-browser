@@ -766,16 +766,16 @@ const hostDeleteSkillCommandSchema = z
         message: "cwd is required to delete a bb-project skill",
       });
     }
-    const isBbScope =
+    const isPatcherScope =
       command.scope === "bb-user" || command.scope === "bb-project";
-    if (isBbScope && command.rootPath !== null) {
+    if (isPatcherScope && command.rootPath !== null) {
       context.addIssue({
         code: "custom",
         path: ["rootPath"],
         message: "rootPath must be null for a bb skill",
       });
     }
-    if (!isBbScope && command.rootPath === null) {
+    if (!isPatcherScope && command.rootPath === null) {
       context.addIssue({
         code: "custom",
         path: ["rootPath"],
@@ -791,12 +791,12 @@ const hostDeleteSkillCommandSchema = z
  * `<bb-root>/<name>/SKILL.md` of an already-existing skill. Edits only — it
  * never creates new skills (creation is via prompt).
  */
-const writableBbSkillScopeSchema = z.enum(["bb-user", "bb-project"]);
+const writablePatcherSkillScopeSchema = z.enum(["bb-user", "bb-project"]);
 
 const hostWriteSkillCommandSchema = z
   .object({
     type: z.literal("host.write_skill"),
-    scope: writableBbSkillScopeSchema,
+    scope: writablePatcherSkillScopeSchema,
     name: z.string().min(1),
     cwd: z.string().min(1).nullable(),
     content: z.string().min(1).max(1_000_000),

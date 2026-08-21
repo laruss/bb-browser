@@ -11,7 +11,7 @@ import type { ReactNode } from "react";
 import { buildAutomationEditThreadPrompt } from "@patcher/shared-ui/resource-edit-prompt";
 import {
   definePluginApp,
-  useBbNavigate,
+  usePatcherNavigate,
   useRealtime,
   useRpc,
   type PluginNavPanelProps,
@@ -556,7 +556,7 @@ function OverviewView({
   activeMode: AutomationCollectionMode;
   onModeChange: (mode: AutomationCollectionMode) => void;
 }) {
-  const navigate = useBbNavigate();
+  const navigate = usePatcherNavigate();
   const { entries, error, refetch } = useOverview();
   const mutations = useMutations();
 
@@ -605,7 +605,7 @@ function DetailView({
   initialEditing: boolean;
   onBack: () => void;
 }) {
-  const navigate = useBbNavigate();
+  const navigate = usePatcherNavigate();
   const { automation, error, missing, refetch } = useAutomation(route);
   const [editingRequested, setEditingRequested] = useState(initialEditing);
   const editingExecutionKey =
@@ -822,7 +822,7 @@ function AutomationsPageFrame({
 }
 
 function AutomationsPanel({ subPath }: PluginNavPanelProps) {
-  const navigate = useBbNavigate();
+  const navigate = usePatcherNavigate();
   const parsedRoute = useMemo(() => parseSubPath(subPath), [subPath]);
   const collectionMode: AutomationCollectionMode =
     subPath === "browse" ? "browse" : "installed";

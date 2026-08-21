@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { Command } from "commander";
-import { maybeReexecViaBbCli } from "./bb-cli-reexec.js";
+import { maybeReexecViaPatcherCli } from "./bb-cli-reexec.js";
 import { registerEnvironmentCommands } from "./commands/environment.js";
 import { registerFileCommands } from "./commands/file.js";
 import { registerGuideCommand } from "./commands/guide.js";
@@ -31,11 +31,11 @@ import {
   pluginProxyCandidate,
   runPluginCliCommand,
 } from "./plugin-cli-proxy.js";
-import { resolveBbCliVersion } from "./version.js";
+import { resolvePatcherCliVersion } from "./version.js";
 
 // Hop to the daemon-managed binary when BB_CLI is set (agent shell env). Must
 // run before Commander so flags/help match the intended build.
-maybeReexecViaBbCli();
+maybeReexecViaPatcherCli();
 
 const program = new Command();
 let cliRuntimeContext: CliRuntimeContext | undefined;
@@ -51,7 +51,7 @@ program
   // Program flags (--version/--help) must precede the subcommand; required
   // so `bb plugin run <id> --flag` passes flags through to the plugin.
   .enablePositionalOptions()
-  .version(resolveBbCliVersion());
+  .version(resolvePatcherCliVersion());
 
 program.addHelpText("after", () => {
   const context = resolveContextSnapshot(getCliRuntimeContext());

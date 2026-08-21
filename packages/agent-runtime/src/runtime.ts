@@ -450,11 +450,11 @@ function createAgentRuntimeInternal(
     });
   }
 
-  function resolveBbThreadIdForProcess(
+  function resolvePatcherThreadIdForProcess(
     proc: ProviderProcess,
     providerThreadId: string | undefined,
   ): string | undefined {
-    return threadIdentityRegistry.resolveBbThreadIdForProviderThread({
+    return threadIdentityRegistry.resolvePatcherThreadIdForProviderThread({
       providerState: proc.identity,
       providerThreadId,
     });
@@ -469,7 +469,7 @@ function createAgentRuntimeInternal(
   function resolveProviderRequestThreadId(
     args: ResolveProviderRequestThreadIdArgs,
   ): string | null {
-    const resolvedThreadId = resolveBbThreadIdForProcess(
+    const resolvedThreadId = resolvePatcherThreadIdForProcess(
       args.proc,
       args.providerThreadId,
     );
@@ -962,28 +962,30 @@ function createAgentRuntimeInternal(
         continue;
       }
 
-      const bbThreadId =
+      const patcherThreadId =
         threadIdentityRegistry.resolvePendingProviderThreadIdentity(
           args.proc.identity,
         );
-      if (bbThreadId) {
+      if (patcherThreadId) {
         recordProviderThreadIdentity(
           args.proc,
-          bbThreadId,
+          patcherThreadId,
           event.providerThreadId,
         );
       }
     }
 
     for (const event of args.events) {
-      const resolvedBbThreadId =
+      const resolvedPatcherThreadId =
         threadIdentityRegistry.resolveProviderEventThreadId({
           eventThreadId: event.threadId,
           providerState: args.proc.identity,
           sourceThreadId: args.sourceThreadId,
         });
 
-      const targetThreadIds = resolvedBbThreadId ? [resolvedBbThreadId] : [];
+      const targetThreadIds = resolvedPatcherThreadId
+        ? [resolvedPatcherThreadId]
+        : [];
 
       if (targetThreadIds.length === 0) {
         options.onStderr?.(

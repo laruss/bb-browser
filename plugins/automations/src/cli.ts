@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { extname } from "node:path";
 import type {
-  BbPluginApi,
+  PatcherPluginApi,
   PluginCliContext,
   PluginCliResult,
 } from "@patcher/plugin-sdk";
@@ -240,7 +240,7 @@ function looksLikePath(value: string): boolean {
 }
 
 async function resolveConnectedHostId(
-  bb: Pick<BbPluginApi, "sdk">,
+  bb: Pick<PatcherPluginApi, "sdk">,
 ): Promise<string> {
   const hosts = hostListSchema.parse(await bb.sdk.hosts.list());
   const host =
@@ -252,7 +252,7 @@ async function resolveConnectedHostId(
 }
 
 async function buildAgentEnvironment(
-  bb: Pick<BbPluginApi, "sdk">,
+  bb: Pick<PatcherPluginApi, "sdk">,
   args: ParsedArgs,
 ): Promise<AgentEnvironment> {
   const environment = flag(args, "environment")?.trim();
@@ -290,7 +290,7 @@ async function buildAgentEnvironment(
 }
 
 async function buildExecution(
-  bb: Pick<BbPluginApi, "sdk">,
+  bb: Pick<PatcherPluginApi, "sdk">,
   args: ParsedArgs,
 ): Promise<ResolvedCreateAutomationInput["execution"]> {
   const prompt = flag(args, "prompt");
@@ -388,7 +388,7 @@ const COMPLETE_EXECUTION_FLAG_NAMES = [
 ] as const;
 
 async function buildAgentExecutionUpdate(
-  bb: Pick<BbPluginApi, "sdk">,
+  bb: Pick<PatcherPluginApi, "sdk">,
   args: ParsedArgs,
 ): Promise<AgentExecutionUpdate | undefined> {
   const agentOptionNames = [
@@ -427,7 +427,7 @@ async function buildAgentExecutionUpdate(
 }
 
 async function buildUpdateRequest(
-  bb: Pick<BbPluginApi, "sdk">,
+  bb: Pick<PatcherPluginApi, "sdk">,
   args: ParsedArgs,
 ): Promise<UpdateAutomationInput> {
   const projectId = requireFlag(args, "project");
@@ -550,7 +550,7 @@ bb automation delete <automationId> --project <id> --yes
 }
 
 export function registerAutomationCli(args: {
-  bb: Pick<BbPluginApi, "cli" | "sdk">;
+  bb: Pick<PatcherPluginApi, "cli" | "sdk">;
   service: AutomationService;
 }): void {
   const { bb, service } = args;

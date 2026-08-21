@@ -6,18 +6,18 @@ import { fileURLToPath } from "node:url";
 import type { AgentRuntimeOptions } from "@patcher/agent-runtime";
 import { assignIfDefined } from "@patcher/config/objects";
 
-interface ResolveLocalBbExecutableDirectoryOptions {
+interface ResolveLocalPatcherExecutableDirectoryOptions {
   cliExecutablePath?: string;
 }
 
 export interface PrepareRuntimeShellEnvOptions {
-  bbExecutableDirectory: string;
+  patcherExecutableDirectory: string;
   /**
    * Absolute path to the daemon-managed `bb` executable. Defaults to
-   * `<bbExecutableDirectory>/bb`. Injected as `BB_CLI` so agent shells can
+   * `<patcherExecutableDirectory>/bb`. Injected as `BB_CLI` so agent shells can
    * invoke it even when PATH is rewritten (ACP providers).
    */
-  bbExecutablePath?: string;
+  patcherExecutablePath?: string;
   hostDaemonPort?: number;
   serverUrl: string;
   inheritedPath?: string;
@@ -336,10 +336,10 @@ export async function resolveUserShellPath(
   return null;
 }
 
-export async function resolveLocalBbExecutableDirectory(
-  options: ResolveLocalBbExecutableDirectoryOptions = {},
+export async function resolveLocalPatcherExecutableDirectory(
+  options: ResolveLocalPatcherExecutableDirectoryOptions = {},
 ): Promise<string> {
-  const cliEntryPath = await resolveLocalBbExecutablePath(options);
+  const cliEntryPath = await resolveLocalPatcherExecutablePath(options);
   return dirname(cliEntryPath);
 }
 
@@ -347,8 +347,8 @@ export async function resolveLocalBbExecutableDirectory(
  * Absolute path to the local bb CLI entry used for agent shell injection.
  * Prefer this over directory-only resolution when setting `BB_CLI`.
  */
-export async function resolveLocalBbExecutablePath(
-  options: ResolveLocalBbExecutableDirectoryOptions = {},
+export async function resolveLocalPatcherExecutablePath(
+  options: ResolveLocalPatcherExecutableDirectoryOptions = {},
 ): Promise<string> {
   const resolvedCliExecutablePath =
     options.cliExecutablePath ?? getDefaultCliExecutablePath();
@@ -356,31 +356,31 @@ export async function resolveLocalBbExecutablePath(
 }
 
 /** Platform-stable name of the bb CLI file inside `BB_CLI_DIR` / daemon dist. */
-export function bbExecutableFileName(): string {
+export function patcherExecutableFileName(): string {
   return "bb";
 }
 
-export function resolveBbExecutablePathInDirectory(
-  bbExecutableDirectory: string,
+export function resolvePatcherExecutablePathInDirectory(
+  patcherExecutableDirectory: string,
 ): string {
-  return resolve(bbExecutableDirectory, bbExecutableFileName());
+  return resolve(patcherExecutableDirectory, patcherExecutableFileName());
 }
 
 export function prepareRuntimeShellEnv(
   options: PrepareRuntimeShellEnvOptions,
 ): NonNullable<AgentRuntimeOptions["shellEnv"]> {
-  const bbExecutablePath =
-    options.bbExecutablePath ??
-    resolveBbExecutablePathInDirectory(options.bbExecutableDirectory);
+  const patcherExecutablePath =
+    options.patcherExecutablePath ??
+    resolvePatcherExecutablePathInDirectory(options.patcherExecutableDirectory);
   const shellEnv: NonNullable<AgentRuntimeOptions["shellEnv"]> = {
     PATH: prependPath(
-      options.bbExecutableDirectory,
+      options.patcherExecutableDirectory,
       options.inheritedPath ?? process.env.PATH,
     ),
     // Absolute path survives PATH rewrites in ACP agent tool shells. Official
     // CLI entrypoints re-exec to this target when it differs from the current
-    // binary (see apps/cli `maybeReexecViaBbCli`).
-    BB_CLI: bbExecutablePath,
+    // binary (see apps/cli `maybeReexecViaPatcherCli`).
+    BB_CLI: patcherExecutablePath,
     BB_SERVER_URL: options.serverUrl,
   };
   assignIfDefined({

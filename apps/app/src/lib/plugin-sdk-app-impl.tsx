@@ -10,8 +10,8 @@ import type {
 import { useThreadTimelineNavigation } from "@/components/thread/timeline/ThreadTimelineNavigationContext";
 import { definePluginApp } from "./plugin-app-definition";
 import {
-  useBbContext,
-  useBbNavigate,
+  usePatcherContext,
+  usePatcherNavigate,
   useComposer,
   useComposerView,
   useRealtime,
@@ -28,7 +28,7 @@ import { useSidebarThreadSplit } from "./plugin-sidebar-split";
 
 /**
  * The real `@patcher/plugin-sdk/app` surface (plugin design §5.2), assigned to
- * `globalThis.__bbPluginRuntime.pluginSdkApp` by installPluginRuntime() so
+ * `globalThis.__patcherPluginRuntime.pluginSdkApp` by installPluginRuntime() so
  * `bb plugin build` shims resolve it inside plugin bundles. `satisfies
  * PluginSdkApp` keeps it in type-sync with the facade package; the plugin SDK
  * parity test compares the facade's actual runtime exports with its bundled
@@ -43,8 +43,8 @@ import { useSidebarThreadSplit } from "./plugin-sidebar-split";
  */
 export const pluginSdkAppImplementation = {
   definePluginApp,
-  useBbContext,
-  useBbNavigate,
+  usePatcherContext,
+  usePatcherNavigate,
   useComposer,
   useComposerView,
   useRealtime,

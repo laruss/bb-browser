@@ -26,7 +26,7 @@ import { SidebarHistoryNavigationControls } from "./SidebarHistoryNavigationCont
 import { useQuickCreateProjectController } from "@/hooks/useQuickCreateProject";
 import {
   CHROME_ROW_CLASS,
-  getBbDesktopInfo,
+  getPatcherDesktopInfo,
   MACOS_CHROME_CONTROL_NO_DRAG_CLASS,
   MACOS_WINDOW_DRAG_CLASS,
   shouldUseMacosDesktopChrome,
@@ -93,7 +93,7 @@ export function AppSidebar({
   });
   const closeOnMobile = useCloseMobileSidebar();
   const { isCompactViewport, setOpen, setOpenMobile } = useSidebar();
-  const [desktopInfo] = useState(getBbDesktopInfo);
+  const [desktopInfo] = useState(getPatcherDesktopInfo);
   const [threadShortcutKeysById, setThreadShortcutKeysById] = useState<
     ReadonlyMap<string, SidebarThreadShortcutPresentation>
   >(EMPTY_SIDEBAR_THREAD_SHORTCUT_KEYS);

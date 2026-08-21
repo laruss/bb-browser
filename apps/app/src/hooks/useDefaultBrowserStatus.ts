@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
-import type { BbDesktopDefaultBrowserStatus } from "@patcher/desktop-contract";
-import { getBbDesktopInfo } from "@/lib/bb-desktop";
+import type { PatcherDesktopDefaultBrowserStatus } from "@patcher/desktop-contract";
+import { getPatcherDesktopInfo } from "@/lib/bb-desktop";
 
 /**
  * What a build with no shell to ask — the web app — knows about it, and what a
  * shell that predates the question answers.
  */
-export const UNAVAILABLE_DEFAULT_BROWSER_STATUS: BbDesktopDefaultBrowserStatus =
+export const UNAVAILABLE_DEFAULT_BROWSER_STATUS: PatcherDesktopDefaultBrowserStatus =
   {
     canRequest: false,
     isDefault: false,
@@ -15,7 +15,7 @@ export const UNAVAILABLE_DEFAULT_BROWSER_STATUS: BbDesktopDefaultBrowserStatus =
 export interface DefaultBrowserStatusResult {
   /** Ask macOS to route web links to bb. The user answers a system dialog. */
   request: () => void;
-  status: BbDesktopDefaultBrowserStatus;
+  status: PatcherDesktopDefaultBrowserStatus;
 }
 
 /**
@@ -27,12 +27,12 @@ export interface DefaultBrowserStatusResult {
  * activation and pushes the difference.
  */
 export function useDefaultBrowserStatus(): DefaultBrowserStatusResult {
-  const [status, setStatus] = useState<BbDesktopDefaultBrowserStatus>(
+  const [status, setStatus] = useState<PatcherDesktopDefaultBrowserStatus>(
     UNAVAILABLE_DEFAULT_BROWSER_STATUS,
   );
 
   useEffect(() => {
-    const desktopApi = getBbDesktopInfo();
+    const desktopApi = getPatcherDesktopInfo();
     let cancelled = false;
 
     const unsubscribe = desktopApi?.onDefaultBrowserStatusChange?.(
@@ -54,7 +54,7 @@ export function useDefaultBrowserStatus(): DefaultBrowserStatusResult {
   }, []);
 
   const request = useCallback(() => {
-    void getBbDesktopInfo()
+    void getPatcherDesktopInfo()
       ?.requestDefaultBrowser?.()
       .then((nextStatus) => {
         setStatus(nextStatus);

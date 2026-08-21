@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-import { runBbApp } from "../launcher.js";
+import { runPatcherApp } from "../launcher.js";
 
-void runBbApp().catch((error) => {
+void runPatcherApp().catch((error) => {
   const message =
     error instanceof Error ? (error.stack ?? error.message) : String(error);
   process.stderr.write(`${message}\n`);

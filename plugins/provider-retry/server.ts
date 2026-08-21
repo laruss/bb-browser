@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@patcher/plugin-sdk";
+import type { PatcherPluginApi } from "@patcher/plugin-sdk";
 import { registerProviderRetryCli } from "./src/cli.js";
 import { providerRetryRpcContract } from "./src/contract.js";
 import {
@@ -30,13 +30,17 @@ function waitForAbort(signal: AbortSignal): Promise<void> {
   });
 }
 
-function logFailure(bb: BbPluginApi, operation: string, error: unknown): void {
+function logFailure(
+  bb: PatcherPluginApi,
+  operation: string,
+  error: unknown,
+): void {
   bb.log.warn(
     `${operation}: ${error instanceof Error ? error.message : String(error)}`,
   );
 }
 
-export default async function plugin(bb: BbPluginApi) {
+export default async function plugin(bb: PatcherPluginApi) {
   const settings = bb.settings.define({
     maximumWait: {
       type: "select",

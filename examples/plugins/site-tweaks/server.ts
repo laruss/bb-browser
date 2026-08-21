@@ -24,7 +24,7 @@
 // See docs/architecture/plugin-permissions.md for why that split exists and
 // docs/architecture/browser-surface.md for what the browser promises about applying
 // the css (short version: one document, main frame, after commit).
-import { defineRpcContract, type BbPluginApi } from "@patcher/plugin-sdk";
+import { defineRpcContract, type PatcherPluginApi } from "@patcher/plugin-sdk";
 import { z } from "zod";
 
 /** The one site this plugin declares, spelled once. Must match `bb.sites`. */
@@ -136,7 +136,7 @@ interface NoteRow {
   created_at: number;
 }
 
-export default function plugin(bb: BbPluginApi) {
+export default function plugin(bb: PatcherPluginApi) {
   const db = bb.storage.database();
   bb.storage.migrate(db, MIGRATIONS);
 

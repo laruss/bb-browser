@@ -7,7 +7,7 @@ import type {
   RegistrySkillsPage,
 } from "@patcher/server-contract";
 import { RESOURCE_GRID_PAGE_SIZE } from "@patcher/shared-ui/resource-pagination";
-import { BbHttpError, sdk } from "@/lib/sdk";
+import { PatcherHttpError, sdk } from "@/lib/sdk";
 
 export type {
   RegistryPagination,
@@ -69,7 +69,7 @@ export async function installRegistrySkill(args: { skill: RegistrySkill }) {
       registrySkillId: args.skill.id,
     });
   } catch (error) {
-    if (error instanceof BbHttpError) {
+    if (error instanceof PatcherHttpError) {
       throw new Error(
         isRecord(error.body) && typeof error.body.message === "string"
           ? error.body.message

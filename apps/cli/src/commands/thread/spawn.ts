@@ -6,7 +6,7 @@ import {
 } from "@patcher/domain";
 import type { BaseBranchSpec, EnvironmentArgs } from "@patcher/server-contract";
 import { action } from "../../action.js";
-import { createCliBbSdk } from "../../client.js";
+import { createCliPatcherSdk } from "../../client.js";
 import {
   resolveExplicitIdFlag,
   resolveContextThreadId,
@@ -292,7 +292,7 @@ export function registerSpawnCommand(
 
         let thread: Thread;
         try {
-          const sdk = createCliBbSdk(getUrl());
+          const sdk = createCliPatcherSdk(getUrl());
           thread = await sdk.threads.spawn({
             origin: "cli",
             projectId,

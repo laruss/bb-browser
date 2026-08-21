@@ -8,7 +8,7 @@ import { useIsCompactViewport } from "@patcher/shared-ui/hooks/use-compact-viewp
 import {
   CHROME_ROW_CLASS,
   CHROME_ROW_HEIGHT_CLASS,
-  getBbDesktopInfo,
+  getPatcherDesktopInfo,
   MACOS_CHROME_CONTROL_AXIS_CLASS,
   MACOS_TRAFFIC_LIGHT_LEADING_RESERVE_CLASS,
   MACOS_WINDOW_DRAG_CLASS,
@@ -88,7 +88,7 @@ export function AppPageHeader({
 }: AppPageHeaderProps) {
   const isSidebarShowing = useIsSidebarShowing();
   const isCompactViewport = useIsCompactViewport();
-  const [desktopInfo] = useState(getBbDesktopInfo);
+  const [desktopInfo] = useState(getPatcherDesktopInfo);
   const desktopWindowState = useDesktopWindowState();
   const usesDesktopChrome = shouldUseMacosDesktopChrome(desktopInfo);
   // Not while the plugin panel is there: it owns the window's leading edge, so

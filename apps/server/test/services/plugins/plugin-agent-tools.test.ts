@@ -678,9 +678,9 @@ describe("plugin tools reach thread runtime config", () => {
     const rootDir = await writePlugin(pluginsDir, {
       name: "bb-plugin-conditional",
       serverSource: `
-        globalThis.__bbConditionalFactoryCount =
-          (globalThis.__bbConditionalFactoryCount ?? 0) + 1;
-        const factoryCount = globalThis.__bbConditionalFactoryCount;
+        globalThis.__patcherConditionalFactoryCount =
+          (globalThis.__patcherConditionalFactoryCount ?? 0) + 1;
+        const factoryCount = globalThis.__patcherConditionalFactoryCount;
         let configureCount = 0;
         export default function plugin(bb: any) {
           for (const name of ["alpha_tool", "beta_tool"]) {

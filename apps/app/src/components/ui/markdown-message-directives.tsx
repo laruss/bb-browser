@@ -8,7 +8,7 @@ import type { Nodes, Parent, RootContent } from "mdast";
 // Side-effect import: augments mdast's `Data` with `hName`/`hProperties`.
 import type {} from "mdast-util-to-hast";
 import type {
-  BbNavigate,
+  PatcherNavigate,
   PluginMessageDirectiveProps,
 } from "@patcher/plugin-sdk";
 import { visit } from "unist-util-visit";
@@ -62,7 +62,7 @@ export interface MarkdownMessageDirectives {
 }
 
 export type MarkdownMessageDirectiveOpenThreadPanel = (
-  options: Parameters<BbNavigate["openThreadPanel"]>[0] & {
+  options: Parameters<PatcherNavigate["openThreadPanel"]>[0] & {
     pluginId: string;
   },
 ) => boolean;

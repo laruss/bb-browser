@@ -12,7 +12,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   definePluginApp,
-  useBbNavigate,
+  usePatcherNavigate,
   useRealtime,
   useRpc,
   type PluginNavPanelProps,
@@ -214,13 +214,13 @@ function routeToSubPath(route: Route): string {
 }
 
 function useSubPathRoute(subPath: string): [Route, (route: Route) => void] {
-  const bbNavigate = useBbNavigate();
+  const patcherNavigate = usePatcherNavigate();
   const route = useMemo(() => parseSubPath(subPath), [subPath]);
   const navigate = useCallback(
     (next: Route) => {
-      bbNavigate.toPluginPanel(PANEL_PATH, { subPath: routeToSubPath(next) });
+      patcherNavigate.toPluginPanel(PANEL_PATH, { subPath: routeToSubPath(next) });
     },
-    [bbNavigate],
+    [patcherNavigate],
   );
   return [route, navigate];
 }
@@ -277,7 +277,7 @@ function useSpawn(): {
   spawningKey: string | null;
 } {
   const rpc = useRpc<typeof githubRpcContract>();
-  const navigate = useBbNavigate();
+  const navigate = usePatcherNavigate();
   const [spawningKey, setSpawningKey] = useState<string | null>(null);
   const spawn = useCallback(
     (method: "startWork" | "startReview", repo: string, number: number) => {
@@ -405,7 +405,7 @@ function StateBadge({ kind, state }: { kind: "issue" | "pr"; state: string }) {
 }
 
 function ThreadPills({ links }: { links: ThreadLink[] | undefined }) {
-  const navigate = useBbNavigate();
+  const navigate = usePatcherNavigate();
   if (links === undefined || links.length === 0) return null;
   return (
     <span className="flex shrink-0 items-center gap-1">

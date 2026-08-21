@@ -67,7 +67,7 @@ import { classifySurfaceRoute } from "@/lib/app-surface-tabs";
 import { useBrowserSurfaceRouteSync } from "@/hooks/useBrowserSurfaceRouteSync";
 import {
   CHROME_ROW_CLASS,
-  getBbDesktopInfo,
+  getPatcherDesktopInfo,
   isDesktopBrowserAvailable,
   MACOS_CHROME_CONTROL_NO_DRAG_CLASS,
   MACOS_CHROME_TRAFFIC_LIGHT_AXIS_NUDGE_CLASS,
@@ -755,7 +755,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     !isRootView &&
     !isBrowserSurfaceView &&
     !(splitWorkspaceActive && pluginPanelMatch !== null);
-  const [desktopInfo] = useState(getBbDesktopInfo);
+  const [desktopInfo] = useState(getPatcherDesktopInfo);
   const usesDesktopChrome = shouldUseMacosDesktopChrome(desktopInfo);
   const sidebarProviderStyle: SidebarProviderStyle = {
     "--sidebar-width": `${sidebarWidth}px`,

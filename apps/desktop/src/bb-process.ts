@@ -9,28 +9,28 @@ export interface CreateRuntimeLogBufferArgs {
   maxLines: number;
 }
 
-export interface StartBbAppProcessArgs {
+export interface StartPatcherAppProcessArgs {
   bridgePath: string;
   cwd: string;
   env: NodeJS.ProcessEnv;
   logLineLimit: number;
-  runtime: BbAppProcessRuntime;
+  runtime: PatcherAppProcessRuntime;
 }
 
-export interface BbAppProcess {
+export interface PatcherAppProcess {
   childProcess: ChildProcess;
-  exit: Promise<BbAppProcessExit>;
+  exit: Promise<PatcherAppProcessExit>;
   logs: RuntimeLogBuffer;
   pid: number;
-  stop(args: StopBbAppProcessArgs): Promise<void>;
+  stop(args: StopPatcherAppProcessArgs): Promise<void>;
 }
 
-export interface BbAppProcessExit {
+export interface PatcherAppProcessExit {
   code: number | null;
   signal: NodeJS.Signals | null;
 }
 
-export interface StopBbAppProcessArgs {
+export interface StopPatcherAppProcessArgs {
   killSignal: NodeJS.Signals;
   killTimeoutMs: number;
   signal: NodeJS.Signals;
@@ -41,19 +41,19 @@ export interface CreateElectronNodeEnvArgs {
   env: NodeJS.ProcessEnv;
 }
 
-export type BbAppProcessRuntimeMode = "electron-node" | "node";
+export type PatcherAppProcessRuntimeMode = "electron-node" | "node";
 
-export interface BbAppProcessRuntime {
+export interface PatcherAppProcessRuntime {
   executablePath: string;
-  mode: BbAppProcessRuntimeMode;
+  mode: PatcherAppProcessRuntimeMode;
 }
 
-export interface CreateBbAppProcessEnvArgs {
+export interface CreatePatcherAppProcessEnvArgs {
   env: NodeJS.ProcessEnv;
-  runtimeMode: BbAppProcessRuntimeMode;
+  runtimeMode: PatcherAppProcessRuntimeMode;
 }
 
-export interface ResolveBbAppProcessRuntimeArgs {
+export interface ResolvePatcherAppProcessRuntimeArgs {
   env: NodeJS.ProcessEnv;
   isPackaged: boolean;
   processExecPath: string;
@@ -102,8 +102,8 @@ export function createElectronNodeEnv(
   };
 }
 
-export function createBbAppProcessEnv(
-  args: CreateBbAppProcessEnvArgs,
+export function createPatcherAppProcessEnv(
+  args: CreatePatcherAppProcessEnvArgs,
 ): NodeJS.ProcessEnv {
   if (args.runtimeMode === "electron-node") {
     return createElectronNodeEnv({ env: args.env });
@@ -114,9 +114,9 @@ export function createBbAppProcessEnv(
   return env;
 }
 
-export function resolveBbAppProcessRuntime(
-  args: ResolveBbAppProcessRuntimeArgs,
-): BbAppProcessRuntime {
+export function resolvePatcherAppProcessRuntime(
+  args: ResolvePatcherAppProcessRuntimeArgs,
+): PatcherAppProcessRuntime {
   if (args.isPackaged) {
     return {
       executablePath: args.processExecPath,
@@ -143,7 +143,7 @@ function hasProcessExited(childProcess: ChildProcess): boolean {
 
 function waitForProcessExit(
   childProcess: ChildProcess,
-): Promise<BbAppProcessExit> {
+): Promise<PatcherAppProcessExit> {
   if (hasProcessExited(childProcess)) {
     return Promise.resolve({
       code: childProcess.exitCode,
@@ -151,7 +151,7 @@ function waitForProcessExit(
     });
   }
 
-  return new Promise<BbAppProcessExit>((resolvePromise) => {
+  return new Promise<PatcherAppProcessExit>((resolvePromise) => {
     childProcess.once("exit", (code, signal) => {
       resolvePromise({ code, signal });
     });
@@ -192,11 +192,13 @@ function waitForProcessExitWithTimeout(
   });
 }
 
-export function startBbAppProcess(args: StartBbAppProcessArgs): BbAppProcess {
+export function startPatcherAppProcess(
+  args: StartPatcherAppProcessArgs,
+): PatcherAppProcess {
   const logs = createRuntimeLogBuffer({ maxLines: args.logLineLimit });
   const childProcess = spawn(args.runtime.executablePath, [args.bridgePath], {
     cwd: args.cwd,
-    env: createBbAppProcessEnv({
+    env: createPatcherAppProcessEnv({
       env: args.env,
       runtimeMode: args.runtime.mode,
     }),

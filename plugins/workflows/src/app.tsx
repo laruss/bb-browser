@@ -29,7 +29,7 @@ import {
 } from "@patcher/shared-ui/workflow-progress";
 import {
   definePluginApp,
-  useBbNavigate,
+  usePatcherNavigate,
   useComposerView,
   useRpc,
   type PluginMessageDirectiveProps,
@@ -493,7 +493,7 @@ function WorkflowStatusBanner() {
 }
 
 function WorkflowComposerCard({ run }: { run: WorkflowRunView }) {
-  const navigate = useBbNavigate();
+  const navigate = usePatcherNavigate();
   const [expanded, setExpanded] = useState(false);
   const bodyId = useId();
   const toggleId = useId();
@@ -654,7 +654,7 @@ function WorkflowPreviewLoaded({
   threadId: string;
   source: string;
 }) {
-  const navigate = useBbNavigate();
+  const navigate = usePatcherNavigate();
   const { state } = useWorkflowRun(threadId, runId);
   const [expanded, setExpanded] = useState(true);
   const bodyId = useId();
@@ -819,7 +819,7 @@ function WorkflowRunPanelLoaded({
   threadId: string;
   runId: string | null;
 }) {
-  const navigate = useBbNavigate();
+  const navigate = usePatcherNavigate();
   const rpc = useRpc<typeof workflowUiRpcContract>();
   const { state, refresh } = useWorkflowRun(threadId, runId);
   const [stopping, setStopping] = useState(false);

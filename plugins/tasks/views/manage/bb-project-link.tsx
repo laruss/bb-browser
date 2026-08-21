@@ -1,4 +1,4 @@
-import type { BbProjectOption } from "../../shared/contract.js";
+import type { PatcherProjectOption } from "../../shared/contract.js";
 import {
   Select,
   SelectContent,
@@ -13,42 +13,44 @@ const NO_LINK = "__none__";
  * UI state for the linked-bb-project picker. Shared by NewProjectDialog and
  * the detail rail.
  */
-export interface BbProjectLinkState {
+export interface PatcherProjectLinkState {
   /** bb project id chosen from the Select. */
   selection: string | null;
 }
 
-export function emptyBbProjectLinkState(): BbProjectLinkState {
+export function emptyPatcherProjectLinkState(): PatcherProjectLinkState {
   return { selection: null };
 }
 
 /** Preserve an existing link even when its project is no longer discoverable. */
-export function bbProjectLinkStateFor(
-  linkedBbProjectId: string | null,
-): BbProjectLinkState {
-  return { selection: linkedBbProjectId };
+export function patcherProjectLinkStateFor(
+  linkedPatcherProjectId: string | null,
+): PatcherProjectLinkState {
+  return { selection: linkedPatcherProjectId };
 }
 
 /** The bb project id the state resolves to; "" means not linked. */
-export function resolveBbProjectLink(state: BbProjectLinkState): string {
+export function resolvePatcherProjectLink(
+  state: PatcherProjectLinkState,
+): string {
   return state.selection ?? "";
 }
 
-export function BbProjectLinkPicker({
+export function PatcherProjectLinkPicker({
   state,
   onStateChange,
-  bbProjects,
+  patcherProjects,
   noneLabel = "Not linked",
 }: {
-  state: BbProjectLinkState;
-  onStateChange: (state: BbProjectLinkState) => void;
-  bbProjects: readonly BbProjectOption[];
+  state: PatcherProjectLinkState;
+  onStateChange: (state: PatcherProjectLinkState) => void;
+  patcherProjects: readonly PatcherProjectOption[];
   /** Label for the "no link" Select item (the rail shows "Unlink"). */
   noneLabel?: string;
 }) {
   const unavailableSelection =
     state.selection !== null &&
-    !bbProjects.some((project) => project.id === state.selection)
+    !patcherProjects.some((project) => project.id === state.selection)
       ? state.selection
       : null;
   return (
@@ -60,7 +62,8 @@ export function BbProjectLinkPicker({
     >
       <SelectTrigger aria-label="Linked bb project" className="h-8">
         <SelectValue>
-          {bbProjects.find((project) => project.id === state.selection)?.name ??
+          {patcherProjects.find((project) => project.id === state.selection)
+            ?.name ??
             unavailableSelection ??
             noneLabel}
         </SelectValue>
@@ -72,7 +75,7 @@ export function BbProjectLinkPicker({
             Unavailable · {unavailableSelection}
           </SelectItem>
         ) : null}
-        {bbProjects.map((project) => (
+        {patcherProjects.map((project) => (
           <SelectItem key={project.id} value={project.id}>
             {project.name}
           </SelectItem>

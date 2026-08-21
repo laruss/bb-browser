@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@patcher/plugin-sdk";
+import type { PatcherPluginApi } from "@patcher/plugin-sdk";
 import { z } from "zod";
 import {
   createAutomation,
@@ -56,12 +56,12 @@ import {
 } from "./script-files.js";
 import { executeAgentRun, executeScriptRun } from "./run.js";
 
-type ServiceApi = Pick<BbPluginApi, "realtime" | "log"> & {
+type ServiceApi = Pick<PatcherPluginApi, "realtime" | "log"> & {
   sdk: {
-    projects: Pick<BbPluginApi["sdk"]["projects"], "get" | "list">;
-    providers: Pick<BbPluginApi["sdk"]["providers"], "list"> &
-      Partial<Pick<BbPluginApi["sdk"]["providers"], "models">>;
-    threads: Pick<BbPluginApi["sdk"]["threads"], "get" | "send" | "spawn">;
+    projects: Pick<PatcherPluginApi["sdk"]["projects"], "get" | "list">;
+    providers: Pick<PatcherPluginApi["sdk"]["providers"], "list"> &
+      Partial<Pick<PatcherPluginApi["sdk"]["providers"], "models">>;
+    threads: Pick<PatcherPluginApi["sdk"]["threads"], "get" | "send" | "spawn">;
   };
 };
 

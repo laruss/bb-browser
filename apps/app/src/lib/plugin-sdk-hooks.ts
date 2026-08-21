@@ -10,8 +10,8 @@ import { useQuery, type QueryKey } from "@tanstack/react-query";
 import { matchPath, useLocation, useNavigate } from "react-router-dom";
 import type { PromptTextMention } from "@patcher/domain";
 import type {
-  BbContext,
-  BbNavigate,
+  PatcherContext,
+  PatcherNavigate,
   ComposerView,
   PluginComposerApi,
   PluginComposerMention,
@@ -272,7 +272,7 @@ export function useSettings(): PluginSettingsState {
   };
 }
 
-export function useBbContext(): BbContext {
+export function usePatcherContext(): PatcherContext {
   const { projectId, threadId } = useRouteState();
   return useMemo(
     () => ({ projectId: projectId ?? null, threadId: threadId ?? null }),
@@ -280,7 +280,7 @@ export function useBbContext(): BbContext {
   );
 }
 
-export function useBbNavigate(): BbNavigate {
+export function usePatcherNavigate(): PatcherNavigate {
   const pluginId = usePluginId();
   const location = useLocation();
   const openThreadPanelHandler = usePluginThreadPanelOpenHandler();
@@ -338,7 +338,7 @@ export function useBbNavigate(): BbNavigate {
     },
     [location.pathname, navigate, pluginId],
   );
-  const openThreadPanel = useCallback<BbNavigate["openThreadPanel"]>(
+  const openThreadPanel = useCallback<PatcherNavigate["openThreadPanel"]>(
     (options) => openThreadPanelHandler?.({ ...options, pluginId }) ?? false,
     [openThreadPanelHandler, pluginId],
   );

@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import * as pluginSdkApp from "@patcher/plugin-sdk/app";
 import {
-  type BbPluginApi,
+  type PatcherPluginApi,
   type PluginAppBuilder,
   type PluginAppSlots,
   type PluginContentScriptContext,
@@ -36,7 +36,7 @@ const FRONTEND_RUNTIME_EXPORT_NAMES = Object.keys(pluginSdkApp).sort();
 
 /**
  * Durability test for the bb-plugin-authoring builtin skill: the skill must
- * document the ENTIRE plugin API. Growing BbPluginApi or the frontend SDK
+ * document the ENTIRE plugin API. Growing PatcherPluginApi or the frontend SDK
  * surface without documenting the new member fails here.
  *
  * The skill is progressively disclosed — SKILL.md stays small and routes to
@@ -61,7 +61,7 @@ function readReferenceFileNames(): string[] {
 }
 
 /**
- * Every property of BbPluginApi, compile-time checked in both directions:
+ * Every property of PatcherPluginApi, compile-time checked in both directions:
  * `satisfies` rejects entries that are not keys, and the Missing assertion
  * below rejects keys that are not entries.
  */
@@ -83,10 +83,10 @@ const BB_PLUGIN_API_KEYS = [
   "server",
   "sdk",
   "onDispose",
-] as const satisfies readonly (keyof BbPluginApi)[];
+] as const satisfies readonly (keyof PatcherPluginApi)[];
 
 type MissingApiKey = Exclude<
-  keyof BbPluginApi,
+  keyof PatcherPluginApi,
   (typeof BB_PLUGIN_API_KEYS)[number]
 >;
 const _assertAllApiKeysListed: MissingApiKey extends never ? true : never =
@@ -383,7 +383,7 @@ describe("bb-plugin-authoring skill", () => {
     expect(skillEntry).toMatch(/^---\nname: bb-plugin-authoring\n/);
   });
 
-  it("documents every BbPluginApi property", () => {
+  it("documents every PatcherPluginApi property", () => {
     for (const key of BB_PLUGIN_API_KEYS) {
       expect(skill, `bb.${key} is not documented in the skill`).toContain(
         `bb.${key}`,

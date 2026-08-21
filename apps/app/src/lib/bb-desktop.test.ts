@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { BbDesktopInfo } from "@patcher/desktop-contract";
-import { createBbDesktopApi } from "@/test/bb-desktop-test-utils";
+import type { PatcherDesktopInfo } from "@patcher/desktop-contract";
+import { createPatcherDesktopApi } from "@/test/bb-desktop-test-utils";
 import {
   MACOS_TRAFFIC_LIGHT_LEADING_RESERVE_CLASS,
   MACOS_TRAFFIC_LIGHT_RESERVE_OFFSET_CLASS,
@@ -9,7 +9,7 @@ import {
   shouldReserveMacosTrafficLights,
 } from "./bb-desktop";
 
-const desktopInfo: BbDesktopInfo = {
+const desktopInfo: PatcherDesktopInfo = {
   lastCheckedAt: null,
   latestVersion: null,
   pendingVersion: null,
@@ -30,7 +30,7 @@ function px(className: string): number {
 
 describe("desktop chrome geometry", () => {
   it("reserves macOS traffic-light space only when lights are visible", () => {
-    const desktopApi = createBbDesktopApi(desktopInfo);
+    const desktopApi = createPatcherDesktopApi(desktopInfo);
 
     expect(
       shouldReserveMacosTrafficLights({

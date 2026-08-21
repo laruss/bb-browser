@@ -2,22 +2,22 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   BB_DESKTOP_BROWSER_MAX_FIND_QUERY_LENGTH,
   BB_DESKTOP_BROWSER_MAX_URL_LENGTH,
-  type BbDesktopBrowserCaptureFullPageResult,
-  type BbDesktopBrowserFindRequest,
-  type BbDesktopBrowserInteractResult,
-  type BbDesktopBrowserObserveResult,
-  type BbDesktopBrowserDownloadActionResult,
-  type BbDesktopBrowserPageReadResult,
-  type BbDesktopBrowserSnapshotResult,
-  type BbDesktopBrowserControlResult,
-  type BbDesktopBrowserRecordResult,
-  type BbDesktopBrowserStorageResult,
-  type BbDesktopBrowserAttachRequest,
-  type BbDesktopBrowserNavigateRequest,
-  type BbDesktopBrowserSetBoundsRequest,
-  type BbDesktopBrowserSetVisibleRequest,
-  type BbDesktopPageScriptBootstrap,
-  type BbDesktopPageScriptRpcAnswer,
+  type PatcherDesktopBrowserCaptureFullPageResult,
+  type PatcherDesktopBrowserFindRequest,
+  type PatcherDesktopBrowserInteractResult,
+  type PatcherDesktopBrowserObserveResult,
+  type PatcherDesktopBrowserDownloadActionResult,
+  type PatcherDesktopBrowserPageReadResult,
+  type PatcherDesktopBrowserSnapshotResult,
+  type PatcherDesktopBrowserControlResult,
+  type PatcherDesktopBrowserRecordResult,
+  type PatcherDesktopBrowserStorageResult,
+  type PatcherDesktopBrowserAttachRequest,
+  type PatcherDesktopBrowserNavigateRequest,
+  type PatcherDesktopBrowserSetBoundsRequest,
+  type PatcherDesktopBrowserSetVisibleRequest,
+  type PatcherDesktopPageScriptBootstrap,
+  type PatcherDesktopPageScriptRpcAnswer,
 } from "@patcher/desktop-contract";
 import {
   BB_DESKTOP_BROWSER_ATTACH_CHANNEL,
@@ -213,11 +213,11 @@ class RecordingDesktopBrowserViewManager implements DesktopBrowserViewManager {
   public pageScriptRpcFailure: Error | null = null;
   public pageScriptBootstrapFailure: Error | null = null;
   public downloadActionFailure: Error | null = null;
-  public downloadActionResult: BbDesktopBrowserDownloadActionResult = {
+  public downloadActionResult: PatcherDesktopBrowserDownloadActionResult = {
     ok: true,
   };
   public readPageFailure: Error | null = null;
-  public readPageResult: BbDesktopBrowserPageReadResult = {
+  public readPageResult: PatcherDesktopBrowserPageReadResult = {
     ok: false,
     reason: "no-view",
   };
@@ -227,44 +227,44 @@ class RecordingDesktopBrowserViewManager implements DesktopBrowserViewManager {
   public pagePromptRespondResult = true;
   public readonly snapshotCalls: SnapshotCall[] = [];
   public snapshotFailure: Error | null = null;
-  public snapshotResult: BbDesktopBrowserSnapshotResult = {
+  public snapshotResult: PatcherDesktopBrowserSnapshotResult = {
     ok: false,
     reason: "no-view",
   };
   public readonly interactCalls: InteractCall[] = [];
   public interactFailure: Error | null = null;
-  public interactResult: BbDesktopBrowserInteractResult = {
+  public interactResult: PatcherDesktopBrowserInteractResult = {
     ok: false,
     reason: "no-view",
   };
   public readonly observeCalls: ObserveCall[] = [];
   public observeFailure: Error | null = null;
-  public observeResult: BbDesktopBrowserObserveResult = {
+  public observeResult: PatcherDesktopBrowserObserveResult = {
     ok: false,
     reason: "no-view",
   };
   public readonly storageCalls: StorageCall[] = [];
   public storageFailure: Error | null = null;
-  public storageResult: BbDesktopBrowserStorageResult = {
+  public storageResult: PatcherDesktopBrowserStorageResult = {
     ok: false,
     reason: "no-view",
   };
   public readonly controlCalls: ControlCall[] = [];
   public controlFailure: Error | null = null;
-  public controlResult: BbDesktopBrowserControlResult = {
+  public controlResult: PatcherDesktopBrowserControlResult = {
     ok: false,
     reason: "no-view",
   };
   public readonly snapshotInCalls: SnapshotInCall[] = [];
   public readonly recordCalls: RecordCall[] = [];
   public recordFailure: Error | null = null;
-  public recordResult: BbDesktopBrowserRecordResult = {
+  public recordResult: PatcherDesktopBrowserRecordResult = {
     ok: false,
     reason: "no-view",
   };
   public readonly captureFullPageCalls: CaptureFullPageCall[] = [];
   public captureFullPageFailure: Error | null = null;
-  public captureFullPageResult: BbDesktopBrowserCaptureFullPageResult = {
+  public captureFullPageResult: PatcherDesktopBrowserCaptureFullPageResult = {
     ok: false,
     reason: "no-view",
   };
@@ -376,7 +376,7 @@ class RecordingDesktopBrowserViewManager implements DesktopBrowserViewManager {
 
   pageScriptBootstrap(
     args: PageScriptBootstrapCall,
-  ): BbDesktopPageScriptBootstrap {
+  ): PatcherDesktopPageScriptBootstrap {
     this.pageScriptBootstrapCalls.push(args);
     if (this.pageScriptBootstrapFailure !== null) {
       throw this.pageScriptBootstrapFailure;
@@ -388,7 +388,7 @@ class RecordingDesktopBrowserViewManager implements DesktopBrowserViewManager {
 
   async pageScriptRpc(
     args: PageScriptRpcCall,
-  ): Promise<BbDesktopPageScriptRpcAnswer> {
+  ): Promise<PatcherDesktopPageScriptRpcAnswer> {
     this.pageScriptRpcCalls.push(args);
     if (this.pageScriptRpcFailure !== null) {
       throw this.pageScriptRpcFailure;
@@ -402,7 +402,7 @@ class RecordingDesktopBrowserViewManager implements DesktopBrowserViewManager {
 
   downloadAction(
     request: DownloadActionCall,
-  ): Promise<BbDesktopBrowserDownloadActionResult> {
+  ): Promise<PatcherDesktopBrowserDownloadActionResult> {
     this.downloadActionCalls.push(request);
     if (this.downloadActionFailure !== null) {
       return Promise.reject(this.downloadActionFailure);
@@ -410,7 +410,7 @@ class RecordingDesktopBrowserViewManager implements DesktopBrowserViewManager {
     return Promise.resolve(this.downloadActionResult);
   }
 
-  readPage(args: ReadPageCall): Promise<BbDesktopBrowserPageReadResult> {
+  readPage(args: ReadPageCall): Promise<PatcherDesktopBrowserPageReadResult> {
     this.readPageCalls.push(args);
     if (this.readPageFailure !== null) {
       return Promise.reject(this.readPageFailure);
@@ -423,7 +423,7 @@ class RecordingDesktopBrowserViewManager implements DesktopBrowserViewManager {
     return Promise.resolve(this.dialogRespondResult);
   }
 
-  snapshot(args: SnapshotCall): Promise<BbDesktopBrowserSnapshotResult> {
+  snapshot(args: SnapshotCall): Promise<PatcherDesktopBrowserSnapshotResult> {
     this.snapshotCalls.push(args);
     if (this.snapshotFailure !== null) {
       return Promise.reject(this.snapshotFailure);
@@ -431,7 +431,7 @@ class RecordingDesktopBrowserViewManager implements DesktopBrowserViewManager {
     return Promise.resolve(this.snapshotResult);
   }
 
-  interact(args: InteractCall): Promise<BbDesktopBrowserInteractResult> {
+  interact(args: InteractCall): Promise<PatcherDesktopBrowserInteractResult> {
     this.interactCalls.push(args);
     if (this.interactFailure !== null) {
       return Promise.reject(this.interactFailure);
@@ -439,7 +439,7 @@ class RecordingDesktopBrowserViewManager implements DesktopBrowserViewManager {
     return Promise.resolve(this.interactResult);
   }
 
-  observe(args: ObserveCall): Promise<BbDesktopBrowserObserveResult> {
+  observe(args: ObserveCall): Promise<PatcherDesktopBrowserObserveResult> {
     this.observeCalls.push(args);
     if (this.observeFailure !== null) {
       return Promise.reject(this.observeFailure);
@@ -447,7 +447,7 @@ class RecordingDesktopBrowserViewManager implements DesktopBrowserViewManager {
     return Promise.resolve(this.observeResult);
   }
 
-  control(args: ControlCall): Promise<BbDesktopBrowserControlResult> {
+  control(args: ControlCall): Promise<PatcherDesktopBrowserControlResult> {
     this.controlCalls.push(args);
     if (this.controlFailure !== null) {
       return Promise.reject(this.controlFailure);
@@ -455,7 +455,9 @@ class RecordingDesktopBrowserViewManager implements DesktopBrowserViewManager {
     return Promise.resolve(this.controlResult);
   }
 
-  snapshotIn(args: SnapshotInCall): Promise<BbDesktopBrowserSnapshotResult> {
+  snapshotIn(
+    args: SnapshotInCall,
+  ): Promise<PatcherDesktopBrowserSnapshotResult> {
     this.snapshotInCalls.push(args);
     if (this.snapshotFailure !== null) {
       return Promise.reject(this.snapshotFailure);
@@ -463,7 +465,7 @@ class RecordingDesktopBrowserViewManager implements DesktopBrowserViewManager {
     return Promise.resolve(this.snapshotResult);
   }
 
-  record(args: RecordCall): Promise<BbDesktopBrowserRecordResult> {
+  record(args: RecordCall): Promise<PatcherDesktopBrowserRecordResult> {
     this.recordCalls.push(args);
     if (this.recordFailure !== null) {
       return Promise.reject(this.recordFailure);
@@ -473,7 +475,7 @@ class RecordingDesktopBrowserViewManager implements DesktopBrowserViewManager {
 
   captureFullPage(
     args: CaptureFullPageCall,
-  ): Promise<BbDesktopBrowserCaptureFullPageResult> {
+  ): Promise<PatcherDesktopBrowserCaptureFullPageResult> {
     this.captureFullPageCalls.push(args);
     if (this.captureFullPageFailure !== null) {
       return Promise.reject(this.captureFullPageFailure);
@@ -481,7 +483,7 @@ class RecordingDesktopBrowserViewManager implements DesktopBrowserViewManager {
     return Promise.resolve(this.captureFullPageResult);
   }
 
-  storage(args: StorageCall): Promise<BbDesktopBrowserStorageResult> {
+  storage(args: StorageCall): Promise<PatcherDesktopBrowserStorageResult> {
     this.storageCalls.push(args);
     if (this.storageFailure !== null) {
       return Promise.reject(this.storageFailure);
@@ -524,7 +526,7 @@ function sendBrowserIpc(args: SendBrowserIpcArgs): void {
 
 async function invokeBrowserIpc(
   args: SendBrowserIpcArgs,
-): Promise<BbDesktopBrowserPageReadResult> {
+): Promise<PatcherDesktopBrowserPageReadResult> {
   const handler = electronMock.handlers.get(args.channel);
   expect(handler).toBeDefined();
   if (handler === undefined) {
@@ -533,7 +535,7 @@ async function invokeBrowserIpc(
   return (await handler(
     { sender: args.sender },
     args.payload,
-  )) as BbDesktopBrowserPageReadResult;
+  )) as PatcherDesktopBrowserPageReadResult;
 }
 
 function oversizedBrowserUrl(): string {
@@ -546,13 +548,13 @@ describe("registerDesktopBrowserIpc", () => {
     registerDesktopBrowserIpc(manager);
     const renderer = createTrustedRenderer("main-window");
     const untrustedSender = createUntrustedSender();
-    const attachRequest: BbDesktopBrowserAttachRequest = {
+    const attachRequest: PatcherDesktopBrowserAttachRequest = {
       tabId: "browser:a",
       url: "http://localhost:5173/",
       bounds: { x: 0, y: 0, width: 800, height: 600 },
       visible: true,
     };
-    const navigateRequest: BbDesktopBrowserNavigateRequest = {
+    const navigateRequest: PatcherDesktopBrowserNavigateRequest = {
       tabId: "browser:a",
       url: "https://example.com/",
     };
@@ -593,7 +595,7 @@ describe("registerDesktopBrowserIpc", () => {
     const manager = new RecordingDesktopBrowserViewManager();
     registerDesktopBrowserIpc(manager);
     const renderer = createTrustedRenderer("main-window");
-    const validAttachRequest: BbDesktopBrowserAttachRequest = {
+    const validAttachRequest: PatcherDesktopBrowserAttachRequest = {
       tabId: "browser:a",
       url: "",
       bounds: { x: 0, y: 0, width: 800, height: 600 },
@@ -633,11 +635,11 @@ describe("registerDesktopBrowserIpc", () => {
     const manager = new RecordingDesktopBrowserViewManager();
     registerDesktopBrowserIpc(manager);
     const renderer = createTrustedRenderer("main-window");
-    const boundsRequest: BbDesktopBrowserSetBoundsRequest = {
+    const boundsRequest: PatcherDesktopBrowserSetBoundsRequest = {
       tabId: "browser:a",
       bounds: { x: 0, y: 0, width: 800, height: 600 },
     };
-    const visibleRequest: BbDesktopBrowserSetVisibleRequest = {
+    const visibleRequest: PatcherDesktopBrowserSetVisibleRequest = {
       tabId: "browser:a",
       visible: true,
     };
@@ -783,7 +785,7 @@ describe("registerDesktopBrowserIpc", () => {
     const manager = new RecordingDesktopBrowserViewManager();
     registerDesktopBrowserIpc(manager);
     const renderer = createTrustedRenderer("main-window");
-    const request: BbDesktopBrowserFindRequest = {
+    const request: PatcherDesktopBrowserFindRequest = {
       tabId: "browser:a",
       action: "start",
       query: "needle",

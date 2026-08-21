@@ -21,7 +21,7 @@ import type { PluginServiceCommand } from "./plugin-service-message.js";
 import { alreadyValidatedElsewhere } from "./plugin-rpc-call.js";
 import { readBrowserHistoryDecision } from "./plugin-history-filter.js";
 import type {
-  BbPluginApi,
+  PatcherPluginApi,
   PluginAgentToolContext,
   PluginAgentToolResult,
   PluginApiHandle,
@@ -147,7 +147,7 @@ export function createRemotePluginApiHandle(args: {
   return {
     // `bb` lives in the plugin's process. Nothing on the server should reach
     // for it, and a thrown explanation beats a plausible-looking empty object.
-    get api(): BbPluginApi {
+    get api(): PatcherPluginApi {
       return notLocal("bb.api");
     },
     // Dispose hooks, database handles and the settings descriptors all belong

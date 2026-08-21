@@ -163,7 +163,7 @@ import { usePluginSlots } from "@/lib/plugin-slots";
 import { getFileExtension } from "@/lib/file-opener-preference";
 import { Icon } from "@patcher/shared-ui/icon";
 import {
-  getBbDesktopInfo,
+  getPatcherDesktopInfo,
   isDesktopBrowserAvailable,
 } from "@/lib/bb-desktop";
 import {
@@ -1335,7 +1335,7 @@ function ThreadDetailViewInternal(props: ThreadDetailViewInternalProps) {
     if (!isFocused) {
       return;
     }
-    const desktopInfo = getBbDesktopInfo();
+    const desktopInfo = getPatcherDesktopInfo();
     if (
       desktopInfo === null ||
       desktopInfo.onAppCommand !== undefined ||
@@ -1461,7 +1461,7 @@ function ThreadDetailViewInternal(props: ThreadDetailViewInternalProps) {
     if (!isFocused) {
       return;
     }
-    const desktopInfo = getBbDesktopInfo();
+    const desktopInfo = getPatcherDesktopInfo();
     if (
       desktopInfo === null ||
       desktopInfo.onCloseWindowRequest === undefined

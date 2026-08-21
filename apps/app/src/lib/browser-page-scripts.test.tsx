@@ -4,14 +4,14 @@ import { cleanup, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   BB_DESKTOP_BROWSER_MAX_PAGE_SCRIPTS,
-  type BbDesktopBrowserApi,
-  type BbDesktopBrowserPageScriptCall,
-  type BbDesktopBrowserPageScriptCallHandler,
-  type BbDesktopBrowserPageScriptResult,
-  type BbDesktopBrowserPageScripts,
+  type PatcherDesktopBrowserApi,
+  type PatcherDesktopBrowserPageScriptCall,
+  type PatcherDesktopBrowserPageScriptCallHandler,
+  type PatcherDesktopBrowserPageScriptResult,
+  type PatcherDesktopBrowserPageScripts,
 } from "@patcher/desktop-contract";
 import {
-  createBbDesktopApi,
+  createPatcherDesktopApi,
   createNoopDesktopBrowserApi,
 } from "@/test/bb-desktop-test-utils";
 import type { PluginBrowserPageScriptContribution } from "@/hooks/queries/plugin-contribution-queries";
@@ -40,7 +40,7 @@ const SCRIPT: PluginBrowserPageScriptContribution = {
   code: "bb.ready(function(){})",
 };
 
-const CALL: BbDesktopBrowserPageScriptCall = {
+const CALL: PatcherDesktopBrowserPageScriptCall = {
   callId: "page-script-1",
   tabId: "browser:a",
   pluginId: "site-tweaks",
@@ -50,18 +50,20 @@ const CALL: BbDesktopBrowserPageScriptCall = {
 };
 
 interface Shell {
-  pushes: BbDesktopBrowserPageScripts[];
-  answers: BbDesktopBrowserPageScriptResult[];
-  call(request?: Partial<BbDesktopBrowserPageScriptCall>): void;
+  pushes: PatcherDesktopBrowserPageScripts[];
+  answers: PatcherDesktopBrowserPageScriptResult[];
+  call(request?: Partial<PatcherDesktopBrowserPageScriptCall>): void;
   unsubscribed(): number;
 }
 
-function installShell(overrides: Partial<BbDesktopBrowserApi> = {}): Shell {
-  const pushes: BbDesktopBrowserPageScripts[] = [];
-  const answers: BbDesktopBrowserPageScriptResult[] = [];
-  const listeners = new Set<BbDesktopBrowserPageScriptCallHandler>();
+function installShell(
+  overrides: Partial<PatcherDesktopBrowserApi> = {},
+): Shell {
+  const pushes: PatcherDesktopBrowserPageScripts[] = [];
+  const answers: PatcherDesktopBrowserPageScriptResult[] = [];
+  const listeners = new Set<PatcherDesktopBrowserPageScriptCallHandler>();
   let unsubscribes = 0;
-  window.bbDesktop = createBbDesktopApi(desktopInfo, {
+  window.bbDesktop = createPatcherDesktopApi(desktopInfo, {
     ...createNoopDesktopBrowserApi(),
     setPageScripts(request) {
       pushes.push(request);
@@ -279,7 +281,7 @@ describe("useBrowserPageScripts", () => {
 
   it("says nothing to a shell that has no such channel", () => {
     contributions.value = { browserPageScripts: [SCRIPT] };
-    window.bbDesktop = createBbDesktopApi(
+    window.bbDesktop = createPatcherDesktopApi(
       desktopInfo,
       createNoopDesktopBrowserApi(),
     );

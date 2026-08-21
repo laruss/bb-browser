@@ -1,6 +1,6 @@
 # Backend core: logging, settings, storage, host facts, events, lifecycle
 
-The parts of `BbPluginApi` a plugin uses regardless of which surface it
+The parts of `PatcherPluginApi` a plugin uses regardless of which surface it
 contributes.
 
 - [bb.log](#bblog)

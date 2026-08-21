@@ -2,9 +2,9 @@
 
 import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { BbDesktopCloseWindowRequestHandler } from "@patcher/desktop-contract";
+import type { PatcherDesktopCloseWindowRequestHandler } from "@patcher/desktop-contract";
 import { AppCommandProvider } from "@/components/commands/AppCommandProvider";
-import { createBbDesktopApi } from "@/test/bb-desktop-test-utils";
+import { createPatcherDesktopApi } from "@/test/bb-desktop-test-utils";
 import { RootComposePanelCommandHandlers } from "./RootComposePanelCommandHandlers";
 
 // The command provider reads plugin commands (`app.commands`); nothing here
@@ -89,9 +89,10 @@ describe("RootComposePanelCommandHandlers", () => {
     const firstClose = vi.fn(() => true);
     const secondToggle = vi.fn();
     const secondClose = vi.fn(() => true);
-    const desktopCloseHandlers = new Set<BbDesktopCloseWindowRequestHandler>();
+    const desktopCloseHandlers =
+      new Set<PatcherDesktopCloseWindowRequestHandler>();
     window.bbDesktop = {
-      ...createBbDesktopApi(desktopInfo),
+      ...createPatcherDesktopApi(desktopInfo),
       onCloseWindowRequest(listener) {
         desktopCloseHandlers.add(listener);
         return () => desktopCloseHandlers.delete(listener);

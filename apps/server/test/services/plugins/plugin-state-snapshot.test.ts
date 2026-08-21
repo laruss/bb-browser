@@ -306,7 +306,7 @@ describe("plugin activation snapshots and garbage collection", () => {
       status: "rollback-pending",
       rollbackCandidateVersion: "candidate",
       rollbackSourceFingerprint: "source",
-      rollbackBbVersion: "1.0.0",
+      rollbackPatcherVersion: "1.0.0",
       rollbackSdkVersion: "0.2.0",
       rollbackDetail: "failed",
       createdAt: 1,

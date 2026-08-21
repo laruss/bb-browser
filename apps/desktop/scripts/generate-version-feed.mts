@@ -3,8 +3,8 @@ import { resolve } from "node:path";
 import { parse as parseYaml } from "yaml";
 import { z } from "zod";
 import {
-  bbDesktopVersionFeedSchema,
-  type BbDesktopVersionFeed,
+  patcherDesktopVersionFeedSchema,
+  type PatcherDesktopVersionFeed,
 } from "@patcher/desktop-contract";
 import {
   createDesktopReleaseConfig,
@@ -61,7 +61,7 @@ if (updateMetadata.version !== packageJson.version) {
   );
 }
 
-const desktopVersionFeed: BbDesktopVersionFeed = {
+const desktopVersionFeed: PatcherDesktopVersionFeed = {
   channel: releaseChannel,
   files: updateMetadata.files,
   minimumSystemVersion: null,
@@ -76,7 +76,7 @@ const desktopVersionFeed: BbDesktopVersionFeed = {
   version: packageJson.version,
 };
 
-const validatedFeed = bbDesktopVersionFeedSchema.parse(desktopVersionFeed);
+const validatedFeed = patcherDesktopVersionFeedSchema.parse(desktopVersionFeed);
 await writeFile(
   desktopVersionFeedPath,
   `${JSON.stringify(validatedFeed, null, 2)}\n`,

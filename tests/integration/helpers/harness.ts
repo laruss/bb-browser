@@ -31,7 +31,7 @@ import {
 } from "../../../apps/server/src/services/skills/builtin-skills-copy.js";
 import { SkillTreeRegistry } from "../../../apps/server/src/services/skills/injected-skills.js";
 import { createAppVersionService } from "../../../apps/server/src/services/system/app-version.js";
-import { createBbAppManagedConfigReloader } from "../../../apps/server/src/services/system/bb-app-managed-config.js";
+import { createPatcherAppManagedConfigReloader } from "../../../apps/server/src/services/system/bb-app-managed-config.js";
 import { createNoopTelemetryService } from "../../../apps/server/src/services/system/telemetry.js";
 import { TerminalSessionLifecycle } from "../../../apps/server/src/services/terminals/terminal-session-lifecycle.js";
 import type {
@@ -257,7 +257,7 @@ async function startIntegrationServer(
   });
   await machineAuth.ensureReady();
   const lifecycleDedupers = createLifecycleDedupers();
-  const bbAppManagedConfig = await createBbAppManagedConfigReloader({
+  const patcherAppManagedConfig = await createPatcherAppManagedConfigReloader({
     config,
     hub,
     logger: testLogger,
@@ -282,7 +282,7 @@ async function startIntegrationServer(
   });
   const { app, injectWebSocket } = createApp({
     appVersion,
-    bbAppManagedConfig,
+    patcherAppManagedConfig,
     config,
     db,
     hub,

@@ -145,7 +145,7 @@ function artifactMeta(args: {
     pluginId: args.pluginId,
     pluginVersion: args.pluginVersion ?? "0.1.0",
     builtWith: {
-      bbVersion: "0.9.0-test",
+      patcherVersion: "0.9.0-test",
       pluginSdkVersion: sdkVersion,
     },
   });
@@ -973,7 +973,7 @@ describe("plugin install flows", () => {
     await scaffoldPlugin({
       targetDir,
       packageName: "bb-plugin-scaffolded",
-      bbVersion: "0.9.0",
+      patcherVersion: "0.9.0",
     });
     await stat(join(targetDir, "skills", "example-skill", "SKILL.md"));
     await stat(join(targetDir, ".gitignore"));
@@ -999,7 +999,7 @@ describe("plugin install flows", () => {
       scaffoldPlugin({
         targetDir,
         packageName: "bb-plugin-scaffolded",
-        bbVersion: "0.9.0",
+        patcherVersion: "0.9.0",
       }),
     ).rejects.toThrowError(/already exists/);
   });

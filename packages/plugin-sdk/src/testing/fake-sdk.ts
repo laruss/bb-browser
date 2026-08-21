@@ -4,10 +4,10 @@ import {
   PLUGIN_SDK_METHOD_EXTRA_PERMISSIONS,
   type PluginPermission,
 } from "@patcher/domain";
-import type { BbPluginApi } from "@patcher/plugin-sdk";
+import type { PatcherPluginApi } from "@patcher/plugin-sdk";
 import type { FakePermissionGate } from "./fake-permissions.js";
 
-type BbSdk = BbPluginApi["sdk"];
+type PatcherSdk = PatcherPluginApi["sdk"];
 
 /**
  * Recordable `bb.sdk` stand-in for {@link createFakePluginHost}. Every call
@@ -32,7 +32,7 @@ type LooseStub<F> = F extends (...args: infer A) => unknown
   : never;
 
 /**
- * Stub implementations keyed like `BbSdk`: an object per area with a subset
+ * Stub implementations keyed like `PatcherSdk`: an object per area with a subset
  * of its methods, or a function for the root-level members (`on`).
  */
 type FakeSdkOverrideTree<T> = {
@@ -41,7 +41,7 @@ type FakeSdkOverrideTree<T> = {
     : FakeSdkOverrideTree<T[K]>;
 };
 
-export type FakeSdkOverrides = FakeSdkOverrideTree<BbSdk>;
+export type FakeSdkOverrides = FakeSdkOverrideTree<PatcherSdk>;
 
 export interface FakeSdkHarness {
   /** Every `bb.sdk` call in order, including ones whose stub threw. */
@@ -78,7 +78,7 @@ export function createFakeSdk(options: {
   pluginId: string;
   overrides?: FakeSdkOverrides;
   permissions: FakePermissionGate;
-}): { sdk: BbSdk; harness: FakeSdkHarness } {
+}): { sdk: PatcherSdk; harness: FakeSdkHarness } {
   const calls: FakeSdkCall[] = [];
   const stubs = new Map<string, (...args: unknown[]) => unknown>();
 
@@ -173,7 +173,7 @@ export function createFakeSdk(options: {
     },
   };
 
-  // The proxy is the genuinely unknowable boundary: it answers any BbSdk
+  // The proxy is the genuinely unknowable boundary: it answers any PatcherSdk
   // shape at runtime, and the type is re-imposed here once.
-  return { sdk: node("") as BbSdk, harness };
+  return { sdk: node("") as PatcherSdk, harness };
 }

@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import Ajv from "ajv";
-import type { BbPluginApi } from "@patcher/plugin-sdk";
+import type { PatcherPluginApi } from "@patcher/plugin-sdk";
 import { z } from "zod";
 import {
   WORKFLOW_CALL_CACHE_VERSION,
@@ -404,7 +404,7 @@ export interface WorkflowRunInspectionPage {
 }
 
 export function createWorkflowService(
-  bb: BbPluginApi,
+  bb: PatcherPluginApi,
   db: Db,
   initialSettings: WorkflowSettings = DEFAULT_WORKFLOW_SETTINGS,
 ): WorkflowService {

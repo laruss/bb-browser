@@ -1,4 +1,4 @@
-import { createNodeBbSdk } from "@patcher/sdk/node";
+import { createNodePatcherSdk } from "@patcher/sdk/node";
 import { createNodeWebsocketFactory } from "@patcher/sdk/node-websocket";
 import { afterEach, describe, expect, it } from "vitest";
 import WebSocket from "ws";
@@ -121,7 +121,7 @@ describe("browser WebSocket origin boundary", () => {
 
   it("keeps absent-Origin Node SDK realtime and CLI terminal sockets working", async () => {
     server = await startTestServer();
-    const sdk = createNodeBbSdk({ baseUrl: server.baseUrl });
+    const sdk = createNodePatcherSdk({ baseUrl: server.baseUrl });
 
     let stopTarget = (): void => {};
     let stopConnection = (): void => {};

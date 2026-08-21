@@ -1,4 +1,4 @@
-import type { BbPluginApi, PluginRpcHandlers } from "@patcher/plugin-sdk";
+import type { PatcherPluginApi, PluginRpcHandlers } from "@patcher/plugin-sdk";
 import { z } from "zod";
 import type {
   Attachment,
@@ -105,7 +105,7 @@ export function buildSeedPrompt(input: SeedPromptInput): string {
     ),
     markdownSection(
       "Project context",
-      `- Name: ${input.project.name}\n- Linked bb project: ${input.project.linkedBbProjectId ?? "Not linked"}`,
+      `- Name: ${input.project.name}\n- Linked bb project: ${input.project.linkedPatcherProjectId ?? "Not linked"}`,
     ),
     markdownSection("Sub-tasks", formatSubtasks(input.subtasks)),
     markdownSection("Attachments", formatAttachments(input.attachments)),
@@ -158,8 +158,8 @@ function requirePreset(store: TasksStore, presetId: string): Preset {
   return preset;
 }
 
-function requireLinkedBbProject(project: Project): string {
-  if (project.linkedBbProjectId) return project.linkedBbProjectId;
+function requireLinkedPatcherProject(project: Project): string {
+  if (project.linkedPatcherProjectId) return project.linkedPatcherProjectId;
   throw new DelegationError(
     "project_not_linked",
     `Task project "${project.name}" is not linked to a bb project`,
@@ -184,11 +184,11 @@ function collectAttachments(
 }
 
 type SpawnEnvironment = Parameters<
-  BbPluginApi["sdk"]["threads"]["spawn"]
+  PatcherPluginApi["sdk"]["threads"]["spawn"]
 >[0]["environment"];
 
 async function presetSpawnEnvironment(
-  bb: BbPluginApi,
+  bb: PatcherPluginApi,
   preset: Preset,
 ): Promise<SpawnEnvironment> {
   if (preset.environmentKind === "project-default") {
@@ -216,7 +216,7 @@ async function presetSpawnEnvironment(
   };
 }
 
-function isBbHttpError(
+function isPatcherHttpError(
   error: unknown,
 ): error is Error & { code: string | null; status: number } {
   return (
@@ -240,7 +240,7 @@ const SPAWN_TARGET_ERROR_CODES = new Set([
 function mapSpawnTargetError(error: unknown, preset: Preset): never {
   if (
     preset.environmentKind === "new-worktree" &&
-    isBbHttpError(error) &&
+    isPatcherHttpError(error) &&
     error.code !== null &&
     SPAWN_TARGET_ERROR_CODES.has(error.code)
   ) {
@@ -275,13 +275,16 @@ export function createSystemComment(
   });
 }
 
-export function publishThreadsChanged(bb: BbPluginApi, taskId: string): void {
+export function publishThreadsChanged(
+  bb: PatcherPluginApi,
+  taskId: string,
+): void {
   const payload: ThreadsChangedEvent = { taskId };
   bb.realtime.publish("threads:changed", payload);
 }
 
 function publishTasksChanged(
-  bb: BbPluginApi,
+  bb: PatcherPluginApi,
   taskId: string,
   projectId: string,
 ): void {
@@ -289,12 +292,15 @@ function publishTasksChanged(
   bb.realtime.publish("tasks:changed", payload);
 }
 
-export function publishCommentsChanged(bb: BbPluginApi, taskId: string): void {
+export function publishCommentsChanged(
+  bb: PatcherPluginApi,
+  taskId: string,
+): void {
   const payload: CommentsChangedEvent = { taskId };
   bb.realtime.publish("comments:changed", payload);
 }
 
-type SdkThread = Awaited<ReturnType<BbPluginApi["sdk"]["threads"]["get"]>>;
+type SdkThread = Awaited<ReturnType<PatcherPluginApi["sdk"]["threads"]["get"]>>;
 
 function taskThreadLiveStatus(thread: SdkThread): TaskThreadLiveStatus {
   if (thread.deletedAt != null) return "completed";
@@ -312,14 +318,14 @@ function taskThreadLiveStatus(thread: SdkThread): TaskThreadLiveStatus {
 }
 
 export function handlers(
-  bb: BbPluginApi,
+  bb: PatcherPluginApi,
   store: TasksApiStore,
 ): PluginRpcHandlers<typeof delegationRpcContract> {
   return {
     async delegate(input) {
       const task = requireTask(store.tasks, input.taskId);
       const project = requireProject(store.tasks, task.projectId);
-      const linkedBbProjectId = requireLinkedBbProject(project);
+      const linkedPatcherProjectId = requireLinkedPatcherProject(project);
       const preset = requirePreset(store.tasks, input.presetId);
       const comments = store.tasks.listComments(task.id);
       const recentComments = comments.slice(-5);
@@ -343,7 +349,7 @@ export function handlers(
       const environment = await presetSpawnEnvironment(bb, preset);
       const thread = await bb.sdk.threads
         .spawn({
-          projectId: linkedBbProjectId,
+          projectId: linkedPatcherProjectId,
           environment,
           providerId: execution.providerId,
           model: execution.model,
@@ -427,7 +433,7 @@ export function handlers(
 }
 
 export function registerDelegation(
-  bb: BbPluginApi,
+  bb: PatcherPluginApi,
   store: TasksApiStore,
 ): void {
   bb.rpc.register(delegationRpcContract, handlers(bb, store));

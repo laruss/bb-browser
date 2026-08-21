@@ -19,7 +19,7 @@ import {
   BB_DESKTOP_BROWSER_MAX_VIDEO_CHAPTERS,
   BB_DESKTOP_BROWSER_MAX_VIDEO_FRAMES,
   BB_DESKTOP_BROWSER_MAX_VIDEO_FRAME_BASE64_LENGTH,
-  type BbDesktopBrowserVideoFrame,
+  type PatcherDesktopBrowserVideoFrame,
 } from "@patcher/desktop-contract";
 
 /**
@@ -33,14 +33,14 @@ export const BB_BROWSER_SCREENCAST_MAX_WIDTH = 960;
 export const BB_BROWSER_SCREENCAST_MAX_HEIGHT = 960;
 
 export interface BrowserVideoResult {
-  frames: BbDesktopBrowserVideoFrame[];
+  frames: PatcherDesktopBrowserVideoFrame[];
   chapters: { at: number; title: string }[];
   droppedFrames: number;
   durationMs: number;
 }
 
 export class BrowserVideoRecording {
-  private readonly frames: BbDesktopBrowserVideoFrame[] = [];
+  private readonly frames: PatcherDesktopBrowserVideoFrame[] = [];
   private readonly chapters: { at: number; title: string }[] = [];
   private readonly intervalMs: number;
   private totalBase64Length = 0;

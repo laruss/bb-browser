@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@patcher/plugin-sdk";
+import type { PatcherPluginApi } from "@patcher/plugin-sdk";
 import { z } from "zod";
 import {
   claimAutomationScheduledRun,
@@ -20,14 +20,14 @@ export const SWEEP_INTERVAL_MS = 10_000;
 const hostListSchema = z.array(
   z.object({ status: z.enum(["connected", "disconnected"]) }).passthrough(),
 );
-type SweepApi = Pick<BbPluginApi, "realtime" | "log"> & {
+type SweepApi = Pick<PatcherPluginApi, "realtime" | "log"> & {
   sdk: {
     hosts: { list(): Promise<unknown> };
     threads: {
-      get(args: Parameters<BbPluginApi["sdk"]["threads"]["get"]>[0]): Promise<unknown>;
-      send(args: Parameters<BbPluginApi["sdk"]["threads"]["send"]>[0]): Promise<unknown>;
+      get(args: Parameters<PatcherPluginApi["sdk"]["threads"]["get"]>[0]): Promise<unknown>;
+      send(args: Parameters<PatcherPluginApi["sdk"]["threads"]["send"]>[0]): Promise<unknown>;
       spawn(
-        args: Parameters<BbPluginApi["sdk"]["threads"]["spawn"]>[0],
+        args: Parameters<PatcherPluginApi["sdk"]["threads"]["spawn"]>[0],
       ): Promise<unknown>;
     };
   };
@@ -138,7 +138,7 @@ async function processDueAutomation(
 }
 
 async function hasConnectedHost(
-  bb: Pick<BbPluginApi, "log"> & {
+  bb: Pick<PatcherPluginApi, "log"> & {
     sdk: { hosts: { list(): Promise<unknown> } };
   },
 ): Promise<boolean> {

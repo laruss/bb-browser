@@ -119,7 +119,7 @@ interface PendingAcpPermission {
 }
 
 interface AcpThreadSession {
-  bbThreadId: string;
+  patcherThreadId: string;
   providerThreadId: string;
   connection: AcpAgentConnection;
   agentLabel: string;
@@ -138,8 +138,8 @@ interface AcpThreadSession {
   pendingPermissions: Set<PendingAcpPermission>;
 }
 
-const sessionsByBbThreadId = new Map<string, AcpThreadSession>();
-const bbThreadIdByProviderThreadId = new Map<string, string>();
+const sessionsByPatcherThreadId = new Map<string, AcpThreadSession>();
+const patcherThreadIdByProviderThreadId = new Map<string, string>();
 const pendingRuntimeRequests = new Map<
   number,
   (response: BridgeJsonRpcResponse) => void
@@ -251,7 +251,7 @@ async function forwardDynamicToolCall(args: {
   | { ok: true; content: string; isError?: boolean }
   | { ok: false; error: string }
 > {
-  const session = sessionsByBbThreadId.get(args.threadId);
+  const session = sessionsByPatcherThreadId.get(args.threadId);
   if (!session || !session.providerThreadId || session.stopping) {
     return { ok: false, error: "No active ACP session for dynamic tool call." };
   }
@@ -259,7 +259,7 @@ async function forwardDynamicToolCall(args: {
   try {
     const result = await sendRuntimeRequest("item/tool/call", {
       providerThreadId: session.providerThreadId,
-      threadId: session.bbThreadId,
+      threadId: session.patcherThreadId,
       turnId: null,
       callId: args.callId,
       tool: args.tool,
@@ -1286,7 +1286,7 @@ function handlePermissionRequest(
     toolCall?.rawInput,
   );
   void sendRuntimeRequest(ACP_PERMISSION_REQUEST_METHOD, {
-    threadId: session.bbThreadId,
+    threadId: session.patcherThreadId,
     providerThreadId: session.providerThreadId,
     turnId: null,
     ...(toolCall?.toolCallId
@@ -1407,7 +1407,7 @@ async function handleFsWriteTextFile(
 
     const diff = buildEditDiff(parsed.data.path, oldText, parsed.data.content);
     sendNotification(ACP_FS_WRITE_METHOD, {
-      threadId: session.bbThreadId,
+      threadId: session.patcherThreadId,
       path: parsed.data.path,
       kind: oldText === undefined ? "add" : "update",
       ...(diff ? { diff } : {}),
@@ -1426,22 +1426,22 @@ async function handleFsWriteTextFile(
 // ---------------------------------------------------------------------------
 
 function removeSession(session: AcpThreadSession): void {
-  if (sessionsByBbThreadId.get(session.bbThreadId) === session) {
-    sessionsByBbThreadId.delete(session.bbThreadId);
+  if (sessionsByPatcherThreadId.get(session.patcherThreadId) === session) {
+    sessionsByPatcherThreadId.delete(session.patcherThreadId);
   }
   if (
-    bbThreadIdByProviderThreadId.get(session.providerThreadId) ===
-    session.bbThreadId
+    patcherThreadIdByProviderThreadId.get(session.providerThreadId) ===
+    session.patcherThreadId
   ) {
-    bbThreadIdByProviderThreadId.delete(session.providerThreadId);
+    patcherThreadIdByProviderThreadId.delete(session.providerThreadId);
   }
 }
 
 function getSessionByProviderThreadId(
   providerThreadId: string,
 ): AcpThreadSession | undefined {
-  const bbThreadId = bbThreadIdByProviderThreadId.get(providerThreadId);
-  return bbThreadId ? sessionsByBbThreadId.get(bbThreadId) : undefined;
+  const patcherThreadId = patcherThreadIdByProviderThreadId.get(providerThreadId);
+  return patcherThreadId ? sessionsByPatcherThreadId.get(patcherThreadId) : undefined;
 }
 
 type AcpSessionStartParams =
@@ -1452,9 +1452,9 @@ async function startAgentSession(
   request: AcpSessionStartParams,
 ): Promise<AcpThreadSession> {
   const params = request.params;
-  const bbThreadId = params.threadId;
+  const patcherThreadId = params.threadId;
 
-  const existing = sessionsByBbThreadId.get(bbThreadId);
+  const existing = sessionsByPatcherThreadId.get(patcherThreadId);
   if (existing) {
     await stopSession(existing);
   }
@@ -1462,7 +1462,7 @@ async function startAgentSession(
   const launch = await resolveAgentLaunchArgs(params);
   if (launch.warning) {
     sendNotification(ACP_WARNING_METHOD, {
-      threadId: bbThreadId,
+      threadId: patcherThreadId,
       summary: launch.warning,
     });
   }
@@ -1484,14 +1484,14 @@ async function startAgentSession(
     onRequest: (method, requestParams, responder) =>
       handleAgentRequest(session, method, requestParams, responder),
     onExit: (info) => {
-      const wasCurrent = sessionsByBbThreadId.get(bbThreadId) === session;
+      const wasCurrent = sessionsByPatcherThreadId.get(patcherThreadId) === session;
       cancelPendingPermissions(session);
       removeSession(session);
       if (!wasCurrent || session.stopping) {
         return;
       }
       sendNotification("error", {
-        threadId: bbThreadId,
+        threadId: patcherThreadId,
         message:
           `ACP agent "${agentLabel}" exited unexpectedly` +
           `${info.code !== null ? ` (code ${info.code})` : ""}` +
@@ -1500,7 +1500,7 @@ async function startAgentSession(
     },
   });
   session = {
-    bbThreadId,
+    patcherThreadId,
     providerThreadId: "",
     connection,
     agentLabel,
@@ -1594,7 +1594,7 @@ async function startAgentSession(
       });
       if (request.kind === "resume") {
         sendNotification(ACP_WARNING_METHOD, {
-          threadId: bbThreadId,
+          threadId: patcherThreadId,
           summary: `${agentLabel} could not restore the previous session; continuing in a fresh session without in-agent history.`,
         });
       }
@@ -1613,17 +1613,17 @@ async function startAgentSession(
       session.pendingLoadUsageUpdate = undefined;
       if (loadUsageUpdate) {
         sendNotification(ACP_UPDATE_METHOD, {
-          threadId: session.bbThreadId,
+          threadId: session.patcherThreadId,
           update: loadUsageUpdate,
         });
       }
     }
 
     session.providerThreadId = sessionId;
-    sessionsByBbThreadId.set(bbThreadId, session);
-    bbThreadIdByProviderThreadId.set(sessionId, bbThreadId);
+    sessionsByPatcherThreadId.set(patcherThreadId, session);
+    patcherThreadIdByProviderThreadId.set(sessionId, patcherThreadId);
     sendNotification("thread/identity", {
-      threadId: bbThreadId,
+      threadId: patcherThreadId,
       providerThreadId: sessionId,
     });
     return session;
@@ -1667,7 +1667,7 @@ async function stopSession(session: AcpThreadSession): Promise<void> {
 
 function runTurn(session: AcpThreadSession, firstInput: PromptInput[]): void {
   session.activePromptKind = "turn";
-  sendNotification(ACP_TURN_STARTED_METHOD, { threadId: session.bbThreadId });
+  sendNotification(ACP_TURN_STARTED_METHOD, { threadId: session.patcherThreadId });
 
   session.turnSettled = (async () => {
     let input = firstInput;
@@ -1690,7 +1690,7 @@ function runTurn(session: AcpThreadSession, firstInput: PromptInput[]): void {
         // connection's exit handler; only report in-protocol prompt failures.
         if (!session.stopping && !session.connection.exited) {
           sendNotification("error", {
-            threadId: session.bbThreadId,
+            threadId: session.patcherThreadId,
             message: error instanceof Error ? error.message : String(error),
           });
         }
@@ -1709,7 +1709,7 @@ function runTurn(session: AcpThreadSession, firstInput: PromptInput[]): void {
       session.activePromptKind = null;
       session.queuedInputs = [];
       sendNotification(ACP_TURN_COMPLETED_METHOD, {
-        threadId: session.bbThreadId,
+        threadId: session.patcherThreadId,
         stopReason,
       });
       return;
@@ -1724,7 +1724,7 @@ function startCompaction(session: AcpThreadSession): void {
 
   session.activePromptKind = "compaction";
   sendNotification(ACP_COMPACTION_STARTED_METHOD, {
-    threadId: session.bbThreadId,
+    threadId: session.patcherThreadId,
   });
 
   const request = session.connection.request({
@@ -1747,14 +1747,14 @@ function startCompaction(session: AcpThreadSession): void {
                 error: `Agent stopped compaction: ${result.stopReason}`,
               };
       sendNotification(ACP_COMPACTION_COMPLETED_METHOD, {
-        threadId: session.bbThreadId,
+        threadId: session.patcherThreadId,
         ...outcome,
       });
     })
     .catch((error: unknown) => {
       const message = error instanceof Error ? error.message : String(error);
       sendNotification(ACP_COMPACTION_COMPLETED_METHOD, {
-        threadId: session.bbThreadId,
+        threadId: session.patcherThreadId,
         status: "failed",
         error: message,
       });
@@ -1824,7 +1824,7 @@ function handleAgentNotification(
     return;
   }
   sendNotification(ACP_UPDATE_METHOD, {
-    threadId: session.bbThreadId,
+    threadId: session.patcherThreadId,
     update: parsed.data.update,
   });
 }
@@ -2017,7 +2017,7 @@ export function handleLine(line: string): void {
 
 async function stopAllSessions(): Promise<void> {
   await Promise.all(
-    Array.from(sessionsByBbThreadId.values()).map((session) =>
+    Array.from(sessionsByPatcherThreadId.values()).map((session) =>
       stopSession(session),
     ),
   );

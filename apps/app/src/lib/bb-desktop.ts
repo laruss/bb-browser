@@ -1,7 +1,7 @@
 import type {
-  BbDesktopApi,
-  BbDesktopBrowserApi,
-  BbDesktopWindowState,
+  PatcherDesktopApi,
+  PatcherDesktopBrowserApi,
+  PatcherDesktopWindowState,
 } from "@patcher/desktop-contract";
 
 // The window's title-bar row has pinned chrome at both ends, and the ends are
@@ -90,20 +90,20 @@ export const MACOS_CHROME_CONTROL_NO_DRAG_CLASS = `${MACOS_WINDOW_NO_DRAG_CLASS}
 export const MACOS_CHROME_TRAFFIC_LIGHT_AXIS_NUDGE_CLASS =
   MACOS_CHROME_CONTROL_AXIS_CLASS;
 
-export type BbDesktopInfoResult = BbDesktopApi | null;
-export const DEFAULT_DESKTOP_WINDOW_STATE: BbDesktopWindowState = {
+export type PatcherDesktopInfoResult = PatcherDesktopApi | null;
+export const DEFAULT_DESKTOP_WINDOW_STATE: PatcherDesktopWindowState = {
   isFullScreen: false,
 };
 
-export function getBbDesktopInfo(): BbDesktopInfoResult {
+export function getPatcherDesktopInfo(): PatcherDesktopInfoResult {
   if (typeof window === "undefined") {
     return null;
   }
-  return window.bbDesktop ?? null;
+  return window.patcherDesktop ?? window.bbDesktop ?? null;
 }
 
 export function shouldUseMacosDesktopChrome(
-  desktopInfo: BbDesktopInfoResult,
+  desktopInfo: PatcherDesktopInfoResult,
 ): boolean {
   return desktopInfo?.platform === "macos";
 }
@@ -112,8 +112,8 @@ export function shouldReserveMacosTrafficLights({
   desktopInfo,
   windowState,
 }: {
-  desktopInfo: BbDesktopInfoResult;
-  windowState: BbDesktopWindowState;
+  desktopInfo: PatcherDesktopInfoResult;
+  windowState: PatcherDesktopWindowState;
 }): boolean {
   return shouldUseMacosDesktopChrome(desktopInfo) && !windowState.isFullScreen;
 }
@@ -127,7 +127,7 @@ export function shouldReserveMacosTrafficLights({
  * callers use it while modules initialise, before any provider exists.
  */
 export function getDesktopWindowKey(): string | null {
-  return getBbDesktopInfo()?.windowKey ?? null;
+  return getPatcherDesktopInfo()?.windowKey ?? null;
 }
 
 /**
@@ -138,7 +138,7 @@ export function getDesktopWindowKey(): string | null {
  * than a window that ignored the request.
  */
 export function closeDesktopWindow(): boolean {
-  const closeWindow = getBbDesktopInfo()?.closeWindow;
+  const closeWindow = getPatcherDesktopInfo()?.closeWindow;
   if (closeWindow === undefined) {
     return false;
   }
@@ -152,8 +152,8 @@ export function closeDesktopWindow(): boolean {
  * preload predates the browser surface. This is the single gate for the
  * desktop-only browser tab entry and the `WebContentsView` host.
  */
-export function getDesktopBrowserApi(): BbDesktopBrowserApi | null {
-  return getBbDesktopInfo()?.browser ?? null;
+export function getDesktopBrowserApi(): PatcherDesktopBrowserApi | null {
+  return getPatcherDesktopInfo()?.browser ?? null;
 }
 
 export function isDesktopBrowserAvailable(): boolean {

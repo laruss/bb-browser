@@ -2,16 +2,16 @@
 
 import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import type {
-  BbDesktopBrowserApi,
-  BbDesktopBrowserAttachRequest,
-  BbDesktopBrowserSetBoundsRequest,
-  BbDesktopBrowserSetVisibleRequest,
-  BbDesktopBrowserState,
+  PatcherDesktopBrowserApi,
+  PatcherDesktopBrowserAttachRequest,
+  PatcherDesktopBrowserSetBoundsRequest,
+  PatcherDesktopBrowserSetVisibleRequest,
+  PatcherDesktopBrowserState,
 } from "@patcher/desktop-contract";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { BrowserFixedPanelTab } from "@/lib/fixed-panel-tabs-state";
 import {
-  createBbDesktopApi,
+  createPatcherDesktopApi,
   createNoopDesktopBrowserApi,
 } from "@/test/bb-desktop-test-utils";
 import { POINTER_COARSE_QUERY } from "@patcher/shared-ui/hooks/use-pointer-coarse";
@@ -20,17 +20,17 @@ import { BrowserTabDeck } from "./BrowserTabDeck";
 import { resetBrowserViewPersistence } from "./browserViewVisibilityCoordinator";
 
 type BrowserCall =
-  | { type: "attach"; request: BbDesktopBrowserAttachRequest }
-  | { type: "setBounds"; request: BbDesktopBrowserSetBoundsRequest }
-  | { type: "setVisible"; request: BbDesktopBrowserSetVisibleRequest };
+  | { type: "attach"; request: PatcherDesktopBrowserAttachRequest }
+  | { type: "setBounds"; request: PatcherDesktopBrowserSetBoundsRequest }
+  | { type: "setVisible"; request: PatcherDesktopBrowserSetVisibleRequest };
 
 interface RecordingBrowserApi {
-  api: BbDesktopBrowserApi;
+  api: PatcherDesktopBrowserApi;
   calls: BrowserCall[];
-  attachments: BbDesktopBrowserAttachRequest[];
-  bounds: BbDesktopBrowserSetBoundsRequest[];
-  emitState: (state: BbDesktopBrowserState) => void;
-  visibility: BbDesktopBrowserSetVisibleRequest[];
+  attachments: PatcherDesktopBrowserAttachRequest[];
+  bounds: PatcherDesktopBrowserSetBoundsRequest[];
+  emitState: (state: PatcherDesktopBrowserState) => void;
+  visibility: PatcherDesktopBrowserSetVisibleRequest[];
 }
 
 const BROWSER_PANEL_RECT = new DOMRect(12, 24, 420, 260);
@@ -57,11 +57,11 @@ function makeBrowserTab(id: string, url: string): BrowserFixedPanelTab {
 
 function createRecordingBrowserApi(): RecordingBrowserApi {
   const calls: BrowserCall[] = [];
-  const attachments: BbDesktopBrowserAttachRequest[] = [];
-  const bounds: BbDesktopBrowserSetBoundsRequest[] = [];
-  const stateListeners: Array<(state: BbDesktopBrowserState) => void> = [];
-  const visibility: BbDesktopBrowserSetVisibleRequest[] = [];
-  const api: BbDesktopBrowserApi = {
+  const attachments: PatcherDesktopBrowserAttachRequest[] = [];
+  const bounds: PatcherDesktopBrowserSetBoundsRequest[] = [];
+  const stateListeners: Array<(state: PatcherDesktopBrowserState) => void> = [];
+  const visibility: PatcherDesktopBrowserSetVisibleRequest[] = [];
+  const api: PatcherDesktopBrowserApi = {
     ...createNoopDesktopBrowserApi(),
     attach(request) {
       attachments.push(request);
@@ -99,8 +99,8 @@ function createRecordingBrowserApi(): RecordingBrowserApi {
   };
 }
 
-function installDesktopBrowser(api: BbDesktopBrowserApi): void {
-  window.bbDesktop = createBbDesktopApi(desktopInfo, api);
+function installDesktopBrowser(api: PatcherDesktopBrowserApi): void {
+  window.bbDesktop = createPatcherDesktopApi(desktopInfo, api);
 }
 
 function createMatchMedia(

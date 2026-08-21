@@ -1,7 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { isAbsolute, join, resolve } from "node:path";
 import type {
-  BbPluginApi,
+  PatcherPluginApi,
   PluginBrowserConsoleEntry,
   PluginBrowserCookie,
   PluginBrowserNetworkEntry,
@@ -594,7 +594,7 @@ Options:
   --json               Machine-readable output
 `;
 
-export function registerBrowserToolsCli(bb: BbPluginApi): void {
+export function registerBrowserToolsCli(bb: PatcherPluginApi): void {
   bb.cli.register({
     name: "browser",
     summary: "Drive the BB desktop app's browser surface",

@@ -59,7 +59,7 @@ import {
 /**
  * Plugin frontend bundle loading (plugin design §5.1). Once per page load,
  * after system config resolves: expose the shared
- * runtime on `globalThis.__bbPluginRuntime`, fetch the plugin inventory, and
+ * runtime on `globalThis.__patcherPluginRuntime`, fetch the plugin inventory, and
  * for each running plugin with a compatible bundle link its CSS and
  * dynamic-import() its JS. Per-plugin containment: a bundle that fails to
  * import records status "failed" and never breaks the app or other plugins;
@@ -204,7 +204,7 @@ async function loadOneBundle(
 // Shared runtime + boot wiring (real browser paths).
 // ---------------------------------------------------------------------------
 
-interface BbPluginRuntime {
+interface PatcherPluginRuntime {
   react: unknown;
   reactDom: unknown;
   reactDomClient: unknown;
@@ -227,18 +227,20 @@ interface BbPluginRuntime {
   pierreDiffsReact: unknown;
 }
 
-type RuntimeHost = typeof globalThis & { __bbPluginRuntime?: BbPluginRuntime };
+type RuntimeHost = typeof globalThis & {
+  __patcherPluginRuntime?: PatcherPluginRuntime;
+};
 
 /**
  * Expose the app's own React graph (plus the SDK slot) on
- * `globalThis.__bbPluginRuntime` — set exactly once, and always before any
+ * `globalThis.__patcherPluginRuntime` — set exactly once, and always before any
  * bundle import()s (their shims read it at evaluation time). One React in
  * the page, ever; a second copy is the "Invalid hook call" factory.
  */
 export function installPluginRuntime(): void {
   const host = globalThis as RuntimeHost;
-  if (host.__bbPluginRuntime !== undefined) return;
-  host.__bbPluginRuntime = {
+  if (host.__patcherPluginRuntime !== undefined) return;
+  host.__patcherPluginRuntime = {
     react,
     reactDom,
     reactDomClient,

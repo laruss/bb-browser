@@ -7,7 +7,7 @@ import {
   resolveCurrentDevInstanceConfig,
   resolvePortFromEnv,
   resolveRuntimeDataDir,
-  type BbRuntimeMode,
+  type PatcherRuntimeMode,
 } from "@patcher/config/runtime";
 import { loadServerUrlValue } from "@patcher/config/server-url";
 import {
@@ -40,11 +40,11 @@ interface CreateAutoJoinRequestArgs {
 }
 
 interface ResolveHostDaemonPortArgs {
-  mode: BbRuntimeMode;
+  mode: PatcherRuntimeMode;
   requiresExplicitPort: boolean;
 }
 
-function resolveMode(): BbRuntimeMode {
+function resolveMode(): PatcherRuntimeMode {
   return resolveScriptMode();
 }
 
@@ -72,7 +72,7 @@ function resolveHostDaemonPort(args: ResolveHostDaemonPortArgs): number {
   });
 }
 
-function ensureDevOverridePair(mode: BbRuntimeMode): void {
+function ensureDevOverridePair(mode: PatcherRuntimeMode): void {
   if (mode !== "dev") {
     return;
   }
@@ -87,7 +87,7 @@ function ensureDevOverridePair(mode: BbRuntimeMode): void {
 }
 
 export function resolveHostDaemonRuntimeEnvironment(
-  mode: BbRuntimeMode,
+  mode: PatcherRuntimeMode,
 ): HostDaemonRuntimeEnvironment {
   ensureDevOverridePair(mode);
   const usesDefaultDevExtraHost =
@@ -123,7 +123,7 @@ export function resolveHostDaemonRuntimeEnvironment(
 }
 
 export function resolveHostDaemonProcessCommand(
-  mode: BbRuntimeMode,
+  mode: PatcherRuntimeMode,
 ): HostDaemonProcessCommand {
   if (mode === "dev") {
     return {

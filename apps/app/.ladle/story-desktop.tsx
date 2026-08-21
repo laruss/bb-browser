@@ -1,16 +1,16 @@
 import { useEffect, type ReactNode } from "react";
 import type {
-  BbDesktopApi,
-  BbDesktopBrowserApi,
-  BbDesktopBrowserState,
-  BbDesktopInfo,
+  PatcherDesktopApi,
+  PatcherDesktopBrowserApi,
+  PatcherDesktopBrowserState,
+  PatcherDesktopInfo,
 } from "@patcher/desktop-contract";
 
 // A minimal, inert desktop bridge for stories that need the desktop-only browser
 // surface to register as available. The browser methods are no-ops: the native
 // `WebContentsView` only exists in the packaged desktop app, so in a story the
 // browser tab renders its chrome + new-tab screen and never a live page.
-const STORY_DESKTOP_INFO: BbDesktopInfo = {
+const STORY_DESKTOP_INFO: PatcherDesktopInfo = {
   lastCheckedAt: null,
   latestVersion: null,
   pendingVersion: null,
@@ -21,8 +21,8 @@ const STORY_DESKTOP_INFO: BbDesktopInfo = {
 };
 
 function createStoryDesktopBrowserApi(
-  initialState: BbDesktopBrowserState | null,
-): BbDesktopBrowserApi {
+  initialState: PatcherDesktopBrowserState | null,
+): PatcherDesktopBrowserApi {
   return {
     attach() {},
     detach() {},
@@ -51,8 +51,8 @@ function createStoryDesktopBrowserApi(
 }
 
 function createStoryDesktopApi(
-  browserState: BbDesktopBrowserState | null,
-): BbDesktopApi {
+  browserState: PatcherDesktopBrowserState | null,
+): PatcherDesktopApi {
   return {
     ...STORY_DESKTOP_INFO,
     browser: createStoryDesktopBrowserApi(browserState),
@@ -72,7 +72,7 @@ function createStoryDesktopApi(
 }
 
 interface WithDesktopBrowserProps {
-  browserState?: BbDesktopBrowserState | null;
+  browserState?: PatcherDesktopBrowserState | null;
   children: ReactNode;
 }
 
