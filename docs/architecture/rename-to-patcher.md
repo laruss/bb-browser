@@ -76,6 +76,17 @@ outside this file, the tree went from 13 548 occurrences across 1 395 files to
 — it also catches `bubble`, `abbrev` and lockfile digests — so compare it only
 against itself.
 
+After phase 5 the plugin contract is gone from the tree: `bb-plugin*` **0**,
+manifest key **0**, `bb.<member>` **0**, `_bb_migrations` **0**, `--bb-` and
+`data-bb-` **0**. By the same literal-`bb` count the tree went from 12 875
+occurrences across 1 340 files to **8 325 across 1 153** — the largest single
+drop of the rename. What is left is `bb-app` 599, `bb-desktop` 169 (the frozen
+channel values and their tests), `bb-cli` 101, `get-bb` / `getbb.app` 78, and
+358 `bb.` that are test hostnames, the macOS bundle path, repository URLs and
+the frozen `bb.ready`. `apps` 3 569 / 665 files, `packages` 3 016 / 298,
+`plugins` 719 / 89, `examples` 182 / 42, `docs` 245 / 12, `qa` 240 / 4,
+`tests` 56 / 16, `scripts` 25 / 8, `.github` 65 / 5.
+
 ## Traps
 
 These are the reasons this is a phased plan and not one `sed`.
@@ -504,22 +515,108 @@ at the parent commit — the repo has never been prettier-clean and no CI job
 checks it. `PATCHER_` is five characters longer than `BB_`, so 62 files
 overflowed the print width; those were formatted and the rest left alone.
 
-### Phase 5 — Plugin contract
+### Phase 5 — Plugin contract — **done** (`adcd25909`)
 
-- Manifest key, `engines`, keyword, package names for the 13 bundled plugins,
-  the 12 examples, and the server test fixtures.
-- Bundled type filenames and scaffold tsconfig `paths`. The SDK specifier
-  itself already moved in phase 2.
-- `bb.*` → `patcher.*` across permission ids, contribution points, storage and
-  settings namespaces, branding keys.
-- `"bb-builtin"` / `"bb-official"` plugin sources.
-- `_bb_migrations` → `_patcher_migrations`.
-- CSS class prefixes in `@patcher/shared-ui`.
-- `PLUGIN_SDK_VERSION` → `1.0.0`.
+468 files, +4 833 / −4 453. By tree: `apps` 196, `plugins` 118, `packages` 84,
+`examples` 54, `docs` 13, plus `turbo.json`, one test and `bun.lock`. This is
+the break plugin authors see, which is why `PLUGIN_SDK_VERSION` goes to 1.0.0
+in the same commit.
 
-**Verify:** `bun run patcher plugin new` → `plugin build` → the plugin loads;
-all bundled plugins load and their tests pass; `@patcher/templates` scaffold
-tests green.
+**The method: two passes, then let the compiler find the rest.** Rename
+`bb.<member>` wherever `<member>` is on an explicit 30-name allow-list. Every
+function body that used the API then reads `patcher.x` while its parameter
+still reads `bb`, so `tsc` reports `Cannot find name 'patcher'` at exactly the
+declarations that have to follow. Five rounds converged. It works because the
+API object is only ever reached through member access; the two bare uses that
+never dereference (`__stalerApi = bb`, `const bb = pkg.patcher`) were the last
+two errors, and nothing else was left over.
+
+**Why an allow-list and not a `bb.` prefix.** There are 40 distinct first
+segments and ten must not move: `bb.test` (103) and `bb.example` (65) are test
+hostnames, `bb.ready` is the frozen page-script global, `/bb.app` (21) is the
+macOS bundle path, `bb.git` (16) is a repository URL, `bb.zip` a fixture file,
+`bb.internal` a persisted system-user email, and `bb.threads` / `bb.status`
+inside `packages/bb-app` are the `BBSdk` instance, which is phase 7. The left
+anchor also had to reject a preceding `/` — for `bb.app` alone, and for nothing
+else in the tree.
+
+**`PLUGIN_SDK_VERSION` 1.0.0 is a behaviour change, not a string.**
+`PLUGIN_SDK_MAJOR` goes 0 → 1, which switches on the major-only artifact gate
+that was deliberately vacuous for 0.x. Two things followed. The pre-1.0 branch
+in `isPrebuiltServerSdkCompatible` — exact `sdkVersion` match within major 0 —
+became unreachable and was removed with the paragraph that explained it. And
+two tests that _encoded_ the pre-1.0 rule had to state the new one instead:
+`version.test.ts` asserted `/^0\./`, and a loader test asserted that a
+same-major, different-minor dist falls back to source, which is now precisely
+what does not happen. A version bump that changes behaviour arrives as failing
+tests that are correct to change.
+
+**Four traps.**
+
+1. **`0.4.1` is a version other packages also publish.** The bump corrupted
+   `bun.lock`: `lru_map`, `levn`, `@eslint/plugin-kit` and `pe-library` all sit
+   at 0.4.1, and the next `bun install` went looking for `lru_map@1.0.0` and
+   got a 404. Restored the lockfile and regenerated it from the manifests; the
+   diff is exactly the plugin renames plus the SDK version, and the
+   transitive entries that look moved are the sort-order shuffle from `bb-` to
+   `patcher-` — phase 4's `bb.db`/`logs` effect again. **A version bump needs
+   the same allow-list discipline as a name.**
+2. **Escaped forms need their own pass, and the fix has its own escaping.**
+   `/bb\.name/` in a regex literal and ``new RegExp(`bb\\.${field}`)`` in a
+   template are two more byte sequences for one name; phase 4 hit the first
+   with `/^bb\.db\./`. Then the repair itself misfired: a JSON rule whose
+   replacement read `patcher\\.` inserted two literal backslashes, because a JS
+   replacement string treats `\\` as two characters and not as an escape. The
+   tests it was meant to fix caught it.
+3. **Generated files defeat a left-anchored pattern, and their order matters.**
+   In `templates.generated.ts` a line-initial `bb.settings` is `\nbb.settings`
+   inside a JSON string, so the character before `bb` is `n` and the anchor
+   refused it. Regenerating fixes it — but `generate-templates.mjs` reads
+   `bundled-types/*.d.ts`, so the dts build has to run first. Run the other way
+   round it embeds a prettier-formatted copy of a generated file, and the drift
+   gate catches that instead.
+4. **Markdown TOC anchors are derived names.** Renaming `## bb.log` to
+   `## patcher.log` silently breaks `](#bblog)` — 26 of them. Verified by
+   re-deriving GitHub's slug from every heading and checking each link lands.
+   GitHub does not collapse runs of whitespace, so an em-dash heading yields
+   two hyphens; a naive slugifier reports false breakage.
+
+**Deliberately left.** `bb.ready` and `window.bb` are the frozen page-script
+boundary: the _documented_ surface now teaches `patcher.ready`, and the loader
+tests that still pass `code: "bb.ready(…)"` are what keeps the alias covered —
+renaming them too would have removed its only regression test.
+`PROJECT_IDS.bb` and the `"bb"` provider filter in `SkillsCollection` are a
+demo project and a UI label (6). `bb_connect` stays per the table above. The
+`bb-cli` builtin skill is named after the binary and moves with it (7).
+
+**A phase-3 residue this phase exposed.** Six identifiers carry `Bb` as a
+_suffix_ — `validBb`, `mapCodexReasoningLevelToBb`, `createAutomationServiceBb`,
+`readPluginManifestBb`, `updatesWithBb`, `runSourceBb`, 39 occurrences. Phase 3
+anchored `Bb` on a following capital, which by construction cannot see a token
+that ends in `Bb`. Renamed here. Separately, `apps/app/src/lib/bb-desktop.ts`,
+`apps/app/src/types/bb-desktop.d.ts` and `apps/desktop/src/bb-process.ts` with
+their tests were assigned to phase 3 by phase 2's deferral table and never
+moved; they hold `PatcherDesktop*` identifiers behind `bb-desktop` filenames.
+They go to phase 6.
+
+**Verified** on Node 22.20.0: `typecheck --force` 54/54, `lint` clean (0
+errors, 152 pre-existing warnings), `build` 13/13,
+`env -u CLAUDE_CONFIG_DIR bun run test` 54/54, generated set with no drift.
+The plan's own check was run for real, not inferred: `plugin new hello --app`
+scaffolds `patcher-plugin-hello` with the `patcher` manifest key,
+`engines.patcherPluginSdk: "^1.0.0"`, tsconfig `paths` onto
+`types/patcher-plugin-sdk*.d.ts`, and a `(patcher: PatcherPluginApi)` entry;
+`plugin build` emits both bundles with `sdkMajor: 1`. `@patcher/server` failed
+two or three tests under full parallel load on three separate runs — a
+different set each time, including the 90MB plugin-host budget test — and
+passed alone at 204/204 files and 1 777/1 777 tests. The load-sensitivity
+caveat, as in phases 1–3.
+
+Formatting: 476 files fail prettier and 411 already failed at the parent
+commit; 65 were formatted. Six of those 65 were the bundled `.d.ts` — generated
+files that have never been prettier-clean and only looked new because they had
+just been renamed. Regenerating put them back, and the tree settles at 417
+pre-existing failures.
 
 ### Phase 6 — Product identity
 
