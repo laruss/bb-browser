@@ -15,7 +15,7 @@ touching anything in the "Frozen" table below.
 | ---------------------------------- | --------------------------------------------------------------------------------------------------------------- |
 | Compatibility with bb installs     | **Clean break.** No dual reads, no fallbacks, no state migration. Old bb data stays where it is and is ignored. |
 | Naming style                       | **Full words**: `PATCHER_*` env, `@patcher/*` scope, `patcher` binary, `~/.patcher`.                            |
-| Cloud (`apps/web`, `apps/connect`) | **Removed from the fork**, along with the tunnel/connect packages and the `connect` plugin.                     |
+| Cloud (`apps/web`, `apps/connect`) | **Removed from the fork**, along with the tunnel/connect packages and the `connect` plugin. Done in phase 1.    |
 | Wire strings                       | **Frozen.** Constant names and types are renamed; the string values on the IPC wire are not.                    |
 
 The clean break is what makes this plan tractable: every "how do we migrate the
@@ -44,6 +44,12 @@ few hundred distinct tokens.
 
 By tree: `apps` 9 630 / 1 599 files, `packages` 5 991 / 629, `plugins` 2 413 /
 207, `examples` 554 / 71, `docs` 381 / 14, `qa` 295 / 3, `.github` 44 / 6.
+
+Measured before phase 1. After it the tree is 3 961 tracked files and **19 333
+occurrences across 2 488 files**: `@bb/*` 4 969, `BB_*` 2 807, `bb.*` 2 492,
+`Bb*` 1 935. The one column that moved sharply is `get-bb` / `getbb.app`,
+472 → **86**, and none of the 86 is cloud any more — they are repository and
+npm URLs in `package.json` files (phase 7), test hostnames, and prose.
 
 ## Traps
 
@@ -184,36 +190,63 @@ source-level break for plugin authors, not an install-level one.
 
 Each phase lands on its own and is verifiable on its own.
 
-### Phase 1 — Remove the cloud
+### Phase 1 — Remove the cloud — **done** (`1c40464b0`)
 
-First, because it deletes 164 files and most of the 472 `getbb.app` references
-before any rename pass has to walk over them.
+First, because it deleted 183 files and most of the 472 `getbb.app` references
+before any rename pass had to walk over them.
 
-Delete: `apps/web` (71), `apps/connect` (23), `packages/connect-client` (10),
-`packages/connect-db` (23), `packages/tunnel-client` (11),
-`packages/tunnel-contract` (5), `plugins/connect` (21).
+Deleted whole: `apps/web`, `apps/connect`, `packages/connect-client`,
+`packages/connect-db`, `packages/tunnel-client`, `packages/tunnel-contract`,
+`plugins/connect`, the five desktop `connect-*.ts` modules,
+`apps/host-daemon/src/connect-tunnel/`, `machine-auth-proxy.ts`, and
+`apps/server/src/ws/host-shared-ports.ts`.
 
-Surgery outside those trees:
+**Three things reached further than this plan estimated.** They are recorded
+here because the same underestimate is available to the phases below.
 
-- `apps/desktop/src/`: `connect-credential-cache.ts`, `connect-desktop-session.ts`,
-  `connect-machine-enrollment.ts`, `connect-server-sync.ts`,
-  `connect-session-renewal.ts`, and six import sites in `main.ts`.
-- `apps/host-daemon/src/connect-tunnel/`, wired from `app.ts`,
-  `command-dispatch.ts`, `server-connection.ts`.
-- `apps/server/package.json`: `@bb/tunnel-contract` is a declared but unused
-  dependency — drop it.
-- `.github/workflows/deploy-web.yml`, `deploy-connect.yml`.
-- `scripts/bb-cloud-dev.mjs` and the root `cloud:dev` script.
-- `BB_DEV_CONNECT_BASE_URL`, plus `cloudPort` / `cloudWorkerPort` in
-  `DevPortSet` (`runtime.ts`) and the `bb.localhost` dev domain.
-- Doc and template mentions of remote access.
+1. **The wire, not just the apps.** `connect-tunnel.ensure-identity`,
+   `connect-tunnel.identity`, `connect-shares.replace`, and the
+   `connectMachineId` / `hasMachineCredential` session fields lived in
+   `@bb/host-daemon-contract`. `HOST_DAEMON_PROTOCOL_VERSION` went
+   **106 → 107**. The estimate had said `apps/server` held only an unused
+   dependency declaration; it also held the shared-port coordinator, the
+   daemon-protocol handler, and the enroll/session write paths.
+2. **The plugin contract, which is phase 5 territory.** `bb.hosts`
+   (`ensureSharedPortTunnel`, `declareSharedPorts`) existed only to mint and
+   use gate labels, so it had to go now: removed from the SDK, both plugin
+   runtimes, the host-call protocol, the fake host, and the authoring skill.
+3. **Gate auth became a security hole the moment the gate left.**
+   `x-bb-gate-auth` and `x-bb-gate-machine-id` were set by the Cloudflare
+   worker alone. With no worker in front, honoring them from a direct client
+   would let any caller claim machine auth, so they went with the checks that
+   read them. The `bbcm_` machine credential is likewise unobtainable now that
+   `/api/connect/redeem-machine` is gone — its path is out of the daemon,
+   `install-machine.sh` (`--machine-code`), `BB_CONNECT_MACHINE_*`, the
+   launcher, and managed config.
 
-What goes away with it: remote access via `<handle>.getbb.app`, connect-based
-machine enrollment, and desktop session sync. Local machine enrollment through
-the host daemon is unaffected.
+Also gone: the cloud dev ports (`cloudPort`, `cloudWorkerPort`,
+`BB_DEV_CONNECT_BASE_URL`) and with them `reservePackagedAppPorts`, whose only
+purpose was that the cloud port range overlapped 38886/38887.
 
-**Verify:** `bun install`; `bunx turbo run typecheck`; `env -u CLAUDE_CONFIG_DIR bun run test`;
-`git grep -i 'getbb\|tunnel\|connect-client'` returns only unrelated hits.
+Left deliberately, both to be picked up later:
+
+- `hosts.connect_machine_id` and its drizzle history — dropping a column is a
+  migration plus ~30 regenerated snapshots for no functional gain.
+- The `app.getbb.host-daemon.*` launchd label in `install-machine.sh`. It is bb
+  branding rather than cloud, so it renames with everything else in phase 6.
+
+What went away with it: remote access via `<handle>.getbb.app`, connect-based
+machine enrollment, desktop session sync, and plugin-declared shared ports.
+Local machine enrollment through the host daemon is unaffected, and the desktop
+shell keeps its custom-server-URL target.
+
+**Verified** on Node 22.20.0: `typecheck` 54/54, `lint` clean,
+`env -u CLAUDE_CONFIG_DIR bun run test` 54/54. Two failures that predate the
+branch were fixed in passing: commit `985460da2` added `sites` to the plugin DTO
+without updating the `@bb/sdk` and `@bb/cli` fixtures, and the committed
+`plugin-sdk-dts.generated.ts` had drifted from its source. `@bb/server` also
+failed once under full parallel load and passed alone and on rerun — the
+load-sensitivity caveat in [bb-migration.md](bb-migration.md), not a defect.
 
 ### Phase 2 — `@bb/*` → `@patcher/*`, packages and paths
 
