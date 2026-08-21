@@ -18,7 +18,7 @@ import {
  * Preferences are scoped per list surface so All / Active / each project keep
  * independent restored and cleared state.
  */
-export const LIST_PREFERENCE_STORAGE_KEY = "bb-tasks:list-preferences";
+export const LIST_PREFERENCE_STORAGE_KEY = "patcher-tasks:list-preferences";
 export const LIST_PREFERENCE_VERSION = 1 as const;
 
 export type ListPreferenceScope =

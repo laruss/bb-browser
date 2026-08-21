@@ -35,7 +35,7 @@ import {
 } from "@/lib/provider-icon";
 
 type ResourceProviderFilter = "bb" | SkillProvider;
-type ResourceSkillSourceFilter = "included" | "bb-official" | "user";
+type ResourceSkillSourceFilter = "included" | "patcher-official" | "user";
 type ResourceSortMode = "provider" | "alpha";
 type ResourceSortDirection = "asc" | "desc";
 
@@ -61,7 +61,7 @@ const RESOURCE_PROVIDER_FILTERS: readonly ResourceProviderFilter[] = (
 
 const RESOURCE_SKILL_SOURCE_FILTERS: readonly ResourceSkillSourceFilter[] = [
   "included",
-  "bb-official",
+  "patcher-official",
   "user",
 ];
 
@@ -80,7 +80,7 @@ function providerFilterLabel(provider: ResourceProviderFilter): string {
 }
 
 function skillSourceFilterId(skill: SkillSummary): ResourceSkillSourceFilter {
-  if (skill.scope === "bb-builtin") return "bb-official";
+  if (skill.scope === "patcher-builtin") return "patcher-official";
   if (skill.scope === "plugin") return "included";
   // Every remaining scope is authored by the user, so the bucket is total and
   // the filter can never strand a skill.
@@ -89,7 +89,7 @@ function skillSourceFilterId(skill: SkillSummary): ResourceSkillSourceFilter {
 
 function skillSourceFilterLabel(source: ResourceSkillSourceFilter): string {
   switch (source) {
-    case "bb-official":
+    case "patcher-official":
       return "BB Official";
     case "included":
       return "Included in plugin";
@@ -101,7 +101,7 @@ function skillSourceFilterLabel(source: ResourceSkillSourceFilter): string {
 function isResourceSkillSourceFilter(
   value: string,
 ): value is ResourceSkillSourceFilter {
-  return value === "included" || value === "bb-official" || value === "user";
+  return value === "included" || value === "patcher-official" || value === "user";
 }
 
 // The filter menu hands back plain strings, so both selections are narrowed on
@@ -199,7 +199,7 @@ function includedPluginDescription(skill: SkillSummary): string {
 }
 
 function skillMutationDisabledReason(skill: SkillSummary): string {
-  if (skill.scope === "bb-builtin") return "Built-in skill";
+  if (skill.scope === "patcher-builtin") return "Built-in skill";
   if (skill.scope === "plugin") return "Bundled with plugin";
   return `Bundled with ${skill.provider === "claude-code" ? "Claude Code" : "Codex"}`;
 }
@@ -217,7 +217,7 @@ function SkillRow({
       leading={<SkillLeading skill={skill} />}
       title={skill.name}
       titleMeta={
-        skill.scope === "bb-builtin" ? (
+        skill.scope === "patcher-builtin" ? (
           <ProvenancePill label="BB Official" />
         ) : skill.scope === "plugin" ? (
           <ProvenancePill
@@ -355,8 +355,8 @@ export function SkillsOverview({
     return [...filtered].sort((left, right) => {
       if (providerFilters.length === 1 && providerFilters[0] === "bb") {
         const officialResult =
-          Number(left.scope !== "bb-builtin") -
-          Number(right.scope !== "bb-builtin");
+          Number(left.scope !== "patcher-builtin") -
+          Number(right.scope !== "patcher-builtin");
         if (officialResult !== 0) return officialResult;
       }
       const base =
@@ -634,7 +634,7 @@ export function SkillDetailDialogView({
       title={skill.name}
       path={skill.filePath}
       titleBadge={
-        skill.scope === "bb-builtin"
+        skill.scope === "patcher-builtin"
           ? {
               label: "BB Official",
               tooltip: "Ships with bb",

@@ -439,11 +439,17 @@ export function registerDesktopBrowserIpc(
       const parsed =
         patcherDesktopPageScriptRpcRequestSchema.safeParse(payload);
       if (!parsed.success) {
-        return { ok: false, message: "bb.rpc: that call was not understood." };
+        return {
+          ok: false,
+          message: "patcher.rpc: that call was not understood.",
+        };
       }
       const url = event.senderFrame?.url ?? "";
       if (url.length === 0) {
-        return { ok: false, message: "bb.rpc is not available in this page." };
+        return {
+          ok: false,
+          message: "patcher.rpc is not available in this page.",
+        };
       }
       try {
         return await manager.pageScriptRpc({
@@ -455,7 +461,7 @@ export function registerDesktopBrowserIpc(
         // Every refusal is a resolved `ok: false`, because an invoke rejection
         // reaches the page as an opaque Electron string with nothing in it for
         // the script's author.
-        return { ok: false, message: "bb.rpc: the call failed." };
+        return { ok: false, message: "patcher.rpc: the call failed." };
       }
     },
   );

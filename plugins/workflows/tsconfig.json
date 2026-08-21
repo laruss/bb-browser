@@ -12,7 +12,7 @@
     "types": ["node", "vitest/globals"],
     "paths": {
       "@patcher/plugin-sdk": [
-        "../../packages/plugin-sdk/bundled-types/bb-plugin-sdk.d.ts"
+        "../../packages/plugin-sdk/bundled-types/patcher-plugin-sdk.d.ts"
       ]
     }
   },

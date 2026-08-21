@@ -3,8 +3,8 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CompactViewportOverrideProvider } from "@patcher/shared-ui/hooks/use-compact-viewport";
-import { AutomationOverviewView } from "bb-plugin-automations/overview-view";
-import type { AutomationsOverviewResponse } from "bb-plugin-automations/rpc-types";
+import { AutomationOverviewView } from "patcher-plugin-automations/overview-view";
+import type { AutomationsOverviewResponse } from "patcher-plugin-automations/rpc-types";
 
 function iconNames(element: HTMLElement): string[] {
   return [...element.querySelectorAll("[data-icon]")].map(

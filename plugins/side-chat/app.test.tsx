@@ -202,7 +202,7 @@ describe("SideChatPanel", () => {
       { rpc: {} },
     );
 
-    const chat = slot.getByTestId("bb-thread-chat");
+    const chat = slot.getByTestId("patcher-thread-chat");
     expect(chat.getAttribute("data-thread-id")).toBe("thr_fork");
     expect(chat.getAttribute("data-variant")).toBe("compact");
     expect(chat.getAttribute("data-layout")).toBe("contained");
@@ -211,14 +211,14 @@ describe("SideChatPanel", () => {
     expect(chat.getAttribute("data-permission-policy")).toBe("editable");
     expect(chat.getAttribute("data-message-actions")).toBe("send-to-main");
 
-    const leading = slot.getByTestId("bb-thread-chat-leading-content");
+    const leading = slot.getByTestId("patcher-thread-chat-leading-content");
     expect(leading.textContent).toContain("Replying to");
     // The anchor renders through the host Markdown component (SDK stub emits
     // the raw source) so the header matches chat-message typography.
-    const markdown = leading.querySelector("[data-testid='bb-markdown']");
+    const markdown = leading.querySelector("[data-testid='patcher-markdown']");
     expect(markdown?.textContent).toContain("**anchor**");
 
-    const action = slot.getByTestId("bb-thread-chat-action-send-to-main");
+    const action = slot.getByTestId("patcher-thread-chat-action-send-to-main");
     expect(action.getAttribute("data-roles")).toBe("assistant");
   });
 
@@ -230,7 +230,7 @@ describe("SideChatPanel", () => {
       { rpc: { sendToMain } },
     );
 
-    fireEvent.click(slot.getByTestId("bb-thread-chat-action-send-to-main"));
+    fireEvent.click(slot.getByTestId("patcher-thread-chat-action-send-to-main"));
 
     await waitFor(() => {
       expect(slot.rpcCalls).toEqual([

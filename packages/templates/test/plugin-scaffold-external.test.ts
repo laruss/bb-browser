@@ -53,7 +53,7 @@ import plugin from "./server";
 describe("scaffold backend", () => {
   it("loads, inspects, and atomically reloads through the packed harness", async () => {
     const host = createFakePluginHost({ pluginId: "external-backend" });
-    await plugin(host.bb);
+    await plugin(host.patcher);
     await expect(host.harness.behavior.callRpc("greeting")).resolves.toEqual({
       greeting: "hello",
       loadCount: 1,
@@ -116,21 +116,21 @@ export const rpcContract = defineRpcContract({
   },
 });
 
-async function verifyFullSdk(bb: PatcherPluginApi) {
-  const thread = await bb.sdk.threads.spawn({
+async function verifyFullSdk(patcher: PatcherPluginApi) {
+  const thread = await patcher.sdk.threads.spawn({
     projectId: "proj_fixture",
     environment: { type: "project-default" },
     prompt: "Verify the portable SDK contract",
   });
   const threadId: string = thread.id;
 
-  const file = await bb.sdk.files.read({ path: "/tmp/fixture.txt" });
+  const file = await patcher.sdk.files.read({ path: "/tmp/fixture.txt" });
   const sha256: string = file.sha256;
 
-  const project = await bb.sdk.projects.get({ projectId: "proj_fixture" });
+  const project = await patcher.sdk.projects.get({ projectId: "proj_fixture" });
   const projectName: string = project.name;
   const sourceId: string | undefined = project.sources[0]?.id;
-  const attachment = await bb.sdk.projects.attachments.upload({
+  const attachment = await patcher.sdk.projects.attachments.upload({
     projectId: "proj_fixture",
     clientFile: new Uint8Array([0, 1, 255]),
     filename: "fixture.bin",
@@ -138,7 +138,7 @@ async function verifyFullSdk(bb: PatcherPluginApi) {
   });
   const attachmentPath: string = attachment.path;
 
-  const environment = await bb.sdk.environments.status({
+  const environment = await patcher.sdk.environments.status({
     environmentId: "env_fixture",
   });
   const outcome: "available" | "not_applicable" | "unavailable" =
@@ -147,15 +147,15 @@ async function verifyFullSdk(bb: PatcherPluginApi) {
   return { attachmentPath, outcome, projectName, sha256, sourceId, threadId };
 }
 
-export default function plugin(bb: PatcherPluginApi) {
+export default function plugin(patcher: PatcherPluginApi) {
   void verifyFullSdk;
-  bb.rpc.register(rpcContract, {
+  patcher.rpc.register(rpcContract, {
     async projectName({ projectId }) {
-      const project = await bb.sdk.projects.get({ projectId });
+      const project = await patcher.sdk.projects.get({ projectId });
       return { name: project.name };
     },
   });
-  bb.log.info("portable SDK fixture loaded");
+  patcher.log.info("portable SDK fixture loaded");
 }
 `;
 
@@ -264,10 +264,10 @@ describe("external plugin scaffold types", () => {
   });
 
   it("typechecks full SDK results without workspace packages and with library checks enabled", async () => {
-    const targetDir = join(workDir, "bb-plugin-external");
+    const targetDir = join(workDir, "patcher-plugin-external");
     await scaffoldPlugin({
       targetDir,
-      packageName: "bb-plugin-external",
+      packageName: "patcher-plugin-external",
       patcherVersion: "0.9.0",
       app: true,
     });
@@ -305,10 +305,10 @@ describe("external plugin scaffold types", () => {
     expect(packedListing).toContain("package/dist/testing/index.js");
     expect(packedListing).toContain("package/dist/testing/app.js");
     expect(packedListing).toContain(
-      "package/bundled-types/bb-plugin-sdk-testing.d.ts",
+      "package/bundled-types/patcher-plugin-sdk-testing.d.ts",
     );
     expect(packedListing).toContain(
-      "package/bundled-types/bb-plugin-sdk-testing-app.d.ts",
+      "package/bundled-types/patcher-plugin-sdk-testing-app.d.ts",
     );
     expect(
       packedListing.some((entry) => entry.startsWith("package/src/")),
@@ -317,10 +317,10 @@ describe("external plugin scaffold types", () => {
       packedListing.some((entry) => entry.startsWith("package/scripts/")),
     ).toBe(false);
 
-    const backendDir = join(workDir, "bb-plugin-external-backend");
+    const backendDir = join(workDir, "patcher-plugin-external-backend");
     await scaffoldPlugin({
       targetDir: backendDir,
-      packageName: "bb-plugin-external-backend",
+      packageName: "patcher-plugin-external-backend",
       patcherVersion: "0.9.0",
     });
     await execFileAsync(
@@ -359,7 +359,7 @@ describe("external plugin scaffold types", () => {
       peerDependencies?: Record<string, string>;
       exports: Record<string, { import: string; types: string }>;
     };
-    expect(installedManifest.version).toBe("0.4.1");
+    expect(installedManifest.version).toBe("1.0.0");
     expect(installedManifest.private).not.toBe(true);
     expect(JSON.stringify(installedManifest.dependencies ?? {})).not.toContain(
       "workspace:",
@@ -417,10 +417,10 @@ describe("external plugin scaffold types", () => {
     await runTypecheck(backendDir);
     await runVitest(backendDir);
 
-    const frontendDir = join(workDir, "bb-plugin-external-frontend");
+    const frontendDir = join(workDir, "patcher-plugin-external-frontend");
     await scaffoldPlugin({
       targetDir: frontendDir,
-      packageName: "bb-plugin-external-frontend",
+      packageName: "patcher-plugin-external-frontend",
       patcherVersion: "0.9.0",
       app: true,
     });

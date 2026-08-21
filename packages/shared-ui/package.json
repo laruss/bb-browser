@@ -329,7 +329,7 @@
     "clean": "rimraf tsconfig.tsbuildinfo",
     "typecheck": "tsc --noEmit"
   },
-  "bb": {
+  "patcher": {
     "pluginTailwindContent": [
       "src/**/*"
     ]

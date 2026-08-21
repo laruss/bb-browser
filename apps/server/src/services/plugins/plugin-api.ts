@@ -11,7 +11,7 @@ import type { z } from "zod";
  * where opening one would be the wrong answer anyway. Everything else about
  * these members stays here: the JSON round-trip, the 256KB limit, the error
  * text. Only the last inch is swapped, so the two sides of the boundary cannot
- * disagree about what `bb.storage.kv` means.
+ * disagree about what `patcher.storage.kv` means.
  *
  * Values are raw JSON strings on purpose. Parsing them here keeps
  * `JSON.parse`'s exact failure mode on the plugin's side of any transport.
@@ -287,7 +287,7 @@ function readRpcMethodContract(
   return { input, output };
 }
 
-/** Per-event handler lists recorded by `bb.events.on`; dropped with the handle. */
+/** Per-event handler lists recorded by `patcher.events.on`; dropped with the handle. */
 export type PluginThreadEventHandlers = {
   [E in PluginThreadEventName]: Array<PluginThreadEventHandler<E>>;
 };
@@ -412,7 +412,7 @@ export interface PluginScheduleRecord {
   fn: () => void | Promise<void>;
 }
 
-/** Validated record of the plugin's `bb.cli.register` call. */
+/** Validated record of the plugin's `patcher.cli.register` call. */
 export interface PluginCliRegistrationRecord {
   name: string;
   summary: string;
@@ -524,65 +524,65 @@ export interface PluginApiHandle {
   };
   /** Every database handle vended by `storage.database()`; closed on dispose. */
   databaseHandles: Database.Database[];
-  /** Thread lifecycle handlers recorded by `bb.events.on`. */
+  /** Thread lifecycle handlers recorded by `patcher.events.on`. */
   threadEventHandlers: PluginThreadEventHandlers;
-  /** HTTP routes recorded by `bb.http.route`; dropped with the handle. */
+  /** HTTP routes recorded by `patcher.http.route`; dropped with the handle. */
   httpRoutes: PluginHttpRouteRecord[];
-  /** RPC handlers recorded by `bb.rpc.register`; dropped with the handle. */
+  /** RPC handlers recorded by `patcher.rpc.register`; dropped with the handle. */
   rpcHandlers: Map<string, PluginRpcHandler>;
-  /** Background services recorded by `bb.background.service`. */
+  /** Background services recorded by `patcher.background.service`. */
   backgroundServices: PluginBackgroundServiceRecord[];
-  /** Schedules recorded by `bb.background.schedule`. */
+  /** Schedules recorded by `patcher.background.schedule`. */
   schedules: PluginScheduleRecord[];
-  /** The plugin's CLI command (`bb.cli.register`); null when none. */
+  /** The plugin's CLI command (`patcher.cli.register`); null when none. */
   cli: { registration: PluginCliRegistrationRecord | null };
-  /** Native tools recorded by `bb.agents.registerTool`. */
+  /** Native tools recorded by `patcher.agents.registerTool`. */
   agentTools: PluginAgentToolRecord[];
-  /** Per-resolution selector from `bb.agents.configure` (at most one). */
+  /** Per-resolution selector from `patcher.agents.configure` (at most one). */
   agentConfigurationProvider: PluginAgentConfigurationProvider | null;
   /**
    * Dynamic thread-instructions provider from
-   * `bb.agents.contributeInstructions` (at most one; null when none).
+   * `patcher.agents.contributeInstructions` (at most one; null when none).
    */
   instructionProvider: PluginInstructionProvider | null;
-  /** Mention providers recorded by `bb.ui.registerMentionProvider`. */
+  /** Mention providers recorded by `patcher.ui.registerMentionProvider`. */
   mentionProviders: PluginMentionProviderRecord[];
-  /** Omnibox providers recorded by `bb.browser.registerOmniboxProvider`. */
+  /** Omnibox providers recorded by `patcher.browser.registerOmniboxProvider`. */
   omniboxProviders: PluginOmniboxProviderRecord[];
-  /** Download handlers recorded by `bb.browser.registerDownloadHandler`. */
+  /** Download handlers recorded by `patcher.browser.registerDownloadHandler`. */
   downloadHandlers: PluginBrowserDownloadHandler[];
-  /** Keybindings recorded by `bb.ui.registerKeybinding`. */
+  /** Keybindings recorded by `patcher.ui.registerKeybinding`. */
   keybindings: AppKeybindingOverrides;
-  /** Context-menu items recorded by `bb.browser.registerContextMenuItem`. */
+  /** Context-menu items recorded by `patcher.browser.registerContextMenuItem`. */
   contextMenuItems: PluginBrowserContextMenuItemRecord[];
-  /** Find-bar buttons recorded by `bb.browser.registerFindAction`. */
+  /** Find-bar buttons recorded by `patcher.browser.registerFindAction`. */
   findActions: PluginBrowserFindActionRecord[];
-  /** Tab-menu entries recorded by `bb.browser.registerTabAction`. */
+  /** Tab-menu entries recorded by `patcher.browser.registerTabAction`. */
   tabActions: PluginBrowserTabActionRecord[];
-  /** Site-info sections recorded by `bb.browser.registerSiteInfoProvider`. */
+  /** Site-info sections recorded by `patcher.browser.registerSiteInfoProvider`. */
   siteInfoProviders: PluginBrowserSiteInfoProviderRecord[];
-  /** Toolbar controls recorded by `bb.browser.registerToolbarItem`. */
+  /** Toolbar controls recorded by `patcher.browser.registerToolbarItem`. */
   toolbarItems: PluginBrowserToolbarItemRecord[];
-  /** New-tab sections recorded by `bb.browser.registerNewTabWidget`. */
+  /** New-tab sections recorded by `patcher.browser.registerNewTabWidget`. */
   newTabWidgets: PluginBrowserNewTabWidgetRecord[];
-  /** Commands recorded by `bb.ui.registerCommand`. */
+  /** Commands recorded by `patcher.ui.registerCommand`. */
   commands: PluginCommandRecord[];
-  /** Search engines recorded by `bb.browser.registerSearchEngine`. */
+  /** Search engines recorded by `patcher.browser.registerSearchEngine`. */
   searchEngines: BrowserSearchEngine[];
-  /** Page styles recorded by `bb.browser.registerPageStyle`. */
+  /** Page styles recorded by `patcher.browser.registerPageStyle`. */
   pageStyles: PluginBrowserPageStyleRecord[];
-  /** Page scripts recorded by `bb.browser.registerPageScript`. */
+  /** Page scripts recorded by `patcher.browser.registerPageScript`. */
   pageScripts: PluginBrowserPageScriptRecord[];
-  /** Auth providers recorded by `bb.browser.registerAuthProvider`. */
+  /** Auth providers recorded by `patcher.browser.registerAuthProvider`. */
   authProviders: PluginBrowserAuthProvider[];
-  /** PDF text providers recorded by `bb.browser.registerPdfTextProvider`. */
+  /** PDF text providers recorded by `patcher.browser.registerPdfTextProvider`. */
   pdfTextProviders: PluginBrowserPdfTextProvider[];
   /**
    * External-link handlers recorded by
-   * `bb.browser.registerExternalLinkHandler`.
+   * `patcher.browser.registerExternalLinkHandler`.
    */
   externalLinkHandlers: PluginBrowserExternalLinkHandler[];
-  /** History filters recorded by `bb.browser.registerHistoryFilter`. */
+  /** History filters recorded by `patcher.browser.registerHistoryFilter`. */
   historyFilters: PluginBrowserHistoryFilter[];
   /** Publish factory-time host declarations and status only after commit. */
   activate(): void;
@@ -590,7 +590,7 @@ export interface PluginApiHandle {
   invalidate(): void;
 }
 
-/** Runtime shape of a `bb.browser.registerContextMenuItem` registration. */
+/** Runtime shape of a `patcher.browser.registerContextMenuItem` registration. */
 export interface PluginBrowserContextMenuItemRecord {
   id: string;
   title: string;
@@ -598,14 +598,14 @@ export interface PluginBrowserContextMenuItemRecord {
   run: (context: PluginBrowserContextMenuContext) => void | Promise<void>;
 }
 
-/** Runtime shape of a `bb.browser.registerFindAction` registration. */
+/** Runtime shape of a `patcher.browser.registerFindAction` registration. */
 export interface PluginBrowserFindActionRecord {
   id: string;
   title: string;
   run: (context: PluginBrowserFindContext) => void | Promise<void>;
 }
 
-/** Runtime shape of a `bb.browser.registerTabAction` registration. */
+/** Runtime shape of a `patcher.browser.registerTabAction` registration. */
 export interface PluginBrowserTabActionRecord {
   id: string;
   title: string;
@@ -613,7 +613,7 @@ export interface PluginBrowserTabActionRecord {
 }
 
 /**
- * Runtime shape of a `bb.browser.registerToolbarItem` registration. `state` is
+ * Runtime shape of a `patcher.browser.registerToolbarItem` registration. `state` is
  * null when the plugin did not offer one — the host then asks nothing as the user
  * browses, which is the difference worth keeping visible on the wire.
  */
@@ -633,8 +633,8 @@ export interface PluginBrowserToolbarItemRecord {
 }
 
 /**
- * Runtime shape of a `bb.browser.registerPageStyle` registration. `matches` is
- * already checked against the plugin's declared `bb.sites`, so everything
+ * Runtime shape of a `patcher.browser.registerPageStyle` registration. `matches` is
+ * already checked against the plugin's declared `patcher.sites`, so everything
  * downstream can apply it without re-deciding what the plugin may reach.
  */
 export interface PluginBrowserPageStyleRecord {
@@ -644,8 +644,8 @@ export interface PluginBrowserPageStyleRecord {
 }
 
 /**
- * Runtime shape of a `bb.browser.registerPageScript` registration. `matches` is
- * checked against `bb.sites` by the same rule as a page style's, so nothing
+ * Runtime shape of a `patcher.browser.registerPageScript` registration. `matches` is
+ * checked against `patcher.sites` by the same rule as a page style's, so nothing
  * downstream re-decides where this code may run — and `code` is text all the way
  * to the page, never evaluated in this process.
  */
@@ -655,7 +655,7 @@ export interface PluginBrowserPageScriptRecord {
   code: string;
 }
 
-/** Runtime shape of a `bb.browser.registerNewTabWidget` registration. */
+/** Runtime shape of a `patcher.browser.registerNewTabWidget` registration. */
 export interface PluginBrowserNewTabWidgetRecord {
   id: string;
   label: string;
@@ -668,7 +668,7 @@ export interface PluginBrowserNewTabWidgetRecord {
 }
 
 /**
- * Runtime shape of a `bb.ui.registerCommand` registration. The shortcut is
+ * Runtime shape of a `patcher.ui.registerCommand` registration. The shortcut is
  * normalised here — every modifier explicit — because the app matches against it
  * and a missing boolean would read as "chord with no modifier".
  */
@@ -686,7 +686,7 @@ export interface PluginCommandRecord {
   run: () => void | Promise<void>;
 }
 
-/** Runtime shape of a `bb.browser.registerSiteInfoProvider` registration. */
+/** Runtime shape of a `patcher.browser.registerSiteInfoProvider` registration. */
 export interface PluginBrowserSiteInfoProviderRecord {
   id: string;
   label: string;
@@ -698,13 +698,13 @@ export interface PluginBrowserSiteInfoProviderRecord {
     | Promise<PluginBrowserSiteInfoRow[] | null>;
 }
 
-/** Provider registered by `bb.agents.contributeInstructions`. */
+/** Provider registered by `patcher.agents.contributeInstructions`. */
 export type PluginInstructionProvider = (ctx: {
   threadId: string;
   projectId: string;
 }) => string | null;
 
-/** Provider registered by `bb.agents.configure`. */
+/** Provider registered by `patcher.agents.configure`. */
 export type PluginAgentConfigurationProvider = (
   context: PluginAgentConfigurationContext,
 ) => PluginAgentConfiguration;
@@ -743,7 +743,7 @@ function resolveDeclaredMatches(args: {
   for (const pattern of matches) {
     if (typeof pattern !== "string" || !declared.includes(pattern)) {
       throw new Error(
-        `${kind} "${id}" matches ${JSON.stringify(pattern)}, which plugin "${pluginId}" does not declare in "bb.sites". ` +
+        `${kind} "${id}" matches ${JSON.stringify(pattern)}, which plugin "${pluginId}" does not declare in "patcher.sites". ` +
           (declared.length === 0
             ? `That list is empty — add the site there, then run \`bb plugin reload ${pluginId}\`.`
             : `It declares: ${declared.join(", ")}.`),
@@ -825,27 +825,27 @@ function wrapSdkForPlugin(
 export function createPluginApi(options: {
   pluginId: string;
   /**
-   * What `bb.permissions` declared. Absent or empty denies everything gated —
+   * What `patcher.permissions` declared. Absent or empty denies everything gated —
    * there is no legacy "everything" mode, see ./plugin-permission-gate.ts.
    */
   permissions: readonly PluginPermission[] | undefined;
   /**
-   * What `bb.sites` declared: the websites this plugin's page contributions may
+   * What `patcher.sites` declared: the websites this plugin's page contributions may
    * reach. Absent or empty reaches none, so a `registerPageStyle` or
    * `registerPageScript` call with nothing declared is refused rather than
    * silently applying nowhere.
    */
   sites: readonly string[] | undefined;
   logger: ServerLogger;
-  /** `bb.storage.kv`'s rows; db-backed in the server, a channel call in a
+  /** `patcher.storage.kv`'s rows; db-backed in the server, a channel call in a
    * plugin process. See {@link PluginKvStore}. */
   kvStore: PluginKvStore;
   /** Resolves declared settings to their current values, secrets included. */
   readSettingsValues: PluginSettingsReader;
   dataDir: string;
-  /** Undefined until the server is listening (bb.sdk is bind-gated). */
+  /** Undefined until the server is listening (patcher.sdk is bind-gated). */
   getSdk: () => PatcherSdk | undefined;
-  /** Undefined until the server is listening (bb.server is bind-gated too). */
+  /** Undefined until the server is listening (patcher.server is bind-gated too). */
   getLoopbackBaseUrl: () => string | undefined;
   /** Broadcasts a plugin-signal WS message (hub.notifyPluginSignal). */
   publishSignal: (channel: string, payload: unknown) => void;
@@ -865,7 +865,7 @@ export function createPluginApi(options: {
     timeoutMs: number;
     signal?: AbortSignal;
   }) => Promise<PluginInteractionResult>;
-  /** Performs one `bb.browser.*` command in the connected app window. */
+  /** Performs one `patcher.browser.*` command in the connected app window. */
   requestBrowserCommand: (args: {
     command: BrowserCommand;
     timeoutMs?: number;
@@ -922,7 +922,7 @@ export function createPluginApi(options: {
   }
 
   const prefix = `[plugin:${pluginId}]`;
-  // Every bb.log line goes to the prefixed server log and, as JSONL, to the
+  // Every patcher.log line goes to the prefixed server log and, as JSONL, to the
   // per-plugin log file served by GET /plugins/:id/logs (`bb plugin logs`).
   function emitLog(
     level: "debug" | "info" | "warn" | "error",
@@ -1046,17 +1046,19 @@ export function createPluginApi(options: {
     migrate(database, statements) {
       assertLive();
       database.exec(
-        "CREATE TABLE IF NOT EXISTS _bb_migrations (id INTEGER PRIMARY KEY, applied_at INTEGER NOT NULL)",
+        "CREATE TABLE IF NOT EXISTS _patcher_migrations (id INTEGER PRIMARY KEY, applied_at INTEGER NOT NULL)",
       );
       const applied = new Set(
         (
-          database.prepare("SELECT id FROM _bb_migrations").all() as Array<{
+          database
+            .prepare("SELECT id FROM _patcher_migrations")
+            .all() as Array<{
             id: number;
           }>
         ).map((row) => row.id),
       );
       const record = database.prepare(
-        "INSERT INTO _bb_migrations (id, applied_at) VALUES (?, ?)",
+        "INSERT INTO _patcher_migrations (id, applied_at) VALUES (?, ?)",
       );
       database.transaction(() => {
         statements.forEach((statement, index) => {
@@ -1586,7 +1588,7 @@ export function createPluginApi(options: {
     },
   };
 
-  // Argument validation for bb.browser.*. It happens here rather than on the
+  // Argument validation for patcher.browser.*. It happens here rather than on the
   // wire so a plugin's own mistake surfaces as that plugin's error instead of
   // travelling to the app and coming back as a refusal, the same way
   // `requestInput` validates its request before reaching the interaction store.
@@ -1970,12 +1972,12 @@ export function createPluginApi(options: {
     expected: TType,
   ): Promise<Extract<BrowserCommandValue, { type: TType }>> {
     assertLive();
-    // Every bb.browser call that reaches a page funnels through here, so this
+    // Every patcher.browser call that reaches a page funnels through here, so this
     // is the whole browser half of the gate — and the list of what a plugin
     // host would have to carry over RPC.
     permissionGate.assert(
       permissionForBrowserCommand(command),
-      `bb.browser command "${command.type}"`,
+      `patcher.browser command "${command.type}"`,
     );
     const value = await requestBrowserCommand({
       command,
@@ -2037,7 +2039,7 @@ export function createPluginApi(options: {
       assertLive();
       permissionGate.assert(
         "omnibox.register",
-        "bb.browser.registerOmniboxProvider",
+        "patcher.browser.registerOmniboxProvider",
       );
       const id = provider?.id;
       if (typeof id !== "string" || !OMNIBOX_PROVIDER_ID_PATTERN.test(id)) {
@@ -2075,7 +2077,7 @@ export function createPluginApi(options: {
       assertLive();
       permissionGate.assert(
         "contextMenu.register",
-        "bb.browser.registerContextMenuItem",
+        "patcher.browser.registerContextMenuItem",
       );
       const id = item?.id;
       if (typeof id !== "string" || !OMNIBOX_PROVIDER_ID_PATTERN.test(id)) {
@@ -2108,7 +2110,10 @@ export function createPluginApi(options: {
     },
     registerFindAction(action) {
       assertLive();
-      permissionGate.assert("find.register", "bb.browser.registerFindAction");
+      permissionGate.assert(
+        "find.register",
+        "patcher.browser.registerFindAction",
+      );
       const id = action?.id;
       if (typeof id !== "string" || !OMNIBOX_PROVIDER_ID_PATTERN.test(id)) {
         throw new Error(
@@ -2137,7 +2142,10 @@ export function createPluginApi(options: {
     },
     registerTabAction(action) {
       assertLive();
-      permissionGate.assert("tabMenu.register", "bb.browser.registerTabAction");
+      permissionGate.assert(
+        "tabMenu.register",
+        "patcher.browser.registerTabAction",
+      );
       const id = action?.id;
       if (typeof id !== "string" || !OMNIBOX_PROVIDER_ID_PATTERN.test(id)) {
         throw new Error(
@@ -2168,7 +2176,7 @@ export function createPluginApi(options: {
       assertLive();
       permissionGate.assert(
         "siteInfo.register",
-        "bb.browser.registerSiteInfoProvider",
+        "patcher.browser.registerSiteInfoProvider",
       );
       const id = provider?.id;
       if (typeof id !== "string" || !OMNIBOX_PROVIDER_ID_PATTERN.test(id)) {
@@ -2200,7 +2208,7 @@ export function createPluginApi(options: {
       assertLive();
       permissionGate.assert(
         "toolbar.register",
-        "bb.browser.registerToolbarItem",
+        "patcher.browser.registerToolbarItem",
       );
       const id = item?.id;
       if (typeof id !== "string" || !OMNIBOX_PROVIDER_ID_PATTERN.test(id)) {
@@ -2242,7 +2250,7 @@ export function createPluginApi(options: {
       assertLive();
       permissionGate.assert(
         "newTab.register",
-        "bb.browser.registerNewTabWidget",
+        "patcher.browser.registerNewTabWidget",
       );
       const id = widget?.id;
       if (typeof id !== "string" || !OMNIBOX_PROVIDER_ID_PATTERN.test(id)) {
@@ -2274,7 +2282,7 @@ export function createPluginApi(options: {
       assertLive();
       permissionGate.assert(
         "searchEngine.register",
-        "bb.browser.registerSearchEngine",
+        "patcher.browser.registerSearchEngine",
       );
       const id = engine?.id;
       if (
@@ -2313,7 +2321,7 @@ export function createPluginApi(options: {
       assertLive();
       permissionGate.assert(
         "pageStyle.register",
-        "bb.browser.registerPageStyle",
+        "patcher.browser.registerPageStyle",
       );
       const id = style?.id;
       if (
@@ -2353,7 +2361,7 @@ export function createPluginApi(options: {
       assertLive();
       permissionGate.assert(
         "pageScript.register",
-        "bb.browser.registerPageScript",
+        "patcher.browser.registerPageScript",
       );
       const id = script?.id;
       if (
@@ -2393,7 +2401,10 @@ export function createPluginApi(options: {
     },
     registerAuthProvider(provider) {
       assertLive();
-      permissionGate.assert("auth.provide", "bb.browser.registerAuthProvider");
+      permissionGate.assert(
+        "auth.provide",
+        "patcher.browser.registerAuthProvider",
+      );
       if (typeof provider !== "function") {
         throw new Error(
           "registerAuthProvider(provider) needs a function taking one challenge",
@@ -2405,7 +2416,7 @@ export function createPluginApi(options: {
       assertLive();
       permissionGate.assert(
         "pdf.provide",
-        "bb.browser.registerPdfTextProvider",
+        "patcher.browser.registerPdfTextProvider",
       );
       if (typeof provider !== "function") {
         throw new Error(
@@ -2418,7 +2429,7 @@ export function createPluginApi(options: {
       assertLive();
       permissionGate.assert(
         "externalLink.handle",
-        "bb.browser.registerExternalLinkHandler",
+        "patcher.browser.registerExternalLinkHandler",
       );
       if (typeof handler !== "function") {
         throw new Error(
@@ -2429,7 +2440,7 @@ export function createPluginApi(options: {
     },
     registerHistoryFilter(filter) {
       assertLive();
-      permissionGate.assert("history", "bb.browser.registerHistoryFilter");
+      permissionGate.assert("history", "patcher.browser.registerHistoryFilter");
       if (typeof filter !== "function") {
         throw new Error(
           "registerHistoryFilter(filter) needs a function taking one visit",
@@ -2441,7 +2452,7 @@ export function createPluginApi(options: {
       assertLive();
       permissionGate.assert(
         "downloads.handle",
-        "bb.browser.registerDownloadHandler",
+        "patcher.browser.registerDownloadHandler",
       );
       if (typeof handler !== "function") {
         throw new Error(
@@ -3192,7 +3203,7 @@ export function createPluginApi(options: {
       const baseUrl = getLoopbackBaseUrl();
       if (baseUrl === undefined) {
         throw new Error(
-          "bb.server.loopbackBaseUrl is not available until the server is listening — " +
+          "patcher.server.loopbackBaseUrl is not available until the server is listening — " +
             "use it inside handlers, services, or timers, not at factory load time",
         );
       }
@@ -3207,7 +3218,7 @@ export function createPluginApi(options: {
       // thread — the same data `sdk.threads` and the `thread:changed` feed
       // both charge for. A push costing less than a pull for identical
       // content is a hole, not a convenience.
-      permissionGate.assert("threads", "bb.events.on");
+      permissionGate.assert("threads", "patcher.events.on");
       const handlers = threadEventHandlers[event];
       if (handlers === undefined) {
         // Plugin sources are untyped at runtime; fail loudly at registration
@@ -3243,7 +3254,7 @@ export function createPluginApi(options: {
       const sdk = getSdk();
       if (!sdk) {
         throw new Error(
-          "bb.sdk is not available until the server is listening — " +
+          "patcher.sdk is not available until the server is listening — " +
             "use it inside handlers, services, or timers, not at factory load time",
         );
       }
@@ -3323,7 +3334,7 @@ export function createPluginApi(options: {
  * ~58MB — see apps/server/scripts/measure-plugin-host.mjs.
  *
  * Why `require` and not `await import`: both call sites are synchronous by
- * contract — `bb.background.schedule()` rejects a bad cron expression before it
+ * contract — `patcher.background.schedule()` rejects a bad cron expression before it
  * returns, and the browser argument checks answer inside functions that must
  * not become async. The mechanics, and why a literal specifier is required for
  * this to survive bundling, are written out once at `loadPatcherSdk` in

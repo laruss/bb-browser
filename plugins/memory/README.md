@@ -1,4 +1,4 @@
-# bb-plugin-memory
+# patcher-plugin-memory
 
 BB's official plugin for durable, progressively disclosed agent memory. It
 provides:
@@ -10,7 +10,7 @@ duplicated or conflicting memories split between Codex, Claude Code, and bb.
 - plugin-private SQLite storage with append-only migrations;
 - global and current-project memory scopes;
 - an automatically injected, 3,900-character summary catalog through
-  `bb.agents.contributeInstructions`;
+  `patcher.agents.contributeInstructions`;
 - CLI-only agent access through `bb memory` (no native agent tools);
 - FTS5 search followed by full-record reads;
 - explicit provenance, tags, kinds, importance, pinning, and version history;
@@ -66,6 +66,6 @@ next turn.
 ## Develop
 
 ```bash
-bunx turbo run test typecheck --filter=bb-plugin-memory
+bunx turbo run test typecheck --filter=patcher-plugin-memory
 bb plugin dev ./plugins/memory
 ```

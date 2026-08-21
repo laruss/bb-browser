@@ -240,9 +240,9 @@ function looksLikePath(value: string): boolean {
 }
 
 async function resolveConnectedHostId(
-  bb: Pick<PatcherPluginApi, "sdk">,
+  patcher: Pick<PatcherPluginApi, "sdk">,
 ): Promise<string> {
-  const hosts = hostListSchema.parse(await bb.sdk.hosts.list());
+  const hosts = hostListSchema.parse(await patcher.sdk.hosts.list());
   const host =
     hosts.find((candidate) => candidate.connected === true) ??
     hosts.find((candidate) => candidate.status === "connected") ??
@@ -252,7 +252,7 @@ async function resolveConnectedHostId(
 }
 
 async function buildAgentEnvironment(
-  bb: Pick<PatcherPluginApi, "sdk">,
+  patcher: Pick<PatcherPluginApi, "sdk">,
   args: ParsedArgs,
 ): Promise<AgentEnvironment> {
   const environment = flag(args, "environment")?.trim();
@@ -269,7 +269,7 @@ async function buildAgentEnvironment(
     }
     return {
       type: "host",
-      hostId: await resolveConnectedHostId(bb),
+      hostId: await resolveConnectedHostId(patcher),
       workspace: {
         type: "managed-worktree",
         baseBranch: baseBranch
@@ -282,7 +282,7 @@ async function buildAgentEnvironment(
   if (looksLikePath(environment)) {
     return {
       type: "host",
-      hostId: await resolveConnectedHostId(bb),
+      hostId: await resolveConnectedHostId(patcher),
       workspace: { type: "unmanaged", path: environment },
     };
   }
@@ -290,7 +290,7 @@ async function buildAgentEnvironment(
 }
 
 async function buildExecution(
-  bb: Pick<PatcherPluginApi, "sdk">,
+  patcher: Pick<PatcherPluginApi, "sdk">,
   args: ParsedArgs,
 ): Promise<ResolvedCreateAutomationInput["execution"]> {
   const prompt = flag(args, "prompt");
@@ -327,14 +327,14 @@ async function buildExecution(
       );
     }
     validateAgentTargetOptions(args);
-    const environment = await buildAgentEnvironment(bb, args);
+    const environment = await buildAgentEnvironment(patcher, args);
     return {
       mode: "agent",
       prompt,
       providerId: provider,
       model,
       permissionMode: await resolvePermissionMode(
-        bb,
+        patcher,
         provider,
         parsePermissionMode(flag(args, "permission-mode")),
         providerRoutingForEnvironment(environment),
@@ -388,7 +388,7 @@ const COMPLETE_EXECUTION_FLAG_NAMES = [
 ] as const;
 
 async function buildAgentExecutionUpdate(
-  bb: Pick<PatcherPluginApi, "sdk">,
+  patcher: Pick<PatcherPluginApi, "sdk">,
   args: ParsedArgs,
 ): Promise<AgentExecutionUpdate | undefined> {
   const agentOptionNames = [
@@ -420,14 +420,14 @@ async function buildAgentExecutionUpdate(
   ) {
     update.target = {
       type: "environment",
-      environment: await buildAgentEnvironment(bb, args),
+      environment: await buildAgentEnvironment(patcher, args),
     };
   }
   return update;
 }
 
 async function buildUpdateRequest(
-  bb: Pick<PatcherPluginApi, "sdk">,
+  patcher: Pick<PatcherPluginApi, "sdk">,
   args: ParsedArgs,
 ): Promise<UpdateAutomationInput> {
   const projectId = requireFlag(args, "project");
@@ -445,9 +445,9 @@ async function buildUpdateRequest(
     request.trigger = buildTrigger(args);
   }
   if (COMPLETE_EXECUTION_FLAG_NAMES.some((name) => args.flags.has(name))) {
-    request.execution = await buildExecution(bb, args);
+    request.execution = await buildExecution(patcher, args);
   } else {
-    const agentUpdate = await buildAgentExecutionUpdate(bb, args);
+    const agentUpdate = await buildAgentExecutionUpdate(patcher, args);
     if (agentUpdate !== undefined) {
       request.agent = agentUpdate;
     }
@@ -550,11 +550,11 @@ bb automation delete <automationId> --project <id> --yes
 }
 
 export function registerAutomationCli(args: {
-  bb: Pick<PatcherPluginApi, "cli" | "sdk">;
+  patcher: Pick<PatcherPluginApi, "cli" | "sdk">;
   service: AutomationService;
 }): void {
-  const { bb, service } = args;
-  bb.cli.register({
+  const { patcher, service } = args;
+  patcher.cli.register({
     name: "automation",
     summary: "Inspect and manage automations (scheduled agent/script runs)",
     commands: [
@@ -631,7 +631,7 @@ export function registerAutomationCli(args: {
         }
         if (command === "create") {
           const projectId = requireFlag(parsed, "project");
-          const execution = await buildExecution(bb, parsed);
+          const execution = await buildExecution(patcher, parsed);
           const request: ResolvedCreateAutomationInput = {
             projectId,
             name: requireFlag(parsed, "name"),
@@ -662,7 +662,7 @@ export function registerAutomationCli(args: {
         }
         if (command === "update") {
           const updated = await service.update(
-            await buildUpdateRequest(bb, parsed),
+            await buildUpdateRequest(patcher, parsed),
           );
           const json = optionalJson(parsed, updated);
           return {

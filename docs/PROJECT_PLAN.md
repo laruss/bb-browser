@@ -1153,8 +1153,8 @@ never built. This phase is where it belongs.
 
 ### Stage A — CSS, and a permission that names sites (done)
 
-`bb.browser.registerPageStyle`, permission `pageStyle.register`, scoped by a new
-manifest field `bb.sites`. Plus `matches` on `experimental_leadingPanel`, so a
+`patcher.browser.registerPageStyle`, permission `pageStyle.register`, scoped by a new
+manifest field `patcher.sites`. Plus `matches` on `experimental_leadingPanel`, so a
 panel appears only while the active tab is on a matching site.
 
 Taken first because it closes the largest share of the ask — "remove or alter
@@ -1167,9 +1167,9 @@ Deliverable: `examples/plugins/site-tweaks`, with no change to the browser core.
 
 ### Stage B — the plugin's own code in the page (done)
 
-`bb.browser.registerPageScript`, permission `pageScript.register`, scoped by the
-same `bb.sites` and checked by the same membership rule. The script runs in an
-isolated world of the plugin's own with two names in it: `bb.rpc` — the plugin's own
+`patcher.browser.registerPageScript`, permission `pageScript.register`, scoped by the
+same `patcher.sites` and checked by the same membership rule. The script runs in an
+isolated world of the plugin's own with two names in it: `patcher.rpc` — the plugin's own
 backend and nothing else — and `bb.ready`.
 
 The mechanism is a **session preload registered only while a page script is
@@ -1196,7 +1196,7 @@ renderer.
 
 Deliverable: `examples/plugins/site-tweaks` gained the in-page half, closing the
 loop — a button in GitHub's page, a row in the plugin's own SQLite, and the note
-appearing in bb's own panel over `bb.realtime`. Still no change to the browser core
+appearing in bb's own panel over `patcher.realtime`. Still no change to the browser core
 from the plugin's side.
 
 Explicitly **not** in scope, and still not: loading real CRX bundles or shimming

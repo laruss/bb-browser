@@ -11,7 +11,7 @@ export type NpmSpecKind = "default" | "exact" | "tag" | "range";
 export type GitRefKind = "branch" | "tag" | "commit";
 
 export interface CompatibilityProblem {
-  engine: "bb" | "bbPluginSdk";
+  engine: "bb" | "patcherPluginSdk";
   required: string;
   actual: string;
   message: string;
@@ -30,7 +30,7 @@ interface ResolutionFlags {
     version: PluginResolvedUpdateVersion;
     reasons: CompatibilityProblem[];
   };
-  /** In dev mode, what engines.bb would decide if 0.0.0 were enforced. */
+  /** In dev mode, what engines.patcher would decide if 0.0.0 were enforced. */
   packagedBuildProblems?: CompatibilityProblem[];
 }
 
@@ -66,8 +66,8 @@ export interface NpmSourceIntentForResolution {
 export interface NpmResolvedCandidate extends PluginResolvedUpdateVersion {
   integrity: string;
   engines: {
-    bb: string | undefined;
-    bbPluginSdk: string | undefined;
+    patcher: string | undefined;
+    patcherPluginSdk: string | undefined;
   };
 }
 
@@ -75,8 +75,8 @@ const packumentVersionSchema = z.object({
   version: z.string(),
   engines: z
     .object({
-      bb: z.string().optional(),
-      bbPluginSdk: z.string().optional(),
+      patcher: z.string().optional(),
+      patcherPluginSdk: z.string().optional(),
     })
     .optional(),
   dist: z
@@ -214,7 +214,7 @@ export function evaluateCompatibility(args: {
         engine: "bb",
         required: args.patcherRange,
         actual: appVersion.version,
-        message: `declares invalid engines.bb range ${JSON.stringify(args.patcherRange)}`,
+        message: `declares invalid engines.patcher range ${JSON.stringify(args.patcherRange)}`,
       });
     } else if (!semver.satisfies(appVersion, args.patcherRange)) {
       patcherProblems.push({
@@ -229,14 +229,14 @@ export function evaluateCompatibility(args: {
   if (args.sdkRange !== undefined) {
     if (semver.validRange(args.sdkRange) === null) {
       sdkProblems.push({
-        engine: "bbPluginSdk",
+        engine: "patcherPluginSdk",
         required: args.sdkRange,
         actual: PLUGIN_SDK_VERSION,
-        message: `declares invalid engines.bbPluginSdk range ${JSON.stringify(args.sdkRange)}`,
+        message: `declares invalid engines.patcherPluginSdk range ${JSON.stringify(args.sdkRange)}`,
       });
     } else if (!semver.satisfies(PLUGIN_SDK_VERSION, args.sdkRange)) {
       sdkProblems.push({
-        engine: "bbPluginSdk",
+        engine: "patcherPluginSdk",
         required: args.sdkRange,
         actual: PLUGIN_SDK_VERSION,
         message: `requires bb plugin SDK ${args.sdkRange}, running SDK is ${PLUGIN_SDK_VERSION}`,
@@ -317,13 +317,13 @@ export async function selectNpmCandidate(args: {
       display: npmDisplay(args.intent.packageName, version),
       integrity: metadata.dist?.integrity ?? "",
       engines: {
-        bb: metadata.engines?.bb,
-        bbPluginSdk: metadata.engines?.bbPluginSdk,
+        patcher: metadata.engines?.patcher,
+        patcherPluginSdk: metadata.engines?.patcherPluginSdk,
       },
     };
     const problems = evaluateCompatibility({
-      patcherRange: candidate.engines.bb,
-      sdkRange: candidate.engines.bbPluginSdk,
+      patcherRange: candidate.engines.patcher,
+      sdkRange: candidate.engines.patcherPluginSdk,
       appVersion: args.appVersion,
     });
     newestCandidate ??= candidate;

@@ -104,7 +104,7 @@ function oneShotTrigger() {
   return { triggerType: "once" as const, runAt: Date.now() + 60_000 };
 }
 
-function createAutomationServiceBb() {
+function createAutomationServicePatcher() {
   return {
     sdk: {
       projects: {
@@ -306,7 +306,7 @@ describe("automation data access", () => {
   it("does not claim due agent automations when no host is connected", async () => {
     const db = createTestDb();
     const automation = createScheduledAutomation(db, 1000);
-    const bb = {
+    const patcher = {
       sdk: {
         hosts: {
           list: async () => [
@@ -342,7 +342,7 @@ describe("automation data access", () => {
       },
     };
 
-    await sweepDueAutomations(bb, db, {
+    await sweepDueAutomations(patcher, db, {
       pluginDataDir: "/tmp",
       serverUrl: "http://127.0.0.1:38986",
       now: 1000,
@@ -401,7 +401,7 @@ describe("automation data access", () => {
 describe("automation service", () => {
   it("validates project availability before creating an automation", async () => {
     const db = createTestDb();
-    const bb = {
+    const patcher = {
       sdk: {
         projects: {
           get: async () => {
@@ -436,7 +436,7 @@ describe("automation service", () => {
       },
     };
     const service = createAutomationService({
-      bb,
+      patcher,
       db,
       pluginDataDir: "/tmp",
       serverUrl: "http://127.0.0.1:38986",
@@ -485,7 +485,7 @@ describe("automation service", () => {
     await mkdir(scriptDir, { recursive: true });
     await writeFile(join(scriptDir, "old.sh"), "echo old\n");
     const service = createAutomationService({
-      bb: createAutomationServiceBb(),
+      patcher: createAutomationServicePatcher(),
       db,
       pluginDataDir,
       serverUrl: "http://127.0.0.1:38986",
@@ -535,7 +535,7 @@ describe("automation service", () => {
     await writeFile(join(scriptDir, "old.sh"), "echo old\n");
     await writeFile(join(scriptDir, "keep.txt"), "keep\n");
     const service = createAutomationService({
-      bb: createAutomationServiceBb(),
+      patcher: createAutomationServicePatcher(),
       db,
       pluginDataDir,
       serverUrl: "http://127.0.0.1:38986",
@@ -593,7 +593,7 @@ describe("automation service", () => {
         SELECT RAISE(ABORT, 'update rejected');
       END`);
     const service = createAutomationService({
-      bb: createAutomationServiceBb(),
+      patcher: createAutomationServicePatcher(),
       db,
       pluginDataDir,
       serverUrl: "http://127.0.0.1:38986",
@@ -649,7 +649,7 @@ describe("automation service", () => {
         SELECT RAISE(ABORT, 'update rejected');
       END`);
     const service = createAutomationService({
-      bb: createAutomationServiceBb(),
+      patcher: createAutomationServicePatcher(),
       db,
       pluginDataDir,
       serverUrl: "http://127.0.0.1:38986",
@@ -839,7 +839,7 @@ describe("legacy import", () => {
       }),
     );
     const kv = new Map<string, unknown>();
-    const bb = {
+    const patcher = {
       storage: {
         kv: {
           get: async <T>(key: string) => kv.get(key) as T | undefined,
@@ -851,8 +851,8 @@ describe("legacy import", () => {
       log: { info: () => undefined },
     };
 
-    await ingestLegacyImport({ bb, db, pluginDataDir });
-    await ingestLegacyImport({ bb, db, pluginDataDir });
+    await ingestLegacyImport({ patcher, db, pluginDataDir });
+    await ingestLegacyImport({ patcher, db, pluginDataDir });
 
     const imported = getAutomation(db, "auto_legacy");
     expect(imported).not.toBeNull();

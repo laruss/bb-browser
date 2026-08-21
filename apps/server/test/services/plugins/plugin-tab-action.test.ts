@@ -22,15 +22,15 @@ const INVOKE_CONTEXT = {
 function tabActionSource(observedPath: string): string {
   return `
   import { appendFileSync } from "node:fs";
-  export default function plugin(bb: any) {
-    bb.browser.registerTabAction({
+  export default function plugin(patcher: any) {
+    patcher.browser.registerTabAction({
       id: "file-tab",
       title: "File this tab",
       run(context: any) {
         appendFileSync(${JSON.stringify(observedPath)}, JSON.stringify(context) + "\\n");
       },
     });
-    bb.browser.registerTabAction({
+    patcher.browser.registerTabAction({
       id: "boom",
       title: "Explodes",
       run() {
@@ -52,7 +52,7 @@ async function writePlugin(
     JSON.stringify({
       name: options.name,
       version: "0.1.0",
-      bb: {
+      patcher: {
         name: "Tab action fixture",
         description: "Tab action plugin fixture.",
         branding: { icon: "Zap" },
@@ -65,7 +65,7 @@ async function writePlugin(
   return rootDir;
 }
 
-describe("plugin tab actions (bb.browser.registerTabAction)", () => {
+describe("plugin tab actions (patcher.browser.registerTabAction)", () => {
   let harness: TestAppHarness;
   let observedPath: string;
 
@@ -98,7 +98,7 @@ describe("plugin tab actions (bb.browser.registerTabAction)", () => {
     const rootDir = await writePlugin(
       join(harness.config.dataDir, "fixtures"),
       {
-        name: "bb-plugin-tab",
+        name: "patcher-plugin-tab",
         serverSource: tabActionSource(observedPath),
       },
     );

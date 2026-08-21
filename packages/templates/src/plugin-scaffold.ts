@@ -27,12 +27,12 @@ import {
 export interface ScaffoldPluginArgs {
   /** Directory to create; scaffolding fails if it already exists. */
   targetDir: string;
-  /** Full package name, e.g. "bb-plugin-hello". */
+  /** Full package name, e.g. "patcher-plugin-hello". */
   packageName: string;
-  /** BB app version; engines.bb is pinned to ">=<major.minor>". */
+  /** BB app version; engines.patcher is pinned to ">=<major.minor>". */
   patcherVersion: string;
   /**
-   * Also scaffold a frontend entry (`app.tsx`, wired as `bb.app` and built
+   * Also scaffold a frontend entry (`app.tsx`, wired as `patcher.app` and built
    * by `bb plugin build`). Off by default so headless plugins stay lean.
    */
   app?: boolean;
@@ -44,7 +44,7 @@ export interface SyncPluginTypesArgs {
   rootDir: string;
   /**
    * Also refresh the frontend declaration. Callers pass whether the manifest
-   * declares `bb.app`; an existing `bb-plugin-sdk-app.d.ts` refreshes either
+   * declares `patcher.app`; an existing `patcher-plugin-sdk-app.d.ts` refreshes either
    * way, so a headless read of the manifest never strands a stale copy.
    */
   app: boolean;
@@ -57,7 +57,7 @@ export interface SyncPluginTypesArgs {
 
 /** One declaration file considered by {@link syncPluginTypes}. */
 export interface SyncedPluginTypeFile {
-  /** Path relative to the plugin root, e.g. `types/bb-plugin-sdk.d.ts`. */
+  /** Path relative to the plugin root, e.g. `types/patcher-plugin-sdk.d.ts`. */
   path: string;
   /**
    * `written` when the file was created or its contents changed, `stale` when
@@ -83,12 +83,16 @@ export async function syncPluginTypes(
   const { rootDir, app, check = false } = args;
   const typesDir = join(rootDir, "types");
   const candidates: { name: string; content: string; optional: boolean }[] = [
-    { name: "bb-plugin-sdk.d.ts", content: PLUGIN_SDK_DTS, optional: false },
     {
-      name: "bb-plugin-sdk-app.d.ts",
+      name: "patcher-plugin-sdk.d.ts",
+      content: PLUGIN_SDK_DTS,
+      optional: false,
+    },
+    {
+      name: "patcher-plugin-sdk-app.d.ts",
       content: PLUGIN_SDK_APP_DTS,
       // Refresh a frontend declaration the plugin already has even when the
-      // caller did not detect bb.app; never create one it never asked for.
+      // caller did not detect patcher.app; never create one it never asked for.
       optional: !app,
     },
   ];
@@ -263,39 +267,39 @@ export const rpcContract = defineRpcContract({
   },
 });
 
-export default async function plugin(bb: PatcherPluginApi) {
-  bb.log.info("loaded");
+export default async function plugin(patcher: PatcherPluginApi) {
+  patcher.log.info("loaded");
 
   // Declarative settings — rendered in BB's settings UI and editable with
   // \`bb plugin config ${id}\`. Add \`secret: true\` for values like API keys.
-  const settings = bb.settings.define({
+  const settings = patcher.settings.define({
     greeting: { type: "string", label: "Greeting", default: "hello" },
   });
   const { greeting } = await settings.get();
 
   // Namespaced key-value storage in patcher.db (JSON values, up to 256KB each).
-  // For bigger or relational data use bb.storage.database().
-  const loadCount = ((await bb.storage.kv.get<number>("load-count")) ?? 0) + 1;
-  await bb.storage.kv.set("load-count", loadCount);
-  bb.log.info(\`\${greeting} — load #\${loadCount}\`);
+  // For bigger or relational data use patcher.storage.database().
+  const loadCount = ((await patcher.storage.kv.get<number>("load-count")) ?? 0) + 1;
+  await patcher.storage.kv.set("load-count", loadCount);
+  patcher.log.info(\`\${greeting} — load #\${loadCount}\`);
 
   // Both schemas run at the wire boundary. Handler input/output are inferred
   // from the shared contract; app.tsx imports only its type.
-  bb.rpc.register(rpcContract, {
+  patcher.rpc.register(rpcContract, {
     greeting: () => ({ greeting, loadCount }),
   });
 
   // Cleanup on reload/disable/shutdown; hooks run LIFO. The sanctioned place
   // to clear timers and close connections.
-  bb.onDispose(() => {
-    bb.log.info("disposed");
+  patcher.onDispose(() => {
+    patcher.log.info("disposed");
   });
 
   // Long-lived background work: starts after load, gets an AbortSignal on
   // reload/disable/shutdown, and restarts with backoff if it crashes. Sleeps
   // must wake on abort — a plain setTimeout sleeps through the stop window
   // and the plugin reports "degraded (service did not stop)" on reload.
-  // bb.background.service("worker", {
+  // patcher.background.service("worker", {
   //   async start(signal) {
   //     while (!signal.aborted) {
   //       await new Promise((resolve) => {
@@ -405,8 +409,8 @@ function tsconfigSource(app: boolean): string {
         // (e.g. bun-types in a home directory) must not leak in.
         types: ["node"],
         paths: {
-          "@patcher/plugin-sdk": ["./types/bb-plugin-sdk.d.ts"],
-          "@patcher/plugin-sdk/app": ["./types/bb-plugin-sdk-app.d.ts"],
+          "@patcher/plugin-sdk": ["./types/patcher-plugin-sdk.d.ts"],
+          "@patcher/plugin-sdk/app": ["./types/patcher-plugin-sdk-app.d.ts"],
           // Vendored components import via "@/..." (shadcn convention);
           // esbuild reads this mapping too during `bb plugin build`.
           ...(app ? { "@/*": ["./*"] } : {}),
@@ -469,14 +473,14 @@ ${componentsSection}
 
 \`package.json\` is the plugin manifest. Notable fields:
 
-- \`bb.server\` — backend entry (required); optional \`bb.app\` for a frontend.
-- \`bb.name\` and \`bb.description\` — required human-facing identity.
-- \`bb.branding\` — required; declare \`icon\` as a BB icon name or a
+- \`patcher.server\` — backend entry (required); optional \`patcher.app\` for a frontend.
+- \`patcher.name\` and \`patcher.description\` — required human-facing identity.
+- \`patcher.branding\` — required; declare \`icon\` as a BB icon name or a
   plugin-relative compact SVG, or declare \`logo.light\` (with optional
   \`logo.dark\`). Logo assets must be relative \`.svg\`, \`.png\`, or
   \`.webp\` files.
-- \`engines.bb\` — supported bb app version range.
-- \`engines.bbPluginSdk\` — supported plugin SDK range (scaffold: \`^${PLUGIN_SDK_VERSION}\`).
+- \`engines.patcher\` — supported bb app version range.
+- \`engines.patcherPluginSdk\` — supported plugin SDK range (scaffold: \`^${PLUGIN_SDK_VERSION}\`).
 - \`dependencies\` — every package your source imports that BB does not provide.
   \`bb plugin build\` inlines them into \`dist/\`, and git installs resolve this
   list alone, so a build-required package here rather than in
@@ -486,8 +490,8 @@ ${componentsSection}
 
 ## Permissions
 
-\`bb.permissions\` in \`package.json\` lists what this plugin may reach through
-\`bb.browser\` and \`bb.sdk\`. It starts empty, and **undeclared means denied** —
+\`patcher.permissions\` in \`package.json\` lists what this plugin may reach through
+\`patcher.browser\` and \`patcher.sdk\`. It starts empty, and **undeclared means denied** —
 the first call to something missing throws with the permission named, so add
 entries as you need them and \`bb plugin reload ${id}\` after.
 
@@ -496,7 +500,7 @@ still reach the machine directly. They exist so what a plugin uses is written
 down, shown to whoever installs it, and refused when it was not asked for.
 
 Run \`bb plugin build\` before publishing git/npm installs. It writes
-\`dist/server.js\` + \`server.meta.json\` (and, with \`bb.app\`, \`app.js\` /
+\`dist/server.js\` + \`server.meta.json\` (and, with \`patcher.app\`, \`app.js\` /
 \`app.css\` / \`app.meta.json\`). Each \`*.meta.json\` stamps SDK major/version,
 \`artifactFormatVersion\`, \`pluginId\`, \`pluginVersion\`, and
 \`builtWith\` so managed installs can verify the artifacts.
@@ -526,7 +530,7 @@ bb plugin config ${id} set greeting hi
 
 ## Types & API reference
 
-\`types/bb-plugin-sdk.d.ts\` (and \`types/bb-plugin-sdk-app.d.ts\` for the
+\`types/patcher-plugin-sdk.d.ts\` (and \`types/patcher-plugin-sdk-app.d.ts\` for the
 frontend) are the full, bundled BB plugin API — \`tsconfig.json\` maps
 \`@patcher/plugin-sdk\` to them, so your editor and \`tsc\` see real types with no extra
 install. They are readable declarations: open them for an exact signature.
@@ -540,7 +544,7 @@ bb plugin types --check  # CI: fail when they are out of date
 \`\`\`
 
 \`bb plugin build\` and \`bb plugin dev\` refresh them for you. Ask BB to write
-plugins for you: the \`bb-plugin-authoring\` skill documents the whole surface
+plugins for you: the \`patcher-plugin-authoring\` skill documents the whole surface
 with examples.
 
 Confused by the API, or need something the types don't explain? Clone the BB
@@ -570,10 +574,10 @@ export async function scaffoldPlugin(args: ScaffoldPluginArgs): Promise<void> {
         version: "0.1.0",
         type: "module",
         engines: {
-          bb: enginesRange(patcherVersion),
-          bbPluginSdk: `^${PLUGIN_SDK_VERSION}`,
+          patcher: enginesRange(patcherVersion),
+          patcherPluginSdk: `^${PLUGIN_SDK_VERSION}`,
         },
-        bb: {
+        patcher: {
           name: pluginNameOf(packageName),
           description: "A BB plugin.",
           branding: { icon: "Zap" },

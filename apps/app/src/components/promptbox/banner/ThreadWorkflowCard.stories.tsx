@@ -94,7 +94,7 @@ const runningWorkflow = workflowRow({
   id: "thr_fixture:workflow:investigation:running",
   status: "pending",
   taskStatus: "running",
-  workflowName: "bb-plugin-investigation",
+  workflowName: "patcher-plugin-investigation",
   description: "Investigate the plugin subsystem",
   // ~5m26s ago, so the live duration reads like the mockup.
   startedAt: Date.now() - 326_000,

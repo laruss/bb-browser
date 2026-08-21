@@ -10,10 +10,10 @@
  * Two parts of the surface are deliberately absent, because they already cross
  * and do not belong to this transport:
  *
- * - `bb.sdk` is a loopback HTTP client that identifies itself
+ * - `patcher.sdk` is a loopback HTTP client that identifies itself
  *   (./plugin-api-identity.ts). A plugin in another process makes the same
  *   requests to the same port; nothing about it changes.
- * - `bb.browser`'s six command namespaces are one serialisable command union on
+ * - `patcher.browser`'s six command namespaces are one serialisable command union on
  *   a message bus already. They appear here as a single entry rather than
  *   ~40 near-identical ones; the per-command list that matters is
  *   `permissionForBrowserCommand` in @patcher/domain.
@@ -81,7 +81,7 @@ export interface PluginHostCallShape {
 
 /**
  * The complete set, keyed by the path a transport would route on —
- * `bb.storage.kv.get` is `"storage.kv.get"`.
+ * `patcher.storage.kv.get` is `"storage.kv.get"`.
  *
  * The keys are exact paths rather than a nested shape because that is what a
  * message carries. `settings.<handle>.*` is the one exception: those members
@@ -339,7 +339,7 @@ export const PLUGIN_HOST_CALLS = {
     argsCross: true,
     resultCrosses: true,
     synchronousHostState: true,
-    note: "Synchronous, because a plugin reads it from `bb.agents.configure()` which cannot await. The plugin process holds a pushed copy rather than asking. Safe to be stale: it reports only whether a browser window is connected, and every command through it already fails with BrowserHostUnavailableError when one is not.",
+    note: "Synchronous, because a plugin reads it from `patcher.agents.configure()` which cannot await. The plugin process holds a pushed copy rather than asking. Safe to be stale: it reports only whether a browser window is connected, and every command through it already fails with BrowserHostUnavailableError when one is not.",
   },
   "browser.<command>": {
     category: "call",

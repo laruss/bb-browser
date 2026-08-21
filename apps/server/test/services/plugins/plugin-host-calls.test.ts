@@ -51,7 +51,7 @@ function walk(root: object, prefix: string): Map<string, string> {
   const visit = (node: object, path: string): void => {
     for (const key of Object.keys(node)) {
       const childPath = path === "" ? key : `${path}.${key}`;
-      // `bb.sdk` is a loopback HTTP client, not part of this transport. It is
+      // `patcher.sdk` is a loopback HTTP client, not part of this transport. It is
       // skipped before the property is *read*, not after: it is a bind-gated
       // getter that throws when the server is not listening, which is exactly
       // the state a factory runs in.

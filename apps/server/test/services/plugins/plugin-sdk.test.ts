@@ -38,7 +38,7 @@ async function writePlugin(
     JSON.stringify({
       name: options.name,
       version: "0.1.0",
-      bb: {
+      patcher: {
         name: "SDK fixture",
         description: "Plugin SDK fixture.",
         branding: { icon: "Zap" },
@@ -60,14 +60,14 @@ function requireApi(
   return api;
 }
 
-describe("plugin bb.sdk bind gate", () => {
+describe("plugin patcher.sdk bind gate", () => {
   let db: DbConnection;
   let workDir: string;
   let service: PluginService;
   beforeEach(async () => {
     db = createConnection(":memory:");
     migrate(db);
-    workDir = await mkdtemp(join(tmpdir(), "bb-plugin-sdk-test-"));
+    workDir = await mkdtemp(join(tmpdir(), "patcher-plugin-sdk-test-"));
     service = createPluginService({
       db,
       hub: {
@@ -89,14 +89,14 @@ describe("plugin bb.sdk bind gate", () => {
 
   it("throws a descriptive error before bindSdk and resolves after", async () => {
     const rootDir = await writePlugin(workDir, {
-      name: "bb-plugin-gate",
+      name: "patcher-plugin-gate",
       serverSource: `export default function plugin() {}`,
     });
     await service.installPath(rootDir);
     const api = requireApi(service, "gate");
 
     expect(() => api.sdk).toThrow(
-      /bb\.sdk is not available until the server is listening/,
+      /patcher\.sdk is not available until the server is listening/,
     );
 
     service.bindSdk({ baseUrl: "http://127.0.0.1:9" });
@@ -104,27 +104,27 @@ describe("plugin bb.sdk bind gate", () => {
     expect(typeof api.sdk.threads.spawn).toBe("function");
   });
 
-  it("marks a plugin error when its factory touches bb.sdk at load time", async () => {
+  it("marks a plugin error when its factory touches patcher.sdk at load time", async () => {
     const rootDir = await writePlugin(workDir, {
-      name: "bb-plugin-eager",
+      name: "patcher-plugin-eager",
       serverSource: `
-        export default function plugin(bb: any) {
-          bb.sdk.threads.spawn({});
+        export default function plugin(patcher: any) {
+          patcher.sdk.threads.spawn({});
         }
       `,
     });
     const entry = await service.installPath(rootDir);
     expect(entry.status).toBe("error");
     expect(entry.statusDetail).toContain(
-      "bb.sdk is not available until the server is listening",
+      "patcher.sdk is not available until the server is listening",
     );
   });
 });
 
-describe("plugin bb.sdk against a running server", () => {
+describe("plugin patcher.sdk against a running server", () => {
   it("keeps hidden plugin threads attributed and directly operable by id", async () => {
     const server = await startTestServer();
-    const workDir = await mkdtemp(join(tmpdir(), "bb-plugin-sdk-live-"));
+    const workDir = await mkdtemp(join(tmpdir(), "patcher-plugin-sdk-live-"));
     try {
       const { host } = seedHostSession(server.deps);
       seedPrimaryHost(server.deps, host.id);
@@ -140,7 +140,7 @@ describe("plugin bb.sdk against a running server", () => {
 
       server.pluginService.bindSdk({ baseUrl: server.baseUrl });
       const rootDir = await writePlugin(workDir, {
-        name: "bb-plugin-spawner",
+        name: "patcher-plugin-spawner",
         serverSource: `export default function plugin() {}`,
       });
       const entry = await server.pluginService.installPath(rootDir);

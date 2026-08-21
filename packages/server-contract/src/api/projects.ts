@@ -374,7 +374,7 @@ export type ProjectCommandsQuery = z.infer<typeof projectCommandsQuerySchema>;
  * server-resolvable identity.
  */
 export const skillScopeSchema = z.enum([
-  "bb-builtin",
+  "patcher-builtin",
   "bb-user",
   "bb-project",
   "claude-user",

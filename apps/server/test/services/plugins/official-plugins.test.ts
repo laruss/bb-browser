@@ -32,7 +32,7 @@ const fixtureRoot = resolve(
   "..",
   "fixtures",
   "plugins",
-  "bb-plugin-builtin-fixture",
+  "patcher-plugin-builtin-fixture",
 );
 const globals = globalThis as Record<string, unknown>;
 
@@ -127,7 +127,7 @@ describe("store-installed official plugins", () => {
     delete globals.__builtinFixtureLoads;
     db = createConnection(":memory:");
     migrate(db);
-    workDir = await mkdtemp(join(tmpdir(), "bb-official-plugins-"));
+    workDir = await mkdtemp(join(tmpdir(), "patcher-official-plugins-"));
   });
 
   afterEach(async () => {
@@ -187,7 +187,7 @@ describe("store-installed official plugins", () => {
   });
 
   it("re-points an installed official plugin when the bundled copy changes", async () => {
-    const mutableRoot = join(workDir, "bb-plugin-builtin-fixture");
+    const mutableRoot = join(workDir, "patcher-plugin-builtin-fixture");
     await cp(fixtureRoot, mutableRoot, { recursive: true });
     service = createService({
       db,

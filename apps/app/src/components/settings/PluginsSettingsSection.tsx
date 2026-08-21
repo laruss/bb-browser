@@ -81,11 +81,11 @@ const DROPDOWN_CONTENT_CLASS =
 
 /**
  * Seed prompt for the "Create a plugin" entry point: opens the composer
- * pre-filled so the agent reaches for the bb-plugin-authoring skill and
+ * pre-filled so the agent reaches for the patcher-plugin-authoring skill and
  * scaffolds a new plugin. The user reviews and sends.
  */
 const CREATE_PLUGIN_PROMPT =
-  "I want to build a new bb plugin. Use the bb-plugin-authoring skill to scaffold a starter plugin and walk me through customizing it.";
+  "I want to build a new bb plugin. Use the patcher-plugin-authoring skill to scaffold a starter plugin and walk me through customizing it.";
 
 function statusPillVariant(status: string): PillVariant {
   if (status === "running") return "secondary";

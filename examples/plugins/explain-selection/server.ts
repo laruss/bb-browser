@@ -1,4 +1,4 @@
-// bb-plugin-explain-selection — the `browser.contextMenu.items` example, and
+// patcher-plugin-explain-selection — the `browser.contextMenu.items` example, and
 // plan §18 Phase 6's named one: "Create a plugin that adds `Explain with Agent`
 // when text is selected."
 //
@@ -10,10 +10,10 @@
 // other half of what this example shows: one plugin, two menus, and the second
 // one is a whole tab rather than something inside a page.
 //
-// Surfaces demonstrated: bb.browser.registerContextMenuItem with a `when`,
-// bb.browser.registerTabAction, bb.sdk.threads.spawn with plugin attribution,
-// bb.browser.tabs.open driving the browser the click came from, and
-// bb.status.needsConfiguration.
+// Surfaces demonstrated: patcher.browser.registerContextMenuItem with a `when`,
+// patcher.browser.registerTabAction, patcher.sdk.threads.spawn with plugin attribution,
+// patcher.browser.tabs.open driving the browser the click came from, and
+// patcher.status.needsConfiguration.
 //
 // Worth reading next to examples/plugins/omnibox-agent, because the same
 // configuration question gets the opposite answer: an omnibox provider decides
@@ -78,8 +78,8 @@ function threadTitle(selection: string): string {
   return `Explain: ${selection.replace(/\s+/gu, " ").slice(0, 60)}`;
 }
 
-export default async function plugin(bb: PatcherPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(patcher: PatcherPluginApi) {
+  const settings = patcher.settings.define({
     project: {
       type: "project",
       label: "BB project for explanations",
@@ -92,7 +92,7 @@ export default async function plugin(bb: PatcherPluginApi) {
   // and say why where the user can act on it: the plugin's own status.
   const initial = await settings.get();
   if (!initial.project) {
-    bb.status.needsConfiguration(CONFIGURE_HINT);
+    patcher.status.needsConfiguration(CONFIGURE_HINT);
     return;
   }
 
@@ -112,28 +112,28 @@ export default async function plugin(bb: PatcherPluginApi) {
 
     // BB fills in origin "plugin" and originPluginId automatically, so the
     // thread is attributed to this plugin in the thread list.
-    const thread = await bb.sdk.threads.spawn({
+    const thread = await patcher.sdk.threads.spawn({
       projectId: project,
       prompt: args.prompt,
       environment: { type: "project-default" },
       title: args.title,
     });
-    bb.log.info(`explain ${args.what} → thread ${thread.id}`);
+    patcher.log.info(`explain ${args.what} → thread ${thread.id}`);
 
     // The thread is the outcome; opening it is a courtesy. A browser that
     // cannot take the tab must not turn a finished explanation into a failed
     // menu action — and the thread is already in the thread list either way.
-    const url = `${bb.server.loopbackBaseUrl}/threads/${thread.id}`;
+    const url = `${patcher.server.loopbackBaseUrl}/threads/${thread.id}`;
     try {
-      await bb.browser.tabs.open({ url, activate: true });
+      await patcher.browser.tabs.open({ url, activate: true });
     } catch (error) {
-      bb.log.warn(
+      patcher.log.warn(
         `explain ${args.what} could not open ${url}: ${String(error)}`,
       );
     }
   }
 
-  bb.browser.registerContextMenuItem({
+  patcher.browser.registerContextMenuItem({
     id: "explain",
     title: "Explain with Agent",
     // Any match shows the entry; this one is only about a selection.
@@ -155,7 +155,7 @@ export default async function plugin(bb: PatcherPluginApi) {
   // every tab — so the entry itself decides what it has to work with: a bb
   // screen reports a null url, and a tab with no page yet reports an empty one.
   // Neither is a page to explain.
-  bb.browser.registerTabAction({
+  patcher.browser.registerTabAction({
     id: "explain-page",
     title: "Explain this page",
     async run(context) {

@@ -239,6 +239,6 @@ export const PATCHER_DESKTOP_BROWSER_EXTERNAL_URLS_PENDING_CHANNEL =
  */
 export const PATCHER_DESKTOP_PAGE_SCRIPT_BOOTSTRAP_CHANNEL =
   "bb-desktop:page:script-bootstrap";
-/** One `bb.rpc` call from a page script, awaiting its plugin's answer. */
+/** One `patcher.rpc` call from a page script, awaiting its plugin's answer. */
 export const PATCHER_DESKTOP_PAGE_SCRIPT_RPC_CHANNEL =
   "bb-desktop:page:script-rpc";

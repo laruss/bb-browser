@@ -1,4 +1,4 @@
-// bb-plugin-memory — durable, progressively disclosed memory for BB agents.
+// patcher-plugin-memory — durable, progressively disclosed memory for BB agents.
 //
 // The model sees a compact global + current-project catalog in its standing
 // instructions. Full records stay in SQLite and are read or changed through
@@ -871,9 +871,9 @@ function parseRpcTags(record: Record<string, unknown>): string[] {
   return value;
 }
 
-export default async function plugin(bb: PatcherPluginApi) {
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
+export default async function plugin(patcher: PatcherPluginApi) {
+  const db = patcher.storage.database();
+  patcher.storage.migrate(db, [
     `CREATE TABLE IF NOT EXISTS memories (
        id TEXT PRIMARY KEY,
        scope TEXT NOT NULL CHECK (scope IN ('global', 'project')),
@@ -932,7 +932,7 @@ export default async function plugin(bb: PatcherPluginApi) {
   ]);
   const store = new MemoryStore(db);
 
-  bb.rpc.register(memoryRpcContract, {
+  patcher.rpc.register(memoryRpcContract, {
     listMemories() {
       return { memories: store.listAll() };
     },
@@ -976,11 +976,11 @@ export default async function plugin(bb: PatcherPluginApi) {
     },
   });
 
-  bb.agents.contributeInstructions(({ projectId }) =>
+  patcher.agents.contributeInstructions(({ projectId }) =>
     renderCatalog(store, projectId),
   );
 
-  bb.cli.register({
+  patcher.cli.register({
     name: "memory",
     summary: "Read and maintain durable global and project memories",
     commands: [

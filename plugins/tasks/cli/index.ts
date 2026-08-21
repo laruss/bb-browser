@@ -140,11 +140,11 @@ function unwrapTask(result: TaskMutationResult): Task {
 
 // CLI handlers execute on the server, so a path argument names a file on the
 // INVOKING machine, not this process's filesystem. All client file access
-// goes through bb.sdk.files with the host resolved from the calling thread's
+// goes through patcher.sdk.files with the host resolved from the calling thread's
 // environment (or an explicit --machine override); node:fs would silently
 // read or write the server's disk in a multi-machine setup.
 async function resolveClientHostId(
-  bb: PatcherPluginApi,
+  patcher: PatcherPluginApi,
   domain: TasksDomain,
   args: ParsedArgs,
   ctx: PluginCliContext,
@@ -152,9 +152,9 @@ async function resolveClientHostId(
   const machine = option(args, "machine");
   if (machine !== undefined) return resolveMachineId(domain, machine);
   if (!ctx.threadId) return undefined;
-  const thread = await bb.sdk.threads.get({ threadId: ctx.threadId });
+  const thread = await patcher.sdk.threads.get({ threadId: ctx.threadId });
   if (!thread.environmentId) return undefined;
-  const environment = await bb.sdk.environments.get({
+  const environment = await patcher.sdk.environments.get({
     environmentId: thread.environmentId,
   });
   return environment.hostId;
@@ -166,11 +166,11 @@ function isMissingClientFileError(error: unknown): boolean {
 }
 
 async function readClientFile(
-  bb: PatcherPluginApi,
+  patcher: PatcherPluginApi,
   hostId: string | undefined,
   path: string,
 ): Promise<{ bytes: Buffer; text: string | null }> {
-  const file = await bb.sdk.files.read({
+  const file = await patcher.sdk.files.read({
     ...(hostId ? { hostId } : {}),
     path,
   });
@@ -184,12 +184,12 @@ async function readClientFile(
 }
 
 async function readAttachmentSource(
-  bb: PatcherPluginApi,
+  patcher: PatcherPluginApi,
   hostId: string | undefined,
   path: string,
 ): Promise<Buffer> {
   try {
-    return (await readClientFile(bb, hostId, path)).bytes;
+    return (await readClientFile(patcher, hostId, path)).bytes;
   } catch (error) {
     if (isMissingClientFileError(error)) {
       throw new CliError(`attachment source is not a file: ${path}`);
@@ -199,12 +199,12 @@ async function readAttachmentSource(
 }
 
 async function writeClientFile(
-  bb: PatcherPluginApi,
+  patcher: PatcherPluginApi,
   hostId: string | undefined,
   path: string,
   content: Buffer,
 ): Promise<void> {
-  await bb.sdk.files.write({
+  await patcher.sdk.files.write({
     ...(hostId ? { hostId } : {}),
     path,
     content: content.toString("base64"),
@@ -218,7 +218,7 @@ function attachmentFileName(path: string): string {
 }
 
 async function readFileOption(
-  bb: PatcherPluginApi,
+  patcher: PatcherPluginApi,
   args: ParsedArgs,
   ctx: PluginCliContext,
   hostId: string | undefined,
@@ -233,7 +233,7 @@ async function readFileOption(
   if (file === undefined) return inline;
   const path = resolve(ctx.cwd ?? process.cwd(), file);
   try {
-    const { text } = await readClientFile(bb, hostId, path);
+    const { text } = await readClientFile(patcher, hostId, path);
     if (text === null) {
       throw new CliError(`could not read ${file}: file is not UTF-8 text`);
     }
@@ -527,7 +527,7 @@ function taskAuthor(ctx: PluginCliContext): string {
 }
 
 async function runProject(
-  bb: PatcherPluginApi,
+  patcher: PatcherPluginApi,
   store: TasksApiStore,
   domain: TasksDomain,
   argv: string[],
@@ -687,7 +687,7 @@ async function runProject(
         linkedPatcherProjectId: updateInput?.linkedPatcherProjectId,
       }),
     );
-    publishProjectsChanged(bb, updated.id);
+    publishProjectsChanged(patcher, updated.id);
     return args.flags.has("json")
       ? json({ project: updated })
       : `Updated project ${updated.prefix}  ${updated.name}`;
@@ -697,7 +697,7 @@ async function runProject(
 }
 
 async function runFolder(
-  bb: PatcherPluginApi,
+  patcher: PatcherPluginApi,
   store: TasksApiStore,
   domain: TasksDomain,
   argv: string[],
@@ -801,7 +801,7 @@ async function runFolder(
         parentFolderId: moveInput?.parentFolderId,
       }),
     );
-    publishProjectsChanged(bb, null);
+    publishProjectsChanged(patcher, null);
     return args.flags.has("json")
       ? json({ folder: updated })
       : `Updated folder ${updated.name}  ${updated.id}`;
@@ -811,7 +811,7 @@ async function runFolder(
 }
 
 async function runCreate(
-  bb: PatcherPluginApi,
+  patcher: PatcherPluginApi,
   store: TasksApiStore,
   domain: TasksDomain,
   ctx: PluginCliContext,
@@ -843,13 +843,13 @@ async function runCreate(
     throw new CliError("--machine requires --attach or --description-file");
   }
   const clientHostId = usesClientFiles
-    ? await resolveClientHostId(bb, domain, args, ctx)
+    ? await resolveClientHostId(patcher, domain, args, ctx)
     : undefined;
   const attachSources: Array<{ path: string; bytes: Buffer }> = [];
   for (const path of attachPaths) {
     attachSources.push({
       path,
-      bytes: await readAttachmentSource(bb, clientHostId, path),
+      bytes: await readAttachmentSource(patcher, clientHostId, path),
     });
   }
   const project = await selectedProject(
@@ -872,7 +872,7 @@ async function runCreate(
     title: requireOption(args, "title"),
     description:
       (await readFileOption(
-        bb,
+        patcher,
         args,
         ctx,
         clientHostId,
@@ -901,7 +901,7 @@ async function runCreate(
           fileName: attachmentFileName(source.path),
         },
       );
-      publishAttachmentChanged(bb, store.tasks, attachment);
+      publishAttachmentChanged(patcher, store.tasks, attachment);
       attachments.push(attachment);
     } catch (error) {
       failedAttachments.push({
@@ -1193,7 +1193,7 @@ async function runShow(domain: TasksDomain, argv: string[]): Promise<string> {
 }
 
 async function runUpdate(
-  bb: PatcherPluginApi,
+  patcher: PatcherPluginApi,
   domain: TasksDomain,
   ctx: PluginCliContext,
   argv: string[],
@@ -1239,10 +1239,10 @@ async function runUpdate(
   }
   const clientHostId =
     option(args, "description-file") !== undefined
-      ? await resolveClientHostId(bb, domain, args, ctx)
+      ? await resolveClientHostId(patcher, domain, args, ctx)
       : undefined;
   const description = await readFileOption(
-    bb,
+    patcher,
     args,
     ctx,
     clientHostId,
@@ -1298,7 +1298,7 @@ async function runUpdate(
 }
 
 async function runComment(
-  bb: PatcherPluginApi,
+  patcher: PatcherPluginApi,
   store: TasksApiStore,
   domain: TasksDomain,
   ctx: PluginCliContext,
@@ -1317,10 +1317,10 @@ async function runComment(
   }
   const clientHostId =
     option(args, "body-file") !== undefined
-      ? await resolveClientHostId(bb, domain, args, ctx)
+      ? await resolveClientHostId(patcher, domain, args, ctx)
       : undefined;
   const body = await readFileOption(
-    bb,
+    patcher,
     args,
     ctx,
     clientHostId,
@@ -1330,7 +1330,7 @@ async function runComment(
   if (body === undefined)
     throw new CliError("missing required --body or --body-file");
   if (!body.trim()) throw new CliError("comment body must not be blank");
-  const comment = await createComment(bb, store, {
+  const comment = await createComment(patcher, store, {
     taskId: task.id,
     kind: ctx.threadId ? "agent" : "user",
     authorName: option(args, "author") ?? taskAuthor(ctx),
@@ -1421,7 +1421,7 @@ async function runLabel(domain: TasksDomain, argv: string[]): Promise<string> {
 }
 
 async function runAttachment(
-  bb: PatcherPluginApi,
+  patcher: PatcherPluginApi,
   store: TasksApiStore,
   domain: TasksDomain,
   ctx: PluginCliContext,
@@ -1451,13 +1451,13 @@ async function runAttachment(
     const owner = comment
       ? { commentId: comment.id }
       : { taskId: (await resolveTask(domain, ownerAddress!)).id };
-    const clientHostId = await resolveClientHostId(bb, domain, args, ctx);
-    const bytes = await readAttachmentSource(bb, clientHostId, sourcePath);
+    const clientHostId = await resolveClientHostId(patcher, domain, args, ctx);
+    const bytes = await readAttachmentSource(patcher, clientHostId, sourcePath);
     const attachment = await saveAttachmentFromBytes(store.tasks, bytes, {
       ...owner,
       fileName: option(args, "name") ?? attachmentFileName(sourcePath),
     });
-    publishAttachmentChanged(bb, store.tasks, attachment);
+    publishAttachmentChanged(patcher, store.tasks, attachment);
     const payload = {
       attachment,
       url: buildAttachmentUrl(attachment.id),
@@ -1476,12 +1476,12 @@ async function runAttachment(
     );
     const outOption = requireOption(args, "out");
     const outPath = resolve(ctx.cwd ?? process.cwd(), outOption);
-    const clientHostId = await resolveClientHostId(bb, domain, args, ctx);
+    const clientHostId = await resolveClientHostId(patcher, domain, args, ctx);
     const { attachment, content } = await readAttachmentContent(
       store.tasks,
       attachmentId!,
     );
-    await writeClientFile(bb, clientHostId, outPath, content);
+    await writeClientFile(patcher, clientHostId, outPath, content);
     return args.flags.has("json")
       ? json({ attachment, out: outPath })
       : `Saved ${attachment.fileName}  ${outPath}`;
@@ -1755,7 +1755,7 @@ async function runPreset(domain: TasksDomain, argv: string[]): Promise<string> {
 }
 
 async function runDispatch(
-  bb: PatcherPluginApi,
+  patcher: PatcherPluginApi,
   store: TasksApiStore,
   domain: TasksDomain,
   argv: string[],
@@ -1770,7 +1770,7 @@ async function runDispatch(
     requireOption(args, "preset"),
   );
   const result = delegationRpcContract.delegate.output.parse(
-    await delegationHandlers(bb, store).delegate(
+    await delegationHandlers(patcher, store).delegate(
       delegationRpcContract.delegate.input.parse({
         taskId: task.id,
         presetId: preset.id,
@@ -1784,7 +1784,7 @@ async function runDispatch(
 }
 
 async function runAttach(
-  bb: PatcherPluginApi,
+  patcher: PatcherPluginApi,
   store: TasksApiStore,
   domain: TasksDomain,
   ctx: PluginCliContext,
@@ -1801,7 +1801,7 @@ async function runAttach(
     throw new CliError("missing --thread and PATCHER_THREAD_ID is not set");
   }
   const result = delegationRpcContract.taskThreadsAttach.output.parse(
-    await delegationHandlers(bb, store).taskThreadsAttach(
+    await delegationHandlers(patcher, store).taskThreadsAttach(
       delegationRpcContract.taskThreadsAttach.input.parse({
         taskId: task.id,
         threadId,
@@ -1868,12 +1868,12 @@ function singleLine(value: string): string {
 }
 
 export function registerTasksCli(
-  bb: PatcherPluginApi,
+  patcher: PatcherPluginApi,
   store: TasksApiStore,
   status: PluginStatus,
 ): void {
-  const domain = registerHandlers(bb, store);
-  bb.cli.register({
+  const domain = registerHandlers(patcher, store);
+  patcher.cli.register({
     name: "tasks",
     summary:
       "Create and manage task-tracker projects, tasks, labels, and comments",
@@ -1972,13 +1972,13 @@ export function registerTasksCli(
             break;
           }
           case "project":
-            stdout = await runProject(bb, store, domain, rest);
+            stdout = await runProject(patcher, store, domain, rest);
             break;
           case "folder":
-            stdout = await runFolder(bb, store, domain, rest);
+            stdout = await runFolder(patcher, store, domain, rest);
             break;
           case "create": {
-            const result = await runCreate(bb, store, domain, ctx, rest);
+            const result = await runCreate(patcher, store, domain, ctx, rest);
             // Partial attachment failure returns a full result: truthful
             // stdout (task + per-file outcomes) with a non-zero exit.
             if (typeof result !== "string") return result;
@@ -1992,16 +1992,16 @@ export function registerTasksCli(
             stdout = await runShow(domain, rest);
             break;
           case "update":
-            stdout = await runUpdate(bb, domain, ctx, rest);
+            stdout = await runUpdate(patcher, domain, ctx, rest);
             break;
           case "comment":
-            stdout = await runComment(bb, store, domain, ctx, rest);
+            stdout = await runComment(patcher, store, domain, ctx, rest);
             break;
           case "label":
             stdout = await runLabel(domain, rest);
             break;
           case "attachment":
-            stdout = await runAttachment(bb, store, domain, ctx, rest);
+            stdout = await runAttachment(patcher, store, domain, ctx, rest);
             break;
           case "preset":
             stdout = await runPreset(domain, rest);
@@ -2009,10 +2009,10 @@ export function registerTasksCli(
           case "dispatch":
           // Hidden alias kept for compatibility; help advertises "dispatch".
           case "delegate":
-            stdout = await runDispatch(bb, store, domain, rest);
+            stdout = await runDispatch(patcher, store, domain, rest);
             break;
           case "attach":
-            stdout = await runAttach(bb, store, domain, ctx, rest);
+            stdout = await runAttach(patcher, store, domain, ctx, rest);
             break;
           case "threads":
             stdout = await runThreads(domain, rest);

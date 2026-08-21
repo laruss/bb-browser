@@ -60,7 +60,7 @@ add <key-or-comment-id> --file <path>` (task key = task-level; comment ID
   file, add `--folder` for a subtree, or use `bb docs pull --all`. Edit the
   resulting ordinary files, inspect `bb docs status <dir> --diff`, then run
   `bb docs push <dir>`.
-- `.bb-docs-state.json` is versioned identity/concurrency state; do not edit it.
+- `.patcher-docs-state.json` is versioned identity/concurrency state; do not edit it.
   Concurrent local and remote changes fail closed with exit 3. Pull and merge,
   then retry.
 - Local deletions are ignored unless `push --delete` is explicit. Use

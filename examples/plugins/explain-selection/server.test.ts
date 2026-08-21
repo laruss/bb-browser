@@ -28,7 +28,7 @@ async function load(
     settings,
     sdk: { threads: { spawn: async () => ({ id: "th_1" }) } },
   });
-  await explainSelection(host.bb);
+  await explainSelection(host.patcher);
   return host;
 }
 

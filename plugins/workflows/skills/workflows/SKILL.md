@@ -15,7 +15,7 @@ ONLY run a workflow when the user has explicitly opted into multi-agent
 orchestration. The user directly asking you to run a workflow, use multi-agent
 orchestration, fan out agents, invoke this skill, or run a specific named or
 saved workflow counts as explicit opt-in. For any other task — even one that
-would clearly benefit from parallelism — do not call `bb_workflow_run`. Use
+would clearly benefit from parallelism — do not call `patcher_workflow_run`. Use
 ordinary BB delegation, or briefly describe what a multi-agent workflow could
 do and how much it would roughly cost, and ask the user whether to run it.
 
@@ -24,7 +24,7 @@ When you do call it, the right move is often **hybrid**: scout inline first
 then run a workflow to pipeline over it. You don't need to know the shape before
 the _task_ — only before the _orchestration step_.
 
-`bb_workflow_run` returns immediately. After a successful call, copy its
+`patcher_workflow_run` returns immediately. After a successful call, copy its
 `previewDirective` into your response exactly once as a standalone line. Do not
 wrap it in backticks or a code fence, and do not invent or edit the run ID. BB
 replaces that line with a live progress card; its action opens the matching
@@ -108,7 +108,7 @@ and per-agent result schemas; rejection errors identify the unsafe schema path.
 
 - `agent(prompt: string, opts?)`: spawn a BB worker. Without `schema`, returns
   its final text as a string. With `schema` (a JSON Schema), the worker is forced
-  to call `bb_workflow_result` and `agent()` returns the validated value — no
+  to call `patcher_workflow_result` and `agent()` returns the validated value — no
   parsing needed. `opts.label` overrides the display label. `opts.phase`
   explicitly assigns this agent to a progress group; use this inside
   `pipeline()`/`parallel()` stages to avoid races on the global `phase()` state —
@@ -130,7 +130,7 @@ and per-agent result schemas; rejection errors identify the unsafe schema path.
 - `phase(title: string)`: start a new phase; subsequent `agent()` calls are
   grouped under this title. An agent-level `phase` overrides only that call and
   does not change the current phase.
-- `args`: the value passed as `bb_workflow_run`'s `args` input, verbatim. Pass
+- `args`: the value passed as `patcher_workflow_run`'s `args` input, verbatim. Pass
   arrays/objects as actual JSON values, NOT as a JSON-encoded string. Use this to
   parameterize named workflows — for example, pass a research question, target
   path, or config object directly instead of via a side-channel file.
@@ -220,7 +220,7 @@ alias for BB's existing `outputSchema`. Either spelling remains supported.
 The canonical structured-result field is `outputSchema`. `phase`, `label`, and
 `title` are display-only.
 
-That worker receives only the `bb_workflow_result` plugin tool. It MUST call the
+That worker receives only the `patcher_workflow_result` plugin tool. It MUST call the
 tool exactly once at the end of its response with `{ value: ... }` to provide
 the structured output. BB validates the value with Ajv. The initial invalid
 attempt gets at most two corrective retries; a third invalid submission fails
@@ -396,7 +396,7 @@ deterministic (loops, conditionals, fan-out) rather than model-driven.
 
 ## Running and resuming
 
-`bb_workflow_run` and `bb workflows validate` accept exactly one source mode:
+`patcher_workflow_run` and `bb workflows validate` accept exactly one source mode:
 
 - `script`: inline JavaScript.
 - `scriptPath`: a relative path or an absolute path confined to the workflow
@@ -411,7 +411,7 @@ paths, missing workspace roots, non-UTF-8 files, and sources over 512 KiB are
 rejected. QuickJS receives source text only; it never gets filesystem access.
 Plugin-bundled workflow discovery is not supported.
 
-`bb_workflow_run` also accepts optional JSON `args` and optional `resumeRunId`.
+`patcher_workflow_run` also accepts optional JSON `args` and optional `resumeRunId`.
 It returns a durable run ID immediately. Use the compact `bb workflows status`
 summary, paged `bb workflows history`, `bb workflows list`, and
 `bb workflows stop` afterward. Completion is sent back as an agent-only input:

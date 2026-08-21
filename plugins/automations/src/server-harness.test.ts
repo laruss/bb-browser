@@ -140,7 +140,7 @@ async function bootAutomationsPlugin(
   });
   // The in-repo testing subpath and bundled plugin SDK entry currently expose
   // equivalent runtime APIs through distinct type declarations.
-  await plugin(host.bb as unknown as Parameters<typeof plugin>[0]);
+  await plugin(host.patcher as unknown as Parameters<typeof plugin>[0]);
   return host;
 }
 
@@ -902,12 +902,12 @@ describe("automations server plugin harness", () => {
   });
 
   it("dispose aborts the sweep service and poisons stale bb handles", async () => {
-    const { bb, harness } = await bootAutomationsPlugin();
+    const { patcher, harness } = await bootAutomationsPlugin();
     const service = harness.runService("automation-sweep");
 
     await harness.dispose();
     await service.done;
-    await expect(bb.storage.kv.get("after-dispose")).rejects.toThrow(
+    await expect(patcher.storage.kv.get("after-dispose")).rejects.toThrow(
       PluginContextStaleError,
     );
   });

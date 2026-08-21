@@ -43,7 +43,7 @@ export const appSettingsSchema = z
     onboardingCompletedAt: z.string().nullable(),
     /**
      * Which search engine the browser's address bar uses, by id — bb's own or
-     * one a plugin declared (`bb.browser.registerSearchEngine`).
+     * one a plugin declared (`patcher.browser.registerSearchEngine`).
      *
      * An id rather than the template itself, so removing the plugin that
      * declared it leaves a setting that resolves back to bb's default instead of

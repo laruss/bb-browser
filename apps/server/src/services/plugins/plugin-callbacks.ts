@@ -1,8 +1,8 @@
 /**
  * Every call the server makes *into* a plugin.
  *
- * The other direction is settled: `bb.sdk` is a loopback HTTP client that now
- * identifies itself, and `bb.browser` is already a serialisable command union
+ * The other direction is settled: `patcher.sdk` is a loopback HTTP client that now
+ * identifies itself, and `patcher.browser` is already a serialisable command union
  * on a message bus. What has no described shape is this direction — the server
  * holds a function the plugin registered and calls it. A function is exactly
  * the thing that cannot cross a process boundary, so plan Phase 7 is blocked on

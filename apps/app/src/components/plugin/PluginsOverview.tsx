@@ -37,20 +37,20 @@ import {
 type PluginsCollectionMode = "installed" | "browse";
 
 /** Where an installed plugin came from, as the collection filter presents it. */
-type PluginTypeFilter = "bb-official" | "user";
+type PluginTypeFilter = "patcher-official" | "user";
 
 const PLUGIN_TYPE_FILTERS: readonly PluginTypeFilter[] = [
-  "bb-official",
+  "patcher-official",
   "user",
 ];
 
 const PLUGIN_TYPE_FILTER_OPTIONS = PLUGIN_TYPE_FILTERS.map((type) => ({
   id: type,
-  label: type === "bb-official" ? "BB Official" : "User",
+  label: type === "patcher-official" ? "BB Official" : "User",
 }));
 
 function pluginTypeFilterId(provenance: PluginProvenance): PluginTypeFilter {
-  return isOfficialProvenance(provenance) ? "bb-official" : "user";
+  return isOfficialProvenance(provenance) ? "patcher-official" : "user";
 }
 
 // Membership, not repeated literals: a new entry in PLUGIN_TYPE_FILTERS is

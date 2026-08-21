@@ -304,14 +304,14 @@ function timingSafeEqualStrings(a: string, b: string): boolean {
   return bufferA.length === bufferB.length && timingSafeEqual(bufferA, bufferB);
 }
 
-/** "token" auth: x-bb-plugin-token header or ?token= must match the plugin's secret. */
+/** "token" auth: x-patcher-plugin-token header or ?token= must match the plugin's secret. */
 async function tokenAuthProblem(
   context: Context,
   plugins: PluginService,
   id: string,
 ): Promise<WireAuthProblem | null> {
   const presented =
-    context.req.header("x-bb-plugin-token") ?? context.req.query("token");
+    context.req.header("x-patcher-plugin-token") ?? context.req.query("token");
   const expected = await plugins.httpToken(id);
   if (
     expected === undefined ||
@@ -321,7 +321,7 @@ async function tokenAuthProblem(
     return {
       status: 401,
       error:
-        'missing or invalid plugin token — send it as the "x-bb-plugin-token" header ' +
+        'missing or invalid plugin token — send it as the "x-patcher-plugin-token" header ' +
         "or ?token=; print it with `bb plugin token " +
         `${id}\``,
     };
@@ -1089,7 +1089,7 @@ export function registerPluginRoutes(
     return context.json({ ok: true, token });
   });
 
-  // Boot-time dispatcher for bb.http routes (design §4.6): Hono routes
+  // Boot-time dispatcher for patcher.http routes (design §4.6): Hono routes
   // cannot be added or removed after boot, so one wildcard route dispatches
   // through the live per-plugin route table (exact method+path match).
   app.all("/plugins/:id/http/*", async (context) => {
@@ -1147,7 +1147,7 @@ export function registerPluginRoutes(
     return plugins.invokeHttpRoute(id, fresh.value, context);
   });
 
-  // bb.rpc dispatcher (design §4.6): always "local" auth semantics —
+  // patcher.rpc dispatcher (design §4.6): always "local" auth semantics —
   // JSON-only body plus the Origin/Host check.
   app.post("/plugins/:id/rpc/:method", async (context) => {
     const id = context.req.param("id");

@@ -21,7 +21,7 @@ import { createPluginArtifactMeta } from "./plugin-artifact-meta.js";
 import { validatePluginBuildManifest } from "./plugin-manifest.js";
 
 /**
- * `bb plugin build` — compile a plugin's `bb.app` entry (app.tsx) into a
+ * `bb plugin build` — compile a plugin's `patcher.app` entry (app.tsx) into a
  * runtime-loadable frontend bundle:
  *
  * - `dist/app.js` — single ESM file, production jsx-runtime forced. The
@@ -88,7 +88,7 @@ let freshFacadeImportSequence = 0;
 async function freshModuleExports(moduleUrl: string): Promise<string[]> {
   const freshUrl = new URL(moduleUrl);
   freshUrl.searchParams.set(
-    "bb-plugin-build",
+    "patcher-plugin-build",
     String(++freshFacadeImportSequence),
   );
   const moduleNamespace = await import(freshUrl.href);
@@ -151,7 +151,7 @@ async function shimModuleSource(
   ].join("\n");
 }
 
-const SHIM_NAMESPACE = "bb-plugin-runtime-shim";
+const SHIM_NAMESPACE = "patcher-plugin-runtime-shim";
 // Derived from the slot map so the two can never drift; everything not
 // matched here bundles normally from the plugin's node_modules.
 const SHIM_FILTER = new RegExp(
@@ -163,7 +163,7 @@ const SHIM_FILTER = new RegExp(
 /** Internal export for focused build tests; not re-exported by the package. */
 export function runtimeShimPlugin(pluginSdkAppModuleUrl?: string): Plugin {
   return {
-    name: "bb-plugin-runtime-shims",
+    name: "patcher-plugin-runtime-shims",
     setup(build) {
       build.onResolve({ filter: SHIM_FILTER }, (args) => ({
         path: args.path,
@@ -185,7 +185,7 @@ export function runtimeShimPlugin(pluginSdkAppModuleUrl?: string): Plugin {
 }
 
 interface PluginAppConfig {
-  /** Absolute path of the `bb.app` entry file. */
+  /** Absolute path of the `patcher.app` entry file. */
   appEntry: string;
   packageName: string;
   pluginVersion: string;
@@ -238,17 +238,17 @@ function readTailwindContentPatterns(
   pkg: Record<string, unknown>,
   packageJsonPath: string,
 ): string[] {
-  const bb = pkg.bb;
-  if (!isRecord(bb) || bb.pluginTailwindContent === undefined) {
+  const patcher = pkg.patcher;
+  if (!isRecord(patcher) || patcher.pluginTailwindContent === undefined) {
     return [];
   }
-  const patterns = bb.pluginTailwindContent;
+  const patterns = patcher.pluginTailwindContent;
   if (
     !Array.isArray(patterns) ||
     !patterns.every((pattern) => typeof pattern === "string")
   ) {
     throw new Error(
-      `bb.pluginTailwindContent must be an array of strings in ${packageJsonPath}`,
+      `patcher.pluginTailwindContent must be an array of strings in ${packageJsonPath}`,
     );
   }
   return patterns;
@@ -304,7 +304,7 @@ async function readDependencyTailwindSources(
   return sources;
 }
 
-/** Read `<rootDir>/package.json` and resolve its `bb.app` entry, or throw. */
+/** Read `<rootDir>/package.json` and resolve its `patcher.app` entry, or throw. */
 async function readPluginAppConfig(rootDir: string): Promise<PluginAppConfig> {
   const packageJsonPath = join(rootDir, "package.json");
   const pkg = await readPackageJson(packageJsonPath);
@@ -313,23 +313,25 @@ async function readPluginAppConfig(rootDir: string): Promise<PluginAppConfig> {
     rootDir,
     packageJsonPath,
   );
-  const app = manifest.bb.app;
+  const app = manifest.patcher.app;
   if (app === undefined) {
     throw new Error(
-      `no frontend entry: ${packageJsonPath} has no "bb": { "app": "./app.tsx" } field (only plugins with an app entry can be built)`,
+      `no frontend entry: ${packageJsonPath} has no "patcher": { "app": "./app.tsx" } field (only plugins with an app entry can be built)`,
     );
   }
   if (isAbsolute(app)) {
-    throw new Error(`manifest bb.app must be relative, got "${app}"`);
+    throw new Error(`manifest patcher.app must be relative, got "${app}"`);
   }
   const appEntry = resolve(rootDir, app);
   if (appEntry !== rootDir && !appEntry.startsWith(rootDir + "/")) {
-    throw new Error(`manifest bb.app escapes the plugin directory: "${app}"`);
+    throw new Error(
+      `manifest patcher.app escapes the plugin directory: "${app}"`,
+    );
   }
   try {
     await stat(appEntry);
   } catch {
-    throw new Error(`manifest bb.app points at a missing file: ${app}`);
+    throw new Error(`manifest patcher.app points at a missing file: ${app}`);
   }
   return {
     appEntry,
@@ -345,7 +347,7 @@ async function readPluginAppConfig(rootDir: string): Promise<PluginAppConfig> {
  * not need tailwindcss installed), via `customCssResolver`.
  *
  * Direct dependencies can contribute additional scan roots with
- * `bb.pluginTailwindContent` in their package.json. Builtin plugins use this
+ * `patcher.pluginTailwindContent` in their package.json. Builtin plugins use this
  * for workspace UI packages that ship raw TS/TSX source: esbuild bundles the
  * package fine, but Tailwind must also see its class strings or it will purge
  * their utilities from app.css.
@@ -360,13 +362,13 @@ async function readPluginAppConfig(rootDir: string): Promise<PluginAppConfig> {
  *   can't be require.resolve'd from the packaged CLI.
  *
  * The utilities are emitted inside `@scope` limited to THIS plugin's own
- * mounts — `[data-bb-plugin="<id>"]`, the attribute every plugin mount root
+ * mounts — `[data-patcher-plugin="<id>"]`, the attribute every plugin mount root
  * (PluginSlotMount) and plugin-rendered portal (portal-scope) carries — so
  * plugin utility rules can never touch host elements OR another plugin's
  * pane. Without any scope, a plugin's plain `.flex-col` (same `utilities`
  * layer, later stylesheet) overrides the host's `sm:flex-row` everywhere: a
  * media query adds no specificity, so the later plain rule wins and host
- * layouts silently collapse. A generic `[data-bb-plugin-root]` scope shared
+ * layouts silently collapse. A generic `[data-patcher-plugin-root]` scope shared
  * by all plugins has the same failure between plugins: every sheet matches
  * every pane, scope proximity ties, and whichever plugin's sheet loads last
  * overrides earlier plugins' container-variant rules with its own base
@@ -402,7 +404,7 @@ async function buildTailwindCss(
     TW_ANIMATE_CSS,
     PLUGIN_THEME_CSS,
     `@layer utilities {`,
-    `  @scope ([data-bb-plugin="${pluginId}"], [data-bb-plugin-root]:not([data-bb-plugin])) {`,
+    `  @scope ([data-patcher-plugin="${pluginId}"], [data-patcher-plugin-root]:not([data-patcher-plugin])) {`,
     `    @tailwind utilities;`,
     `  }`,
     `}`,
@@ -444,7 +446,7 @@ export interface PluginAppBuildResult {
 
 /**
  * Build `<rootDir>`'s frontend bundle into `<rootDir>/dist/`. Throws with a
- * human-readable message on any problem (missing bb.app, compile errors).
+ * human-readable message on any problem (missing patcher.app, compile errors).
  */
 export async function buildPluginApp(
   rootDir: string,

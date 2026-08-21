@@ -29,8 +29,8 @@ import {
  */
 
 const CONTEXT_MENU_PLUGIN = `
-  export default function plugin(bb: any) {
-    bb.browser.registerContextMenuItem({
+  export default function plugin(patcher: any) {
+    patcher.browser.registerContextMenuItem({
       id: "shout",
       title: "Shout",
       run: (ctx: any) => (ctx.selectionText ?? "").toUpperCase(),
@@ -77,7 +77,7 @@ describe("a plugin whose process does not work out", () => {
       typeof createPluginService
     >[0]["pluginProcessRestart"];
   }): Promise<{ service: PluginService; rootDir: string }> {
-    const workDir = await mkdtemp(join(tmpdir(), "bb-plugin-fallback-"));
+    const workDir = await mkdtemp(join(tmpdir(), "patcher-plugin-fallback-"));
     dirs.push(workDir);
     db = createConnection(":memory:");
     migrate(db);
@@ -100,14 +100,14 @@ describe("a plugin whose process does not work out", () => {
       ...overrides,
     });
 
-    const rootDir = join(workDir, "bb-plugin-remote");
+    const rootDir = join(workDir, "patcher-plugin-remote");
     await mkdir(rootDir, { recursive: true });
     await writeFile(
       join(rootDir, "package.json"),
       JSON.stringify({
-        name: "bb-plugin-remote",
+        name: "patcher-plugin-remote",
         version: "0.1.0",
-        bb: {
+        patcher: {
           name: "Fallback fixture",
           description: "Fixture.",
           branding: { icon: "Zap" },

@@ -26,18 +26,19 @@ const publicApiModule = path.join(pkgsDir, "server-contract/src/public-api.ts");
 const publicApiStub = path.join(here, "public-api-stub.d.ts");
 const outDir = path.join(pkgRoot, "bundled-types");
 const outputs = {
-  "bb-plugin-sdk.d.ts": path.join(pkgRoot, "src/index.ts"),
-  "bb-plugin-sdk-app.d.ts": path.join(pkgRoot, "src/app.ts"),
-  "bb-plugin-sdk-internal-composer-customization-validation.d.ts": path.join(
-    pkgRoot,
-    "src/internal/composer-customization-validation.ts",
-  ),
-  "bb-plugin-sdk-internal-composer-view.d.ts": path.join(
+  "patcher-plugin-sdk.d.ts": path.join(pkgRoot, "src/index.ts"),
+  "patcher-plugin-sdk-app.d.ts": path.join(pkgRoot, "src/app.ts"),
+  "patcher-plugin-sdk-internal-composer-customization-validation.d.ts":
+    path.join(pkgRoot, "src/internal/composer-customization-validation.ts"),
+  "patcher-plugin-sdk-internal-composer-view.d.ts": path.join(
     pkgRoot,
     "src/internal/composer-view.ts",
   ),
-  "bb-plugin-sdk-testing.d.ts": path.join(pkgRoot, "src/testing/index.ts"),
-  "bb-plugin-sdk-testing-app.d.ts": path.join(pkgRoot, "src/testing/app.tsx"),
+  "patcher-plugin-sdk-testing.d.ts": path.join(pkgRoot, "src/testing/index.ts"),
+  "patcher-plugin-sdk-testing-app.d.ts": path.join(
+    pkgRoot,
+    "src/testing/app.tsx",
+  ),
 };
 
 // Real npm packages the bundle imports from — kept external so they resolve

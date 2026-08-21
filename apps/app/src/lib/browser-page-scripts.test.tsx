@@ -212,7 +212,7 @@ describe("useBrowserPageScripts", () => {
           callId: "page-script-1",
           ok: false,
           message:
-            'bb.rpc: plugin "site-tweaks" declares no page script for this address.',
+            'patcher.rpc: plugin "site-tweaks" declares no page script for this address.',
         },
       ]);
     });
@@ -263,7 +263,7 @@ describe("useBrowserPageScripts", () => {
           callId: "page-script-1",
           ok: false,
           message:
-            'bb.rpc("notes"): the answer is too large to hand to a page.',
+            'patcher.rpc("notes"): the answer is too large to hand to a page.',
         },
       ]);
     });

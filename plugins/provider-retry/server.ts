@@ -31,17 +31,17 @@ function waitForAbort(signal: AbortSignal): Promise<void> {
 }
 
 function logFailure(
-  bb: PatcherPluginApi,
+  patcher: PatcherPluginApi,
   operation: string,
   error: unknown,
 ): void {
-  bb.log.warn(
+  patcher.log.warn(
     `${operation}: ${error instanceof Error ? error.message : String(error)}`,
   );
 }
 
-export default async function plugin(bb: PatcherPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(patcher: PatcherPluginApi) {
+  const settings = patcher.settings.define({
     maximumWait: {
       type: "select",
       label: "Maximum automatic wait",
@@ -53,16 +53,16 @@ export default async function plugin(bb: PatcherPluginApi) {
   });
   const initialSettings = await settings.get();
   const service = new ProviderRetryService(
-    bb,
+    patcher,
     undefined,
     maximumWaitMs(initialSettings.maximumWait),
   );
   settings.onChange((next) => {
     service.setMaximumWaitMs(maximumWaitMs(next.maximumWait));
   });
-  bb.onDispose(() => service.dispose());
+  patcher.onDispose(() => service.dispose());
 
-  bb.rpc.register(providerRetryRpcContract, {
+  patcher.rpc.register(providerRetryRpcContract, {
     providerRetryCancel({ threadId }) {
       return { cancelled: service.cancel(threadId) };
     },
@@ -70,27 +70,35 @@ export default async function plugin(bb: PatcherPluginApi) {
       return { view: service.status(threadId) };
     },
   });
-  registerProviderRetryCli(bb, service);
+  registerProviderRetryCli(patcher, service);
 
-  bb.events.on("thread.failed", async ({ thread }) => {
+  patcher.events.on("thread.failed", async ({ thread }) => {
     try {
       await service.reconcile(thread.id);
     } catch (error) {
       logFailure(
-        bb,
+        patcher,
         `Could not inspect provider retry for ${thread.id}`,
         error,
       );
     }
   });
-  bb.events.on("thread.active", ({ thread }) => service.supersede(thread.id));
-  bb.events.on("thread.idle", ({ thread }) => service.supersede(thread.id));
-  bb.events.on("thread.archived", ({ thread }) => service.supersede(thread.id));
-  bb.events.on("thread.deleted", ({ thread }) => service.supersede(thread.id));
+  patcher.events.on("thread.active", ({ thread }) =>
+    service.supersede(thread.id),
+  );
+  patcher.events.on("thread.idle", ({ thread }) =>
+    service.supersede(thread.id),
+  );
+  patcher.events.on("thread.archived", ({ thread }) =>
+    service.supersede(thread.id),
+  );
+  patcher.events.on("thread.deleted", ({ thread }) =>
+    service.supersede(thread.id),
+  );
 
-  bb.background.service("provider-retry-scheduler", {
+  patcher.background.service("provider-retry-scheduler", {
     async start(signal) {
-      const unsubscribeHost = bb.sdk.subscribe({
+      const unsubscribeHost = patcher.sdk.subscribe({
         event: "host:changed",
         callback: (event) => {
           if (

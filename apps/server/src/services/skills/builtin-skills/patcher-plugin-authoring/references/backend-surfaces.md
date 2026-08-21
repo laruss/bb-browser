@@ -3,20 +3,20 @@
 What a plugin registers in its factory to become reachable — from the bb
 frontend, from an agent, from the CLI, from a timer, or from the outside world.
 
-- [bb.http — HTTP routes](#bbhttp--http-routes)
-- [bb.rpc — the frontend data plane](#bbrpc--the-frontend-data-plane)
-- [bb.realtime](#bbrealtime)
-- [bb.background — services and schedules](#bbbackground--services-and-schedules)
-- [bb.cli — an agent-facing `bb` subcommand](#bbcli--an-agent-facing-bb-subcommand)
-- [bb.ui.requestInput](#bbuirequestinput--replace-the-composer-with-a-blocking-plugin-form)
-- [bb.agents — native tools and session configuration](#bbagents--native-tools-and-conditional-session-configuration)
-- [bb.ui — host-rendered UI](#bbui--host-rendered-ui-no-frontend-bundle-needed)
-- [bb.ui — rebinding keyboard shortcuts](#bbui--rebinding-keyboard-shortcuts)
-- [bb.ui — a command of your own](#bbui--a-command-of-your-own)
+- [patcher.http — HTTP routes](#patcherhttp--http-routes)
+- [patcher.rpc — the frontend data plane](#patcherrpc--the-frontend-data-plane)
+- [patcher.realtime](#patcherrealtime)
+- [patcher.background — services and schedules](#patcherbackground--services-and-schedules)
+- [patcher.cli — an agent-facing `bb` subcommand](#patchercli--an-agent-facing-bb-subcommand)
+- [patcher.ui.requestInput](#patcheruirequestinput--replace-the-composer-with-a-blocking-plugin-form)
+- [patcher.agents — native tools and session configuration](#patcheragents--native-tools-and-conditional-session-configuration)
+- [patcher.ui — host-rendered UI](#patcherui--host-rendered-ui-no-frontend-bundle-needed)
+- [patcher.ui — rebinding keyboard shortcuts](#patcherui--rebinding-keyboard-shortcuts)
+- [patcher.ui — a command of your own](#patcherui--a-command-of-your-own)
 
-## bb.http — HTTP routes
+## patcher.http — HTTP routes
 
-`bb.http.route(method, path, handler, { auth? })` mounts an exact-match
+`patcher.http.route(method, path, handler, { auth? })` mounts an exact-match
 route (no params/wildcards) at `/api/v1/plugins/<id>/http/<path>`. The
 handler is a Hono handler: `(context) => Response | Promise<Response>`.
 Auth modes:
@@ -25,12 +25,12 @@ Auth modes:
   Right for anything the bb frontend calls.
 - `"token"` — requires the per-plugin token (`bb plugin token <id>`;
   `--rotate` generates a new one, invalidating the old) via the
-  `x-bb-plugin-token` header or `?token=`. Right for external scripts
+  `x-patcher-plugin-token` header or `?token=`. Right for external scripts
   and machines you control.
 - `"none"` — no checks. ONLY for webhooks that verify their own signature
   (e.g. Slack's `x-slack-signature` HMAC) inside the handler.
 
-## bb.rpc — the frontend data plane
+## patcher.rpc — the frontend data plane
 
 Define method names plus runtime input/output schemas once, then register
 handlers against that contract. Schemas use validator-neutral Standard Schema
@@ -53,8 +53,8 @@ export const rpcContract = defineRpcContract({
   },
 });
 
-export default function plugin(bb: PatcherPluginApi) {
-  bb.rpc.register(rpcContract, {
+export default function plugin(patcher: PatcherPluginApi) {
+  patcher.rpc.register(rpcContract, {
     listIssues({ filter }) {
       return { issues: listCachedIssues(filter) };
     },
@@ -93,18 +93,18 @@ return 500. Results must be strict JSON values: cyclic objects, bigint,
 undefined/functions, class instances, symbol keys, and non-finite numbers are
 rejected rather than coerced or silently dropped.
 
-## bb.realtime
+## patcher.realtime
 
-`bb.realtime.publish(channel, payload)` broadcasts an ephemeral
+`patcher.realtime.publish(channel, payload)` broadcasts an ephemeral
 `plugin-signal` WS message to every connected client; the frontend hook
 `useRealtime(channel, handler)` receives it. Payload must be
 JSON-serializable; nothing is persisted. Publish state-changed signals and
 let the frontend refetch via rpc.
 
-## bb.background — services and schedules
+## patcher.background — services and schedules
 
 ```ts
-bb.background.service("worker", {
+patcher.background.service("worker", {
   async start(signal) {
     while (!signal.aborted) {
       await doWork();
@@ -112,7 +112,7 @@ bb.background.service("worker", {
     }
   },
 });
-bb.background.schedule("sync", "*/5 * * * *", async () => {
+patcher.background.schedule("sync", "*/5 * * * *", async () => {
   await syncNow();
 });
 ```
@@ -130,19 +130,19 @@ bb.background.schedule("sync", "*/5 * * * *", async () => {
   in the schedule's `last_status`/`last_error` shown by `bb plugin list`.
 - `NeedsConfigurationError` is matched **by name**, so no runtime import is
   needed: `throw Object.assign(new Error(msg), { name:
-"NeedsConfigurationError" })`. Pair it with `bb.status.needsConfiguration`
+"NeedsConfigurationError" })`. Pair it with `patcher.status.needsConfiguration`
   in the factory so an unconfigured plugin reports itself instead of
   crash-looping:
 
 ```ts
 const initial = await settings.get();
 if (!initial.apiKey)
-  bb.status.needsConfiguration(
+  patcher.status.needsConfiguration(
     "Set apiKey with `bb plugin config <id>`, then reload.",
   );
 ```
 
-## bb.cli — an agent-facing `bb` subcommand
+## patcher.cli — an agent-facing `bb` subcommand
 
 One top-level command per plugin; a second `register` in one factory
 execution is rejected.
@@ -150,7 +150,7 @@ Users and agents run `bb <name> …` like any core command; the bb CLI
 proxies it to the server, where `run` executes.
 
 ```ts
-bb.cli.register({
+patcher.cli.register({
   name: "weather", // lowercase [a-z0-9-]+; core names (thread, plugin, …) are reserved
   summary: "Weather lookups",
   commands: [
@@ -185,17 +185,17 @@ those calls need escalation approval.
 a file on the INVOKING machine, not on `run`'s filesystem.** Never open a
 `ctx.cwd`-relative or user-supplied path with `node:fs` — on an enrolled
 remote machine that silently reads or writes the wrong host's disk. Instead
-resolve the invoking host (`ctx.threadId` → `bb.sdk.threads.get` →
-`environmentId` → `bb.sdk.environments.get(...).hostId`, with an explicit
+resolve the invoking host (`ctx.threadId` → `patcher.sdk.threads.get` →
+`environmentId` → `patcher.sdk.environments.get(...).hostId`, with an explicit
 `--machine`-style flag as the no-thread escape hatch; `undefined` targets the
-server's own host) and do all such file I/O through `bb.sdk.files` with that
+server's own host) and do all such file I/O through `patcher.sdk.files` with that
 `hostId`. Reference implementations: the docs plugin's pull/push sync and the
 tasks plugin's attachment commands. `node:fs` remains correct for genuinely
 server-local data such as files under the plugin's own data directory.
 
-## bb.ui.requestInput — replace the composer with a blocking plugin form
+## patcher.ui.requestInput — replace the composer with a blocking plugin form
 
-Use `bb.ui.requestInput({ threadId, rendererId, title, payload, timeoutMs? },
+Use `patcher.ui.requestInput({ threadId, rendererId, title, payload, timeoutMs? },
 { signal? })` when plugin backend code must wait for sensitive or structured
 user input. The promise resolves to `{ outcome: "submitted", value }` or
 `{ outcome: "cancelled", reason }`. Payloads and responses are JSON values
@@ -204,7 +204,7 @@ invocation and are never persisted. Pair `rendererId` with a frontend
 `pendingInteraction` slot. Pass a CLI handler's `ctx.signal` so disconnecting
 the caller cancels the request.
 
-## bb.agents — native tools and conditional session configuration
+## patcher.agents — native tools and conditional session configuration
 
 To give agents standing knowledge (conventions, workflows), ship a
 `skills/` directory. For schema'd capabilities, register a native tool.
@@ -213,7 +213,7 @@ bb remotely — share tunnel URLs"), use `contributeInstructions`:
 
 ```ts
 import { z } from "zod"; // runtime import — declare zod as a plugin dependency
-bb.agents.registerTool({
+patcher.agents.registerTool({
   name: "docs_search", // [a-zA-Z0-9_-]+, unique ACROSS plugins
   description: "Search the bundled docs.",
   instructions: "Prefer docs_search over guessing conventions.", // optional, appended to thread instructions
@@ -232,7 +232,7 @@ bb.agents.registerTool({
 
 // All tools and manifest skills are static registrations. configure() only
 // selects this plugin's own ids when BB resolves a thread/session config.
-bb.agents.configure((context) => ({
+patcher.agents.configure((context) => ({
   tools: context.provider.id === "codex" ? ["docs_search"] : [],
   skills: context.project.kind === "standard" ? ["repo-conventions"] : [],
   instructions: `Docs selection resolved for ${context.project.name}.`,
@@ -243,7 +243,7 @@ bb.agents.configure((context) => ({
 // registrations are rejected. Output is capped at 4096
 // characters; a throw is logged and contributes nothing. Side-chat
 // threads never receive plugin instructions.
-bb.agents.contributeInstructions(({ threadId, projectId }) => {
+patcher.agents.contributeInstructions(({ threadId, projectId }) => {
   if (!shouldAdviseRemoteUrls()) return null;
   return "The user is viewing bb remotely — share tunnel URLs, not localhost.";
 });
@@ -302,10 +302,10 @@ safety policy such as permission escalation is unchanged. The legacy
 `contributeInstructions` provider remains excluded from side chats, so use
 `configure` for side-chat-aware dynamic instructions.
 
-## bb.ui — host-rendered UI (no frontend bundle needed)
+## patcher.ui — host-rendered UI (no frontend bundle needed)
 
 ```ts
-bb.ui.registerMentionProvider({
+patcher.ui.registerMentionProvider({
   id: "issue",
   label: "Issues",
   triggers: ["@", "#"], // optional; defaults to ["@"]. Valid: @ # $ ! ~
@@ -326,15 +326,15 @@ There is deliberately no plugin slash-command surface: the composer's `/`
 menu lists skills, so a plugin capability that crafts a prompt for the agent
 ships as a `skills/` entry instead.
 
-## bb.ui — rebinding keyboard shortcuts
+## patcher.ui — rebinding keyboard shortcuts
 
 ```ts
-bb.ui.registerKeybinding({
+patcher.ui.registerKeybinding({
   command: "browser.newTab", // must be a known app command id
   shortcut: { key: "y", mod: true, shift: true }, // mod = Cmd on macOS, Ctrl elsewhere
 });
 // null frees the chord, e.g. to leave it to the page
-bb.ui.registerKeybinding({ command: "browser.reload", shortcut: null });
+patcher.ui.registerKeybinding({ command: "browser.reload", shortcut: null });
 ```
 
 This changes what _this install's_ defaults are, so the user's own overrides in
@@ -344,20 +344,20 @@ error — the whole registration is rejected, not half-applied. Between plugins
 the lowest plugin id wins a contested command, so the result never depends on
 load order.
 
-## bb.ui — a command of your own
+## patcher.ui — a command of your own
 
 `registerKeybinding` rebinds a command **BB already has**. This adds one it has
 never heard of, with the chord that runs it:
 
 ```ts
-bb.ui.registerCommand({
+patcher.ui.registerCommand({
   id: "save-page",
   title: "Save this page", // how the shortcut is listed in Settings → Keyboard
   shortcut: { key: "d", mod: true }, // required — see below
   async run() {
     // No context: ask for what you need, and pay for it where it is already gated.
-    const url = await bb.browser.page.getUrl(); // costs `tabs.read`
-    await bb.storage.kv.set(`saved:${url}`, { at: Date.now() });
+    const url = await patcher.browser.page.getUrl(); // costs `tabs.read`
+    await patcher.storage.kv.set(`saved:${url}`, { at: Date.now() });
   },
 });
 ```
@@ -369,7 +369,7 @@ Four rules, each with a reason worth knowing:
   than sitting there doing nothing.
 - **`run` is handed nothing.** A chord that carried the current page would give
   every command the address of whatever the user is looking at. Read what you need
-  instead — `bb.browser.page.getUrl()`, `bb.browser.tabs.list()` — and the
+  instead — `patcher.browser.page.getUrl()`, `patcher.browser.tabs.list()` — and the
   permission that already governs seeing the user's page (`tabs.read`) is the one
   that applies. This is also why `registerCommand` itself costs no permission.
 - **BB's own bindings win.** Your chord is matched only after every one of BB's has

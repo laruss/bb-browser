@@ -494,7 +494,7 @@ describe("claude-code provider adapter", () => {
       },
       dynamicTools: [
         {
-          name: "bb_test_ping",
+          name: "patcher_test_ping",
           description: "Ping the host",
           inputSchema: {
             type: "object",
@@ -521,7 +521,7 @@ describe("claude-code provider adapter", () => {
         ),
         dynamicTools: [
           {
-            name: "bb_test_ping",
+            name: "patcher_test_ping",
             description: "Ping the host",
             inputSchema: {
               type: "object",
@@ -763,7 +763,7 @@ describe("claude-code provider adapter", () => {
       },
       dynamicTools: [
         {
-          name: "bb_test_ping",
+          name: "patcher_test_ping",
           description: "Ping the host",
           inputSchema: {
             type: "object",
@@ -786,7 +786,7 @@ describe("claude-code provider adapter", () => {
         baseInstructions: "Reopen the thread and continue carefully.",
         dynamicTools: [
           {
-            name: "bb_test_ping",
+            name: "patcher_test_ping",
             description: "Ping the host",
             inputSchema: {
               type: "object",
@@ -976,7 +976,7 @@ describe("claude-code provider adapter", () => {
           providerThreadId: "claude-session-1",
           turnId: "turn-1",
           callId: "call-1",
-          tool: "bb_test_ping",
+          tool: "patcher_test_ping",
           arguments: { ping: true },
         },
       }),
@@ -986,7 +986,7 @@ describe("claude-code provider adapter", () => {
       providerThreadId: "claude-session-1",
       turnId: "turn-1",
       callId: "call-1",
-      tool: "bb_test_ping",
+      tool: "patcher_test_ping",
       arguments: { ping: true },
     });
   });
@@ -1000,7 +1000,7 @@ describe("claude-code provider adapter", () => {
           threadId: "t1",
           turnId: "turn-1",
           callId: "call-1",
-          tool: "bb_test_ping",
+          tool: "patcher_test_ping",
           arguments: { ping: true },
         },
       }),

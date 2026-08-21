@@ -1,5 +1,5 @@
 {
-  "name": "bb-plugin-automations",
+  "name": "patcher-plugin-automations",
   "version": "0.1.0",
   "description": "Schedule recurring and one-shot agent or script work.",
   "private": true,
@@ -10,9 +10,9 @@
     "./rpc-types": "./src/rpc-types.ts"
   },
   "engines": {
-    "bb": ">=0.0"
+    "patcher": ">=0.0"
   },
-  "bb": {
+  "patcher": {
     "name": "Automations",
     "description": "Schedule recurring and one-shot agent or script work.",
     "branding": {
@@ -29,7 +29,7 @@
     ]
   },
   "keywords": [
-    "bb-plugin"
+    "patcher-plugin"
   ],
   "scripts": {
     "typecheck": "tsc --noEmit",

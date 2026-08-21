@@ -140,7 +140,7 @@ decision that shapes it is what it does **not** contain: a second `bb`.
 `createPluginApi` already took every host-facing capability as an injected
 function. That was always the seam — it just pointed at the server. So the
 plugin's process builds the _same_ object with those functions pointed at the
-channel, and there is one copy of what `bb.storage.kv.set` means, of the 256KB
+channel, and there is one copy of what `patcher.storage.kv.set` means, of the 256KB
 limit, of every error string. A hand-written plugin-side `bb` would have been
 the third time this repo paid for two descriptions of one thing.
 
@@ -178,11 +178,11 @@ Building it surfaced something the catalogue had no field for.
 `createPluginApi` takes three capabilities as **synchronous** functions, and
 the `bb` members behind them do not await:
 
-| Path                       | Why it cannot be a request                            |
-| -------------------------- | ----------------------------------------------------- |
-| `browser.getStatus`        | read from `bb.agents.configure()`, which cannot await |
-| `agents.registerTool`      | rejects a name another plugin took, at registration   |
-| `hosts.declareSharedPorts` | validates against host policy and returns void        |
+| Path                       | Why it cannot be a request                                 |
+| -------------------------- | ---------------------------------------------------------- |
+| `browser.getStatus`        | read from `patcher.agents.configure()`, which cannot await |
+| `agents.registerTool`      | rejects a name another plugin took, at registration        |
+| `hosts.declareSharedPorts` | validates against host policy and returns void             |
 
 Their arguments and results serialise perfectly, which is exactly why they were
 easy to miss. `synchronousHostState` now marks them, and the answers differ:
@@ -221,9 +221,9 @@ zod is 551 KB and luxon 258 KB; the memory says `@patcher/sdk` is 149 MB and hon
 
 **`@patcher/sdk`: ~100 MB.** It pulls `createApiClient`, which constructs the whole
 public API surface — every route, every schema — at import time, in every
-plugin process, whether or not the plugin ever touches `bb.sdk`. It is now
+plugin process, whether or not the plugin ever touches `patcher.sdk`. It is now
 loaded on first use. The awkward part is that `getSdk()` is synchronous and
-must stay so: `bb.sdk.guide.render()` answers without awaiting anything. A
+must stay so: `patcher.sdk.guide.render()` answers without awaiting anything. A
 literal `require()` is what makes a synchronous deferral possible — the bundler
 keeps the module in the bundle and initialises it on the first call, so the
 process stays self-contained; under tsx there is no `require` in scope and
@@ -249,7 +249,7 @@ into anything `plugin-child-runtime.ts` reaches.
 reads and writes values — so every plugin process loaded drizzle and
 better-sqlite3 to get a validator. Describing settings and storing them are now
 separate modules. It bought little memory (~1 MB; `better-sqlite3` itself is
-2 MB and stays, for `bb.storage.database()`) and one real thing: the bundle no
+2 MB and stays, for `patcher.storage.database()`) and one real thing: the bundle no
 longer needs the native module resolvable just to start.
 
 What is left is ~34 MB over bare Node: browser-control's schemas (~22 MB) and
@@ -289,8 +289,8 @@ it is worth stating as a rule because it is what the numbers kept saying:
 > `bb` this plugin has not touched.
 
 - **cron-parser (luxon), ~11 MB** — one call, validating a cron expression at
-  `bb.background.schedule`. A plugin with no schedules paid for a date library.
-- **The browser-control schemas, ~23 MB** — argument checks for `bb.browser.*`,
+  `patcher.background.schedule`. A plugin with no schedules paid for a date library.
+- **The browser-control schemas, ~23 MB** — argument checks for `patcher.browser.*`,
   of which ~9 MB is zod itself. A plugin that never drives a tab paid for all
   of it.
 - **zod, ~9 MB, three more ways in.** The interesting ones were not deferrals
@@ -301,7 +301,7 @@ it is worth stating as a rule because it is what the numbers kept saying:
   and `plugin-interaction-limits.ts` — and the file the host loads is zod-free.
   What was left (the settings-descriptor schema, `z.toJSONSchema` for agent
   tools, the keybinding id) is built on first use.
-- **better-sqlite3, ~2 MB and a dlopen** — deferred to `bb.storage.database()`.
+- **better-sqlite3, ~2 MB and a dlopen** — deferred to `patcher.storage.database()`.
   This one is the exception to the mechanism: natives are external to the
   bundle, so it resolves from disk in both branches rather than out of the
   bundle. `plugin-host-bundle.test.ts` opens a database in the real bundle,

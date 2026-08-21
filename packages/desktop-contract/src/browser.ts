@@ -2056,7 +2056,7 @@ export type PatcherDesktopBrowserPageScripts = z.infer<
  * Longest rpc input or result a page script may pass. Both directions cross two
  * process boundaries as text, so this is a size the wire can carry rather than a
  * size a database row can hold: a page script asks its plugin questions, and a
- * plugin with a large answer has `bb.http.route` for it.
+ * plugin with a large answer has `patcher.http.route` for it.
  */
 export const PATCHER_DESKTOP_BROWSER_MAX_PAGE_SCRIPT_JSON_LENGTH = 128_000;
 
@@ -2146,7 +2146,7 @@ export interface PatcherDesktopPageScriptBootstrap {
   worlds: PatcherDesktopPageScriptWorld[];
 }
 
-/** One `bb.rpc(...)` from a page script, page → main. */
+/** One `patcher.rpc(...)` from a page script, page → main. */
 export const patcherDesktopPageScriptRpcRequestSchema = z
   .object({
     pluginId: z.string().min(1).max(128),

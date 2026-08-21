@@ -1,4 +1,4 @@
-// bb-plugin-inline-vis — reference messageDirective that previews a workspace
+// patcher-plugin-inline-vis — reference messageDirective that previews a workspace
 // HTML file inside an assistant message.
 //
 // The frontend directive mounts when the model emits:
@@ -75,7 +75,7 @@ export function requireWorkspaceHtmlFile(value: unknown): string {
 
 /**
  * Resolve `relativeFile` beneath `rootPath` and prove it stays contained.
- * Returns the absolute path suitable for `bb.sdk.files.read`.
+ * Returns the absolute path suitable for `patcher.sdk.files.read`.
  */
 export function resolveContainedHtmlPath(
   rootPath: string,
@@ -131,8 +131,8 @@ export const inlineVisRpcContract = defineRpcContract({
   },
 });
 
-export default async function plugin(bb: PatcherPluginApi) {
-  bb.rpc.register(inlineVisRpcContract, {
+export default async function plugin(patcher: PatcherPluginApi) {
+  patcher.rpc.register(inlineVisRpcContract, {
     /**
      * Preflight a workspace-relative HTML file for the inline-vis message
      * directive. Input is untyped on the wire — narrowed immediately. The
@@ -142,7 +142,7 @@ export default async function plugin(bb: PatcherPluginApi) {
       threadId,
       file,
     }): Promise<PrepareHtmlPreviewResult> {
-      const thread = await bb.sdk.threads.get({
+      const thread = await patcher.sdk.threads.get({
         threadId,
         include: "environment",
       });
@@ -173,7 +173,7 @@ export default async function plugin(bb: PatcherPluginApi) {
 
       let result;
       try {
-        result = await bb.sdk.files.read({
+        result = await patcher.sdk.files.read({
           path: absolutePath,
           rootPath,
           hostId,

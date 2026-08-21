@@ -28,7 +28,7 @@ import {
 } from "./ffmpeg.js";
 
 /**
- * `bb browser …` — the same `bb.browser` API the agent tools use, from a
+ * `bb browser …` — the same `patcher.browser` API the agent tools use, from a
  * terminal.
  *
  * It exists because the agent path is only observable by running an agent: the
@@ -594,8 +594,8 @@ Options:
   --json               Machine-readable output
 `;
 
-export function registerBrowserToolsCli(bb: PatcherPluginApi): void {
-  bb.cli.register({
+export function registerBrowserToolsCli(patcher: PatcherPluginApi): void {
+  patcher.cli.register({
     name: "browser",
     summary: "Drive the BB desktop app's browser surface",
     commands: [
@@ -927,7 +927,7 @@ export function registerBrowserToolsCli(bb: PatcherPluginApi): void {
       const act = async (
         action: PluginBrowserAction,
       ): Promise<PluginCliResult> => {
-        const state = await bb.browser.page.act(
+        const state = await patcher.browser.page.act(
           { action, tabId: parsed.tabId, generation: parsed.generation },
           options,
         );
@@ -939,7 +939,7 @@ export function registerBrowserToolsCli(bb: PatcherPluginApi): void {
       try {
         switch (command) {
           case "status": {
-            const status = bb.browser.getStatus();
+            const status = patcher.browser.getStatus();
             if (parsed.json) {
               return { exitCode: 0, stdout: `${JSON.stringify(status)}\n` };
             }
@@ -952,7 +952,7 @@ export function registerBrowserToolsCli(bb: PatcherPluginApi): void {
           }
 
           case "snapshot": {
-            const result = await bb.browser.page.snapshot(
+            const result = await patcher.browser.page.snapshot(
               {
                 tabId: parsed.tabId,
                 maxDepth: parsed.max,
@@ -1090,7 +1090,7 @@ export function registerBrowserToolsCli(bb: PatcherPluginApi): void {
                 stderr: "Usage: bb browser dialog <accept|dismiss> [text]\n",
               };
             }
-            const answered = await bb.browser.page.handleDialog(
+            const answered = await patcher.browser.page.handleDialog(
               {
                 accept: action === "accept",
                 tabId: parsed.tabId,
@@ -1107,7 +1107,7 @@ export function registerBrowserToolsCli(bb: PatcherPluginApi): void {
           }
 
           case "tabs": {
-            const tabs = await bb.browser.tabs.list(options);
+            const tabs = await patcher.browser.tabs.list(options);
             return { exitCode: 0, stdout: renderTabs(tabs, parsed.json) };
           }
 
@@ -1117,11 +1117,11 @@ export function registerBrowserToolsCli(bb: PatcherPluginApi): void {
               return { exitCode: 2, stderr: "A URL is required.\n" };
             }
             const tab = parsed.newTab
-              ? await bb.browser.tabs.open(
+              ? await patcher.browser.tabs.open(
                   { url, activate: true },
                   options,
                 )
-              : await bb.browser.navigation.open(
+              : await patcher.browser.navigation.open(
                   { url, tabId: parsed.tabId },
                   options,
                 );
@@ -1133,7 +1133,7 @@ export function registerBrowserToolsCli(bb: PatcherPluginApi): void {
             if (tabId === undefined) {
               return { exitCode: 2, stderr: "A tab id is required.\n" };
             }
-            const result = await bb.browser.tabs.close({ tabId }, options);
+            const result = await patcher.browser.tabs.close({ tabId }, options);
             return {
               exitCode: 0,
               stdout: parsed.json
@@ -1147,12 +1147,12 @@ export function registerBrowserToolsCli(bb: PatcherPluginApi): void {
             if (tabId === undefined) {
               return { exitCode: 2, stderr: "A tab id is required.\n" };
             }
-            const tab = await bb.browser.tabs.activate({ tabId }, options);
+            const tab = await patcher.browser.tabs.activate({ tabId }, options);
             return { exitCode: 0, stdout: renderTab(tab, parsed.json) };
           }
 
           case "url": {
-            const url = await bb.browser.page.getUrl(
+            const url = await patcher.browser.page.getUrl(
               { tabId: parsed.tabId },
               options,
             );
@@ -1160,7 +1160,7 @@ export function registerBrowserToolsCli(bb: PatcherPluginApi): void {
           }
 
           case "title": {
-            const title = await bb.browser.page.getTitle(
+            const title = await patcher.browser.page.getTitle(
               { tabId: parsed.tabId },
               options,
             );
@@ -1168,7 +1168,7 @@ export function registerBrowserToolsCli(bb: PatcherPluginApi): void {
           }
 
           case "text": {
-            const result = await bb.browser.page.getText(
+            const result = await patcher.browser.page.getText(
               {
                 tabId: parsed.tabId,
                 maxLength: parsed.max ?? DEFAULT_PAGE_TEXT_MAX_LENGTH,
@@ -1186,7 +1186,7 @@ export function registerBrowserToolsCli(bb: PatcherPluginApi): void {
           }
 
           case "selection": {
-            const result = await bb.browser.page.getSelection(
+            const result = await patcher.browser.page.getSelection(
               { tabId: parsed.tabId },
               options,
             );
@@ -1208,11 +1208,11 @@ export function registerBrowserToolsCli(bb: PatcherPluginApi): void {
             // long page to PDF especially — so neither rides the default wait.
             const capture =
               command === "pdf"
-                ? await bb.browser.page.pdf(
+                ? await patcher.browser.page.pdf(
                     { tabId: parsed.tabId },
                     { ...options, timeoutMs: 60_000 },
                   )
-                : await bb.browser.page.screenshot(
+                : await patcher.browser.page.screenshot(
                     {
                       tabId: parsed.tabId,
                       format: target.endsWith(".png") ? "png" : "jpeg",
@@ -1238,7 +1238,7 @@ export function registerBrowserToolsCli(bb: PatcherPluginApi): void {
 
           case "console": {
             return renderLog(
-              await bb.browser.page.console(
+              await patcher.browser.page.console(
                 { tabId: parsed.tabId, limit: parsed.max },
                 options,
               ),
@@ -1250,7 +1250,7 @@ export function registerBrowserToolsCli(bb: PatcherPluginApi): void {
 
           case "network": {
             return renderLog(
-              await bb.browser.page.network(
+              await patcher.browser.page.network(
                 { tabId: parsed.tabId, limit: parsed.max },
                 options,
               ),
@@ -1266,7 +1266,7 @@ export function registerBrowserToolsCli(bb: PatcherPluginApi): void {
             if (command === "cookie-get" && name === undefined) {
               return { exitCode: 2, stderr: "A cookie name is required.\n" };
             }
-            const { cookies } = await bb.browser.storage.cookies(
+            const { cookies } = await patcher.browser.storage.cookies(
               { tabId: parsed.tabId },
               options,
             );
@@ -1290,7 +1290,7 @@ export function registerBrowserToolsCli(bb: PatcherPluginApi): void {
             }
             // Everything after the name, so an unquoted value with spaces in it
             // still arrives whole — the same rule `fill` follows.
-            const written = await bb.browser.storage.setCookies(
+            const written = await patcher.browser.storage.setCookies(
               {
                 cookies: [{ name, value: rest.slice(1).join(" ") }],
                 tabId: parsed.tabId,
@@ -1312,7 +1312,7 @@ export function registerBrowserToolsCli(bb: PatcherPluginApi): void {
             if (command === "cookie-delete" && name === undefined) {
               return { exitCode: 2, stderr: "A cookie name is required.\n" };
             }
-            const { removed } = await bb.browser.storage.clearCookies(
+            const { removed } = await patcher.browser.storage.clearCookies(
               {
                 ...(command === "cookie-delete" ? { name } : {}),
                 tabId: parsed.tabId,
@@ -1336,7 +1336,7 @@ export function registerBrowserToolsCli(bb: PatcherPluginApi): void {
             if (command.endsWith("-get") && key === undefined) {
               return { exitCode: 2, stderr: "A key is required.\n" };
             }
-            const result = await bb.browser.storage.items(
+            const result = await patcher.browser.storage.items(
               { area, tabId: parsed.tabId },
               options,
             );
@@ -1369,7 +1369,7 @@ export function registerBrowserToolsCli(bb: PatcherPluginApi): void {
             if (key === undefined || key.length === 0) {
               return { exitCode: 2, stderr: "A key and a value are required.\n" };
             }
-            const written = await bb.browser.storage.setItems(
+            const written = await patcher.browser.storage.setItems(
               {
                 area,
                 items: [{ name: key, value: rest.slice(1).join(" ") }],
@@ -1397,7 +1397,7 @@ export function registerBrowserToolsCli(bb: PatcherPluginApi): void {
             if (command.endsWith("-delete") && key === undefined) {
               return { exitCode: 2, stderr: "A key is required.\n" };
             }
-            const { removed } = await bb.browser.storage.clearItems(
+            const { removed } = await patcher.browser.storage.clearItems(
               {
                 area,
                 ...(command.endsWith("-delete") ? { name: key } : {}),
@@ -1412,11 +1412,11 @@ export function registerBrowserToolsCli(bb: PatcherPluginApi): void {
           }
 
           case "state-save": {
-            const cookies = await bb.browser.storage.cookies(
+            const cookies = await patcher.browser.storage.cookies(
               { tabId: parsed.tabId },
               options,
             );
-            const stored = await bb.browser.storage.items(
+            const stored = await patcher.browser.storage.items(
               { area: "local", tabId: parsed.tabId },
               options,
             );
@@ -1471,14 +1471,14 @@ export function registerBrowserToolsCli(bb: PatcherPluginApi): void {
             const cookies =
               state.cookies.length === 0
                 ? { applied: 0, rejected: 0 }
-                : await bb.browser.storage.setCookies(
+                : await patcher.browser.storage.setCookies(
                     { cookies: state.cookies, tabId: parsed.tabId },
                     options,
                   );
             // localStorage belongs to an origin, and this tab is on one origin.
             // Loading the rest would mean navigating the user's browser around
             // their saved sites, so the other origins are reported instead.
-            const url = await bb.browser.page.getUrl(
+            const url = await patcher.browser.page.getUrl(
               { tabId: parsed.tabId },
               options,
             );
@@ -1490,7 +1490,7 @@ export function registerBrowserToolsCli(bb: PatcherPluginApi): void {
             const written =
               items.length === 0
                 ? { applied: 0, rejected: 0 }
-                : await bb.browser.storage.setItems(
+                : await patcher.browser.storage.setItems(
                     { area: "local", items, tabId: parsed.tabId },
                     options,
                   );
@@ -1516,7 +1516,7 @@ export function registerBrowserToolsCli(bb: PatcherPluginApi): void {
                   'A function is required, e.g. bb browser eval "() => document.title"\n',
               };
             }
-            const result = await bb.browser.control.evaluate(
+            const result = await patcher.browser.control.evaluate(
               {
                 expression,
                 ref: rest[1],
@@ -1544,7 +1544,7 @@ export function registerBrowserToolsCli(bb: PatcherPluginApi): void {
                 stderr: "An x and a y in viewport pixels are required.\n",
               };
             }
-            const state = await bb.browser.control.mouseMove(
+            const state = await patcher.browser.control.mouseMove(
               { x, y, tabId: parsed.tabId },
               options,
             );
@@ -1565,7 +1565,7 @@ export function registerBrowserToolsCli(bb: PatcherPluginApi): void {
                 stderr: "A button is left, middle or right.\n",
               };
             }
-            const state = await bb.browser.control.mouseButton(
+            const state = await patcher.browser.control.mouseButton(
               {
                 down: command === "mousedown",
                 button: named ?? parsed.button,
@@ -1585,7 +1585,7 @@ export function registerBrowserToolsCli(bb: PatcherPluginApi): void {
                 stderr: "A horizontal and a vertical delta are required.\n",
               };
             }
-            const state = await bb.browser.control.mouseWheel(
+            const state = await patcher.browser.control.mouseWheel(
               { deltaX, deltaY, tabId: parsed.tabId },
               options,
             );
@@ -1602,7 +1602,7 @@ export function registerBrowserToolsCli(bb: PatcherPluginApi): void {
               };
             }
             return renderRoutes(
-              await bb.browser.control.route(
+              await patcher.browser.control.route(
                 {
                   pattern,
                   status: parsed.status,
@@ -1619,7 +1619,7 @@ export function registerBrowserToolsCli(bb: PatcherPluginApi): void {
 
           case "route-list": {
             return renderRoutes(
-              await bb.browser.control.routes(
+              await patcher.browser.control.routes(
                 { tabId: parsed.tabId },
                 options,
               ),
@@ -1629,7 +1629,7 @@ export function registerBrowserToolsCli(bb: PatcherPluginApi): void {
 
           case "unroute": {
             return renderRoutes(
-              await bb.browser.control.unroute(
+              await patcher.browser.control.unroute(
                 { pattern: rest[0], tabId: parsed.tabId },
                 options,
               ),
@@ -1645,7 +1645,7 @@ export function registerBrowserToolsCli(bb: PatcherPluginApi): void {
                 stderr: "Usage: bb browser network-state-set <offline|online>\n",
               };
             }
-            const page = await bb.browser.control.setOffline(
+            const page = await patcher.browser.control.setOffline(
               { offline: state === "offline", tabId: parsed.tabId },
               options,
             );
@@ -1658,7 +1658,7 @@ export function registerBrowserToolsCli(bb: PatcherPluginApi): void {
           }
 
           case "tracing-start": {
-            await bb.browser.recording.traceStart(
+            await patcher.browser.recording.traceStart(
               { screenshots: parsed.screenshots },
               options,
             );
@@ -1671,7 +1671,7 @@ export function registerBrowserToolsCli(bb: PatcherPluginApi): void {
           }
 
           case "tracing-stop": {
-            const trace = await bb.browser.recording.traceStop(options);
+            const trace = await patcher.browser.recording.traceStop(options);
             const missing =
               trace.droppedSteps + trace.droppedImages === 0
                 ? undefined
@@ -1709,7 +1709,7 @@ export function registerBrowserToolsCli(bb: PatcherPluginApi): void {
           }
 
           case "video-start": {
-            await bb.browser.recording.videoStart(
+            await patcher.browser.recording.videoStart(
               { fps: parsed.fps, tabId: parsed.tabId },
               options,
             );
@@ -1728,7 +1728,7 @@ export function registerBrowserToolsCli(bb: PatcherPluginApi): void {
                 stderr: "Usage: bb browser video-chapter <title>\n",
               };
             }
-            await bb.browser.recording.videoChapter(
+            await patcher.browser.recording.videoChapter(
               { title, tabId: parsed.tabId },
               options,
             );
@@ -1743,7 +1743,7 @@ export function registerBrowserToolsCli(bb: PatcherPluginApi): void {
                 stderr: "A directory is required: bb browser video-stop <dir>\n",
               };
             }
-            const video = await bb.browser.recording.videoStop(
+            const video = await patcher.browser.recording.videoStop(
               { tabId: parsed.tabId },
               // Handing over every frame takes longer than any other command
               // here, and the wait is proportional to how long it filmed.
@@ -1850,7 +1850,7 @@ export function registerBrowserToolsCli(bb: PatcherPluginApi): void {
           case "back":
           case "forward":
           case "reload": {
-            const tab = await bb.browser.navigation[command](
+            const tab = await patcher.browser.navigation[command](
               { tabId: parsed.tabId },
               options,
             );

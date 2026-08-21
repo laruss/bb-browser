@@ -35,7 +35,7 @@ Reading order is the order in which they block each other.
   [PROJECT_PLAN.md](PROJECT_PLAN.md) §19 rules out a _sophisticated_ one, and that
   still stands — no sync, no sharing, no breach monitoring. What is missing is the plain thing. bb prompts for **HTTP
   authentication** today and lets a plugin answer one
-  (`bb.browser.registerAuthProvider`), which is the rare case; a **form login**,
+  (`patcher.browser.registerAuthProvider`), which is the rare case; a **form login**,
   which is nearly every case, has nowhere to be saved from, nothing to fill it,
   and no "save this password?" at all. Chromium's own manager is not in Electron,
   so it is not a switch to flip.
@@ -99,7 +99,7 @@ Reading order is the order in which they block each other.
   honestly so the site's fallback runs), the refusal is the part that cannot
   wait.
 
-- **A per-site grant the user makes at runtime.** `bb.sites` is declared in the
+- **A per-site grant the user makes at runtime.** `patcher.sites` is declared in the
   manifest, and that is exactly right for "declutter GitHub". It is the wrong
   shape for a credential filler, which legitimately needs every site the user has
   an account on — and `["https://**/**"]` in a manifest is a disclosure that says
@@ -120,14 +120,14 @@ Reading order is the order in which they block each other.
 ## A plugin could own these — and now nothing is in the way
 
 Each of these is a whole feature a plugin can store, act on and search
-(`bb.storage.database`, tab and page menu entries, an omnibox provider, a
+(`patcher.storage.database`, tab and page menu entries, an omnibox provider, a
 site-info section, its own panel). What they used to be missing was a place in bb's
 chrome; as of 2026-08-19 they have all three:
 
-- a **star in the address bar** — `bb.browser.registerToolbarItem`, with the
+- a **star in the address bar** — `patcher.browser.registerToolbarItem`, with the
   per-page state a star needs;
-- a section on the **new-tab screen** — `bb.browser.registerNewTabWidget`;
-- **a chord of their own** — `bb.ui.registerCommand`.
+- a section on the **new-tab screen** — `patcher.browser.registerNewTabWidget`;
+- **a chord of their own** — `patcher.ui.registerCommand`.
 
 See [architecture/browser-surface.md](architecture/browser-surface.md) for all
 three.
@@ -182,7 +182,7 @@ either a screen bb has not drawn (below) or a decision nobody has needed yet.
 - **Streaming HTTP across the plugin boundary.** Deferred on purpose; a plugin's
   route buffers its response.
 - **Permissions the user grants, rather than the plugin declaring them.** Today
-  `bb.permissions` is written by whoever wrote the plugin — which, in the case this
+  `patcher.permissions` is written by whoever wrote the plugin — which, in the case this
   product exists for, is the user's own agent. The install is one all-or-nothing
   yes (and only in the CLI), nothing can be granted in part, and nothing can be
   taken back afterwards short of uninstalling. So "the agent asked for `threads`
@@ -204,7 +204,7 @@ either a screen bb has not drawn (below) or a decision nobody has needed yet.
   first, then consented** — which is also why this is one item and not two.
 
   What is cheap and honest before any of that exists is the **record**: the gate is
-  two chokepoints (`callBrowser` and the `bb.sdk` wrapper), so "what has this
+  two chokepoints (`callBrowser` and the `patcher.sdk` wrapper), so "what has this
   plugin actually reached" is collectable today, and it describes behaviour instead
   of promising containment. Three questions the design has to answer when it is
   time: which permissions are worth asking about at all (a dialog listing twenty is
@@ -215,7 +215,7 @@ either a screen bb has not drawn (below) or a decision nobody has needed yet.
   handle.
 
 - **The app shows no plugin permissions.** Nothing in the SPA renders
-  `bb.permissions`, and nothing renders `bb.sites` either. The CLI prints both
+  `patcher.permissions`, and nothing renders `patcher.sites` either. The CLI prints both
   before an install and `bb plugin info` lists them, so the agent-authored path
   discloses them — but a plugin installed through the app's own dialog does not,
   and `sites` is the one whose scope only the reader can judge. It now scopes two

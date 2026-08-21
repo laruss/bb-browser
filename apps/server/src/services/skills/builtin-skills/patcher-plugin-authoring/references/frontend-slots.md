@@ -1,4 +1,4 @@
-# Frontend: the `bb.app` entry, slots, and content scripts
+# Frontend: the `patcher.app` entry, slots, and content scripts
 
 Where plugin React mounts inside the bb app, what each slot receives, and how
 the host loads and disposes a frontend generation. Read
@@ -138,7 +138,7 @@ export default definePluginApp((app) => {
 
 `app.slots.experimental_threadHeaderAction` renders a component in the thread
 header's action row. It replaced the older backend-only
-`bb.ui.registerThreadAction`, so a control that needs to draw live state (a
+`patcher.ui.registerThreadAction`, so a control that needs to draw live state (a
 count, a cluster, a status) is now the only shape:
 
 ```tsx
@@ -265,7 +265,7 @@ bundled JavaScript/TypeScript in the bb app shell without a React slot. It is
 full-trust, same-origin page code — **not a security sandbox**. It can access
 the app DOM and any authenticated client state available to ordinary page
 code, so install only plugins you trust. bb does not use `eval`, `Function`,
-or persisted source strings: the existing `bb.app` build emits a normal CSP-
+or persisted source strings: the existing `patcher.app` build emits a normal CSP-
 compatible ESM bundle.
 
 The host mounts scripts in registration order after the bundle loads and
@@ -280,7 +280,7 @@ clear:
   sidebar.
 - `experimental_setBrowserTabStatus(tabId, status)` marks a **browser tab** in
   the browser surface's strip, beside its page icon and title. Tab ids come from
-  the backend side (`bb.browser.tabs.list()`, or a tab action's context — see
+  the backend side (`patcher.browser.tabs.list()`, or a tab action's context — see
   [browser.md](browser.md)); marking an id the strip does not hold is not an
   error, it simply shows nowhere.
 
@@ -370,7 +370,7 @@ Versioned and additive-only:
   the edge. `browserUrl` is that tab's address, or null when the window is not
   showing a page; with `matches` declared it is non-null whenever the panel
   renders. Costs no permission: this is bb's own UI reacting to the address bar,
-  unlike `bb.sites`, which governs reaching into a page.
+  unlike `patcher.sites`, which governs reaching into a page.
 - `navPanel` → `{ subPath: string }` — owns the whole route at
   `/plugins/<pluginId>/<path>/*` and gets its own sidebar entry. `subPath`
   is the route remainder after the panel root (`""` at the root), so deep
@@ -463,7 +463,7 @@ projectId }` (nullable fields) and `path` follows the source (workspace:
   worktree-relative; host: absolute; thread-storage: storage-relative).
   Applies only to live file content — git-ref snapshots and deleted files
   always use the built-in preview, and a removed/disabled opener degrades
-  back to it. Pair with `bb.sdk.files` (rpc from your server) to load and
+  back to it. Pair with `patcher.sdk.files` (rpc from your server) to load and
   CAS-save the content.
 - `messageDirective` → `{ attributes, source, message,
 openWorkspaceFile }` — register a leaf
@@ -491,7 +491,7 @@ openWorkspaceFile }` — register a leaf
   conflicting, or crashing directives fall back to rendering the original
   `source` (the component ErrorBoundary still isolates a throw). Treat
   attributes as attacker-controlled even though the model emitted them;
-  load workspace data through `bb.sdk.files` with root/host confinement
+  load workspace data through `patcher.sdk.files` with root/host confinement
   rather than trusting paths. Reference implementation:
   `plugins/inline-vis` (the sidebar's path-shaped, sandboxed worktree
   iframe preview, including relative assets and normal web loading).

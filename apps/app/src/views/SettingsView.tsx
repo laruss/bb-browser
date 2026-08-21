@@ -608,7 +608,7 @@ export function DefaultBrowserSettingsControl() {
 
 /**
  * The address bar's search engine: bb's own, plus whatever plugins declared
- * (`bb.browser.registerSearchEngine`). A plugin's row says which plugin it came
+ * (`patcher.browser.registerSearchEngine`). A plugin's row says which plugin it came
  * from, the way the palette list does for plugin themes — the user is picking who
  * receives everything they type.
  */

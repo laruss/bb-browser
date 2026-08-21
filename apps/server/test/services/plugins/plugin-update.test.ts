@@ -57,17 +57,17 @@ async function git(cwd: string, args: string[]): Promise<string> {
 async function commitPlugin(
   repo: string,
   version: string,
-  engines?: { bb?: string; bbPluginSdk?: string },
+  engines?: { patcher?: string; patcherPluginSdk?: string },
   serverSource?: string,
 ): Promise<string> {
   await mkdir(repo, { recursive: true });
   await writeFile(
     join(repo, "package.json"),
     JSON.stringify({
-      name: "bb-plugin-updater",
+      name: "patcher-plugin-updater",
       version,
       ...(engines ? { engines } : {}),
-      bb: {
+      patcher: {
         name: "Updater fixture",
         description: "Plugin update fixture.",
         branding: { icon: "Zap" },
@@ -78,7 +78,7 @@ async function commitPlugin(
   await writeFile(
     join(repo, "server.ts"),
     serverSource ??
-      `export default function plugin(bb: any) { bb.log.info(${JSON.stringify(version)}); }`,
+      `export default function plugin(patcher: any) { patcher.log.info(${JSON.stringify(version)}); }`,
   );
   await git(repo, ["add", "-A"]);
   await git(repo, ["commit", "-qm", version]);
@@ -102,7 +102,7 @@ describe("plugin update service and routes", () => {
   beforeEach(async () => {
     db = createConnection(":memory:");
     migrate(db);
-    workDir = await mkdtemp(join(tmpdir(), "bb-plugin-update-"));
+    workDir = await mkdtemp(join(tmpdir(), "patcher-plugin-update-"));
     repo = join(workDir, "repo");
     await mkdir(repo, { recursive: true });
     await git(repo, ["init", "-q", "-b", "main"]);
@@ -147,10 +147,10 @@ describe("plugin update service and routes", () => {
       statusDetail: null,
     };
     for (const packageName of [
-      "bb-plugin-offline-registry",
-      "bb-plugin-healthy-registry",
+      "patcher-plugin-offline-registry",
+      "patcher-plugin-healthy-registry",
     ]) {
-      const id = packageName.replace("bb-plugin-", "");
+      const id = packageName.replace("patcher-plugin-", "");
       upsertInstalledPlugin(db, {
         id,
         source: `npm:${packageName}`,
@@ -238,13 +238,13 @@ describe("plugin update service and routes", () => {
     // degrade per-row instead of rejecting the whole multi-plugin update sweep.
     upsertInstalledPlugin(db, {
       id: "legacy-marketplace",
-      source: "npm:bb-plugin-legacy-marketplace@^0.2.0",
+      source: "npm:patcher-plugin-legacy-marketplace@^0.2.0",
       provenance: { kind: "catalog", entryId: "legacy-marketplace" },
       sourceIntent: {
         kind: "npm",
-        packageName: "bb-plugin-legacy-marketplace",
+        packageName: "patcher-plugin-legacy-marketplace",
         registry:
-          "https://api.github.com/repos/ymichael/bb/releases?bb-source=github-release&tag-template=plugin-legacy-v%7Bversion%7D&asset-template=bb-plugin-legacy-%7Bversion%7D.tgz",
+          "https://api.github.com/repos/ymichael/bb/releases?bb-source=github-release&tag-template=plugin-legacy-v%7Bversion%7D&asset-template=patcher-plugin-legacy-%7Bversion%7D.tgz",
         requestedSpec: "^0.2.0",
         specKind: "range",
       },
@@ -347,7 +347,7 @@ describe("plugin update service and routes", () => {
       repo,
       "1.2.0",
       undefined,
-      "export default function plugin(bb: any) { this is not valid typescript",
+      "export default function plugin(patcher: any) { this is not valid typescript",
     );
 
     const results = await service.checkForUpdates("updater");
@@ -368,7 +368,7 @@ describe("plugin update service and routes", () => {
   it("returns an actionable 422 and keeps the installed commit for an incompatible candidate", async () => {
     const installedCommit = await git(repo, ["rev-parse", "HEAD"]);
     const incompatibleCommit = await commitPlugin(repo, "2.0.0", {
-      bb: ">=99.0.0",
+      patcher: ">=99.0.0",
     });
     const checkResponse = await app.request("/plugins/updates/check", {
       method: "POST",
@@ -493,8 +493,8 @@ describe("plugin update service and routes", () => {
       repo,
       "1.1.0",
       undefined,
-      `export default function plugin(bb: any) {
-        bb.background.service("unstable", { async start() {
+      `export default function plugin(patcher: any) {
+        patcher.background.service("unstable", { async start() {
           await (globalThis as any).__patcherPluginStabilizationCrash;
         }});
       }`,
@@ -560,10 +560,10 @@ describe("plugin update service and routes", () => {
       undefined,
       `
         import { writeFileSync } from "node:fs";
-        export default async function plugin(bb: any) {
-          const database = bb.storage.database();
+        export default async function plugin(patcher: any) {
+          const database = patcher.storage.database();
           database.prepare("UPDATE restart_state SET value = ?").run("new-db");
-          await bb.storage.kv.set("restart-cursor", "new-kv");
+          await patcher.storage.kv.set("restart-cursor", "new-kv");
           writeFileSync(${JSON.stringify(secretPath)}, "changed-secret");
           throw new Error("restart rollback candidate failed");
         }

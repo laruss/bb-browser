@@ -1604,7 +1604,7 @@ async function startOwnedRuntime(
   await loadStartupError({
     details:
       raceResult.result.kind === "incompatible"
-        ? `Port ${args.serverUrl} is responding, but it does not look like bb: ${raceResult.result.reason}.`
+        ? `Port ${args.serverUrl} is responding, but it does not look like patcher: ${raceResult.result.reason}.`
         : `Timed out waiting for bb at ${args.serverUrl}: ${raceResult.result.reason}.`,
     logs: patcherProcess.logs.text(),
     title: "Could not start bb",

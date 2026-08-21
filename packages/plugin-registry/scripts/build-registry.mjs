@@ -219,7 +219,7 @@ generatedFiles.set(
   JSON.stringify(
     {
       $comment:
-        "BB plugin component registry index. Install via: npx shadcn add @patcher/<name> (see the bb-plugin-authoring skill).",
+        "BB plugin component registry index. Install via: npx shadcn add @patcher/<name> (see the patcher-plugin-authoring skill).",
       items: indexEntries.sort((a, b) => a.name.localeCompare(b.name)),
     },
     null,

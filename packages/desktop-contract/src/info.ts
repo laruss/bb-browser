@@ -77,13 +77,14 @@ export type PatcherDesktopAppCommandHandler = (command: AppCommandId) => void;
 export type PatcherDesktopCloseWindowRequestHandler = () => boolean;
 
 /**
- * How the shell tells a renderer which window it is: a `--bb-window-key=...`
+ * How the shell tells a renderer which window it is: a `--patcher-window-key=...`
  * entry in `additionalArguments`, read out of `process.argv` by the preload.
  *
  * An argument rather than an IPC call because the answer has to exist before
  * the first module runs — see {@link PatcherDesktopApi.windowKey}.
  */
-export const PATCHER_DESKTOP_WINDOW_KEY_ARGUMENT_PREFIX = "--bb-window-key=";
+export const PATCHER_DESKTOP_WINDOW_KEY_ARGUMENT_PREFIX =
+  "--patcher-window-key=";
 
 export interface PatcherDesktopApi extends PatcherDesktopInfo {
   /**

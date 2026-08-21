@@ -44,7 +44,7 @@ export const SKILL_COMMAND_SURFACE_PROVIDERS: readonly SkillProvider[] = [
 const SKILL_SCOPE_ORDER: readonly SkillScope[] = [
   "bb-project",
   "bb-user",
-  "bb-builtin",
+  "patcher-builtin",
   "shared-project",
   "shared-user",
   "claude-project",
@@ -95,8 +95,8 @@ export function mapSkillScope(
       return { scope: "bb-project", provider: null, manageable: true };
     case "bb-data-dir":
       return { scope: "bb-user", provider: null, manageable: true };
-    case "bb-builtin":
-      return { scope: "bb-builtin", provider: null, manageable: false };
+    case "patcher-builtin":
+      return { scope: "patcher-builtin", provider: null, manageable: false };
     case "provider-project":
       if (provider === "claude-code") {
         return { scope: "claude-project", provider, manageable: true };
@@ -209,11 +209,11 @@ function listServerOwnedSkills(deps: AppDeps): SkillSummary[] {
       );
       const logicalPath = `${runtimeSource.name}/${runtimeSource.entryPath}`;
       return {
-        id: skillId(builtin ? "bb-builtin" : "bb-data-dir", logicalPath),
+        id: skillId(builtin ? "patcher-builtin" : "bb-data-dir", logicalPath),
         name: runtimeSource.name,
         description: runtimeSource.description,
         provider: null,
-        scope: builtin ? "bb-builtin" : "bb-user",
+        scope: builtin ? "patcher-builtin" : "bb-user",
         pluginId: null,
         filePath: path.join(rootPath, runtimeSource.entryPath),
         manageable: !builtin,
@@ -235,7 +235,7 @@ function listPatcherPluginSkills(deps: AppDeps): SkillSummary[] {
       if (rootPath === undefined) return null;
       const logicalPath = `${runtimeSource.name}/${runtimeSource.entryPath}`;
       return {
-        id: skillId(`bb-plugin:${provenance.pluginId}`, logicalPath),
+        id: skillId(`patcher-plugin:${provenance.pluginId}`, logicalPath),
         name: runtimeSource.name,
         description: runtimeSource.description,
         provider: null,
@@ -301,7 +301,7 @@ function isServerOwnedSkill(deps: AppDeps, skill: SkillSummary): boolean {
     );
   }
   return (
-    skill.scope === "bb-builtin" &&
+    skill.scope === "patcher-builtin" &&
     path.dirname(skillDirectoryPath) === deps.config.builtinSkillsRootPath
   );
 }

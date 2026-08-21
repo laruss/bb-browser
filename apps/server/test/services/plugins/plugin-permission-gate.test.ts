@@ -18,7 +18,7 @@ describe("createPluginPermissionGate", () => {
 
     expect(gate.has("threads")).toBe(false);
     expect(gate.granted).toEqual([]);
-    expect(() => gate.assert("threads", "bb.sdk.threads.list")).toThrow(
+    expect(() => gate.assert("threads", "patcher.sdk.threads.list")).toThrow(
       PluginPermissionError,
     );
   });
@@ -27,9 +27,9 @@ describe("createPluginPermissionGate", () => {
     const gate = createPluginPermissionGate("noisy", ["tabs.read"]);
 
     expect(() =>
-      gate.assert("page.credentials", 'bb.browser command "page.storage"'),
+      gate.assert("page.credentials", 'patcher.browser command "page.storage"'),
     ).toThrow(
-      /page\.storage.*"page\.credentials".*"noisy".*bb\.permissions.*bb plugin reload noisy/s,
+      /page\.storage.*"page\.credentials".*"noisy".*patcher\.permissions.*bb plugin reload noisy/s,
     );
   });
 
@@ -37,7 +37,7 @@ describe("createPluginPermissionGate", () => {
     const gate = createPluginPermissionGate("noisy", ["tabs.read"]);
 
     expect(() =>
-      gate.assert("tabs.read", "bb.browser tabs.list"),
+      gate.assert("tabs.read", "patcher.browser tabs.list"),
     ).not.toThrow();
   });
 
@@ -78,7 +78,7 @@ describe("applySdkPermissions", () => {
     const sdk = applySdkPermissions(fakeSdk(), "p", gate);
 
     expect(() => sdk.terminals.create).toThrow(
-      /bb\.sdk\.terminals\.create needs the "shell" permission/,
+      /patcher\.sdk\.terminals\.create needs the "shell" permission/,
     );
   });
 
@@ -106,7 +106,7 @@ describe("applySdkPermissions", () => {
     expect(() => workspaceOnly.environments.diff({} as never)).not.toThrow();
     expect(() =>
       workspaceOnly.environments.archiveThreads({} as never),
-    ).toThrow(/bb\.sdk\.environments\.archiveThreads needs the "threads"/);
+    ).toThrow(/patcher\.sdk\.environments\.archiveThreads needs the "threads"/);
   });
 
   it("lets it through when both are declared", () => {

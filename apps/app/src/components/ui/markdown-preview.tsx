@@ -753,7 +753,7 @@ function MarkdownCode({
         </div>
         <pre
           className={cn(
-            "bb-code-highlight px-3 pb-3 pt-1",
+            "patcher-code-highlight px-3 pb-3 pt-1",
             softWrap
               ? "whitespace-pre-wrap [overflow-wrap:anywhere]"
               : "overflow-x-auto",
@@ -1080,14 +1080,14 @@ function buildMarkdownComponents({
   };
 
   if (threadMentions !== undefined) {
-    components["bb-thread-mention"] = buildThreadMentionComponent({
+    components["patcher-thread-mention"] = buildThreadMentionComponent({
       mentions: threadMentions.mentions,
       resolveSegmentLinkHref: threadMentions.resolveLinkHref,
     });
   }
 
   if (promptMentions !== undefined) {
-    components["bb-prompt-mention"] = buildPromptMentionComponent({
+    components["patcher-prompt-mention"] = buildPromptMentionComponent({
       mentions: promptMentions.mentions,
       resolveLinkHref: promptMentions.resolveLinkHref,
       resolveMentionLink: promptMentions.resolveMentionLink,
@@ -1236,7 +1236,7 @@ function MarkdownPreviewComponent({
   // Substitute prompt-mention spans for inert sentinels first (offsets index
   // into the raw `content`), so the sentinels are present before frontmatter
   // splitting and link normalization run. `resolvedPromptMentions` carries the
-  // index-aligned mention list the `bb-prompt-mention` renderer reads back.
+  // index-aligned mention list the `patcher-prompt-mention` renderer reads back.
   const promptMentionSubstitution = useMemo(
     () =>
       promptMentions

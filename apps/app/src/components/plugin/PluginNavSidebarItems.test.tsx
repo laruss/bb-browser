@@ -159,7 +159,7 @@ describe("PluginNavSidebarItems", () => {
       screen.getByRole("button", { name: "Tasks" }).classList.contains("pr-18"),
     ).toBe(true);
     for (const className of [
-      "bb-sidebar-hover-actions-fade",
+      "patcher-sidebar-hover-actions-fade",
       "right-1",
       "min-w-5",
       "max-h-5",

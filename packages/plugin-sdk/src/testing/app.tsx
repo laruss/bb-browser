@@ -228,7 +228,7 @@ function isPluginAppDefinition(value: unknown): value is PluginAppDefinition {
  * records every public prop as a data attribute so plugin tests can assert
  * what their slot component passed without the real chat engine.
  * `leadingContent` renders inside the stub; each `messageActions` entry
- * renders as a button (`data-testid="bb-thread-chat-action-<id>"`) that
+ * renders as a button (`data-testid="patcher-thread-chat-action-<id>"`) that
  * invokes its `run` with a synthetic assistant message reference, so plugin
  * tests can drive the action without the real timeline.
  */
@@ -244,7 +244,7 @@ function TestThreadChat({
 }: ThreadChatProps) {
   return (
     <div
-      data-testid="bb-thread-chat"
+      data-testid="patcher-thread-chat"
       data-thread-id={threadId}
       data-variant={variant}
       data-layout={layout}
@@ -256,14 +256,16 @@ function TestThreadChat({
       className={className}
     >
       {leadingContent === undefined ? null : (
-        <div data-testid="bb-thread-chat-leading-content">{leadingContent}</div>
+        <div data-testid="patcher-thread-chat-leading-content">
+          {leadingContent}
+        </div>
       )}
       ThreadChat stub ({threadId})
       {(messageActions ?? []).map((action) => (
         <button
           key={action.id}
           type="button"
-          data-testid={`bb-thread-chat-action-${action.id}`}
+          data-testid={`patcher-thread-chat-action-${action.id}`}
           data-roles={action.roles === undefined ? "" : action.roles.join(" ")}
           onClick={() => {
             void action.run({
@@ -289,7 +291,7 @@ function TestThreadChat({
  */
 function TestMarkdown({ content, className }: MarkdownProps) {
   return (
-    <div data-testid="bb-markdown" className={className}>
+    <div data-testid="patcher-markdown" className={className}>
       {content}
     </div>
   );
@@ -1064,7 +1066,7 @@ export interface RenderSlotOptions<
 export interface RenderedSlotBehaviorDrivers {
   /**
    * Push a realtime event to `useRealtime(channel, …)` subscribers, wrapped
-   * in act. The payload is JSON-round-tripped like `bb.realtime.publish`.
+   * in act. The payload is JSON-round-tripped like `patcher.realtime.publish`.
    */
   emitRealtime(channel: string, payload: unknown): Promise<void>;
   /** Drive the lifecycle of the same connection used by realtime events. */

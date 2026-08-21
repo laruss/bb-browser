@@ -13,8 +13,8 @@ import { PatcherPluginApi, PluginSettingValue, PluginAgentToolExperimentalStatus
  * Read this before adding one: **in-process, these are not a security boundary
  * and cannot be.** A plugin's `server.ts` is a Node module loaded into the bb
  * server, so it can `import("node:child_process")`, read another plugin's
- * secrets off disk, or skip `bb.sdk` entirely and call the loopback API it is
- * handed in `bb.server.loopbackBaseUrl`. A gate on the `bb` object stops none
+ * secrets off disk, or skip `patcher.sdk` entirely and call the loopback API it is
+ * handed in `patcher.server.loopbackBaseUrl`. A gate on the `bb` object stops none
  * of that. Plan §9 asks for isolation and plan Phase 7 is where it comes from.
  *
  * What these are for until then, in the order the value actually arrives:
@@ -28,7 +28,7 @@ import { PatcherPluginApi, PluginSettingValue, PluginAgentToolExperimentalStatus
  *    which is a fixable message rather than silent extra behaviour.
  * 3. **Something to show the user** at install time, and in the plugin's detail.
  *
- * Undeclared means denied. A plugin with no `bb.permissions` reaches nothing
+ * Undeclared means denied. A plugin with no `patcher.permissions` reaches nothing
  * gated — there is no legacy "everything" mode, because a default of "all"
  * would leave the list describing intentions instead of the boundary.
  */
@@ -40,12 +40,12 @@ declare const PLUGIN_PERMISSIONS: readonly ["tabs.read", "page.read", "network.o
 type PluginPermission = (typeof PLUGIN_PERMISSIONS)[number];
 
 /**
- * The fake host's half of `bb.permissions`.
+ * The fake host's half of `patcher.permissions`.
  *
  * It exists so a plugin's unit tests cannot pass on a manifest the real host
  * would refuse. The default is the host's default — **declared nothing,
- * reaches nothing gated** — so a suite that exercises `bb.browser` or
- * `bb.sdk` must say what the plugin asks for, and saying it wrong fails here
+ * reaches nothing gated** — so a suite that exercises `patcher.browser` or
+ * `patcher.sdk` must say what the plugin asks for, and saying it wrong fails here
  * instead of on someone's machine.
  *
  * Say it by reading the plugin's own manifest, so the test cannot drift from
@@ -55,19 +55,19 @@ type PluginPermission = (typeof PLUGIN_PERMISSIONS)[number];
  * crosses that boundary, and tests match on the name.
  */
 /**
- * The `bb.permissions` of the plugin owning `from`, read off disk.
+ * The `patcher.permissions` of the plugin owning `from`, read off disk.
  *
  * Pass `import.meta.url` from the test. Reading the real manifest is the whole
  * point: a hand-written list in the test would be a second declaration, free
  * to say the plugin needs something it does not, or — worse — to keep passing
  * after the manifest drops an entry the code still uses.
  *
- * Walks up to the nearest `package.json` that declares `bb.server`, so tests
+ * Walks up to the nearest `package.json` that declares `patcher.server`, so tests
  * in subdirectories work without naming a path.
  */
 declare function pluginPermissionsFromManifest(from: string): readonly PluginPermission[];
 /**
- * The `bb.sites` of the plugin owning `from`, read off disk.
+ * The `patcher.sites` of the plugin owning `from`, read off disk.
  *
  * The companion to {@link pluginPermissionsFromManifest}, and needed for the
  * same reason plus one of its own: a page style names one of these patterns, so
@@ -83,12 +83,12 @@ interface FakePermissionGate {
 
 type PatcherSdk = PatcherPluginApi["sdk"];
 /**
- * Recordable `bb.sdk` stand-in for {@link createFakePluginHost}. Every call
+ * Recordable `patcher.sdk` stand-in for {@link createFakePluginHost}. Every call
  * through the fake is recorded (post plugin-attribution defaulting, so
  * assertions see what the server would receive); calls without a stubbed
  * implementation throw with a message naming the exact path to stub.
  */
-/** One recorded `bb.sdk` call. `path` is dot-joined, e.g. "threads.spawn". */
+/** One recorded `patcher.sdk` call. `path` is dot-joined, e.g. "threads.spawn". */
 interface FakeSdkCall {
     path: string;
     args: unknown[];
@@ -108,7 +108,7 @@ type FakeSdkOverrideTree<T> = {
 };
 type FakeSdkOverrides = FakeSdkOverrideTree<PatcherSdk>;
 interface FakeSdkHarness {
-    /** Every `bb.sdk` call in order, including ones whose stub threw. */
+    /** Every `patcher.sdk` call in order, including ones whose stub threw. */
     readonly calls: FakeSdkCall[];
     /** Argument lists of the calls to one dot-joined path. */
     callsTo(path: string): unknown[][];
@@ -143,7 +143,7 @@ declare function createFakeSdk(options: {
  * - storage is process-local: kv in a Map, `storage.database()` one shared
  *   better-sqlite3 handle in a temp directory (same data across calls, like
  *   the host's shared file), secret settings alongside plain values (no files).
- * - `bb.sdk` is always bound (no listen gate) and every unstubbed method
+ * - `patcher.sdk` is always bound (no listen gate) and every unstubbed method
  *   throws instead of hitting a server.
  * - http auth modes are recorded but not enforced — signature checks and
  *   token handling inside handlers still run.
@@ -214,7 +214,7 @@ interface FakeOmniboxProviderRecord {
     run: ((itemId: string, ctx: PluginOmniboxRunContext) => PluginOmniboxRunResult | void | Promise<PluginOmniboxRunResult | void>) | null;
 }
 /**
- * A stand-in browser surface for plugins that call `bb.browser.tabs`/`page`/
+ * A stand-in browser surface for plugins that call `patcher.browser.tabs`/`page`/
  * `navigation`. It models the two properties those calls actually hinge on —
  * which tab is active, and which tabs are **live** (have a real page behind
  * them) — so a plugin's error handling can be exercised without an Electron
@@ -233,17 +233,17 @@ interface FakeBrowserDrivers {
         snapshot?: string;
         console?: readonly PluginBrowserConsoleEntry[];
         network?: readonly PluginBrowserNetworkEntry[];
-        /** What `bb.browser.storage` reads, and what its writes then change. */
+        /** What `patcher.browser.storage` reads, and what its writes then change. */
         cookies?: readonly PluginBrowserCookie[];
         localStorage?: readonly PluginBrowserStorageItem[];
         sessionStorage?: readonly PluginBrowserStorageItem[];
         /**
-         * What `bb.browser.control.evaluate` answers with, whatever it was asked.
+         * What `patcher.browser.control.evaluate` answers with, whatever it was asked.
          * A fake cannot run the expression; what a test can check is that the
          * expression it meant to send is the one that was sent.
          */
         evaluated?: string;
-        /** What `bb.browser.recording.videoStop` hands back, since a fake films nothing. */
+        /** What `patcher.browser.recording.videoStop` hands back, since a fake films nothing. */
         frames?: readonly {
             at: number;
             base64: string;
@@ -270,7 +270,7 @@ interface FakeBrowserTabInput {
     canGoBack?: boolean;
     canGoForward?: boolean;
 }
-/** One recorded `bb.browser.*` call, for assertions. */
+/** One recorded `patcher.browser.*` call, for assertions. */
 interface FakeBrowserCall {
     type: string;
     args: Record<string, unknown>;
@@ -289,7 +289,7 @@ interface FakePluginRegistrations {
     schedules: FakeScheduleRecord[];
     cli: FakeCliRecord | null;
     agentTools: FakeAgentToolRecord[];
-    /** Provider from bb.agents.configure, or null when none registered. */
+    /** Provider from patcher.agents.configure, or null when none registered. */
     agentConfigurationProvider: ((context: PluginAgentConfigurationContext) => PluginAgentConfiguration) | null;
     /** Provider from contributeInstructions, or null when none registered. */
     instructionProvider: ((ctx: {
@@ -299,63 +299,63 @@ interface FakePluginRegistrations {
     threadEventHandlers: Record<PluginThreadEventName, number>;
     mentionProviders: FakeMentionProviderRecord[];
     omniboxProviders: FakeOmniboxProviderRecord[];
-    /** Keybindings from `bb.ui.registerKeybinding`, in registration order. */
+    /** Keybindings from `patcher.ui.registerKeybinding`, in registration order. */
     keybindings: PluginKeybinding[];
-    /** Handlers from `bb.browser.registerDownloadHandler`, in registration order. */
+    /** Handlers from `patcher.browser.registerDownloadHandler`, in registration order. */
     downloadHandlers: PluginBrowserDownloadHandler[];
-    /** Items from `bb.browser.registerContextMenuItem`, in registration order. */
+    /** Items from `patcher.browser.registerContextMenuItem`, in registration order. */
     contextMenuItems: PluginBrowserContextMenuItemRegistration[];
-    /** Buttons from `bb.browser.registerFindAction`, in registration order. */
+    /** Buttons from `patcher.browser.registerFindAction`, in registration order. */
     findActions: PluginBrowserFindActionRegistration[];
-    /** Entries from `bb.browser.registerTabAction`, in registration order. */
+    /** Entries from `patcher.browser.registerTabAction`, in registration order. */
     tabActions: PluginBrowserTabActionRegistration[];
-    /** Providers from `bb.browser.registerSiteInfoProvider`, in order. */
+    /** Providers from `patcher.browser.registerSiteInfoProvider`, in order. */
     siteInfoProviders: PluginBrowserSiteInfoProviderRegistration[];
-    /** Controls from `bb.browser.registerToolbarItem` — at most one. */
+    /** Controls from `patcher.browser.registerToolbarItem` — at most one. */
     toolbarItems: PluginBrowserToolbarItemRegistration[];
-    /** Sections from `bb.browser.registerNewTabWidget`, in registration order. */
+    /** Sections from `patcher.browser.registerNewTabWidget`, in registration order. */
     newTabWidgets: PluginBrowserNewTabWidgetRegistration[];
-    /** Commands from `bb.ui.registerCommand`, in registration order. */
+    /** Commands from `patcher.ui.registerCommand`, in registration order. */
     commands: PluginCommandRegistration[];
-    /** Engines from `bb.browser.registerSearchEngine`, in registration order. */
+    /** Engines from `patcher.browser.registerSearchEngine`, in registration order. */
     searchEngines: PluginBrowserSearchEngineRegistration[];
-    /** Styles from `bb.browser.registerPageStyle`, in registration order. */
+    /** Styles from `patcher.browser.registerPageStyle`, in registration order. */
     pageStyles: PluginBrowserPageStyleRegistration[];
-    /** Scripts from `bb.browser.registerPageScript`, in registration order. */
+    /** Scripts from `patcher.browser.registerPageScript`, in registration order. */
     pageScripts: PluginBrowserPageScriptRegistration[];
-    /** Providers from `bb.browser.registerAuthProvider`, in registration order. */
+    /** Providers from `patcher.browser.registerAuthProvider`, in registration order. */
     authProviders: PluginBrowserAuthProvider[];
-    /** Providers from `bb.browser.registerPdfTextProvider`, in order. */
+    /** Providers from `patcher.browser.registerPdfTextProvider`, in order. */
     pdfTextProviders: PluginBrowserPdfTextProvider[];
     /**
-     * Handlers from `bb.browser.registerExternalLinkHandler`, in registration
+     * Handlers from `patcher.browser.registerExternalLinkHandler`, in registration
      * order.
      */
     externalLinkHandlers: PluginBrowserExternalLinkHandler[];
-    /** Filters from `bb.browser.registerHistoryFilter`, in registration order. */
+    /** Filters from `patcher.browser.registerHistoryFilter`, in registration order. */
     historyFilters: PluginBrowserHistoryFilter[];
 }
 /** Read-only state for assertions after a plugin registers or handles work. */
 interface FakePluginInspectionState {
     readonly pluginId: string;
-    /** Every `bb.log` line, in order. */
+    /** Every `patcher.log` line, in order. */
     readonly logEntries: FakeLogEntry[];
-    /** Every `bb.realtime.publish`, payload normalized like the wire. */
+    /** Every `patcher.realtime.publish`, payload normalized like the wire. */
     readonly realtimeSignals: FakeRealtimeSignal[];
-    /** Every `bb.status.needsConfiguration` message, in order. */
+    /** Every `patcher.status.needsConfiguration` message, in order. */
     readonly needsConfigurationMessages: string[];
-    /** Recorded `bb.sdk` calls + stub control. */
+    /** Recorded `patcher.sdk` calls + stub control. */
     readonly sdk: FakeSdkHarness;
     readonly registrations: FakePluginRegistrations;
     readonly pendingInteractions: readonly (PluginInteractionRequest & {
         id: string;
     })[];
-    /** Every `bb.browser.*` call, in order. */
+    /** Every `patcher.browser.*` call, in order. */
     readonly browserCalls: readonly FakeBrowserCall[];
 }
 /** Deterministic inputs that stand in for behavior normally driven by BB. */
 interface FakePluginBehaviorDrivers {
-    /** Drive the stand-in browser surface behind `bb.browser.*`. */
+    /** Drive the stand-in browser surface behind `patcher.browser.*`. */
     browser: FakeBrowserDrivers;
     submitInteraction(id: string, value: JsonValue): void;
     cancelInteraction(id: string): void;
@@ -379,7 +379,7 @@ interface FakePluginBehaviorDrivers {
      */
     runCli(argv: string[], ctx?: PluginCliContext): Promise<PluginCliExecutionResult>;
     /**
-     * Dispatch a request to a registered `bb.http` route (exact method+path
+     * Dispatch a request to a registered `patcher.http` route (exact method+path
      * match, like the host's V1 router) through a real Hono context. Auth
      * modes are not enforced. A throwing handler yields the host's 500
      * `{ ok: false, error: "plugin route failed: …" }` response.
@@ -399,7 +399,7 @@ interface FakePluginBehaviorDrivers {
     /** Run a registered schedule's function once (no timers, no cron sweep). */
     runSchedule(name: string): Promise<void>;
     /**
-     * Deliver a thread lifecycle event to every `bb.events.on` handler. Handlers run
+     * Deliver a thread lifecycle event to every `patcher.events.on` handler. Handlers run
      * sequentially; errors are caught and logged like the host's
      * fire-and-forget dispatch, and returned for assertions.
      */
@@ -413,7 +413,7 @@ interface FakePluginBehaviorDrivers {
      * default to "thread-test"/"project-test" and a fresh signal.
      */
     callAgentTool(name: string, input: unknown, ctx?: Partial<PluginAgentToolContext>): Promise<PluginAgentToolResult>;
-    /** Evaluate `bb.agents.configure` with production validation/fail-closed
+    /** Evaluate `patcher.agents.configure` with production validation/fail-closed
      * semantics. With no callback, every registered tool/declared test skill is
      * selected. Callback failures are logged and return empty selections. */
     resolveAgentConfiguration(context: PluginAgentConfigurationContext): Promise<{
@@ -429,7 +429,7 @@ interface FakePluginLifecycleControls {
      * The current host remains live when the factory throws; on success its
      * services/hooks are disposed and the returned host becomes current.
      */
-    reload(factory: (bb: PatcherPluginApi) => void | Promise<void>): Promise<FakePluginHost>;
+    reload(factory: (patcher: PatcherPluginApi) => void | Promise<void>): Promise<FakePluginHost>;
     /**
      * Dispose like a host reload/disable: abort services started via
      * runService, run onDispose hooks LIFO (isolated), close database handles,
@@ -451,8 +451,8 @@ interface CreateFakePluginHostOptions {
     /** Defaults to "test-plugin". */
     pluginId?: string;
     /**
-     * Value served by `bb.server.loopbackBaseUrl` (always bound here, like
-     * `bb.sdk`). Defaults to "http://127.0.0.1:38986".
+     * Value served by `patcher.server.loopbackBaseUrl` (always bound here, like
+     * `patcher.sdk`). Defaults to "http://127.0.0.1:38986".
      */
     loopbackBaseUrl?: string;
     /**
@@ -462,13 +462,13 @@ interface CreateFakePluginHostOptions {
      * the descriptor default on read, like the host.
      */
     settings?: Record<string, PluginSettingValue>;
-    /** Initial `bb.sdk` stubs; extend later via `harness.sdk.stub`. */
+    /** Initial `patcher.sdk` stubs; extend later via `harness.sdk.stub`. */
     sdk?: FakeSdkOverrides;
     /** Static manifest skill ids available to configure() in this fake host. */
     agentSkillIds?: readonly string[];
     /**
-     * What `bb.permissions` declares. Defaults to none, like the host — so a
-     * suite touching `bb.browser` or `bb.sdk` must say what the plugin asks
+     * What `patcher.permissions` declares. Defaults to none, like the host — so a
+     * suite touching `patcher.browser` or `patcher.sdk` must say what the plugin asks
      * for, and cannot pass on a manifest an install would refuse.
      *
      * Read it from the plugin's own manifest so the two cannot drift:
@@ -476,7 +476,7 @@ interface CreateFakePluginHostOptions {
      */
     permissions?: readonly PluginPermission[];
     /**
-     * What `bb.sites` declares: the websites this plugin's page contributions may
+     * What `patcher.sites` declares: the websites this plugin's page contributions may
      * reach. Defaults to none, so `registerPageStyle` and `registerPageScript`
      * are refused here exactly as an install would refuse them.
      *
@@ -486,7 +486,7 @@ interface CreateFakePluginHostOptions {
     sites?: readonly string[];
 }
 interface FakePluginHost {
-    bb: PatcherPluginApi;
+    patcher: PatcherPluginApi;
     harness: FakePluginHarness;
 }
 declare function createFakePluginHost(options?: CreateFakePluginHostOptions): FakePluginHost;

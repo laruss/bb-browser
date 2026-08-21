@@ -6,7 +6,7 @@ import {
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 
-export const BRIDGE_MCP_SERVER_NAME = "bb-bridge";
+export const BRIDGE_MCP_SERVER_NAME = "patcher-bridge";
 
 export type DynamicToolDefinition = DynamicTool;
 

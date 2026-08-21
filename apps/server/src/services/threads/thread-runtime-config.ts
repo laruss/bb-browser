@@ -112,7 +112,7 @@ interface DynamicToolContribution {
 
 /**
  * The session's dynamic tool set: built-ins first, then native plugin tools
- * (bb.agents.registerTool), resolved live at thread.start/turn.submit — so
+ * (patcher.agents.registerTool), resolved live at thread.start/turn.submit — so
  * tool-set changes apply on the next session start, never mid-session.
  * Conditionally selected plugin tools follow configure() like any thread.
  */

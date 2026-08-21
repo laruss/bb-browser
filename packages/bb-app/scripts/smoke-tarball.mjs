@@ -590,7 +590,7 @@ async function smokePiUserConfiguration(packageDir) {
       cwd: workspaceDir,
       dynamicTools: [
         {
-          name: "bb_dynamic_tool",
+          name: "patcher_dynamic_tool",
           description: "A tool provided by BB.",
           inputSchema: {
             type: "object",
@@ -636,7 +636,7 @@ async function smokePiUserConfiguration(packageDir) {
     const dynamicToolCall = dynamicToolCalls[0];
     if (
       !isRecord(dynamicToolCall.params) ||
-      dynamicToolCall.params.tool !== "bb_dynamic_tool" ||
+      dynamicToolCall.params.tool !== "patcher_dynamic_tool" ||
       !isRecord(dynamicToolCall.params.arguments) ||
       dynamicToolCall.params.arguments.value !== "BB tool input"
     ) {
@@ -650,7 +650,7 @@ async function smokePiUserConfiguration(packageDir) {
       .map((message) => message.params.message.toolName);
     if (
       !completedToolNames.includes("configured_tool") ||
-      !completedToolNames.includes("bb_dynamic_tool")
+      !completedToolNames.includes("patcher_dynamic_tool")
     ) {
       throw new Error(
         `${label} did not complete both tools: ${completedToolNames.join(", ")}`,

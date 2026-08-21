@@ -1658,7 +1658,7 @@ describe("codex provider adapter", () => {
       },
       dynamicTools: [
         {
-          name: "bb_test_ping",
+          name: "patcher_test_ping",
           description: "Ping the host",
           inputSchema: {
             type: "object",
@@ -1681,7 +1681,7 @@ describe("codex provider adapter", () => {
         ),
         dynamicTools: [
           {
-            name: "bb_test_ping",
+            name: "patcher_test_ping",
             description: "Ping the host",
             inputSchema: {
               type: "object",
@@ -1726,7 +1726,7 @@ describe("codex provider adapter", () => {
       options: fullProviderExecutionContext,
       dynamicTools: [
         {
-          name: "bb_side_chat_context",
+          name: "patcher_side_chat_context",
           description: "Read side chat context",
           inputSchema: {
             type: "object",
@@ -1745,7 +1745,7 @@ describe("codex provider adapter", () => {
         threadId: "codex-parent-thread",
         dynamicTools: [
           {
-            name: "bb_side_chat_context",
+            name: "patcher_side_chat_context",
             description: "Read side chat context",
             inputSchema: {
               type: "object",
@@ -3663,7 +3663,7 @@ describe("codex provider adapter", () => {
           type: "dynamicToolCall",
           id: "dyn-1",
           namespace: null,
-          tool: "bb_test_ping",
+          tool: "patcher_test_ping",
           arguments: {},
           status: "completed",
           contentItems: [{ type: "inputText", text: "PONG_FROM_TOOL" }],
@@ -3681,7 +3681,7 @@ describe("codex provider adapter", () => {
         item: expect.objectContaining({
           type: "toolCall",
           id: "dyn-1",
-          tool: "bb_test_ping",
+          tool: "patcher_test_ping",
           status: "completed",
           result: "PONG_FROM_TOOL",
           durationMs: 3,
@@ -3702,7 +3702,7 @@ describe("codex provider adapter", () => {
           type: "dynamicToolCall",
           id: "dyn-err-1",
           namespace: null,
-          tool: "bb_test_ping",
+          tool: "patcher_test_ping",
           arguments: {},
           status: "failed",
           contentItems: [{ type: "inputText", text: "permission denied" }],
@@ -3740,7 +3740,7 @@ describe("codex provider adapter", () => {
           type: "dynamicToolCall",
           id: "dyn-img-1",
           namespace: null,
-          tool: "bb_test_image",
+          tool: "patcher_test_image",
           arguments: {},
           status: "failed",
           contentItems: [
@@ -5330,7 +5330,7 @@ describe("codex provider adapter", () => {
           threadId: "t1",
           turnId: "turn-1",
           callId: "call-1",
-          tool: "bb_test_ping",
+          tool: "patcher_test_ping",
           arguments: { ping: true },
         },
       }),
@@ -5339,7 +5339,7 @@ describe("codex provider adapter", () => {
       providerThreadId: "t1",
       turnId: "turn-1",
       callId: "call-1",
-      tool: "bb_test_ping",
+      tool: "patcher_test_ping",
       arguments: { ping: true },
     });
   });
@@ -5353,7 +5353,7 @@ describe("codex provider adapter", () => {
           threadId: "t1",
           turnId: "turn-1",
           callId: "call-1",
-          tool: "bb_test_ping",
+          tool: "patcher_test_ping",
           arguments: { ping: true },
         },
       }),

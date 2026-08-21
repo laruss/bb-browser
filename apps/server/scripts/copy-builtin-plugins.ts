@@ -83,10 +83,12 @@ async function writeRuntimePackageJson(args: {
     `${JSON.stringify(
       {
         ...packageJson,
-        bb: {
-          ...packageJson.bb,
+        patcher: {
+          ...packageJson.patcher,
           server: "./dist/server.js",
-          ...(packageJson.bb.app === undefined ? {} : { app: "./dist/app.js" }),
+          ...(packageJson.patcher.app === undefined
+            ? {}
+            : { app: "./dist/app.js" }),
         },
       },
       null,
@@ -113,7 +115,7 @@ async function copyBuiltinPlugin(args: {
       "utf8",
     );
     const packageJson = pluginPackageJsonSchema.parse(JSON.parse(raw));
-    if (packageJson.bb.app !== undefined) {
+    if (packageJson.patcher.app !== undefined) {
       await buildPluginApp(args.sourceRoot, args.patcherVersion, toolchain);
     }
   }
@@ -136,9 +138,11 @@ async function copyBuiltinPlugin(args: {
       await readFile(path.join(args.sourceRoot, "package.json"), "utf8"),
     ),
   );
-  const logo = packageJson.bb.branding.logo;
-  const compactIcon = isPluginOwnedIconPath(packageJson.bb.branding.icon ?? "")
-    ? packageJson.bb.branding.icon
+  const logo = packageJson.patcher.branding.logo;
+  const compactIcon = isPluginOwnedIconPath(
+    packageJson.patcher.branding.icon ?? "",
+  )
+    ? packageJson.patcher.branding.icon
     : undefined;
   for (const asset of [compactIcon, logo?.light, logo?.dark]) {
     if (asset === undefined) continue;

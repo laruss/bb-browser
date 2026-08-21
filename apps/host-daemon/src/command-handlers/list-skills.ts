@@ -44,7 +44,7 @@ function createPatcherSkillScanRoot(
 
 /**
  * Resolve the project-local bb root owned by this host. Global bb-user and
- * bb-builtin skills remain server-owned so remote hosts never interpret server
+ * patcher-builtin skills remain server-owned so remote hosts never interpret server
  * filesystem paths or create a second, divergent user catalog.
  */
 function resolvePatcherSkillScanRoots(

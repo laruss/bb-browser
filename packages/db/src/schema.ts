@@ -326,7 +326,7 @@ export const pluginStateSnapshots = sqliteTable(
   ],
 );
 
-// Namespaced plugin key/value storage (`bb.storage.kv`). Values are JSON text;
+// Namespaced plugin key/value storage (`patcher.storage.kv`). Values are JSON text;
 // the plugin API caps them at 256KB before they reach this table.
 export const pluginKv = sqliteTable(
   "plugin_kv",
@@ -339,7 +339,7 @@ export const pluginKv = sqliteTable(
   (table) => [primaryKey({ columns: [table.pluginId, table.key] })],
 );
 
-// Non-secret plugin settings values (`bb.settings`). Values are JSON text;
+// Non-secret plugin settings values (`patcher.settings`). Values are JSON text;
 // `secret: true` values live in files under <dataDir>/plugins/<id>/secrets/
 // instead, never in the database.
 export const pluginSettings = sqliteTable(
@@ -353,7 +353,7 @@ export const pluginSettings = sqliteTable(
   (table) => [primaryKey({ columns: [table.pluginId, table.key] })],
 );
 
-// Durable rows for `bb.background.schedule`. Registration (plugin load)
+// Durable rows for `patcher.background.schedule`. Registration (plugin load)
 // upserts the row and computes next_run_at; the periodic sweep claims a due
 // row with a compare-and-swap on next_run_at, but only while its plugin is
 // loaded. Dispose keeps rows; removing the plugin deletes them.

@@ -227,7 +227,7 @@ const PAGE_SCRIPT_WORLD_BASE = 9001;
 const PAGE_SCRIPT_PRELOAD_ID = "bb-page-scripts";
 
 /**
- * How long a page script's `bb.rpc` waits.
+ * How long a page script's `patcher.rpc` waits.
  *
  * A backstop rather than a policy: the answer travels through this window's
  * renderer to the bb server and back, and nothing in that path has a deadline of
@@ -237,7 +237,7 @@ const PAGE_SCRIPT_PRELOAD_ID = "bb-page-scripts";
 const PAGE_SCRIPT_CALL_TIMEOUT_MS = 30_000;
 
 /**
- * The sliding window on `bb.rpc`, same shape as the popup limiter above.
+ * The sliding window on `patcher.rpc`, same shape as the popup limiter above.
  *
  * Generous enough for a script answering clicks and typing, and bounded because
  * a page script in a loop would otherwise be a page driving the bb server.
@@ -416,7 +416,7 @@ interface BrowserViewEntry {
    */
   pageStyleDocument: number;
   /**
-   * `bb.rpc` stamps from page scripts running in this view, behind the same
+   * `patcher.rpc` stamps from page scripts running in this view, behind the same
    * sliding-window limiter the popups use.
    *
    * Per view rather than per plugin: what this bounds is how much one page can
@@ -804,7 +804,7 @@ export interface DesktopBrowserViewManager {
     webContentsId: number;
     url: string;
   }): PatcherDesktopPageScriptBootstrap;
-  /** One `bb.rpc` from a page script, routed through this window's renderer. */
+  /** One `patcher.rpc` from a page script, routed through this window's renderer. */
   pageScriptRpc(args: {
     webContentsId: number;
     url: string;
@@ -2720,7 +2720,7 @@ export function createDesktopBrowserViewManager(
   const pageScriptWorldIds = new Map<string, number>();
   let pageScriptCallSequence = 0;
   /**
-   * `bb.rpc` calls in flight: callId → how to answer the page that asked.
+   * `patcher.rpc` calls in flight: callId → how to answer the page that asked.
    *
    * The request starts in a browsed renderer, is answered by this window's
    * renderer, and has to find its way back, so the correlation lives here. A late
@@ -2815,7 +2815,7 @@ export function createDesktopBrowserViewManager(
   }
 
   /**
-   * One `bb.rpc` from a page script.
+   * One `patcher.rpc` from a page script.
    *
    * `url` is the frame's address as Chromium reports it to this process, never
    * something the payload claimed, and the plugin is re-checked against it on
@@ -2831,7 +2831,7 @@ export function createDesktopBrowserViewManager(
   }): Promise<PatcherDesktopPageScriptRpcAnswer> {
     const entry = entriesByWebContentsId.get(callArgs.webContentsId);
     if (entry === undefined) {
-      return refusePageScriptCall("bb.rpc is not available in this page.");
+      return refusePageScriptCall("patcher.rpc is not available in this page.");
     }
     const { pluginId, method, input } = callArgs.request;
     if (
@@ -2840,7 +2840,7 @@ export function createDesktopBrowserViewManager(
       )
     ) {
       return refusePageScriptCall(
-        `bb.rpc: plugin "${pluginId}" declares no page script for this address.`,
+        `patcher.rpc: plugin "${pluginId}" declares no page script for this address.`,
       );
     }
     const now = Date.now();
@@ -2850,7 +2850,7 @@ export function createDesktopBrowserViewManager(
     if (recent.length >= PAGE_SCRIPT_RATE_MAX_IN_WINDOW) {
       entry.pageScriptCallTimestamps = recent;
       return refusePageScriptCall(
-        `bb.rpc: too many calls — at most ${PAGE_SCRIPT_RATE_MAX_IN_WINDOW} every ${
+        `patcher.rpc: too many calls — at most ${PAGE_SCRIPT_RATE_MAX_IN_WINDOW} every ${
           PAGE_SCRIPT_RATE_WINDOW_MS / 1000
         } seconds.`,
       );
@@ -2859,7 +2859,7 @@ export function createDesktopBrowserViewManager(
 
     const hostWindow = entry.hostWindow;
     if (hostWindow.webContents.isDestroyed()) {
-      return refusePageScriptCall("bb.rpc: this tab's bb window is gone.");
+      return refusePageScriptCall("patcher.rpc: this tab's bb window is gone.");
     }
     const callId = `page-script-${(pageScriptCallSequence += 1)}`;
     return await new Promise<PatcherDesktopPageScriptRpcAnswer>((resolve) => {
@@ -2867,7 +2867,7 @@ export function createDesktopBrowserViewManager(
         if (pendingPageScriptCalls.delete(callId)) {
           resolve(
             refusePageScriptCall(
-              `bb.rpc("${method}"): no answer within ${
+              `patcher.rpc("${method}"): no answer within ${
                 PAGE_SCRIPT_CALL_TIMEOUT_MS / 1000
               } seconds.`,
             ),
@@ -3572,7 +3572,7 @@ export function createDesktopBrowserViewManager(
     // Right-click menu for the untrusted browser view. Built from this view's
     // own webContents so the standard editing roles act on it (not the host
     // React surface), giving Copy parity even when focus is elsewhere. Only
-    // plain editing roles are exposed — no dev tools, reload, or bb-bridge
+    // plain editing roles are exposed — no dev tools, reload, or patcher-bridge
     // surface — keeping the untrusted-content posture.
     webContents.on("context-menu", (_event, params) => {
       if (webContents.isDestroyed()) {

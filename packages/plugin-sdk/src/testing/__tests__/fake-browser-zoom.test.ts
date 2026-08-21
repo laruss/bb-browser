@@ -13,12 +13,12 @@ import { createFakePluginHost } from "../fake-plugin-host.js";
  * this test with it.
  */
 async function zoomTo(factor: number): Promise<number> {
-  const { bb } = createFakePluginHost({
+  const { patcher } = createFakePluginHost({
     pluginId: "p",
     permissions: ["tabs.modify", "page.interact"],
   });
-  await bb.browser.tabs.open({ url: "https://example.test/" });
-  return await bb.browser.page.zoom({ factor });
+  await patcher.browser.tabs.open({ url: "https://example.test/" });
+  return await patcher.browser.page.zoom({ factor });
 }
 
 describe("the fake host's page.zoom", () => {

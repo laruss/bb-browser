@@ -690,7 +690,7 @@ const hostListCommandsCommandSchema = z
 export const skillRootKindSchema = z.enum([
   "bb-project",
   "bb-data-dir",
-  "bb-builtin",
+  "patcher-builtin",
   "provider-project",
   "provider-user",
   "shared-project",

@@ -47,11 +47,11 @@ export interface NewPluginTarget {
 export function resolveNewPluginTarget(name: string): NewPluginTarget | null {
   const packageName = name.startsWith("@")
     ? name
-    : name.startsWith("bb-plugin-")
+    : name.startsWith("patcher-plugin-")
       ? name
-      : `bb-plugin-${name}`;
+      : `patcher-plugin-${name}`;
   if (
-    !/^(?:@[a-z0-9][a-z0-9-]*\/)?bb-plugin-[a-z0-9][a-z0-9-]*$/.test(
+    !/^(?:@[a-z0-9][a-z0-9-]*\/)?patcher-plugin-[a-z0-9][a-z0-9-]*$/.test(
       packageName,
     )
   ) {
@@ -59,7 +59,7 @@ export function resolveNewPluginTarget(name: string): NewPluginTarget | null {
   }
   return {
     packageName,
-    directoryName: `bb-plugin-${derivePluginId(packageName)}`,
+    directoryName: `patcher-plugin-${derivePluginId(packageName)}`,
   };
 }
 
@@ -136,7 +136,7 @@ const pluginLogsResultSchema = z.object({
 const pluginPackageSummarySchema = z.object({
   name: z.string().optional(),
   version: z.string().optional(),
-  bb: z
+  patcher: z
     .object({
       permissions: z.array(z.string()).optional(),
       sites: z.array(z.string()).optional(),
@@ -145,7 +145,7 @@ const pluginPackageSummarySchema = z.object({
     .optional(),
 });
 const pluginManifestSchema = z.object({
-  bb: z
+  patcher: z
     .object({
       server: z.unknown().optional(),
       app: z.unknown().optional(),
@@ -669,11 +669,13 @@ export function registerPluginCommands(
         console.log(`  resolved: ${source.resolved}`);
         if (source.registry) console.log(`  registry: ${source.registry}`);
         if (source.integrity) console.log(`  integrity: ${source.integrity}`);
-        if (source.engines.bb) {
-          console.log(`  engines.bb: ${source.engines.bb}`);
+        if (source.engines.patcher) {
+          console.log(`  engines.patcher: ${source.engines.patcher}`);
         }
-        if (source.engines.bbPluginSdk) {
-          console.log(`  engines.bbPluginSdk: ${source.engines.bbPluginSdk}`);
+        if (source.engines.patcherPluginSdk) {
+          console.log(
+            `  engines.patcherPluginSdk: ${source.engines.patcherPluginSdk}`,
+          );
         }
         if (source.installedAt !== undefined) {
           console.log(`  installed: ${formatAbsoluteDate(source.installedAt)}`);
@@ -725,8 +727,8 @@ export function registerPluginCommands(
               if (pkg.name !== undefined) {
                 summary = `Installing ${pkg.name}@${pkg.version ?? "?"} from ${path}`;
               }
-              declared = pkg.bb?.permissions ?? [];
-              declaredSites = pkg.bb?.sites ?? [];
+              declared = pkg.patcher?.permissions ?? [];
+              declaredSites = pkg.patcher?.sites ?? [];
             } catch {
               // fall through to the bare path summary
             }
@@ -814,7 +816,7 @@ export function registerPluginCommands(
           result.installed.display,
           result.candidate?.display ?? "—",
           blockedSummary(result),
-          `${UPDATE_STATUS_LABELS[result.outcome]}${result.devMode ? " [dev build: engines.bb not enforced]" : ""}`,
+          `${UPDATE_STATUS_LABELS[result.outcome]}${result.devMode ? " [dev build: engines.patcher not enforced]" : ""}`,
         ]);
         console.log(
           renderBorderlessTable(
@@ -925,7 +927,7 @@ export function registerPluginCommands(
   plugin
     .command("new <name>")
     .description(
-      "Scaffold a plugin in ./bb-plugin-<name>; accepts @scope/bb-plugin-<name>",
+      "Scaffold a plugin in ./patcher-plugin-<name>; accepts @scope/patcher-plugin-<name>",
     )
     .option(
       "--app",
@@ -936,7 +938,7 @@ export function registerPluginCommands(
         const target = resolveNewPluginTarget(name);
         if (target === null) {
           console.error(
-            `Invalid plugin name "${name}" — use name, bb-plugin-name, or @scope/bb-plugin-name.`,
+            `Invalid plugin name "${name}" — use name, patcher-plugin-name, or @scope/patcher-plugin-name.`,
           );
           process.exit(1);
         }
@@ -975,13 +977,13 @@ export function registerPluginCommands(
           );
           process.exit(1);
         }
-        if (typeof manifest.bb?.server !== "string") {
+        if (typeof manifest.patcher?.server !== "string") {
           console.error(
-            `${rootDir} is not a bb plugin — package.json has no "bb.server" entry.`,
+            `${rootDir} is not a bb plugin — package.json has no "patcher.server" entry.`,
           );
           process.exit(1);
         }
-        const hasApp = typeof manifest.bb.app === "string";
+        const hasApp = typeof manifest.patcher.app === "string";
         const files = await syncPluginTypes({
           rootDir,
           app: hasApp,
@@ -1008,22 +1010,22 @@ export function registerPluginCommands(
   plugin
     .command("build [path]")
     .description(
-      "Compile the plugin into dist/: the bb.server backend bundle (server.js, server.meta.json) and, when bb.app is declared, the frontend bundle (app.js, app.css, app.meta.json); each *.meta.json stamps SDK/identity metadata; no server required",
+      "Compile the plugin into dist/: the patcher.server backend bundle (server.js, server.meta.json) and, when patcher.app is declared, the frontend bundle (app.js, app.css, app.meta.json); each *.meta.json stamps SDK/identity metadata; no server required",
     )
     .action(
       action(async (path: string | undefined) => {
         const rootDir = resolve(process.cwd(), path ?? ".");
         const patcherVersion = resolvePatcherCliVersion();
         // Read the manifest before building: buildPluginServer errors legibly
-        // on a missing/invalid bb.server, so a null manifest here is only the
+        // on a missing/invalid patcher.server, so a null manifest here is only the
         // unreachable case where that read also fails.
         const manifest = await readPluginManifest(rootDir);
-        const hasApp = typeof manifest?.bb?.app === "string";
+        const hasApp = typeof manifest?.patcher?.app === "string";
         // Keep the local declarations tracking the bb doing the build, so a
         // plugin scaffolded against an older SDK never typechecks green
-        // against an API this bb no longer has. Gate on bb.server so a
+        // against an API this bb no longer has. Gate on patcher.server so a
         // directory this command is about to reject is never written to first.
-        if (typeof manifest?.bb?.server === "string") {
+        if (typeof manifest?.patcher?.server === "string") {
           await refreshPluginTypes(rootDir, hasApp);
         }
         const toolchain = await cliBuildToolchain();
@@ -1058,13 +1060,13 @@ export function registerPluginCommands(
           );
           process.exit(1);
         }
-        if (typeof manifest.bb?.server !== "string") {
+        if (typeof manifest.patcher?.server !== "string") {
           console.error(
-            `${rootDir} is not a bb plugin — package.json has no "bb.server" entry.`,
+            `${rootDir} is not a bb plugin — package.json has no "patcher.server" entry.`,
           );
           process.exit(1);
         }
-        const hasApp = typeof manifest.bb.app === "string";
+        const hasApp = typeof manifest.patcher.app === "string";
         // Refresh before the watcher starts, so writing types/ cannot feed
         // the loop its own change event.
         await refreshPluginTypes(rootDir, hasApp);
@@ -1321,7 +1323,7 @@ export function registerPluginCommands(
 
   plugin
     .command("logs <id>")
-    .description("Print a plugin's log (bb.log output)")
+    .description("Print a plugin's log (patcher.log output)")
     .option("-n, --lines <count>", "Number of lines to show", "100")
     .option("-f, --follow", "Poll for new lines every second (Ctrl+C to stop)")
     .action(

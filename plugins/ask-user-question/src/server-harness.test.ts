@@ -14,7 +14,7 @@ function createHost(): FakePluginHost {
     permissions: pluginPermissionsFromManifest(import.meta.url),
     pluginId: "ask-user-question",
   });
-  plugin(host.bb as unknown as Parameters<typeof plugin>[0]);
+  plugin(host.patcher as unknown as Parameters<typeof plugin>[0]);
   return host;
 }
 
@@ -192,11 +192,11 @@ describe("asking a question", () => {
       permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "ask-user-question",
     });
-    host.bb.ui.requestInput = () =>
+    host.patcher.ui.requestInput = () =>
       Promise.reject(
         new Error("Thread thr-test is already awaiting user interaction"),
       );
-    plugin(host.bb as unknown as Parameters<typeof plugin>[0]);
+    plugin(host.patcher as unknown as Parameters<typeof plugin>[0]);
 
     const result = await host.harness.callAgentTool(TOOL_NAME, { questions });
 

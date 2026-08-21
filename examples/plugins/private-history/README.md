@@ -1,4 +1,4 @@
-# bb-plugin-private-history
+# patcher-plugin-private-history
 
 The `browser.history.filters` example — no frontend entry, no dependencies.
 Name a few hosts, and the browser stops remembering them; everything it does
@@ -12,22 +12,22 @@ a decision the browser was already making**. See
 
 What it demonstrates:
 
-- **`bb.browser.registerHistoryFilter`** — the only place a plugin sees a page
+- **`patcher.browser.registerHistoryFilter`** — the only place a plugin sees a page
   before it is stored. Returning nothing accepts the visit, `{ url, title }`
   records something else, and `null` drops it. All three appear here.
 - **Reading settings out of the hot path** — the filter runs on every page load
   and is time-boxed to a second, so the host list is read once at load and kept
   current with `settings.onChange` rather than awaited inside the filter.
-- **`bb.sdk.browserHistory`** — the other half of the same `history` permission,
+- **`patcher.sdk.browserHistory`** — the other half of the same `history` permission,
   and a different job: the filter decides what is stored from now on, the SDK
   cleans up what was stored before the rule existed. `bb private-history forget
 <text>` lists matching entries and removes them.
-- **`bb.browser.registerSiteInfoProvider`** — a third face of the same
+- **`patcher.browser.registerSiteInfoProvider`** — a third face of the same
   permission, in the panel behind the address bar's padlock: how many pages this
   site has in the store, and whether recording is off for it. The section reads
   the store rather than keeping its own tally, so what it shows is what a
   `bb private-history forget` would find.
-- **`bb.status.needsConfiguration`** as a hint rather than a refusal — with no
+- **`patcher.status.needsConfiguration`** as a hint rather than a refusal — with no
   hosts named the plugin still strips tracking parameters, so it loads and says
   what it is missing instead of contributing nothing.
 

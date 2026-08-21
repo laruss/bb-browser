@@ -28,7 +28,7 @@ provider.setResponses([
         { id: "configured-tool-call" },
       ),
       fauxToolCall(
-        "bb_dynamic_tool",
+        "patcher_dynamic_tool",
         { value: "BB tool input" },
         { id: "bb-tool-call" },
       ),

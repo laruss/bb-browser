@@ -32,7 +32,7 @@ function RepoNotes({ browserUrl }: { browserUrl: string | null }) {
   // dependency is "something changed on the server", which has no value of its own.
   const [reloads, setReloads] = useState(0);
 
-  // The other end of `bb.realtime.publish` in server.ts. This is what makes the
+  // The other end of `patcher.realtime.publish` in server.ts. This is what makes the
   // in-page button and this panel one feature rather than two: the click happens
   // in GitHub's own page, and the note appears here without either side knowing
   // about the other.
@@ -127,7 +127,7 @@ export default definePluginApp((app) => {
     icon: "StickyNote",
     component: RepoNotes,
     // The same site the page style is declared for. Unlike `matches` there, this
-    // one is not checked against `bb.sites` — it decides whether bb draws its own
+    // one is not checked against `patcher.sites` — it decides whether bb draws its own
     // column, not what this plugin may reach.
     matches: ["https://github.com/**"],
   });

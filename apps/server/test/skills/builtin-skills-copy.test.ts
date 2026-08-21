@@ -12,7 +12,9 @@ import {
 const tempDirs: string[] = [];
 
 async function makeTempDir(): Promise<string> {
-  const dir = await mkdtemp(path.join(tmpdir(), "bb-builtin-skills-copy-"));
+  const dir = await mkdtemp(
+    path.join(tmpdir(), "patcher-builtin-skills-copy-"),
+  );
   tempDirs.push(dir);
   return dir;
 }

@@ -82,7 +82,8 @@ const GITHUB_CATALOG_ENTRY = {
   description: "Browse GitHub issues and pull requests in BB.",
   icon: "Github",
   category: "Developer tools",
-  source: "github-release:ymichael/bb/bb-plugin-github-{version}.tgz@^0.1.0",
+  source:
+    "github-release:ymichael/bb/patcher-plugin-github-{version}.tgz@^0.1.0",
   installed: false,
   compatible: true,
   incompatibleReason: null,

@@ -1,4 +1,4 @@
-// bb-plugin-inline-vis frontend — assistant message directive that previews
+// patcher-plugin-inline-vis frontend — assistant message directive that previews
 // a workspace HTML file through the same path-shaped, sandboxed iframe route
 // as bb's sidebar HTML preview. Scripts, relative assets, and normal web
 // resources work inside an opaque origin that cannot access the host page.

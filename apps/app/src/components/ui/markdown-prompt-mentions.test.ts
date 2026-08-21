@@ -119,12 +119,12 @@ describe("substitutePromptMentions", () => {
 });
 
 describe("remarkPromptMentions", () => {
-  // A `data.hName` of "bb-prompt-mention" is what `mdast-util-to-hast` turns
+  // A `data.hName` of "patcher-prompt-mention" is what `mdast-util-to-hast` turns
   // into the custom element the component renders; asserting it directly checks
   // the plugin without needing a DOM.
   function mentionNodes(children: readonly PhrasingContent[]) {
     return children.filter(
-      (child) => child.data?.hName === "bb-prompt-mention",
+      (child) => child.data?.hName === "patcher-prompt-mention",
     );
   }
 

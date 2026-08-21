@@ -49,8 +49,8 @@ function gitPersistence(url: string, requestedRef: string) {
 
 const THROWING_SERVER_TS = `throw new Error("source must not load");\n`;
 
-const PREBUILT_SERVER_JS = `export default async function plugin(bb) {
-  bb.log.info("dist");
+const PREBUILT_SERVER_JS = `export default async function plugin(patcher) {
+  patcher.log.info("dist");
   globalThis.__prebuiltDistLoads = (globalThis.__prebuiltDistLoads ?? 0) + 1;
 }
 `;
@@ -63,7 +63,7 @@ describe("prebuilt server bundle loading", () => {
   beforeEach(async () => {
     db = createConnection(":memory:");
     migrate(db);
-    workDir = await mkdtemp(join(tmpdir(), "bb-plugin-prebuilt-"));
+    workDir = await mkdtemp(join(tmpdir(), "patcher-plugin-prebuilt-"));
     service = createPluginService({
       db,
       hub: {
@@ -94,7 +94,7 @@ describe("prebuilt server bundle loading", () => {
       JSON.stringify({
         name,
         version: "0.1.0",
-        bb: {
+        patcher: {
           name: "Prebuilt server fixture",
           description: "Prebuilt plugin server fixture.",
           branding: { icon: "Zap" },
@@ -115,13 +115,13 @@ describe("prebuilt server bundle loading", () => {
   }
 
   it("prefers a fresh dist/server.js for git installs (source never evaluated)", async () => {
-    const rootDir = await writePrebuiltPlugin("bb-plugin-gitdist");
+    const rootDir = await writePrebuiltPlugin("patcher-plugin-gitdist");
     // Managed-source registration without the clone step (materialization is
     // not under test); the row's git: source is what flips the loader path.
     upsertInstalledPlugin(db, {
-      ...gitPersistence("https://github.com/acme/bb-plugin-gitdist", "v1"),
+      ...gitPersistence("https://github.com/acme/patcher-plugin-gitdist", "v1"),
       id: "gitdist",
-      source: "git:github.com/acme/bb-plugin-gitdist@v1",
+      source: "git:github.com/acme/patcher-plugin-gitdist@v1",
       rootDir,
       version: "0.1.0",
       enabled: true,
@@ -141,21 +141,24 @@ describe("prebuilt server bundle loading", () => {
   });
 
   it("never prefers dist for path installs — edited source must win", async () => {
-    const rootDir = await writePrebuiltPlugin("bb-plugin-pathsrc");
+    const rootDir = await writePrebuiltPlugin("patcher-plugin-pathsrc");
     const entry = await service.installPath(rootDir);
     expect(entry.status).toBe("error");
     expect(entry.statusDetail).toContain("source must not load");
   });
 
-  it("pre-1.0: falls back to source when the dist SDK version differs within major 0", async () => {
-    const rootDir = await writePrebuiltPlugin("bb-plugin-minordist", {
+  it("loads a dist whose SDK version differs inside the running major", async () => {
+    const rootDir = await writePrebuiltPlugin("patcher-plugin-minordist", {
       sdkMajor: PLUGIN_SDK_MAJOR,
       sdkVersion: `${PLUGIN_SDK_MAJOR}.999.0`,
     });
     upsertInstalledPlugin(db, {
-      ...gitPersistence("https://github.com/acme/bb-plugin-minordist", "v1"),
+      ...gitPersistence(
+        "https://github.com/acme/patcher-plugin-minordist",
+        "v1",
+      ),
       id: "minordist",
-      source: "git:github.com/acme/bb-plugin-minordist@v1",
+      source: "git:github.com/acme/patcher-plugin-minordist@v1",
       rootDir,
       version: "0.1.0",
       enabled: true,
@@ -163,20 +166,23 @@ describe("prebuilt server bundle loading", () => {
     await service.reload("minordist");
 
     const entry = service.list().find((plugin) => plugin.id === "minordist");
-    // The throwing source ran — proof the 0.x-stale dist was NOT imported.
-    expect(entry?.status).toBe("error");
-    expect(entry?.statusDetail).toContain("source must not load");
+    // The throwing source did NOT run: past 1.0 a matching major is the whole
+    // compatibility test, so the dist is imported even at a different minor.
+    expect(entry?.status).toBe("running");
   });
 
   it("falls back to source when the dist meta's SDK major mismatches", async () => {
-    const rootDir = await writePrebuiltPlugin("bb-plugin-staledist", {
+    const rootDir = await writePrebuiltPlugin("patcher-plugin-staledist", {
       sdkMajor: 999,
       sdkVersion: "999.0.0",
     });
     upsertInstalledPlugin(db, {
-      ...gitPersistence("https://github.com/acme/bb-plugin-staledist", "v1"),
+      ...gitPersistence(
+        "https://github.com/acme/patcher-plugin-staledist",
+        "v1",
+      ),
       id: "staledist",
-      source: "git:github.com/acme/bb-plugin-staledist@v1",
+      source: "git:github.com/acme/patcher-plugin-staledist@v1",
       rootDir,
       version: "0.1.0",
       enabled: true,

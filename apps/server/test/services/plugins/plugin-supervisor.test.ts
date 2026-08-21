@@ -534,8 +534,8 @@ describe("the plugin supervisor", () => {
 
     await supervisor.start(plugin("alpha"));
 
-    // The factory's bb.log.info reached the server's logger, and its
-    // bb.storage.kv.set reached the server's kv — through a pipe, with no
+    // The factory's patcher.log.info reached the server's logger, and its
+    // patcher.storage.kv.set reached the server's kv — through a pipe, with no
     // test double anywhere in the path.
     expect(logs).toContain("[plugin:alpha] sample plugin loading");
     expect(kv.get("loaded")).toBe(JSON.stringify({ at: "factory" }));

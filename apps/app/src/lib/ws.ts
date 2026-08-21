@@ -158,7 +158,7 @@ export class WebSocketManager {
       return;
     }
 
-    // Ephemeral plugin realtime signal (bb.realtime.publish). Not buffered:
+    // Ephemeral plugin realtime signal (patcher.realtime.publish). Not buffered:
     // only live useRealtime subscribers care, and V1 has no replay.
     const pluginSignal = pluginSignalLenientSchema.safeParse(parsed);
     if (pluginSignal.success) {

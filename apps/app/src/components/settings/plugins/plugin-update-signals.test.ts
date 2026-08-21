@@ -34,7 +34,7 @@ function plugin(
     provenance: "catalog",
     isOrphanedBuiltin: false,
     catalogEntryId: "linear",
-    sourceDisplay: "npm · @bb-plugins/linear · tracks compatible",
+    sourceDisplay: "npm · @patcher-plugins/linear · tracks compatible",
     updateState: { ...EMPTY_PLUGIN_UPDATE_STATE, ...updateState },
     ...overrides,
   };

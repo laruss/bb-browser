@@ -153,7 +153,7 @@ function AddPluginDialogContent({
             <Input
               value={sourceText}
               autoFocus
-              placeholder="https://github.com/owner/bb-plugin-name"
+              placeholder="https://github.com/owner/patcher-plugin-name"
               aria-label="Plugin source"
               className="h-8 font-mono text-xs"
               onChange={(event) => setSourceText(event.target.value)}

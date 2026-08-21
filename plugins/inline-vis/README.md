@@ -1,4 +1,4 @@
-# bb-plugin-inline-vis
+# patcher-plugin-inline-vis
 
 Builtin plugin for the assistant **message directive** slot
 (`app.slots.messageDirective`). When the model emits:
@@ -35,7 +35,7 @@ bb replaces that leaf with this plugin's React component, which:
 `prepareHtmlPreview` narrows `unknown` input immediately (rejects unknown
 keys), loads the thread with `include: "environment"`, requires a live
 workspace `path` and `hostId`, confines the workspace-relative `.html`/`.htm`
-path under that root, and preflights it through `bb.sdk.files` (host-routed).
+path under that root, and preflights it through `patcher.sdk.files` (host-routed).
 Absolute paths, traversal, non-html extensions, missing files, non-UTF-8
 content, and files over 5 MiB are rejected. The iframe then uses bb's existing
 confined worktree preview route to serve the document and relative assets.
@@ -47,5 +47,5 @@ a workspace HTML file, then ask the agent to visualize it with the directive
 ## Tests
 
 ```bash
-bunx turbo run test typecheck --filter=bb-plugin-inline-vis
+bunx turbo run test typecheck --filter=patcher-plugin-inline-vis
 ```

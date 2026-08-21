@@ -1073,9 +1073,9 @@ describe("ThreadTimelineRows actions", () => {
     });
 
     await waitFor(() =>
-      expect(nestedRow.classList.contains("bb-search-flash")).toBe(true),
+      expect(nestedRow.classList.contains("patcher-search-flash")).toBe(true),
     );
-    expect(parentRow?.classList.contains("bb-search-flash")).toBe(false);
+    expect(parentRow?.classList.contains("patcher-search-flash")).toBe(false);
   });
 
   it("loads older timeline rows before scrolling to an older sidebar search match", async () => {
@@ -1112,7 +1112,7 @@ describe("ThreadTimelineRows actions", () => {
     });
 
     await waitFor(() =>
-      expect(olderRow.classList.contains("bb-search-flash")).toBe(true),
+      expect(olderRow.classList.contains("patcher-search-flash")).toBe(true),
     );
   });
 
@@ -1474,7 +1474,7 @@ describe("ThreadTimelineRows actions", () => {
     });
 
     await waitFor(() =>
-      expect(nestedRow.classList.contains("bb-search-flash")).toBe(true),
+      expect(nestedRow.classList.contains("patcher-search-flash")).toBe(true),
     );
   });
 });

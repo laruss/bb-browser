@@ -93,7 +93,7 @@ describe("a remote handle against the in-process one", () => {
   async function inProcess(): Promise<PluginApiHandle> {
     const handle = createPluginApi(noopCapabilities(await dataDir()));
     const module = (await import(FULL_ENTRY)) as {
-      default: (bb: unknown) => void;
+      default: (patcher: unknown) => void;
     };
     module.default(handle.api);
     handle.activate();

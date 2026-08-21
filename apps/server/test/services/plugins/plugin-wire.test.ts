@@ -32,30 +32,30 @@ const WIRE_SOURCE = `
     nonFiniteResult: { input: z.null(), output: z.any() },
     validated: { input: z.object({ value: z.string().min(1) }), output: z.string() },
   });
-  export default function plugin(bb: any) {
-    bb.http.route("GET", "/hello", (c: any) => c.json({ message: "hello v1" }));
-    bb.http.route("POST", "/echo", async (c: any) =>
+  export default function plugin(patcher: any) {
+    patcher.http.route("GET", "/hello", (c: any) => c.json({ message: "hello v1" }));
+    patcher.http.route("POST", "/echo", async (c: any) =>
       c.json({ echoed: await c.req.json() }));
-    bb.http.route("GET", "/guarded", (c: any) => c.json({ guarded: true }), {
+    patcher.http.route("GET", "/guarded", (c: any) => c.json({ guarded: true }), {
       auth: "token",
     });
-    bb.http.route("GET", "/open", (c: any) => c.json({ open: true }), {
+    patcher.http.route("GET", "/open", (c: any) => c.json({ open: true }), {
       auth: "none",
     });
-    bb.http.route("GET", "/boom", () => {
+    patcher.http.route("GET", "/boom", () => {
       throw new Error("route boom");
     });
-    bb.rpc.register(rpcContract, {
+    patcher.rpc.register(rpcContract, {
       echo: async (input: any) => ({ echoed: input }),
       boom: async () => {
         throw new Error("rpc boom");
       },
       publish: async (input: any) => {
-        bb.realtime.publish(input.channel, input.payload);
+        patcher.realtime.publish(input.channel, input.payload);
         return "published";
       },
       publishBad: async () => {
-        bb.realtime.publish("bad", { n: BigInt(1) });
+        patcher.realtime.publish("bad", { n: BigInt(1) });
       },
       invalidOutput: () => 42,
       bigintResult: () => BigInt(1),
@@ -84,7 +84,7 @@ async function writePlugin(
     JSON.stringify({
       name: options.name,
       version: "0.1.0",
-      bb: {
+      patcher: {
         name: "Wire fixture",
         description: "Plugin wire fixture.",
         branding: { icon: "Zap" },
@@ -137,7 +137,7 @@ describe("plugin wire surfaces (http/rpc dispatcher + realtime)", () => {
   beforeEach(async () => {
     harness = await createTestAppHarness({ devAppPort: 5173 });
     rootDir = await writePlugin(join(harness.config.dataDir, "fixtures"), {
-      name: "bb-plugin-wire",
+      name: "patcher-plugin-wire",
       serverSource: WIRE_SOURCE,
     });
     const entry = await harness.pluginService.installPath(rootDir);
@@ -316,7 +316,7 @@ describe("plugin wire surfaces (http/rpc dispatcher + realtime)", () => {
     const viaHeader = await harness.app.request(
       `${BASE}/api/v1/plugins/wire/http/guarded`,
       // Token routes are for webhooks: a foreign origin is fine.
-      { headers: { "x-bb-plugin-token": token, origin: EVIL_ORIGIN } },
+      { headers: { "x-patcher-plugin-token": token, origin: EVIL_ORIGIN } },
     );
     expect(viaHeader.status).toBe(200);
     expect(await viaHeader.json()).toEqual({ guarded: true });
@@ -339,13 +339,13 @@ describe("plugin wire surfaces (http/rpc dispatcher + realtime)", () => {
 
     const staleToken = await harness.app.request(
       `${BASE}/api/v1/plugins/wire/http/guarded`,
-      { headers: { "x-bb-plugin-token": token } },
+      { headers: { "x-patcher-plugin-token": token } },
     );
     expect(staleToken.status).toBe(401);
 
     const freshToken = await harness.app.request(
       `${BASE}/api/v1/plugins/wire/http/guarded`,
-      { headers: { "x-bb-plugin-token": nextToken } },
+      { headers: { "x-patcher-plugin-token": nextToken } },
     );
     expect(freshToken.status).toBe(200);
 
@@ -408,8 +408,8 @@ describe("plugin wire surfaces (http/rpc dispatcher + realtime)", () => {
     await writeFile(
       join(rootDir, "server.ts"),
       `
-        export default function plugin(bb: any) {
-          bb.http.route("GET", "/hello", (c: any) => c.json({ message: "hello v2" }));
+        export default function plugin(patcher: any) {
+          patcher.http.route("GET", "/hello", (c: any) => c.json({ message: "hello v2" }));
         }
       `,
     );
@@ -430,10 +430,10 @@ describe("plugin wire surfaces (http/rpc dispatcher + realtime)", () => {
     await writeFile(
       join(rootDir, "server.ts"),
       `
-        export default function plugin(bb: any) {
+        export default function plugin(patcher: any) {
           const schema = { "~standard": { version: 1, vendor: "test", validate: (value: any) => ({ value }) } };
-          bb.http.route("GET", "/candidate", (c: any) => c.json({ candidate: true }));
-          bb.rpc.register({ candidate: { input: schema, output: schema } }, { candidate: () => ({ candidate: true }) });
+          patcher.http.route("GET", "/candidate", (c: any) => c.json({ candidate: true }));
+          patcher.rpc.register({ candidate: { input: schema, output: schema } }, { candidate: () => ({ candidate: true }) });
           throw new Error("candidate failed");
         }
       `,
@@ -555,7 +555,7 @@ describe("plugin wire surfaces (http/rpc dispatcher + realtime)", () => {
     });
   });
 
-  it("bb.realtime.publish broadcasts a plugin-signal WS frame to connected clients", async () => {
+  it("patcher.realtime.publish broadcasts a plugin-signal WS frame to connected clients", async () => {
     const socket = createMockHubSocket();
     harness.hub.subscribe(socket, { kind: "system" });
 
@@ -575,7 +575,7 @@ describe("plugin wire surfaces (http/rpc dispatcher + realtime)", () => {
     });
   });
 
-  it("bb.realtime.publish rejects payloads that do not survive JSON", async () => {
+  it("patcher.realtime.publish rejects payloads that do not survive JSON", async () => {
     const response = await rpc(harness, "publishBad", {});
     expect(response.status).toBe(500);
     expect(await response.json()).toMatchObject({
@@ -592,16 +592,16 @@ describe("plugin wire surfaces (http/rpc dispatcher + realtime)", () => {
     // before the body read (and invalidated by the mid-read reload) would
     // answer with the disposed instance's generation.
     const genDir = await writePlugin(join(harness.config.dataDir, "fixtures"), {
-      name: "bb-plugin-gen",
+      name: "patcher-plugin-gen",
       serverSource: `
         import { defineRpcContract } from "@patcher/plugin-sdk";
         import { z } from "zod";
         const rpcContract = defineRpcContract({ gen: { input: z.record(z.string(), z.unknown()), output: z.object({ gen: z.number() }) } });
-        export default function plugin(bb: any) {
+        export default function plugin(patcher: any) {
           const g = globalThis as any;
           g.__wireGen = (g.__wireGen ?? 0) + 1;
           const gen = g.__wireGen;
-          bb.rpc.register(rpcContract, { gen: async () => ({ gen }) });
+          patcher.rpc.register(rpcContract, { gen: async () => ({ gen }) });
         }
       `,
     });

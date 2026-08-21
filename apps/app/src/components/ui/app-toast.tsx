@@ -207,7 +207,7 @@ function showAppToast({
     ),
     {
       ...sonnerOptions,
-      className: cn("bb-app-toast", className),
+      className: cn("patcher-app-toast", className),
       duration: nextDuration,
     },
   );

@@ -213,11 +213,11 @@ const pluginSdkDtsOutputPath = path.join(
   "plugin-sdk-dts.generated.ts",
 );
 const pluginSdkDts = await readFile(
-  path.join(pluginSdkDtsDir, "bb-plugin-sdk.d.ts"),
+  path.join(pluginSdkDtsDir, "patcher-plugin-sdk.d.ts"),
   "utf8",
 );
 const pluginSdkAppDts = await readFile(
-  path.join(pluginSdkDtsDir, "bb-plugin-sdk-app.d.ts"),
+  path.join(pluginSdkDtsDir, "patcher-plugin-sdk-app.d.ts"),
   "utf8",
 );
 const pluginSdkDtsOutput = `/* eslint-disable */

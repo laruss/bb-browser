@@ -1,6 +1,6 @@
 {
   "name": "@patcher/plugin-sdk",
-  "version": "0.4.1",
+  "version": "1.0.0",
   "type": "module",
   "files": [
     "bundled-types",
@@ -10,42 +10,42 @@
   "exports": {
     ".": {
       "source": "./src/index.ts",
-      "types": "./bundled-types/bb-plugin-sdk.d.ts",
+      "types": "./bundled-types/patcher-plugin-sdk.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
     "./app": {
       "source": "./src/app.ts",
-      "types": "./bundled-types/bb-plugin-sdk-app.d.ts",
+      "types": "./bundled-types/patcher-plugin-sdk-app.d.ts",
       "import": "./dist/app.js",
       "default": "./dist/app.js"
     },
     "./internal/composer-customization-validation": {
       "source": "./src/internal/composer-customization-validation.ts",
-      "types": "./bundled-types/bb-plugin-sdk-internal-composer-customization-validation.d.ts",
+      "types": "./bundled-types/patcher-plugin-sdk-internal-composer-customization-validation.d.ts",
       "import": "./dist/internal/composer-customization-validation.js",
       "default": "./dist/internal/composer-customization-validation.js"
     },
     "./internal/composer-view": {
       "source": "./src/internal/composer-view.ts",
-      "types": "./bundled-types/bb-plugin-sdk-internal-composer-view.d.ts",
+      "types": "./bundled-types/patcher-plugin-sdk-internal-composer-view.d.ts",
       "import": "./dist/internal/composer-view.js",
       "default": "./dist/internal/composer-view.js"
     },
     "./testing": {
       "source": "./src/testing/index.ts",
-      "types": "./bundled-types/bb-plugin-sdk-testing.d.ts",
+      "types": "./bundled-types/patcher-plugin-sdk-testing.d.ts",
       "import": "./dist/testing/index.js",
       "default": "./dist/testing/index.js"
     },
     "./testing/app": {
       "source": "./src/testing/app.tsx",
-      "types": "./bundled-types/bb-plugin-sdk-testing-app.d.ts",
+      "types": "./bundled-types/patcher-plugin-sdk-testing-app.d.ts",
       "import": "./dist/testing/app.js",
       "default": "./dist/testing/app.js"
     }
   },
-  "types": "./bundled-types/bb-plugin-sdk.d.ts",
+  "types": "./bundled-types/patcher-plugin-sdk.d.ts",
   "scripts": {
     "build": "node scripts/build-bundled-dts.mjs && node scripts/build-runtime.mjs",
     "clean": "rimraf dist tsconfig.tsbuildinfo",

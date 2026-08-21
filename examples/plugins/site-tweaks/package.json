@@ -1,14 +1,14 @@
 {
-  "name": "bb-plugin-site-tweaks",
+  "name": "patcher-plugin-site-tweaks",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "description": "Declutter GitHub, and keep notes on a repository in the browser's own edge.",
   "engines": {
-    "bb": ">=0.0",
-    "bbPluginSdk": "^0.4.1"
+    "patcher": ">=0.0",
+    "patcherPluginSdk": "^1.0.0"
   },
-  "bb": {
+  "patcher": {
     "name": "Site tweaks",
     "description": "Declutter GitHub, and keep notes on a repository in the browser's own edge.",
     "branding": {
@@ -25,7 +25,7 @@
     ]
   },
   "keywords": [
-    "bb-plugin"
+    "patcher-plugin"
   ],
   "scripts": {
     "test": "vitest run --config vitest.config.ts",

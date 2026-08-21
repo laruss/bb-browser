@@ -242,7 +242,7 @@ export function createManagedPluginArtifacts(
           .catch(() => false);
         if (!jsPresent) {
           throw new Error(
-            `install refused: npm plugins with a frontend (bb.app) must publish a prebuilt bundle — "${manifest.id}" is missing dist/app.js + dist/app.meta.json`,
+            `install refused: npm plugins with a frontend (patcher.app) must publish a prebuilt bundle — "${manifest.id}" is missing dist/app.js + dist/app.meta.json`,
           );
         }
       } else if (

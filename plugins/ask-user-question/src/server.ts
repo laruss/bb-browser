@@ -35,8 +35,8 @@ function errorResult(message: string): PluginAgentToolResult {
   return { content: [{ type: "text", text: message }], isError: true };
 }
 
-export default function plugin(bb: PatcherPluginApi) {
-  bb.agents.registerTool({
+export default function plugin(patcher: PatcherPluginApi) {
+  patcher.agents.registerTool({
     name: TOOL_NAME,
     description: TOOL_DESCRIPTION,
     parameters: toolInputSchema,
@@ -56,7 +56,7 @@ export default function plugin(bb: PatcherPluginApi) {
       const askedAt = Date.now();
       let result;
       try {
-        result = await bb.ui.requestInput(
+        result = await patcher.ui.requestInput(
           {
             threadId: ctx.threadId,
             rendererId: RENDERER_ID,
@@ -98,7 +98,7 @@ export default function plugin(bb: PatcherPluginApi) {
     },
   });
 
-  bb.agents.configure((context) => {
+  patcher.agents.configure((context) => {
     if (providerHasNativeTool(context.provider.id)) {
       return { tools: [], skills: [] };
     }

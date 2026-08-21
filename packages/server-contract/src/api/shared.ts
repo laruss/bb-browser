@@ -175,7 +175,7 @@ export const serverMessageLenientSchema = changedMessageLenientSchema;
 
 /**
  * Ephemeral server→client WebSocket message carrying a plugin's
- * `bb.realtime.publish(channel, payload)` signal. V1 broadcasts to every
+ * `patcher.realtime.publish(channel, payload)` signal. V1 broadcasts to every
  * connected client — there is no per-channel subscription yet (client-side
  * consumption lands with the plugin frontend runtime). Nothing is persisted;
  * clients that predate this message type ignore it. `payload` is a

@@ -3,7 +3,7 @@ kind: instruction
 title: bb Guide — Plugins
 summary: Command reference for installing, configuring, running, and authoring bb plugins and their contributed CLI commands.
 intent: Provide complete plugin command documentation plus an authoring walkthrough for agents and humans building bb plugins.
-editingNotes: Keep flags accurate against the CLI implementation (apps/cli/src/commands/plugin.ts) and the server plugin service; a CLI test asserts every `bb plugin` subcommand appears in this chapter. The full authoring reference is the bb-plugin-authoring builtin skill.
+editingNotes: Keep flags accurate against the CLI implementation (apps/cli/src/commands/plugin.ts) and the server plugin service; a CLI test asserts every `bb plugin` subcommand appears in this chapter. The full authoring reference is the patcher-plugin-authoring builtin skill.
 ---
 Plugin commands
 
@@ -101,7 +101,7 @@ a manifest-backed local workspace:
   bb docs status [workspace-dir] [--delete] [--diff] [--json]
   bb docs push [workspace-dir] [--delete] [--dry-run] [--diff] [--json]
 
-Pull preserves vault-relative paths and writes `.bb-docs-state.json`; edit the
+Pull preserves vault-relative paths and writes `.patcher-docs-state.json`; edit the
 ordinary files and leave that state file untouched. Push uses pulled SHA-256
 versions as compare-and-swap guards. Concurrent changes stop with exit 3.
 Local file and empty-directory deletions are warnings unless `--delete` is
@@ -158,7 +158,7 @@ added/updated/unchanged counts.
                                  npm:<package>[@<version|tag|range>]
                                  (npm: needs npm on PATH; installs prompt —
                                  pass --yes to skip). Managed git:/npm:
-                                 installs refuse engines.bb / engines.bbPluginSdk
+                                 installs refuse engines.patcher / engines.patcherPluginSdk
                                  mismatches, manifest/artifact identity
                                  mismatches, and ids reserved by bundled plugins
                                  Omitted npm specs, ranges, dist-tags, omitted
@@ -169,7 +169,7 @@ added/updated/unchanged counts.
                                  Columns: installed, latest compatible,
                                  blocked newer (incompatible releases not
                                  selected), status. Dev builds (bb 0.0.0)
-                                 annotate that engines.bb is not enforced
+                                 annotate that engines.patcher is not enforced
   bb plugin update <id> | --all  Apply compatible updates for one plugin or
                                  every tracking plugin with an update. Same
                                  full-trust confirmation as
@@ -183,7 +183,7 @@ added/updated/unchanged counts.
   bb plugin reload [id]          Re-run factories against current sources
   bb plugin config <id> [set <key> <value> | unset <key>]
                                  Show or change a plugin's declared settings
-  bb plugin logs <id> [-n N] [-f]  Print (or follow) a plugin's bb.log output
+  bb plugin logs <id> [-n N] [-f]  Print (or follow) a plugin's patcher.log output
   bb plugin run <id> [args...]   Run the plugin's CLI command explicitly
   bb plugin token <id> [--rotate]  Print the token for auth:"token" HTTP
                                  routes; --rotate generates a new token,
@@ -199,7 +199,7 @@ added/updated/unchanged counts.
                                  --check reports staleness and writes nothing
   bb plugin build [path]         Compile the plugin into dist/ — the backend
                                  bundle (server.js, server.meta.json) and,
-                                 when bb.app is declared, the frontend bundle
+                                 when patcher.app is declared, the frontend bundle
                                  (app.js, app.css, app.meta.json). Each
                                  *.meta.json is stamped with SDK major/version,
                                  artifactFormatVersion, pluginId, pluginVersion,
@@ -207,7 +207,7 @@ added/updated/unchanged counts.
                                  server required
   bb plugin dev [path]           Watch a plugin's sources (default: cwd) and
                                  on every change rebuild its frontend bundle
-                                 (if it declares bb.app) and reload the
+                                 (if it declares patcher.app) and reload the
                                  plugin; Ctrl+C to stop
 
 BB Official plugins
@@ -321,7 +321,7 @@ pills, and focus the composer), and useComposerView (reactive bound scope,
 layout, draft, and run state). Plain-text edits preserve attachments and
 reconcile only inline mentions overlapped by the edit. Define RPC methods with `defineRpcContract`
 and Standard Schema-compatible input/output validators (Zod works directly),
-register via `bb.rpc.register(contract, handlers)`, then use a type-only
+register via `patcher.rpc.register(contract, handlers)`, then use a type-only
 backend contract import with `useRpc<typeof contract>()` for exact frontend
 method/input/result inference. The server validates both schemas and rejects
 non-JSON results (including cyclic and non-finite values) with structured
@@ -355,36 +355,36 @@ large content.
 
 Authoring a plugin
 
-The loop: `bb plugin new <name>` scaffolds `./bb-plugin-<name>` (add --app
+The loop: `bb plugin new <name>` scaffolds `./patcher-plugin-<name>` (add --app
 for a frontend entry); `bb plugin install .` registers it; `bb plugin dev`
 watches and reloads on every save. The manifest is package.json: required
-`bb.name` and `bb.description` human identity, required `bb.branding` with at
-least `icon` or `logo.light`, `bb.server`
-(backend entry, loaded as TypeScript — no build step), optional `bb.app`
-(frontend entry), optional `bb.skills` (static skill directories auto-imported
-into agent threads unless filtered by `bb.agents.configure`; default
-`skills/`), `engines.bb` (supported bb range),
-and optional `engines.bbPluginSdk` (supported plugin SDK range; scaffold
-writes `"^0.4.1"` for SDK 0.4.1). Use `bb-plugin-hello` for the package name by
-default. Scoped names such as `@acme/bb-plugin-hello` are also supported. The
-plugin id is the final package-name component minus `bb-plugin-`, so both forms
+`patcher.name` and `patcher.description` human identity, required `patcher.branding` with at
+least `icon` or `logo.light`, `patcher.server`
+(backend entry, loaded as TypeScript — no build step), optional `patcher.app`
+(frontend entry), optional `patcher.skills` (static skill directories auto-imported
+into agent threads unless filtered by `patcher.agents.configure`; default
+`skills/`), `engines.patcher` (supported bb range),
+and optional `engines.patcherPluginSdk` (supported plugin SDK range; scaffold
+writes `"^1.0.0"` for SDK 1.0.0). Use `patcher-plugin-hello` for the package name by
+default. Scoped names such as `@acme/patcher-plugin-hello` are also supported. The
+plugin id is the final package-name component minus `patcher-plugin-`, so both forms
 use `hello`.
 
-Plugins can contribute palettes with `bb.themes`: an array of
+Plugins can contribute palettes with `patcher.themes`: an array of
 `{ id, name, description?, css }`, where `css` is a plugin-relative `.css`
 file. Loaded plugin palettes appear in Settings → Appearance and `bb theme
 list`; their selectable id is `plugin:<plugin-id>:<theme-id>`. Disabling or
 removing the owning plugin makes bb fall back to the default palette.
 
-Branding is explicit. Declare `bb.branding.icon` as either the plugin's
+Branding is explicit. Declare `patcher.branding.icon` as either the plugin's
 canonical BB icon name or a plugin-relative compact SVG such as
 `./assets/icon.svg`. BB validates and hash-serves path-shaped SVGs, then
 renders them as masks that inherit the surrounding text color. Compact chrome
 prefers the manifest icon, then a contribution's local icon hint, and finally
 Zap. Roomy surfaces reuse the same icon when no logo override is declared.
 
-Add `bb.branding.logo.light` only for intentionally different rich/full-size
-identity artwork; optional `bb.branding.logo.dark` is preferred in dark mode.
+Add `patcher.branding.logo.light` only for intentionally different rich/full-size
+identity artwork; optional `patcher.branding.logo.dark` is preferred in dark mode.
 Logo paths must be plugin-relative `.svg`, `.png`, or `.webp` files. Root logo
 files are not auto-detected, and a dark logo requires a light logo. Logo-only
 manifests remain supported for compatibility, so at least an icon or light logo
@@ -395,7 +395,7 @@ the plugin to pick up branding changes.
 The backend entry default-exports a factory receiving the full plugin API:
 
   import type { PatcherPluginApi } from "@patcher/plugin-sdk";
-  export default async function plugin(bb: PatcherPluginApi) { ... }
+  export default async function plugin(patcher: PatcherPluginApi) { ... }
 
 The import is type-only and erased at load; the scaffold ships the full API
 as bundled .d.ts in types/ (tsconfig maps @patcher/plugin-sdk to them), so
@@ -406,33 +406,33 @@ release, so `bb plugin types` rewrites them from the running bb — run it in a
 cloned or older plugin, and `bb plugin types --check` in CI. `bb plugin
 build` and `bb plugin dev` refresh them for you. Need a symbol the types
 don't explain? Clone the repo: https://github.com/get-bb/bb. The API in
-one line each — bb.log (plugin-scoped logger behind `bb plugin logs`);
-bb.settings.define (declarative settings incl. secrets, editable via
-`bb plugin config`); bb.storage.kv (JSON rows ≤256KB) and
-bb.storage.database()+migrate (the plugin's own database); bb.sdk (the full
+one line each — patcher.log (plugin-scoped logger behind `bb plugin logs`);
+patcher.settings.define (declarative settings incl. secrets, editable via
+`bb plugin config`); patcher.storage.kv (JSON rows ≤256KB) and
+patcher.storage.database()+migrate (the plugin's own database); patcher.sdk (the full
 bb SDK — handlers/services only, not the factory; spawned threads are
 attributed to the plugin; `visibility: "hidden"` creates directly addressable
 background workers omitted from sidebar organization and unread/pending
 favicon attention, with other behavior unchanged; a child thread inherits
 its parent's visibility and still notifies that parent);
-bb.events.on (observe thread.created/idle/failed/deleted);
-bb.http.route (routes under /api/v1/plugins/<id>/http/* with
-local/token/none auth); defineRpcContract + bb.rpc.register (Standard
+patcher.events.on (observe thread.created/idle/failed/deleted);
+patcher.http.route (routes under /api/v1/plugins/<id>/http/* with
+local/token/none auth); defineRpcContract + patcher.rpc.register (Standard
 Schema-validated frontend data plane with inferred backend handlers and
 type-only frontend method/input/result inference);
-bb.realtime.publish (ephemeral signals to open app pages);
-bb.background.service (long-lived, AbortSignal, restart w/ backoff) and
-bb.background.schedule (durable cron rows); bb.cli.register (a top-level
+patcher.realtime.publish (ephemeral signals to open app pages);
+patcher.background.service (long-lived, AbortSignal, restart w/ backoff) and
+patcher.background.schedule (durable cron rows); patcher.cli.register (a top-level
 `bb <name>` command agents run through bash, with a shared 1 MiB combined
-stdout/stderr ceiling and atomic structured over-limit errors); bb.agents.registerTool
+stdout/stderr ceiling and atomic structured over-limit errors); patcher.agents.registerTool
 (static native tools with zod or JSON-schema parameters) and
-bb.agents.configure (one synchronous per-resolution callback selecting this
+patcher.agents.configure (one synchronous per-resolution callback selecting this
 plugin's own tool/skill ids and optional dynamic instructions; tools apply on
 the next provider session start/resume, while busy skill runtimes defer catalog
-changes); bb.ui
+changes); patcher.ui
 registerMentionProvider (host-rendered UI — no
-frontend bundle needed); bb.status.needsConfiguration (report
-"unconfigured" instead of crashing); bb.onDispose (LIFO cleanup on
+frontend bundle needed); patcher.status.needsConfiguration (report
+"unconfigured" instead of crashing); patcher.onDispose (LIFO cleanup on
 reload/disable/shutdown).
 
 Frontend entries register React slots (homepageSection, settingsSection,
@@ -451,8 +451,8 @@ tw-animate-css utilities compile in plugin builds).
 
 For the complete authoring reference — exact signatures, working snippets
 for every surface, the reload lifecycle, testing tips, and gotchas — use
-the built-in `bb-plugin-authoring` skill (agents: it loads on demand;
-humans: apps/server/src/services/skills/builtin-skills/bb-plugin-authoring/
+the built-in `patcher-plugin-authoring` skill (agents: it loads on demand;
+humans: apps/server/src/services/skills/builtin-skills/patcher-plugin-authoring/
 in a checkout). The builtin `inline-vis` plugin renders
 `::inline-vis{file="demo.html" height="480"}` through the sidebar's
 path-shaped, sandboxed worktree HTML iframe preview; `height` is optional.

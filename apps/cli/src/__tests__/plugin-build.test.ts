@@ -55,10 +55,10 @@ async function failingTailwindToolchain(
 
 const FIXTURE_PACKAGE_JSON = JSON.stringify(
   {
-    name: "bb-plugin-fixture",
+    name: "patcher-plugin-fixture",
     version: "0.1.0",
     type: "module",
-    bb: {
+    patcher: {
       name: "Build fixture",
       description: "Plugin app build fixture.",
       branding: { icon: "Zap" },
@@ -96,7 +96,7 @@ describe("buildPluginApp", () => {
   let root: string;
 
   beforeEach(async () => {
-    root = await mkdtemp(join(tmpdir(), "bb-plugin-build-"));
+    root = await mkdtemp(join(tmpdir(), "patcher-plugin-build-"));
   });
 
   afterEach(async () => {
@@ -153,7 +153,7 @@ describe("buildPluginApp", () => {
     // Utilities stay scoped to this plugin's own mounts, with a generic-root
     // fallback for hosts whose portals predate the per-plugin id attribute.
     expect(css).toContain(
-      '@scope ([data-bb-plugin="fixture"], [data-bb-plugin-root]:not([data-bb-plugin]))',
+      '@scope ([data-patcher-plugin="fixture"], [data-patcher-plugin-root]:not([data-patcher-plugin]))',
     );
 
     const meta = JSON.parse(await readFile(result.metaPath, "utf8"));
@@ -294,13 +294,13 @@ describe("buildPluginApp", () => {
     ]);
   });
 
-  it("errors clearly when the plugin has no bb.app entry", async () => {
+  it("errors clearly when the plugin has no patcher.app entry", async () => {
     await writeFile(
       join(root, "package.json"),
       JSON.stringify({
-        name: "bb-plugin-headless",
+        name: "patcher-plugin-headless",
         version: "0.1.0",
-        bb: {
+        patcher: {
           name: "Headless fixture",
           description: "Headless plugin build fixture.",
           branding: { icon: "Zap" },
@@ -313,7 +313,7 @@ describe("buildPluginApp", () => {
     );
   });
 
-  it("errors when bb.app points at a missing file", async () => {
+  it("errors when patcher.app points at a missing file", async () => {
     await writeFile(join(root, "package.json"), FIXTURE_PACKAGE_JSON);
     await expect(buildPluginApp(root, TEST_PATCHER_VERSION, await testToolchain())).rejects.toThrow(
       /missing file/,
@@ -323,16 +323,16 @@ describe("buildPluginApp", () => {
   it("validates a path-shaped branding.icon before building", async () => {
     await writeFixture();
     const packageJson = JSON.parse(FIXTURE_PACKAGE_JSON) as {
-      bb: { branding: { icon: string } };
+      patcher: { branding: { icon: string } };
     };
-    packageJson.bb.branding.icon = "./assets/icon.svg";
+    packageJson.patcher.branding.icon = "./assets/icon.svg";
     await writeFile(
       join(root, "package.json"),
       JSON.stringify(packageJson, null, 2),
     );
 
     await expect(buildPluginApp(root, TEST_PATCHER_VERSION, await testToolchain())).rejects.toThrow(
-      /bb\.branding\.icon points at a missing file/,
+      /patcher\.branding\.icon points at a missing file/,
     );
 
     await mkdir(join(root, "assets"));
@@ -342,10 +342,10 @@ describe("buildPluginApp", () => {
   });
 
   it("builds the `bb plugin new --app` scaffold end to end", async () => {
-    const targetDir = join(root, "bb-plugin-scaffolded");
+    const targetDir = join(root, "patcher-plugin-scaffolded");
     await scaffoldPlugin({
       targetDir,
-      packageName: "bb-plugin-scaffolded",
+      packageName: "patcher-plugin-scaffolded",
       patcherVersion: "0.9.0",
       app: true,
     });

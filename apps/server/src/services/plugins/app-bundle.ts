@@ -23,7 +23,7 @@ export interface PluginArtifactMetaParseResult {
 }
 
 /**
- * Frontend bundle inventory + asset state for plugins that declare `bb.app`
+ * Frontend bundle inventory + asset state for plugins that declare `patcher.app`
  * (design §5.1). The plugin service refreshes this per load (install, boot,
  * reload); GET /api/v1/plugins serves the wire shape and the asset routes
  * serve the recorded file paths with the recorded content hash.
@@ -49,7 +49,7 @@ export interface PluginAppBundleInfo {
 
 /** App-bundle slice of a GET /api/v1/plugins entry. */
 export interface PluginAppState {
-  /** Whether the manifest declares a `bb.app` frontend entry. */
+  /** Whether the manifest declares a `patcher.app` frontend entry. */
   hasApp: boolean;
   /** Null when dist/app.js or dist/app.meta.json is missing/unreadable. */
   bundle: PluginAppBundleInfo | null;
@@ -68,8 +68,8 @@ export interface PluginAppBundleSnapshot {
 }
 
 // ---------------------------------------------------------------------------
-// Plugin branding assets from path-shaped `bb.branding.icon` values and
-// `bb.branding.logo`. Served with the same hash-busting scheme as bundle
+// Plugin branding assets from path-shaped `patcher.branding.icon` values and
+// `patcher.branding.logo`. Served with the same hash-busting scheme as bundle
 // assets and refreshed on every load like the bundle snapshot.
 // ---------------------------------------------------------------------------
 

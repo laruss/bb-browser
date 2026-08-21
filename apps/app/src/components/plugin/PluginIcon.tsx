@@ -12,7 +12,7 @@ export function pluginIconName(icon: string | null): IconName {
 /**
  * Compact identity for plugin-contributed chrome (sidebar rows, thread
  * actions, command/mention menu rows, panel title bars). Prefer a
- * plugin-owned, path-shaped `bb.branding.icon` SVG, then a named manifest
+ * plugin-owned, path-shaped `patcher.branding.icon` SVG, then a named manifest
  * icon, then the contribution's local icon hint, then Zap. Rich
  * image logos remain reserved for roomy `PluginLogo` surfaces such as
  * installed-plugin rows and cards. Size defaults to the standard icon box;

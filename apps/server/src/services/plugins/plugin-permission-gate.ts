@@ -10,11 +10,11 @@ import {
 import type { PatcherSdk } from "@patcher/sdk";
 
 /**
- * Enforcement for the permissions a plugin declared in `bb.permissions`.
+ * Enforcement for the permissions a plugin declared in `patcher.permissions`.
  *
  * Two chokepoints carry all of it, which is the reason this is worth having:
- * every `bb.browser.*` call funnels through one `callBrowser`, and every
- * `bb.sdk` area is handed out by one wrapper. Those two are also exactly the
+ * every `patcher.browser.*` call funnels through one `callBrowser`, and every
+ * `patcher.sdk` area is handed out by one wrapper. Those two are also exactly the
  * calls that must become RPC when plugins move out of this process, so the
  * gate doubles as the list of what that RPC has to carry.
  *
@@ -31,7 +31,7 @@ export class PluginPermissionError extends Error {
   constructor(pluginId: string, permission: PluginPermission, what: string) {
     super(
       `${what} needs the "${permission}" permission, which plugin "${pluginId}" ` +
-        `does not declare. Add it to "bb.permissions" in the plugin's ` +
+        `does not declare. Add it to "patcher.permissions" in the plugin's ` +
         `package.json, then run \`bb plugin reload ${pluginId}\`.`,
     );
     this.name = "PluginPermissionError";
@@ -84,7 +84,7 @@ const SDK_AREA_PERMISSIONS: Readonly<
 
 /**
  * Stand-in for an area the plugin did not ask for. Throws on any property read
- * so `bb.sdk.terminals` fails where it is reached rather than where it is
+ * so `patcher.sdk.terminals` fails where it is reached rather than where it is
  * called — the stack then points at the plugin's own line.
  *
  * The target is a function because one member of `PatcherSdk` is one: `subscribe`
@@ -104,16 +104,16 @@ function deniedSdkArea(
   };
   return new Proxy(function denied() {} as object, {
     apply() {
-      return deny(`bb.sdk.${area}()`);
+      return deny(`patcher.sdk.${area}()`);
     },
     get(_target, property) {
       if (typeof property === "symbol") return undefined;
-      return deny(`bb.sdk.${area}.${String(property)}`);
+      return deny(`patcher.sdk.${area}.${String(property)}`);
     },
   }) as never;
 }
 
-/** Replace every `bb.sdk` area the plugin did not declare. */
+/** Replace every `patcher.sdk` area the plugin did not declare. */
 export function applySdkPermissions(
   sdk: PatcherSdk,
   pluginId: string,
@@ -128,7 +128,7 @@ export function applySdkPermissions(
   gated.subscribe = ((args: Parameters<PatcherSdk["subscribe"]>[0]) => {
     gate.assert(
       permissionForRealtimeEvent(args.event),
-      `bb.sdk.subscribe({ event: "${args.event}" })`,
+      `patcher.sdk.subscribe({ event: "${args.event}" })`,
     );
     return sdk.subscribe(args);
   }) satisfies PatcherSdk["subscribe"];
@@ -149,7 +149,7 @@ export function applySdkPermissions(
         }
         return (...args: unknown[]) => {
           for (const permission of extra) {
-            gate.assert(permission, `bb.sdk.${member}`);
+            gate.assert(permission, `patcher.sdk.${member}`);
           }
           return (
             Reflect.get(target, property, receiver) as (

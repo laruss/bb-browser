@@ -5,7 +5,7 @@ import type {
 } from "@patcher/server-contract";
 
 export const SKILL_SCOPE_LABELS: Record<SkillScope, string> = {
-  "bb-builtin": "Built-in",
+  "patcher-builtin": "Built-in",
   "bb-user": "bb · user",
   "bb-project": "bb · project",
   "claude-user": "Claude · user",
@@ -41,7 +41,7 @@ export function isSkillEditable(
       return skill.manageable;
     case "shared-user":
     case "shared-project":
-    case "bb-builtin":
+    case "patcher-builtin":
     case "plugin":
       return false;
   }

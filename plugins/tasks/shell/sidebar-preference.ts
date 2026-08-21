@@ -1,4 +1,4 @@
-export const SIDEBAR_COLLAPSED_STORAGE_KEY = "bb-tasks:sidebar-collapsed";
+export const SIDEBAR_COLLAPSED_STORAGE_KEY = "patcher-tasks:sidebar-collapsed";
 
 /**
  * The Tasks sidebar is a client-local layout preference. Keeping it in the

@@ -210,9 +210,9 @@ export interface WorkflowSettingsHandle {
 
 /** Register the descriptors and expose only parsed settings to consumers. */
 export function registerWorkflowSettings(
-  bb: Pick<PatcherPluginApi, "settings">,
+  patcher: Pick<PatcherPluginApi, "settings">,
 ): WorkflowSettingsHandle {
-  const handle = bb.settings.define(WORKFLOW_SETTING_DESCRIPTORS);
+  const handle = patcher.settings.define(WORKFLOW_SETTING_DESCRIPTORS);
   let lastValid = DEFAULT_WORKFLOW_SETTINGS;
   return {
     async get() {

@@ -118,7 +118,7 @@ function ThreadCard({
   );
 }
 
-const LAST_PRESET_STORAGE_KEY = "bb-tasks:last-dispatch-preset";
+const LAST_PRESET_STORAGE_KEY = "patcher-tasks:last-dispatch-preset";
 
 function loadLastPresetId(): string | null {
   try {

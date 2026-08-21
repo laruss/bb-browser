@@ -1,15 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
   mapPatcherReasoningLevelToCodex,
-  mapCodexReasoningLevelToBb,
+  mapCodexReasoningLevelToPatcher,
   parseModelsResponse,
 } from "./models.js";
 
-describe("mapCodexReasoningLevelToBb", () => {
+describe("mapCodexReasoningLevelToPatcher", () => {
   it("returns null for unknown values", () => {
-    expect(mapCodexReasoningLevelToBb("ludicrous")).toBeNull();
-    expect(mapCodexReasoningLevelToBb(42)).toBeNull();
-    expect(mapCodexReasoningLevelToBb(undefined)).toBeNull();
+    expect(mapCodexReasoningLevelToPatcher("ludicrous")).toBeNull();
+    expect(mapCodexReasoningLevelToPatcher(42)).toBeNull();
+    expect(mapCodexReasoningLevelToPatcher(undefined)).toBeNull();
   });
 });
 

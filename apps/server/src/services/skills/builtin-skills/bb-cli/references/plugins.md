@@ -1,7 +1,7 @@
 # Managing plugins from the CLI
 
 Installing, updating, inspecting, and scaffolding bb plugins. To WRITE one,
-use the `bb-plugin-authoring` skill instead.
+use the `patcher-plugin-authoring` skill instead.
 
 - A bb plugin is a TypeScript package running inside the bb server, extending
   it with services, schedules, HTTP/RPC endpoints, settings — and `bb` CLI
@@ -28,17 +28,17 @@ use the `bb-plugin-authoring` skill instead.
     repository's default branch; explicit branches track, while tags and
     commits are pinned. Installs prompt for confirmation (plugins are full-trust code);
     pass `--yes` to skip. Reinstalling an already-installed managed plugin is
-    refused — use `bb plugin update`. Plugins that declare a frontend (`bb.app`)
+    refused — use `bb plugin update`. Plugins that declare a frontend (`patcher.app`)
     are built at install time for path sources and git sources without a
     prebuilt app when their imported dependencies are already available;
     git/npm packages can also ship a metadata-validated prebuilt `dist/`, and
-    npm packages must. Managed git/npm installs refuse `engines.bb` /
-    `engines.bbPluginSdk` mismatches, manifest vs. artifact identity mismatches,
+    npm packages must. Managed git/npm installs refuse `engines.patcher` /
+    `engines.patcherPluginSdk` mismatches, manifest vs. artifact identity mismatches,
     and ids reserved by bundled plugins.
   - `bb plugin outdated` — check installed plugins for compatible updates
     (table; `--json` for raw results). Shows latest compatible candidate and
     any blocked incompatible newer release. Dev builds (bb `0.0.0`) annotate
-    that `engines.bb` is not enforced.
+    that `engines.patcher` is not enforced.
   - `bb plugin update <id>` / `bb plugin update --all` — apply compatible
     updates for tracking sources. Same full-trust confirmation as install
     (`--yes` skips; non-TTY refuses without it). Use `bb plugin outdated` to
@@ -53,17 +53,17 @@ use the `bb-plugin-authoring` skill instead.
     `bb plugin remove <id>` (builtin removals are remembered).
   - `bb plugin config <id> [set <key> <value> | unset <key>]` — declared
     settings. Reload the plugin after configuring (`bb plugin reload <id>`).
-  - `bb plugin logs <id> [-n N] [-f]` — the plugin's `bb.log` output.
+  - `bb plugin logs <id> [-n N] [-f]` — the plugin's `patcher.log` output.
   - `bb plugin run <id> [args...]` — explicit form of a plugin's CLI command.
   - `bb plugin new <name> [--app]` — scaffold a plugin and install its npm
     dependencies (`--app` adds a frontend entry plus a typecheck-only
-    `tsconfig.json`; scaffold sets `engines.bbPluginSdk` to `^0.4.1`). The
+    `tsconfig.json`; scaffold sets `engines.patcherPluginSdk` to `^1.0.0`). The
     install is best-effort and verified: if npm is missing or leaves a package
     out, it says so and prints the manual `npm install --include=dev` step
     rather than reporting success; `bb plugin build [path]` —
     compile the plugin into `dist/`: the backend bundle (`server.js` +
     `server.meta.json` stamped with SDK/identity metadata; preferred by
-    git/npm installs over source) and, when `bb.app` is declared, `app.js` +
+    git/npm installs over source) and, when `patcher.app` is declared, `app.js` +
     `app.css` + `app.meta.json`. Neither needs the server.
   - `bb plugin types [path]` — rewrite the plugin's `types/*.d.ts` from the
     running bb's `@patcher/plugin-sdk` declarations, creating `types/` when absent.
@@ -72,7 +72,7 @@ use the `bb-plugin-authoring` skill instead.
     non-zero without writing (for CI). `bb plugin build` and `bb plugin dev`
     refresh them automatically. Needs no server.
   - `bb plugin dev [path]` — watch loop for an installed plugin (default:
-    cwd): on every change it rebuilds the frontend bundle (when `bb.app` is
+    cwd): on every change it rebuilds the frontend bundle (when `patcher.app` is
     declared) and reloads the plugin; open app pages pick the new UI up live.
     Build/reload failures print and keep watching; Ctrl+C stops.
   - Frontend entries default-export `definePluginApp` from
@@ -92,7 +92,7 @@ use the `bb-plugin-authoring` skill instead.
   oversized result is rejected in full as `plugin_cli_output_too_large` (valid
   JSON for `--json` callers), never truncated. Use pagination or file/streaming
   commands for large results.
-- **Writing a plugin?** Use the `bb-plugin-authoring` skill — the complete
+- **Writing a plugin?** Use the `patcher-plugin-authoring` skill — the complete
   authoring reference for the backend `PatcherPluginApi` (settings, storage, sdk,
   http/rpc/realtime, background services and schedules, CLI commands, agent
   tools and context, host-rendered UI, lifecycle) and the frontend

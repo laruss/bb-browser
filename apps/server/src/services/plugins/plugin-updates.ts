@@ -307,10 +307,10 @@ export function createPluginUpdates(
         engines: {
           ...(manifest?.patcherEngineRange === undefined
             ? {}
-            : { bb: manifest.patcherEngineRange }),
+            : { patcher: manifest.patcherEngineRange }),
           ...(manifest?.patcherPluginSdkRange === undefined
             ? {}
-            : { bbPluginSdk: manifest.patcherPluginSdkRange }),
+            : { patcherPluginSdk: manifest.patcherPluginSdkRange }),
         },
         installedAt: row.installedAt,
         history: artifacts.map((artifact) => ({

@@ -12,13 +12,13 @@ import { createComment, createStore, registerTasksApi } from ".";
 
 describe("Tasks RPC domain API", () => {
   it("deletes through the typed RPC policy and rejects saved-description references", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { patcher, harness } = createFakePluginHost({
       permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
     });
-    const store = createStore(bb);
-    registerAttachments(bb, store.tasks);
-    registerTasksApi(bb, store);
+    const store = createStore(patcher);
+    registerAttachments(patcher, store.tasks);
+    registerTasksApi(patcher, store);
     const project = store.tasks.createProject({
       name: "Attachments",
       prefix: "ATT",
@@ -80,7 +80,7 @@ describe("Tasks RPC domain API", () => {
   });
 
   it("persists one successful notification to the latest replying agent", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { patcher, harness } = createFakePluginHost({
       permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
       sdk: {
@@ -91,8 +91,8 @@ describe("Tasks RPC domain API", () => {
         },
       },
     });
-    const store = createStore(bb);
-    registerTasksApi(bb, store);
+    const store = createStore(patcher);
+    registerTasksApi(patcher, store);
     const project = store.tasks.createProject({
       name: "Notifications",
       prefix: "NTF",
@@ -151,7 +151,7 @@ describe("Tasks RPC domain API", () => {
   });
 
   it("resolves the live thread title for agent comments and falls back otherwise", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { patcher, harness } = createFakePluginHost({
       permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
       sdk: {
@@ -199,8 +199,8 @@ describe("Tasks RPC domain API", () => {
         },
       },
     });
-    const store = createStore(bb);
-    registerTasksApi(bb, store);
+    const store = createStore(patcher);
+    registerTasksApi(patcher, store);
     const project = store.tasks.createProject({
       name: "Notifications",
       prefix: "NTF",
@@ -303,7 +303,7 @@ describe("Tasks RPC domain API", () => {
   });
 
   it("resolves the authoring provider badge for agent comments and falls back otherwise", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { patcher, harness } = createFakePluginHost({
       permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
       sdk: {
@@ -349,8 +349,8 @@ describe("Tasks RPC domain API", () => {
         },
       },
     });
-    const store = createStore(bb);
-    registerTasksApi(bb, store);
+    const store = createStore(patcher);
+    registerTasksApi(patcher, store);
     const project = store.tasks.createProject({
       name: "Providers",
       prefix: "PRV",
@@ -428,7 +428,7 @@ describe("Tasks RPC domain API", () => {
   });
 
   it("lists bb workspace projects as id/name options", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { patcher, harness } = createFakePluginHost({
       permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
       sdk: {
@@ -440,7 +440,7 @@ describe("Tasks RPC domain API", () => {
         },
       },
     });
-    registerTasksApi(bb, createStore(bb));
+    registerTasksApi(patcher, createStore(patcher));
 
     const result = tasksRpcContract.listPatcherProjects.output.parse(
       await harness.callRpc("listPatcherProjects", null),
@@ -456,7 +456,7 @@ describe("Tasks RPC domain API", () => {
   });
 
   it("lists providers and provider models from the BB SDK", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { patcher, harness } = createFakePluginHost({
       permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
       sdk: {
@@ -502,7 +502,7 @@ describe("Tasks RPC domain API", () => {
         },
       },
     });
-    registerTasksApi(bb, createStore(bb));
+    registerTasksApi(patcher, createStore(patcher));
 
     await expect(harness.callRpc("listProviders", {})).resolves.toEqual({
       providers: [
@@ -535,7 +535,7 @@ describe("Tasks RPC domain API", () => {
   });
 
   it("lists machines as id/name options from the BB SDK", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { patcher, harness } = createFakePluginHost({
       permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
       sdk: {
@@ -555,7 +555,7 @@ describe("Tasks RPC domain API", () => {
         },
       },
     });
-    registerTasksApi(bb, createStore(bb));
+    registerTasksApi(patcher, createStore(patcher));
 
     await expect(harness.callRpc("listMachines", {})).resolves.toEqual({
       machines: [
@@ -569,7 +569,7 @@ describe("Tasks RPC domain API", () => {
   });
 
   it("falls back to the standard reasoning levels when models omit metadata", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { patcher, harness } = createFakePluginHost({
       permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
       sdk: {
@@ -587,7 +587,7 @@ describe("Tasks RPC domain API", () => {
         },
       },
     });
-    registerTasksApi(bb, createStore(bb));
+    registerTasksApi(patcher, createStore(patcher));
 
     await expect(
       harness.callRpc("listProviderModels", { providerId: "test" }),
@@ -605,7 +605,7 @@ describe("Tasks RPC domain API", () => {
       updatedAt: number,
       status: string,
     ) => ({ id, title, titleFallback, updatedAt, status });
-    const { bb, harness } = createFakePluginHost({
+    const { patcher, harness } = createFakePluginHost({
       permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
       sdk: {
@@ -642,7 +642,7 @@ describe("Tasks RPC domain API", () => {
         },
       },
     });
-    registerTasksApi(bb, createStore(bb));
+    registerTasksApi(patcher, createStore(patcher));
 
     await expect(
       harness.callRpc("searchThreads", { query: "match", limit: 2 }),
@@ -668,13 +668,13 @@ describe("Tasks RPC domain API", () => {
   });
 
   it("does not send for notify=false or when no prior agent has replied", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { patcher, harness } = createFakePluginHost({
       permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
       sdk: { threads: { send: async () => undefined } },
     });
-    const store = createStore(bb);
-    registerTasksApi(bb, store);
+    const store = createStore(patcher);
+    registerTasksApi(patcher, store);
     const project = store.tasks.createProject({
       name: "Quiet comments",
       prefix: "QIT",
@@ -699,7 +699,7 @@ describe("Tasks RPC domain API", () => {
         notify: false,
       }),
     );
-    const agentComment = await createComment(bb, store, {
+    const agentComment = await createComment(patcher, store, {
       taskId: task.id,
       kind: "agent",
       authorName: "Worker",
@@ -726,12 +726,12 @@ describe("Tasks RPC domain API", () => {
   });
 
   it("allows an empty comment body only with attachment intent", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { patcher, harness } = createFakePluginHost({
       permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
     });
-    const store = createStore(bb);
-    registerTasksApi(bb, store);
+    const store = createStore(patcher);
+    registerTasksApi(patcher, store);
     const project = store.tasks.createProject({
       name: "Attachment comments",
       prefix: "ACM",
@@ -769,7 +769,7 @@ describe("Tasks RPC domain API", () => {
   });
 
   it("keeps the comment when delivery to the latest responder fails", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { patcher, harness } = createFakePluginHost({
       permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
       sdk: {
@@ -784,8 +784,8 @@ describe("Tasks RPC domain API", () => {
         },
       },
     });
-    const store = createStore(bb);
-    registerTasksApi(bb, store);
+    const store = createStore(patcher);
+    registerTasksApi(patcher, store);
     const project = store.tasks.createProject({
       name: "Partial delivery",
       prefix: "PRT",
@@ -845,13 +845,13 @@ describe("Tasks RPC domain API", () => {
   });
 
   it("removes task and comment attachment blobs when deleting a task", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { patcher, harness } = createFakePluginHost({
       permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
     });
-    const store = createStore(bb);
-    registerTasksApi(bb, store);
-    registerAttachments(bb, store.tasks);
+    const store = createStore(patcher);
+    registerTasksApi(patcher, store);
+    registerAttachments(patcher, store.tasks);
     const project = store.tasks.createProject({
       name: "Cleanup",
       prefix: "CLN",
@@ -890,7 +890,7 @@ describe("Tasks RPC domain API", () => {
       if (!taskAttachment || !commentAttachment) {
         throw new Error("attachment rows were not created");
       }
-      const database = bb.storage
+      const database = patcher.storage
         .database()
         .prepare<[], { name: string; file: string }>("PRAGMA database_list")
         .all()
@@ -915,13 +915,13 @@ describe("Tasks RPC domain API", () => {
   });
 
   it("removes attachment blobs when force-deleting a project", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { patcher, harness } = createFakePluginHost({
       permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
     });
-    const store = createStore(bb);
-    registerTasksApi(bb, store);
-    registerAttachments(bb, store.tasks);
+    const store = createStore(patcher);
+    registerTasksApi(patcher, store);
+    registerAttachments(patcher, store.tasks);
     const project = store.tasks.createProject({
       name: "Project cleanup",
       prefix: "PRJ",
@@ -942,7 +942,7 @@ describe("Tasks RPC domain API", () => {
         .attachmentId;
       const attachment = store.tasks.getAttachment(attachmentId);
       if (!attachment) throw new Error("attachment row was not created");
-      const database = bb.storage
+      const database = patcher.storage
         .database()
         .prepare<[], { name: string; file: string }>("PRAGMA database_list")
         .all()
@@ -967,12 +967,12 @@ describe("Tasks RPC domain API", () => {
   });
 
   it("runs the project and task flow with comments, filtering, summary SQL, and invalidations", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { patcher, harness } = createFakePluginHost({
       permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
     });
-    const store = createStore(bb);
-    registerTasksApi(bb, store);
+    const store = createStore(patcher);
+    registerTasksApi(patcher, store);
 
     const projectResult = tasksRpcContract.createProject.output.parse(
       await harness.callRpc("createProject", {
@@ -1146,12 +1146,12 @@ describe("Tasks RPC domain API", () => {
   });
 
   it("resolves task keys case-insensitively and degrades bad keys to null", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { patcher, harness } = createFakePluginHost({
       permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
     });
-    const store = createStore(bb);
-    registerTasksApi(bb, store);
+    const store = createStore(patcher);
+    registerTasksApi(patcher, store);
     const project = store.tasks.createProject({
       name: "Plugin",
       prefix: "PLUG",
@@ -1195,11 +1195,11 @@ describe("Tasks RPC domain API", () => {
   });
 
   it("returns a typed error when a task would exceed one sub-task level", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { patcher, harness } = createFakePluginHost({
       permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
     });
-    registerTasksApi(bb, createStore(bb));
+    registerTasksApi(patcher, createStore(patcher));
 
     const projectResult = tasksRpcContract.createProject.output.parse(
       await harness.callRpc("createProject", {
@@ -1242,12 +1242,12 @@ describe("Tasks RPC domain API", () => {
   });
 
   it("allows legacy built-in rows to be renamed and deleted", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { patcher, harness } = createFakePluginHost({
       permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
     });
-    const store = createStore(bb);
-    registerTasksApi(bb, store);
+    const store = createStore(patcher);
+    registerTasksApi(patcher, store);
     const preset = store.tasks.createPreset({
       name: "Sonnet · high",
       providerId: "claude-code",
@@ -1311,7 +1311,7 @@ describe("Tasks RPC domain API", () => {
       thr_no_env000: null,
       thr_no_pr0000: "env_no_pr",
     };
-    const { bb, harness } = createFakePluginHost({
+    const { patcher, harness } = createFakePluginHost({
       permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
       sdk: {
@@ -1332,8 +1332,8 @@ describe("Tasks RPC domain API", () => {
         },
       },
     });
-    const store = createStore(bb);
-    registerTasksApi(bb, store);
+    const store = createStore(patcher);
+    registerTasksApi(patcher, store);
     const project = store.tasks.createProject({
       name: "PRs",
       prefix: "PR",
@@ -1399,7 +1399,7 @@ describe("Tasks RPC domain API", () => {
   });
 
   it("separates unavailable lookups (auth failure, crash) from genuine absence", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { patcher, harness } = createFakePluginHost({
       permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
       sdk: {
@@ -1433,8 +1433,8 @@ describe("Tasks RPC domain API", () => {
         },
       },
     });
-    const store = createStore(bb);
-    registerTasksApi(bb, store);
+    const store = createStore(patcher);
+    registerTasksApi(patcher, store);
     const project = store.tasks.createProject({
       name: "PRs",
       prefix: "PR",
@@ -1476,7 +1476,7 @@ describe("Tasks RPC domain API", () => {
 
   it("overlaps distinct environment lookups while deduplicating shared ones", async () => {
     const resolvers = new Map<string, (lookup: PullRequestLookup) => void>();
-    const { bb, harness } = createFakePluginHost({
+    const { patcher, harness } = createFakePluginHost({
       permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
       sdk: {
@@ -1495,8 +1495,8 @@ describe("Tasks RPC domain API", () => {
         },
       },
     });
-    const store = createStore(bb);
-    registerTasksApi(bb, store);
+    const store = createStore(patcher);
+    registerTasksApi(patcher, store);
     const project = store.tasks.createProject({
       name: "PRs",
       prefix: "PR",
@@ -1578,7 +1578,7 @@ describe("Tasks RPC domain API", () => {
         }),
       },
     };
-    const { bb, harness } = createFakePluginHost({
+    const { patcher, harness } = createFakePluginHost({
       permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
       sdk: {
@@ -1596,8 +1596,8 @@ describe("Tasks RPC domain API", () => {
         },
       },
     });
-    const store = createStore(bb);
-    registerTasksApi(bb, store);
+    const store = createStore(patcher);
+    registerTasksApi(patcher, store);
     const project = store.tasks.createProject({
       name: "PRs",
       prefix: "PR",

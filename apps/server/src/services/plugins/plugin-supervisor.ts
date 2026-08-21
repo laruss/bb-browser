@@ -65,7 +65,7 @@ export interface SupervisedPlugin {
   instanceId: string;
   pluginId: string;
   permissions: readonly PluginPermission[] | undefined;
-  /** What `bb.sites` declared; per-plugin, like the permissions beside it. */
+  /** What `patcher.sites` declared; per-plugin, like the permissions beside it. */
   sites: readonly string[] | undefined;
   serverEntry: string;
   /** Identifies this plugin's SDK client; per-plugin, never shared. */

@@ -1,5 +1,5 @@
 {
-  "name": "bb-plugin-tasks",
+  "name": "patcher-plugin-tasks",
   "version": "0.1.1",
   "description": "Plan and track work in BB, delegate tasks to agents, and keep task context connected to worker threads.",
   "private": true,
@@ -22,10 +22,10 @@
     "README.md"
   ],
   "engines": {
-    "bb": ">=0.0",
-    "bbPluginSdk": "^0.4.1"
+    "patcher": ">=0.0",
+    "patcherPluginSdk": "^1.0.0"
   },
-  "bb": {
+  "patcher": {
     "name": "Tasks",
     "description": "Plan and track work in BB, delegate tasks to agents, and keep task context connected to worker threads.",
     "branding": {
@@ -43,7 +43,7 @@
     ]
   },
   "keywords": [
-    "bb-plugin"
+    "patcher-plugin"
   ],
   "scripts": {
     "build": "node --conditions=source --import tsx ../../scripts/build-official-plugins.mjs tasks",

@@ -28,7 +28,7 @@ async function load(
       },
     },
   });
-  await privateHistory(host.bb);
+  await privateHistory(host.patcher);
   return host;
 }
 

@@ -42,7 +42,7 @@ async function commandWorks(command: string, args: string[]): Promise<boolean> {
  * shell do it also keeps the probe and the script on the same executable.
  *
  * The env vars come before `PATH` because the server process does not reliably
- * inherit a `PATH` containing bb: on a packaged install bb lives in the daemon
+ * inherit a `PATH` containing patcher: on a packaged install bb lives in the daemon
  * bundle directory, which is on no shell `PATH`. `PATCHER_CLI` (the binary) and
  * `PATCHER_CLI_DIR` (its directory) are the two documented pointers; see
  * packages/config/src/env-vars.ts. Relative values are skipped rather than

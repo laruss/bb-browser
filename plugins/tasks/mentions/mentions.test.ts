@@ -8,20 +8,20 @@ import { createStore } from "../api";
 import { registerMentions } from ".";
 
 function setup() {
-  const { bb, harness } = createFakePluginHost({
+  const { patcher, harness } = createFakePluginHost({
     permissions: pluginPermissionsFromManifest(import.meta.url),
     pluginId: "tasks",
   });
-  const store = createStore(bb);
-  registerMentions(bb, store);
+  const store = createStore(patcher);
+  registerMentions(patcher, store);
   const provider = harness.registrations.mentionProviders[0];
   if (!provider) throw new Error("task mention provider was not registered");
-  return { bb, harness, provider, store };
+  return { patcher, harness, provider, store };
 }
 
 describe("@task mention provider", () => {
   it("searches partial keys and title words, ranks the composer's linked project first, and caps results", async () => {
-    const { bb, harness, provider, store } = setup();
+    const { patcher, harness, provider, store } = setup();
     try {
       const linked = store.tasks.createProject({
         name: "Linked project",
@@ -44,13 +44,13 @@ describe("@task mention provider", () => {
         title: "Ship keyboard shortcuts",
         status: "todo",
       });
-      bb.storage
+      patcher.storage
         .database()
         .prepare<
           [string, string]
         >("UPDATE tasks SET updated_at = ? WHERE id = ?")
         .run("2026-07-15T18:00:00.000Z", linkedTask.id);
-      bb.storage
+      patcher.storage
         .database()
         .prepare<
           [string, string]

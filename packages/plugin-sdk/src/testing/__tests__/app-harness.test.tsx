@@ -780,7 +780,7 @@ describe("loadPluginApp", () => {
   it("renders the ThreadChat stub with recorded props inside a slot", () => {
     const chatPanel = app.navPanels.find((panel) => panel.id === "chat")!;
     const slot = renderSlot(chatPanel, { subPath: "thr_42" });
-    const stub = slot.getByTestId("bb-thread-chat");
+    const stub = slot.getByTestId("patcher-thread-chat");
     expect(stub.getAttribute("data-thread-id")).toBe("thr_42");
     expect(stub.getAttribute("data-variant")).toBe("compact");
     expect(stub.getAttribute("data-layout")).toBe("document");
@@ -794,10 +794,10 @@ describe("loadPluginApp", () => {
     const chatPanel = app.navPanels.find((panel) => panel.id === "chat")!;
     const slot = renderSlot(chatPanel, { subPath: "thr_42" });
     expect(
-      slot.getByTestId("bb-thread-chat-leading-content").textContent,
+      slot.getByTestId("patcher-thread-chat-leading-content").textContent,
     ).toContain("Replying to something earlier");
 
-    const action = slot.getByTestId("bb-thread-chat-action-send-to-main");
+    const action = slot.getByTestId("patcher-thread-chat-action-send-to-main");
     expect(action.getAttribute("data-roles")).toBe("assistant");
     fireEvent.click(action);
     expect(messageActionRuns).toEqual([

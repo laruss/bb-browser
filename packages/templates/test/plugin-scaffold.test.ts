@@ -23,15 +23,15 @@ describe("scaffoldPlugin bundled types", () => {
   });
 
   it("ships root types and maps @patcher/plugin-sdk to them (headless)", async () => {
-    const targetDir = join(workDir, "bb-plugin-headless");
+    const targetDir = join(workDir, "patcher-plugin-headless");
     await scaffoldPlugin({
       targetDir,
-      packageName: "bb-plugin-headless",
+      packageName: "patcher-plugin-headless",
       patcherVersion: "0.9.0",
     });
 
     const rootDts = await readFile(
-      join(targetDir, "types", "bb-plugin-sdk.d.ts"),
+      join(targetDir, "types", "patcher-plugin-sdk.d.ts"),
       "utf8",
     );
     expect(rootDts).toContain("interface PatcherPluginApi");
@@ -43,7 +43,7 @@ describe("scaffoldPlugin bundled types", () => {
       await readFile(join(targetDir, "tsconfig.json"), "utf8"),
     );
     expect(tsconfig.compilerOptions.paths["@patcher/plugin-sdk"]).toEqual([
-      "./types/bb-plugin-sdk.d.ts",
+      "./types/patcher-plugin-sdk.d.ts",
     ]);
     expect(tsconfig.compilerOptions.skipLibCheck).toBe(false);
     expect(tsconfig.include).toContain("types");
@@ -54,10 +54,10 @@ describe("scaffoldPlugin bundled types", () => {
       await readFile(join(targetDir, "package.json"), "utf8"),
     );
     expect(pkg.engines).toEqual({
-      bb: ">=0.9",
-      bbPluginSdk: `^${PLUGIN_SDK_VERSION}`,
+      patcher: ">=0.9",
+      patcherPluginSdk: `^${PLUGIN_SDK_VERSION}`,
     });
-    expect(pkg.bb).toMatchObject({
+    expect(pkg.patcher).toMatchObject({
       name: "Headless",
       description: "A BB plugin.",
       branding: { icon: "Zap" },
@@ -73,7 +73,7 @@ describe("scaffoldPlugin bundled types", () => {
 
     // No app entry ⇒ no app types.
     await expect(
-      readFile(join(targetDir, "types", "bb-plugin-sdk-app.d.ts"), "utf8"),
+      readFile(join(targetDir, "types", "patcher-plugin-sdk-app.d.ts"), "utf8"),
     ).rejects.toThrow();
 
     const readme = await readFile(join(targetDir, "README.md"), "utf8");
@@ -81,16 +81,16 @@ describe("scaffoldPlugin bundled types", () => {
   });
 
   it("also ships app types and maps the /app subpath for --app plugins", async () => {
-    const targetDir = join(workDir, "bb-plugin-ui");
+    const targetDir = join(workDir, "patcher-plugin-ui");
     await scaffoldPlugin({
       targetDir,
-      packageName: "bb-plugin-ui",
+      packageName: "patcher-plugin-ui",
       patcherVersion: "0.9.0",
       app: true,
     });
 
     const appDts = await readFile(
-      join(targetDir, "types", "bb-plugin-sdk-app.d.ts"),
+      join(targetDir, "types", "patcher-plugin-sdk-app.d.ts"),
       "utf8",
     );
     expect(appDts).toContain("definePluginApp");
@@ -99,7 +99,7 @@ describe("scaffoldPlugin bundled types", () => {
       await readFile(join(targetDir, "tsconfig.json"), "utf8"),
     );
     expect(tsconfig.compilerOptions.paths["@patcher/plugin-sdk/app"]).toEqual([
-      "./types/bb-plugin-sdk-app.d.ts",
+      "./types/patcher-plugin-sdk-app.d.ts",
     ]);
     expect(tsconfig.include).toContain("app.tsx");
 
@@ -112,18 +112,18 @@ describe("scaffoldPlugin bundled types", () => {
   });
 
   it("uses the canonical id in a scoped package scaffold", async () => {
-    const targetDir = join(workDir, "bb-plugin-scoped");
+    const targetDir = join(workDir, "patcher-plugin-scoped");
     await scaffoldPlugin({
       targetDir,
-      packageName: "@acme/bb-plugin-scoped",
+      packageName: "@acme/patcher-plugin-scoped",
       patcherVersion: "0.9.0",
     });
 
     const pkg = JSON.parse(
       await readFile(join(targetDir, "package.json"), "utf8"),
     );
-    expect(pkg.name).toBe("@acme/bb-plugin-scoped");
-    expect(pkg.bb.name).toBe("Scoped");
+    expect(pkg.name).toBe("@acme/patcher-plugin-scoped");
+    expect(pkg.patcher.name).toBe("Scoped");
 
     const readme = await readFile(join(targetDir, "README.md"), "utf8");
     expect(readme).toContain("bb plugin reload scoped");

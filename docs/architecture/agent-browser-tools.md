@@ -25,7 +25,7 @@ server-side handler down to a page, and back.
 agent tool call
    ↓  apps/server/src/internal/tool-calls.ts        (already existed)
 plugins/browser-tools/src/server.ts                  bundled plugin, 12 tools
-   ↓  bb.browser.tabs / page / navigation            plugin SDK contract
+   ↓  patcher.browser.tabs / page / navigation            plugin SDK contract
 apps/server/.../plugins/plugin-api.ts                argument validation
    ↓  services/browser/browser-bridge.ts             request ids, timeouts, errors
 apps/server/src/ws/hub.ts                            addressed to the browser host
@@ -43,7 +43,7 @@ how bb talks to itself.
 ## Why the tools are a plugin
 
 Plan §20 asks that agent interfaces use the same APIs as plugins, and warns
-against a separate hidden browser-control system for agents. So `bb.browser`
+against a separate hidden browser-control system for agents. So `patcher.browser`
 grew a control API and the tools are an ordinary bundled plugin using it. Two
 consequences worth having: anything an agent can do to the browser, a plugin can
 do too — which is what Phase 6's generated plugins will need — and the tools got
@@ -149,7 +149,7 @@ that, closing the window leaves in-flight commands to time out.
 
 The tools are only reachable through a provider session inside a thread, which
 makes a broken bridge show up as a model saying something odd, minutes later. So
-the plugin also registers a CLI command over the **same** `bb.browser` API:
+the plugin also registers a CLI command over the **same** `patcher.browser` API:
 
 ```
 bb browser status                    is an app window connected at all

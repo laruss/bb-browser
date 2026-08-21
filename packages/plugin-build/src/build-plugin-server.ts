@@ -13,7 +13,7 @@ import { validatePluginBuildManifest } from "./plugin-manifest.js";
 import { type PluginBuildToolchain } from "./toolchain.js";
 
 /**
- * `bb plugin build` — compile a plugin's `bb.server` entry into a
+ * `bb plugin build` — compile a plugin's `patcher.server` entry into a
  * self-contained backend bundle (prebuilt distribution, design §6):
  *
  * - `dist/server.js` (+ `.map`) — single node-platform ESM file with the
@@ -22,7 +22,7 @@ import { type PluginBuildToolchain } from "./toolchain.js";
  *   have its `.d.ts` types, so the specifier must survive to load time, where
  *   the server's loader aliases it to the SDK runtime bundle shipped next to
  *   the server (workspace resolution covers source checkouts). better-sqlite3
- *   is also external (plugins get sqlite from the host via `bb.storage`;
+ *   is also external (plugins get sqlite from the host via `patcher.storage`;
  *   native deps are unsupported in plugins regardless).
  * - `dist/server.meta.json` — SDK compatibility plus authoritative plugin,
  *   artifact-format, and build-version metadata.
@@ -51,7 +51,7 @@ export const PLUGIN_SERVER_EXTERNALS: readonly string[] = [
 ];
 
 interface PluginServerConfig {
-  /** Absolute path of the `bb.server` entry file. */
+  /** Absolute path of the `patcher.server` entry file. */
   serverEntry: string;
   packageName: string;
   pluginVersion: string;
@@ -61,7 +61,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-/** Read `<rootDir>/package.json` and resolve its `bb.server` entry, or throw. */
+/** Read `<rootDir>/package.json` and resolve its `patcher.server` entry, or throw. */
 async function readPluginServerConfig(
   rootDir: string,
 ): Promise<PluginServerConfig> {
@@ -78,9 +78,13 @@ async function readPluginServerConfig(
   } catch {
     throw new Error(`package.json is not valid JSON at ${packageJsonPath}`);
   }
-  if (!isRecord(json) || !isRecord(json.bb) || json.bb.server === undefined) {
+  if (
+    !isRecord(json) ||
+    !isRecord(json.patcher) ||
+    json.patcher.server === undefined
+  ) {
     throw new Error(
-      `no server entry: ${packageJsonPath} has no "bb": { "server": "./server.ts" } field`,
+      `no server entry: ${packageJsonPath} has no "patcher": { "server": "./server.ts" } field`,
     );
   }
   const manifest = await validatePluginBuildManifest(
@@ -88,20 +92,24 @@ async function readPluginServerConfig(
     rootDir,
     packageJsonPath,
   );
-  const server = manifest.bb.server;
+  const server = manifest.patcher.server;
   if (isAbsolute(server)) {
-    throw new Error(`manifest bb.server must be relative, got "${server}"`);
+    throw new Error(
+      `manifest patcher.server must be relative, got "${server}"`,
+    );
   }
   const serverEntry = resolve(rootDir, server);
   if (serverEntry !== rootDir && !serverEntry.startsWith(rootDir + "/")) {
     throw new Error(
-      `manifest bb.server escapes the plugin directory: "${server}"`,
+      `manifest patcher.server escapes the plugin directory: "${server}"`,
     );
   }
   try {
     await stat(serverEntry);
   } catch {
-    throw new Error(`manifest bb.server points at a missing file: ${server}`);
+    throw new Error(
+      `manifest patcher.server points at a missing file: ${server}`,
+    );
   }
   return {
     serverEntry,
@@ -118,7 +126,7 @@ export interface PluginServerBuildResult {
 
 /**
  * Build `<rootDir>`'s backend bundle into `<rootDir>/dist/`. Throws with a
- * human-readable message on any problem (missing bb.server, compile errors).
+ * human-readable message on any problem (missing patcher.server, compile errors).
  */
 export async function buildPluginServer(
   rootDir: string,
@@ -155,7 +163,7 @@ export async function buildPluginServer(
       sourcemap: true,
       banner: { js: NODE_ESM_REQUIRE_BANNER },
       // The server's loader aliases the SDK to its shipped runtime bundle at
-      // load time; better-sqlite3 comes from the host (bb.storage). Node
+      // load time; better-sqlite3 comes from the host (patcher.storage). Node
       // builtins are auto-external via platform: "node".
       external: [...PLUGIN_SERVER_EXTERNALS],
       logLevel: "error",

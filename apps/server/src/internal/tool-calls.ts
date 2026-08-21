@@ -73,7 +73,7 @@ export function registerInternalToolCallRoutes(app: Hono, deps: AppDeps): void {
       }
 
       // Built-in tools win name lookups; then the native plugin-tool
-      // registry (bb.agents.registerTool). A tool whose plugin was
+      // registry (patcher.agents.registerTool). A tool whose plugin was
       // disabled/reloaded away since the session started falls through to
       // the unsupported-tool response below.
       if (payload.tool === UPDATE_ENVIRONMENT_DIRECTORY_TOOL_NAME) {

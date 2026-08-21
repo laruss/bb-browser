@@ -211,7 +211,7 @@ export async function runServer(serverConfig: ServerConfig): Promise<void> {
   telemetry.capture({ name: "app_started" });
 
   // Plugins load after the listener is up: they are additive, and a slow
-  // plugin must not delay serving. Bind the loopback SDK first so bb.sdk is
+  // plugin must not delay serving. Bind the loopback SDK first so patcher.sdk is
   // usable from the moment factories run.
   pluginService.bindSdk({
     baseUrl: `http://127.0.0.1:${serverConfig.PATCHER_SERVER_PORT}`,

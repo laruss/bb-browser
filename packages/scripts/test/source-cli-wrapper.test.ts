@@ -37,7 +37,7 @@ function buildCleanEnv(): NodeJS.ProcessEnv {
   return env;
 }
 
-function runSourceBb(args: string[]): Promise<SourceCliResult> {
+function runSourcePatcher(args: string[]): Promise<SourceCliResult> {
   return new Promise((resolvePromise, rejectPromise) => {
     const child = spawn("bun", ["run", "--silent", "bb", ...args], {
       cwd: repoRoot,
@@ -78,7 +78,7 @@ afterEach(() => {
 
 describe("source CLI wrapper", () => {
   it("keeps --json stdout parseable when the prepare build writes progress", async () => {
-    const result = await runSourceBb(["status", "--json"]);
+    const result = await runSourcePatcher(["status", "--json"]);
 
     if (result.code !== 0 || result.signal !== null) {
       throw new Error(

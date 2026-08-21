@@ -330,14 +330,14 @@ async function fetchFrontendCandidates(): Promise<PluginFrontendCandidate[]> {
 }
 
 /**
- * Point a plugin's stylesheet `<link data-bb-plugin-css="<id>">` at `url`,
+ * Point a plugin's stylesheet `<link data-patcher-plugin-css="<id>">` at `url`,
  * or remove it (`url: null`). A changed URL swaps in a fresh element (the
  * new sheet loads, then the old element is removed) rather than mutating
  * `href`, so a reload never flashes unstyled plugin UI. If the fresh sheet
  * fails to load, it is dropped and the old sheet stays in place.
  */
 export function applyPluginCss(pluginId: string, url: string | null): void {
-  const marker = "data-bb-plugin-css";
+  const marker = "data-patcher-plugin-css";
   const existing = [
     ...document.head.querySelectorAll(`link[${marker}="${pluginId}"]`),
   ];

@@ -20,10 +20,10 @@ function textView(view: ProviderRetryView): string {
 }
 
 export function registerProviderRetryCli(
-  bb: PatcherPluginApi,
+  patcher: PatcherPluginApi,
   service: ProviderRetryService,
 ): void {
-  bb.cli.register({
+  patcher.cli.register({
     name: "provider-retry",
     summary: "Manage pending automatic provider retries",
     commands: [

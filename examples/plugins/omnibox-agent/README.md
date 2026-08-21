@@ -1,4 +1,4 @@
-# bb-plugin-omnibox-agent
+# patcher-plugin-omnibox-agent
 
 The `browser.omnibox.providers` and `browser.searchEngines` example — no frontend
 entry, no dependencies. Type in the browser surface's omnibox and this plugin adds
@@ -8,28 +8,28 @@ does.
 
 What it demonstrates:
 
-- **`bb.browser.registerOmniboxProvider`** with both action kinds:
+- **`patcher.browser.registerOmniboxProvider`** with both action kinds:
   - `{ type: "navigate", url }` — "Search GitHub for …", resolved by the browser
     without calling back into the plugin.
   - `{ type: "run" }` — "Ask an agent: …", which calls the plugin's `run(itemId,
 { query })` when picked.
-- **`bb.sdk.threads.spawn`** — the `run` handler spawns a BB thread with the
+- **`patcher.sdk.threads.spawn`** — the `run` handler spawns a BB thread with the
   omnibox query as its prompt. BB fills in `origin: "plugin"` and
   `originPluginId: "omnibox-agent"`, so the thread is attributed in the thread
   list.
-- **`bb.server.loopbackBaseUrl`** — `run` returns
+- **`patcher.server.loopbackBaseUrl`** — `run` returns
   `{ navigate: "<server>/threads/<id>" }`, so the browser opens the new thread in
   the tab the omnibox was used from: the plugin points the browser at the BB app
   it is itself running inside.
-- **`bb.browser.registerSearchEngine`** — two engines, and the pair is the point.
+- **`patcher.browser.registerSearchEngine`** — two engines, and the pair is the point.
   `kagi` is an ordinary template. `ask-agent` points at the plugin's **own
   loopback route**, which spawns a thread and redirects the tab to it: an engine
   that is not a search engine. The address bar resolves what Enter does
   synchronously, so an engine is a URL template rather than a callback — which is
   exactly why a route is how a plugin does work on the way.
-- **`bb.http.route`** — that route (`GET /ask?q=…` → 302 to the new thread),
+- **`patcher.http.route`** — that route (`GET /ask?q=…` → 302 to the new thread),
   refusing an empty query and saying so when no project is configured.
-- **`bb.status.needsConfiguration`** — the agent row needs a project, so it is
+- **`patcher.status.needsConfiguration`** — the agent row needs a project, so it is
   offered only once one is set. The GitHub row works unconfigured, which is why
   the plugin is useful before anyone opens its settings.
 

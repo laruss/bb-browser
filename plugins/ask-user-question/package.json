@@ -1,13 +1,13 @@
 {
-  "name": "bb-plugin-ask-user-question",
+  "name": "patcher-plugin-ask-user-question",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "description": "Let any provider ask the user a multiple-choice question, the way Claude Code's AskUserQuestion does natively.",
   "engines": {
-    "bb": ">=0.0"
+    "patcher": ">=0.0"
   },
-  "bb": {
+  "patcher": {
     "name": "Ask User Question",
     "description": "Let any provider ask the user a multiple-choice question, the way Claude Code's AskUserQuestion does natively.",
     "branding": {
@@ -17,7 +17,7 @@
     "app": "./app.tsx"
   },
   "keywords": [
-    "bb-plugin"
+    "patcher-plugin"
   ],
   "scripts": {
     "typecheck": "tsc --noEmit",

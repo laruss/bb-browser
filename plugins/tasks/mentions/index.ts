@@ -199,12 +199,12 @@ You can act on this task with the bb tasks CLI. If you begin working on it, firs
 }
 
 export function registerMentions(
-  bb: PatcherPluginApi,
+  patcher: PatcherPluginApi,
   store: TasksApiStore,
 ): void {
-  const database = bb.storage.database();
+  const database = patcher.storage.database();
 
-  bb.ui.registerMentionProvider({
+  patcher.ui.registerMentionProvider({
     id: "task",
     label: "Tasks",
     search({ query, projectId }) {

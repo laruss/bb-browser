@@ -42,7 +42,7 @@ describe("Docs official plugin frontend bundle", () => {
   let root: string;
 
   beforeEach(async () => {
-    root = await mkdtemp(join(tmpdir(), "bb-simple-notes-bundle-"));
+    root = await mkdtemp(join(tmpdir(), "patcher-simple-notes-bundle-"));
   });
 
   afterEach(async () => {

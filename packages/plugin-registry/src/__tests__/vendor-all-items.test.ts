@@ -103,10 +103,10 @@ describe("plugin component registry", () => {
       path.join(fixtureDir, "package.json"),
       JSON.stringify(
         {
-          name: "bb-plugin-registry-fixture",
+          name: "patcher-plugin-registry-fixture",
           version: "0.0.0",
           type: "module",
-          bb: {
+          patcher: {
             name: "Registry vendor fixture",
             description:
               "Verify every registry item can be vendored and bundled.",
@@ -163,7 +163,7 @@ describe("plugin component registry", () => {
     // Utilities scope to this plugin's own mounts (id derived from the
     // package name), with a generic-root fallback for pre-id hosts.
     expect(css).toContain(
-      '@scope ([data-bb-plugin="registry-fixture"], [data-bb-plugin-root]:not([data-bb-plugin]))',
+      '@scope ([data-patcher-plugin="registry-fixture"], [data-patcher-plugin-root]:not([data-patcher-plugin]))',
     );
     expect(css).toMatch(/var\(--background\)/);
   });

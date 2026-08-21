@@ -31,7 +31,7 @@ const EXAMPLES_DIR = fileURLToPath(
   new URL("../../../../../examples/plugins", import.meta.url),
 );
 
-// The examples pin engines.bb to ">=0.9"; the harness default app version
+// The examples pin engines.patcher to ">=0.9"; the harness default app version
 // ("0.0.0-test") would legitimately mark them incompatible.
 const APP_VERSION = "1.0.0";
 

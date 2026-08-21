@@ -364,12 +364,12 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
   // Cumulative per plugin for this server session (kept across reloads so a
   // reload cannot hide cost); removed with the plugin registration.
   const handlerStats = new Map<string, PluginHandlerStats>();
-  // Bound once the HTTP listener is up; bb.sdk is gated on it (design §3
+  // Bound once the HTTP listener is up; patcher.sdk is gated on it (design §3
   // two-phase load/bind).
   //
   // One client per plugin rather than one shared: each carries that plugin's
   // identity headers, so the API can apply its permissions to traffic that
-  // arrives as HTTP — which is what `bb.sdk` is. See plugin-api-identity.ts.
+  // arrives as HTTP — which is what `patcher.sdk` is. See plugin-api-identity.ts.
   let boundLoopbackBaseUrl: string | undefined;
   const pluginSdks = new Map<string, PatcherSdk>();
   // Owned here rather than injected: it is the loader that knows which plugins
@@ -968,9 +968,7 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
     meta: { sdkMajor: number; sdkVersion: string } | null,
   ): boolean {
     if (meta === null) return false;
-    if (meta.sdkMajor !== PLUGIN_SDK_MAJOR) return false;
-    if (PLUGIN_SDK_MAJOR === 0) return meta.sdkVersion === PLUGIN_SDK_VERSION;
-    return true;
+    return meta.sdkMajor === PLUGIN_SDK_MAJOR;
   }
 
   /**
@@ -981,9 +979,9 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
    * from source, so author iteration via `bb plugin reload` and the builtin
    * dev watcher sees edited files; packaged builtins declare dist/server.js
    * as their manifest entry and still load that artifact. A present-but-stale
-   * or meta-less managed dist falls back to source with one warning. While
-   * the SDK is pre-1.0, minor bumps are breaking (semver), so compatibility
-   * requires the exact SDK version, not just a matching major.
+   * or meta-less managed dist falls back to source with one warning. Now that
+   * the SDK is past 1.0 a matching major is the whole test; before it, minor
+   * bumps were breaking, so compatibility demanded the exact SDK version.
    */
   async function resolveServerEntry(
     row: InstalledPluginRow,
@@ -1284,7 +1282,7 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
         const factory = mod.default;
         if (typeof factory !== "function") {
           throw new Error(
-            `server entry must default-export a factory (bb) => void, got ${typeof factory}`,
+            `server entry must default-export a factory (patcher) => void, got ${typeof factory}`,
           );
         }
         await runFactoryTimeBoxed(
@@ -1809,7 +1807,7 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
   function bindSdk(args: { baseUrl: string }): void {
     boundLoopbackBaseUrl = args.baseUrl;
     // Any clients built before the bind pointed nowhere useful; drop them so
-    // the next `bb.sdk` read builds one against the URL that is now real.
+    // the next `patcher.sdk` read builds one against the URL that is now real.
     pluginSdks.clear();
     // Plugin processes hold their own bind-gate, so they are told too. A
     // plugin loaded before the server was listening is the case this exists

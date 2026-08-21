@@ -1,4 +1,4 @@
-# bb-plugin-composer-customization
+# patcher-plugin-composer-customization
 
 A small reference plugin for every `app.composer.customize(...)` region:
 

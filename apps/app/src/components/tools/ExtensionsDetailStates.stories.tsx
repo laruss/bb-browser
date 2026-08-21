@@ -16,8 +16,8 @@ import { PluginDetailReleaseControl } from "@/components/plugin/management/Plugi
 import {
   AutomationLifecycleControl,
   AutomationRunStatusIndicator,
-} from "bb-plugin-automations/detail-view";
-import { AUTOMATION_CREATE_TEMPLATES } from "bb-plugin-automations/overview-view";
+} from "patcher-plugin-automations/detail-view";
+import { AUTOMATION_CREATE_TEMPLATES } from "patcher-plugin-automations/overview-view";
 import {
   pluginSourceQueryKey,
   type PluginCatalogSearchEntry,
@@ -87,11 +87,11 @@ function PluginStoryQueryBoundary({ children }: { children: ReactNode }) {
       "enterprise-issue-tracker-synchronization",
     ]) {
       client.setQueryData(pluginSourceQueryKey(pluginId), {
-        requested: `npm:@bb-plugins/${pluginId}`,
+        requested: `npm:@patcher-plugins/${pluginId}`,
         resolved: "1.4.0",
         integrity: null,
         registry: "npm",
-        engines: { bb: null, bbPluginSdk: null },
+        engines: { patcher: null, patcherPluginSdk: null },
         installedAt: new Date(2026, 6, 8).getTime(),
         history: [],
       });
@@ -385,7 +385,7 @@ export function SkillDetailStates() {
 
 const PLUGIN: PluginListItem = {
   id: "github",
-  source: "npm:@bb-plugins/github",
+  source: "npm:@patcher-plugins/github",
   rootDir: "/Users/you/.patcher/plugins/github",
   version: "1.4.0",
   enabled: true,
@@ -407,7 +407,7 @@ const PLUGIN: PluginListItem = {
   provenance: "direct",
   isOrphanedBuiltin: false,
   catalogEntryId: null,
-  sourceDisplay: "npm · @bb-plugins/github",
+  sourceDisplay: "npm · @patcher-plugins/github",
   updateState: EMPTY_PLUGIN_UPDATE_STATE,
 };
 

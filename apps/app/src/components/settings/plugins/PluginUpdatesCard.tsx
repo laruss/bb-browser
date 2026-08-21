@@ -177,17 +177,17 @@ export function PluginUpdatesSourceCard({
                       ...(source.registry !== null
                         ? [{ key: "Registry", value: source.registry }]
                         : []),
-                      ...(source.engines.bb !== null ||
-                      source.engines.bbPluginSdk !== null
+                      ...(source.engines.patcher !== null ||
+                      source.engines.patcherPluginSdk !== null
                         ? [
                             {
                               key: "Requires",
                               value: [
-                                source.engines.bb !== null
-                                  ? `bb ${source.engines.bb}`
+                                source.engines.patcher !== null
+                                  ? `bb ${source.engines.patcher}`
                                   : null,
-                                source.engines.bbPluginSdk !== null
-                                  ? `sdk ${source.engines.bbPluginSdk}`
+                                source.engines.patcherPluginSdk !== null
+                                  ? `sdk ${source.engines.patcherPluginSdk}`
                                   : null,
                               ]
                                 .filter((part): part is string => part !== null)

@@ -20,7 +20,7 @@ function createHost() {
     permissions: pluginPermissionsFromManifest(import.meta.url),
     pluginId: "browser-tools",
   });
-  plugin(host.bb);
+  plugin(host.patcher);
   host.harness.behavior.browser.setTabs([
     { tabId: "tab-1", url: "https://example.com/", title: "Example" },
     { tabId: "tab-2", url: "https://other.test/", title: "Other", live: false },

@@ -49,7 +49,7 @@ const MAX_LEADING_PANEL_MATCHES = 16;
 /**
  * A registration's URL globs, checked for shape only.
  *
- * No scheme or host rule, unlike `bb.sites`: this decides whether bb draws one
+ * No scheme or host rule, unlike `patcher.sites`: this decides whether bb draws one
  * of its own columns, not what a plugin may reach, so a pattern that matches
  * nothing costs the plugin its panel and nobody else anything.
  */

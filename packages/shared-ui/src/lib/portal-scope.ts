@@ -4,8 +4,8 @@
  * this file differs). Everything a plugin renders is plugin-scoped, so the
  * scope attributes are unconditional: portaled overlay content (dialog,
  * select, popover, …) lands in document.body, outside the plugin's
- * `[data-bb-plugin]` mount, and must carry its own scope root for the
- * plugin's compiled stylesheet (`@scope ([data-bb-plugin="<id>"], …)`) to
+ * `[data-patcher-plugin]` mount, and must carry its own scope root for the
+ * plugin's compiled stylesheet (`@scope ([data-patcher-plugin="<id>"], …)`) to
  * reach it. `__PATCHER_PLUGIN_ID__` is an esbuild define stamped by
  * `bb plugin build`; outside that pipeline (registry copies, tests) it is
  * undefined and the generic root attribute alone keeps legacy behavior. In
@@ -17,17 +17,17 @@
 declare const __PATCHER_PLUGIN_ID__: string | undefined;
 
 export function usePortalScopeProps(): {
-  "data-bb-portaled-overlay": "";
-  "data-bb-plugin-root"?: "";
-  "data-bb-plugin"?: string;
+  "data-patcher-portaled-overlay": "";
+  "data-patcher-plugin-root"?: "";
+  "data-patcher-plugin"?: string;
 } {
   const pluginId =
     typeof __PATCHER_PLUGIN_ID__ === "string"
       ? __PATCHER_PLUGIN_ID__
       : undefined;
   return {
-    "data-bb-portaled-overlay": "",
-    "data-bb-plugin-root": "",
-    ...(pluginId !== undefined ? { "data-bb-plugin": pluginId } : {}),
+    "data-patcher-portaled-overlay": "",
+    "data-patcher-plugin-root": "",
+    ...(pluginId !== undefined ? { "data-patcher-plugin": pluginId } : {}),
   };
 }

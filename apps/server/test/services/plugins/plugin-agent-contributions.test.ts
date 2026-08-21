@@ -67,7 +67,7 @@ async function writePlugin(
     JSON.stringify({
       name: options.name,
       version: "0.1.0",
-      bb: {
+      patcher: {
         name: "Agent contributions fixture",
         description: "Agent contributions plugin fixture.",
         branding: { icon: "Zap" },
@@ -97,7 +97,7 @@ describe("plugin skills tier", () => {
   beforeEach(async () => {
     db = createConnection(":memory:");
     migrate(db);
-    workDir = await mkdtemp(join(tmpdir(), "bb-plugin-skills-test-"));
+    workDir = await mkdtemp(join(tmpdir(), "patcher-plugin-skills-test-"));
     service = createPluginService({
       db,
       hub: {
@@ -119,7 +119,7 @@ describe("plugin skills tier", () => {
 
   it("layers plugin skills between user (data-dir/project) skills and builtins", async () => {
     const rootDir = await writePlugin(workDir, {
-      name: "bb-plugin-skiller",
+      name: "patcher-plugin-skiller",
       skillNames: ["alpha", "beta", "gamma"],
     });
     await service.installPath(rootDir);
@@ -171,9 +171,9 @@ describe("plugin skills tier", () => {
     expect(sources).toHaveLength(byName.size);
   });
 
-  it("manifest bb.skills relocates the convention root and the experiment gates the tier", async () => {
+  it("manifest patcher.skills relocates the convention root and the experiment gates the tier", async () => {
     const rootDir = await writePlugin(workDir, {
-      name: "bb-plugin-relocated",
+      name: "patcher-plugin-relocated",
       patcherSkills: ["./custom/*"],
       skillNames: ["relocated-skill"],
       skillsDirName: "custom",
@@ -194,7 +194,7 @@ describe("plugin skills tier", () => {
 
   it("a skill added after install is discovered on the next resolve after reload", async () => {
     const rootDir = await writePlugin(workDir, {
-      name: "bb-plugin-growing",
+      name: "patcher-plugin-growing",
       skillNames: ["first-skill"],
     });
     await service.installPath(rootDir);
@@ -220,7 +220,7 @@ describe("plugin agent contributions reach thread runtime config", () => {
 
   beforeEach(async () => {
     harness = await createTestAppHarness();
-    pluginsDir = await mkdtemp(join(tmpdir(), "bb-plugin-runtime-test-"));
+    pluginsDir = await mkdtemp(join(tmpdir(), "patcher-plugin-runtime-test-"));
   });
 
   afterEach(async () => {
@@ -231,7 +231,7 @@ describe("plugin agent contributions reach thread runtime config", () => {
 
   it("plugin skills reach the thread.start command and update after reload", async () => {
     const rootDir = await writePlugin(pluginsDir, {
-      name: "bb-plugin-ctxdemo",
+      name: "patcher-plugin-ctxdemo",
       skillNames: ["ctx-skill"],
       serverSource: `
         export default function plugin() {}

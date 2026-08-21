@@ -193,15 +193,15 @@ describe("appearance settings", () => {
       const root = join(
         harness.config.dataDir,
         "fixtures",
-        "bb-plugin-palette",
+        "patcher-plugin-palette",
       );
       await mkdir(join(root, "themes"), { recursive: true });
       await writeFile(
         join(root, "package.json"),
         JSON.stringify({
-          name: "bb-plugin-palette",
+          name: "patcher-plugin-palette",
           version: "0.1.0",
-          bb: {
+          patcher: {
             name: "Palette fixture",
             description: "Plugin palette fixture.",
             branding: { icon: "Zap" },

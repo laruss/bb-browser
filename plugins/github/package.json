@@ -1,5 +1,5 @@
 {
-  "name": "bb-plugin-github",
+  "name": "patcher-plugin-github",
   "version": "0.2.1",
   "description": "Browse GitHub issues and pull requests in BB, then send them to agents.",
   "private": true,
@@ -22,10 +22,10 @@
     "README.md"
   ],
   "engines": {
-    "bb": ">=0.0",
-    "bbPluginSdk": "^0.4.1"
+    "patcher": ">=0.0",
+    "patcherPluginSdk": "^1.0.0"
   },
-  "bb": {
+  "patcher": {
     "name": "GitHub",
     "description": "Browse GitHub issues and pull requests in BB, then send them to agents.",
     "branding": {
@@ -39,7 +39,7 @@
     ]
   },
   "keywords": [
-    "bb-plugin"
+    "patcher-plugin"
   ],
   "scripts": {
     "build": "node --conditions=source --import tsx ../../scripts/build-official-plugins.mjs github",

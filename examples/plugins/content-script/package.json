@@ -1,12 +1,12 @@
 {
-  "name": "bb-plugin-content-script-example",
+  "name": "patcher-plugin-content-script-example",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "engines": {
-    "bbPluginSdk": "^0.4.0"
+    "patcherPluginSdk": "^0.4.0"
   },
-  "bb": {
+  "patcher": {
     "name": "Content Script Example",
     "description": "Adds a cleanup-safe focus ring to editable app surfaces.",
     "branding": {

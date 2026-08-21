@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 describe("bundled plugin SDK declarations", () => {
   it("use portable named SDK results without workspace imports", async () => {
     const declarations = await readFile(
-      new URL("../../bundled-types/bb-plugin-sdk.d.ts", import.meta.url),
+      new URL("../../bundled-types/patcher-plugin-sdk.d.ts", import.meta.url),
       "utf8",
     );
 
@@ -32,7 +32,10 @@ describe("bundled plugin SDK declarations", () => {
     expect(declarations).toContain("applyUpdate(args: PluginIdArgs)");
 
     const appDeclarations = await readFile(
-      new URL("../../bundled-types/bb-plugin-sdk-app.d.ts", import.meta.url),
+      new URL(
+        "../../bundled-types/patcher-plugin-sdk-app.d.ts",
+        import.meta.url,
+      ),
       "utf8",
     );
     expect(appDeclarations).not.toContain("PluginCatalogArea");
@@ -57,10 +60,10 @@ describe("bundled plugin SDK declarations", () => {
 
   it("ships portable declarations for every exported subpath", async () => {
     const fileNames = [
-      "bb-plugin-sdk.d.ts",
-      "bb-plugin-sdk-app.d.ts",
-      "bb-plugin-sdk-testing.d.ts",
-      "bb-plugin-sdk-testing-app.d.ts",
+      "patcher-plugin-sdk.d.ts",
+      "patcher-plugin-sdk-app.d.ts",
+      "patcher-plugin-sdk-testing.d.ts",
+      "patcher-plugin-sdk-testing-app.d.ts",
     ];
     const declarations = await Promise.all(
       fileNames.map((fileName) =>

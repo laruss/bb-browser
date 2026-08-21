@@ -125,7 +125,7 @@ PW exists to avoid.
   `Accessibility.getFullAXTree` reduced to PW's compact form, refs on interactive
   nodes only, state worth acting on (`[checked]`, `[collapsed]`, `[disabled]`),
   node/length/depth caps that report truncation. Reachable as an agent tool, as
-  `bb.browser.page.snapshot`, and as `bb browser snapshot`.
+  `patcher.browser.page.snapshot`, and as `bb browser snapshot`.
 - **Ref lifetime** — refs map to `backendNodeId`, invalidated on navigation and
   on same-document navigation, with a `generation` carried in the result so a
   later interaction command can be refused rather than resolved against whatever
@@ -291,7 +291,7 @@ server process's.
 #### Full-page capture, added after F
 
 `bb browser screenshot out.jpg --full-page`, the `fullPage` parameter on the
-screenshot tool, and `bb.browser.page.screenshot({ fullPage: true })` capture the
+screenshot tool, and `patcher.browser.page.screenshot({ fullPage: true })` capture the
 whole scrollable document. This is the item Stage C deferred, and it is deferred
 no longer for the reason it was deferred in the first place: there is no way to
 do it without the debugger, so the only honest options were to attach one or to
@@ -800,7 +800,7 @@ browser.
 
 Stage E cuts across that grouping — its commands belong to PW's Network, Vision
 and Core groups — and it still ships as one channel and one plugin-API namespace
-(`bb.browser.control`). That is deliberate: the CLI and the docs keep PW's
+(`patcher.browser.control`). That is deliberate: the CLI and the docs keep PW's
 grouping because that is how someone looks a command up, while the wire groups
 by how much a command hands over, because that is the line a permission would
 one day be drawn along. `bb browser eval` and `bb browser route` have nothing in

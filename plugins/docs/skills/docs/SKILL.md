@@ -56,7 +56,7 @@ bb docs pull --all --vault personal --into ./docs-work
 ```
 
 Always edit the pulled files with ordinary workspace tools, then run `status`
-before `push`. The manifest in `.bb-docs-state.json` records stable vault paths
+before `push`. The manifest in `.patcher-docs-state.json` records stable vault paths
 and remote SHA-256 versions; do not edit it. Pull and push fail closed when both
 the local and vault copies changed. Resolve the content manually, then pull or
 push again. `push --dry-run --diff` previews without writing.

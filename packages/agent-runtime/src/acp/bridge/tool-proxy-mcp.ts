@@ -3,7 +3,7 @@ import { createInterface } from "node:readline";
 import { dynamicToolSchema, type DynamicTool } from "@patcher/domain";
 import { z } from "zod";
 
-export const ACP_BRIDGE_MCP_SERVER_NAME = "bb-bridge";
+export const ACP_BRIDGE_MCP_SERVER_NAME = "patcher-bridge";
 
 const ENV_HOST = "PATCHER_ACP_DYNAMIC_TOOL_HOST";
 const ENV_PORT = "PATCHER_ACP_DYNAMIC_TOOL_PORT";

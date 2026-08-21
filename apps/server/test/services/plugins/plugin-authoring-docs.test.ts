@@ -35,7 +35,7 @@ import {
 const FRONTEND_RUNTIME_EXPORT_NAMES = Object.keys(pluginSdkApp).sort();
 
 /**
- * Durability test for the bb-plugin-authoring builtin skill: the skill must
+ * Durability test for the patcher-plugin-authoring builtin skill: the skill must
  * document the ENTIRE plugin API. Growing PatcherPluginApi or the frontend SDK
  * surface without documenting the new member fails here.
  *
@@ -47,7 +47,7 @@ const FRONTEND_RUNTIME_EXPORT_NAMES = Object.keys(pluginSdkApp).sort();
 
 const SKILL_DIR = fileURLToPath(
   new URL(
-    "../../../src/services/skills/builtin-skills/bb-plugin-authoring/",
+    "../../../src/services/skills/builtin-skills/patcher-plugin-authoring/",
     import.meta.url,
   ),
 );
@@ -368,7 +368,7 @@ const _assertAllThreadChatMessageActionFieldsListed: MissingThreadChatMessageAct
   : never = true;
 void _assertAllThreadChatMessageActionFieldsListed;
 
-describe("bb-plugin-authoring skill", () => {
+describe("patcher-plugin-authoring skill", () => {
   const skillEntry = readFileSync(SKILL_PATH, "utf8");
   const referenceFileNames = readReferenceFileNames();
   /** SKILL.md plus every reference file: the agent reaches all of it. */
@@ -380,13 +380,13 @@ describe("bb-plugin-authoring skill", () => {
   ].join("\n");
 
   it("has frontmatter naming the skill after its directory", () => {
-    expect(skillEntry).toMatch(/^---\nname: bb-plugin-authoring\n/);
+    expect(skillEntry).toMatch(/^---\nname: patcher-plugin-authoring\n/);
   });
 
   it("documents every PatcherPluginApi property", () => {
     for (const key of PATCHER_PLUGIN_API_KEYS) {
-      expect(skill, `bb.${key} is not documented in the skill`).toContain(
-        `bb.${key}`,
+      expect(skill, `patcher.${key} is not documented in the skill`).toContain(
+        `patcher.${key}`,
       );
     }
   });
@@ -500,9 +500,9 @@ describe("bb-plugin-authoring skill", () => {
   });
 
   it("documents the explicit plugin branding contract", () => {
-    expect(skill).toContain("bb.name");
-    expect(skill).toContain("bb.description");
-    expect(skill).toContain("bb.branding");
+    expect(skill).toContain("patcher.name");
+    expect(skill).toContain("patcher.description");
+    expect(skill).toContain("patcher.branding");
     expect(skill).toContain("logo.light");
     expect(skill).toContain("logo.dark");
     expect(skill).toContain("no root logo auto-detection");

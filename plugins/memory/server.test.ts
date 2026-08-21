@@ -11,7 +11,7 @@ async function loadPlugin(): Promise<FakePluginHost> {
     permissions: pluginPermissionsFromManifest(import.meta.url),
     pluginId: "memory",
   });
-  await memoryPlugin(host.bb);
+  await memoryPlugin(host.patcher);
   return host;
 }
 
@@ -60,7 +60,7 @@ async function addMemory(
   };
 }
 
-describe("bb-plugin-memory", () => {
+describe("patcher-plugin-memory", () => {
   it("registers a CLI and instruction catalog without native agent tools", async () => {
     const host = await loadPlugin();
     expect(host.harness.registrations.cli?.name).toBe("memory");

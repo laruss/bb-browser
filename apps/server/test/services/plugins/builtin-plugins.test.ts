@@ -43,7 +43,7 @@ const fixtureRoot = resolve(
   "..",
   "fixtures",
   "plugins",
-  "bb-plugin-builtin-fixture",
+  "patcher-plugin-builtin-fixture",
 );
 const globals = globalThis as Record<string, unknown>;
 
@@ -72,10 +72,10 @@ async function writePackagedBuiltinSource(workDir: string): Promise<{
       join(sourceRoot, "package.json"),
       JSON.stringify(
         {
-          name: `bb-plugin-${name}`,
+          name: `patcher-plugin-${name}`,
           version: "0.1.0",
           type: "module",
-          bb: {
+          patcher: {
             name,
             description: `${name} builtin plugin fixture.`,
             branding: usesPluginOwnedIcon
@@ -188,7 +188,7 @@ describe("builtin plugin reconciliation", () => {
     delete globals.__hotBuiltinServerVersion;
     db = createConnection(":memory:");
     migrate(db);
-    workDir = await mkdtemp(join(tmpdir(), "bb-builtin-plugins-"));
+    workDir = await mkdtemp(join(tmpdir(), "patcher-builtin-plugins-"));
   });
 
   it("keeps official plugins bundled but out of the auto-install builtins", () => {
@@ -301,8 +301,13 @@ describe("builtin plugin reconciliation", () => {
     const legacyRows = [
       ["legacy-path", `path:${fixtureRoot}`, 1, 101],
       ["legacy-builtin", "builtin:fixture", 0, 102],
-      ["legacy-npm", "npm:bb-plugin-legacy@1.2.3", 1, 103],
-      ["legacy-git", `git:github.com/acme/bb-plugin-legacy@${sha}`, 0, 104],
+      ["legacy-npm", "npm:patcher-plugin-legacy@1.2.3", 1, 103],
+      [
+        "legacy-git",
+        `git:github.com/acme/patcher-plugin-legacy@${sha}`,
+        0,
+        104,
+      ],
     ] as const;
     const insert = db.$client.prepare(
       `INSERT INTO plugins
@@ -335,7 +340,7 @@ describe("builtin plugin reconciliation", () => {
       enabled: true,
       removedAt: 103,
       sourceKind: "npm",
-      sourceNpmPackage: "bb-plugin-legacy",
+      sourceNpmPackage: "patcher-plugin-legacy",
       sourceNpmRequestedSpec: "1.2.3",
       npmResolvedVersion: "1.2.3",
     });
@@ -343,7 +348,7 @@ describe("builtin plugin reconciliation", () => {
       enabled: false,
       removedAt: 104,
       sourceKind: "git",
-      sourceGitUrl: "https://github.com/acme/bb-plugin-legacy",
+      sourceGitUrl: "https://github.com/acme/patcher-plugin-legacy",
       sourceGitRequestedRef: sha,
       gitResolvedCommit: sha,
     });
@@ -504,7 +509,7 @@ describe("builtin plugin reconciliation", () => {
   });
 
   it("refreshes the builtin row when the bundled package version changes", async () => {
-    const mutableRoot = join(workDir, "bb-plugin-builtin-fixture");
+    const mutableRoot = join(workDir, "patcher-plugin-builtin-fixture");
     await cp(fixtureRoot, mutableRoot, { recursive: true });
     service = createService({
       db,
@@ -517,10 +522,10 @@ describe("builtin plugin reconciliation", () => {
     await writeFile(
       join(mutableRoot, "package.json"),
       JSON.stringify({
-        name: "bb-plugin-builtin-fixture",
+        name: "patcher-plugin-builtin-fixture",
         version: "0.2.0",
         type: "module",
-        bb: {
+        patcher: {
           name: "Builtin fixture",
           description: "Builtin plugin fixture.",
           branding: { icon: "Zap" },
@@ -569,15 +574,15 @@ describe("builtin plugin reconciliation", () => {
   });
 
   it("hot-reloads a source-layout builtin server instead of a compatible dist artifact", async () => {
-    const mutableRoot = join(workDir, "bb-plugin-hot-server-builtin");
+    const mutableRoot = join(workDir, "patcher-plugin-hot-server-builtin");
     await mkdir(join(mutableRoot, "dist"), { recursive: true });
     await writeFile(
       join(mutableRoot, "package.json"),
       JSON.stringify({
-        name: "bb-plugin-hot-server-builtin",
+        name: "patcher-plugin-hot-server-builtin",
         version: "0.1.0",
         type: "module",
-        bb: {
+        patcher: {
           name: "Hot server builtin",
           description: "Hot server builtin plugin fixture.",
           branding: { icon: "Zap" },
@@ -627,15 +632,15 @@ describe("builtin plugin reconciliation", () => {
   }, 30_000);
 
   it("surfaces builtin app build failures in status until the next successful build", async () => {
-    const mutableRoot = join(workDir, "bb-plugin-hot-app-builtin");
+    const mutableRoot = join(workDir, "patcher-plugin-hot-app-builtin");
     await mkdir(mutableRoot, { recursive: true });
     await writeFile(
       join(mutableRoot, "package.json"),
       JSON.stringify({
-        name: "bb-plugin-hot-app-builtin",
+        name: "patcher-plugin-hot-app-builtin",
         version: "0.1.0",
         type: "module",
-        bb: {
+        patcher: {
           name: "Hot app builtin",
           description: "Hot app builtin plugin fixture.",
           branding: { icon: "Zap" },
@@ -824,7 +829,7 @@ describe("builtin plugin packaging", () => {
   let workDir: string;
 
   beforeEach(async () => {
-    workDir = await mkdtemp(join(tmpdir(), "bb-builtin-plugin-copy-"));
+    workDir = await mkdtemp(join(tmpdir(), "patcher-builtin-plugin-copy-"));
   });
 
   afterEach(async () => {
@@ -848,7 +853,7 @@ describe("builtin plugin packaging", () => {
       await readFile(join(copiedRoot, "package.json"), "utf8"),
     );
     expect(packageJson).toMatchObject({
-      bb: {
+      patcher: {
         server: "./dist/server.js",
         app: "./dist/app.js",
         skills: ["skills"],

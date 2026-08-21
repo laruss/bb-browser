@@ -5,15 +5,15 @@ fresh BB installations. It runs provider-independent JavaScript orchestration
 inside QuickJS while delegating actual reasoning to ordinary BB threads.
 
 The author-facing native surface is intentionally one tool:
-`bb_workflow_run`. Validation, inspection, listing, and cancellation use the
+`patcher_workflow_run`. Validation, inspection, listing, and cancellation use the
 `bb workflows` CLI documented below. Provider and model discovery uses BB's
 built-in `bb provider` commands. Structured workers separately
-receive only `bb_workflow_result`; ordinary authoring agents never receive that
+receive only `patcher_workflow_result`; ordinary authoring agents never receive that
 worker tool.
 
 ## Progress UI
 
-A successful `bb_workflow_run` result includes a trusted
+A successful `patcher_workflow_run` result includes a trusted
 `previewDirective` such as:
 
 ```text
@@ -98,7 +98,7 @@ schema, and other deterministic failures are not retried. Retry attempts are
 persisted on the call so a plugin restart cannot reset the retry budget.
 
 Worker output is either the final assistant text or an Ajv-validated value
-submitted through `bb_workflow_result`. Structured workers receive two
+submitted through `patcher_workflow_result`. Structured workers receive two
 corrective retries after their initial invalid attempt.
 
 Workflow workers use BB's generic hidden-thread visibility. They remain
@@ -149,8 +149,8 @@ capped exponential backoff. Status exposes notification outcome as `pending`,
 Useful checks:
 
 ```bash
-bunx turbo run typecheck --filter=bb-plugin-workflows
-bunx turbo run test --filter=bb-plugin-workflows --force
+bunx turbo run typecheck --filter=patcher-plugin-workflows
+bunx turbo run test --filter=patcher-plugin-workflows --force
 bb plugin build plugins/workflows
 ```
 

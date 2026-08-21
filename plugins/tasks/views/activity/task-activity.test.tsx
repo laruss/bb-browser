@@ -262,7 +262,7 @@ async function renderComposerWithTask(options?: {
   if (!options?.holdSend) {
     releaseSend = () => {};
   }
-  const { bb, harness } = createFakePluginHost({
+  const { patcher, harness } = createFakePluginHost({
     permissions: pluginPermissionsFromManifest(import.meta.url),
     pluginId: "tasks",
     sdk: {
@@ -273,7 +273,7 @@ async function renderComposerWithTask(options?: {
       },
     },
   });
-  const store = createStore(bb);
+  const store = createStore(patcher);
   const project = store.tasks.createProject({
     name: "Composer",
     prefix: "CMP",
@@ -300,7 +300,7 @@ async function renderComposerWithTask(options?: {
       notify: boolean;
     };
     return {
-      comment: await createComment(bb, store, {
+      comment: await createComment(patcher, store, {
         taskId: request.taskId,
         kind: "user",
         authorName: "You",

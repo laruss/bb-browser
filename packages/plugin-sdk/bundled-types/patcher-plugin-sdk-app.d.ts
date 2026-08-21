@@ -478,7 +478,7 @@ interface PluginLeadingPanelRegistration {
      * that returns null for the page in front of the user leaves an empty edge
      * behind. The host removes the column instead.
      *
-     * Unlike `bb.sites`, this costs no permission and is not checked against one:
+     * Unlike `patcher.sites`, this costs no permission and is not checked against one:
      * the panel is bb's own UI, and what it is told about the tab is the address
      * the address bar is already showing.
      */
@@ -597,7 +597,7 @@ interface PluginNewThreadPanelActionRegistration {
     run?(context: PluginNewThreadPanelActionContext): void | Promise<void>;
 }
 interface PluginPendingInteractionRegistration {
-    /** Matches `rendererId` passed to `bb.ui.requestInput`. */
+    /** Matches `rendererId` passed to `patcher.ui.requestInput`. */
     id: string;
     component: ComponentType<PluginPendingInteractionProps>;
 }
@@ -784,7 +784,7 @@ interface PluginSidebarThreadActions {
 /**
  * Render a plugin component in the thread header's action row.
  *
- * The frontend sibling of the backend `bb.ui.registerThreadAction`, which
+ * The frontend sibling of the backend `patcher.ui.registerThreadAction`, which
  * renders a host-owned button and runs server-side. Use that one for "do a
  * thing"; use this one when the control must draw live state.
  *
@@ -1030,7 +1030,7 @@ interface PluginContentScriptContext {
      * a tab id the strip does not hold is not an error — the tab may not be open
      * yet, or may be in another window — it simply shows nowhere.
      *
-     * Which tabs exist is `bb.browser.tabs.list()` on the backend side; a decorator
+     * Which tabs exist is `patcher.browser.tabs.list()` on the backend side; a decorator
      * is what a plugin does once it knows.
      *
      * Optional so bundles can feature-detect support while this experimental
@@ -1075,7 +1075,7 @@ interface PluginAppDefinition {
 }
 interface PluginRpcClient<Contract extends PluginRpcContract = PluginRpcContract> {
     /**
-     * Invoke one of the plugin's `bb.rpc` methods (POST
+     * Invoke one of the plugin's `patcher.rpc` methods (POST
      * /api/v1/plugins/&lt;id&gt;/rpc/&lt;method&gt;). Resolves with the method's
      * inferred output; rejects with an `Error` carrying the server's message,
      * stable `code`, and validation `issues` when present.
@@ -1219,7 +1219,7 @@ interface PluginComposerThreadRowStatus {
 }
 /** An @-mention pill bound to one of the calling plugin's mention providers. */
 interface PluginComposerMention {
-    /** Mention provider id registered by THIS plugin via `bb.ui.registerMentionProvider`. */
+    /** Mention provider id registered by THIS plugin via `patcher.ui.registerMentionProvider`. */
     provider: string;
     /** Item id your provider's `resolve` will receive at send time. */
     id: string;
@@ -1348,10 +1348,10 @@ interface ThreadChatProps {
 /**
  * Every selection the composer resolved, JSON-serializable so a plugin can
  * forward it to its own backend rpc verbatim and hand it straight to
- * `bb.sdk.threads.spawn`.
+ * `patcher.sdk.threads.spawn`.
  *
  * The split is deliberate: the composer owns *user selections*, the plugin
- * owns *filing and attribution*. `bb.sdk.threads.spawn` auto-fills
+ * owns *filing and attribution*. `patcher.sdk.threads.spawn` auto-fills
  * `origin: "plugin"` and `originPluginId`, so a thread created this way stays
  * attributed to the plugin — which it would not be if the component created
  * the thread itself. The plugin adds `sectionId`, `parentThreadId`, `title`,

@@ -2,7 +2,7 @@
 
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { AutomationExecutionOptionsResponse } from "bb-plugin-automations/rpc-types";
+import type { AutomationExecutionOptionsResponse } from "patcher-plugin-automations/rpc-types";
 
 const { rpc, rpcCall } = vi.hoisted(() => {
   const call = vi.fn();

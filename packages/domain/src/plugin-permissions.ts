@@ -10,8 +10,8 @@ import type {
  * Read this before adding one: **in-process, these are not a security boundary
  * and cannot be.** A plugin's `server.ts` is a Node module loaded into the bb
  * server, so it can `import("node:child_process")`, read another plugin's
- * secrets off disk, or skip `bb.sdk` entirely and call the loopback API it is
- * handed in `bb.server.loopbackBaseUrl`. A gate on the `bb` object stops none
+ * secrets off disk, or skip `patcher.sdk` entirely and call the loopback API it is
+ * handed in `patcher.server.loopbackBaseUrl`. A gate on the `bb` object stops none
  * of that. Plan §9 asks for isolation and plan Phase 7 is where it comes from.
  *
  * What these are for until then, in the order the value actually arrives:
@@ -25,7 +25,7 @@ import type {
  *    which is a fixable message rather than silent extra behaviour.
  * 3. **Something to show the user** at install time, and in the plugin's detail.
  *
- * Undeclared means denied. A plugin with no `bb.permissions` reaches nothing
+ * Undeclared means denied. A plugin with no `patcher.permissions` reaches nothing
  * gated — there is no legacy "everything" mode, because a default of "all"
  * would leave the list describing intentions instead of the boundary.
  */
@@ -81,7 +81,7 @@ export const PLUGIN_PERMISSIONS = [
    * the user's browsing is disclosed — this buys the placement. */
   "newTab.register",
   /**
-   * Apply the plugin's CSS to pages on the sites it declared in `bb.sites`.
+   * Apply the plugin's CSS to pages on the sites it declared in `patcher.sites`.
    *
    * The first permission whose answer is a *list of sites* rather than a
    * capability, and it has to be: styling one site the user named and styling
@@ -92,7 +92,7 @@ export const PLUGIN_PERMISSIONS = [
   "pageStyle.register",
   /**
    * Run the plugin's own code in the pages of the sites it declared in
-   * `bb.sites`, and let that code call the plugin's own rpc.
+   * `patcher.sites`, and let that code call the plugin's own rpc.
    *
    * Separate from `pageStyle.register` over the same list, because a stylesheet
    * and a program are not the same disclosure: this one reads the page — its
@@ -131,13 +131,13 @@ export const PLUGIN_PERMISSIONS = [
    * (`browser.registerHistoryFilter`).
    *
    * One permission rather than a read/write pair because neither gate that
-   * enforces it sees the HTTP method — one keys on the `bb.sdk` area, the other
+   * enforces it sees the HTTP method — one keys on the `patcher.sdk` area, the other
    * on the URL prefix — so a read-only variant would be a boundary on paper
    * that `DELETE /browser-history/:id` walks straight through.
    */
   "history",
 
-  // -- Host: bb.sdk areas ---------------------------------------------------
+  // -- Host: patcher.sdk areas ---------------------------------------------------
   /** Read and drive agent threads (`sdk.threads`, `sdk.threadSections`). */
   "threads",
   /** Read and write files on the user's hosts (`sdk.files`). */
@@ -167,7 +167,7 @@ export function canonicalPermissions(
 }
 
 /**
- * Which permission opens each `bb.sdk` area, keyed by area name.
+ * Which permission opens each `patcher.sdk` area, keyed by area name.
  *
  * Here rather than beside the server's gate because two hosts enforce it: the
  * bb server and `@patcher/plugin-sdk/testing`'s fake. A second copy would drift,
@@ -224,7 +224,7 @@ export const PLUGIN_SDK_AREA_PERMISSIONS = {
  *   returns is thread content.
  *
  * All three were invisible while the only gate was per area. They are listed
- * here so the HTTP gate and the `bb.sdk` gate charge the same price — a plugin
+ * here so the HTTP gate and the `patcher.sdk` gate charge the same price — a plugin
  * that passes one and is refused by the other is the worst of both, and
  * `status.get` swallows its own request failures, so the mismatch there is a
  * silently empty answer rather than an error.
@@ -238,7 +238,7 @@ export const PLUGIN_SDK_METHOD_EXTRA_PERMISSIONS = {
 /**
  * What a plugin must hold to reach a path under `/api/v1`.
  *
- * `bb.sdk` is an HTTP client for this same API, and the server hands every
+ * `patcher.sdk` is an HTTP client for this same API, and the server hands every
  * plugin the loopback URL, so gating only the JavaScript object gates only the
  * polite route in. This is the same decision expressed where it can survive a
  * plugin moving out of process — and once it does, this is the whole of the
@@ -346,7 +346,7 @@ export function permissionForRealtimeEvent(event: string): PluginPermission {
 
 /**
  * The same question asked of a subscription target, which is how a plugin
- * reaches the feed without going through `bb.sdk` at all — the websocket is
+ * reaches the feed without going through `patcher.sdk` at all — the websocket is
  * not under `/api/v1`, so the HTTP gate never sees it.
  */
 export function permissionForRealtimeTarget(kind: string): PluginPermission {

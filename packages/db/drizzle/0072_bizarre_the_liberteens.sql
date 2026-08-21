@@ -35,7 +35,7 @@ SELECT
 	`updated_at`
 FROM `marketplaces`
 WHERE
-	`id` = 'bb-official'
+	`id` = 'patcher-official'
 	AND `source_kind` = 'git'
 	AND `location` = 'https://github.com/ymichael/bb.git'
 	AND `requested_git_ref` = 'main'
@@ -47,12 +47,12 @@ SET
 	`catalog_entry_id` = CASE
 		WHEN
 			`provenance` = 'marketplace'
-			AND `marketplace_id` = 'bb-official'
+			AND `marketplace_id` = 'patcher-official'
 			AND EXISTS (
 				SELECT 1
 				FROM `marketplaces`
 				WHERE
-					`id` = 'bb-official'
+					`id` = 'patcher-official'
 					AND `source_kind` = 'git'
 					AND `location` = 'https://github.com/ymichael/bb.git'
 					AND `requested_git_ref` = 'main'
@@ -63,12 +63,12 @@ SET
 	`provenance` = CASE
 		WHEN
 			`provenance` = 'marketplace'
-			AND `marketplace_id` = 'bb-official'
+			AND `marketplace_id` = 'patcher-official'
 			AND EXISTS (
 				SELECT 1
 				FROM `marketplaces`
 				WHERE
-					`id` = 'bb-official'
+					`id` = 'patcher-official'
 					AND `source_kind` = 'git'
 					AND `location` = 'https://github.com/ymichael/bb.git'
 					AND `requested_git_ref` = 'main'

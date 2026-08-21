@@ -67,7 +67,7 @@ function buildApi(pluginId: string): PageScriptApi {
         serialized = input === undefined ? "" : (JSON.stringify(input) ?? "");
       } catch {
         throw new Error(
-          `bb.rpc("${method}"): the input is not JSON-serialisable.`,
+          `patcher.rpc("${method}"): the input is not JSON-serialisable.`,
         );
       }
       const answer = (await ipcRenderer.invoke(
@@ -78,7 +78,7 @@ function buildApi(pluginId: string): PageScriptApi {
         throw new Error(
           answer?.ok === false
             ? answer.message
-            : `bb.rpc("${method}"): the browser did not answer.`,
+            : `patcher.rpc("${method}"): the browser did not answer.`,
         );
       }
       return answer.result.length === 0

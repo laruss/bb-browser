@@ -1,4 +1,4 @@
-// bb-plugin-thread-chat-demo — the frontend bundle.
+// patcher-plugin-thread-chat-demo — the frontend bundle.
 //
 // Demonstrates the two chat-integration surfaces added for the sidechat
 // rebuild:

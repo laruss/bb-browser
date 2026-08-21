@@ -33,7 +33,7 @@ function createTestPreset(
 
 describe("task delegation", () => {
   it("spawns from a preset, attaches the thread, advances status, comments, and invalidates", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { patcher, harness } = createFakePluginHost({
       permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
       sdk: {
@@ -44,7 +44,7 @@ describe("task delegation", () => {
         },
       },
     });
-    const store = createStore(bb);
+    const store = createStore(patcher);
     const project = store.tasks.createProject({
       name: "Tasks plugin",
       prefix: "TASK",
@@ -57,7 +57,7 @@ describe("task delegation", () => {
       description: "Build the core agent loop.",
       status: "todo",
     });
-    registerDelegation(bb, store);
+    registerDelegation(patcher, store);
     const preset = createTestPreset(store);
 
     const result = delegationRpcContract.delegate.output.parse(
@@ -128,7 +128,7 @@ describe("task delegation", () => {
   });
 
   it("corrects the attached row when a delegated thread becomes active immediately", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { patcher, harness } = createFakePluginHost({
       permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
       sdk: {
@@ -139,7 +139,7 @@ describe("task delegation", () => {
         },
       },
     });
-    const store = createStore(bb);
+    const store = createStore(patcher);
     const project = store.tasks.createProject({
       name: "Fast delegation",
       prefix: "FAST",
@@ -150,7 +150,7 @@ describe("task delegation", () => {
       projectId: project.id,
       title: "Transition during spawn",
     });
-    registerDelegation(bb, store);
+    registerDelegation(patcher, store);
     const preset = createTestPreset(store);
 
     await harness.callRpc("delegate", {
@@ -172,7 +172,7 @@ describe("task delegation", () => {
   });
 
   it("spawns a new worktree from the configured branch on the configured machine", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { patcher, harness } = createFakePluginHost({
       permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
       sdk: {
@@ -183,7 +183,7 @@ describe("task delegation", () => {
         },
       },
     });
-    const store = createStore(bb);
+    const store = createStore(patcher);
     const project = store.tasks.createProject({
       name: "Worktree delegation",
       prefix: "WT",
@@ -194,7 +194,7 @@ describe("task delegation", () => {
       projectId: project.id,
       title: "Use a fresh checkout",
     });
-    registerDelegation(bb, store);
+    registerDelegation(patcher, store);
     const preset = createTestPreset(store, {
       environmentKind: "new-worktree",
       baseBranch: "release/next",
@@ -226,7 +226,7 @@ describe("task delegation", () => {
   });
 
   it("resolves the default machine and default branch for a worktree preset", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { patcher, harness } = createFakePluginHost({
       permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
       sdk: {
@@ -243,7 +243,7 @@ describe("task delegation", () => {
         },
       },
     });
-    const store = createStore(bb);
+    const store = createStore(patcher);
     const project = store.tasks.createProject({
       name: "Default worktree target",
       prefix: "DWT",
@@ -254,7 +254,7 @@ describe("task delegation", () => {
       projectId: project.id,
       title: "Use default worktree target",
     });
-    registerDelegation(bb, store);
+    registerDelegation(patcher, store);
     const preset = createTestPreset(store, {
       environmentKind: "new-worktree",
     });
@@ -288,7 +288,7 @@ describe("task delegation", () => {
       code: "host_not_found",
       status: 404,
     });
-    const { bb, harness } = createFakePluginHost({
+    const { patcher, harness } = createFakePluginHost({
       permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
       sdk: {
@@ -299,7 +299,7 @@ describe("task delegation", () => {
         },
       },
     });
-    const store = createStore(bb);
+    const store = createStore(patcher);
     const project = store.tasks.createProject({
       name: "Invalid target",
       prefix: "BAD",
@@ -310,7 +310,7 @@ describe("task delegation", () => {
       projectId: project.id,
       title: "Reject bad machine",
     });
-    registerDelegation(bb, store);
+    registerDelegation(patcher, store);
     const preset = createTestPreset(store, {
       environmentKind: "new-worktree",
       baseBranch: "missing-branch",
@@ -332,12 +332,12 @@ describe("task delegation", () => {
   });
 
   it("fails before spawning when the task project is not linked to bb", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { patcher, harness } = createFakePluginHost({
       permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
       sdk: { threads: { spawn: async () => ({ id: "thr_never" }) } },
     });
-    const store = createStore(bb);
+    const store = createStore(patcher);
     const project = store.tasks.createProject({
       name: "Unlinked",
       prefix: "UNL",
@@ -347,7 +347,7 @@ describe("task delegation", () => {
       projectId: project.id,
       title: "Cannot delegate yet",
     });
-    registerDelegation(bb, store);
+    registerDelegation(patcher, store);
     const preset = createTestPreset(store);
 
     await expect(
@@ -362,7 +362,7 @@ describe("task delegation", () => {
   });
 
   it("self-attaches an existing thread through taskThreadsAttach", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { patcher, harness } = createFakePluginHost({
       permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
       sdk: {
@@ -376,7 +376,7 @@ describe("task delegation", () => {
         },
       },
     });
-    const store = createStore(bb);
+    const store = createStore(patcher);
     const project = store.tasks.createProject({
       name: "Manual",
       prefix: "MAN",
@@ -386,7 +386,7 @@ describe("task delegation", () => {
       projectId: project.id,
       title: "Attach current worker",
     });
-    registerDelegation(bb, store);
+    registerDelegation(patcher, store);
 
     await expect(
       harness.callRpc("taskThreadsAttach", {

@@ -347,10 +347,10 @@ function callLogRecord(call: WorkflowCallInspection, exportedAt: number) {
 }
 
 export function registerWorkflowCli(
-  bb: PatcherPluginApi,
+  patcher: PatcherPluginApi,
   service: WorkflowService,
 ): void {
-  bb.cli.register({
+  patcher.cli.register({
     name: "workflows",
     summary: "Run and inspect durable BB workflows",
     commands: [
@@ -402,7 +402,7 @@ export function registerWorkflowCli(
           ]);
           const context = requireContext(ctx);
           const prepared = await prepareWorkflowSource(
-            bb,
+            patcher,
             context,
             sourceInput(options, ctx.cwd),
           );
@@ -424,7 +424,7 @@ export function registerWorkflowCli(
           ]);
           const context = requireContext(ctx);
           const prepared = await prepareWorkflowSource(
-            bb,
+            patcher,
             context,
             sourceInput(options, ctx.cwd),
           );

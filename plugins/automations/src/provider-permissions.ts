@@ -24,12 +24,12 @@ export function providerRoutingForEnvironment(
 }
 
 export async function resolvePermissionMode(
-  bb: ProviderPermissionApi,
+  patcher: ProviderPermissionApi,
   providerId: string,
   requested: PermissionMode | undefined,
   routing: ProviderRouting = {},
 ): Promise<PermissionMode> {
-  const providers = await bb.sdk.providers.list(routing);
+  const providers = await patcher.sdk.providers.list(routing);
   const provider = providers.find((candidate) => candidate.id === providerId);
   if (provider === undefined || provider.available === false) {
     throw new Error(`Provider ${providerId} is not available.`);

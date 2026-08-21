@@ -971,7 +971,7 @@ export class NotificationHub implements DbNotifier {
   }
 
   /**
-   * Broadcast an ephemeral plugin realtime signal (`bb.realtime.publish`) to
+   * Broadcast an ephemeral plugin realtime signal (`patcher.realtime.publish`) to
    * every connected client. V1 broadcasts to all clients — per-channel
    * subscriptions arrive with the plugin frontend runtime. Returns how many
    * clients the signal reached.

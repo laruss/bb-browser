@@ -9,6 +9,8 @@ describe("plugin SDK compatibility version", () => {
     ) as { version: string };
 
     expect(packageJson.version).toBe(PLUGIN_SDK_VERSION);
-    expect(PLUGIN_SDK_VERSION).toMatch(/^0\./u);
+    // Past 0.x on purpose. The artifact gate compares majors and was vacuous
+    // while the major was 0; see plugin-sdk-version.ts.
+    expect(PLUGIN_SDK_VERSION).toMatch(/^[1-9]\d*\.\d+\.\d+$/u);
   });
 });

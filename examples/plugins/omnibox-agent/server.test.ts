@@ -20,7 +20,7 @@ async function load(
     settings,
     sdk: { threads: { spawn: async () => ({ id: "th_1" }) } },
   });
-  await omniboxAgent(host.bb);
+  await omniboxAgent(host.patcher);
   return host;
 }
 

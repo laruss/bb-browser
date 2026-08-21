@@ -110,14 +110,14 @@ export interface PluginServiceDeps {
     "requestPluginInteraction" | "interruptPluginInteractions"
   >;
   /**
-   * Agent browser control (`bb.browser.tabs` / `page` / `navigation`). Optional
+   * Agent browser control (`patcher.browser.tabs` / `page` / `navigation`). Optional
    * like `pendingInteractions`: isolated plugin-runtime tests build these deps by
    * hand, and a host without it simply refuses browser calls.
    */
   browserBridge?: import("../browser/browser-bridge.js").BrowserBridge;
   /** BB data dir: plugin database files and secrets live under <dataDir>/plugins/<id>/. */
   dataDir: string;
-  /** BB app version, checked against manifests' engines.bb range. */
+  /** BB app version, checked against manifests' engines.patcher range. */
   appVersion: string;
   /** Declared first-party plugins bundled with the app; test-only override. */
   bundledPlugins?: readonly BundledPluginRegistration[];

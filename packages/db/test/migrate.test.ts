@@ -4326,10 +4326,10 @@ describe("migrate", () => {
           updated_at integer NOT NULL
         );
         INSERT INTO marketplaces VALUES
-          ('bb-official', 'git', 'https://github.com/ymichael/bb.git', 'main', '{"schemaVersion":1,"name":"bb-official","displayName":"BB Official","plugins":[]}', 10, 20, NULL, 1, 20),
+          ('patcher-official', 'git', 'https://github.com/ymichael/bb.git', 'main', '{"schemaVersion":1,"name":"patcher-official","displayName":"BB Official","plugins":[]}', 10, 20, NULL, 1, 20),
           ('other', 'git', 'https://example.test/catalog.git', 'main', '{"schemaVersion":1}', 30, 40, NULL, 2, 40);
         INSERT INTO plugins VALUES
-          ('official', 'marketplace', 'bb-official', 'notes', 'npm:notes@^1'),
+          ('official', 'marketplace', 'patcher-official', 'notes', 'npm:notes@^1'),
           ('third-party', 'marketplace', 'other', 'tasks', 'git:https://example.test/tasks@main'),
           ('already-direct', 'direct', NULL, NULL, 'path:/tmp/plugin');
       `);
@@ -4386,7 +4386,7 @@ describe("migrate", () => {
     }
   });
 
-  it("does not grant catalog provenance to a custom marketplace named bb-official", () => {
+  it("does not grant catalog provenance to a custom marketplace named patcher-official", () => {
     const db = createConnection(":memory:");
     try {
       db.$client.exec(`
@@ -4410,7 +4410,7 @@ describe("migrate", () => {
           updated_at integer NOT NULL
         );
         INSERT INTO marketplaces VALUES (
-          'bb-official',
+          'patcher-official',
           'git',
           'https://example.test/custom.git',
           'main',
@@ -4424,9 +4424,9 @@ describe("migrate", () => {
         INSERT INTO plugins VALUES (
           'custom',
           'marketplace',
-          'bb-official',
+          'patcher-official',
           'custom-entry',
-          'npm:bb-plugin-custom@^1'
+          'npm:patcher-plugin-custom@^1'
         );
       `);
 

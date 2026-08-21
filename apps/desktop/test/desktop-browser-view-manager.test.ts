@@ -7459,7 +7459,7 @@ describe("plugin page styles", () => {
     expect(view.webContents.insertedCss).toEqual([]);
   });
 
-  // A pattern only names a website because `bb.sites` normalised it, and that
+  // A pattern only names a website because `patcher.sites` normalised it, and that
   // happened two processes away — so the shell decides for itself that bb's own
   // blank page is not a site. `**` is the pattern that shows it: a style for
   // "everything" must not restyle the app's own pages.
@@ -7772,7 +7772,7 @@ describe("plugin page scripts", () => {
     ).toEqual([]);
   });
 
-  // A pattern is only known to name a website because `bb.sites` normalised it,
+  // A pattern is only known to name a website because `patcher.sites` normalised it,
   // and normalising happens two processes away. So the shell decides for itself
   // that a blank page, a `file://` document and bb's own pages are not sites —
   // `**` reaching them would be a plugin on every page a tab can show.
@@ -7866,7 +7866,7 @@ describe("plugin page scripts", () => {
     ).resolves.toEqual({
       ok: false,
       message:
-        'bb.rpc: plugin "site-tweaks" declares no page script for this address.',
+        'patcher.rpc: plugin "site-tweaks" declares no page script for this address.',
     });
     expect(pageScriptCalls(hostWindow)).toEqual([]);
   });
@@ -7887,7 +7887,7 @@ describe("plugin page scripts", () => {
     ).resolves.toEqual({
       ok: false,
       message:
-        'bb.rpc: plugin "somebody-else" declares no page script for this address.',
+        'patcher.rpc: plugin "somebody-else" declares no page script for this address.',
     });
   });
 
@@ -7912,7 +7912,7 @@ describe("plugin page scripts", () => {
 
     await expect(call()).resolves.toEqual({
       ok: false,
-      message: "bb.rpc: too many calls — at most 60 every 10 seconds.",
+      message: "patcher.rpc: too many calls — at most 60 every 10 seconds.",
     });
     expect(pageScriptCalls(hostWindow)).toHaveLength(60);
   });

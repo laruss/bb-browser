@@ -16,7 +16,7 @@ async function load(): Promise<FakePluginHost> {
     permissions: pluginPermissionsFromManifest(import.meta.url),
     pluginId: "bookmarks",
   });
-  await bookmarks(host.bb);
+  await bookmarks(host.patcher);
   return host;
 }
 
@@ -137,7 +137,7 @@ describe("bookmarks", () => {
     await star(host).run(
       context({ url: "https://example.test/blog", title: "The blog" }),
     );
-    host.bb.storage
+    host.patcher.storage
       .database()
       .prepare(`UPDATE bookmarks SET saved_at = 1000`)
       .run();

@@ -1,4 +1,4 @@
-// bb-plugin-github — GitHub issues & pull requests inside BB.
+// patcher-plugin-github — GitHub issues & pull requests inside BB.
 //
 // Auth rides on the GitHub CLI: if `gh auth status` passes, the plugin
 // works. Repos are discovered from BB project sources (each local checkout's
@@ -452,8 +452,8 @@ export async function fetchRepoItems(
   ];
 }
 
-export default async function plugin(bb: PatcherPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(patcher: PatcherPluginApi) {
+  const settings = patcher.settings.define({
     extraRepos: {
       type: "string",
       label: "Extra repositories",
@@ -518,7 +518,7 @@ export default async function plugin(bb: PatcherPluginApi) {
     }
     const byRepo = new Map<string, RepoInfo>();
     try {
-      const projects = (await bb.sdk.projects.list()) as unknown as PatcherProjectSummary[];
+      const projects = (await patcher.sdk.projects.list()) as unknown as PatcherProjectSummary[];
       for (const project of projects) {
         for (const source of project.sources ?? []) {
           if (source.type !== "local_path") continue;
@@ -538,7 +538,7 @@ export default async function plugin(bb: PatcherPluginApi) {
         }
       }
     } catch (error) {
-      bb.log.warn(
+      patcher.log.warn(
         `project discovery failed: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
@@ -556,8 +556,8 @@ export default async function plugin(bb: PatcherPluginApi) {
   // ------------------------------------------------------------------
   // SQLite cache of open issues + PRs across tracked repos.
   // ------------------------------------------------------------------
-  const db = bb.storage.database();
-  bb.storage.migrate(db, [
+  const db = patcher.storage.database();
+  patcher.storage.migrate(db, [
     `CREATE TABLE IF NOT EXISTS items (
        repo TEXT NOT NULL,
        number INTEGER NOT NULL,
@@ -689,7 +689,7 @@ export default async function plugin(bb: PatcherPluginApi) {
       db.prepare("UPDATE items SET labels = ? WHERE repo = ? AND kind = ? AND number = ?")
         .run(JSON.stringify(patch.labels), repo, kind, number);
     }
-    bb.realtime.publish("data-changed", {});
+    patcher.realtime.publish("data-changed", {});
   }
 
   async function syncAll(force = false): Promise<{ repos: number; items: number }> {
@@ -705,7 +705,7 @@ export default async function plugin(bb: PatcherPluginApi) {
         replaceRepoRows(repo, items);
         total += items.length;
       } catch (error) {
-        bb.log.warn(
+        patcher.log.warn(
           `sync failed for ${repo}: ${error instanceof Error ? error.message : String(error)}`,
         );
       }
@@ -713,22 +713,22 @@ export default async function plugin(bb: PatcherPluginApi) {
     const after = JSON.stringify(
       db.prepare("SELECT repo, kind, number, updated_at FROM items ORDER BY repo, kind, number").all(),
     );
-    await bb.storage.kv.set("sync-cursor", {
+    await patcher.storage.kv.set("sync-cursor", {
       lastSyncedAt: new Date().toISOString(),
       repos: repos.length,
       items: total,
     });
     if (before !== after) {
-      bb.realtime.publish("data-changed", { items: total });
+      patcher.realtime.publish("data-changed", { items: total });
     }
-    bb.log.info(`synced ${total} item(s) across ${repos.length} repo(s)`);
+    patcher.log.info(`synced ${total} item(s) across ${repos.length} repo(s)`);
     return { repos: repos.length, items: total };
   }
 
   // Initial sync + 5-minute refresh loop. NeedsConfigurationError from a
   // missing/unauthenticated gh flips the plugin to needs-configuration
   // instead of crash-looping.
-  bb.background.service("sync", {
+  patcher.background.service("sync", {
     async start(signal) {
       while (!signal.aborted) {
         await syncAll();
@@ -752,7 +752,7 @@ export default async function plugin(bb: PatcherPluginApi) {
   try {
     await checkAuth();
   } catch (error) {
-    bb.status.needsConfiguration(
+    patcher.status.needsConfiguration(
       error instanceof Error ? error.message : String(error),
     );
   }
@@ -767,16 +767,16 @@ export default async function plugin(bb: PatcherPluginApi) {
 
   async function addLink(link: ThreadLink): Promise<void> {
     const key = linkKey(link.kind, link.repo, link.number);
-    const existing = (await bb.storage.kv.get<ThreadLink[]>(key)) ?? [];
-    await bb.storage.kv.set(key, [...existing, link]);
-    bb.realtime.publish("links-changed", { key });
+    const existing = (await patcher.storage.kv.get<ThreadLink[]>(key)) ?? [];
+    await patcher.storage.kv.set(key, [...existing, link]);
+    patcher.realtime.publish("links-changed", { key });
   }
 
   async function listAllLinks(): Promise<Record<string, ThreadLink[]>> {
-    const keys = await bb.storage.kv.list("link:");
+    const keys = await patcher.storage.kv.list("link:");
     const result: Record<string, ThreadLink[]> = {};
     for (const key of keys) {
-      const links = await bb.storage.kv.get<ThreadLink[]>(key);
+      const links = await patcher.storage.kv.get<ThreadLink[]>(key);
       if (links !== undefined && links.length > 0) {
         result[key.slice("link:".length)] = links;
       }
@@ -834,7 +834,7 @@ export default async function plugin(bb: PatcherPluginApi) {
               "Summarize your findings with file/line references. Do not push " +
               "changes or post to GitHub unless asked.",
           ].join("\n");
-    const thread = (await bb.sdk.threads.spawn({
+    const thread = (await patcher.sdk.threads.spawn({
       projectId,
       environment: { type: "project-default" },
       title: `${ref}: ${title}`.slice(0, 120),
@@ -847,7 +847,7 @@ export default async function plugin(bb: PatcherPluginApi) {
       threadId: thread.id,
       createdAt: new Date().toISOString(),
     });
-    bb.log.info(`spawned thread ${thread.id} for ${kind} ${ref}`);
+    patcher.log.info(`spawned thread ${thread.id} for ${kind} ${ref}`);
     return { threadId: thread.id };
   }
 
@@ -904,10 +904,10 @@ export default async function plugin(bb: PatcherPluginApi) {
   // ------------------------------------------------------------------
   // rpc — the frontend data plane.
   // ------------------------------------------------------------------
-  bb.rpc.register(githubRpcContract, {
+  patcher.rpc.register(githubRpcContract, {
     /** () → auth/sync status for the panel banner. */
     async status() {
-      const cursor = await bb.storage.kv.get<{
+      const cursor = await patcher.storage.kv.get<{
         lastSyncedAt: string;
         repos: number;
         items: number;
@@ -1248,11 +1248,11 @@ export default async function plugin(bb: PatcherPluginApi) {
         thread was spawned to review. Null when neither exists. */
     async pullForThread({ threadId }) {
       try {
-        const thread = (await bb.sdk.threads.get({ threadId })) as unknown as {
+        const thread = (await patcher.sdk.threads.get({ threadId })) as unknown as {
           environmentId?: string | null;
         };
         if (thread?.environmentId) {
-          const result = await bb.sdk.environments.pullRequest({
+          const result = await patcher.sdk.environments.pullRequest({
             environmentId: thread.environmentId,
           });
           const url =
@@ -1296,7 +1296,7 @@ export default async function plugin(bb: PatcherPluginApi) {
       const number = match !== null ? Number(match[1]) : null;
       try {
         replaceRepoRows(input.repo, await fetchRepoItems(gh, input.repo));
-        bb.realtime.publish("data-changed", {});
+        patcher.realtime.publish("data-changed", {});
       } catch {
         // creation succeeded; the next scheduled sync will pick it up
       }
@@ -1384,7 +1384,7 @@ export default async function plugin(bb: PatcherPluginApi) {
     }
   }
 
-  bb.ui.registerMentionProvider({
+  patcher.ui.registerMentionProvider({
     id: "issue",
     label: "GitHub issues",
     triggers: ["@", "#"],
@@ -1396,7 +1396,7 @@ export default async function plugin(bb: PatcherPluginApi) {
     },
   });
 
-  bb.ui.registerMentionProvider({
+  patcher.ui.registerMentionProvider({
     id: "pr",
     label: "GitHub pull requests",
     triggers: ["@", "#"],
@@ -1419,7 +1419,7 @@ export default async function plugin(bb: PatcherPluginApi) {
     "  bb github sync               Refresh the cache from GitHub now",
   ].join("\n");
 
-  bb.cli.register({
+  patcher.cli.register({
     name: "github",
     summary: "Browse tracked GitHub repos, issues, and PRs",
     commands: [

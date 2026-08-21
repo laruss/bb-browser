@@ -266,7 +266,7 @@ export async function readPluginSnapshotRegistration(args: {
   const installed = getInstalledPlugin(args.db, legacy.id);
   if (
     legacy.provenance === "marketplace" &&
-    marketplaceId === "bb-official" &&
+    marketplaceId === "patcher-official" &&
     marketplaceEntryId !== null &&
     installed?.provenance === "catalog" &&
     installed.catalogEntryId === marketplaceEntryId

@@ -1,5 +1,5 @@
 /**
- * What a settings *descriptor* is: the schema `bb.settings.define` is checked
+ * What a settings *descriptor* is: the schema `patcher.settings.define` is checked
  * against, and nothing else.
  *
  * Split out of plugin-settings.ts for a reason worth stating, because the two
@@ -30,7 +30,7 @@ export class PluginSettingsValidationError extends Error {
 const SETTING_KEY_PATTERN = /^[a-zA-Z0-9_-]+$/;
 
 /**
- * Built on the first `bb.settings.define`, not at import.
+ * Built on the first `patcher.settings.define`, not at import.
  *
  * Same reason as the note above, one layer down: this module is in every plugin
  * process's startup path, and constructing these schemas loads zod — ~9MB

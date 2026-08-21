@@ -419,7 +419,7 @@ export function createApp(
   setPluginThreadEventEmitter(pluginService.events);
   // Bridge runtime-config assembly to plugin skills + context (§4.4).
   setPluginAgentContributions(pluginService);
-  // Plugin traffic is gated where it actually arrives. `bb.sdk` is an HTTP
+  // Plugin traffic is gated where it actually arrives. `patcher.sdk` is an HTTP
   // client for this API and every plugin holds the loopback URL, so a gate on
   // the SDK object alone covers only the polite way in — and this is the check
   // that keeps working once plugins run in their own process.

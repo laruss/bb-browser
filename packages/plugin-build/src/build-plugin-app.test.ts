@@ -50,7 +50,7 @@ describe("plugin app runtime shim", () => {
   });
 
   it("re-derives @patcher/plugin-sdk/app exports for every rebuild", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "bb-plugin-shim-"));
+    const dir = await mkdtemp(join(tmpdir(), "patcher-plugin-shim-"));
     tempDirs.push(dir);
     const facadePath = join(dir, "app-facade.mjs");
     const facadeUrl = pathToFileURL(facadePath).href;
@@ -83,14 +83,14 @@ describe("plugin app runtime shim", () => {
   });
 
   it("scopes Tailwind utilities while preserving imported CSS unscoped", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "bb-plugin-css-"));
+    const dir = await mkdtemp(join(tmpdir(), "patcher-plugin-css-"));
     tempDirs.push(dir);
     await writeFile(
       join(dir, "package.json"),
       JSON.stringify({
-        name: "bb-plugin-css-fixture",
+        name: "patcher-plugin-css-fixture",
         version: "0.0.0",
-        bb: {
+        patcher: {
           name: "CSS fixture",
           description: "Verifies plugin CSS emission.",
           branding: { icon: "Paintbrush" },
@@ -116,7 +116,7 @@ describe("plugin app runtime shim", () => {
     const css = await readFile(result.cssPath, "utf8");
 
     expect(css).toContain(
-      '@scope ([data-bb-plugin="css-fixture"], [data-bb-plugin-root]:not([data-bb-plugin]))',
+      '@scope ([data-patcher-plugin="css-fixture"], [data-patcher-plugin-root]:not([data-patcher-plugin]))',
     );
     const utilityRuleIndex = css.indexOf(".flex-col");
     const utilityScope = precedingScopeBounds(css, utilityRuleIndex);
@@ -142,14 +142,14 @@ describe("plugin app runtime shim", () => {
   ])(
     "rejects %s in a path-shaped branding.icon before building",
     async (_case, icon, expectedError) => {
-      const dir = await mkdtemp(join(tmpdir(), "bb-plugin-icon-"));
+      const dir = await mkdtemp(join(tmpdir(), "patcher-plugin-icon-"));
       tempDirs.push(dir);
       await writeFile(
         join(dir, "package.json"),
         JSON.stringify({
-          name: "bb-plugin-icon-fixture",
+          name: "patcher-plugin-icon-fixture",
           version: "0.0.0",
-          bb: {
+          patcher: {
             name: "Icon fixture",
             description: "Verifies compact icon validation.",
             branding: { icon: "./icon.svg" },

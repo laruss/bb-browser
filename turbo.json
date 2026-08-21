@@ -109,7 +109,7 @@
         "server/**"
       ]
     },
-    "bb-plugin-tasks#build": {
+    "patcher-plugin-tasks#build": {
       // The tasks plugin's app bundle imports the @patcher/plugin-sdk root at
       // runtime (shared RPC contract), so the SDK dist must exist first.
       "dependsOn": [

@@ -45,10 +45,11 @@ function parseInstructionsInput(input: unknown): string {
   return instructions;
 }
 
-export default async function plugin(bb: PatcherPluginApi) {
-  let customInstructions = (await bb.storage.kv.get<string>(STORAGE_KEY)) ?? "";
+export default async function plugin(patcher: PatcherPluginApi) {
+  let customInstructions =
+    (await patcher.storage.kv.get<string>(STORAGE_KEY)) ?? "";
 
-  bb.rpc.register(customInstructionsRpcContract, {
+  patcher.rpc.register(customInstructionsRpcContract, {
     getInstructions() {
       return {
         instructions: customInstructions,
@@ -56,7 +57,7 @@ export default async function plugin(bb: PatcherPluginApi) {
       };
     },
     async saveInstructions({ instructions }) {
-      await bb.storage.kv.set(STORAGE_KEY, instructions);
+      await patcher.storage.kv.set(STORAGE_KEY, instructions);
       customInstructions = instructions;
       return {
         instructions: customInstructions,
@@ -65,11 +66,11 @@ export default async function plugin(bb: PatcherPluginApi) {
     },
   });
 
-  bb.agents.contributeInstructions(() =>
+  patcher.agents.contributeInstructions(() =>
     customInstructions.trim().length > 0 ? customInstructions : null,
   );
 
-  bb.cli.register({
+  patcher.cli.register({
     name: "instructions",
     summary: "Read and update the custom instructions injected into agents",
     commands: [
@@ -105,7 +106,7 @@ export default async function plugin(bb: PatcherPluginApi) {
         const instructions = parseInstructionsInput({
           instructions: rest.join(" "),
         });
-        await bb.storage.kv.set(STORAGE_KEY, instructions);
+        await patcher.storage.kv.set(STORAGE_KEY, instructions);
         customInstructions = instructions;
         return {
           exitCode: 0,
@@ -115,7 +116,7 @@ export default async function plugin(bb: PatcherPluginApi) {
         };
       }
       if (command === "clear") {
-        await bb.storage.kv.set(STORAGE_KEY, "");
+        await patcher.storage.kv.set(STORAGE_KEY, "");
         customInstructions = "";
         return {
           exitCode: 0,

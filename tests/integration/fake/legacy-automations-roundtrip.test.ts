@@ -198,7 +198,7 @@ describe("legacy automation export/import round trip", () => {
       ]);
 
       await ingestLegacyImport({
-        bb: {
+        patcher: {
           storage: {
             kv: {
               async get(): Promise<undefined> {

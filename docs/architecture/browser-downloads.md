@@ -207,7 +207,7 @@ because it means a bug on our side rather than anything the user did.
 
 ## Rewriting downloads in a plugin
 
-`bb.browser.registerDownloadHandler(handler)` — the plan's
+`patcher.browser.registerDownloadHandler(handler)` — the plan's
 `browser.downloads.handlers`. A handler receives each finished download and may
 do anything with the file: move it by media type, rename it, hand it to an
 agent, upload it, delete it.
@@ -229,13 +229,13 @@ handler can already undo. Not worth it now; the seam that would change is
 
 The chain, mirroring the omnibox contribution point exactly:
 
-| Step                                 | Where                                         |
-| ------------------------------------ | --------------------------------------------- |
-| `bb.browser.registerDownloadHandler` | `packages/plugin-sdk/src/backend-contract.ts` |
-| Registration, runtime record         | `apps/server/.../plugins/plugin-api.ts`       |
-| Fan-out, time box, isolation         | `apps/server/.../plugins/plugin-service.ts`   |
-| `POST /plugins/browser/downloads`    | `apps/server/src/routes/plugins.ts`           |
-| Reporting the download               | `apps/app/src/lib/browser-downloads.ts`       |
+| Step                                      | Where                                         |
+| ----------------------------------------- | --------------------------------------------- |
+| `patcher.browser.registerDownloadHandler` | `packages/plugin-sdk/src/backend-contract.ts` |
+| Registration, runtime record              | `apps/server/.../plugins/plugin-api.ts`       |
+| Fan-out, time box, isolation              | `apps/server/.../plugins/plugin-service.ts`   |
+| `POST /plugins/browser/downloads`         | `apps/server/src/routes/plugins.ts`           |
+| Reporting the download                    | `apps/app/src/lib/browser-downloads.ts`       |
 
 Three properties follow the omnibox's discipline rather than inventing their
 own: handlers are additive (several per plugin, several plugins), each is

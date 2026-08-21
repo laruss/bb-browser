@@ -18,7 +18,7 @@ semantics: real better-sqlite3 temporary storage (never mock the db), the kv
 keyed registration failures, atomic reload, conditional agent configuration,
 request input, and `threads.spawn` plugin attribution.
 
-`bb.permissions` is enforced too, and it defaults to the host's default —
+`patcher.permissions` is enforced too, and it defaults to the host's default —
 **declared nothing, reaches nothing gated**. Pass
 `pluginPermissionsFromManifest(import.meta.url)`, which reads your own
 `package.json`: a hand-written list would be a second declaration, free to
@@ -35,13 +35,13 @@ import {
 } from "@patcher/plugin-sdk/testing";
 import plugin from "./server";
 
-const { bb, harness } = createFakePluginHost({
+const { patcher, harness } = createFakePluginHost({
   pluginId: "my-plugin",
   permissions: pluginPermissionsFromManifest(import.meta.url), // what ships
   settings: { apiToken: "tok" }, // pre-seeded stored values (secrets included)
   sdk: { threads: { spawn: async () => ({ id: "th_1" }) } },
 });
-await plugin(bb);
+await plugin(patcher);
 
 await harness.behavior.callRpc("list", { q: "x" }); // JSON round-trip like the wire
 await harness.behavior.fetchHttp("POST", "/events", { body }); // real Hono context; auth not enforced
@@ -66,7 +66,7 @@ replacement leaves the current registrations and API live.
 
 Inspect: `harness.inspection.sdk.calls` /
 `harness.inspection.sdk.callsTo("threads.spawn")` (every
-`bb.sdk` call is recorded; unstubbed methods throw naming the path to stub —
+`patcher.sdk` call is recorded; unstubbed methods throw naming the path to stub —
 `harness.sdk.stub("projects.list", fn)` adds one late), `harness.logEntries`,
 `harness.realtimeSignals`, `harness.needsConfigurationMessages`, and
 `harness.registrations` (http routes, rpc methods, services, schedules, cli,
@@ -130,7 +130,7 @@ panel list over rpc + create/open navigation assertions).
 
 Fidelity boundaries: HTTP auth is recorded but not enforced; services and
 schedules run only when driven (no restart timers or cron sweep); storage is
-process-local and secrets stay in memory; `bb.sdk` is always bound and
+process-local and secrets stay in memory; `patcher.sdk` is always bound and
 unstubbed calls throw; cross-plugin collisions are outside one fake host. The
 frontend harness validates registrations and JSON/composer behavior but does
 not reproduce BB layout/CSS, persistence, routing, crash boundaries, or
@@ -138,12 +138,12 @@ multi-plugin arbitration. Use a live loop for those host boundaries.
 
 ## Live loop against a running bb
 
-- `bb plugin dev` is the loop: save → rebuild (if `bb.app`) → reload; open
+- `bb plugin dev` is the loop: save → rebuild (if `patcher.app`) → reload; open
   app pages pick new UI up live. Build/reload failures print and keep
   watching.
 - `bb plugin list` shows status, services, schedules (with last_error),
   handler stats, and the CLI command; `bb plugin logs <id> -f` follows
-  `bb.log` output. Add `--json` to any plugin command for machine output.
+  `patcher.log` output. Add `--json` to any plugin command for machine output.
 - Exercise wire surfaces directly: `curl -X POST -H "content-type:
 application/json" -d '{}' <server>/api/v1/plugins/<id>/rpc/<method>`,
   `bb <command> …` for the CLI, `bb plugin run <id> …` as the explicit form.
@@ -159,7 +159,7 @@ BB Official plugins in `plugins/` (a bb checkout):
   components from the registry), background sync service, rpc + realtime,
   project setting, a `bb github` CLI command, and agent-spawn buttons.
 - `docs` (stable plugin id `simple-notes`) — multi-host Docs vaults over
-  `bb.sdk.files`, with a Tiptap
+  `patcher.sdk.files`, with a Tiptap
   markdown WYSIWYG, nested navigation, images and sandboxed HTML, CLI/HTTP
   operations, autosave with CAS conflicts, native local-vault watching with
   remote polling fallback, a markdown `fileOpener`, message directives, and

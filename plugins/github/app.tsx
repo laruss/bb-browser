@@ -1,4 +1,4 @@
-// bb-plugin-github — the frontend bundle.
+// patcher-plugin-github — the frontend bundle.
 //
 // A GitHub panel: Issues / Pull Requests as a filterable table (state chips,
 // "Assigned to me", text search), inline status + assignee editing, issue and
@@ -2260,7 +2260,7 @@ function PanelHeader() {
   );
 }
 
-const QUERY_KEY = "bb-plugin-github:query";
+const QUERY_KEY = "patcher-plugin-github:query";
 const DEFAULT_QUERY = "is:open ";
 
 function GithubPanel({ subPath }: PluginNavPanelProps) {

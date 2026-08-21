@@ -42,8 +42,8 @@ describe("mapSkillScope", () => {
     },
     {
       provider: "claude-code",
-      rootKind: "bb-builtin",
-      scope: "bb-builtin",
+      rootKind: "patcher-builtin",
+      scope: "patcher-builtin",
       listedProvider: null,
       manageable: false,
     },

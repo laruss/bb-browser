@@ -196,7 +196,7 @@ export interface PluginService {
   events: PluginThreadEventEmitter;
   /**
    * Bind the in-process BB SDK to the running server. Call once the HTTP
-   * listener is up, before start(): bb.sdk throws until this runs.
+   * listener is up, before start(): patcher.sdk throws until this runs.
    */
   bindSdk(args: { baseUrl: string }): void;
   /** Load all enabled plugins. Call after the HTTP listener is up. */
@@ -213,7 +213,7 @@ export interface PluginService {
    * `git:<url-ish>@<ref>` (ref required; cloned into the managed dir under
    * <dataDir>/plugins/git), or `npm:<name>[@<version|tag|range>]` (installed
    * with npm --ignore-scripts under <dataDir>/plugins/npm). git/npm installs
-   * hard-fail on an engines.bb mismatch and refuse already-registered ids;
+   * hard-fail on an engines.patcher mismatch and refuse already-registered ids;
    * use update for an existing managed plugin.
    */
   install(source: string): Promise<PluginListEntry>;
@@ -340,14 +340,14 @@ export interface PluginService {
     ctx: PluginCliContext,
   ): Promise<PluginCliExecutionResult>;
   /**
-   * Skills roots of running plugins (manifest bb.skills or the skills/
+   * Skills roots of running plugins (manifest patcher.skills or the skills/
    * convention dir), ordered by plugin id — the "plugin" precedence tier
    * passed to resolveInjectedSkillSources per turn. Missing directories are
    * tolerated downstream.
    */
   listSkillRootContributions(): PluginSkillRootContribution[];
   /**
-   * Native tools of running plugins (bb.agents.registerTool), ordered by
+   * Native tools of running plugins (patcher.agents.registerTool), ordered by
    * plugin id then registration order, deduped defensively (first wins —
    * registration already blocks collisions). Appended to a session's
    * dynamicTools at thread.start/turn.submit time; changes apply on the
@@ -355,7 +355,7 @@ export interface PluginService {
    */
   listAgentTools(): PluginAgentToolContribution[];
   /**
-   * Evaluate each plugin's optional `bb.agents.configure` callback for one
+   * Evaluate each plugin's optional `patcher.agents.configure` callback for one
    * server-owned thread/session boundary. Registrations stay static; invalid
    * or throwing callbacks fail closed for that plugin and cannot affect peers.
    */
@@ -364,7 +364,7 @@ export interface PluginService {
     skillIdsByPlugin: ReadonlyMap<string, readonly string[]>;
   }): Promise<PluginResolvedAgentConfiguration>;
   /**
-   * Dynamic instruction providers from bb.agents.contributeInstructions,
+   * Dynamic instruction providers from patcher.agents.contributeInstructions,
    * ordered by plugin id. Resolved live at thread.start/turn.submit;
    * empty when no plugin registered a provider.
    * At most one provider per plugin (duplicate registration is rejected).
@@ -387,7 +387,7 @@ export interface PluginService {
     ctx: PluginAgentToolContext;
   }): Promise<ToolCallResponse>;
   /**
-   * Mention providers of running plugins (bb.ui.registerMentionProvider),
+   * Mention providers of running plugins (patcher.ui.registerMentionProvider),
    * ordered by plugin id then registration order, for
    * GET /plugins/contributions. No plugin code runs.
    */
@@ -418,13 +418,13 @@ export interface PluginService {
     itemId: string;
   }): Promise<PluginMentionResolveResult>;
   /**
-   * Omnibox providers of running plugins (bb.browser.registerOmniboxProvider),
+   * Omnibox providers of running plugins (patcher.browser.registerOmniboxProvider),
    * ordered by plugin id then registration order, for
    * GET /plugins/contributions. No plugin code runs.
    */
   listOmniboxProviderContributions(): PluginOmniboxProviderContribution[];
   /**
-   * Keyboard shortcuts plugins contributed (`bb.ui.registerKeybinding`), for
+   * Keyboard shortcuts plugins contributed (`patcher.ui.registerKeybinding`), for
    * the system config to fold under the user's own overrides. Ordered by plugin
    * id and deduplicated, so a command two plugins both bind resolves to the
    * lowest plugin id rather than to whichever loaded first. No plugin code
@@ -665,7 +665,7 @@ export interface PluginService {
     query: string;
   }): Promise<PluginOmniboxRunOutcome>;
   /**
-   * Last `tail` lines of the plugin's JSONL log file (bb.log output).
+   * Last `tail` lines of the plugin's JSONL log file (patcher.log output).
    * Undefined when the plugin is not installed.
    */
   readLogTail(id: string, tail: number): Promise<string[] | undefined>;
@@ -2322,7 +2322,7 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
       return (
         `${missing.map((permission) => `"${permission}"`).join(" and ")} ` +
         `${missing.length === 1 ? "is" : "are"} required, which plugin ` +
-        `"${pluginId}" does not declare in "bb.permissions"`
+        `"${pluginId}" does not declare in "patcher.permissions"`
       );
     },
     async httpToken(id, options) {

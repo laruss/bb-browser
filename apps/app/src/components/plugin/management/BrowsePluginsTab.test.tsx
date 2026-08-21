@@ -446,7 +446,7 @@ describe("BrowsePluginsTab", () => {
               {
                 ...INSTALLED_MEMORY_PLUGIN,
                 id: "simple-notes",
-                source: "npm:bb-plugin-simple-notes@^0.1.0",
+                source: "npm:patcher-plugin-simple-notes@^0.1.0",
                 catalogEntryId: "simple-notes",
               },
             ],

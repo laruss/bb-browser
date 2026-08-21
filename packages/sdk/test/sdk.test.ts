@@ -1292,7 +1292,7 @@ describe("@patcher/sdk", () => {
         body: {
           requested: "npm:@patcher/notes@^1",
           resolved: "1.2.0",
-          engines: { bb: ">=0.9", bbPluginSdk: "^0.2.0" },
+          engines: { patcher: ">=0.9", patcherPluginSdk: "^0.2.0" },
           installedAt: 5,
           history: [{ version: "1.2.0", activatedAt: 5 }],
         },

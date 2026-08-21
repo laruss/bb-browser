@@ -208,7 +208,7 @@ export function createPluginChannel<
         signal: receiver.signal,
       });
       // `undefined` is not JSON. Normalising to null matches what
-      // `bb.realtime.publish` already does with an absent payload.
+      // `patcher.realtime.publish` already does with an absent payload.
       post({ kind: "result", callId: message.callId, value: value ?? null });
     } catch (error) {
       post({

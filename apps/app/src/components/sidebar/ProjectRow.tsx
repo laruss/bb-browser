@@ -1564,7 +1564,7 @@ const SectionTreeItemRow = memo(function SectionTreeItemRow({
       className={cn(
         "space-y-0.5 rounded-md transition-colors",
         isDropTargetActive &&
-          "[&_.bb-sidebar-hover-actions-row]:!bg-sidebar-accent [&_.bb-sidebar-hover-actions-row]:!text-sidebar-accent-foreground",
+          "[&_.patcher-sidebar-hover-actions-row]:!bg-sidebar-accent [&_.patcher-sidebar-hover-actions-row]:!text-sidebar-accent-foreground",
       )}
     >
       <SidebarSectionRow

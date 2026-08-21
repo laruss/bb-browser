@@ -29,7 +29,7 @@ function plugin(updateState: Partial<PluginUpdateState>): PluginListItem {
     provenance: "catalog",
     isOrphanedBuiltin: false,
     catalogEntryId: "linear",
-    sourceDisplay: "npm · @bb-plugins/linear · tracks compatible",
+    sourceDisplay: "npm · @patcher-plugins/linear · tracks compatible",
     updateState: { ...EMPTY_PLUGIN_UPDATE_STATE, ...updateState },
     handlerStats: { count: 0, totalMs: 0, maxMs: 0, errorCount: 0 },
     services: [],

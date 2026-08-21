@@ -1,4 +1,4 @@
-# bb-plugin-explain-selection
+# patcher-plugin-explain-selection
 
 The `browser.contextMenu.items` and `browser.tab.actions` example — no frontend
 entry, no dependencies. Select text on a browsed page, right-click, **Explain
@@ -13,24 +13,24 @@ hardcoded into the browser — it is one plugin file against the shipped SDK.
 
 What it demonstrates:
 
-- **`bb.browser.registerContextMenuItem`** with a `when` — `{ selection: true }`,
+- **`patcher.browser.registerContextMenuItem`** with a `when` — `{ selection: true }`,
   so the entry appears on a selection and nowhere else. `run(context)` receives
   the tab, the page URL and whatever was under the pointer.
-- **`bb.browser.registerTabAction`** — the same explanation from the tab strip's
+- **`patcher.browser.registerTabAction`** — the same explanation from the tab strip's
   own menu. A tab action has no `when` (it is offered on every tab), so the entry
   decides for itself what it can work with: its context reports `url: null` for a
   bb screen and `""` for a tab with no page yet, and neither is a page to explain.
   It also carries `pinned`, `muted` and `active`, which is where a plugin is told
-  the tab state that `bb.browser.tabs.list()` does not report.
-- **`bb.sdk.threads.spawn`** — the handler spawns a BB thread whose prompt quotes
+  the tab state that `patcher.browser.tabs.list()` does not report.
+- **`patcher.sdk.threads.spawn`** — the handler spawns a BB thread whose prompt quotes
   the selection. BB fills in `origin: "plugin"` and
   `originPluginId: "explain-selection"`, so the thread is attributed in the
   thread list.
-- **`bb.browser.tabs.open`** — the plugin then drives the browser the click came
+- **`patcher.browser.tabs.open`** — the plugin then drives the browser the click came
   from, opening the new thread in a tab. A context-menu `run` returns nothing (the
   menu closed when the user clicked), so a plugin that wants the browser to move
   asks it to, rather than returning a URL the way an omnibox `run` does.
-- **`bb.status.needsConfiguration`** — the entry needs a project to spawn into, so
+- **`patcher.status.needsConfiguration`** — the entry needs a project to spawn into, so
   an unconfigured install contributes no entry and says why instead.
 
 ## Try it

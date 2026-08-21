@@ -1,4 +1,4 @@
-// bb-plugin-side-chat frontend — the plugin-owned side chat surface.
+// patcher-plugin-side-chat frontend — the plugin-owned side chat surface.
 //
 // "Reply in side chat" (message action bar + selection menu) asks the backend
 // for an idle hidden fork, then opens a thread panel tab rendering the fork

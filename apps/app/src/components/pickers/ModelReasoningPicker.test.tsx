@@ -180,7 +180,7 @@ describe("ModelReasoningPicker", () => {
     );
 
     expect(
-      screen.getByRole("dialog").getAttribute("data-bb-portaled-overlay"),
+      screen.getByRole("dialog").getAttribute("data-patcher-portaled-overlay"),
     ).toBe("");
   });
 

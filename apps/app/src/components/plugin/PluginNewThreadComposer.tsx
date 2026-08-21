@@ -72,7 +72,7 @@ import {
  * docs/api_to_audit.md.
  *
  * The composer resolves selections and hands them to `onSubmit`; the PLUGIN
- * performs the creation through `bb.sdk.threads.spawn`, which is what keeps
+ * performs the creation through `patcher.sdk.threads.spawn`, which is what keeps
  * `origin: "plugin"` + `originPluginId` attribution correct.
  */
 export function PluginNewThreadComposer({

@@ -35,7 +35,7 @@ async function loadPlugin(sdkThreads: Record<string, unknown>) {
     pluginId: PLUGIN_ID,
     sdk: { threads: sdkThreads },
   });
-  await plugin(host.bb);
+  await plugin(host.patcher);
   return host;
 }
 

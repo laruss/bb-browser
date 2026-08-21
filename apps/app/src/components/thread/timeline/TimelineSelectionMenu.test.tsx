@@ -64,7 +64,7 @@ describe("TimelineSelectionMenu", () => {
     expect(
       screen
         .getByRole("button", { name: "Add to chat" })
-        .closest("[data-bb-portaled-overlay]"),
+        .closest("[data-patcher-portaled-overlay]"),
     ).not.toBeNull();
   });
 

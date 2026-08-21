@@ -80,7 +80,7 @@ async function scaffoldWithDependencies(args: {
   workDir: string;
   app: boolean;
 }): Promise<{ targetDir: string; dependencies: string[] }> {
-  const packageName = `bb-plugin-${args.app ? "app" : "headless"}`;
+  const packageName = `patcher-plugin-${args.app ? "app" : "headless"}`;
   const targetDir = join(args.workDir, packageName);
   await scaffoldPlugin({
     targetDir,

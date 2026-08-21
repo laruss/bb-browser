@@ -187,15 +187,15 @@ async function writePluginSkillFixture(rootPath: string): Promise<{
   pluginRootPath: string;
   skillFilePath: string;
 }> {
-  const pluginRootPath = join(rootPath, "bb-plugin-skill-catalog-fixture");
+  const pluginRootPath = join(rootPath, "patcher-plugin-skill-catalog-fixture");
   const skillRootPath = join(pluginRootPath, "skills", "plugin-notes");
   await mkdir(skillRootPath, { recursive: true });
   await writeFile(
     join(pluginRootPath, "package.json"),
     JSON.stringify({
-      name: "bb-plugin-skill-catalog-fixture",
+      name: "patcher-plugin-skill-catalog-fixture",
       version: "0.1.0",
-      bb: {
+      patcher: {
         name: "Skill catalog fixture",
         description: "Contributes one readable skill.",
         branding: { icon: "Zap" },
@@ -1043,7 +1043,7 @@ describe("public project skills route", () => {
           {
             filePath: join(builtinCollisionDirectory, "SKILL.md"),
             registrySkillId: null,
-            scope: "bb-builtin",
+            scope: "patcher-builtin",
           },
           {
             filePath: join(registrySkillDirectory, "SKILL.md"),
@@ -1059,7 +1059,9 @@ describe("public project skills route", () => {
   });
 
   it("lists and reads a bb plugin skill from the authoritative runtime catalog", async () => {
-    const workDir = await mkdtemp(join(tmpdir(), "bb-plugin-skill-route-"));
+    const workDir = await mkdtemp(
+      join(tmpdir(), "patcher-plugin-skill-route-"),
+    );
     try {
       await withTestHarness(async (harness) => {
         setExperiments(harness.db, {

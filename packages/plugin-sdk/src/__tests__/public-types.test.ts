@@ -199,7 +199,7 @@ describe("backend plugin SDK public surface", () => {
     const [backendContract, declarations] = await Promise.all([
       readFile(new URL("../backend-contract.ts", import.meta.url), "utf8"),
       readFile(
-        new URL("../../bundled-types/bb-plugin-sdk.d.ts", import.meta.url),
+        new URL("../../bundled-types/patcher-plugin-sdk.d.ts", import.meta.url),
         "utf8",
       ),
     ]);
@@ -230,7 +230,7 @@ describe("backend plugin SDK public surface", () => {
     const [rpcContract, declarations] = await Promise.all([
       readFile(new URL("../rpc-contract.ts", import.meta.url), "utf8"),
       readFile(
-        new URL("../../bundled-types/bb-plugin-sdk.d.ts", import.meta.url),
+        new URL("../../bundled-types/patcher-plugin-sdk.d.ts", import.meta.url),
         "utf8",
       ),
     ]);

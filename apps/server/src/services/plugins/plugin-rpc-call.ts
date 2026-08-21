@@ -220,7 +220,7 @@ export function rpcBoundaryError(thrown: unknown): PluginRpcError | null {
 export const alreadyValidatedElsewhere: StandardSchemaV1 = {
   "~standard": {
     version: 1,
-    vendor: "bb-plugin-process",
+    vendor: "patcher-plugin-process",
     validate: (value: unknown) => ({ value }),
   },
 };

@@ -18,7 +18,7 @@ const codexModelIdentitySchema = z
   .passthrough();
 
 /** Map a Codex-native reasoning effort string into a BB ReasoningLevel. */
-export function mapCodexReasoningLevelToBb(
+export function mapCodexReasoningLevelToPatcher(
   value: unknown,
 ): ReasoningLevel | null {
   if (typeof value !== "string") {
@@ -67,7 +67,7 @@ function parseReasoningEffortOption(
     return null;
   }
   const record = raw as Record<string, unknown>;
-  const level = mapCodexReasoningLevelToBb(record.reasoningEffort);
+  const level = mapCodexReasoningLevelToPatcher(record.reasoningEffort);
   if (!level) {
     return null;
   }
@@ -109,7 +109,7 @@ function toAvailableModel(
   const efforts = parseSupportedReasoningEfforts(
     raw.supportedReasoningEfforts,
   );
-  const mappedDefault = mapCodexReasoningLevelToBb(raw.defaultReasoningEffort);
+  const mappedDefault = mapCodexReasoningLevelToPatcher(raw.defaultReasoningEffort);
   const defaultReasoningEffort =
     mappedDefault &&
     efforts.some((effort) => effort.reasoningEffort === mappedDefault)

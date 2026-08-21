@@ -5,13 +5,13 @@
  * loading a bundle (design §7 — a stale bundle is skipped legibly, never a
  * TypeError).
  */
-// The SDK remains pre-1.0: compatible additions bump the patch, while breaking
-// changes bump the 0.x minor. Consequently
-// PLUGIN_SDK_MAJOR is 0, so the major-only artifact gate cannot distinguish
-// 0.x releases and is intentionally vacuous for them until a future 1.0.
-// Pre-1.0 compatibility rides on each plugin's engines.bbPluginSdk range plus
-// the exact sdkVersion-differs rebuild trigger for rebuildable artifacts.
-export const PLUGIN_SDK_VERSION = "0.4.1";
+// 1.0.0 is the Patcher rename itself: the manifest key, the contribution ids
+// and the SDK specifier all changed at once, so no bundle built against an
+// earlier SDK can load. From here the major carries breaking changes and the
+// artifact gate stops being vacuous — a bundle stamped with a different major
+// is skipped legibly, instead of falling back on the pre-1.0 rule that
+// compared sdkVersion exactly.
+export const PLUGIN_SDK_VERSION = "1.0.0";
 
 /** Major of {@link PLUGIN_SDK_VERSION} — the plugin API compatibility number. */
 export const PLUGIN_SDK_MAJOR = Number(PLUGIN_SDK_VERSION.split(".", 1)[0]);

@@ -38,7 +38,7 @@ describe("plugin activation snapshots and garbage collection", () => {
   beforeEach(async () => {
     db = createConnection(":memory:");
     migrate(db);
-    dataDir = await mkdtemp(join(tmpdir(), "bb-plugin-snapshot-"));
+    dataDir = await mkdtemp(join(tmpdir(), "patcher-plugin-snapshot-"));
   });
 
   afterEach(async () => {
@@ -133,11 +133,11 @@ describe("plugin activation snapshots and garbage collection", () => {
     await mkdir(pluginDir, { recursive: true });
     upsertInstalledPlugin(db, {
       id: "legacy-snapshot",
-      source: "npm:bb-plugin-legacy@^1.0.0",
+      source: "npm:patcher-plugin-legacy@^1.0.0",
       provenance: { kind: "catalog", entryId: "legacy-entry" },
       sourceIntent: {
         kind: "npm",
-        packageName: "bb-plugin-legacy",
+        packageName: "patcher-plugin-legacy",
         registry: "https://registry.npmjs.org",
         requestedSpec: "^1.0.0",
         specKind: "range",
@@ -180,7 +180,7 @@ describe("plugin activation snapshots and garbage collection", () => {
       JSON.stringify({
         ...legacyRegistration,
         provenance: "marketplace",
-        marketplaceId: "bb-official",
+        marketplaceId: "patcher-official",
         marketplaceEntryId: "legacy-entry",
       }),
     );
@@ -221,7 +221,7 @@ describe("plugin activation snapshots and garbage collection", () => {
       JSON.stringify({
         ...legacyRegistration,
         provenance: "marketplace",
-        marketplaceId: "bb-official",
+        marketplaceId: "patcher-official",
         marketplaceEntryId: "legacy-entry",
       }),
     );

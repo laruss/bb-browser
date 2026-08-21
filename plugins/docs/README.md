@@ -5,7 +5,7 @@ Markdown, HTML, and asset files while the plugin adds nested navigation,
 multi-host vaults, rich editing, images, sandboxed HTML, automation, chat
 mentions, and links that open inside a thread.
 
-The package and installed plugin ID remain `bb-plugin-simple-notes` and
+The package and installed plugin ID remain `patcher-plugin-simple-notes` and
 `simple-notes` for compatibility with existing settings and stored vaults. The
 user-facing product name, catalog listing, panel route, CLI, mention
 provider, and directive are all Docs.
@@ -19,7 +19,7 @@ provider, and directive are all Docs.
   Markdown documents, and HTML pages. It can be collapsed, and search stays
   hidden until requested.
 - **Safe host-routed operations:** all list/read/write/mkdir/move/remove calls
-  go through `bb.sdk.files` with an explicit vault root. Saves retain SHA-256
+  go through `patcher.sdk.files` with an explicit vault root. Saves retain SHA-256
   compare-and-swap conflict handling. Local vaults use native filesystem
   watching for immediate UI refreshes; remote or unwatchable vaults fall back
   to polling.
@@ -98,7 +98,7 @@ bb docs push ./docs-work --delete
 ### Sync workspace contract
 
 - **Layout and identity:** the destination keeps exact vault-relative paths
-  beneath one workspace root and stores a versioned `.bb-docs-state.json`
+  beneath one workspace root and stores a versioned `.patcher-docs-state.json`
   manifest at that root. Manifest entries map `vault id + remote path` to a
   local path and retain the pulled SHA-256, byte size, content encoding, MIME
   type, and modification time. A single-file pull still keeps its vault path,
@@ -163,7 +163,7 @@ its existing compare-and-swap behavior.
 
 The stable internal plugin ID remains `simple-notes`. Generate or inspect its
 token with `bb plugin token simple-notes`, then send it in
-`x-bb-plugin-token` to these JSON endpoints:
+`x-patcher-plugin-token` to these JSON endpoints:
 
 ```text
 POST /api/v1/plugins/simple-notes/http/list

@@ -156,14 +156,14 @@ describe("GitHub RPC contract", () => {
   });
 
   it("rejects invalid method inputs and outputs at runtime", async () => {
-    const { bb, harness } = createFakePluginHost({
+    const { patcher, harness } = createFakePluginHost({
       permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "github-contract",
     });
     const contract = defineRpcContract({
       startWork: githubRpcContract.startWork,
     });
-    bb.rpc.register(contract, {
+    patcher.rpc.register(contract, {
       startWork() {
         return { threadId: "" };
       },

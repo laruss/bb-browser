@@ -1,13 +1,13 @@
-// bb-plugin-private-history — the `browser.history.filters` example.
+// patcher-plugin-private-history — the `browser.history.filters` example.
 //
 // Two halves of the same permission, and they are deliberately different in
 // kind:
 //
-//   * `bb.browser.registerHistoryFilter` sees a page *before* it is recorded,
+//   * `patcher.browser.registerHistoryFilter` sees a page *before* it is recorded,
 //     which is the only way to keep something out of the history at all. Here:
 //     never record a host the user named, and strip tracking parameters from
 //     everything else.
-//   * `bb.sdk.browserHistory` reads and edits what is already stored, which is
+//   * `patcher.sdk.browserHistory` reads and edits what is already stored, which is
 //     how a plugin cleans up after a rule that did not exist yet. Here: a
 //     `bb private-history forget` command.
 //
@@ -77,8 +77,8 @@ function stripTrackingParameters(url: URL): boolean {
   return changed;
 }
 
-export default async function plugin(bb: PatcherPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(patcher: PatcherPluginApi) {
+  const settings = patcher.settings.define({
     hosts: {
       type: "string",
       label: "Private hosts",
@@ -97,10 +97,10 @@ export default async function plugin(bb: PatcherPluginApi) {
   if (privateHosts.length === 0) {
     // The tracking-parameter half still works, so this is a hint rather than a
     // refusal to load: the plugin does something useful unconfigured.
-    bb.status.needsConfiguration(HOSTS_HINT);
+    patcher.status.needsConfiguration(HOSTS_HINT);
   }
 
-  bb.browser.registerHistoryFilter(
+  patcher.browser.registerHistoryFilter(
     (visit): PluginBrowserHistoryRewrite | null | void => {
       let url: URL;
       try {
@@ -121,7 +121,7 @@ export default async function plugin(bb: PatcherPluginApi) {
   // front of the user, shown where they are already asking "what is this site?".
   // A rule that keeps a host out of history is visible here too — the section
   // says zero for a private host, which is the plugin working, not failing.
-  bb.browser.registerSiteInfoProvider({
+  patcher.browser.registerSiteInfoProvider({
     id: "history",
     label: "History",
     async describe(context: { host: string }) {
@@ -131,7 +131,7 @@ export default async function plugin(bb: PatcherPluginApi) {
       // Matched by text, which is what the store can search — so this counts the
       // entries whose URL or title mentions the host rather than claiming to be
       // an exact per-origin count.
-      const entries = await bb.sdk.browserHistory.list({
+      const entries = await patcher.sdk.browserHistory.list({
         limit: 100,
         query: context.host,
       });
@@ -144,7 +144,7 @@ export default async function plugin(bb: PatcherPluginApi) {
     },
   });
 
-  bb.cli.register({
+  patcher.cli.register({
     name: "private-history",
     summary: "Inspect and prune the browser's stored history",
     commands: [
@@ -164,7 +164,7 @@ export default async function plugin(bb: PatcherPluginApi) {
       const query = rest.join(" ").trim();
 
       if (command === "list") {
-        const entries = await bb.sdk.browserHistory.list(
+        const entries = await patcher.sdk.browserHistory.list(
           query.length === 0 ? { limit: 20 } : { limit: 20, query },
         );
         return {
@@ -179,12 +179,12 @@ export default async function plugin(bb: PatcherPluginApi) {
         if (query.length === 0) {
           return { exitCode: 1, stderr: "forget requires text to match" };
         }
-        const entries = await bb.sdk.browserHistory.list({
+        const entries = await patcher.sdk.browserHistory.list({
           limit: 1000,
           query,
         });
         for (const entry of entries) {
-          await bb.sdk.browserHistory.remove({ id: entry.id });
+          await patcher.sdk.browserHistory.remove({ id: entry.id });
         }
         return { exitCode: 0, stdout: `Forgot ${entries.length} entries.` };
       }

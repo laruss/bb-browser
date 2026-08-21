@@ -5,7 +5,7 @@
  * already takes every host-facing capability as an injected function — that was
  * always the seam, it just pointed at the server — so the plugin's process
  * builds the *same* object with those functions pointed at the channel. One
- * copy of what `bb.storage.kv.set` means, of the 256KB limit, of every error
+ * copy of what `patcher.storage.kv.set` means, of the 256KB limit, of every error
  * string, running on both sides of the boundary.
  *
  * This is deliberate and it is the lesson the repo already paid for twice: the
@@ -67,13 +67,13 @@ import type { PluginServiceCommand } from "./plugin-service-message.js";
 export interface PluginHostConfig {
   pluginId: string;
   permissions: readonly PluginPermission[] | undefined;
-  /** What `bb.sites` declared; see the same field on `createPluginApi`. */
+  /** What `patcher.sites` declared; see the same field on `createPluginApi`. */
   sites: readonly string[] | undefined;
-  /** For `bb.storage.database()`, which this process opens itself. */
+  /** For `patcher.storage.database()`, which this process opens itself. */
   dataDir: string;
   /**
    * Null when the server is not listening yet. A plugin can load before that,
-   * and `bb.server.loopbackBaseUrl` is bind-gated for exactly that reason — so
+   * and `patcher.server.loopbackBaseUrl` is bind-gated for exactly that reason — so
    * the gate travels rather than being quietly removed. The host pushes
    * `host.loopbackBaseUrl` once it binds.
    */
@@ -86,7 +86,7 @@ export interface PluginHostConfig {
    * The two synchronous host facts, as they stand at bootstrap.
    *
    * They are pushed as notifications afterwards, but the factory runs *during*
-   * bootstrap and reads both — `bb.agents.registerTool` checks the owners map
+   * bootstrap and reads both — `patcher.agents.registerTool` checks the owners map
    * to refuse a name another plugin already took — so an empty starting value
    * is not a stale copy, it is a wrong answer at the only moment it is asked.
    */
@@ -189,7 +189,7 @@ export interface PluginRegistrationSnapshot {
 export const BOOTSTRAP_METHOD = "bootstrap";
 
 /** The plugin factory a server entry default-exports. */
-export type PluginFactory = (bb: PatcherPluginApi) => unknown;
+export type PluginFactory = (patcher: PatcherPluginApi) => unknown;
 
 export interface PluginChildRuntimeOptions {
   port: PluginPort;
@@ -222,7 +222,7 @@ async function defaultLoadFactory(entry: string): Promise<PluginFactory> {
   const mod = (await jiti.import(entry)) as { default?: unknown };
   if (typeof mod.default !== "function") {
     throw new Error(
-      `server entry must default-export a factory (bb) => void, got ${typeof mod.default}`,
+      `server entry must default-export a factory (patcher) => void, got ${typeof mod.default}`,
     );
   }
   return mod.default as PluginFactory;
@@ -352,7 +352,7 @@ export function createPluginChildRuntime(
         // listening" error a plugin sees in-process.
         if (loopbackBaseUrl === null) return undefined;
         // Built once, lazily: the SDK opens a websocket, and a plugin that
-        // never touches bb.sdk should not have one.
+        // never touches patcher.sdk should not have one.
         const patcherSdk = loadPatcherSdk();
         sdk ??= patcherSdk.createNodePatcherSdk({
           baseUrl: loopbackBaseUrl,
@@ -869,9 +869,9 @@ function snapshot(handle: PluginApiHandle): PluginRegistrationSnapshot {
 }
 
 /**
- * `@patcher/sdk`, loaded the first time a plugin asks for `bb.sdk` — and loaded
+ * `@patcher/sdk`, loaded the first time a plugin asks for `patcher.sdk` — and loaded
  * *synchronously*, because `getSdk()` is synchronous and the plugin-facing
- * contract (`bb.sdk.threads.list()`, `bb.sdk.guide.render()`) has members that
+ * contract (`patcher.sdk.threads.list()`, `patcher.sdk.guide.render()`) has members that
  * answer without awaiting anything.
  *
  * This is the single biggest thing a plugin process pays for. `@patcher/sdk` pulls

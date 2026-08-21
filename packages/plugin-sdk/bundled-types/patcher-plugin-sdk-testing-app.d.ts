@@ -196,7 +196,7 @@ interface RenderSlotOptions<Contract extends PluginRpcContract = PluginRpcContra
 interface RenderedSlotBehaviorDrivers {
     /**
      * Push a realtime event to `useRealtime(channel, …)` subscribers, wrapped
-     * in act. The payload is JSON-round-tripped like `bb.realtime.publish`.
+     * in act. The payload is JSON-round-tripped like `patcher.realtime.publish`.
      */
     emitRealtime(channel: string, payload: unknown): Promise<void>;
     /** Drive the lifecycle of the same connection used by realtime events. */

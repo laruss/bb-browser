@@ -406,7 +406,7 @@ describe("pi provider adapter", () => {
       },
       dynamicTools: [
         {
-          name: "bb_test_ping",
+          name: "patcher_test_ping",
           description: "Ping the host",
           inputSchema: {
             type: "object",
@@ -428,7 +428,7 @@ describe("pi provider adapter", () => {
         appendSystemPrompt: "Focus on the failing tests first.",
         dynamicTools: [
           {
-            name: "bb_test_ping",
+            name: "patcher_test_ping",
             description: "Ping the host",
             inputSchema: {
               type: "object",
@@ -647,7 +647,7 @@ describe("pi provider adapter", () => {
           providerThreadId: "t1",
           turnId: "turn-1",
           callId: "call-1",
-          tool: "bb_test_ping",
+          tool: "patcher_test_ping",
           arguments: { ping: true },
         },
       }),
@@ -657,7 +657,7 @@ describe("pi provider adapter", () => {
       providerThreadId: "t1",
       turnId: "turn-1",
       callId: "call-1",
-      tool: "bb_test_ping",
+      tool: "patcher_test_ping",
       arguments: { ping: true },
     });
   });
@@ -665,7 +665,7 @@ describe("pi provider adapter", () => {
   it("decodeToolCallRequest rejects non-string, non-number request ids", () => {
     const adapter = createPiProviderAdapter();
     const malformedRequest = JSON.parse(
-      '{"jsonrpc":"2.0","id":true,"method":"item/tool/call","params":{"threadId":"t1","turnId":"turn-1","callId":"call-1","tool":"bb_test_ping","arguments":{"ping":true}}}',
+      '{"jsonrpc":"2.0","id":true,"method":"item/tool/call","params":{"threadId":"t1","turnId":"turn-1","callId":"call-1","tool":"patcher_test_ping","arguments":{"ping":true}}}',
     );
 
     expect(adapter.decodeToolCallRequest(malformedRequest)).toBeNull();

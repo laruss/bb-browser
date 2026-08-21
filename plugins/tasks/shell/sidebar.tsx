@@ -22,7 +22,7 @@ import {
 } from "@patcher/shared-ui/tooltip";
 import { cn } from "@patcher/shared-ui/lib/utils";
 
-const SIDEBAR_WIDTH_KEY = "bb-tasks:sidebar-width";
+const SIDEBAR_WIDTH_KEY = "patcher-tasks:sidebar-width";
 const SIDEBAR_DEFAULT_WIDTH = 208; // matches the old fixed w-52
 const SIDEBAR_MIN_WIDTH = 180;
 const SIDEBAR_MAX_WIDTH = 340;

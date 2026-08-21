@@ -102,7 +102,7 @@ describe("bb plugin catalog", () => {
     vi.mocked(fetch).mockResolvedValueOnce(
       json({ ok: true, plugin: installedPlugin }),
     );
-    const source = "https://github.com/acme/bb-plugin-linear";
+    const source = "https://github.com/acme/patcher-plugin-linear";
 
     await runCommand(["plugin", "install", source, "--yes"], register);
 
@@ -167,7 +167,7 @@ describe("bb plugin catalog", () => {
   it("does not resolve the removed entry@marketplace syntax", async () => {
     await expect(
       runCommand(
-        ["plugin", "install", "linear@bb-official", "--yes"],
+        ["plugin", "install", "linear@patcher-official", "--yes"],
         register,
       ),
     ).rejects.toThrow("process.exit:1");

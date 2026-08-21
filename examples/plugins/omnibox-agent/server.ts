@@ -1,4 +1,4 @@
-// bb-plugin-omnibox-agent — the `browser.omnibox.providers` example (no frontend).
+// patcher-plugin-omnibox-agent — the `browser.omnibox.providers` example (no frontend).
 //
 // Type into the browser surface's omnibox and this plugin adds two kinds of row
 // to the same ranked list the browser fills with address, search, open-tab and
@@ -16,10 +16,10 @@
 // points at this plugin's own loopback route — which spawns the thread and
 // redirects the tab to it.
 //
-// Surfaces demonstrated: bb.browser.registerOmniboxProvider (both action kinds),
-// bb.browser.registerSearchEngine (including an engine that is not a search
-// engine), bb.http.route, a `project` setting with bb.status.needsConfiguration,
-// bb.sdk.threads.spawn with plugin attribution, and bb.server.loopbackBaseUrl to
+// Surfaces demonstrated: patcher.browser.registerOmniboxProvider (both action kinds),
+// patcher.browser.registerSearchEngine (including an engine that is not a search
+// engine), patcher.http.route, a `project` setting with patcher.status.needsConfiguration,
+// patcher.sdk.threads.spawn with plugin attribution, and patcher.server.loopbackBaseUrl to
 // point the browser at the BB app the plugin itself runs inside.
 //
 // The type-only import is erased at load time; this file runs as-is.
@@ -36,8 +36,8 @@ function githubSearchUrl(query: string): string {
   return `https://github.com/search?q=${encodeURIComponent(query)}&type=repositories`;
 }
 
-export default async function plugin(bb: PatcherPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(patcher: PatcherPluginApi) {
+  const settings = patcher.settings.define({
     project: {
       type: "project",
       label: "BB project for omnibox asks",
@@ -49,14 +49,14 @@ export default async function plugin(bb: PatcherPluginApi) {
   // plugin is useful before anyone touches its settings.
   const initial = await settings.get();
   if (!initial.project) {
-    bb.status.needsConfiguration(CONFIGURE_HINT);
+    patcher.status.needsConfiguration(CONFIGURE_HINT);
   }
 
   // The engine's other half: the browser navigates here with the query, and this
   // turns it into a thread. A plain `https` engine needs none of this — see the
   // Kagi registration below — but an engine that *does* something needs somewhere
   // to do it.
-  bb.http.route("GET", "/ask", async (context) => {
+  patcher.http.route("GET", "/ask", async (context) => {
     // A Hono context, so the query comes off the request rather than a parsed URL.
     const query = (context.req.query("q") ?? "").trim();
     if (query.length === 0) {
@@ -71,39 +71,39 @@ export default async function plugin(bb: PatcherPluginApi) {
         },
       );
     }
-    const thread = await bb.sdk.threads.spawn({
+    const thread = await patcher.sdk.threads.spawn({
       projectId: current.project,
       prompt: query,
       environment: { type: "project-default" },
       title: `Omnibox: ${query.slice(0, 60)}`,
     });
-    bb.log.info(`search engine ask → thread ${thread.id}`);
+    patcher.log.info(`search engine ask → thread ${thread.id}`);
     // A redirect rather than a page: the tab should end up on the thread, the way
     // a search engine leaves you on its results.
     return new Response(null, {
       status: 302,
       headers: {
-        location: `${bb.server.loopbackBaseUrl}/threads/${thread.id}`,
+        location: `${patcher.server.loopbackBaseUrl}/threads/${thread.id}`,
       },
     });
   });
 
-  bb.browser.registerSearchEngine({
+  patcher.browser.registerSearchEngine({
     id: "ask-agent",
     name: "Ask an agent",
     // Loopback is admitted for exactly this: an engine served by the machine the
     // browser is running on. `%s` is where the browser puts the escaped query.
-    urlTemplate: `${bb.server.loopbackBaseUrl}/api/v1/plugins/omnibox-agent/http/ask?q=%s`,
+    urlTemplate: `${patcher.server.loopbackBaseUrl}/api/v1/plugins/omnibox-agent/http/ask?q=%s`,
   });
 
   // And an ordinary one, to show that most engines are just a template.
-  bb.browser.registerSearchEngine({
+  patcher.browser.registerSearchEngine({
     id: "kagi",
     name: "Kagi",
     urlTemplate: "https://kagi.com/search?q=%s",
   });
 
-  bb.browser.registerOmniboxProvider({
+  patcher.browser.registerOmniboxProvider({
     // Wire item ids are "<providerId>:<item id>", so rows read as
     // "agent:ask" / "agent:github".
     id: "agent",
@@ -147,16 +147,18 @@ export default async function plugin(bb: PatcherPluginApi) {
       }
       // BB fills in origin "plugin" and originPluginId automatically, so the
       // thread is attributed to this plugin in the thread list.
-      const thread = await bb.sdk.threads.spawn({
+      const thread = await patcher.sdk.threads.spawn({
         projectId: current.project,
         prompt: query,
         environment: { type: "project-default" },
         title: `Omnibox: ${query.slice(0, 60)}`,
       });
-      bb.log.info(`omnibox ask → thread ${thread.id}`);
+      patcher.log.info(`omnibox ask → thread ${thread.id}`);
       // Open the new thread in the tab the omnibox was used from: the browser
       // navigates to the BB app served by the server this plugin runs in.
-      return { navigate: `${bb.server.loopbackBaseUrl}/threads/${thread.id}` };
+      return {
+        navigate: `${patcher.server.loopbackBaseUrl}/threads/${thread.id}`,
+      };
     },
   });
 }

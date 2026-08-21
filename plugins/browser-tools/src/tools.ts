@@ -12,7 +12,7 @@ import type { PluginBrowserPageState, PluginBrowserTab } from "@patcher/plugin-s
 /**
  * Tool names are `[a-zA-Z0-9_-]+` (the host rejects anything else), so the
  * plan's dotted `browser.tabs.list` becomes `browser_tabs_list`. The model sees
- * these verbatim on Codex and as `mcp__bb-bridge__<name>` on Claude Code, which
+ * these verbatim on Codex and as `mcp__patcher-bridge__<name>` on Claude Code, which
  * is why nothing written for the model spells a tool name out.
  */
 export const BROWSER_TOOL_NAMES = [

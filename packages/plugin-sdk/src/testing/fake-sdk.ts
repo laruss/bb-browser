@@ -10,13 +10,13 @@ import type { FakePermissionGate } from "./fake-permissions.js";
 type PatcherSdk = PatcherPluginApi["sdk"];
 
 /**
- * Recordable `bb.sdk` stand-in for {@link createFakePluginHost}. Every call
+ * Recordable `patcher.sdk` stand-in for {@link createFakePluginHost}. Every call
  * through the fake is recorded (post plugin-attribution defaulting, so
  * assertions see what the server would receive); calls without a stubbed
  * implementation throw with a message naming the exact path to stub.
  */
 
-/** One recorded `bb.sdk` call. `path` is dot-joined, e.g. "threads.spawn". */
+/** One recorded `patcher.sdk` call. `path` is dot-joined, e.g. "threads.spawn". */
 export interface FakeSdkCall {
   path: string;
   args: unknown[];
@@ -44,7 +44,7 @@ type FakeSdkOverrideTree<T> = {
 export type FakeSdkOverrides = FakeSdkOverrideTree<PatcherSdk>;
 
 export interface FakeSdkHarness {
-  /** Every `bb.sdk` call in order, including ones whose stub threw. */
+  /** Every `patcher.sdk` call in order, including ones whose stub threw. */
   readonly calls: FakeSdkCall[];
   /** Argument lists of the calls to one dot-joined path. */
   callsTo(path: string): unknown[][];
@@ -105,7 +105,7 @@ export function createFakeSdk(options: {
       >
     )[path];
     for (const permission of extras ?? []) {
-      options.permissions.assert(permission, `bb.sdk.${path}`);
+      options.permissions.assert(permission, `patcher.sdk.${path}`);
     }
     // `subscribe` picks its feed with an argument, so an area grant cannot
     // cover it — the host splits it the same way.
@@ -113,7 +113,7 @@ export function createFakeSdk(options: {
       const event = (rawArgs[0] as { event?: unknown } | undefined)?.event;
       options.permissions.assert(
         permissionForRealtimeEvent(String(event)),
-        `bb.sdk.subscribe({ event: "${String(event)}" })`,
+        `patcher.sdk.subscribe({ event: "${String(event)}" })`,
       );
     }
     const args =
@@ -124,7 +124,7 @@ export function createFakeSdk(options: {
     const stub = stubs.get(path);
     if (!stub) {
       throw new Error(
-        `bb.sdk.${path} is not stubbed — pass an implementation via ` +
+        `patcher.sdk.${path} is not stubbed — pass an implementation via ` +
           `createFakePluginHost({ sdk: { ... } }) or harness.sdk.stub("${path}", fn)`,
       );
     }
@@ -148,7 +148,7 @@ export function createFakeSdk(options: {
             PLUGIN_SDK_AREA_PERMISSIONS;
           const permission = areas[prop];
           if (permission !== undefined) {
-            options.permissions.assert(permission, `bb.sdk.${prop}`);
+            options.permissions.assert(permission, `patcher.sdk.${prop}`);
           }
         }
         return node(path === "" ? prop : `${path}.${prop}`);

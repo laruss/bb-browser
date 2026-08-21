@@ -7,7 +7,7 @@ that `bb plugin build` replaces with BB's shared implementation.
 The authoritative contracts are the exported declarations in
 [`src/backend-contract.ts`](src/backend-contract.ts) and
 [`src/app-contract.ts`](src/app-contract.ts). Keep author-facing guidance in
-the built-in `bb-plugin-authoring` skill synchronized with those declarations.
+the built-in `patcher-plugin-authoring` skill synchronized with those declarations.
 
 ## Composer customization
 
@@ -62,7 +62,7 @@ import { createFakePluginHost } from "@patcher/plugin-sdk/testing";
 import plugin from "./server.js";
 
 const host = createFakePluginHost({ pluginId: "notes" });
-await plugin(host.bb);
+await plugin(host.patcher);
 
 await host.harness.behavior.callRpc("list", { query: "today" });
 expect(host.harness.inspection.registrations.rpcMethods).toContain("list");
@@ -119,7 +119,7 @@ settings, KV/database storage, conditional agent configuration, request input,
 and disposal order. HTTP runs through Hono but does not enforce BB's local or
 token authentication. Background services and schedules run only when driven;
 there are no restart timers or cron sweeps. Storage is process-local in a
-temporary directory, secrets are kept in memory, `bb.sdk` is always bound and
+temporary directory, secrets are kept in memory, `patcher.sdk` is always bound and
 unstubbed calls throw, and cross-plugin/global collision policy is outside one
 fake host.
 

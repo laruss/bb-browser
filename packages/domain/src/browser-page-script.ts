@@ -5,7 +5,7 @@
  * The other half of {@link BrowserPageStyle}, and the more expensive one: a
  * stylesheet cannot read the page and cannot ask anything of the plugin, while
  * this can do both. So it takes its own permission (`pageScript.register`) over
- * the same `bb.sites`, and everything the browser guarantees about running it is
+ * the same `patcher.sites`, and everything the browser guarantees about running it is
  * written down here rather than left to be discovered.
  *
  * Measured against Electron 41.7.0 rather than assumed (the scripts run from a
@@ -15,7 +15,7 @@
  *   been created and the parser has produced *nothing* — `document.documentElement`
  *   is still null. That is earlier than a page style lands and earlier than any
  *   inline script on the page, which is the point: it can patch what the page is
- *   about to use. It also means DOM work has to wait, which is what `bb.ready`
+ *   about to use. It also means DOM work has to wait, which is what `patcher.ready`
  *   is for.
  * - **A world of its own, per plugin.** Each plugin's scripts share one isolated
  *   world; the page's own world and every other plugin's are separate objects
@@ -56,7 +56,7 @@ export const BROWSER_PAGE_SCRIPT_MAX_MATCHES = 16;
 export interface BrowserPageScript {
   pluginId: string;
   scriptId: string;
-  /** Site patterns, each one the plugin declared in `bb.sites`. */
+  /** Site patterns, each one the plugin declared in `patcher.sites`. */
   matches: string[];
   code: string;
 }

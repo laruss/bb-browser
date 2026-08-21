@@ -1,4 +1,4 @@
-# bb-plugin-slack-bot
+# patcher-plugin-slack-bot
 
 The headless "Slack bot" hero plugin — no frontend entry, no dependencies.
 Mention the bot in Slack and it spawns a BB thread in your configured project;
@@ -10,19 +10,19 @@ What it demonstrates:
 - **Settings** — `botToken` and `signingSecret` as `secret: true` (stored in
   0600 files, never sent to the frontend), a plain string `channelId`, and a
   `project` picker (stores the BB project id).
-- **`bb.http.route("POST", "/events", ..., { auth: "none" })`** — a Slack
+- **`patcher.http.route("POST", "/events", ..., { auth: "none" })`** — a Slack
   Events API webhook. `auth: "none"` is safe here because the handler
   verifies Slack's `x-slack-signature` (HMAC-SHA256 of
   `v0:<timestamp>:<raw body>` with the signing secret, with a 5-minute replay
   window) before touching any event.
-- **`bb.sdk.threads.spawn`** — project-default environment; BB fills in
+- **`patcher.sdk.threads.spawn`** — project-default environment; BB fills in
   `origin: "plugin"` and `originPluginId: "slack-bot"` automatically, so
   spawned threads are attributed in the thread list.
-- **`bb.storage.kv`** — maps Slack `thread_ts` → BB thread id (and back), so
+- **`patcher.storage.kv`** — maps Slack `thread_ts` → BB thread id (and back), so
   follow-up mentions land in the same BB thread.
-- **`bb.events.on("thread.idle")`** — posts `lastAssistantText` to Slack via
+- **`patcher.events.on("thread.idle")`** — posts `lastAssistantText` to Slack via
   `chat.postMessage`.
-- **`bb.status.needsConfiguration`** — the plugin loads without tokens and
+- **`patcher.status.needsConfiguration`** — the plugin loads without tokens and
   reports "needs configuration" instead of crash-looping.
 
 Socket Mode is intentionally out of scope: it needs a WebSocket client

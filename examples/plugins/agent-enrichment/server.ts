@@ -1,18 +1,18 @@
-// bb-plugin-agent-enrichment — the "agent enrichment" hero plugin.
+// patcher-plugin-agent-enrichment — the "agent enrichment" hero plugin.
 //
 // A headless plugin whose entire surface is agent-facing:
-// - bb.cli.register: a `bb docs` command that both humans and agents (via
+// - patcher.cli.register: a `bb docs` command that both humans and agents (via
 //   bash) use to search the bundled docs/ folder
-// - bb.agents.registerTool: `docs_search`, the same search as a native
+// - patcher.agents.registerTool: `docs_search`, the same search as a native
 //   dynamic tool with zod-validated parameters (schema'd, permission-visible
 //   tool calls — the secondary surface from design §4.4)
-// - bb.agents.configure: selects that tool and the repo-conventions skill for
+// - patcher.agents.configure: selects that tool and the repo-conventions skill for
 //   standard-project sessions without rebuilding either registration
-// - bb.ui.registerMentionProvider: `@`-mention the bundled docs from the
+// - patcher.ui.registerMentionProvider: `@`-mention the bundled docs from the
 //   composer; the picked doc's body is resolved at send time and attached
 //   as agent-only context
-// - bb.settings.define: a boolean rendered in BB's settings UI
-// - bb.storage.kv: caches the last search (CLI and tool share it)
+// - patcher.settings.define: a boolean rendered in BB's settings UI
+// - patcher.storage.kv: caches the last search (CLI and tool share it)
 // - skills/repo-conventions: a conventional skills/ directory, auto-imported
 //   into every thread's skills through the plugin skills tier
 //
@@ -41,8 +41,8 @@ interface LastSearch {
   at: number;
 }
 
-export default async function plugin(bb: PatcherPluginApi) {
-  const settings = bb.settings.define({
+export default async function plugin(patcher: PatcherPluginApi) {
+  const settings = patcher.settings.define({
     caseSensitive: {
       type: "boolean",
       label: "Case-sensitive search",
@@ -71,7 +71,7 @@ export default async function plugin(bb: PatcherPluginApi) {
         }
       });
     }
-    await bb.storage.kv.set("last-search", {
+    await patcher.storage.kv.set("last-search", {
       query,
       matchCount: excerpts.length,
       at: Date.now(),
@@ -96,7 +96,7 @@ export default async function plugin(bb: PatcherPluginApi) {
     return docs;
   }
 
-  bb.cli.register({
+  patcher.cli.register({
     name: "docs",
     summary: "Search this plugin's bundled docs",
     commands: [
@@ -128,7 +128,7 @@ export default async function plugin(bb: PatcherPluginApi) {
         return { exitCode: 0, stdout: excerpts.join("\n") };
       }
       if (sub === "last") {
-        const last = await bb.storage.kv.get<LastSearch>("last-search");
+        const last = await patcher.storage.kv.get<LastSearch>("last-search");
         if (!last) return { exitCode: 0, stdout: "No searches yet." };
         return {
           exitCode: 0,
@@ -142,7 +142,7 @@ export default async function plugin(bb: PatcherPluginApi) {
   // The same search as a native dynamic tool: zod parameters are validated
   // per call (bad model arguments become a tool error, not a plugin error)
   // and converted to the JSON schema providers see.
-  bb.agents.registerTool({
+  patcher.agents.registerTool({
     name: "docs_search",
     description:
       "Search this repository's bundled docs (conventions, testing rules) and return matching lines.",
@@ -158,7 +158,7 @@ export default async function plugin(bb: PatcherPluginApi) {
     },
   });
 
-  bb.agents.configure((context) => {
+  patcher.agents.configure((context) => {
     if (context.project.kind === "personal") {
       return { tools: [], skills: [] };
     }
@@ -172,7 +172,7 @@ export default async function plugin(bb: PatcherPluginApi) {
   // @-mention a bundled doc from the composer: search matches doc titles
   // and file names; the picked doc's full body is resolved once at send
   // time and attached as agent-only context.
-  bb.ui.registerMentionProvider({
+  patcher.ui.registerMentionProvider({
     id: "docs",
     label: "Plugin docs",
     async search({ query }) {

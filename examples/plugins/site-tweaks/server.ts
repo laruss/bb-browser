@@ -1,11 +1,11 @@
-// bb-plugin-site-tweaks — changing a site, and putting a panel beside it.
+// patcher-plugin-site-tweaks — changing a site, and putting a panel beside it.
 //
 // The two halves of "replace a Chrome extension", in the shape they were built
 // for:
 //
-//   * `bb.browser.registerPageStyle` — CSS in GitHub's own pages, which is what
+//   * `patcher.browser.registerPageStyle` — CSS in GitHub's own pages, which is what
 //     "remove or alter parts of a website" costs once the browser will carry it;
-//   * `bb.browser.registerPageScript` — a control *in* the page that calls this
+//   * `patcher.browser.registerPageScript` — a control *in* the page that calls this
 //     plugin's own backend, which is the part a userscript cannot do: a page has
 //     no database and no credentials of its own;
 //   * a leading panel scoped with `matches` (see app.tsx) — the part a userscript
@@ -17,7 +17,7 @@
 //
 // The permission model is the thing worth reading here. `pageStyle.register` says
 // this plugin restyles pages, `pageScript.register` says it runs code in them, and
-// `bb.sites` in package.json says *which* pages — for both. Every `matches` below
+// `patcher.sites` in package.json says *which* pages — for both. Every `matches` below
 // must be one of those patterns verbatim. Widening the reach means editing the
 // manifest, which is the line whoever installs this actually reads.
 //
@@ -27,11 +27,11 @@
 import { defineRpcContract, type PatcherPluginApi } from "@patcher/plugin-sdk";
 import { z } from "zod";
 
-/** The one site this plugin declares, spelled once. Must match `bb.sites`. */
+/** The one site this plugin declares, spelled once. Must match `patcher.sites`. */
 const GITHUB = "https://github.com/**";
 
 /**
- * Append-only, as `bb.storage.migrate` requires: a statement's index *is* its
+ * Append-only, as `patcher.storage.migrate` requires: a statement's index *is* its
  * migration id, so editing a shipped line would be a migration that never runs
  * where it already ran.
  */
@@ -136,9 +136,9 @@ interface NoteRow {
   created_at: number;
 }
 
-export default function plugin(bb: PatcherPluginApi) {
-  const db = bb.storage.database();
-  bb.storage.migrate(db, MIGRATIONS);
+export default function plugin(patcher: PatcherPluginApi) {
+  const db = patcher.storage.database();
+  patcher.storage.migrate(db, MIGRATIONS);
 
   const insert = db.prepare(
     `INSERT INTO notes (repo, body, created_at) VALUES (?, ?, ?)`,
@@ -165,7 +165,7 @@ export default function plugin(bb: PatcherPluginApi) {
   //
   // `!important` is not defensiveness: GitHub's own stylesheet was there first,
   // and this is a late stylesheet like any other.
-  bb.browser.registerPageStyle({
+  patcher.browser.registerPageStyle({
     id: "declutter",
     matches: [GITHUB],
     css: `
@@ -185,11 +185,11 @@ export default function plugin(bb: PatcherPluginApi) {
   //
   // Two things every page script has to get right, and both are here:
   //
-  //   * `bb.ready`, because at the moment this runs the page has no elements yet;
+  //   * `patcher.ready`, because at the moment this runs the page has no elements yet;
   //   * re-mounting, because GitHub replaces the page's content on its own
   //     navigations and takes anything added to it along. The browser re-runs a
   //     page script per *document*, and a client-side route change is not one.
-  bb.browser.registerPageScript({
+  patcher.browser.registerPageScript({
     id: "note-button",
     matches: [GITHUB],
     code: `
@@ -204,7 +204,7 @@ export default function plugin(bb: PatcherPluginApi) {
           "font:12px system-ui;cursor:pointer";
         button.addEventListener("click", function () {
           button.disabled = true;
-          bb.rpc("notePage", { url: location.href, body: document.title })
+          patcher.rpc("notePage", { url: location.href, body: document.title })
             .then(function (answer) {
               button.textContent = answer.repo === null ? "Not a repository" : "Noted";
             })
@@ -221,14 +221,14 @@ export default function plugin(bb: PatcherPluginApi) {
         document.body.append(button);
       }
 
-      bb.ready(function () {
+      patcher.ready(function () {
         mount();
         new MutationObserver(mount).observe(document.body, { childList: true });
       });
     `,
   });
 
-  bb.rpc.register(rpcContract, {
+  patcher.rpc.register(rpcContract, {
     notes: ({ repo }) => notesFor(repo),
     addNote: ({ repo, body }) => {
       const trimmed = body.trim();
@@ -255,7 +255,7 @@ export default function plugin(bb: PatcherPluginApi) {
       // What makes the demo a loop rather than two features: the panel is
       // listening, so the note appears in the browser's own chrome as the click
       // lands in the page.
-      bb.realtime.publish("notes", { repo });
+      patcher.realtime.publish("notes", { repo });
       return { repo };
     },
   });

@@ -1,5 +1,5 @@
 {
-  "name": "bb-plugin-simple-notes",
+  "name": "patcher-plugin-simple-notes",
   "version": "0.2.2",
   "description": "Create and edit Markdown documents across local and connected-host vaults.",
   "private": true,
@@ -22,10 +22,10 @@
     "README.md"
   ],
   "engines": {
-    "bb": ">=0.0",
-    "bbPluginSdk": "^0.4.1"
+    "patcher": ">=0.0",
+    "patcherPluginSdk": "^1.0.0"
   },
-  "bb": {
+  "patcher": {
     "name": "Docs",
     "description": "Create and edit Markdown documents across local and connected-host vaults.",
     "branding": {
@@ -43,7 +43,7 @@
     ]
   },
   "keywords": [
-    "bb-plugin"
+    "patcher-plugin"
   ],
   "scripts": {
     "build": "node --conditions=source --import tsx ../../scripts/build-official-plugins.mjs docs",

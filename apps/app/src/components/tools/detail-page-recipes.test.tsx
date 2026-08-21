@@ -24,11 +24,11 @@ import type {
   AutomationExecutionOptionsResponse,
   AutomationResponse,
   AutomationRunResponse,
-} from "bb-plugin-automations/rpc-types";
+} from "patcher-plugin-automations/rpc-types";
 import {
   AutomationDetailView as AutomationDetailViewBase,
   AutomationRunStatusIndicator,
-} from "bb-plugin-automations/detail-view";
+} from "patcher-plugin-automations/detail-view";
 import {
   EMPTY_PLUGIN_UPDATE_STATE,
   type PluginListItem,

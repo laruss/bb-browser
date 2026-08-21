@@ -1,13 +1,13 @@
 {
-  "name": "bb-plugin-workflows",
+  "name": "patcher-plugin-workflows",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "description": "Run durable, provider-independent agent workflows.",
   "engines": {
-    "bb": ">=0.0"
+    "patcher": ">=0.0"
   },
-  "bb": {
+  "patcher": {
     "name": "Workflows",
     "description": "Run durable, provider-independent agent workflows.",
     "branding": {
@@ -25,7 +25,7 @@
     ]
   },
   "keywords": [
-    "bb-plugin"
+    "patcher-plugin"
   ],
   "scripts": {
     "test": "vitest run --config vitest.config.ts",

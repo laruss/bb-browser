@@ -114,6 +114,6 @@ directly — unknown `bb` commands are resolved against installed plugins and
 proxied to the server, and core command names always win. In agent threads the
 injected `plugin-commands` skill lists what is available.
 
-**Writing a plugin?** Use the `bb-plugin-authoring` skill — the complete
+**Writing a plugin?** Use the `patcher-plugin-authoring` skill — the complete
 authoring reference for the backend `PatcherPluginApi` and the frontend
 `@patcher/plugin-sdk/app` contract. `bb guide plugins` has the short walkthrough.

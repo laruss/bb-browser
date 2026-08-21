@@ -24,7 +24,7 @@ async function load(): Promise<FakePluginHost> {
     sites: pluginSitesFromManifest(import.meta.url),
     pluginId: "site-tweaks",
   });
-  await siteTweaks(host.bb);
+  await siteTweaks(host.patcher);
   return host;
 }
 
@@ -33,7 +33,7 @@ describe("the page style", () => {
     const host = await load();
 
     // Not a spelling check: the fake host refuses a `matches` entry that is not in
-    // `bb.sites`, so this passing is the same check the install performs.
+    // `patcher.sites`, so this passing is the same check the install performs.
     expect(host.harness.registrations.pageStyles).toHaveLength(1);
     expect(host.harness.registrations.pageStyles[0]?.matches).toEqual([
       "https://github.com/**",
@@ -167,8 +167,8 @@ describe("the page script", () => {
     const code = host.harness.registrations.pageScripts[0]?.code ?? "";
 
     // The code runs before the page has any elements, so DOM work has to be
-    // inside `bb.ready` — `document.body` is null at the top level.
-    expect(code).toContain("bb.ready(");
+    // inside `patcher.ready` — `document.body` is null at the top level.
+    expect(code).toContain("patcher.ready(");
     // GitHub replaces the page's content on its own navigations and takes the
     // button with it. A page script is re-run per document, and a client-side
     // route change is not one.

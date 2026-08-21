@@ -355,7 +355,7 @@ describe("electron-builder signing config", () => {
     );
     const nodePtyPackageDir = resolve(
       appOutDir,
-      "bb.app",
+      "patcher.app",
       "Contents",
       "Resources",
       "app.asar.unpacked",

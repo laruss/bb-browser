@@ -8,7 +8,7 @@ import type { PluginRpcContract, PluginRpcHandlers } from "./rpc-contract.js";
 
 /**
  * The backend plugin API contract — the `bb` object handed to a plugin's
- * `server.ts` factory (`export default function plugin(bb: PatcherPluginApi)`).
+ * `server.ts` factory (`export default function plugin(patcher: PatcherPluginApi)`).
  *
  * Types only: the implementation lives in the BB server
  * (apps/server/src/services/plugins/plugin-api.ts), which imports these
@@ -33,7 +33,7 @@ export interface PluginLogger {
 // ---------------------------------------------------------------------------
 
 /**
- * Declarative settings descriptors (`bb.settings.define`). Deliberately plain
+ * Declarative settings descriptors (`patcher.settings.define`). Deliberately plain
  * data — not zod — so the host can render settings forms and the CLI can
  * parse values without executing plugin code.
  */
@@ -118,7 +118,7 @@ export interface PluginStorage {
   database(): Database.Database;
   /**
    * Ordered-statement migration helper: statement index = migration id in a
-   * `_bb_migrations` table; unapplied statements run in one transaction.
+   * `_patcher_migrations` table; unapplied statements run in one transaction.
    * Append-only — never reorder or edit shipped statements.
    */
   migrate(db: Database.Database, statements: string[]): void;
@@ -173,7 +173,7 @@ export interface PluginHttp {
    * - "local": Origin/Host must be a local BB app origin; non-GET requires
    *   content-type application/json (forces a CORS preflight).
    * - "token": requires the per-plugin token (`bb plugin token <id>`) via
-   *   the x-bb-plugin-token header or ?token=.
+   *   the x-patcher-plugin-token header or ?token=.
    * - "none": no checks — only for signature-verified webhooks.
    */
   route(
@@ -332,7 +332,7 @@ export interface PluginCli {
 // Agent surfaces: per-turn context and native tools (design §4.4).
 // ---------------------------------------------------------------------------
 
-/** Per-turn context handed to bb.agents context providers (design §4.4). */
+/** Per-turn context handed to patcher.agents context providers (design §4.4). */
 /** MCP-style content parts a native tool may return (design §4.4). */
 export type PluginAgentToolContentPart =
   | { type: "text"; text: string }
@@ -645,8 +645,8 @@ export interface PluginKeybinding {
  * keybinding config — bb's command ids are a closed set, and a plugin's are not.
  *
  * Deliberately context-free: `run` is handed nothing. A command that needs the
- * page the user is on reads it (`bb.browser.page.getUrl()`,
- * `bb.browser.tabs.list()`) and pays `tabs.read` for it — the permission that
+ * page the user is on reads it (`patcher.browser.page.getUrl()`,
+ * `patcher.browser.tabs.list()`) and pays `tabs.read` for it — the permission that
  * already governs seeing where the user is. Handing the address to every chord
  * would be a disclosure nobody agreed to for a shortcut.
  */
@@ -935,7 +935,7 @@ export interface PluginBrowserToolbarItemRegistration {
   /** The control's accessible name, and its tooltip. */
   title: string;
   /**
-   * Icon hint, resolved like every other plugin icon: your `bb.branding.icon`,
+   * Icon hint, resolved like every other plugin icon: your `patcher.branding.icon`,
    * then the manifest's, then this name, then a generic mark. Fixed at
    * registration — see {@link PluginBrowserToolbarState.active} for why.
    */
@@ -1029,7 +1029,7 @@ export interface PluginBrowserPageStyleRegistration {
   id: string;
   /**
    * Which of the plugin's declared sites this stylesheet is for. Each entry must
-   * be one of the patterns in `bb.sites` — the manifest is where the user reads
+   * be one of the patterns in `patcher.sites` — the manifest is where the user reads
    * what a plugin reaches, so code may pick from that list but never widen it.
    */
   matches: string[];
@@ -1050,7 +1050,7 @@ export interface PluginBrowserPageStyleRegistration {
  * sugar that keeps the common case from being a footgun.
  *
  * It arrives as the global `bb` inside the script — declare it at the top of the
- * source (`declare const bb: PluginPageScriptApi`) to type-check a script written
+ * source (`declare const patcher: PluginPageScriptApi`) to type-check a script written
  * as a template literal.
  */
 export interface PluginPageScriptApi {
@@ -1092,9 +1092,9 @@ export interface PluginPageScriptApi {
  *
  * - It runs **before the page's own first script**, when the document exists and
  *   the parser has produced nothing (`document.documentElement` is null). Use
- *   `bb.ready` for DOM work.
+ *   `patcher.ready` for DOM work.
  * - It runs in an **isolated world of this plugin's own**. The page cannot see
- *   `bb` or anything the script defines, and cannot shadow what it reads. Two
+ *   `patcher` or anything the script defines, and cannot shadow what it reads. Two
  *   scripts of the same plugin share that world; another plugin's scripts do not.
  * - **Main frame only.** An iframe is out of reach, as it is for a page style.
  * - A script registered while a matching page is already open runs when that page
@@ -1107,7 +1107,7 @@ export interface PluginBrowserPageScriptRegistration {
   id: string;
   /**
    * Which of the plugin's declared sites this script is for. Each entry must be
-   * one of the patterns in `bb.sites`, exactly as for a page style: the manifest
+   * one of the patterns in `patcher.sites`, exactly as for a page style: the manifest
    * is what the user read, so code may pick from that list but never widen it.
    */
   matches: string[];
@@ -1128,7 +1128,7 @@ export interface PluginBrowserPageScriptRegistration {
  *
  * The consequence worth knowing: an engine need not search. Any `https` address
  * with `%s` in it is one, and so is a **loopback** address — including your own
- * `bb.http.route`, which is how "Enter asks an agent" is built.
+ * `patcher.http.route`, which is how "Enter asks an agent" is built.
  */
 export interface PluginBrowserSearchEngineRegistration {
   /** Unique within this plugin: [a-zA-Z0-9_-]+. Stored in the user's setting. */
@@ -1193,7 +1193,7 @@ export interface PluginBrowserFindContext {
 export interface PluginBrowserPdfDocument {
   /** The browser tab the document is open in. */
   tabId: string;
-  /** Where it came from — fetchable again with `bb.browser.storage` cookies. */
+  /** Where it came from — fetchable again with `patcher.browser.storage` cookies. */
   pageUrl: string;
   title: string | null;
 }
@@ -1287,7 +1287,7 @@ export interface PluginBrowserHistoryRewrite {
 
 /**
  * Decide what the browser remembers about a page — see
- * `bb.browser.registerHistoryFilter`.
+ * `patcher.browser.registerHistoryFilter`.
  *
  * Return nothing to accept the visit as it stands, a rewrite to change what is
  * stored (strip tracking parameters, retitle a page whose own title is
@@ -2163,7 +2163,7 @@ export interface PluginBrowser {
    * column or restyling a site the user has to look at all day is one rule, runs
    * no code in the page, and reads nothing back.
    *
-   * Costs `pageStyle.register` **and** the sites in `bb.sites`: the permission
+   * Costs `pageStyle.register` **and** the sites in `patcher.sites`: the permission
    * says the plugin restyles pages, the manifest's sites say which ones, and
    * `matches` picks from that list. Declaring neither reaches nothing.
    */
@@ -2175,11 +2175,11 @@ export interface PluginBrowser {
    * {@link PluginPageScriptApi} for what the code is handed.
    *
    * Everything a page style cannot do: read the page, add a control to it,
-   * answer a click by asking this plugin's backend. The script's `bb.rpc` reaches
+   * answer a click by asking this plugin's backend. The script's `patcher.rpc` reaches
    * *this plugin's* rpc methods and nothing else, which is what keeps a program
    * in an untrusted page from being a program in bb.
    *
-   * Costs `pageScript.register` **and** the sites in `bb.sites` — a separate
+   * Costs `pageScript.register` **and** the sites in `patcher.sites` — a separate
    * permission from `pageStyle.register` over the same list, because a stylesheet
    * that cannot read the page and a program that can are not the same thing to
    * agree to.
@@ -2217,7 +2217,7 @@ export interface PluginBrowser {
    * See every page before it enters the browser's history, and rewrite or drop
    * it (`browser.history.filters`) — see {@link PluginBrowserHistoryFilter}.
    *
-   * Reading and editing the store afterwards is `bb.sdk.browserHistory`; this
+   * Reading and editing the store afterwards is `patcher.sdk.browserHistory`; this
    * is the only place a plugin sees a visit as it happens.
    *
    * Additive: every registered filter runs, across plugins, in plugin id order.
@@ -2237,7 +2237,7 @@ export interface PluginBrowser {
   readonly storage: PluginBrowserStorage;
   readonly control: PluginBrowserControl;
   readonly recording: PluginBrowserRecording;
-  /** Synchronous, so it is safe to read from `bb.agents.configure()`. */
+  /** Synchronous, so it is safe to read from `patcher.agents.configure()`. */
   getStatus(): PluginBrowserStatus;
 }
 
@@ -2261,7 +2261,7 @@ export interface PluginServerApi {
    * This BB server's own loopback base URL (e.g. "http://127.0.0.1:38986"),
    * which serves the SPA + /api + /ws. For plugins that proxy or relay
    * traffic back to the server itself (e.g. a tunnel). Bind-gated like
-   * `bb.sdk`: reading it before the server is listening throws, so prefer
+   * `patcher.sdk`: reading it before the server is listening throws, so prefer
    * reading it from handlers, services, and timers.
    */
   readonly loopbackBaseUrl: string;

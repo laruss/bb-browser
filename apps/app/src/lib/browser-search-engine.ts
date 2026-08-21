@@ -12,7 +12,7 @@ import { useSystemConfig } from "@/hooks/queries/system-queries";
  * Which search engine the address bar uses, and the whole list to choose from.
  *
  * Two sources: bb's own engines and whatever plugins declared
- * (`bb.browser.registerSearchEngine`). Read through a hook rather than threaded
+ * (`patcher.browser.registerSearchEngine`). Read through a hook rather than threaded
  * as a prop because the two places that need it — the omnibox and the surface —
  * are not on one path, and both are already inside the query cache.
  */

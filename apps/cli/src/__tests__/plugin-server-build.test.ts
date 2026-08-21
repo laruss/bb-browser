@@ -20,10 +20,10 @@ const TEST_PATCHER_VERSION = "0.9.0-test";
 
 const FIXTURE_PACKAGE_JSON = JSON.stringify(
   {
-    name: "bb-plugin-server-fixture",
+    name: "patcher-plugin-server-fixture",
     version: "0.1.0",
     type: "module",
-    bb: {
+    patcher: {
       name: "Server fixture",
       description: "Plugin server build fixture.",
       branding: { icon: "Zap" },
@@ -41,8 +41,8 @@ const FIXTURE_SERVER_TS = `
 import type { PatcherPluginApi } from "@patcher/plugin-sdk";
 import { greeting } from "./lib.ts";
 
-export default function plugin(bb: PatcherPluginApi): void {
-  bb.log.info(greeting);
+export default function plugin(patcher: PatcherPluginApi): void {
+  patcher.log.info(greeting);
 }
 `;
 
@@ -50,7 +50,7 @@ describe("buildPluginServer", () => {
   let root: string;
 
   beforeEach(async () => {
-    root = await mkdtemp(join(tmpdir(), "bb-plugin-server-build-"));
+    root = await mkdtemp(join(tmpdir(), "patcher-plugin-server-build-"));
   });
 
   afterEach(async () => {
@@ -102,8 +102,8 @@ describe("buildPluginServer", () => {
       import { greeting } from "./lib.ts";
       import * as sdk from "@patcher/plugin-sdk";
 
-      export default function plugin(bb: { log: { info(msg: string): void } }): void {
-        bb.log.info(greeting + Object.keys(sdk).length);
+      export default function plugin(patcher: { log: { info(msg: string): void } }): void {
+        patcher.log.info(greeting + Object.keys(sdk).length);
       }
       `,
     );
@@ -112,10 +112,10 @@ describe("buildPluginServer", () => {
     expect(js).toMatch(/from\s*"@patcher\/plugin-sdk"/);
   });
 
-  it("errors clearly when package.json has no bb.server entry", async () => {
+  it("errors clearly when package.json has no patcher.server entry", async () => {
     await writeFile(
       join(root, "package.json"),
-      JSON.stringify({ name: "bb-plugin-headless", version: "0.1.0" }),
+      JSON.stringify({ name: "patcher-plugin-headless", version: "0.1.0" }),
     );
     await expect(buildPluginServer(root, TEST_PATCHER_VERSION, await testToolchain())).rejects.toThrowError(
       /no server entry/,
@@ -127,13 +127,13 @@ describe("buildPluginServer", () => {
     await writeFile(
       join(root, "package.json"),
       JSON.stringify({
-        name: "bb-plugin-legacy",
+        name: "patcher-plugin-legacy",
         version: "0.1.0",
-        bb: { server: "./server.ts" },
+        patcher: { server: "./server.ts" },
       }),
     );
     await expect(buildPluginServer(root, TEST_PATCHER_VERSION, await testToolchain())).rejects.toThrowError(
-      /bb\.name/,
+      /patcher\.name/,
     );
   });
 

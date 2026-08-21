@@ -16,9 +16,9 @@ import {
 const BASE = "http://127.0.0.1:3334";
 
 const CLI_SOURCE = `
-  export default function plugin(bb: any) {
-    bb.log.info("cli plugin loaded");
-    bb.cli.register({
+  export default function plugin(patcher: any) {
+    patcher.log.info("cli plugin loaded");
+    patcher.cli.register({
       name: "acme",
       summary: "Acme tools",
       commands: [
@@ -65,7 +65,7 @@ async function writePlugin(
     JSON.stringify({
       name: options.name,
       version: "0.1.0",
-      bb: {
+      patcher: {
         name: "CLI fixture",
         description: "Plugin CLI fixture.",
         branding: { icon: "Zap" },
@@ -89,14 +89,14 @@ async function runCli(
   });
 }
 
-describe("plugin CLI commands (bb.cli.register + endpoints + skill + logs)", () => {
+describe("plugin CLI commands (patcher.cli.register + endpoints + skill + logs)", () => {
   let harness: TestAppHarness;
   let rootDir: string;
 
   beforeEach(async () => {
     harness = await createTestAppHarness();
     rootDir = await writePlugin(join(harness.config.dataDir, "fixtures"), {
-      name: "bb-plugin-acme",
+      name: "patcher-plugin-acme",
       serverSource: CLI_SOURCE,
     });
     const entry = await harness.pluginService.installPath(rootDir);
@@ -283,10 +283,10 @@ describe("plugin CLI commands (bb.cli.register + endpoints + skill + logs)", () 
     const reserved = await writePlugin(
       join(harness.config.dataDir, "fixtures"),
       {
-        name: "bb-plugin-shadower",
+        name: "patcher-plugin-shadower",
         serverSource: `
-          export default function plugin(bb: any) {
-            bb.cli.register({ name: "thread", summary: "s", run: async () => ({ exitCode: 0 }) });
+          export default function plugin(patcher: any) {
+            patcher.cli.register({ name: "thread", summary: "s", run: async () => ({ exitCode: 0 }) });
           }
         `,
       },
@@ -298,10 +298,10 @@ describe("plugin CLI commands (bb.cli.register + endpoints + skill + logs)", () 
     const invalid = await writePlugin(
       join(harness.config.dataDir, "fixtures"),
       {
-        name: "bb-plugin-badname",
+        name: "patcher-plugin-badname",
         serverSource: `
-        export default function plugin(bb: any) {
-          bb.cli.register({ name: "Bad Name", summary: "s", run: async () => ({ exitCode: 0 }) });
+        export default function plugin(patcher: any) {
+          patcher.cli.register({ name: "Bad Name", summary: "s", run: async () => ({ exitCode: 0 }) });
         }
       `,
       },
@@ -315,11 +315,11 @@ describe("plugin CLI commands (bb.cli.register + endpoints + skill + logs)", () 
     const replacer = await writePlugin(
       join(harness.config.dataDir, "fixtures"),
       {
-        name: "bb-plugin-replacer",
+        name: "patcher-plugin-replacer",
         serverSource: `
-        export default function plugin(bb: any) {
-          bb.cli.register({ name: "first", summary: "old", run: async () => ({ exitCode: 0 }) });
-          bb.cli.register({ name: "second", summary: "new", run: async () => ({ exitCode: 0 }) });
+        export default function plugin(patcher: any) {
+          patcher.cli.register({ name: "first", summary: "old", run: async () => ({ exitCode: 0 }) });
+          patcher.cli.register({ name: "second", summary: "new", run: async () => ({ exitCode: 0 }) });
         }
       `,
       },
@@ -363,8 +363,8 @@ describe("plugin CLI commands (bb.cli.register + endpoints + skill + logs)", () 
     await writeFile(
       join(rootDir, "server.ts"),
       `
-        export default function plugin(bb: any) {
-          bb.cli.register({ name: "acme2", summary: "Acme v2", run: async () => ({ exitCode: 0 }) });
+        export default function plugin(patcher: any) {
+          patcher.cli.register({ name: "acme2", summary: "Acme v2", run: async () => ({ exitCode: 0 }) });
         }
       `,
     );
@@ -374,7 +374,7 @@ describe("plugin CLI commands (bb.cli.register + endpoints + skill + logs)", () 
     expect(reloaded).not.toContain("## bb acme —");
   });
 
-  it("bb.log writes JSONL to the plugin log file and the tail endpoint serves it", async () => {
+  it("patcher.log writes JSONL to the plugin log file and the tail endpoint serves it", async () => {
     const logFile = join(
       harness.config.dataDir,
       "plugins",

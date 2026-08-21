@@ -1,4 +1,4 @@
-# bb-plugin-github
+# patcher-plugin-github
 
 GitHub issues and pull requests inside BB, with one-click agent dispatch.
 
@@ -50,5 +50,5 @@ panel's Refresh button (or `bb github sync`) forces it.
 Run the checks from the repository root:
 
 ```sh
-bunx turbo run typecheck test --filter=bb-plugin-github
+bunx turbo run typecheck test --filter=patcher-plugin-github
 ```

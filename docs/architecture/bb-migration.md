@@ -118,7 +118,7 @@ What is missing for this project:
   for agent-generated plugins, so plan Phase 7 (Bun plugin host) is genuinely new
   work, not a refactor.
 
-  A permission model has since landed on top of this — `bb.permissions`,
+  A permission model has since landed on top of this — `patcher.permissions`,
   declared per plugin and denied by default, described in
   [plugin-permissions.md](plugin-permissions.md). It gates the bb API rather
   than the process, so it does not change the sentence above: it specifies the
@@ -233,7 +233,7 @@ to masquerade as migration regressions:
    object, with a `--localstorage-file was provided without a valid path`
    warning as the only clue. Every test touching `window.localStorage` then
    fails with `clear is not a function`: on 25.6.1 that is 46 tests in
-   `bb-plugin-tasks` alone, plus `@patcher/host-watcher` and `@patcher/qa`. On the pinned
+   `patcher-plugin-tasks` alone, plus `@patcher/host-watcher` and `@patcher/qa`. On the pinned
    22.20.0 the same files pass. **Run the suite on the `.nvmrc` version**, and
    distrust any failure list gathered without checking `node --version` first.
 3. **Test parallelism is bounded on purpose, at two levels.** Vitest sizes its
@@ -694,12 +694,12 @@ obstacle sits behind the first even if it lifts: Bun reports
 `scripts/ensure-native-modules.mjs` build cannot satisfy both runtimes.
 
 This is not confined to the server. `packages/plugin-sdk` depends on
-better-sqlite3 because `bb.storage.database()` hands the plugin a live
+better-sqlite3 because `patcher.storage.database()` hands the plugin a live
 `Database` — synchronous, with statement objects and iterators, so it is also
 the one part of the plugin API that cannot be proxied over RPC. Two consequences
 for Phase 7:
 
-- A Bun plugin host has to drop `bb.storage.database()` or re-point it at
+- A Bun plugin host has to drop `patcher.storage.database()` or re-point it at
   `bun:sqlite`, which changes a plugin-facing type
   (`backend-contract.ts` imports `Database` from better-sqlite3).
 - `@patcher/plugin-sdk/testing` constructs the same handle, so a plugin author who
@@ -741,7 +741,7 @@ sometimes `/bin/sh` that then died, sometimes still stuck as node-pty's
 
 Bun is not a candidate for a runtime that needs either module. It stays viable
 only for a plugin host that reaches storage and terminals **over RPC**, and only
-once `bb.storage.database()` is redefined, since that call is a native handle by
+once `patcher.storage.database()` is redefined, since that call is a native handle by
 contract. The narrower Phase 7 question — a Bun host for plugin code alone — is
 not closed by this, but it now costs a plugin-facing contract change, so it is
 no longer free.
@@ -769,7 +769,7 @@ on Node and 3/8 on Bun. Bun issue 4290 is the one to watch.
   the trust tier deciding how much a plugin is sandboxed rather than which
   runtime it gets — two runtimes would be two implementations of the same host,
   and the fake-vs-real host taught this repo what that costs. Node is also what
-  keeps `bb.storage.database()` intact: the plugin's own process opens its
+  keeps `patcher.storage.database()` intact: the plugin's own process opens its
   SQLite file directly, which no transport could have carried and Bun could not
   have opened at all.
   Process topology: **plugins share one process by default**, settled by
@@ -785,7 +785,7 @@ on Node and 3/8 on Bun. Bun issue 4290 is the one to watch.
   subpath imports cover what the plugin API actually uses. The SDK is deferred
   behind a literal `require`, which keeps `getSdk()` synchronous: the bundler
   folds the module in and initialises it on the first call, so a plugin that
-  never touches `bb.sdk` never pays for it.
+  never touches `patcher.sdk` never pays for it.
   The protocol does not depend on the choice — it is one logical channel per
   plugin either way — so `placement` in `plugin-supervisor.ts` keeps it a
   one-line policy, and `ISOLATED_PLACEMENT` is there for a plugin that has

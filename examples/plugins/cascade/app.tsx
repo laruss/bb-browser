@@ -1,4 +1,4 @@
-// bb-plugin-cascade — the frontend. One navPanel owning a scrollable-tiling
+// patcher-plugin-cascade — the frontend. One navPanel owning a scrollable-tiling
 // strip of live threads.
 //
 // Every column renders the host's own `ThreadChat`, so this file never touches

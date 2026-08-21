@@ -1,13 +1,13 @@
 {
-  "name": "bb-plugin-custom-instructions",
+  "name": "patcher-plugin-custom-instructions",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "description": "Add persistent custom instructions to agent tasks on this bb host.",
   "engines": {
-    "bb": ">=0.0"
+    "patcher": ">=0.0"
   },
-  "bb": {
+  "patcher": {
     "name": "Custom instructions",
     "description": "Add persistent custom instructions to agent tasks on this bb host.",
     "branding": {
@@ -17,7 +17,7 @@
     "app": "./app.tsx"
   },
   "keywords": [
-    "bb-plugin"
+    "patcher-plugin"
   ],
   "scripts": {
     "test": "vitest run --config vitest.config.ts",

@@ -64,16 +64,16 @@ header shows no parent chip.
 
 ## What it demonstrates
 
-| Plugin API                                         | Used for                                                                                    |
-| -------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `experimental_threadList`                          | the sidebar's scrolling list (bb keeps the New-thread button, search, nav rows, and footer) |
-| `experimental_threadHeaderAction`                  | the two header chips: children on a parent, and the way back on a child                     |
-| `experimental_useSidebarThreads`                   | live threads and projects, from the host's own cache                                        |
-| `experimental_useSidebarThreadActions`             | open, open-in-split, new thread                                                             |
-| `experimental_useSidebarThreadSplit`               | dragging a card out to a split pane                                                         |
-| `experimental_useSidebarThreadPullRequest`         | the `#412` badge, coloured by bb's attention state                                          |
-| `@radix-ui/react-context-menu` (shimmed)           | this plugin's own right-click menu, built on the action hook                                |
-| `bb.storage.database()` + `bb.rpc` + `bb.realtime` | the settled/snoozed store                                                                   |
+| Plugin API                                                        | Used for                                                                                    |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `experimental_threadList`                                         | the sidebar's scrolling list (bb keeps the New-thread button, search, nav rows, and footer) |
+| `experimental_threadHeaderAction`                                 | the two header chips: children on a parent, and the way back on a child                     |
+| `experimental_useSidebarThreads`                                  | live threads and projects, from the host's own cache                                        |
+| `experimental_useSidebarThreadActions`                            | open, open-in-split, new thread                                                             |
+| `experimental_useSidebarThreadSplit`                              | dragging a card out to a split pane                                                         |
+| `experimental_useSidebarThreadPullRequest`                        | the `#412` badge, coloured by bb's attention state                                          |
+| `@radix-ui/react-context-menu` (shimmed)                          | this plugin's own right-click menu, built on the action hook                                |
+| `patcher.storage.database()` + `patcher.rpc` + `patcher.realtime` | the settled/snoozed store                                                                   |
 
 The plugin API ships **no components**. Status glyphs and the right-click menu
 are both this plugin's own: `indicator` arrives as data, and every menu item is

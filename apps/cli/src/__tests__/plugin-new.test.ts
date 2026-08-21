@@ -10,9 +10,13 @@ import {
 
 describe("resolveNewPluginTarget", () => {
   it.each([
-    ["hello", "bb-plugin-hello", "bb-plugin-hello"],
-    ["bb-plugin-hello", "bb-plugin-hello", "bb-plugin-hello"],
-    ["@acme/bb-plugin-hello", "@acme/bb-plugin-hello", "bb-plugin-hello"],
+    ["hello", "patcher-plugin-hello", "patcher-plugin-hello"],
+    ["patcher-plugin-hello", "patcher-plugin-hello", "patcher-plugin-hello"],
+    [
+      "@acme/patcher-plugin-hello",
+      "@acme/patcher-plugin-hello",
+      "patcher-plugin-hello",
+    ],
   ])("resolves %s", (name, expectedPackageName, expectedDirectoryName) => {
     expect(resolveNewPluginTarget(name)).toEqual({
       packageName: expectedPackageName,
@@ -22,10 +26,10 @@ describe("resolveNewPluginTarget", () => {
 
   it.each([
     "Hello",
-    "bb-plugin-",
+    "patcher-plugin-",
     "@acme/hello",
-    "@acme/bb-plugin-Hello",
-    "@acme/team/bb-plugin-hello",
+    "@acme/patcher-plugin-Hello",
+    "@acme/team/patcher-plugin-hello",
   ])("rejects %s", (name) => {
     expect(resolveNewPluginTarget(name)).toBeNull();
   });
@@ -75,7 +79,7 @@ describe.sequential("bb plugin new dependency install", () => {
   let warned: string[];
 
   beforeEach(async () => {
-    workDir = await mkdtemp(join(tmpdir(), "bb-plugin-new-"));
+    workDir = await mkdtemp(join(tmpdir(), "patcher-plugin-new-"));
     const binDir = join(workDir, "bin");
     await mkdir(binDir);
     await writeFile(join(binDir, "npm"), FAKE_NPM, { mode: 0o755 });
@@ -121,9 +125,11 @@ describe.sequential("bb plugin new dependency install", () => {
 
     // zod is imported by the generated server.ts and inlined by the build;
     // typescript/@types are what the scaffold typechecks against.
-    expect(await isInstalled("bb-plugin-prod-env", "zod")).toBe(true);
-    expect(await isInstalled("bb-plugin-prod-env", "typescript")).toBe(true);
-    expect(await isInstalled("bb-plugin-prod-env", "clsx")).toBe(true);
+    expect(await isInstalled("patcher-plugin-prod-env", "zod")).toBe(true);
+    expect(await isInstalled("patcher-plugin-prod-env", "typescript")).toBe(
+      true,
+    );
+    expect(await isInstalled("patcher-plugin-prod-env", "clsx")).toBe(true);
     expect(warned).toEqual([]);
     expect(logged).toContain("Installed dependencies (npm install).");
     expect(logged).not.toContain("  npm install --include=dev");
@@ -132,7 +138,7 @@ describe.sequential("bb plugin new dependency install", () => {
   it("installs headless scaffolds too, whose server.ts also imports zod", async () => {
     await runPluginNew(["headless"]);
 
-    expect(await isInstalled("bb-plugin-headless", "zod")).toBe(true);
+    expect(await isInstalled("patcher-plugin-headless", "zod")).toBe(true);
     expect(logged).toContain("Installed dependencies (npm install).");
   });
 
@@ -149,7 +155,7 @@ describe.sequential("bb plugin new dependency install", () => {
 
     await runPluginNew(["hoisted", "--app"]);
 
-    expect(await isInstalled("bb-plugin-hoisted", "zod")).toBe(false);
+    expect(await isInstalled("patcher-plugin-hoisted", "zod")).toBe(false);
     expect(warned).toEqual([]);
     expect(logged).toContain("Installed dependencies (npm install).");
   });
@@ -159,7 +165,7 @@ describe.sequential("bb plugin new dependency install", () => {
 
     await runPluginNew(["silent-omit", "--app"]);
 
-    expect(await isInstalled("bb-plugin-silent-omit", "typescript")).toBe(
+    expect(await isInstalled("patcher-plugin-silent-omit", "typescript")).toBe(
       false,
     );
     expect(logged).not.toContain("Installed dependencies (npm install).");

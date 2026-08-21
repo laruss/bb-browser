@@ -49,7 +49,7 @@ the default action by returning 99 — which matters once scores come from plugi
 That synchronous resolution is also what decided the shape of the search-engine
 setting. A plugin **cannot** own Enter by being asked for it — every provider is
 asynchronous, and the whole point above is that Enter does not wait. So an engine
-is a _declared URL template_ (`bb.browser.registerSearchEngine`, permission
+is a _declared URL template_ (`patcher.browser.registerSearchEngine`, permission
 `searchEngine.register`) that the app holds and formats itself, the same way the
 shell holds declared context-menu items: bb ships a few, plugins declare more, and
 the setting picks among them by id.
@@ -182,11 +182,11 @@ declines when it has no address input of its own to focus.
 
 ## The plugin contribution point
 
-Milestone C: `bb.browser.registerOmniboxProvider` — plugin rows in the same
+Milestone C: `patcher.browser.registerOmniboxProvider` — plugin rows in the same
 ranked list, which is the plan's §12 vertical slice and its central hypothesis.
 
 The contribution point is modelled on the mention providers bb already had
-(`bb.ui.registerMentionProvider`), deliberately: same shape, same guarantees,
+(`patcher.ui.registerMentionProvider`), deliberately: same shape, same guarantees,
 same failure discipline. A plugin registers a provider with an `id` and a `label`
 in its server module; `suggest({ query })` runs server-side; the host namespaces
 item ids as `<providerId>:<itemId>` and never lets the plugin's internals reach
@@ -196,7 +196,7 @@ the client.
 
 | Step                                                        | Where                                                       |
 | ----------------------------------------------------------- | ----------------------------------------------------------- |
-| `bb.browser.registerOmniboxProvider`                        | `packages/plugin-sdk/src/backend-contract.ts`               |
+| `patcher.browser.registerOmniboxProvider`                   | `packages/plugin-sdk/src/backend-contract.ts`               |
 | Registration validation, runtime record                     | `apps/server/.../plugins/plugin-api.ts`                     |
 | Fan-out, time box, isolation, normalization                 | `apps/server/.../plugins/plugin-service.ts`                 |
 | `GET /plugins/omnibox/suggest`, `POST /plugins/omnibox/run` | `apps/server/src/routes/plugins.ts`                         |

@@ -1550,7 +1550,7 @@ describe("internal event and tool-call routes", () => {
             providerThreadId: "provider-side-chat",
             turnId: "turn-side-chat",
             callId: "call-send-main",
-            tool: "bb_send_to_main_thread",
+            tool: "patcher_send_to_main_thread",
             arguments: {
               message: "Please carry this back to the main thread.",
             },
@@ -1564,7 +1564,7 @@ describe("internal event and tool-call routes", () => {
         contentItems: [
           {
             type: "inputText",
-            text: "Unsupported tool: bb_send_to_main_thread",
+            text: "Unsupported tool: patcher_send_to_main_thread",
           },
         ],
       });

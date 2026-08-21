@@ -188,7 +188,7 @@ type SpawnEnvironment = Parameters<
 >[0]["environment"];
 
 async function presetSpawnEnvironment(
-  bb: PatcherPluginApi,
+  patcher: PatcherPluginApi,
   preset: Preset,
 ): Promise<SpawnEnvironment> {
   if (preset.environmentKind === "project-default") {
@@ -196,7 +196,7 @@ async function presetSpawnEnvironment(
   }
 
   const hostId =
-    preset.machineId ?? (await bb.sdk.system.config()).primaryHostId;
+    preset.machineId ?? (await patcher.sdk.system.config()).primaryHostId;
   if (hostId === null) {
     throw new DelegationError(
       "spawn_target_invalid",
@@ -276,28 +276,28 @@ export function createSystemComment(
 }
 
 export function publishThreadsChanged(
-  bb: PatcherPluginApi,
+  patcher: PatcherPluginApi,
   taskId: string,
 ): void {
   const payload: ThreadsChangedEvent = { taskId };
-  bb.realtime.publish("threads:changed", payload);
+  patcher.realtime.publish("threads:changed", payload);
 }
 
 function publishTasksChanged(
-  bb: PatcherPluginApi,
+  patcher: PatcherPluginApi,
   taskId: string,
   projectId: string,
 ): void {
   const payload: TasksChangedEvent = { taskId, projectId };
-  bb.realtime.publish("tasks:changed", payload);
+  patcher.realtime.publish("tasks:changed", payload);
 }
 
 export function publishCommentsChanged(
-  bb: PatcherPluginApi,
+  patcher: PatcherPluginApi,
   taskId: string,
 ): void {
   const payload: CommentsChangedEvent = { taskId };
-  bb.realtime.publish("comments:changed", payload);
+  patcher.realtime.publish("comments:changed", payload);
 }
 
 type SdkThread = Awaited<ReturnType<PatcherPluginApi["sdk"]["threads"]["get"]>>;
@@ -318,7 +318,7 @@ function taskThreadLiveStatus(thread: SdkThread): TaskThreadLiveStatus {
 }
 
 export function handlers(
-  bb: PatcherPluginApi,
+  patcher: PatcherPluginApi,
   store: TasksApiStore,
 ): PluginRpcHandlers<typeof delegationRpcContract> {
   return {
@@ -346,8 +346,8 @@ export function handlers(
         extraInstructions: input.extraInstructions,
       });
 
-      const environment = await presetSpawnEnvironment(bb, preset);
-      const thread = await bb.sdk.threads
+      const environment = await presetSpawnEnvironment(patcher, preset);
+      const thread = await patcher.sdk.threads
         .spawn({
           projectId: linkedPatcherProjectId,
           environment,
@@ -389,28 +389,32 @@ export function handlers(
       });
 
       try {
-        const currentThread = await bb.sdk.threads.get({ threadId: thread.id });
+        const currentThread = await patcher.sdk.threads.get({
+          threadId: thread.id,
+        });
         const currentLiveStatus = taskThreadLiveStatus(currentThread);
         if (currentLiveStatus !== taskThread.liveStatus) {
           store.tasks.updateTaskThreadStatus(taskThread.id, currentLiveStatus);
         }
       } catch (error) {
-        bb.log.warn(
+        patcher.log.warn(
           `Could not read delegated thread ${thread.id} after attach: ${
             error instanceof Error ? error.message : String(error)
           }`,
         );
       }
 
-      publishThreadsChanged(bb, task.id);
-      publishTasksChanged(bb, task.id, task.projectId);
-      publishCommentsChanged(bb, task.id);
+      publishThreadsChanged(patcher, task.id);
+      publishTasksChanged(patcher, task.id, task.projectId);
+      publishCommentsChanged(patcher, task.id);
       return { threadId: thread.id };
     },
 
     async taskThreadsAttach(input) {
       const task = requireTask(store.tasks, input.taskId);
-      const thread = await bb.sdk.threads.get({ threadId: input.threadId });
+      const thread = await patcher.sdk.threads.get({
+        threadId: input.threadId,
+      });
       const title = (
         thread.title ??
         thread.titleFallback ??
@@ -425,16 +429,16 @@ export function handlers(
         liveStatus: taskThreadLiveStatus(thread),
       });
 
-      publishThreadsChanged(bb, task.id);
-      publishTasksChanged(bb, task.id, task.projectId);
+      publishThreadsChanged(patcher, task.id);
+      publishTasksChanged(patcher, task.id, task.projectId);
       return { threadId: thread.id };
     },
   };
 }
 
 export function registerDelegation(
-  bb: PatcherPluginApi,
+  patcher: PatcherPluginApi,
   store: TasksApiStore,
 ): void {
-  bb.rpc.register(delegationRpcContract, handlers(bb, store));
+  patcher.rpc.register(delegationRpcContract, handlers(patcher, store));
 }

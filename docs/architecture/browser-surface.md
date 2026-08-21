@@ -658,7 +658,7 @@ the list land on a scrim rather than on the page.
 
 ### Plugins can rebind any of it
 
-`bb.ui.registerKeybinding` lets a plugin change what a chord does, or free one
+`patcher.ui.registerKeybinding` lets a plugin change what a chord does, or free one
 (`shortcut: null`). It is a third layer, and the order is the point: built-in
 defaults, then plugins, then the user's own overrides on top. Folding a plugin
 into the _defaults_ rather than into the overrides is what keeps the settings UI
@@ -804,7 +804,7 @@ are built on opposite sides of the boundary — the same split the surrounding c
 already makes:
 
 - **Tab actions** are declared on the backend
-  (`bb.browser.registerTabAction`) and run there when picked, exactly like page
+  (`patcher.browser.registerTabAction`) and run there when picked, exactly like page
   context-menu items: the shell (here, the strip) holds the list so a right-click
   opens without waiting on a server, and only the click travels. The context an
   action receives carries the tab's id, url, title, `pinned`, `muted` and
@@ -829,7 +829,7 @@ rows.
 ### Driveable, not only clickable
 
 `tabs.pin`, `tabs.mute`, `tabs.duplicate` and `tabs.move` are browser commands,
-so a plugin (`bb.browser.tabs.pin/mute/duplicate/move`) or an agent can do what
+so a plugin (`patcher.browser.tabs.pin/mute/duplicate/move`) or an agent can do what
 the menu and the drag do. All four cost `tabs.modify`: none of them reaches into what a page contains, and all
 three are things the user does from the tab's own menu. Each states the end
 result rather than toggling, so asking twice lands where asking once did — a
@@ -899,7 +899,7 @@ things claiming its freeze.
 
 ### The plugin point: sections, not controls
 
-`bb.browser.registerSiteInfoProvider` adds a section — a label and rows of
+`patcher.browser.registerSiteInfoProvider` adds a section — a label and rows of
 `{ label, value }` — asked each time the panel opens, concurrently, time-boxed at
 2s and failure-isolated, exactly like an omnibox provider. A provider with nothing
 to say about _this_ site returns null and no heading appears.
@@ -927,7 +927,7 @@ is gone even though it makes no new claim.
 
 ## The toolbar: the first surface asked about a page nobody clicked
 
-The address row had bb's own controls and nothing else. `bb.browser.registerToolbarItem`
+The address row had bb's own controls and nothing else. `patcher.browser.registerToolbarItem`
 puts a plugin's control there — between the address bar and bb's downloads and
 open-externally buttons, which is where a browser keeps other people's things and
 leaves its own where the user learned them.
@@ -984,7 +984,7 @@ to be pressed with no second thing to say.
 
 ## The new-tab screen, and the sections plugins add to it
 
-A fresh tab shows what bb knows: recently visited pages. `bb.browser.registerNewTabWidget`
+A fresh tab shows what bb knows: recently visited pages. `patcher.browser.registerNewTabWidget`
 adds a section under that — saved pages, a reading list, yesterday's closed tabs.
 Permission: `newTab.register`, which is the cheapest of the browser's permissions
 to reason about, because a new tab has no page: nothing about the user's browsing
@@ -1020,7 +1020,7 @@ fastest way to see what they cost a plugin author.
 
 ## Commands a plugin owns
 
-`bb.ui.registerKeybinding` rebinds a command bb already has. `bb.ui.registerCommand`
+`patcher.ui.registerKeybinding` rebinds a command bb already has. `patcher.ui.registerCommand`
 adds one bb has never heard of, with the chord that runs it — the last thing the
 bookmarks-shaped features were waiting on, since `Cmd+D` cannot belong to a plugin
 otherwise.
@@ -1052,14 +1052,14 @@ What follows from that ordering, and is worth stating because it is a limit:
 
 `run` is handed **no context**, which is the decision worth defending: passing the
 current page would give every chord the address of whatever the user is looking at,
-for a shortcut. A command that needs the page reads it (`bb.browser.page.getUrl()`)
+for a shortcut. A command that needs the page reads it (`patcher.browser.page.getUrl()`)
 and pays `tabs.read`, the permission that already governs exactly that. Which is
 also why `registerCommand` itself is ungated — a chord that runs the plugin's own
 code discloses nothing.
 
 ## Pages a plugin restyles, and the first permission that names sites
 
-`bb.browser.registerPageStyle` applies a plugin's CSS to the pages the user let it
+`patcher.browser.registerPageStyle` applies a plugin's CSS to the pages the user let it
 reach. It is the cheapest thing on this list and the first one that touches the
 page itself rather than the chrome around it: hiding a banner, widening a column,
 restyling a site somebody stares at all day is one rule, runs no plugin code in the
@@ -1073,21 +1073,21 @@ The declaration is therefore split in two:
 
 ```json
 {
-  "bb": {
+  "patcher": {
     "permissions": ["pageStyle.register"],
     "sites": ["https://github.com/**"]
   }
 }
 ```
 
-`permissions` says the plugin restyles pages; `bb.sites` says which ones, as URL
+`permissions` says the plugin restyles pages; `patcher.sites` says which ones, as URL
 globs in the dialect route patterns already use. A registration's `matches` must be
 **one of the declared patterns** — membership, not containment. Code picks from the
 list the user read before installing and cannot widen it, and nobody has to trust an
 answer to "is this glob inside that glob". `https` only, except loopback over plain
 http, for the reason a registered search engine's template is: standing access to a
 site the user is signed in to, over a connection anyone on the path can
-impersonate, is not a plugin's call to make. `bb.sites` is unrelated to `bb.hosts`
+impersonate, is not a plugin's call to make. `patcher.sites` is unrelated to `patcher.hosts`
 in the plugin API, which is enrolled machines; these are websites.
 
 Not to be confused with the _frontend_ `contentScripts.register`, which is trusted
@@ -1155,7 +1155,7 @@ panels out of scope there is no choice left to offer.
 
 This costs no permission and is checked against none. The panel is bb's own UI, and
 what it is told about the tab is the address the address bar is already showing —
-whereas `bb.sites` governs something else entirely, code and styling _inside_ a page.
+whereas `patcher.sites` governs something else entirely, code and styling _inside_ a page.
 
 It is deliberately not scoped to the route: the leading edge is the _window's_, so a
 site-scoped panel that vanished the moment the user glanced at a thread would take
@@ -1169,13 +1169,13 @@ site the manifest does not, which is the property the whole permission rests on.
 
 ## A plugin's own code in a browsed page
 
-`bb.browser.registerPageScript` is the other half, and the one a userscript is
+`patcher.browser.registerPageScript` is the other half, and the one a userscript is
 usually reached for: read the page, add a control to it, answer a click by asking
 the plugin's backend — which is the part a userscript cannot do, because a page has
 no database, no keychain and no way past the site's CSP.
 
 **A separate permission over the same list.** `pageScript.register` is scoped by the
-same `bb.sites`, checked by the same membership rule, refused in the same three
+same `patcher.sites`, checked by the same membership rule, refused in the same three
 places. It is not folded into `pageStyle.register` because a stylesheet that cannot
 read the page and a program that can are not the same disclosure: a plugin the user
 let restyle GitHub has not thereby been let read what they do there. Granting this
@@ -1245,7 +1245,7 @@ API or what the documentation is allowed to claim:
 
 ### The channel back, and where it is checked
 
-`bb.rpc(method, input)` reaches the plugin's own rpc and nothing else. Getting there
+`patcher.rpc(method, input)` reaches the plugin's own rpc and nothing else. Getting there
 crosses three processes, because no shorter path exists: the browsed page cannot
 hold credentials, and the shell deliberately holds none for the bb server either. So
 the page asks the shell, the shell asks that window's renderer, the renderer performs
@@ -1306,7 +1306,7 @@ rather than a second copy of the engine in the main process.
 
 ### Plugins can add to it
 
-`bb.browser.registerContextMenuItem` — the plan's `browser.contextMenu.items`.
+`patcher.browser.registerContextMenuItem` — the plan's `browser.contextMenu.items`.
 An item declares an `id`, a `title`, an optional `when` (`link`, `image`,
 `selection`, `page`; any match shows it) and a `run(context)` that receives the
 tab, the page URL, and whichever of link, image and selection was under the
@@ -1379,7 +1379,7 @@ in the page.
 
 ### Plugins can add to it
 
-`bb.browser.registerFindAction` — `browser.find.actions`. An action declares an
+`patcher.browser.registerFindAction` — `browser.find.actions`. An action declares an
 `id`, a `title` and a `run(context)` that receives the tab, the page URL and the
 query. Buttons appear after the browser's own controls and are disabled while
 the bar is empty, because every one of them is about the query.
@@ -1438,7 +1438,7 @@ process down — the request then fails, which is what declining meant.
 
 ### A page with a plugin behind it
 
-`bb.browser.registerAuthProvider` — `browser.auth.providers`. A provider is
+`patcher.browser.registerAuthProvider` — `browser.auth.providers`. A provider is
 asked before the user is, and returning credentials means no prompt appears at
 all; that is what makes a password manager a plugin here rather than a feature.
 Providers run in plugin id order, sequentially, and the first to answer wins —
@@ -1551,7 +1551,7 @@ something the agent does not.
 
 ### The plugin contribution point
 
-`bb.browser.registerPdfTextProvider` — `browser.pdf.textProviders`. A provider
+`patcher.browser.registerPdfTextProvider` — `browser.pdf.textProviders`. A provider
 is handed `{ tabId, pageUrl, title }` and returns the document's text, or null.
 
 It is asked in exactly one case: a document the browser parsed and found **no

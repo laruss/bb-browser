@@ -1232,7 +1232,7 @@ describe("registerDesktopBrowserIpc", () => {
       ),
     ).resolves.toEqual({
       ok: false,
-      message: "bb.rpc: that call was not understood.",
+      message: "patcher.rpc: that call was not understood.",
     });
     await expect(
       handler?.(
@@ -1245,7 +1245,7 @@ describe("registerDesktopBrowserIpc", () => {
       ),
     ).resolves.toEqual({
       ok: false,
-      message: "bb.rpc is not available in this page.",
+      message: "patcher.rpc is not available in this page.",
     });
     expect(manager.pageScriptRpcCalls).toEqual([]);
   });
@@ -1269,7 +1269,7 @@ describe("registerDesktopBrowserIpc", () => {
         },
         { pluginId: "site-tweaks", method: "notes", input: "" },
       ),
-    ).resolves.toEqual({ ok: false, message: "bb.rpc: the call failed." });
+    ).resolves.toEqual({ ok: false, message: "patcher.rpc: the call failed." });
   });
 
   it("takes page scripts and their answers only from an app window", () => {

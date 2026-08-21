@@ -248,7 +248,7 @@ describe("SkillsOverview", () => {
         makeSkill({
           name: "zz-official-skill",
           provider: null,
-          scope: "bb-builtin",
+          scope: "patcher-builtin",
           manageable: false,
         }),
       ],
@@ -279,7 +279,7 @@ describe("SkillsOverview", () => {
           makeSkill({
             name: "official-skill",
             provider: null,
-            scope: "bb-builtin",
+            scope: "patcher-builtin",
             manageable: false,
           }),
           makeSkill({
@@ -347,7 +347,7 @@ describe("SkillsOverview", () => {
     expect(screen.getByText("automations")).toBeTruthy();
   });
 
-  // The "user" bucket is a fallthrough — every scope that is not bb-builtin or
+  // The "user" bucket is a fallthrough — every scope that is not patcher-builtin or
   // plugin lands in it. Exercising only a bb-user fixture would leave that
   // claim untested for the claude-*/codex-* scopes, which is exactly where the
   // old code returned null and let skills bypass the Type filter entirely.
@@ -369,7 +369,7 @@ describe("SkillsOverview", () => {
           makeSkill({
             name: "official-skill",
             provider: null,
-            scope: "bb-builtin",
+            scope: "patcher-builtin",
             manageable: false,
           }),
         ]}
@@ -414,7 +414,7 @@ describe("SkillsOverview", () => {
           makeSkill({
             name: "official-skill",
             provider: null,
-            scope: "bb-builtin",
+            scope: "patcher-builtin",
             manageable: false,
           }),
           makeSkill({
@@ -469,7 +469,7 @@ describe("SkillsOverview", () => {
           makeSkill({
             name: "official-skill",
             provider: null,
-            scope: "bb-builtin",
+            scope: "patcher-builtin",
             manageable: false,
           }),
         ]}
@@ -1152,7 +1152,7 @@ describe("SkillDetailDialogView", () => {
     const skill = makeSkill({
       name: "bb-cli",
       provider: null,
-      scope: "bb-builtin",
+      scope: "patcher-builtin",
       manageable: false,
     });
     renderSkillDetailDialog(skill);

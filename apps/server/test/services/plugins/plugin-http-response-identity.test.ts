@@ -70,8 +70,8 @@ describe("recognising a plugin route's Response", () => {
       });
       createPluginChildRuntime({
         port: pluginPort,
-        loadFactory: async () => (bb) => {
-          bb.http.route("GET", "/echo", () =>
+        loadFactory: async () => (patcher) => {
+          patcher.http.route("GET", "/echo", () =>
             NativeResponse.json({ who: "мир" }),
           );
         },

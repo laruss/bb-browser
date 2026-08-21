@@ -148,7 +148,7 @@ export function createRemotePluginApiHandle(args: {
     // `bb` lives in the plugin's process. Nothing on the server should reach
     // for it, and a thrown explanation beats a plausible-looking empty object.
     get api(): PatcherPluginApi {
-      return notLocal("bb.api");
+      return notLocal("patcher.api");
     },
     // Dispose hooks, database handles and the settings descriptors all belong
     // to the far side. The host's dispose path sends the `dispose` callback,

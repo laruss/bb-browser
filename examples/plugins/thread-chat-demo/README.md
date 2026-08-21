@@ -1,4 +1,4 @@
-# bb-plugin-thread-chat-demo
+# patcher-plugin-thread-chat-demo
 
 Demonstrates the SDK's host-owned `ThreadChat` component and the
 `messageAction` slot:

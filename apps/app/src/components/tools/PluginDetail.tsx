@@ -304,9 +304,9 @@ export function PluginDetail({
   // Delivery policy comes from the source itself. Source detail is auxiliary:
   // a missing or still-loading install date must never make a managed plugin
   // look as though it ships with bb.
-  const updatesWithBb = plugin.source.startsWith("builtin:");
+  const updatesWithPatcher = plugin.source.startsWith("builtin:");
   const installedAt = sourceQuery.data?.installedAt ?? null;
-  const installedValue = updatesWithBb
+  const installedValue = updatesWithPatcher
     ? "Updates with bb"
     : installedAt !== null
       ? formatAbsoluteDate(installedAt)
@@ -402,7 +402,7 @@ export function PluginDetail({
         >
           <PluginDetailTable>
             <PluginDetailFieldRow
-              label={updatesWithBb ? "Delivery" : "Installed"}
+              label={updatesWithPatcher ? "Delivery" : "Installed"}
               labelClassName="font-medium"
             >
               {installedValue}

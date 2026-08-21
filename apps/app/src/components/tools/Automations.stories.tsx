@@ -1,16 +1,16 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { AutomationDetailView } from "bb-plugin-automations/detail-view";
+import { AutomationDetailView } from "patcher-plugin-automations/detail-view";
 import {
   AutomationOverviewView,
   type AutomationCollectionMode,
-} from "bb-plugin-automations/overview-view";
+} from "patcher-plugin-automations/overview-view";
 import type {
   AutomationExecutionOptionsResponse,
   AutomationResponse,
   AutomationRunResponse,
   AutomationsOverviewResponse,
-} from "bb-plugin-automations/rpc-types";
+} from "patcher-plugin-automations/rpc-types";
 import { ResourceListState } from "@patcher/shared-ui/resource-list";
 import { AppBreadcrumbs } from "@/components/layout/AppBreadcrumbs";
 import { resolveAutomationBreadcrumbs } from "@/components/tools/tools-navigation";

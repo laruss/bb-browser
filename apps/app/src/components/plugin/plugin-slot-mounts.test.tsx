@@ -1387,7 +1387,7 @@ describe("PluginNavSidebarItems + PluginPanelView", () => {
     render(
       <MemoryRouter
         initialEntries={[
-          "/plugins/simple-notes/simple-notes/bb-plugin-marketplaces-and-compatible-updates.md",
+          "/plugins/simple-notes/simple-notes/patcher-plugin-marketplaces-and-compatible-updates.md",
         ]}
       >
         <PluginNavSidebarItems />

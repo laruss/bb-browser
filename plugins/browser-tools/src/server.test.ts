@@ -11,7 +11,7 @@ import plugin from "./server.js";
 import { BROWSER_TOOL_NAMES } from "./tools.js";
 
 /**
- * The tools are thin over `bb.browser`, so what is worth asserting is the part
+ * The tools are thin over `patcher.browser`, so what is worth asserting is the part
  * that is not: which commands each tool issues, and what the model is told when
  * the browser refuses. A wrong message here reads to an agent as a broken
  * browser rather than as a recoverable situation.
@@ -49,7 +49,7 @@ function createHost() {
     permissions: pluginPermissionsFromManifest(import.meta.url),
     pluginId: "browser-tools",
   });
-  plugin(host.bb);
+  plugin(host.patcher);
   host.harness.behavior.browser.setTabs([
     { tabId: "tab-1", url: "https://example.com/", title: "Example" },
     { tabId: "tab-2", url: "https://other.test/", title: "Other", live: false },

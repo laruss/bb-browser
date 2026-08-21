@@ -1,4 +1,4 @@
-// bb-plugin-automations — the frontend bundle.
+// patcher-plugin-automations — the frontend bundle.
 //
 // A single navPanel "Automations" that replaces the kernel's Automations
 // views. The panel root lists every automation across projects (rpc

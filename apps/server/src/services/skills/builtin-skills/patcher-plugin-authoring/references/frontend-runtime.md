@@ -85,7 +85,7 @@ className?, draftKey? }` — the `default*` props are SEEDS, not controlled
   `NewThreadRequest`
   `{ projectId, providerId, model, reasoningLevel, permissionMode,
 serviceTier?, executionInputSources, environment, input }`. Forward it
-  verbatim to your backend rpc and hand it to `bb.sdk.threads.spawn`,
+  verbatim to your backend rpc and hand it to `patcher.sdk.threads.spawn`,
   adding `sectionId` / `parentThreadId` / `title` / `visibility` yourself —
   `spawn` fills in `origin: "plugin"` and `originPluginId`, so threads
   created this way stay attributed to your plugin. The draft clears when
@@ -110,7 +110,7 @@ serviceTier?, executionInputSources, environment, input }`. Forward it
   ```ts
   // server.ts
   async createThread({ request, sectionId }) {
-    const thread = await bb.sdk.threads.spawn({
+    const thread = await patcher.sdk.threads.spawn({
       ...request,
       ...(sectionId ? { sectionId } : {}),
     });
@@ -128,7 +128,7 @@ serviceTier?, executionInputSources, environment, input }`. Forward it
 - `useRpc<typeof rpcContract>()` → `{ call(method, input?) }` — exact method,
   input, and result inference from a type-only backend contract import.
 - `useRealtime(channel, handler)` — fires for this plugin's
-  `bb.realtime.publish(channel, …)` signals while mounted.
+  `patcher.realtime.publish(channel, …)` signals while mounted.
 - `useRealtimeConnectionState()` — returns `"connecting"`, `"connected"`, or
   `"reconnecting"` for the same shared socket used by `useRealtime`. Reconcile
   durable server state on subsequent transitions to `connected` (not the first
@@ -159,7 +159,7 @@ openThreadPanel({ actionId, title?, params? }) }`.
   the editor read-only and busy and auto-releases when the customization
   unmounts or changes scope;
   `insertMention({ provider, id, label })` inserts an @-mention pill bound
-  to one of YOUR `bb.ui.registerMentionProvider` providers, resolved to
+  to one of YOUR `patcher.ui.registerMentionProvider` providers, resolved to
   fresh context at send time; `focus()` focuses the caret; `scope` reports
   where writes land (`{ kind: "thread", threadId }` inside a thread
   context, `{ kind: "new-thread", projectId }` from nav panels and

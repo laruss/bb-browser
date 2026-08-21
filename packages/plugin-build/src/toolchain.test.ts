@@ -92,9 +92,9 @@ describe("plugin build toolchain", () => {
         await writeFile(
           join(pluginDir, "package.json"),
           JSON.stringify({
-            name: "bb-plugin-fetched",
+            name: "patcher-plugin-fetched",
             version: "0.1.0",
-            bb: {
+            patcher: {
               name: "Fetched",
               description: "Fetched toolchain fixture.",
               branding: { icon: "Zap" },

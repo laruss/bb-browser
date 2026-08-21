@@ -7,11 +7,11 @@ The complete manifest, with the optional fields SKILL.md leaves out:
 
 ```json
 {
-  "name": "bb-plugin-hello",
+  "name": "patcher-plugin-hello",
   "version": "0.1.0",
   "type": "module",
-  "engines": { "bb": ">=0.9", "bbPluginSdk": "^0.4.1" },
-  "bb": {
+  "engines": { "patcher": ">=0.9", "patcherPluginSdk": "^1.0.0" },
+  "patcher": {
     "name": "Hello",
     "description": "A friendly example plugin.",
     "branding": { "icon": "Zap" },
@@ -24,11 +24,11 @@ The complete manifest, with the optional fields SKILL.md leaves out:
 }
 ```
 
-- `bb.server` (required) — backend entry. Path installs load it as
+- `patcher.server` (required) — backend entry. Path installs load it as
   TypeScript directly (no build step); `bb plugin build` also emits a
   self-contained `dist/server.js` + `server.meta.json` that git/npm installs
   prefer when its SDK major matches, so consumers never need npm or
-  node_modules. `bb.app` (optional) — frontend entry compiled by
+  node_modules. `patcher.app` (optional) — frontend entry compiled by
   `bb plugin build` into `dist/app.js` + `app.css` + `app.meta.json`; path
   and git installs build it automatically at install time. Git installs also
   run `npm install --omit=dev` first (so a git plugin may use third-party
@@ -47,47 +47,47 @@ The complete manifest, with the optional fields SKILL.md leaves out:
   `bb plugin build` needs no server, and depending on `bb-app@X` builds
   against exactly that release's shim configuration. bb downloads its build
   toolchain on first use, so cache `<dataDir>/plugins/toolchain-*` in CI.
-- `bb.permissions` (optional, but **undeclared means denied**) — what this
-  plugin may reach through `bb.browser` and `bb.sdk`. Absent or `[]` reaches
+- `patcher.permissions` (optional, but **undeclared means denied**) — what this
+  plugin may reach through `patcher.browser` and `patcher.sdk`. Absent or `[]` reaches
   nothing gated; the first call to a surface you did not declare throws with
   the permission named, and registering a browser contribution you did not
   declare fails the factory, so the plugin loads in `error`. Add entries as
   you need them, then `bb plugin reload <id>`. An unknown string is rejected
   at install, so a typo cannot silently grant nothing.
 
-  | Permission              | Opens                                                                                                                                 |
-  | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-  | `tabs.read`             | `browser.tabs.list`, `page.url`, `page.title`                                                                                         |
-  | `tabs.modify`           | opening, closing, activating tabs, `browser.tabs.pin/mute/duplicate/move`, `browser.navigation.*`                                     |
-  | `page.read`             | page text, selection, snapshot, screenshot, PDF, console                                                                              |
-  | `page.interact`         | `page.act`, answering page dialogs, mouse input, `page.zoom`                                                                          |
-  | `page.inject`           | `browser.control.evaluate` — arbitrary JavaScript in the page                                                                         |
-  | `network.observe`       | the page's network log, including headers                                                                                             |
-  | `network.intercept`     | route mocking, unrouting, forcing a tab offline                                                                                       |
-  | `page.credentials`      | `browser.storage.*` — the user's cookies and site storage                                                                             |
-  | `page.record`           | `browser.recording.*` — traces and video                                                                                              |
-  | `omnibox.register`      | `browser.registerOmniboxProvider` (sees everything typed in the address bar)                                                          |
-  | `contextMenu.register`  | `browser.registerContextMenuItem` (receives the selection or link clicked)                                                            |
-  | `tabMenu.register`      | `browser.registerTabAction` (receives the tab the entry was picked on)                                                                |
-  | `siteInfo.register`     | `browser.registerSiteInfoProvider` (receives the page's address and host)                                                             |
-  | `toolbar.register`      | `browser.registerToolbarItem` (asked about every page the user opens, on navigation)                                                  |
-  | `newTab.register`       | `browser.registerNewTabWidget` (a section on the new-tab screen; a new tab has no page)                                               |
-  | `pageStyle.register`    | `browser.registerPageStyle` — CSS in the pages of the sites listed in `bb.sites`, which this permission is scoped by                  |
-  | `pageScript.register`   | `browser.registerPageScript` — the plugin's own code in those same pages, and `bb.rpc` back to itself; scoped by `bb.sites` too       |
-  | `searchEngine.register` | `browser.registerSearchEngine` (a chosen engine receives everything typed in the address bar)                                         |
-  | `find.register`         | `browser.registerFindAction` (receives the find query)                                                                                |
-  | `downloads.handle`      | `browser.registerDownloadHandler`                                                                                                     |
-  | `auth.provide`          | `browser.registerAuthProvider`                                                                                                        |
-  | `pdf.provide`           | `browser.registerPdfTextProvider`                                                                                                     |
-  | `externalLink.handle`   | `browser.registerExternalLinkHandler` (every address the user opens from outside BB, while BB is the default browser)                 |
-  | `history`               | `browser.registerHistoryFilter` and `sdk.browserHistory` — the browsing history, read and write                                       |
-  | `threads`               | `sdk.threads`, `sdk.threadSections`, `sdk.subscribe({event:"thread:changed"})`                                                        |
-  | `filesystem`            | `sdk.files`                                                                                                                           |
-  | `shell`                 | `sdk.terminals`                                                                                                                       |
-  | `workspace`             | `sdk.projects`, `environments`, `hosts`, `providers`, `skills`, `system`, `theme`, `status`, `guide`, and the other `subscribe` feeds |
-  | `plugins`               | `sdk.plugins`                                                                                                                         |
+  | Permission              | Opens                                                                                                                                     |
+  | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+  | `tabs.read`             | `browser.tabs.list`, `page.url`, `page.title`                                                                                             |
+  | `tabs.modify`           | opening, closing, activating tabs, `browser.tabs.pin/mute/duplicate/move`, `browser.navigation.*`                                         |
+  | `page.read`             | page text, selection, snapshot, screenshot, PDF, console                                                                                  |
+  | `page.interact`         | `page.act`, answering page dialogs, mouse input, `page.zoom`                                                                              |
+  | `page.inject`           | `browser.control.evaluate` — arbitrary JavaScript in the page                                                                             |
+  | `network.observe`       | the page's network log, including headers                                                                                                 |
+  | `network.intercept`     | route mocking, unrouting, forcing a tab offline                                                                                           |
+  | `page.credentials`      | `browser.storage.*` — the user's cookies and site storage                                                                                 |
+  | `page.record`           | `browser.recording.*` — traces and video                                                                                                  |
+  | `omnibox.register`      | `browser.registerOmniboxProvider` (sees everything typed in the address bar)                                                              |
+  | `contextMenu.register`  | `browser.registerContextMenuItem` (receives the selection or link clicked)                                                                |
+  | `tabMenu.register`      | `browser.registerTabAction` (receives the tab the entry was picked on)                                                                    |
+  | `siteInfo.register`     | `browser.registerSiteInfoProvider` (receives the page's address and host)                                                                 |
+  | `toolbar.register`      | `browser.registerToolbarItem` (asked about every page the user opens, on navigation)                                                      |
+  | `newTab.register`       | `browser.registerNewTabWidget` (a section on the new-tab screen; a new tab has no page)                                                   |
+  | `pageStyle.register`    | `browser.registerPageStyle` — CSS in the pages of the sites listed in `patcher.sites`, which this permission is scoped by                 |
+  | `pageScript.register`   | `browser.registerPageScript` — the plugin's own code in those same pages, and `patcher.rpc` back to itself; scoped by `patcher.sites` too |
+  | `searchEngine.register` | `browser.registerSearchEngine` (a chosen engine receives everything typed in the address bar)                                             |
+  | `find.register`         | `browser.registerFindAction` (receives the find query)                                                                                    |
+  | `downloads.handle`      | `browser.registerDownloadHandler`                                                                                                         |
+  | `auth.provide`          | `browser.registerAuthProvider`                                                                                                            |
+  | `pdf.provide`           | `browser.registerPdfTextProvider`                                                                                                         |
+  | `externalLink.handle`   | `browser.registerExternalLinkHandler` (every address the user opens from outside BB, while BB is the default browser)                     |
+  | `history`               | `browser.registerHistoryFilter` and `sdk.browserHistory` — the browsing history, read and write                                           |
+  | `threads`               | `sdk.threads`, `sdk.threadSections`, `sdk.subscribe({event:"thread:changed"})`                                                            |
+  | `filesystem`            | `sdk.files`                                                                                                                               |
+  | `shell`                 | `sdk.terminals`                                                                                                                           |
+  | `workspace`             | `sdk.projects`, `environments`, `hosts`, `providers`, `skills`, `system`, `theme`, `status`, `guide`, and the other `subscribe` feeds     |
+  | `plugins`               | `sdk.plugins`                                                                                                                             |
 
-- `bb.sites` (optional) — which **websites** this plugin's page contributions may
+- `patcher.sites` (optional) — which **websites** this plugin's page contributions may
   reach, as URL globs. Not a permission but the _scope_ of two: `pageStyle.register`
   says the plugin restyles pages and `pageScript.register` says it runs code in
   them, while this says which pages. Absent or `[]` reaches none, so a permission
@@ -114,15 +114,15 @@ The complete manifest, with the optional fields SKILL.md leaves out:
   — membership, not containment — so code picks from what the user read and cannot
   widen it. Declare a second pattern rather than trying to broaden one.
 
-  `bb.sites` is nothing to do with `bb.hosts` in the plugin API, which is enrolled
+  `patcher.sites` is nothing to do with `patcher.hosts` in the plugin API, which is enrolled
   machines. Frontend `matches` on a leading panel is also unrelated and costs
   nothing: that is bb's own chrome reacting to the address bar, not code reaching
   into a page.
 
-  The same list applies to the loopback API, not only to the `bb.sdk` object:
+  The same list applies to the loopback API, not only to the `patcher.sdk` object:
   your plugin's SDK client identifies itself, so calling
-  `bb.server.loopbackBaseUrl` with `fetch` is checked exactly like the
-  equivalent `bb.sdk` call and answers 403 the same way. Three calls cost more
+  `patcher.server.loopbackBaseUrl` with `fetch` is checked exactly like the
+  equivalent `patcher.sdk` call and answers 403 the same way. Three calls cost more
   than their area suggests, because of what they reach:
   `sdk.environments.archiveThreads` and `sdk.status.get` also need `threads`,
   and `sdk.threadSections.list` also needs `workspace` (it reads a route that
@@ -131,27 +131,27 @@ The complete manifest, with the optional fields SKILL.md leaves out:
   These gate the bb API, not the process. A plugin is full-trust code in the
   bb server and can still use `node:fs` or spawn a shell. Declaring less does
   not sandbox a plugin — it records what the plugin uses, shows it to whoever
-  installs it, and refuses calls it did not ask for. `bb.log`, `bb.settings`,
-  `bb.storage`, `bb.http`, `bb.rpc`, `bb.realtime`, `bb.background`,
-  `bb.cli`, `bb.agents`, `bb.ui`, `bb.events`, `bb.hosts` and
-  `bb.browser.getStatus()` are ungated: they reach the plugin's own resources
+  installs it, and refuses calls it did not ask for. `patcher.log`, `patcher.settings`,
+  `patcher.storage`, `patcher.http`, `patcher.rpc`, `patcher.realtime`, `patcher.background`,
+  `patcher.cli`, `patcher.agents`, `patcher.ui`, `patcher.events`, `patcher.hosts` and
+  `patcher.browser.getStatus()` are ungated: they reach the plugin's own resources
   or report only whether a browser window is connected.
 
   `@patcher/plugin-sdk/testing` enforces the same list, so a suite that exercises
   a surface the manifest omits fails in the test rather than on install — pass
   `pluginPermissionsFromManifest(import.meta.url)` and it reads this file.
 
-- `bb.skills` (optional) — relocates the auto-imported skills directories
+- `patcher.skills` (optional) — relocates the auto-imported skills directories
   (default `skills/`; `[]` opts out). Every `skills/<name>/SKILL.md` is
   injected into agent threads as the plugin skills tier.
-- `bb.themes` (optional) — contributes palettes to Settings → Appearance and
+- `patcher.themes` (optional) — contributes palettes to Settings → Appearance and
   `bb theme list`. Each entry is
   `{ id, name, description?, css: "./themes/name.css" }`; bb namespaces its
   selectable id as `plugin:<plugin-id>:<id>`. Only loaded plugins contribute.
-- `bb.name` and `bb.description` (required) — non-empty human-facing plugin
+- `patcher.name` and `patcher.description` (required) — non-empty human-facing plugin
   identity. The top-level package `name` remains the package identity and
   source of the plugin id.
-- `bb.branding` (required) — declare `bb.branding.icon` as either the plugin's
+- `patcher.branding` (required) — declare `patcher.branding.icon` as either the plugin's
   canonical BB icon name, such as `Zap`, or a plugin-relative compact SVG path
   such as `./assets/icon.svg`. BB validates and hash-serves path-shaped SVGs,
   then renders them as CSS masks so their shape inherits the surrounding text
@@ -172,15 +172,15 @@ The complete manifest, with the optional fields SKILL.md leaves out:
   should contain only the intended transparent glyph shape. Do not duplicate
   the same artwork across `icon` and `logo`; reserve logos for intentionally
   different branded artwork and provide a dark variant when needed.
-- `engines.bb` — optional semver range checked against the bb app version.
-- `engines.bbPluginSdk` — optional semver range for the plugin SDK surface
-  (currently `0.4.1`; the scaffold writes `"^0.4.1"`). Absent means a legacy
+- `engines.patcher` — optional semver range checked against the bb app version.
+- `engines.patcherPluginSdk` — optional semver range for the plugin SDK surface
+  (currently `1.0.0`; the scaffold writes `"^1.0.0"`). Absent means a legacy
   manifest. Managed (`git:`/`npm:`) installs **refuse** a mismatch against
   the running SDK; path installs surface it as `incompatible` at load.
   Compatible updates (`bb plugin outdated` / `bb plugin update`) only select
   candidates that satisfy these ranges; newer incompatible releases are
   reported as blocked rather than applied. Dev builds (bb `0.0.0`) skip
-  enforcing `engines.bb` and annotate that on check results.
+  enforcing `engines.patcher` and annotate that on check results.
 - **Manual updates:** `bb plugin outdated` checks tracking sources and
   `bb plugin update` applies compatible candidates (reinstall of an already
   installed managed plugin is refused). A failed activation **rolls back** to
@@ -193,9 +193,9 @@ The complete manifest, with the optional fields SKILL.md leaves out:
   `builtWith: { patcherVersion, pluginSdkVersion }`. Managed installs reject
   artifacts whose `pluginId`/`pluginVersion` disagree with the package
   manifest, or whose SDK major does not match the host.
-- Default to `bb-plugin-hello` for the package name. Scoped names such as
-  `@acme/bb-plugin-hello` are also supported. The plugin id is the final
-  package-name component minus the `bb-plugin-` prefix, so both forms use
+- Default to `patcher-plugin-hello` for the package name. Scoped names such as
+  `@acme/patcher-plugin-hello` are also supported. The plugin id is the final
+  package-name component minus the `patcher-plugin-` prefix, so both forms use
   `hello`; it namespaces routes, storage, settings, and CLI commands. Builtin
   ids such as
   `automations`, `connect`, `custom-instructions`, `inline-vis`, and `secrets`
@@ -207,10 +207,10 @@ Users can install third-party plugins directly from a local path, npm package,
 or Git repository:
 
 ```sh
-bb plugin install ./bb-plugin-notes
-bb plugin install npm:bb-plugin-notes@^1.0.0
-bb plugin install https://github.com/acme/bb-plugin-notes
-bb plugin install git:https://github.com/acme/bb-plugin-notes.git@main
+bb plugin install ./patcher-plugin-notes
+bb plugin install npm:patcher-plugin-notes@^1.0.0
+bb plugin install https://github.com/acme/patcher-plugin-notes
+bb plugin install git:https://github.com/acme/patcher-plugin-notes.git@main
 ```
 
 A bare HTTP(S) repository URL tracks its default branch. Use the `git:` form

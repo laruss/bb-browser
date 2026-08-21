@@ -78,7 +78,7 @@ export function useBrowserPageScripts(): void {
         respond({
           callId: call.callId,
           ok: false,
-          message: `bb.rpc: plugin "${call.pluginId}" declares no page script for this address.`,
+          message: `patcher.rpc: plugin "${call.pluginId}" declares no page script for this address.`,
         });
         return;
       }
@@ -118,7 +118,7 @@ async function answer(
   const serialized = result === undefined ? "" : JSON.stringify(result);
   if (serialized.length > PATCHER_DESKTOP_BROWSER_MAX_PAGE_SCRIPT_JSON_LENGTH) {
     throw new Error(
-      `bb.rpc("${method}"): the answer is too large to hand to a page.`,
+      `patcher.rpc("${method}"): the answer is too large to hand to a page.`,
     );
   }
   return serialized;
