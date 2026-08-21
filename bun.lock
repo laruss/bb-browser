@@ -21,22 +21,9 @@
       },
     },
     "apps/app": {
-      "name": "@bb/app",
+      "name": "@patcher/app",
       "version": "0.0.1",
       "dependencies": {
-        "@bb/agent-providers": "workspace:*",
-        "@bb/config": "workspace:*",
-        "@bb/core-ui": "workspace:*",
-        "@bb/desktop-contract": "workspace:*",
-        "@bb/domain": "workspace:*",
-        "@bb/fuzzy-match": "workspace:*",
-        "@bb/host-daemon-contract": "workspace:*",
-        "@bb/plugin-sdk": "workspace:*",
-        "@bb/sdk": "workspace:*",
-        "@bb/server-contract": "workspace:*",
-        "@bb/shared-ui": "workspace:*",
-        "@bb/templates": "workspace:*",
-        "@bb/thread-view": "workspace:*",
         "@dnd-kit/core": "^6.3.1",
         "@dnd-kit/sortable": "^10.0.0",
         "@dnd-kit/utilities": "^3.2.2",
@@ -44,6 +31,19 @@
         "@hookform/resolvers": "^5.4.0",
         "@hugeicons/core-free-icons": "^4.1.3",
         "@hugeicons/react": "^1.1.6",
+        "@patcher/agent-providers": "workspace:*",
+        "@patcher/config": "workspace:*",
+        "@patcher/core-ui": "workspace:*",
+        "@patcher/desktop-contract": "workspace:*",
+        "@patcher/domain": "workspace:*",
+        "@patcher/fuzzy-match": "workspace:*",
+        "@patcher/host-daemon-contract": "workspace:*",
+        "@patcher/plugin-sdk": "workspace:*",
+        "@patcher/sdk": "workspace:*",
+        "@patcher/server-contract": "workspace:*",
+        "@patcher/shared-ui": "workspace:*",
+        "@patcher/templates": "workspace:*",
+        "@patcher/thread-view": "workspace:*",
         "@pierre/diffs": "^1.2.9",
         "@pierre/trees": "^1.0.0-beta.3",
         "@radix-ui/react-accordion": "^1.2.16",
@@ -126,9 +126,9 @@
         "zod": "^4.3.6",
       },
       "devDependencies": {
-        "@bb/test-helpers": "workspace:*",
-        "@bb/tsconfig": "workspace:*",
         "@ladle/react": "^5.0.3",
+        "@patcher/test-helpers": "workspace:*",
+        "@patcher/tsconfig": "workspace:*",
         "@rolldown/plugin-babel": "^0.2.3",
         "@tailwindcss/vite": "^4.3.0",
         "@testing-library/react": "^16.3.2",
@@ -152,28 +152,28 @@
       },
     },
     "apps/cli": {
-      "name": "@bb/cli",
+      "name": "@patcher/cli",
       "version": "0.0.1",
       "bin": {
         "bb": "./bin/bb",
         "title": "./bin/title",
       },
       "dependencies": {
-        "@bb/config": "workspace:*",
-        "@bb/core-ui": "workspace:*",
-        "@bb/domain": "workspace:*",
-        "@bb/plugin-build": "workspace:*",
-        "@bb/sdk": "workspace:*",
-        "@bb/server-contract": "workspace:*",
-        "@bb/templates": "workspace:*",
-        "@bb/thread-view": "workspace:*",
+        "@patcher/config": "workspace:*",
+        "@patcher/core-ui": "workspace:*",
+        "@patcher/domain": "workspace:*",
+        "@patcher/plugin-build": "workspace:*",
+        "@patcher/sdk": "workspace:*",
+        "@patcher/server-contract": "workspace:*",
+        "@patcher/templates": "workspace:*",
+        "@patcher/thread-view": "workspace:*",
         "cli-table3": "^0.6.5",
         "commander": "^13.0.0",
         "mime-types": "^3.0.2",
         "zod": "^4.3.6",
       },
       "devDependencies": {
-        "@bb/tsconfig": "workspace:*",
+        "@patcher/tsconfig": "workspace:*",
         "@tailwindcss/node": "^4.3.0",
         "@tailwindcss/oxide": "^4.3.0",
         "@types/mime-types": "^3.0.1",
@@ -185,7 +185,7 @@
       },
     },
     "apps/desktop": {
-      "name": "@bb/desktop",
+      "name": "@patcher/desktop",
       "version": "0.37.0",
       "dependencies": {
         "bb-app": "workspace:*",
@@ -194,11 +194,11 @@
         "zod": "^4.3.6",
       },
       "devDependencies": {
-        "@bb/config": "workspace:*",
-        "@bb/desktop-contract": "workspace:*",
-        "@bb/domain": "workspace:*",
-        "@bb/server-contract": "workspace:*",
-        "@bb/tsconfig": "workspace:*",
+        "@patcher/config": "workspace:*",
+        "@patcher/desktop-contract": "workspace:*",
+        "@patcher/domain": "workspace:*",
+        "@patcher/server-contract": "workspace:*",
+        "@patcher/tsconfig": "workspace:*",
         "@types/node": "^24.9.0",
         "@types/semver": "^7.7.0",
         "electron": "41.7.0",
@@ -214,27 +214,27 @@
       },
     },
     "apps/host-daemon": {
-      "name": "@bb/host-daemon",
+      "name": "@patcher/host-daemon",
       "version": "0.0.1",
       "dependencies": {
-        "@bb/agent-runtime": "workspace:*",
-        "@bb/cli": "workspace:*",
-        "@bb/config": "workspace:*",
-        "@bb/domain": "workspace:*",
-        "@bb/fuzzy-match": "workspace:*",
-        "@bb/host-daemon-contract": "workspace:*",
-        "@bb/host-watcher": "workspace:*",
-        "@bb/host-workspace": "workspace:*",
-        "@bb/local-open-targets": "workspace:*",
-        "@bb/logger": "workspace:*",
-        "@bb/process-utils": "workspace:*",
-        "@bb/templates": "workspace:*",
         "@earendil-works/pi-agent-core": "0.84.0",
         "@earendil-works/pi-ai": "0.84.0",
         "@earendil-works/pi-coding-agent": "0.84.0",
         "@earendil-works/pi-tui": "0.84.0",
         "@hono/node-server": "^1.19.11",
         "@parcel/watcher": "2.5.6",
+        "@patcher/agent-runtime": "workspace:*",
+        "@patcher/cli": "workspace:*",
+        "@patcher/config": "workspace:*",
+        "@patcher/domain": "workspace:*",
+        "@patcher/fuzzy-match": "workspace:*",
+        "@patcher/host-daemon-contract": "workspace:*",
+        "@patcher/host-watcher": "workspace:*",
+        "@patcher/host-workspace": "workspace:*",
+        "@patcher/local-open-targets": "workspace:*",
+        "@patcher/logger": "workspace:*",
+        "@patcher/process-utils": "workspace:*",
+        "@patcher/templates": "workspace:*",
         "better-sqlite3": "12.10.0",
         "gray-matter": "^4.0.3",
         "jiti": "^2.6.1",
@@ -253,9 +253,9 @@
         "zod": "^4.3.6",
       },
       "devDependencies": {
-        "@bb/scripts": "workspace:*",
-        "@bb/test-helpers": "workspace:*",
-        "@bb/tsconfig": "workspace:*",
+        "@patcher/scripts": "workspace:*",
+        "@patcher/test-helpers": "workspace:*",
+        "@patcher/tsconfig": "workspace:*",
         "@types/better-sqlite3": "^7.6.12",
         "@types/mime-types": "^3.0.1",
         "@types/node": "^22.0.0",
@@ -268,30 +268,30 @@
       },
     },
     "apps/server": {
-      "name": "@bb/server",
+      "name": "@patcher/server",
       "version": "0.0.1",
       "dependencies": {
-        "@bb/agent-providers": "workspace:*",
-        "@bb/config": "workspace:*",
-        "@bb/core-ui": "workspace:*",
-        "@bb/db": "workspace:*",
-        "@bb/domain": "workspace:*",
-        "@bb/host-daemon-contract": "workspace:*",
-        "@bb/logger": "workspace:*",
-        "@bb/plugin-build": "workspace:*",
-        "@bb/plugin-sdk": "workspace:*",
-        "@bb/process-utils": "workspace:*",
-        "@bb/sdk": "workspace:*",
-        "@bb/secret-storage": "workspace:*",
-        "@bb/server-contract": "workspace:*",
-        "@bb/templates": "workspace:*",
-        "@bb/thread-view": "workspace:*",
         "@better-auth/api-key": "^1.6.23",
         "@better-auth/drizzle-adapter": "^1.6.23",
         "@earendil-works/pi-ai": "0.84.0",
         "@hono/node-server": "^1.19.11",
         "@hono/node-ws": "^1.3.0",
         "@opentelemetry/api": "1.9.1",
+        "@patcher/agent-providers": "workspace:*",
+        "@patcher/config": "workspace:*",
+        "@patcher/core-ui": "workspace:*",
+        "@patcher/db": "workspace:*",
+        "@patcher/domain": "workspace:*",
+        "@patcher/host-daemon-contract": "workspace:*",
+        "@patcher/logger": "workspace:*",
+        "@patcher/plugin-build": "workspace:*",
+        "@patcher/plugin-sdk": "workspace:*",
+        "@patcher/process-utils": "workspace:*",
+        "@patcher/sdk": "workspace:*",
+        "@patcher/secret-storage": "workspace:*",
+        "@patcher/server-contract": "workspace:*",
+        "@patcher/templates": "workspace:*",
+        "@patcher/thread-view": "workspace:*",
         "better-auth": "^1.6.23",
         "better-sqlite3": "12.10.0",
         "cron-parser": "^5.5.0",
@@ -308,9 +308,9 @@
         "zod": "^4.3.6",
       },
       "devDependencies": {
-        "@bb/scripts": "workspace:*",
-        "@bb/test-helpers": "workspace:*",
-        "@bb/tsconfig": "workspace:*",
+        "@patcher/scripts": "workspace:*",
+        "@patcher/test-helpers": "workspace:*",
+        "@patcher/tsconfig": "workspace:*",
         "@types/better-sqlite3": "^7.6.12",
         "@types/mime-types": "^3.0.1",
         "@types/node": "^22.0.0",
@@ -334,7 +334,7 @@
       "name": "bb-plugin-bookmarks",
       "version": "0.1.0",
       "devDependencies": {
-        "@bb/plugin-sdk": "workspace:*",
+        "@patcher/plugin-sdk": "workspace:*",
         "@types/better-sqlite3": "^7.6.12",
         "@types/node": "^22.0.0",
         "typescript": "^6.0.2",
@@ -350,7 +350,7 @@
         "tailwind-merge": "^3.4.0",
       },
       "devDependencies": {
-        "@bb/plugin-sdk": "workspace:*",
+        "@patcher/plugin-sdk": "workspace:*",
         "@types/react": "^19.0.0",
         "react": "^19.0.0",
         "sonner": "^2.0.7",
@@ -362,7 +362,7 @@
       "name": "bb-plugin-composer-customization",
       "version": "0.1.0",
       "devDependencies": {
-        "@bb/plugin-sdk": "workspace:*",
+        "@patcher/plugin-sdk": "workspace:*",
         "@types/react": "^19.0.0",
         "react": "^19.0.0",
         "typescript": "^6.0.2",
@@ -372,8 +372,8 @@
       "name": "bb-plugin-content-script-example",
       "version": "0.1.0",
       "devDependencies": {
-        "@bb/plugin-sdk": "workspace:*",
-        "@bb/tsconfig": "workspace:*",
+        "@patcher/plugin-sdk": "workspace:*",
+        "@patcher/tsconfig": "workspace:*",
         "typescript": "^6.0.2",
       },
     },
@@ -381,7 +381,7 @@
       "name": "bb-plugin-explain-selection",
       "version": "0.1.0",
       "devDependencies": {
-        "@bb/plugin-sdk": "workspace:*",
+        "@patcher/plugin-sdk": "workspace:*",
         "@types/node": "^22.0.0",
         "typescript": "^6.0.2",
         "typescript-7": "npm:typescript@^7.0.2",
@@ -392,7 +392,7 @@
       "name": "bb-plugin-omnibox-agent",
       "version": "0.1.0",
       "devDependencies": {
-        "@bb/plugin-sdk": "workspace:*",
+        "@patcher/plugin-sdk": "workspace:*",
         "@types/node": "^22.0.0",
         "typescript": "^6.0.2",
         "typescript-7": "npm:typescript@^7.0.2",
@@ -403,7 +403,7 @@
       "name": "bb-plugin-private-history",
       "version": "0.1.0",
       "devDependencies": {
-        "@bb/plugin-sdk": "workspace:*",
+        "@patcher/plugin-sdk": "workspace:*",
         "@types/node": "^22.0.0",
         "typescript": "^6.0.2",
         "typescript-7": "npm:typescript@^7.0.2",
@@ -417,7 +417,7 @@
         "zod": "^4.3.6",
       },
       "devDependencies": {
-        "@bb/plugin-sdk": "workspace:*",
+        "@patcher/plugin-sdk": "workspace:*",
         "@types/better-sqlite3": "^7.6.12",
         "@types/node": "^22.0.0",
         "@types/react": "^19.0.0",
@@ -432,7 +432,7 @@
       "name": "bb-plugin-slack-bot",
       "version": "0.1.0",
       "devDependencies": {
-        "@bb/plugin-sdk": "workspace:*",
+        "@patcher/plugin-sdk": "workspace:*",
         "@types/node": "^22.0.0",
         "typescript": "^6.0.2",
         "typescript-7": "npm:typescript@^7.0.2",
@@ -450,7 +450,7 @@
         "zod": "^4.3.6",
       },
       "devDependencies": {
-        "@bb/plugin-sdk": "workspace:*",
+        "@patcher/plugin-sdk": "workspace:*",
         "@radix-ui/react-context-menu": "^2.3.3",
         "@radix-ui/react-select": "^2.3.3",
         "@testing-library/react": "^16.3.2",
@@ -470,44 +470,44 @@
       "name": "bb-plugin-thread-chat-demo",
       "version": "0.1.0",
       "devDependencies": {
-        "@bb/plugin-sdk": "workspace:*",
+        "@patcher/plugin-sdk": "workspace:*",
         "@types/react": "^19.0.0",
         "react": "^19.0.0",
         "typescript": "^5.7.0",
       },
     },
     "packages/agent-providers": {
-      "name": "@bb/agent-providers",
+      "name": "@patcher/agent-providers",
       "version": "0.0.1",
       "dependencies": {
-        "@bb/domain": "workspace:*",
+        "@patcher/domain": "workspace:*",
         "zod": "^4.3.6",
       },
       "devDependencies": {
-        "@bb/tsconfig": "workspace:*",
+        "@patcher/tsconfig": "workspace:*",
         "typescript": "^6.0.2",
         "typescript-7": "npm:typescript@^7.0.2",
         "vitest": "^4.1.1",
       },
     },
     "packages/agent-runtime": {
-      "name": "@bb/agent-runtime",
+      "name": "@patcher/agent-runtime",
       "version": "0.0.1",
       "dependencies": {
         "@anthropic-ai/claude-agent-sdk": "^0.3.197",
         "@anthropic-ai/sdk": "^0.93.0",
-        "@bb/agent-providers": "workspace:*",
-        "@bb/domain": "workspace:*",
-        "@bb/host-daemon-contract": "workspace:*",
-        "@bb/process-utils": "workspace:*",
         "@earendil-works/pi-ai": "0.84.0",
         "@earendil-works/pi-coding-agent": "0.84.0",
         "@modelcontextprotocol/sdk": "^1.29.0",
+        "@patcher/agent-providers": "workspace:*",
+        "@patcher/domain": "workspace:*",
+        "@patcher/host-daemon-contract": "workspace:*",
+        "@patcher/process-utils": "workspace:*",
         "zod": "^4.3.6",
       },
       "devDependencies": {
-        "@bb/test-helpers": "workspace:*",
-        "@bb/tsconfig": "workspace:*",
+        "@patcher/test-helpers": "workspace:*",
+        "@patcher/tsconfig": "workspace:*",
         "@types/node": "^22.0.0",
         "tsx": "^4.23.1",
         "typescript": "^6.0.2",
@@ -540,9 +540,9 @@
         "zod": "4.3.6",
       },
       "devDependencies": {
-        "@bb/config": "workspace:*",
-        "@bb/sdk": "workspace:*",
-        "@bb/tsconfig": "workspace:*",
+        "@patcher/config": "workspace:*",
+        "@patcher/sdk": "workspace:*",
+        "@patcher/tsconfig": "workspace:*",
         "@types/node": "^22.0.0",
         "rimraf": "^6.1.0",
         "rollup": "^4.62.2",
@@ -553,45 +553,45 @@
       },
     },
     "packages/config": {
-      "name": "@bb/config",
+      "name": "@patcher/config",
       "version": "0.0.1",
       "dependencies": {
-        "@bb/agent-providers": "workspace:*",
-        "@bb/domain": "workspace:*",
+        "@patcher/agent-providers": "workspace:*",
+        "@patcher/domain": "workspace:*",
         "zod": "4.3.6",
       },
       "devDependencies": {
-        "@bb/tsconfig": "workspace:*",
+        "@patcher/tsconfig": "workspace:*",
         "@types/node": "^22.0.0",
         "typescript": "^6.0.2",
         "typescript-7": "npm:typescript@^7.0.2",
       },
     },
     "packages/core-ui": {
-      "name": "@bb/core-ui",
+      "name": "@patcher/core-ui",
       "version": "0.0.1",
       "dependencies": {
-        "@bb/domain": "workspace:*",
+        "@patcher/domain": "workspace:*",
       },
       "devDependencies": {
-        "@bb/tsconfig": "workspace:*",
+        "@patcher/tsconfig": "workspace:*",
         "@types/node": "^22.0.0",
         "typescript": "^6.0.2",
         "typescript-7": "npm:typescript@^7.0.2",
       },
     },
     "packages/db": {
-      "name": "@bb/db",
+      "name": "@patcher/db",
       "version": "0.0.1",
       "dependencies": {
-        "@bb/config": "workspace:*",
-        "@bb/domain": "workspace:*",
+        "@patcher/config": "workspace:*",
+        "@patcher/domain": "workspace:*",
         "better-sqlite3": "12.10.0",
         "drizzle-orm": "^0.38.0",
         "nanoid": "^5.0.9",
       },
       "devDependencies": {
-        "@bb/tsconfig": "workspace:*",
+        "@patcher/tsconfig": "workspace:*",
         "@types/better-sqlite3": "^7.6.12",
         "@types/node": "^22.0.0",
         "drizzle-kit": "^0.30.0",
@@ -601,114 +601,114 @@
       },
     },
     "packages/desktop-contract": {
-      "name": "@bb/desktop-contract",
+      "name": "@patcher/desktop-contract",
       "version": "0.0.1",
       "dependencies": {
-        "@bb/domain": "workspace:*",
+        "@patcher/domain": "workspace:*",
         "zod": "^4.3.6",
       },
       "devDependencies": {
-        "@bb/tsconfig": "workspace:*",
+        "@patcher/tsconfig": "workspace:*",
         "typescript": "^6.0.2",
         "typescript-7": "npm:typescript@^7.0.2",
       },
     },
     "packages/domain": {
-      "name": "@bb/domain",
+      "name": "@patcher/domain",
       "version": "0.0.1",
       "dependencies": {
         "zod": "^4.3.6",
       },
       "devDependencies": {
-        "@bb/tsconfig": "workspace:*",
+        "@patcher/tsconfig": "workspace:*",
         "@types/node": "^22.0.0",
         "typescript": "^6.0.2",
         "typescript-7": "npm:typescript@^7.0.2",
       },
     },
     "packages/fuzzy-match": {
-      "name": "@bb/fuzzy-match",
+      "name": "@patcher/fuzzy-match",
       "version": "0.0.1",
       "dependencies": {
         "fzf": "^0.5.2",
       },
       "devDependencies": {
-        "@bb/tsconfig": "workspace:*",
+        "@patcher/tsconfig": "workspace:*",
         "typescript": "^6.0.2",
         "typescript-7": "npm:typescript@^7.0.2",
         "vitest": "^4.1.1",
       },
     },
     "packages/hono-typed-routes": {
-      "name": "@bb/hono-typed-routes",
+      "name": "@patcher/hono-typed-routes",
       "version": "0.0.1",
       "dependencies": {
         "hono": "^4.7.0",
         "zod": "^4.3.6",
       },
       "devDependencies": {
-        "@bb/tsconfig": "workspace:*",
+        "@patcher/tsconfig": "workspace:*",
         "typescript": "^6.0.2",
         "typescript-7": "npm:typescript@^7.0.2",
       },
     },
     "packages/host-daemon-contract": {
-      "name": "@bb/host-daemon-contract",
+      "name": "@patcher/host-daemon-contract",
       "version": "0.0.1",
       "dependencies": {
-        "@bb/domain": "workspace:*",
-        "@bb/hono-typed-routes": "workspace:*",
+        "@patcher/domain": "workspace:*",
+        "@patcher/hono-typed-routes": "workspace:*",
         "hono": "^4.7.0",
         "zod": "^4.3.6",
       },
       "devDependencies": {
-        "@bb/test-helpers": "workspace:*",
-        "@bb/tsconfig": "workspace:*",
+        "@patcher/test-helpers": "workspace:*",
+        "@patcher/tsconfig": "workspace:*",
         "@types/node": "^22.0.0",
         "typescript": "^6.0.2",
         "typescript-7": "npm:typescript@^7.0.2",
       },
     },
     "packages/host-watcher": {
-      "name": "@bb/host-watcher",
+      "name": "@patcher/host-watcher",
       "version": "0.0.1",
       "dependencies": {
-        "@bb/domain": "workspace:*",
         "@parcel/watcher": "2.5.6",
+        "@patcher/domain": "workspace:*",
       },
       "devDependencies": {
-        "@bb/test-helpers": "workspace:*",
-        "@bb/tsconfig": "workspace:*",
+        "@patcher/test-helpers": "workspace:*",
+        "@patcher/tsconfig": "workspace:*",
         "@types/node": "^22.0.0",
         "typescript": "^6.0.2",
         "typescript-7": "npm:typescript@^7.0.2",
       },
     },
     "packages/host-workspace": {
-      "name": "@bb/host-workspace",
+      "name": "@patcher/host-workspace",
       "version": "0.0.1",
       "dependencies": {
-        "@bb/domain": "workspace:*",
-        "@bb/process-utils": "workspace:*",
+        "@patcher/domain": "workspace:*",
+        "@patcher/process-utils": "workspace:*",
       },
       "devDependencies": {
-        "@bb/test-helpers": "workspace:*",
-        "@bb/tsconfig": "workspace:*",
+        "@patcher/test-helpers": "workspace:*",
+        "@patcher/tsconfig": "workspace:*",
         "@types/node": "^22.0.0",
         "typescript": "^6.0.2",
         "typescript-7": "npm:typescript@^7.0.2",
       },
     },
     "packages/local-open-targets": {
-      "name": "@bb/local-open-targets",
+      "name": "@patcher/local-open-targets",
       "version": "0.0.1",
       "dependencies": {
-        "@bb/host-daemon-contract": "workspace:*",
-        "@bb/process-utils": "workspace:*",
+        "@patcher/host-daemon-contract": "workspace:*",
+        "@patcher/process-utils": "workspace:*",
         "zod": "4.3.6",
       },
       "devDependencies": {
-        "@bb/tsconfig": "workspace:*",
+        "@patcher/tsconfig": "workspace:*",
         "@types/node": "^22.0.0",
         "typescript": "^6.0.2",
         "typescript-7": "npm:typescript@^7.0.2",
@@ -716,31 +716,31 @@
       },
     },
     "packages/logger": {
-      "name": "@bb/logger",
+      "name": "@patcher/logger",
       "version": "0.0.1",
       "dependencies": {
-        "@bb/config": "workspace:*",
+        "@patcher/config": "workspace:*",
         "pino": "^9.6.0",
         "pino-pretty": "^13.0.0",
         "pino-roll": "^4.0.0",
       },
       "devDependencies": {
-        "@bb/tsconfig": "workspace:*",
+        "@patcher/tsconfig": "workspace:*",
         "@types/node": "^22.0.0",
         "typescript": "^6.0.2",
         "typescript-7": "npm:typescript@^7.0.2",
       },
     },
     "packages/plugin-build": {
-      "name": "@bb/plugin-build",
+      "name": "@patcher/plugin-build",
       "version": "0.0.1",
       "dependencies": {
-        "@bb/domain": "workspace:*",
-        "@bb/plugin-sdk": "workspace:*",
+        "@patcher/domain": "workspace:*",
+        "@patcher/plugin-sdk": "workspace:*",
         "saxes": "^6.0.0",
       },
       "devDependencies": {
-        "@bb/tsconfig": "workspace:*",
+        "@patcher/tsconfig": "workspace:*",
         "@tailwindcss/node": "^4.3.0",
         "@tailwindcss/oxide": "^4.3.0",
         "@types/node": "^22.0.0",
@@ -752,13 +752,13 @@
       },
     },
     "packages/plugin-registry": {
-      "name": "@bb/plugin-registry",
+      "name": "@patcher/plugin-registry",
       "version": "0.0.1",
       "devDependencies": {
-        "@bb/plugin-build": "workspace:*",
-        "@bb/tsconfig": "workspace:*",
         "@hugeicons/core-free-icons": "^4.1.3",
         "@hugeicons/react": "^1.1.6",
+        "@patcher/plugin-build": "workspace:*",
+        "@patcher/tsconfig": "workspace:*",
         "@radix-ui/react-accordion": "^1.2.16",
         "@radix-ui/react-alert-dialog": "^1.1.19",
         "@radix-ui/react-aspect-ratio": "^1.1.11",
@@ -804,15 +804,15 @@
       },
     },
     "packages/plugin-sdk": {
-      "name": "@bb/plugin-sdk",
+      "name": "@patcher/plugin-sdk",
       "version": "0.4.1",
       "devDependencies": {
-        "@bb/domain": "workspace:*",
-        "@bb/sdk": "workspace:*",
-        "@bb/server-contract": "workspace:*",
-        "@bb/tsconfig": "workspace:*",
         "@hugeicons/core-free-icons": "^4.1.3",
         "@hugeicons/react": "^1.1.6",
+        "@patcher/domain": "workspace:*",
+        "@patcher/sdk": "workspace:*",
+        "@patcher/server-contract": "workspace:*",
+        "@patcher/tsconfig": "workspace:*",
         "@radix-ui/react-dialog": "^1.1.19",
         "@radix-ui/react-slot": "^1.3.0",
         "@testing-library/react": "^16.3.2",
@@ -862,13 +862,13 @@
       ],
     },
     "packages/process-utils": {
-      "name": "@bb/process-utils",
+      "name": "@patcher/process-utils",
       "version": "0.0.1",
       "dependencies": {
         "cross-spawn": "^7.0.6",
       },
       "devDependencies": {
-        "@bb/tsconfig": "workspace:*",
+        "@patcher/tsconfig": "workspace:*",
         "@types/cross-spawn": "^6.0.6",
         "@types/node": "^22.0.0",
         "typescript": "^6.0.2",
@@ -877,7 +877,7 @@
       },
     },
     "packages/scripts": {
-      "name": "@bb/scripts",
+      "name": "@patcher/scripts",
       "version": "0.0.1",
       "bin": {
         "bb-script-archive-codex-tmp-bb-sessions": "./dist/commands/archive-codex-tmp-bb-sessions.js",
@@ -888,15 +888,15 @@
         "bb-script-seed-perf-db": "./dist/commands/seed-perf-db.js",
       },
       "dependencies": {
-        "@bb/config": "workspace:*",
-        "@bb/db": "workspace:*",
-        "@bb/domain": "workspace:*",
-        "@bb/host-daemon-contract": "workspace:*",
-        "@bb/process-utils": "workspace:*",
+        "@patcher/config": "workspace:*",
+        "@patcher/db": "workspace:*",
+        "@patcher/domain": "workspace:*",
+        "@patcher/host-daemon-contract": "workspace:*",
+        "@patcher/process-utils": "workspace:*",
         "picocolors": "^1.1.1",
       },
       "devDependencies": {
-        "@bb/tsconfig": "workspace:*",
+        "@patcher/tsconfig": "workspace:*",
         "@types/node": "^22.0.0",
         "typescript": "^6.0.2",
         "typescript-7": "npm:typescript@^7.0.2",
@@ -904,21 +904,21 @@
       },
     },
     "packages/sdk": {
-      "name": "@bb/sdk",
+      "name": "@patcher/sdk",
       "version": "0.0.1",
       "dependencies": {
-        "@bb/config": "workspace:*",
-        "@bb/core-ui": "workspace:*",
-        "@bb/domain": "workspace:*",
-        "@bb/host-daemon-contract": "workspace:*",
-        "@bb/server-contract": "workspace:*",
-        "@bb/templates": "workspace:*",
+        "@patcher/config": "workspace:*",
+        "@patcher/core-ui": "workspace:*",
+        "@patcher/domain": "workspace:*",
+        "@patcher/host-daemon-contract": "workspace:*",
+        "@patcher/server-contract": "workspace:*",
+        "@patcher/templates": "workspace:*",
         "hono": "^4.7.0",
         "ws": "^8.19.0",
         "zod": "^4.3.6",
       },
       "devDependencies": {
-        "@bb/tsconfig": "workspace:*",
+        "@patcher/tsconfig": "workspace:*",
         "@types/node": "^22.0.0",
         "@types/ws": "^8.18.1",
         "esbuild": "^0.28.0",
@@ -928,13 +928,13 @@
       },
     },
     "packages/secret-storage": {
-      "name": "@bb/secret-storage",
+      "name": "@patcher/secret-storage",
       "version": "0.0.1",
       "dependencies": {
         "zod": "^4.3.6",
       },
       "devDependencies": {
-        "@bb/tsconfig": "workspace:*",
+        "@patcher/tsconfig": "workspace:*",
         "@types/node": "^22.0.0",
         "typescript": "^6.0.2",
         "typescript-7": "npm:typescript@^7.0.2",
@@ -942,25 +942,25 @@
       },
     },
     "packages/server-contract": {
-      "name": "@bb/server-contract",
+      "name": "@patcher/server-contract",
       "version": "0.0.1",
       "dependencies": {
-        "@bb/domain": "workspace:*",
-        "@bb/hono-typed-routes": "workspace:*",
-        "@bb/host-daemon-contract": "workspace:*",
+        "@patcher/domain": "workspace:*",
+        "@patcher/hono-typed-routes": "workspace:*",
+        "@patcher/host-daemon-contract": "workspace:*",
         "hono": "^4.7.0",
         "zod": "^4.3.6",
       },
       "devDependencies": {
-        "@bb/test-helpers": "workspace:*",
-        "@bb/tsconfig": "workspace:*",
+        "@patcher/test-helpers": "workspace:*",
+        "@patcher/tsconfig": "workspace:*",
         "@types/node": "^22.0.0",
         "typescript": "^6.0.2",
         "typescript-7": "npm:typescript@^7.0.2",
       },
     },
     "packages/shared-ui": {
-      "name": "@bb/shared-ui",
+      "name": "@patcher/shared-ui",
       "version": "0.0.1",
       "dependencies": {
         "@hugeicons/core-free-icons": "^4.1.3",
@@ -970,9 +970,9 @@
         "tailwind-merge": "^3.4.0",
       },
       "devDependencies": {
-        "@bb/tsconfig": "workspace:*",
         "@hugeicons/core-free-icons": "^4.1.3",
         "@hugeicons/react": "^1.1.6",
+        "@patcher/tsconfig": "workspace:*",
         "@radix-ui/react-accordion": "^1.2.16",
         "@radix-ui/react-alert-dialog": "^1.1.19",
         "@radix-ui/react-aspect-ratio": "^1.1.11",
@@ -1028,15 +1028,15 @@
       },
     },
     "packages/templates": {
-      "name": "@bb/templates",
+      "name": "@patcher/templates",
       "version": "0.0.1",
       "dependencies": {
-        "@bb/domain": "workspace:*",
+        "@patcher/domain": "workspace:*",
         "gray-matter": "^4.0.3",
         "handlebars": "^4.7.8",
       },
       "devDependencies": {
-        "@bb/tsconfig": "workspace:*",
+        "@patcher/tsconfig": "workspace:*",
         "@types/node": "^22.0.0",
         "typescript": "^6.0.2",
         "typescript-7": "npm:typescript@^7.0.2",
@@ -1044,47 +1044,47 @@
       },
     },
     "packages/test-helpers": {
-      "name": "@bb/test-helpers",
+      "name": "@patcher/test-helpers",
       "version": "0.0.1",
       "dependencies": {
-        "@bb/domain": "workspace:*",
+        "@patcher/domain": "workspace:*",
         "zod": "^4.3.6",
       },
       "devDependencies": {
-        "@bb/tsconfig": "workspace:*",
+        "@patcher/tsconfig": "workspace:*",
         "@types/node": "^22.0.0",
         "typescript": "^6.0.2",
         "typescript-7": "npm:typescript@^7.0.2",
       },
     },
     "packages/thread-view": {
-      "name": "@bb/thread-view",
+      "name": "@patcher/thread-view",
       "version": "0.0.1",
       "dependencies": {
-        "@bb/domain": "workspace:*",
-        "@bb/server-contract": "workspace:*",
+        "@patcher/domain": "workspace:*",
+        "@patcher/server-contract": "workspace:*",
         "zod": "^4.3.6",
       },
       "devDependencies": {
-        "@bb/tsconfig": "workspace:*",
+        "@patcher/tsconfig": "workspace:*",
         "@types/node": "^22.0.0",
         "typescript": "^6.0.2",
         "typescript-7": "npm:typescript@^7.0.2",
       },
     },
     "packages/tsconfig": {
-      "name": "@bb/tsconfig",
+      "name": "@patcher/tsconfig",
       "version": "0.0.1",
     },
     "plugins/ask-user-question": {
       "name": "bb-plugin-ask-user-question",
       "version": "0.1.0",
       "dependencies": {
-        "@bb/shared-ui": "workspace:*",
+        "@patcher/shared-ui": "workspace:*",
         "zod": "^4.3.6",
       },
       "devDependencies": {
-        "@bb/plugin-sdk": "workspace:*",
+        "@patcher/plugin-sdk": "workspace:*",
         "@testing-library/react": "^16.3.2",
         "@types/node": "^22.0.0",
         "@types/react": "^19.0.0",
@@ -1099,14 +1099,14 @@
       "name": "bb-plugin-automations",
       "version": "0.1.0",
       "dependencies": {
-        "@bb/shared-ui": "workspace:*",
+        "@patcher/shared-ui": "workspace:*",
         "@radix-ui/react-slot": "^1.3.0",
         "cron-parser": "^5.5.0",
         "cronstrue": "^3.14.0",
         "zod": "^4.3.6",
       },
       "devDependencies": {
-        "@bb/plugin-sdk": "workspace:*",
+        "@patcher/plugin-sdk": "workspace:*",
         "@radix-ui/react-dialog": "^1.1.19",
         "@radix-ui/react-dropdown-menu": "^2.1.20",
         "@testing-library/react": "^16.3.2",
@@ -1131,7 +1131,7 @@
         "zod": "^4.3.6",
       },
       "devDependencies": {
-        "@bb/plugin-sdk": "workspace:*",
+        "@patcher/plugin-sdk": "workspace:*",
         "@types/node": "^22.0.0",
         "typescript": "^6.0.2",
         "typescript-7": "npm:typescript@^7.0.2",
@@ -1142,11 +1142,11 @@
       "name": "bb-plugin-custom-instructions",
       "version": "0.1.0",
       "dependencies": {
-        "@bb/shared-ui": "workspace:*",
+        "@patcher/shared-ui": "workspace:*",
         "zod": "^4.3.6",
       },
       "devDependencies": {
-        "@bb/plugin-sdk": "workspace:*",
+        "@patcher/plugin-sdk": "workspace:*",
         "@testing-library/react": "^16.3.2",
         "@types/node": "^22.0.0",
         "@types/react": "^19.0.0",
@@ -1162,9 +1162,9 @@
       "name": "bb-plugin-simple-notes",
       "version": "0.2.2",
       "dependencies": {
-        "@bb/shared-ui": "workspace:*",
         "@hugeicons/core-free-icons": "^4.1.3",
         "@hugeicons/react": "^1.1.6",
+        "@patcher/shared-ui": "workspace:*",
         "@radix-ui/react-context-menu": "^2.3.3",
         "@radix-ui/react-dialog": "^1.1.15",
         "@radix-ui/react-slot": "^1.3.0",
@@ -1185,7 +1185,7 @@
         "zod": "^4.3.6",
       },
       "devDependencies": {
-        "@bb/plugin-sdk": "workspace:*",
+        "@patcher/plugin-sdk": "workspace:*",
         "@radix-ui/react-dropdown-menu": "^2.1.20",
         "@testing-library/react": "^16.3.2",
         "@types/node": "^22.0.0",
@@ -1204,12 +1204,12 @@
       "name": "bb-plugin-github",
       "version": "0.2.1",
       "dependencies": {
-        "@bb/shared-ui": "workspace:*",
+        "@patcher/shared-ui": "workspace:*",
         "@radix-ui/react-slot": "^1.3.0",
         "zod": "^4.3.6",
       },
       "devDependencies": {
-        "@bb/plugin-sdk": "workspace:*",
+        "@patcher/plugin-sdk": "workspace:*",
         "@pierre/diffs": "^1.2.9",
         "@radix-ui/react-dialog": "^1.1.19",
         "@radix-ui/react-dropdown-menu": "^2.1.20",
@@ -1229,11 +1229,11 @@
       "name": "bb-plugin-inline-vis",
       "version": "0.1.0",
       "dependencies": {
-        "@bb/shared-ui": "workspace:*",
+        "@patcher/shared-ui": "workspace:*",
         "zod": "^4.3.6",
       },
       "devDependencies": {
-        "@bb/plugin-sdk": "workspace:*",
+        "@patcher/plugin-sdk": "workspace:*",
         "@testing-library/react": "^16.3.2",
         "@types/node": "^22.0.0",
         "@types/react": "^19.0.0",
@@ -1249,12 +1249,12 @@
       "name": "bb-plugin-memory",
       "version": "0.2.0",
       "dependencies": {
-        "@bb/shared-ui": "workspace:*",
+        "@patcher/shared-ui": "workspace:*",
         "@radix-ui/react-slot": "^1.3.0",
         "zod": "^4.3.6",
       },
       "devDependencies": {
-        "@bb/plugin-sdk": "workspace:*",
+        "@patcher/plugin-sdk": "workspace:*",
         "@radix-ui/react-dialog": "^1.1.19",
         "@radix-ui/react-dropdown-menu": "^2.1.20",
         "@testing-library/react": "^16.3.2",
@@ -1274,11 +1274,11 @@
       "name": "bb-plugin-provider-retry",
       "version": "0.1.0",
       "dependencies": {
-        "@bb/shared-ui": "workspace:*",
+        "@patcher/shared-ui": "workspace:*",
         "zod": "^4.3.6",
       },
       "devDependencies": {
-        "@bb/plugin-sdk": "workspace:*",
+        "@patcher/plugin-sdk": "workspace:*",
         "@testing-library/react": "^16.3.2",
         "@types/node": "^22.0.0",
         "@types/react": "^19.0.0",
@@ -1294,13 +1294,13 @@
       "name": "bb-plugin-secrets",
       "version": "0.1.0",
       "dependencies": {
-        "@bb/shared-ui": "workspace:*",
         "@hugeicons/core-free-icons": "^4.1.3",
         "@hugeicons/react": "^1.1.6",
+        "@patcher/shared-ui": "workspace:*",
         "zod": "^4.3.6",
       },
       "devDependencies": {
-        "@bb/plugin-sdk": "workspace:*",
+        "@patcher/plugin-sdk": "workspace:*",
         "@types/node": "^22.0.0",
         "@types/react": "^19.0.0",
         "dotenv": "^17.4.1",
@@ -1313,11 +1313,11 @@
       "name": "bb-plugin-side-chat",
       "version": "0.1.0",
       "dependencies": {
-        "@bb/shared-ui": "workspace:*",
+        "@patcher/shared-ui": "workspace:*",
         "zod": "^4.3.6",
       },
       "devDependencies": {
-        "@bb/plugin-sdk": "workspace:*",
+        "@patcher/plugin-sdk": "workspace:*",
         "@testing-library/react": "^16.3.2",
         "@types/node": "^22.0.0",
         "@types/react": "^19.0.0",
@@ -1334,9 +1334,9 @@
       "name": "bb-plugin-tasks",
       "version": "0.1.1",
       "dependencies": {
-        "@bb/shared-ui": "workspace:*",
         "@hugeicons/core-free-icons": "^4.1.3",
         "@hugeicons/react": "^1.1.6",
+        "@patcher/shared-ui": "workspace:*",
         "@radix-ui/react-dialog": "^1.1.19",
         "@radix-ui/react-dropdown-menu": "^2.1.20",
         "@radix-ui/react-slot": "^1.3.0",
@@ -1356,8 +1356,8 @@
         "zod": "^4.3.6",
       },
       "devDependencies": {
-        "@bb/plugin-build": "workspace:*",
-        "@bb/plugin-sdk": "workspace:*",
+        "@patcher/plugin-build": "workspace:*",
+        "@patcher/plugin-sdk": "workspace:*",
         "@testing-library/react": "^16.3.2",
         "@types/node": "^22.0.0",
         "@types/react": "^19.0.0",
@@ -1373,8 +1373,8 @@
       "name": "bb-plugin-workflows",
       "version": "0.1.0",
       "dependencies": {
-        "@bb/shared-ui": "workspace:*",
         "@jitl/quickjs-singlefile-cjs-release-sync": "^0.32.0",
+        "@patcher/shared-ui": "workspace:*",
         "acorn": "8.16.0",
         "acorn-walk": "^8.3.5",
         "ajv": "^8.20.0",
@@ -1382,7 +1382,7 @@
         "zod": "^4.3.6",
       },
       "devDependencies": {
-        "@bb/plugin-sdk": "workspace:*",
+        "@patcher/plugin-sdk": "workspace:*",
         "@testing-library/react": "^16.3.2",
         "@types/better-sqlite3": "^7.6.12",
         "@types/node": "^22.0.0",
@@ -1397,25 +1397,25 @@
       },
     },
     "tests/integration": {
-      "name": "@bb/integration-tests",
+      "name": "@patcher/integration-tests",
       "version": "0.0.1",
       "dependencies": {
-        "@bb/agent-runtime": "workspace:*",
-        "@bb/config": "workspace:*",
-        "@bb/db": "workspace:*",
-        "@bb/domain": "workspace:*",
-        "@bb/host-daemon": "workspace:*",
-        "@bb/host-daemon-contract": "workspace:*",
-        "@bb/host-watcher": "workspace:*",
-        "@bb/server": "workspace:*",
-        "@bb/server-contract": "workspace:*",
-        "@bb/test-helpers": "workspace:*",
         "@hono/node-server": "^1.19.11",
+        "@patcher/agent-runtime": "workspace:*",
+        "@patcher/config": "workspace:*",
+        "@patcher/db": "workspace:*",
+        "@patcher/domain": "workspace:*",
+        "@patcher/host-daemon": "workspace:*",
+        "@patcher/host-daemon-contract": "workspace:*",
+        "@patcher/host-watcher": "workspace:*",
+        "@patcher/server": "workspace:*",
+        "@patcher/server-contract": "workspace:*",
+        "@patcher/test-helpers": "workspace:*",
         "drizzle-orm": "^0.38.4",
         "ws": "^8.19.0",
       },
       "devDependencies": {
-        "@bb/tsconfig": "workspace:*",
+        "@patcher/tsconfig": "workspace:*",
         "@types/node": "^22.0.0",
         "@types/ws": "^8.18.1",
         "typescript": "^6.0.2",
@@ -1424,16 +1424,16 @@
       },
     },
     "tests/qa": {
-      "name": "@bb/qa",
+      "name": "@patcher/qa",
       "version": "0.0.1",
       "dependencies": {
-        "@bb/domain": "workspace:*",
-        "@bb/host-daemon-contract": "workspace:*",
-        "@bb/server-contract": "workspace:*",
+        "@patcher/domain": "workspace:*",
+        "@patcher/host-daemon-contract": "workspace:*",
+        "@patcher/server-contract": "workspace:*",
         "zod": "^4.3.6",
       },
       "devDependencies": {
-        "@bb/tsconfig": "workspace:*",
+        "@patcher/tsconfig": "workspace:*",
         "@types/node": "^22.0.0",
         "rimraf": "^6.1.0",
         "tsx": "^4.23.1",
@@ -1592,74 +1592,6 @@
     "@babel/traverse": ["@babel/traverse@7.29.8", "", { "dependencies": { "@babel/code-frame": "^7.29.7", "@babel/generator": "^7.29.8", "@babel/helper-globals": "^7.29.7", "@babel/parser": "^7.29.8", "@babel/template": "^7.29.7", "@babel/types": "^7.29.8", "debug": "^4.3.1" } }, "sha512-I5z7H3bf/41ktsNVLtpN0wAa336HkqIHQ5BuPLEhTkt1jVSyZpeNKIzTgEWmlxjdg81R0IgUCcaE+Ok3NvrfZg=="],
 
     "@babel/types": ["@babel/types@7.29.8", "", { "dependencies": { "@babel/helper-string-parser": "^7.29.7", "@babel/helper-validator-identifier": "^7.29.7" } }, "sha512-Vj1jF3cPfxg7OAfoI7QnVKLoILlm2JF9pnVHrX8qx7AHMiYWT+NDAA7jChlNgRS4WTLc/fD1lXLmPixluj+3Gg=="],
-
-    "@bb/agent-providers": ["@bb/agent-providers@workspace:packages/agent-providers"],
-
-    "@bb/agent-runtime": ["@bb/agent-runtime@workspace:packages/agent-runtime"],
-
-    "@bb/app": ["@bb/app@workspace:apps/app"],
-
-    "@bb/cli": ["@bb/cli@workspace:apps/cli"],
-
-    "@bb/config": ["@bb/config@workspace:packages/config"],
-
-    "@bb/core-ui": ["@bb/core-ui@workspace:packages/core-ui"],
-
-    "@bb/db": ["@bb/db@workspace:packages/db"],
-
-    "@bb/desktop": ["@bb/desktop@workspace:apps/desktop"],
-
-    "@bb/desktop-contract": ["@bb/desktop-contract@workspace:packages/desktop-contract"],
-
-    "@bb/domain": ["@bb/domain@workspace:packages/domain"],
-
-    "@bb/fuzzy-match": ["@bb/fuzzy-match@workspace:packages/fuzzy-match"],
-
-    "@bb/hono-typed-routes": ["@bb/hono-typed-routes@workspace:packages/hono-typed-routes"],
-
-    "@bb/host-daemon": ["@bb/host-daemon@workspace:apps/host-daemon"],
-
-    "@bb/host-daemon-contract": ["@bb/host-daemon-contract@workspace:packages/host-daemon-contract"],
-
-    "@bb/host-watcher": ["@bb/host-watcher@workspace:packages/host-watcher"],
-
-    "@bb/host-workspace": ["@bb/host-workspace@workspace:packages/host-workspace"],
-
-    "@bb/integration-tests": ["@bb/integration-tests@workspace:tests/integration"],
-
-    "@bb/local-open-targets": ["@bb/local-open-targets@workspace:packages/local-open-targets"],
-
-    "@bb/logger": ["@bb/logger@workspace:packages/logger"],
-
-    "@bb/plugin-build": ["@bb/plugin-build@workspace:packages/plugin-build"],
-
-    "@bb/plugin-registry": ["@bb/plugin-registry@workspace:packages/plugin-registry"],
-
-    "@bb/plugin-sdk": ["@bb/plugin-sdk@workspace:packages/plugin-sdk"],
-
-    "@bb/process-utils": ["@bb/process-utils@workspace:packages/process-utils"],
-
-    "@bb/qa": ["@bb/qa@workspace:tests/qa"],
-
-    "@bb/scripts": ["@bb/scripts@workspace:packages/scripts"],
-
-    "@bb/sdk": ["@bb/sdk@workspace:packages/sdk"],
-
-    "@bb/secret-storage": ["@bb/secret-storage@workspace:packages/secret-storage"],
-
-    "@bb/server": ["@bb/server@workspace:apps/server"],
-
-    "@bb/server-contract": ["@bb/server-contract@workspace:packages/server-contract"],
-
-    "@bb/shared-ui": ["@bb/shared-ui@workspace:packages/shared-ui"],
-
-    "@bb/templates": ["@bb/templates@workspace:packages/templates"],
-
-    "@bb/test-helpers": ["@bb/test-helpers@workspace:packages/test-helpers"],
-
-    "@bb/thread-view": ["@bb/thread-view@workspace:packages/thread-view"],
-
-    "@bb/tsconfig": ["@bb/tsconfig@workspace:packages/tsconfig"],
 
     "@better-auth/api-key": ["@better-auth/api-key@1.6.27", "", { "dependencies": { "zod": "^4.3.6" }, "peerDependencies": { "@better-auth/core": "^1.6.27", "@better-auth/utils": "0.4.2", "better-auth": "^1.6.27", "better-call": "1.4.0" } }, "sha512-rWXcAQTTretngfg4J+pOqNbg4vnpqXz9QfNNhY4TNscaeF7khkBSXhpvPSofUF58FM87aBCPltvXuPeVkeHqFg=="],
 
@@ -2034,6 +1966,74 @@
     "@parcel/watcher-win32-ia32": ["@parcel/watcher-win32-ia32@2.5.6", "", { "os": "win32", "cpu": "ia32" }, "sha512-k35yLp1ZMwwee3Ez/pxBi5cf4AoBKYXj00CZ80jUz5h8prpiaQsiRPKQMxoLstNuqe2vR4RNPEAEcjEFzhEz/g=="],
 
     "@parcel/watcher-win32-x64": ["@parcel/watcher-win32-x64@2.5.6", "", { "os": "win32", "cpu": "x64" }, "sha512-hbQlYcCq5dlAX9Qx+kFb0FHue6vbjlf0FrNzSKdYK2APUf7tGfGxQCk2ihEREmbR6ZMc0MVAD5RIX/41gpUzTw=="],
+
+    "@patcher/agent-providers": ["@patcher/agent-providers@workspace:packages/agent-providers"],
+
+    "@patcher/agent-runtime": ["@patcher/agent-runtime@workspace:packages/agent-runtime"],
+
+    "@patcher/app": ["@patcher/app@workspace:apps/app"],
+
+    "@patcher/cli": ["@patcher/cli@workspace:apps/cli"],
+
+    "@patcher/config": ["@patcher/config@workspace:packages/config"],
+
+    "@patcher/core-ui": ["@patcher/core-ui@workspace:packages/core-ui"],
+
+    "@patcher/db": ["@patcher/db@workspace:packages/db"],
+
+    "@patcher/desktop": ["@patcher/desktop@workspace:apps/desktop"],
+
+    "@patcher/desktop-contract": ["@patcher/desktop-contract@workspace:packages/desktop-contract"],
+
+    "@patcher/domain": ["@patcher/domain@workspace:packages/domain"],
+
+    "@patcher/fuzzy-match": ["@patcher/fuzzy-match@workspace:packages/fuzzy-match"],
+
+    "@patcher/hono-typed-routes": ["@patcher/hono-typed-routes@workspace:packages/hono-typed-routes"],
+
+    "@patcher/host-daemon": ["@patcher/host-daemon@workspace:apps/host-daemon"],
+
+    "@patcher/host-daemon-contract": ["@patcher/host-daemon-contract@workspace:packages/host-daemon-contract"],
+
+    "@patcher/host-watcher": ["@patcher/host-watcher@workspace:packages/host-watcher"],
+
+    "@patcher/host-workspace": ["@patcher/host-workspace@workspace:packages/host-workspace"],
+
+    "@patcher/integration-tests": ["@patcher/integration-tests@workspace:tests/integration"],
+
+    "@patcher/local-open-targets": ["@patcher/local-open-targets@workspace:packages/local-open-targets"],
+
+    "@patcher/logger": ["@patcher/logger@workspace:packages/logger"],
+
+    "@patcher/plugin-build": ["@patcher/plugin-build@workspace:packages/plugin-build"],
+
+    "@patcher/plugin-registry": ["@patcher/plugin-registry@workspace:packages/plugin-registry"],
+
+    "@patcher/plugin-sdk": ["@patcher/plugin-sdk@workspace:packages/plugin-sdk"],
+
+    "@patcher/process-utils": ["@patcher/process-utils@workspace:packages/process-utils"],
+
+    "@patcher/qa": ["@patcher/qa@workspace:tests/qa"],
+
+    "@patcher/scripts": ["@patcher/scripts@workspace:packages/scripts"],
+
+    "@patcher/sdk": ["@patcher/sdk@workspace:packages/sdk"],
+
+    "@patcher/secret-storage": ["@patcher/secret-storage@workspace:packages/secret-storage"],
+
+    "@patcher/server": ["@patcher/server@workspace:apps/server"],
+
+    "@patcher/server-contract": ["@patcher/server-contract@workspace:packages/server-contract"],
+
+    "@patcher/shared-ui": ["@patcher/shared-ui@workspace:packages/shared-ui"],
+
+    "@patcher/templates": ["@patcher/templates@workspace:packages/templates"],
+
+    "@patcher/test-helpers": ["@patcher/test-helpers@workspace:packages/test-helpers"],
+
+    "@patcher/thread-view": ["@patcher/thread-view@workspace:packages/thread-view"],
+
+    "@patcher/tsconfig": ["@patcher/tsconfig@workspace:packages/tsconfig"],
 
     "@peculiar/asn1-schema": ["@peculiar/asn1-schema@2.8.0", "", { "dependencies": { "@peculiar/utils": "^2.0.2", "asn1js": "^3.0.10", "tslib": "^2.8.1" } }, "sha512-7YT0U/ze0tF2QOBbE15gKZwy5tvgGyLRiRHLzhlbOpf7BT032oBSd0haZqXn5W6l26WLlu3dyxzjM+2638/z2Q=="],
 
@@ -4583,8 +4583,6 @@
 
     "@babel/helper-compilation-targets/semver": ["semver@6.3.1", "", { "bin": { "semver": "bin/semver.js" } }, "sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA=="],
 
-    "@bb/desktop/@types/node": ["@types/node@24.13.3", "", { "dependencies": { "undici-types": "~7.18.0" } }, "sha512-Dh8vAsV36ig5wa9OX4pXvMc9D3Veibfw2wix0CUwYODLD8nkj9UsLjASr49nPg+2eKzxhBV+v7L8pXvT4e639Q=="],
-
     "@earendil-works/pi-ai/@anthropic-ai/sdk": ["@anthropic-ai/sdk@0.91.1", "", { "dependencies": { "json-schema-to-ts": "^3.1.1" }, "peerDependencies": { "zod": "^3.25.0 || ^4.0.0" }, "optionalPeers": ["zod"], "bin": { "anthropic-ai-sdk": "bin/cli" } }, "sha512-LAmu761tSN9r66ixvmciswUj/ZC+1Q4iAfpedTfSVLeswRwnY3n2Nb6Tsk+cLPP28aLOPWeMgIuTuCcMC6W/iw=="],
 
     "@earendil-works/pi-ai/@opentelemetry/api": ["@opentelemetry/api@1.9.0", "", {}, "sha512-3giAOQvZiH5F9bMlMiv8+GSPMeqg0dbaeo58/0SlA9sxSqZhnUtxzX9/2FzyhS9sWQf5S0GJE0AKBrFqjpeYcg=="],
@@ -4646,6 +4644,8 @@
     "@ladle/react/vite": ["vite@6.4.3", "", { "dependencies": { "esbuild": "^0.25.0", "fdir": "^6.4.4", "picomatch": "^4.0.2", "postcss": "^8.5.3", "rollup": "^4.34.9", "tinyglobby": "^0.2.13" }, "optionalDependencies": { "fsevents": "~2.3.3" }, "peerDependencies": { "@types/node": "^18.0.0 || ^20.0.0 || >=22.0.0", "jiti": ">=1.21.0", "less": "*", "lightningcss": "^1.21.0", "sass": "*", "sass-embedded": "*", "stylus": "*", "sugarss": "*", "terser": "^5.16.0", "tsx": "^4.8.1", "yaml": "^2.4.2" }, "optionalPeers": ["@types/node", "jiti", "less", "lightningcss", "sass", "sass-embedded", "stylus", "sugarss", "terser", "tsx", "yaml"], "bin": { "vite": "bin/vite.js" } }, "sha512-NTKlcQjlAK7MlQoyb6LgaqHc8sso/pVyUJYWMws3jg21uTJw/LddqIFPcPqP6PzpgbIcZyKI85sFE4HBrQDA8A=="],
 
     "@malept/flatpak-bundler/fs-extra": ["fs-extra@9.1.0", "", { "dependencies": { "at-least-node": "^1.0.0", "graceful-fs": "^4.2.0", "jsonfile": "^6.0.1", "universalify": "^2.0.0" } }, "sha512-hcg3ZmepS30/7BSFqRvoo3DOMQu7IjqxO5nCDt+zM9XWjb33Wg7ziNT+Qvqbuc3+gWpzO02JubVyk2G4Zvo1OQ=="],
+
+    "@patcher/desktop/@types/node": ["@types/node@24.13.3", "", { "dependencies": { "undici-types": "~7.18.0" } }, "sha512-Dh8vAsV36ig5wa9OX4pXvMc9D3Veibfw2wix0CUwYODLD8nkj9UsLjASr49nPg+2eKzxhBV+v7L8pXvT4e639Q=="],
 
     "@pierre/diffs/diff": ["diff@8.0.3", "", {}, "sha512-qejHi7bcSD4hQAZE0tNAawRK1ZtafHDmMTMkrrIGgSLl7hTnQHmKCeB45xAcbfTqK2zowkM3j3bHt/4b/ARbYQ=="],
 
@@ -4929,8 +4929,6 @@
 
     "@babel/helper-compilation-targets/lru-cache/yallist": ["yallist@3.1.1", "", {}, "sha512-a4UGQaWPH59mOXUYnAG2ewncQS4i4F43Tv3JoAM+s2VDAmS9NsK8GpDMLrCHPksFT7h3K6TOoUNn2pb7RoXx4g=="],
 
-    "@bb/desktop/@types/node/undici-types": ["undici-types@7.18.2", "", {}, "sha512-AsuCzffGHJybSaRrmr5eHr81mwJU3kjw6M+uprWvCXiNeN9SOGwQ3Jn8jb8m3Z6izVgknn1R0FTCEAP2QrLY/w=="],
-
     "@electron/asar/minimatch/brace-expansion": ["brace-expansion@1.1.18", "", { "dependencies": { "balanced-match": "^1.0.0", "concat-map": "0.0.1" } }, "sha512-Edep/X9fGqVNmzKBVsDYIOtD+z1tuezV70LBjdCst9Tqu76lsnvRiZ6oTic1n+/BIwX6QDGAO94PN4N2SADvtw=="],
 
     "@electron/get/fs-extra/jsonfile": ["jsonfile@4.0.0", "", { "optionalDependencies": { "graceful-fs": "^4.1.6" } }, "sha512-m6F1R3z8jjlf2imQHS2Qez5sjKWQzbuuhuJ/FKYFRZvPE3PuHcSMVZzfsLhGVOkfd20obL5SWEBew5ShlquNxg=="],
@@ -4948,6 +4946,8 @@
     "@google/genai/p-retry/@types/retry": ["@types/retry@0.12.0", "", {}, "sha512-wWKOClTTiizcZhXnPY4wikVAwmdYHp8q6DmC+EJUzAMsycb7HB32Kh9RN4+0gExjmPmZSAQjgURXIGATPegAvA=="],
 
     "@ladle/react/@vitejs/plugin-react/@rolldown/pluginutils": ["@rolldown/pluginutils@1.0.0-beta.27", "", {}, "sha512-+d0F4MKMCbeVUJwG96uQ4SgAznZNSq93I3V+9NHA4OpvqG8mRCpGdKmK8l/dl02h2CCDHwW2FqilnTyDcAnqjA=="],
+
+    "@patcher/desktop/@types/node/undici-types": ["undici-types@7.18.2", "", {}, "sha512-AsuCzffGHJybSaRrmr5eHr81mwJU3kjw6M+uprWvCXiNeN9SOGwQ3Jn8jb8m3Z6izVgknn1R0FTCEAP2QrLY/w=="],
 
     "@tailwindcss/node/lightningcss/lightningcss-android-arm64": ["lightningcss-android-arm64@1.32.0", "", { "os": "android", "cpu": "arm64" }, "sha512-YK7/ClTt4kAK0vo6w3X+Pnm0D2cf2vPHbhOXdoNti1Ga0al1P4TBZhwjATvjNwLEBCnKvjJc2jQgHXH0NEwlAg=="],
 
