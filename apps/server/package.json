@@ -28,7 +28,6 @@
     "@bb/server-contract": "workspace:*",
     "@bb/templates": "workspace:*",
     "@bb/thread-view": "workspace:*",
-    "@bb/tunnel-contract": "workspace:*",
     "@better-auth/api-key": "^1.6.23",
     "@better-auth/drizzle-adapter": "^1.6.23",
     "@hono/node-server": "^1.19.11",

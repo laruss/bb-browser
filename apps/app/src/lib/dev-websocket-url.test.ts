@@ -28,19 +28,19 @@ describe("buildDevWebSocketUrl", () => {
     );
   });
 
-  it("uses the proxied app origin for HTTPS bb connect shares", () => {
+  it("uses the proxied app origin for an HTTPS reverse proxy", () => {
     vi.stubGlobal("__BB_DEV_WS_BROWSER_HOST_PORT__", 23_802);
     vi.stubGlobal("__BB_DEV_APP_BROWSER_HOST_PORT__", 15_802);
     installWindowLocation(
-      "https://sawyer--15802.getbb.app/threads/thr_jew2ruik89",
+      "https://laptop.tail-scale.ts.net/threads/thr_jew2ruik89",
     );
 
     expect(buildDevWebSocketUrl({ path: "/ws" })).toBe(
-      "wss://sawyer--15802.getbb.app/ws",
+      "wss://laptop.tail-scale.ts.net/ws",
     );
   });
 
-  it("uses the proxied app origin for HTTP local Cloud", () => {
+  it("uses the proxied app origin for an HTTP proxy on another port", () => {
     vi.stubGlobal("__BB_DEV_WS_BROWSER_HOST_PORT__", 23_802);
     vi.stubGlobal("__BB_DEV_APP_BROWSER_HOST_PORT__", 15_802);
     installWindowLocation("http://sawyer.localhost:35802/threads/thr_1");

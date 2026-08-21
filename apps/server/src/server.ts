@@ -79,7 +79,6 @@ import {
   createPluginCatalogService,
   type PluginCatalogService,
 } from "./services/plugin-catalog/plugin-catalog-service.js";
-import { callHostRetryableOnlineRpc } from "./services/hosts/online-rpc.js";
 import { browserRequestProblem } from "./browser-request-guard.js";
 import { rankAcceptedAssetEncodings } from "./asset-content-encoding.js";
 
@@ -411,15 +410,6 @@ export function createApp(
     browserBridge: createBrowserBridge({ hub: deps.hub }),
     dataDir: deps.config.dataDir,
     appVersion: deps.config.appVersion,
-    sharedPorts: deps.sharedPorts,
-    ensureSharedPortTunnel: (hostId) =>
-      deps.sharedPorts.ensureTunnelIdentity(hostId, () =>
-        callHostRetryableOnlineRpc(deps, {
-          command: { type: "connect-tunnel.ensure-identity" },
-          hostId,
-          timeoutMs: 30_000,
-        }),
-      ),
     watchBuiltinPluginSources:
       process.env.BB_MANAGED_DEV_BUILTIN_PLUGIN_HOT_RELOAD === "1",
   });
@@ -455,7 +445,7 @@ export function createApp(
   registerProjectRoutes(publicApi, deps);
   registerThreadSectionRoutes(publicApi, deps);
   registerFileRoutes(publicApi, deps);
-  registerHostRoutes(publicApi, deps, pluginService);
+  registerHostRoutes(publicApi, deps);
   registerTerminalRoutes(publicApi, deps);
   registerEnvironmentRoutes(publicApi, deps);
   registerThreadRoutes(publicApi, deps);

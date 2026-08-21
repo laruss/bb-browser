@@ -25,7 +25,6 @@ import { MANAGED_ENVIRONMENT_RETIRE_GRACE_MS } from "../../src/constants.js";
 import type { NotificationHub } from "../../src/ws/hub.js";
 import { NotificationHub as NotificationHubImpl } from "../../src/ws/hub.js";
 import { WatchInterestCoordinator } from "../../src/ws/watch-interests.js";
-import { HostSharedPortCoordinator } from "../../src/ws/host-shared-ports.js";
 
 const TEST_MACHINE_KEY_PREFIX = "test-daemon-key";
 const TEST_SERVER_HOST = "127.0.0.1";
@@ -108,7 +107,6 @@ export async function createTestAppHarness(
   const db = initDb(":memory:");
   const hub = new NotificationHubImpl();
   const watchInterests = new WatchInterestCoordinator({ db, hub });
-  const sharedPorts = new HostSharedPortCoordinator({ db, hub });
   const lifecycleDedupers = createLifecycleDedupers();
   const machineAuth = await createMachineAuthService({
     dataDir,
@@ -204,7 +202,6 @@ export async function createTestAppHarness(
     telemetry,
     terminalSessions,
     watchInterests,
-    sharedPorts,
   };
   const { app, pluginCatalogService, pluginService } = createApp(
     deps,

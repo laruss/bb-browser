@@ -415,24 +415,6 @@ export function createPluginChildRuntime(
           { command: args.command, timeoutMs: args.timeoutMs ?? null },
           args.signal,
         ) as never,
-      ensureSharedPortTunnel: (hostId) =>
-        call("hosts.ensureSharedPortTunnel", { hostId }) as never,
-      // See the note on hosts.declareSharedPorts in plugin-host-calls.ts: the
-      // policy this validated against is host state and the member is
-      // synchronous, so the check cannot happen here. The host validates what
-      // it is told; a rejection reaches the plugin as a log line, not a throw.
-      validateSharedPortDeclaration: (_hostId, ports) => ports,
-      declareSharedPorts: (hostId, ports) => {
-        send("hosts.declareSharedPorts", { hostId, ports: [...ports] });
-      },
-      replaceDeclaredSharedPorts: (declarations) => {
-        send("hosts.declareSharedPorts", {
-          replace: declarations.map((one) => ({
-            hostId: one.hostId,
-            ports: [...one.ports],
-          })),
-        });
-      },
     });
     handle = built;
 

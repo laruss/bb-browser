@@ -117,30 +117,6 @@ describe("host enroll routes", () => {
     }
   });
 
-  it("rejects machine-gated enroll-key requests even from loopback", async () => {
-    const harness = await createTestAppHarness({ appUrl: undefined });
-    const app = createInternalHostRouteApp({
-      deps: harness.deps,
-      trustedRemoteAddress: "127.0.0.1",
-    });
-    try {
-      const response = await app.request("/hosts/enroll-key", {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          "x-bb-gate-auth": "machine",
-        },
-        body: JSON.stringify({ hostId: "host_forbidden_machine" }),
-      });
-      expect(response.status).toBe(403);
-      expect(await readJson(response)).toMatchObject({
-        code: "machine_host_management_forbidden",
-      });
-    } finally {
-      await harness.cleanup();
-    }
-  });
-
   it("exchanges enroll-key material for a daemon host key exactly once", async () => {
     await withTestHarness(async (harness) => {
       const enrollKeyBody = await requestHostEnrollKey(

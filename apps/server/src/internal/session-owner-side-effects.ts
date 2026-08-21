@@ -28,12 +28,7 @@ const DAEMON_DISCONNECTED_PENDING_INTERACTION_REASON =
 type HostSessionOpenedDeps = LoggedPendingInteractionWorkSessionDeps;
 type DaemonSocketClosedDeps = Pick<
   AppDeps,
-  | "db"
-  | "hub"
-  | "logger"
-  | "pendingInteractions"
-  | "sharedPorts"
-  | "terminalSessions"
+  "db" | "hub" | "logger" | "pendingInteractions" | "terminalSessions"
 >;
 type DaemonDisconnectGraceDeps = Pick<
   AppDeps,
@@ -137,7 +132,6 @@ export function handleDaemonSocketClosed(
 ): void {
   deps.logger.info({ sessionId: args.sessionId }, "Daemon WebSocket closed");
   deps.hub.unregisterDaemon(args.sessionId);
-  deps.sharedPorts.clearHostConnectCapability(args.sessionId);
 
   const session = deps.db
     .select()

@@ -8,7 +8,6 @@ type ExpectedBbPluginApiKey =
   | "browser"
   | "cli"
   | "events"
-  | "hosts"
   | "http"
   | "log"
   | "onDispose"
@@ -110,7 +109,6 @@ const EXPECTED_BACKEND_ROOT_TYPE_EXPORTS = [
   "PluginCliResult",
   "PluginCommandRegistration",
   "PluginEvents",
-  "PluginHosts",
   "PluginHttp",
   "PluginHttpAuthMode",
   "PluginHttpHandler",
@@ -141,7 +139,6 @@ const EXPECTED_BACKEND_ROOT_TYPE_EXPORTS = [
   "PluginSettings",
   "PluginSettingsHandle",
   "PluginSettingsValues",
-  "PluginSharedPortTunnelIdentity",
   "PluginStatusApi",
   "PluginStorage",
   "PluginThreadEventHandler",

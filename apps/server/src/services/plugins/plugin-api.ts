@@ -87,7 +87,6 @@ import type {
   PluginHttp,
   PluginHttpAuthMode,
   PluginHttpHandler,
-  PluginHosts,
   PluginKvStorage,
   PluginLogger,
   PluginBrowser,
@@ -167,7 +166,6 @@ export type {
   PluginHttp,
   PluginHttpAuthMode,
   PluginHttpHandler,
-  PluginHosts,
   PluginKvStorage,
   PluginLogger,
   PluginMentionItem,
@@ -875,18 +873,6 @@ export function createPluginApi(options: {
   }) => Promise<BrowserCommandValue>;
   /** Whether any app window can serve browser commands right now. */
   getBrowserHostStatus: () => { connected: boolean; hostCount: number };
-  ensureSharedPortTunnel: PluginHosts["ensureSharedPortTunnel"];
-  validateSharedPortDeclaration: (
-    hostId: string,
-    ports: readonly number[],
-  ) => readonly number[];
-  declareSharedPorts: PluginHosts["declareSharedPorts"];
-  replaceDeclaredSharedPorts: (
-    declarations: readonly {
-      hostId: string;
-      ports: readonly number[];
-    }[],
-  ) => void;
 }): PluginApiHandle {
   const {
     pluginId,
@@ -905,10 +891,6 @@ export function createPluginApi(options: {
     requestInteraction,
     requestBrowserCommand,
     getBrowserHostStatus,
-    ensureSharedPortTunnel,
-    validateSharedPortDeclaration,
-    declareSharedPorts,
-    replaceDeclaredSharedPorts,
   } = options;
   const permissionGate = createPluginPermissionGate(pluginId, permissions);
   let invalidated = false;
@@ -916,7 +898,6 @@ export function createPluginApi(options: {
   let wrappedSdk: BbSdk | undefined;
   let pendingNeedsConfiguration: string | null = null;
   const pendingAgentToolProblems: string[] = [];
-  const pendingSharedPorts = new Map<string, readonly number[]>();
   const disposeHooks: Array<() => void | Promise<void>> = [];
   const settingsRecord: PluginApiHandle["settings"] = {
     descriptors: {},
@@ -3219,26 +3200,6 @@ export function createPluginApi(options: {
     },
   };
 
-  const hosts: PluginHosts = {
-    ensureSharedPortTunnel(hostId) {
-      assertLive();
-      // Reaching a host, which `sdk.hosts` charges `workspace` for — and this
-      // one does more than read: it mints a gate identity for that machine.
-      permissionGate.assert("workspace", "bb.hosts.ensureSharedPortTunnel");
-      return ensureSharedPortTunnel(hostId);
-    },
-    declareSharedPorts(hostId, ports) {
-      assertLive();
-      permissionGate.assert("workspace", "bb.hosts.declareSharedPorts");
-      if (activated) declareSharedPorts(hostId, ports);
-      else {
-        pendingSharedPorts.set(
-          hostId,
-          validateSharedPortDeclaration(hostId, ports),
-        );
-      }
-    },
-  };
   const events: PluginEvents = {
     on(event, handler) {
       assertLive();
@@ -3277,7 +3238,6 @@ export function createPluginApi(options: {
     events,
     status,
     server,
-    hosts,
     get sdk(): BbSdk {
       assertLive();
       const sdk = getSdk();
@@ -3335,11 +3295,7 @@ export function createPluginApi(options: {
     activate() {
       if (activated) return;
       assertLive();
-      replaceDeclaredSharedPorts(
-        [...pendingSharedPorts].map(([hostId, ports]) => ({ hostId, ports })),
-      );
       activated = true;
-      pendingSharedPorts.clear();
       for (const problem of pendingAgentToolProblems) {
         reportAgentToolProblem(problem);
       }

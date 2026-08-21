@@ -25,8 +25,6 @@ import type {
   PluginHttp,
   PluginHttpAuthMode,
   PluginHttpHandler,
-  PluginHosts,
-  PluginSharedPortTunnelIdentity,
   PluginInteractionRequest,
   PluginInteractionResult,
   PluginKeybinding,
@@ -512,10 +510,6 @@ export interface FakePluginInspectionState {
   /** Recorded `bb.sdk` calls + stub control. */
   readonly sdk: FakeSdkHarness;
   readonly registrations: FakePluginRegistrations;
-  readonly sharedPortDeclarations: Array<{
-    hostId: string;
-    ports: number[];
-  }>;
   readonly pendingInteractions: readonly (PluginInteractionRequest & {
     id: string;
   })[];
@@ -657,8 +651,6 @@ export interface CreateFakePluginHostOptions {
   sdk?: FakeSdkOverrides;
   /** Static manifest skill ids available to configure() in this fake host. */
   agentSkillIds?: readonly string[];
-  /** Read-only identities returned by bb.hosts.ensureSharedPortTunnel. */
-  sharedPortTunnelIdentities?: Record<string, PluginSharedPortTunnelIdentity>;
   /**
    * What `bb.permissions` declares. Defaults to none, like the host — so a
    * suite touching `bb.browser` or `bb.sdk` must say what the plugin asks
@@ -3119,51 +3111,6 @@ function createFakePluginHostInternal(
     });
   }
 
-  const sharedPortDeclarations: FakePluginHarness["sharedPortDeclarations"] =
-    [];
-  const hosts: PluginHosts = {
-    async ensureSharedPortTunnel(hostId) {
-      assertLive();
-      if (hostId.trim().length === 0) {
-        throw new Error("shared-port hostId must be non-empty");
-      }
-      const identity = options.sharedPortTunnelIdentities?.[hostId];
-      if (!identity) {
-        throw new Error(`host ${hostId} has no shared-port tunnel identity`);
-      }
-      return { ...identity };
-    },
-    declareSharedPorts(hostId, ports) {
-      assertLive();
-      if (hostId.trim().length === 0) {
-        throw new Error("shared-port hostId must be non-empty");
-      }
-      const normalizedPorts = [...new Set(ports)].sort((a, b) => a - b);
-      for (const port of normalizedPorts) {
-        if (!Number.isInteger(port) || port < 1 || port > 65535) {
-          throw new Error(
-            `shared port ${String(port)} must be an integer between 1 and 65535`,
-          );
-        }
-      }
-      const replacement = {
-        hostId,
-        ports: normalizedPorts,
-      };
-      const existingIndex = sharedPortDeclarations.findIndex(
-        (declaration) => declaration.hostId === hostId,
-      );
-      if (existingIndex === -1) {
-        sharedPortDeclarations.push(replacement);
-      } else {
-        sharedPortDeclarations[existingIndex] = replacement;
-      }
-    },
-  };
-  disposeHooks.push(() => {
-    sharedPortDeclarations.length = 0;
-  });
-
   const events: PluginEvents = {
     on(event, handler) {
       assertLive();
@@ -3195,7 +3142,6 @@ function createFakePluginHostInternal(
     events,
     status,
     server,
-    hosts,
     get sdk() {
       assertLive();
       return sdk;
@@ -3251,7 +3197,6 @@ function createFakePluginHostInternal(
     logEntries,
     realtimeSignals,
     needsConfigurationMessages,
-    sharedPortDeclarations,
     sdk: sdkHarness,
     registrations: {
       settingsDescriptors,

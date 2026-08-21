@@ -179,8 +179,7 @@ npx bb-app config list
 npx bb-app config refresh
 ```
 
-For remote access, use bb connect or publish the default loopback listener with
-Tailscale Serve. Direct tailnet or LAN access to port `38886` requires the
+For remote access, publish the default loopback listener with Tailscale Serve. Direct tailnet or LAN access to port `38886` requires the
 explicit, security-sensitive `--server-bind-host 0.0.0.0` compatibility option;
 see the multiple-devices guide.
 

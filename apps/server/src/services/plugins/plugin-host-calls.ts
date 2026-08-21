@@ -361,18 +361,6 @@ export const PLUGIN_HOST_CALLS = {
     argsCross: true,
     resultCrosses: true,
   },
-  "hosts.ensureSharedPortTunnel": {
-    category: "call",
-    argsCross: true,
-    resultCrosses: true,
-  },
-  "hosts.declareSharedPorts": {
-    category: "notify",
-    argsCross: true,
-    resultCrosses: true,
-    synchronousHostState: true,
-    note: "The arguments cross fine; the check does not. `validateSharedPortDeclaration` consults the host's shared-port control plane and the member returns void, so a plugin cannot await a rejection. Unlike the other two this one must not be answered from a pushed copy — it is a policy decision, not a fact — so the host validates what it is told and a refusal reaches the plugin as a log line instead of a throw. That is a real behaviour change and the one place this boundary is not transparent.",
-  },
   onDispose: {
     category: "register",
     argsCross: true,

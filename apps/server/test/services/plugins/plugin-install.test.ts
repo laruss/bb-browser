@@ -373,15 +373,15 @@ describe("plugin install flows", () => {
     });
 
     it("refuses a git plugin that shadows a builtin after materialization", async () => {
-      const repoDir = join(workDir, "repo-connect");
-      await writePluginFixture(repoDir, { name: "bb-plugin-connect" });
+      const repoDir = join(workDir, "repo-side-chat");
+      await writePluginFixture(repoDir, { name: "bb-plugin-side-chat" });
       await initGitRepo(repoDir);
       await commitAll(repoDir, "init");
 
       await expect(service.install(`git:${repoDir}@main`)).rejects.toThrowError(
-        /reserved by the bundled plugin.*builtin:connect/,
+        /reserved by the bundled plugin.*builtin:side-chat/,
       );
-      expect(getInstalledPluginRegistration(db, "connect")).toBeUndefined();
+      expect(getInstalledPluginRegistration(db, "side-chat")).toBeUndefined();
     });
 
     it("installs a pinned commit sha via clone + checkout", async () => {
@@ -954,18 +954,18 @@ describe("plugin install flows", () => {
 
   it("refuses an npm package whose derived id shadows a builtin before install", async () => {
     await expect(
-      service.install("npm:bb-plugin-connect@1.2.3"),
-    ).rejects.toThrowError(/reserved by the bundled plugin.*builtin:connect/);
-    expect(getInstalledPluginRegistration(db, "connect")).toBeUndefined();
+      service.install("npm:bb-plugin-side-chat@1.2.3"),
+    ).rejects.toThrowError(/reserved by the bundled plugin.*builtin:side-chat/);
+    expect(getInstalledPluginRegistration(db, "side-chat")).toBeUndefined();
   });
 
   it("refuses a path plugin whose manifest id shadows a builtin", async () => {
-    const rootDir = join(workDir, "bb-plugin-connect");
-    await writePluginFixture(rootDir, { name: "bb-plugin-connect" });
+    const rootDir = join(workDir, "bb-plugin-side-chat");
+    await writePluginFixture(rootDir, { name: "bb-plugin-side-chat" });
     await expect(service.installPath(rootDir)).rejects.toThrowError(
-      /reserved by the bundled plugin.*builtin:connect/,
+      /reserved by the bundled plugin.*builtin:side-chat/,
     );
-    expect(getInstalledPluginRegistration(db, "connect")).toBeUndefined();
+    expect(getInstalledPluginRegistration(db, "side-chat")).toBeUndefined();
   });
 
   it("the bb plugin new scaffold installs and loads through the plugin service", async () => {

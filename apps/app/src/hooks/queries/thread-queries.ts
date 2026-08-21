@@ -571,7 +571,7 @@ export function useThreadDetailBootstrap(
       // The thread shell and timeline are independent reads. Starting the
       // timeline only after the bootstrap completes adds a full network
       // round-trip to every cold thread open, which is especially visible
-      // through bb connect's edge + tunnel path.
+      // over a high-latency link.
       if (timelinePrefetch) {
         void queryClient.prefetchQuery({
           queryKey: threadTimelineQueryKey(threadId),

@@ -842,8 +842,6 @@ describe("bb-app launcher", () => {
       env: {
         BB_HOST_ENROLL_KEY: "bbde_supplied",
         BB_HOST_ID: "host_remote",
-        BB_CONNECT_MACHINE_CREDENTIAL: "bbcm_machine",
-        BB_CONNECT_MACHINE_ID: "machine-1",
       },
       serverUrl: "https://bb.example.test",
     });
@@ -855,8 +853,6 @@ describe("bb-app launcher", () => {
     expect(
       JSON.parse(readFileSync(join(dataDir, "config.json"), "utf8")),
     ).toMatchObject({
-      machineCredential: "bbcm_machine",
-      connectMachineId: "machine-1",
       serverUrl: "https://bb.example.test",
     });
   });

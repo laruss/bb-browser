@@ -356,7 +356,6 @@ afterEach(async () => {
 
 async function createAppFixture(
   args: CreateFetchRecorderArgs = {},
-  options: { closeMachineAuthProxy?: () => Promise<void> } = {},
 ): Promise<HostDaemonAppFixture> {
   const dataDir = await makeTempDir("bb-host-daemon-app-test-");
   const fetchRecorder = createFetchRecorder(args);
@@ -379,9 +378,6 @@ async function createAppFixture(
     },
     fetchFn: fetchRecorder.fetchFn,
     createWebSocket: createOpeningWebSocket(),
-    ...(options.closeMachineAuthProxy
-      ? { closeMachineAuthProxy: options.closeMachineAuthProxy }
-      : {}),
   });
 
   return {
@@ -393,15 +389,6 @@ async function createAppFixture(
 }
 
 describe("createHostDaemonApp", () => {
-  it("closes the machine authentication proxy during daemon shutdown", async () => {
-    const closeMachineAuthProxy = vi.fn(async () => undefined);
-    const { app } = await createAppFixture({}, { closeMachineAuthProxy });
-
-    await app.daemon.shutdown("test");
-
-    expect(closeMachineAuthProxy).toHaveBeenCalledTimes(1);
-  });
-
   it("refreshes runtime shell env before provider model listing", async () => {
     const dataDir = await makeTempDir("bb-host-daemon-app-models-");
     const fetchRecorder = createFetchRecorder();

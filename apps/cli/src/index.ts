@@ -118,8 +118,8 @@ async function tryPluginCommandProxy(): Promise<void> {
   if (candidate === null) return;
   const result = await fetchPluginCliContributions(getUrl());
   if (result.outcome === "unreachable") {
-    // The candidate may be a plugin command (`bb connect` on a fresh
-    // machine is the canonical case) — only the running server can say, so
+    // The candidate may be a plugin command — only the running server can
+    // say which ones exist, so
     // an unreachable server must not degrade into commander's "unknown
     // command".
     console.error(describeUnreachableServer(getUrl(), result.cause));

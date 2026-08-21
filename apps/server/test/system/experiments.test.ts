@@ -58,7 +58,7 @@ describe("experiments settings", () => {
     });
   });
 
-  it("does not expose legacy direct bb connect routes", async () => {
+  it("does not expose legacy direct connect routes", async () => {
     await withTestHarness(async (harness) => {
       const disabled = await harness.app.request("/api/v1/connect/status");
       expect(disabled.status).toBe(404);

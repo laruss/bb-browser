@@ -89,7 +89,6 @@ describe("official plugin registry invariants", () => {
       "ask-user-question": "Agent interaction",
       automations: "Workflow management",
       "browser-tools": "Agent interaction",
-      connect: "Host access",
       "custom-instructions": "Context & knowledge",
       docs: "Context & knowledge",
       github: "Developer tools",

@@ -205,7 +205,6 @@ describe("builtin plugin reconciliation", () => {
       ["ask-user-question", "MessageQuestion"],
       ["automations", "Clock"],
       ["browser-tools", "Globe02"],
-      ["connect", "Smartphone"],
       ["custom-instructions", "EditFile"],
       ["inline-vis", "AppWindow"],
       ["provider-retry", "ArrowReloadHorizontal"],
@@ -447,11 +446,11 @@ describe("builtin plugin reconciliation", () => {
     ]);
   });
 
-  it("loads the builtin connect plugin like other builtins", async () => {
+  it("loads a registered builtin under its own source label", async () => {
     service = createService({
       db,
       dataDir: join(workDir, "data"),
-      builtinName: "connect",
+      builtinName: "side-chat",
     });
 
     await service.start();
@@ -459,7 +458,7 @@ describe("builtin plugin reconciliation", () => {
     expect(service.list()).toMatchObject([
       {
         id: "builtin-fixture",
-        source: "builtin:connect",
+        source: "builtin:side-chat",
         enabled: true,
         status: "running",
       },
@@ -873,16 +872,18 @@ describe("builtin plugin packaging", () => {
     await expect(stat(join(copiedRoot, "app.tsx"))).rejects.toThrow();
     await expect(stat(join(copiedRoot, "node_modules"))).rejects.toThrow();
 
-    const connectRoot = join(targetRoot, "connect");
-    await expect(stat(join(connectRoot, "package.json"))).resolves.toBeTruthy();
+    const sideChatRoot = join(targetRoot, "side-chat");
     await expect(
-      stat(join(connectRoot, "dist", "server.js")),
+      stat(join(sideChatRoot, "package.json")),
     ).resolves.toBeTruthy();
     await expect(
-      stat(join(connectRoot, "dist", "app.js")),
+      stat(join(sideChatRoot, "dist", "server.js")),
     ).resolves.toBeTruthy();
-    await expect(stat(join(connectRoot, "src"))).rejects.toThrow();
-    await expect(stat(join(connectRoot, "node_modules"))).rejects.toThrow();
+    await expect(
+      stat(join(sideChatRoot, "dist", "app.js")),
+    ).resolves.toBeTruthy();
+    await expect(stat(join(sideChatRoot, "src"))).rejects.toThrow();
+    await expect(stat(join(sideChatRoot, "node_modules"))).rejects.toThrow();
 
     await expect(stat(join(targetRoot, "memory"))).rejects.toThrow();
   });

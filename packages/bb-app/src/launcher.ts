@@ -854,14 +854,6 @@ function applyManagedConfigEnv(
 ): NodeJS.ProcessEnv {
   return {
     ...args.env,
-    ...(args.config.machineCredential !== undefined
-      ? {
-          BB_CONNECT_MACHINE_CREDENTIAL: args.config.machineCredential,
-        }
-      : {}),
-    ...(args.config.connectMachineId !== undefined
-      ? { BB_CONNECT_MACHINE_ID: args.config.connectMachineId }
-      : {}),
     ...args.config.config,
     ...args.envFile.env,
   };
@@ -1032,12 +1024,6 @@ function mergeManagedConfig(
   if (patchConfig.serverUrl !== undefined) {
     nextConfig.serverUrl = patchConfig.serverUrl;
   }
-  if (patchConfig.machineCredential !== undefined) {
-    nextConfig.machineCredential = patchConfig.machineCredential;
-  }
-  if (patchConfig.connectMachineId !== undefined) {
-    nextConfig.connectMachineId = patchConfig.connectMachineId;
-  }
 
   if (patchConfig.config !== undefined) {
     nextConfig.config = {
@@ -1062,12 +1048,6 @@ function pruneManagedConfig(
   const nextConfig: ManagedConfigForWrite = {};
   if (config.serverUrl !== undefined) {
     nextConfig.serverUrl = config.serverUrl;
-  }
-  if (config.machineCredential !== undefined) {
-    nextConfig.machineCredential = config.machineCredential;
-  }
-  if (config.connectMachineId !== undefined) {
-    nextConfig.connectMachineId = config.connectMachineId;
   }
   if (config.config !== undefined && Object.keys(config.config).length > 0) {
     nextConfig.config = config.config;
@@ -2530,10 +2510,6 @@ export async function createHostDaemonJoinEnv(
     trimToUndefined(args.env.BB_HOST_ID) ??
     (await readPersistedHostId(args.context.dataDir));
   const suppliedJoinCode = trimToUndefined(args.env.BB_HOST_ENROLL_KEY);
-  const machineCredential = trimToUndefined(
-    args.env.BB_CONNECT_MACHINE_CREDENTIAL,
-  );
-  const connectMachineId = trimToUndefined(args.env.BB_CONNECT_MACHINE_ID);
   if (suppliedJoinCode !== undefined) {
     if (requestedHostId === null) {
       throw new Error("--host-id is required when --join-code is supplied");
@@ -2541,8 +2517,6 @@ export async function createHostDaemonJoinEnv(
     await writeManagedConfig({
       config: {
         serverUrl: args.serverUrl,
-        ...(machineCredential !== undefined ? { machineCredential } : {}),
-        ...(connectMachineId !== undefined ? { connectMachineId } : {}),
       },
       dataDir: args.context.dataDir,
     });
@@ -2569,8 +2543,6 @@ export async function createHostDaemonJoinEnv(
   await writeManagedConfig({
     config: {
       serverUrl: args.serverUrl,
-      ...(machineCredential !== undefined ? { machineCredential } : {}),
-      ...(connectMachineId !== undefined ? { connectMachineId } : {}),
     },
     dataDir: args.context.dataDir,
   });

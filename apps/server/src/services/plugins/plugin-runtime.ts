@@ -1228,34 +1228,6 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
           pluginId: row.id,
         });
       },
-      ensureSharedPortTunnel: (hostId) => {
-        if (!deps.ensureSharedPortTunnel) {
-          throw new Error("host shared-port control plane is unavailable");
-        }
-        return deps.ensureSharedPortTunnel(hostId);
-      },
-      validateSharedPortDeclaration: (hostId, ports) => {
-        if (!deps.sharedPorts) {
-          throw new Error("host shared-port control plane is unavailable");
-        }
-        return deps.sharedPorts.validateSharedPortDeclaration(hostId, ports);
-      },
-      declareSharedPorts: (hostId, ports) => {
-        if (!deps.sharedPorts) {
-          throw new Error("host shared-port control plane is unavailable");
-        }
-        deps.sharedPorts.declareSharedPorts({
-          ownerId: row.id,
-          hostId,
-          ports,
-        });
-      },
-      replaceDeclaredSharedPorts: (declarations) => {
-        if (declarations.length > 0 && !deps.sharedPorts) {
-          throw new Error("host shared-port control plane is unavailable");
-        }
-        deps.sharedPorts?.replaceDeclarationsForOwner(row.id, declarations);
-      },
     } satisfies Parameters<typeof createPluginApi>[0];
 
     // Everything from here is shared: whichever way the handle was built, the
@@ -1367,7 +1339,6 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
       await disposePluginInstance(row.id, previous);
       if ((hungServices.get(row.id)?.size ?? 0) > 0) {
         loaded.delete(row.id);
-        deps.sharedPorts?.clearDeclarationsForOwner(row.id);
         for (const database of handle.databaseHandles.splice(0)) {
           try {
             database.close();
@@ -1593,7 +1564,6 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
     if (!plugin) return;
     loaded.delete(id);
     await disposePluginInstance(id, plugin);
-    deps.sharedPorts?.clearDeclarationsForOwner(id);
     // Its tool names are free again, and the processes still running hold a
     // copy of who owns what.
     pushHostFacts();

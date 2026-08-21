@@ -4,9 +4,9 @@ set -eu
 
 usage() {
   cat >&2 <<'EOF'
-Usage: install.sh --join-code <code> --host-id <host-id> --server <url> [--machine-code <code>] [--host-daemon-port <port>]
+Usage: install.sh --join-code <code> --host-id <host-id> --server <url> [--host-daemon-port <port>]
 
-The first three options are required. --machine-code is required through bb connect.
+The first three options are required.
 By default, the installer assigns this enrolled daemon its own local API port.
 EOF
   exit 2
@@ -15,19 +15,17 @@ EOF
 join_code=
 host_id=
 server_url=
-machine_code=
 requested_host_daemon_port=
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
-    --join-code|--host-id|--server|--machine-code|--host-daemon-port)
+    --join-code|--host-id|--server|--host-daemon-port)
       [ "$#" -ge 2 ] || usage
       [ -n "$2" ] || usage
       case "$1" in
         --join-code) join_code=$2 ;;
         --host-id) host_id=$2 ;;
         --server) server_url=$2 ;;
-        --machine-code) machine_code=$2 ;;
         --host-daemon-port) requested_host_daemon_port=$2 ;;
       esac
       shift 2
@@ -313,61 +311,6 @@ if [ -z "$bb_app" ]; then
     exit 1
   fi
   bb_app=$(command -v bb-app)
-fi
-
-if [ -n "$machine_code" ]; then
-  connect_apex=$(node -e '
-    const url = new URL(process.argv[1]);
-    const labels = url.hostname.split(".");
-    if (labels.length < 3) process.exit(2);
-    url.hostname = labels.slice(1).join(".");
-    url.pathname = "/";
-    url.search = "";
-    url.hash = "";
-    process.stdout.write(url.origin);
-  ' "$server_url") || {
-    echo "Could not derive the bb connect apex from $server_url." >&2
-    exit 1
-  }
-  echo "Authorizing this machine with bb connect..."
-  redeem_response=$(curl -fsS \
-    -X POST \
-    -H 'content-type: application/json' \
-    --data "{\"code\":\"$machine_code\"}" \
-    "$connect_apex/api/connect/redeem-machine") || {
-    echo "Could not redeem the bb connect machine code." >&2
-    exit 1
-  }
-  printf '%s' "$redeem_response" | node -e '
-    let input = "";
-    process.stdin.setEncoding("utf8");
-    process.stdin.on("data", (chunk) => { input += chunk; });
-    process.stdin.on("end", () => {
-      const body = JSON.parse(input);
-      if (typeof body.credential !== "string" || !body.credential.startsWith("bbcm_")) {
-        process.exit(2);
-      }
-      if (typeof body.machineId !== "string" || body.machineId.length === 0) {
-        process.exit(2);
-      }
-      const fs = require("node:fs");
-      const path = require("node:path");
-      const [dataDir, serverUrl] = process.argv.slice(1);
-      const configPath = path.join(dataDir, "config.json");
-      let config = {};
-      try { config = JSON.parse(fs.readFileSync(configPath, "utf8")); }
-      catch (error) { if (error.code !== "ENOENT") throw error; }
-      config.serverUrl = serverUrl;
-      config.machineCredential = body.credential;
-      config.connectMachineId = body.machineId;
-      const temporary = `${configPath}.${process.pid}.tmp`;
-      fs.writeFileSync(temporary, `${JSON.stringify(config, null, 2)}\n`, { mode: 0o600 });
-      fs.renameSync(temporary, configPath);
-    });
-  ' "$data_dir" "$server_url" || {
-    echo "The bb connect machine-code response was invalid." >&2
-    exit 1
-  }
 fi
 
 auth_matches_host() {

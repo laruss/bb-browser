@@ -3554,16 +3554,16 @@ declare const hostDaemonCommandRegistry: {
             permissionScope: z$1.ZodLiteral<"workspace">;
             approvalReviewer: z$1.ZodLiteral<"user">;
             permissionEscalation: z$1.ZodEnum<{
-                deny: "deny";
                 ask: "ask";
+                deny: "deny";
             }>;
         }, z$1.core.$strip>, z$1.ZodObject<{
             permissionMode: z$1.ZodLiteral<"auto">;
             permissionScope: z$1.ZodLiteral<"workspace">;
             approvalReviewer: z$1.ZodLiteral<"automatic">;
             permissionEscalation: z$1.ZodEnum<{
-                deny: "deny";
                 ask: "ask";
+                deny: "deny";
             }>;
         }, z$1.core.$strip>, z$1.ZodObject<{
             permissionMode: z$1.ZodLiteral<"full">;
@@ -3755,16 +3755,16 @@ declare const hostDaemonCommandRegistry: {
             permissionScope: z$1.ZodLiteral<"workspace">;
             approvalReviewer: z$1.ZodLiteral<"user">;
             permissionEscalation: z$1.ZodEnum<{
-                deny: "deny";
                 ask: "ask";
+                deny: "deny";
             }>;
         }, z$1.core.$strip>, z$1.ZodObject<{
             permissionMode: z$1.ZodLiteral<"auto">;
             permissionScope: z$1.ZodLiteral<"workspace">;
             approvalReviewer: z$1.ZodLiteral<"automatic">;
             permissionEscalation: z$1.ZodEnum<{
-                deny: "deny";
                 ask: "ask";
+                deny: "deny";
             }>;
         }, z$1.core.$strip>, z$1.ZodObject<{
             permissionMode: z$1.ZodLiteral<"full">;
@@ -3859,8 +3859,8 @@ declare const hostDaemonCommandRegistry: {
                     }>;
                     origin: z$1.ZodEnum<{
                         builtin: "builtin";
-                        user: "user";
                         project: "project";
+                        user: "user";
                     }>;
                     label: z$1.ZodString;
                     argumentHint: z$1.ZodNullable<z$1.ZodString>;
@@ -3940,8 +3940,8 @@ declare const hostDaemonCommandRegistry: {
                     }>;
                     origin: z$1.ZodEnum<{
                         builtin: "builtin";
-                        user: "user";
                         project: "project";
+                        user: "user";
                     }>;
                     label: z$1.ZodString;
                     argumentHint: z$1.ZodNullable<z$1.ZodString>;
@@ -4033,8 +4033,8 @@ declare const hostDaemonCommandRegistry: {
                     }>;
                     origin: z$1.ZodEnum<{
                         builtin: "builtin";
-                        user: "user";
                         project: "project";
+                        user: "user";
                     }>;
                     label: z$1.ZodString;
                     argumentHint: z$1.ZodNullable<z$1.ZodString>;
@@ -4114,8 +4114,8 @@ declare const hostDaemonCommandRegistry: {
                     }>;
                     origin: z$1.ZodEnum<{
                         builtin: "builtin";
-                        user: "user";
                         project: "project";
+                        user: "user";
                     }>;
                     label: z$1.ZodString;
                     argumentHint: z$1.ZodNullable<z$1.ZodString>;
@@ -4178,16 +4178,16 @@ declare const hostDaemonCommandRegistry: {
             permissionScope: z$1.ZodLiteral<"workspace">;
             approvalReviewer: z$1.ZodLiteral<"user">;
             permissionEscalation: z$1.ZodEnum<{
-                deny: "deny";
                 ask: "ask";
+                deny: "deny";
             }>;
         }, z$1.core.$strip>, z$1.ZodObject<{
             permissionMode: z$1.ZodLiteral<"auto">;
             permissionScope: z$1.ZodLiteral<"workspace">;
             approvalReviewer: z$1.ZodLiteral<"automatic">;
             permissionEscalation: z$1.ZodEnum<{
-                deny: "deny";
                 ask: "ask";
+                deny: "deny";
             }>;
         }, z$1.core.$strip>, z$1.ZodObject<{
             permissionMode: z$1.ZodLiteral<"full">;
@@ -4300,13 +4300,12 @@ declare const hostDaemonCommandRegistry: {
                     personal: "personal";
                 }>;
             }, z$1.core.$strip>;
-            projectId: z$1.ZodString;
-            providerThreadId: z$1.ZodString;
-            providerId: z$1.ZodString;
             instructionMode: z$1.ZodEnum<{
                 replace: "replace";
                 append: "append";
             }>;
+            projectId: z$1.ZodString;
+            providerId: z$1.ZodString;
             acpLaunchSpec: z$1.ZodOptional<z$1.ZodObject<{
                 displayName: z$1.ZodString;
                 command: z$1.ZodString;
@@ -4438,6 +4437,7 @@ declare const hostDaemonCommandRegistry: {
                 skillFilePath: z$1.ZodString;
             }, z$1.core.$strict>], "kind">>;
             disallowedTools: z$1.ZodOptional<z$1.ZodArray<z$1.ZodString>>;
+            providerThreadId: z$1.ZodString;
         }, z$1.core.$strict>;
         target: z$1.ZodDiscriminatedUnion<[z$1.ZodObject<{
             mode: z$1.ZodLiteral<"start">;
@@ -4450,8 +4450,8 @@ declare const hostDaemonCommandRegistry: {
         }, z$1.core.$strip>], "mode">;
     }, z$1.core.$strict>, z$1.ZodObject<{
         appliedAs: z$1.ZodEnum<{
-            "new-turn": "new-turn";
             steer: "steer";
+            "new-turn": "new-turn";
         }>;
     }, z$1.core.$strip>, "settled", false>;
     "thread.stop": HostDaemonCommandDescriptor<"thread.stop", z$1.ZodObject<{
@@ -4492,16 +4492,16 @@ declare const hostDaemonCommandRegistry: {
             permissionScope: z$1.ZodLiteral<"workspace">;
             approvalReviewer: z$1.ZodLiteral<"user">;
             permissionEscalation: z$1.ZodEnum<{
-                deny: "deny";
                 ask: "ask";
+                deny: "deny";
             }>;
         }, z$1.core.$strip>, z$1.ZodObject<{
             permissionMode: z$1.ZodLiteral<"auto">;
             permissionScope: z$1.ZodLiteral<"workspace">;
             approvalReviewer: z$1.ZodLiteral<"automatic">;
             permissionEscalation: z$1.ZodEnum<{
-                deny: "deny";
                 ask: "ask";
+                deny: "deny";
             }>;
         }, z$1.core.$strip>, z$1.ZodObject<{
             permissionMode: z$1.ZodLiteral<"full">;
@@ -4614,13 +4614,12 @@ declare const hostDaemonCommandRegistry: {
                     personal: "personal";
                 }>;
             }, z$1.core.$strip>;
-            projectId: z$1.ZodString;
-            providerThreadId: z$1.ZodString;
-            providerId: z$1.ZodString;
             instructionMode: z$1.ZodEnum<{
                 replace: "replace";
                 append: "append";
             }>;
+            projectId: z$1.ZodString;
+            providerId: z$1.ZodString;
             acpLaunchSpec: z$1.ZodOptional<z$1.ZodObject<{
                 displayName: z$1.ZodString;
                 command: z$1.ZodString;
@@ -4752,6 +4751,7 @@ declare const hostDaemonCommandRegistry: {
                 skillFilePath: z$1.ZodString;
             }, z$1.core.$strict>], "kind">>;
             disallowedTools: z$1.ZodOptional<z$1.ZodArray<z$1.ZodString>>;
+            providerThreadId: z$1.ZodString;
         }, z$1.core.$strict>;
     }, z$1.core.$strict>, z$1.ZodObject<{
         cleared: z$1.ZodBoolean;
@@ -5123,12 +5123,6 @@ declare const hostDaemonCommandRegistry: {
         enabled: z$1.ZodBoolean;
         supported: z$1.ZodBoolean;
     }, z$1.core.$strict>, "onlineRpc", false>;
-    "connect-tunnel.ensure-identity": HostDaemonCommandDescriptor<"connect-tunnel.ensure-identity", z$1.ZodObject<{
-        type: z$1.ZodLiteral<"connect-tunnel.ensure-identity">;
-    }, z$1.core.$strict>, z$1.ZodObject<{
-        label: z$1.ZodString;
-        baseDomain: z$1.ZodString;
-    }, z$1.core.$strict>, "onlineRpc", true>;
     "host.list_commands": HostDaemonCommandDescriptor<"host.list_commands", z$1.ZodObject<{
         type: z$1.ZodLiteral<"host.list_commands">;
         providerId: z$1.ZodString;
@@ -5145,8 +5139,8 @@ declare const hostDaemonCommandRegistry: {
                 skill: "skill";
             }>;
             origin: z$1.ZodEnum<{
-                user: "user";
                 project: "project";
+                user: "user";
             }>;
             description: z$1.ZodNullable<z$1.ZodString>;
             argumentHint: z$1.ZodNullable<z$1.ZodString>;
@@ -5167,9 +5161,9 @@ declare const hostDaemonCommandRegistry: {
             description: z$1.ZodNullable<z$1.ZodString>;
             filePath: z$1.ZodString;
             rootKind: z$1.ZodEnum<{
-                plugin: "plugin";
                 "shared-user": "shared-user";
                 "shared-project": "shared-project";
+                plugin: "plugin";
                 "bb-project": "bb-project";
                 "bb-data-dir": "bb-data-dir";
                 "bb-builtin": "bb-builtin";
@@ -6036,9 +6030,9 @@ declare const hostDaemonCommandRegistry: {
                 conclusion: z$1.ZodNullable<z$1.ZodEnum<{
                     unknown: "unknown";
                     success: "success";
-                    skipped: "skipped";
                     cancelled: "cancelled";
                     failure: "failure";
+                    skipped: "skipped";
                     neutral: "neutral";
                     timed_out: "timed_out";
                     action_required: "action_required";
@@ -15350,27 +15344,6 @@ interface PluginServerApi {
      */
     readonly loopbackBaseUrl: string;
 }
-interface PluginSharedPortTunnelIdentity {
-    /** Gate routing label assigned to this machine. */
-    label: string;
-    /** Gate apex without a scheme, e.g. "getbb.app". */
-    baseDomain: string;
-}
-interface PluginHosts {
-    /**
-     * Ensure this enrolled host has a gate label and return its read-only public
-     * identity. The daemon chooses the trusted gate and desired label; plugins
-     * cannot influence either credential-bearing destination.
-     */
-    ensureSharedPortTunnel(hostId: string): Promise<PluginSharedPortTunnelIdentity>;
-    /**
-     * Replace this plugin's desired shared-loopback ports for one host. The
-     * server aggregates declarations, owns generations, and delivers the
-     * resulting set to that host's daemon. Tunnel identity is deliberately not
-     * accepted here: it is owned by the daemon's trusted enrollment.
-     */
-    declareSharedPorts(hostId: string, ports: readonly number[]): void;
-}
 interface PluginStatusApi {
     /**
      * Mark this plugin `needs-configuration` (with a message shown in
@@ -15418,7 +15391,6 @@ interface BbPluginApi {
     /** Read-only facts about the running server (loopback base URL). */
     readonly server: PluginServerApi;
     /** Server-to-daemon host control-plane declarations. */
-    readonly hosts: PluginHosts;
     /**
      * The full BB SDK, bound to this server over loopback (design §4.1).
      * Bind-gated: reading this before the host binds the SDK throws. The real
@@ -15437,4 +15409,4 @@ interface BbPluginApi {
 }
 
 export { PLUGIN_CLI_OUTPUT_MAX_BYTES, defineRpcContract };
-export type { BbContext, BbNavigate, BbPluginApi, ComposerCustomization, ComposerPlusMenuItem, ComposerRichTextSpec, ComposerStructuredDraft, ComposerView, JsonValue, MarkdownProps, NewThreadComposerProps, NewThreadRequest, PluginAgentConfiguration, PluginAgentConfigurationContext, PluginAgentToolContentPart, PluginAgentToolContext, PluginAgentToolExperimentalStatusLabels, PluginAgentToolRegistrationBase, PluginAgentToolResult, PluginAgentToolSelection, PluginAgents, PluginAppBuilder, PluginAppComposer, PluginAppContentScripts, PluginAppDefinition, PluginAppSetup, PluginAppSlots, PluginBackground, PluginBrowser, PluginBrowserAction, PluginBrowserAuthChallenge, PluginBrowserAuthCredentials, PluginBrowserAuthProvider, PluginBrowserCallOptions, PluginBrowserConsoleEntry, PluginBrowserContextMenuContext, PluginBrowserContextMenuItemRegistration, PluginBrowserContextMenuWhen, PluginBrowserControl, PluginBrowserCookie, PluginBrowserCookieInput, PluginBrowserCookies, PluginBrowserDownload, PluginBrowserDownloadHandler, PluginBrowserDownloadState, PluginBrowserErrorCode, PluginBrowserEvaluated, PluginBrowserExternalLink, PluginBrowserExternalLinkDecision, PluginBrowserExternalLinkHandler, PluginBrowserFindActionRegistration, PluginBrowserFindContext, PluginBrowserHistoryFilter, PluginBrowserHistoryRewrite, PluginBrowserHistoryVisit, PluginBrowserKeyModifier, PluginBrowserLog, PluginBrowserNavigation, PluginBrowserNetworkEntry, PluginBrowserNewTabContext, PluginBrowserNewTabRow, PluginBrowserNewTabWidgetRegistration, PluginBrowserPage, PluginBrowserPageScriptRegistration, PluginBrowserPageSnapshot, PluginBrowserPageState, PluginBrowserPageStyleRegistration, PluginBrowserPdf, PluginBrowserPdfDocument, PluginBrowserPdfTextProvider, PluginBrowserRecording, PluginBrowserRoute, PluginBrowserRouteState, PluginBrowserRoutes, PluginBrowserScreenshot, PluginBrowserSearchEngineRegistration, PluginBrowserSiteInfoContext, PluginBrowserSiteInfoProviderRegistration, PluginBrowserSiteInfoRow, PluginBrowserStatus, PluginBrowserStorage, PluginBrowserStorageArea, PluginBrowserStorageItem, PluginBrowserStorageItems, PluginBrowserStorageWrite, PluginBrowserTab, PluginBrowserTabActionContext, PluginBrowserTabActionRegistration, PluginBrowserTabStatus, PluginBrowserTabs, PluginBrowserToolbarContext, PluginBrowserToolbarItemRegistration, PluginBrowserToolbarState, PluginBrowserTrace, PluginBrowserTraceStep, PluginBrowserVideo, PluginCli, PluginCliCommandInfo, PluginCliContext, PluginCliExecutionResult, PluginCliOutputLimitError, PluginCliRegistration, PluginCliResult, PluginCommandRegistration, PluginComposerApi, PluginComposerMention, PluginComposerScope, PluginComposerTextEffect, PluginComposerThreadRowStatus, PluginContentScriptContext, PluginContentScriptDisposer, PluginContentScriptRegistration, PluginEvents, PluginFileOpenerProps, PluginFileOpenerRegistration, PluginFileOpenerSource, PluginHomepageSectionProps, PluginHomepageSectionRegistration, PluginHosts, PluginHttp, PluginHttpAuthMode, PluginHttpHandler, PluginInteractionCancelReason, PluginInteractionRequest, PluginInteractionResult, PluginKeybinding, PluginKeybindingShortcut, PluginKvStorage, PluginLeadingPanelProps, PluginLeadingPanelRegistration, PluginLogger, PluginMentionItem, PluginMentionProviderRegistration, PluginMentionSearchContext, PluginMentionTrigger, PluginMessageActionContext, PluginMessageActionRegistration, PluginMessageActionThreadPanelOptions, PluginMessageDirectiveMessage, PluginMessageDirectiveOpenWorkspaceFile, PluginMessageDirectiveProps, PluginMessageDirectiveRegistration, PluginNavPanelProps, PluginNavPanelRegistration, PluginNewThreadPanelActionContext, PluginNewThreadPanelActionRegistration, PluginNewThreadPanelProps, PluginOmniboxAction, PluginOmniboxProviderRegistration, PluginOmniboxRunContext, PluginOmniboxRunResult, PluginOmniboxSuggestContext, PluginOmniboxSuggestion, PluginPageScriptApi, PluginPendingInteractionProps, PluginPendingInteractionRegistration, PluginPendingInteractionView, PluginRealtime, PluginRealtimeConnectionState, PluginRpc, PluginRpcCallArgs, PluginRpcClient, PluginRpcContract, PluginRpcError, PluginRpcErrorCode, PluginRpcHandlers, PluginRpcIssuePathSegment, PluginRpcMethodContract, PluginRpcResult, PluginRpcValidationIssue, PluginSdkApp, PluginServerApi, PluginSettingDescriptor, PluginSettingDescriptors, PluginSettingValue, PluginSettings, PluginSettingsHandle, PluginSettingsSectionProps, PluginSettingsSectionRegistration, PluginSettingsState, PluginSettingsValues, PluginSharedPortTunnelIdentity, PluginSidebarFooterActionContext, PluginSidebarFooterActionProps, PluginSidebarFooterActionRegistration, PluginSidebarProject, PluginSidebarPullRequest, PluginSidebarSplitPane, PluginSidebarThread, PluginSidebarThreadActions, PluginSidebarThreadActivity, PluginSidebarThreadIndicator, PluginSidebarThreadPullRequestState, PluginSidebarThreadSplit, PluginSidebarThreadsState, PluginSidebarWorkspaceKind, PluginStatusApi, PluginStorage, PluginThreadEventHandler, PluginThreadEventName, PluginThreadEventPayloads, PluginThreadHeaderActionProps, PluginThreadHeaderActionRegistration, PluginThreadListProps, PluginThreadListRegistration, PluginThreadPanelActionContext, PluginThreadPanelActionRegistration, PluginThreadPanelProps, PluginUi, StandardSchemaV1, StandardSchemaV1InferInput, StandardSchemaV1InferOutput, StandardSchemaV1Issue, StandardSchemaV1Result, ThreadChatMessageAction, ThreadChatMessageReference, ThreadChatProps };
+export type { BbContext, BbNavigate, BbPluginApi, ComposerCustomization, ComposerPlusMenuItem, ComposerRichTextSpec, ComposerStructuredDraft, ComposerView, JsonValue, MarkdownProps, NewThreadComposerProps, NewThreadRequest, PluginAgentConfiguration, PluginAgentConfigurationContext, PluginAgentToolContentPart, PluginAgentToolContext, PluginAgentToolExperimentalStatusLabels, PluginAgentToolRegistrationBase, PluginAgentToolResult, PluginAgentToolSelection, PluginAgents, PluginAppBuilder, PluginAppComposer, PluginAppContentScripts, PluginAppDefinition, PluginAppSetup, PluginAppSlots, PluginBackground, PluginBrowser, PluginBrowserAction, PluginBrowserAuthChallenge, PluginBrowserAuthCredentials, PluginBrowserAuthProvider, PluginBrowserCallOptions, PluginBrowserConsoleEntry, PluginBrowserContextMenuContext, PluginBrowserContextMenuItemRegistration, PluginBrowserContextMenuWhen, PluginBrowserControl, PluginBrowserCookie, PluginBrowserCookieInput, PluginBrowserCookies, PluginBrowserDownload, PluginBrowserDownloadHandler, PluginBrowserDownloadState, PluginBrowserErrorCode, PluginBrowserEvaluated, PluginBrowserExternalLink, PluginBrowserExternalLinkDecision, PluginBrowserExternalLinkHandler, PluginBrowserFindActionRegistration, PluginBrowserFindContext, PluginBrowserHistoryFilter, PluginBrowserHistoryRewrite, PluginBrowserHistoryVisit, PluginBrowserKeyModifier, PluginBrowserLog, PluginBrowserNavigation, PluginBrowserNetworkEntry, PluginBrowserNewTabContext, PluginBrowserNewTabRow, PluginBrowserNewTabWidgetRegistration, PluginBrowserPage, PluginBrowserPageScriptRegistration, PluginBrowserPageSnapshot, PluginBrowserPageState, PluginBrowserPageStyleRegistration, PluginBrowserPdf, PluginBrowserPdfDocument, PluginBrowserPdfTextProvider, PluginBrowserRecording, PluginBrowserRoute, PluginBrowserRouteState, PluginBrowserRoutes, PluginBrowserScreenshot, PluginBrowserSearchEngineRegistration, PluginBrowserSiteInfoContext, PluginBrowserSiteInfoProviderRegistration, PluginBrowserSiteInfoRow, PluginBrowserStatus, PluginBrowserStorage, PluginBrowserStorageArea, PluginBrowserStorageItem, PluginBrowserStorageItems, PluginBrowserStorageWrite, PluginBrowserTab, PluginBrowserTabActionContext, PluginBrowserTabActionRegistration, PluginBrowserTabStatus, PluginBrowserTabs, PluginBrowserToolbarContext, PluginBrowserToolbarItemRegistration, PluginBrowserToolbarState, PluginBrowserTrace, PluginBrowserTraceStep, PluginBrowserVideo, PluginCli, PluginCliCommandInfo, PluginCliContext, PluginCliExecutionResult, PluginCliOutputLimitError, PluginCliRegistration, PluginCliResult, PluginCommandRegistration, PluginComposerApi, PluginComposerMention, PluginComposerScope, PluginComposerTextEffect, PluginComposerThreadRowStatus, PluginContentScriptContext, PluginContentScriptDisposer, PluginContentScriptRegistration, PluginEvents, PluginFileOpenerProps, PluginFileOpenerRegistration, PluginFileOpenerSource, PluginHomepageSectionProps, PluginHomepageSectionRegistration, PluginHttp, PluginHttpAuthMode, PluginHttpHandler, PluginInteractionCancelReason, PluginInteractionRequest, PluginInteractionResult, PluginKeybinding, PluginKeybindingShortcut, PluginKvStorage, PluginLeadingPanelProps, PluginLeadingPanelRegistration, PluginLogger, PluginMentionItem, PluginMentionProviderRegistration, PluginMentionSearchContext, PluginMentionTrigger, PluginMessageActionContext, PluginMessageActionRegistration, PluginMessageActionThreadPanelOptions, PluginMessageDirectiveMessage, PluginMessageDirectiveOpenWorkspaceFile, PluginMessageDirectiveProps, PluginMessageDirectiveRegistration, PluginNavPanelProps, PluginNavPanelRegistration, PluginNewThreadPanelActionContext, PluginNewThreadPanelActionRegistration, PluginNewThreadPanelProps, PluginOmniboxAction, PluginOmniboxProviderRegistration, PluginOmniboxRunContext, PluginOmniboxRunResult, PluginOmniboxSuggestContext, PluginOmniboxSuggestion, PluginPageScriptApi, PluginPendingInteractionProps, PluginPendingInteractionRegistration, PluginPendingInteractionView, PluginRealtime, PluginRealtimeConnectionState, PluginRpc, PluginRpcCallArgs, PluginRpcClient, PluginRpcContract, PluginRpcError, PluginRpcErrorCode, PluginRpcHandlers, PluginRpcIssuePathSegment, PluginRpcMethodContract, PluginRpcResult, PluginRpcValidationIssue, PluginSdkApp, PluginServerApi, PluginSettingDescriptor, PluginSettingDescriptors, PluginSettingValue, PluginSettings, PluginSettingsHandle, PluginSettingsSectionProps, PluginSettingsSectionRegistration, PluginSettingsState, PluginSettingsValues, PluginSidebarFooterActionContext, PluginSidebarFooterActionProps, PluginSidebarFooterActionRegistration, PluginSidebarProject, PluginSidebarPullRequest, PluginSidebarSplitPane, PluginSidebarThread, PluginSidebarThreadActions, PluginSidebarThreadActivity, PluginSidebarThreadIndicator, PluginSidebarThreadPullRequestState, PluginSidebarThreadSplit, PluginSidebarThreadsState, PluginSidebarWorkspaceKind, PluginStatusApi, PluginStorage, PluginThreadEventHandler, PluginThreadEventName, PluginThreadEventPayloads, PluginThreadHeaderActionProps, PluginThreadHeaderActionRegistration, PluginThreadListProps, PluginThreadListRegistration, PluginThreadPanelActionContext, PluginThreadPanelActionRegistration, PluginThreadPanelProps, PluginUi, StandardSchemaV1, StandardSchemaV1InferInput, StandardSchemaV1InferOutput, StandardSchemaV1Issue, StandardSchemaV1Result, ThreadChatMessageAction, ThreadChatMessageReference, ThreadChatProps };

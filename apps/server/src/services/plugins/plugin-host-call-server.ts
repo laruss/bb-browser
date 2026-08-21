@@ -81,7 +81,6 @@ export const ONE_WAY = new Set<PluginHostCallPath>([
   "log.error",
   "realtime.publish",
   "status.needsConfiguration",
-  "hosts.declareSharedPorts",
   "agents.registerTool",
 ]);
 
@@ -124,39 +123,6 @@ export function createPluginHostCallServer(
         // sees every plugin — see `synchronousHostState` on this path.
         capabilities.reportAgentToolProblem(String(args.problem));
         return;
-      case "hosts.declareSharedPorts": {
-        // Validation could not happen in the plugin's process: the policy is
-        // host state and the member is synchronous. So it happens here, and a
-        // refusal throws where the channel turns it into a log line rather
-        // than into something the plugin could have caught.
-        if (Array.isArray(args.replace)) {
-          capabilities.replaceDeclaredSharedPorts(
-            args.replace.map((one) => {
-              const entry = one as unknown as {
-                hostId: string;
-                ports: number[];
-              };
-              return {
-                hostId: entry.hostId,
-                ports: capabilities.validateSharedPortDeclaration(
-                  entry.hostId,
-                  entry.ports,
-                ),
-              };
-            }),
-          );
-          return;
-        }
-        const hostId = String(args.hostId);
-        capabilities.declareSharedPorts(
-          hostId,
-          capabilities.validateSharedPortDeclaration(
-            hostId,
-            (args.ports ?? []) as unknown as number[],
-          ),
-        );
-        return;
-      }
       default:
         // An unknown notification is the far side being newer, which is not
         // worth failing anything over — but it is worth saying, because the
@@ -219,10 +185,6 @@ export function createPluginHostCallServer(
             : {}),
           signal,
         })) as unknown as JsonValue;
-      case "hosts.ensureSharedPortTunnel":
-        return (await capabilities.ensureSharedPortTunnel(
-          String(args.hostId),
-        )) as unknown as JsonValue;
       default:
         if (ANSWERED_IN_THE_PLUGIN_PROCESS.has(path)) {
           throw new Error(

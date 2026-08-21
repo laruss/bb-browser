@@ -20,7 +20,6 @@ import type {
   HostDaemonSettledCommandType,
 } from "./commands.js";
 import {
-  hostDaemonConnectTunnelIdentitySchema,
   hostDaemonOnlineRpcResultSchemaByType,
   hostDaemonCommandResultSchemaByType,
   hostDaemonSettledCommandTypeSchema,
@@ -75,23 +74,11 @@ export const hostDaemonWatchSetSchema = z
   .strict();
 export type HostDaemonWatchSet = z.infer<typeof hostDaemonWatchSetSchema>;
 
-export const hostDaemonConnectSharesSchema = z
-  .object({
-    generation: z.number().int().nonnegative(),
-    ports: z.array(z.number().int().min(1).max(65535)),
-  })
-  .strict();
-export type HostDaemonConnectShares = z.infer<
-  typeof hostDaemonConnectSharesSchema
->;
-
 export const hostDaemonSessionOpenRequestSchema = z.object({
   hostId: z.string().min(1),
   instanceId: z.string().min(1),
   hostName: z.string().min(1),
   hostType: hostTypeSchema,
-  connectMachineId: z.string().min(1).optional(),
-  hasMachineCredential: z.boolean(),
   platform: hostPlatformSchema,
   dataDir: z.string().min(1),
   // Accept any version at the schema boundary so the server can return an
@@ -109,7 +96,6 @@ export const hostDaemonEnrollRequestSchema = z
     hostId: z.string().min(1),
     hostName: z.string().min(1),
     hostType: hostTypeSchema,
-    connectMachineId: z.string().min(1).optional(),
   })
   .strict();
 export type HostDaemonEnrollRequest = z.infer<
@@ -155,10 +141,6 @@ export const hostDaemonSessionOpenResponseSchema = z
       generation: 0,
       workspaceTargets: [],
       threadStorageTargets: [],
-    }),
-    connectShares: hostDaemonConnectSharesSchema.default({
-      generation: 0,
-      ports: [],
     }),
     retiredEnvironmentIds: z.array(z.string().min(1)).default([]),
   })
@@ -364,16 +346,6 @@ export type HostDaemonWatchSetReplaceMessage = z.infer<
   typeof hostDaemonWatchSetReplaceMessageSchema
 >;
 
-const hostDaemonConnectSharesReplaceMessageSchema =
-  hostDaemonConnectSharesSchema
-    .extend({
-      type: z.literal("connect-shares.replace"),
-    })
-    .strict();
-export type HostDaemonConnectSharesReplaceMessage = z.infer<
-  typeof hostDaemonConnectSharesReplaceMessageSchema
->;
-
 const hostDaemonOnlineRpcResponseSuccessBaseSchema = z
   .object({
     type: z.literal("host-rpc.response"),
@@ -417,7 +389,6 @@ const hostDaemonOnlineRpcResponseSuccessSchema = z.discriminatedUnion(
     onlineRpcResponseSuccessSchemaFor("project.clone_default_path"),
     onlineRpcResponseSuccessSchemaFor("host.pick_folder"),
     onlineRpcResponseSuccessSchemaFor("host.caffeinate"),
-    onlineRpcResponseSuccessSchemaFor("connect-tunnel.ensure-identity"),
     onlineRpcResponseSuccessSchemaFor("host.list_commands"),
     onlineRpcResponseSuccessSchemaFor("host.list_skills"),
     onlineRpcResponseSuccessSchemaFor("host.delete_skill"),
@@ -584,7 +555,6 @@ export const hostDaemonServerWsMessageSchema = z.discriminatedUnion("type", [
     .strict(),
   hostDaemonOnlineRpcRequestMessageSchema,
   hostDaemonWatchSetReplaceMessageSchema,
-  hostDaemonConnectSharesReplaceMessageSchema,
   hostDaemonTerminalOpenMessageSchema,
   hostDaemonTerminalAttachMessageSchema,
   hostDaemonTerminalInputMessageSchema,
@@ -614,16 +584,6 @@ const hostDaemonEnvironmentMetadataChangeMessageSchema =
       type: z.literal("environment-metadata-change"),
     })
     .strict();
-
-const hostDaemonConnectTunnelIdentityMessageSchema = z
-  .object({
-    type: z.literal("connect-tunnel.identity"),
-    identity: hostDaemonConnectTunnelIdentitySchema,
-  })
-  .strict();
-export type HostDaemonConnectTunnelIdentityMessage = z.infer<
-  typeof hostDaemonConnectTunnelIdentityMessageSchema
->;
 
 const hostDaemonTerminalOpenedMessageSchema = z
   .object({
@@ -680,7 +640,6 @@ export const hostDaemonDaemonWsMessageSchema = z.union([
   hostDaemonHeartbeatMessageSchema,
   hostDaemonEnvironmentChangeMessageSchema,
   hostDaemonEnvironmentMetadataChangeMessageSchema,
-  hostDaemonConnectTunnelIdentityMessageSchema,
   hostDaemonTerminalOpenedMessageSchema,
   hostDaemonTerminalOutputMessageSchema,
   hostDaemonTerminalReplayMessageSchema,

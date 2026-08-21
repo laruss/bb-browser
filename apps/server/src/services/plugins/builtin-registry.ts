@@ -37,7 +37,6 @@ export const PLUGIN_CATALOG_CATEGORIES = [
   "Agent interaction",
   "Context & knowledge",
   "Developer tools",
-  "Host access",
   "Interface",
 ] as const;
 
@@ -62,12 +61,6 @@ export const BUILTIN_PLUGINS = [
     pluginId: "browser-tools",
     defaultEnabled: false,
     category: "Agent interaction",
-  },
-  {
-    name: "connect",
-    pluginId: "connect",
-    defaultEnabled: true,
-    category: "Host access",
   },
   {
     name: "custom-instructions",

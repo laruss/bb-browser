@@ -8,7 +8,7 @@ function resolveBrowserHostDevWebSocketBaseUrl(
 ): string {
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
 
-  // HTTPS dev origins are typically reverse proxies or bb connect shares.
+  // HTTPS dev origins are typically reverse proxies, e.g. Tailscale Serve.
   // Their public origin does not expose the backend's local TCP port, so keep
   // the socket on the app origin and let Vite proxy /ws to the server.
   if (

@@ -157,7 +157,6 @@ interface CreateServerClientOptions {
   serverUrl: string;
   hostKey: string;
   logger: HostDaemonLogger;
-  machineCredential?: string;
   getSessionId: () => string;
   /** Runs before each POST attempt so retryable ordering preconditions can be repaired. */
   beforeInteractiveRequestRegistrationAttempt?: () => Promise<void>;
@@ -165,7 +164,6 @@ interface CreateServerClientOptions {
 }
 
 interface OpenSessionArgs {
-  connectMachineId?: string;
   hostId: string;
   hostName: string;
   hostType: HostDaemonSessionOpenRequest["hostType"];
@@ -309,9 +307,6 @@ export function createServerClient(
     return {
       authorization: `Bearer ${options.hostKey}`,
       "content-type": "application/json",
-      ...(options.machineCredential !== undefined
-        ? { "x-bb-connect-machine": options.machineCredential }
-        : {}),
     };
   }
 
@@ -355,12 +350,6 @@ export function createServerClient(
         instanceId: args.instanceId,
         hostName: args.hostName,
         hostType: args.hostType,
-        ...(args.connectMachineId !== undefined
-          ? { connectMachineId: args.connectMachineId }
-          : {}),
-        hasMachineCredential:
-          options.machineCredential !== undefined &&
-          options.machineCredential.trim().length > 0,
         platform: resolveHostPlatform(),
         dataDir: args.dataDir,
         protocolVersion: HOST_DAEMON_PROTOCOL_VERSION,

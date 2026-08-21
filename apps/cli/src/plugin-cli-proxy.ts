@@ -153,8 +153,8 @@ export async function fetchPluginCliContributions(
 
 /**
  * Look up an installed-but-disabled plugin whose id matches the unknown
- * command name (the `bb <id>` convention builtins follow), so `bb connect`
- * with the connect plugin disabled explains itself instead of erroring with
+ * command name (the `bb <id>` convention builtins follow), so `bb <id>` with
+ * that plugin disabled explains itself instead of erroring with
  * "unknown command". Best effort: any failure returns null.
  */
 export async function findDisabledPluginForCommand(

@@ -36,7 +36,7 @@ import {
   providerCliStatusResponseSchema,
 } from "./local.js";
 
-export const HOST_DAEMON_PROTOCOL_VERSION = 106 as const;
+export const HOST_DAEMON_PROTOCOL_VERSION = 107 as const;
 
 export {
   BRANCH_LIST_LIMIT_MAX,
@@ -52,38 +52,6 @@ export const workspaceContextSchema = z.object({
   workspaceProvisionType: workspaceProvisionTypeSchema,
 });
 export type WorkspaceContext = z.infer<typeof workspaceContextSchema>;
-
-function isConnectBaseDomain(value: string): boolean {
-  try {
-    const parsed = new URL(`https://${value}`);
-    return (
-      parsed.host === value &&
-      parsed.username === "" &&
-      parsed.password === "" &&
-      parsed.pathname === "/" &&
-      parsed.search === "" &&
-      parsed.hash === ""
-    );
-  } catch {
-    return false;
-  }
-}
-
-/** Gate identity derived and assigned by the enrolled host daemon. */
-export const hostDaemonConnectTunnelIdentitySchema = z
-  .object({
-    label: z
-      .string()
-      .min(1)
-      .max(63)
-      .regex(/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/)
-      .refine((label) => !label.includes("--")),
-    baseDomain: z.string().min(1).refine(isConnectBaseDomain),
-  })
-  .strict();
-export type HostDaemonConnectTunnelIdentity = z.infer<
-  typeof hostDaemonConnectTunnelIdentitySchema
->;
 
 export const workspaceResolutionFailureCodeSchema = z.enum([
   "path_not_found",
@@ -655,12 +623,6 @@ const hostCaffeinateCommandSchema = z
   .object({
     type: z.literal("host.caffeinate"),
     enabled: z.boolean(),
-  })
-  .strict();
-
-const connectTunnelEnsureIdentityCommandSchema = z
-  .object({
-    type: z.literal("connect-tunnel.ensure-identity"),
   })
   .strict();
 
@@ -1851,15 +1813,6 @@ export const hostDaemonCommandRegistry = {
     resultSchema: hostCaffeinateResultSchema,
     transport: "onlineRpc",
     retryable: false,
-    flushEventsBeforeResult: false,
-    envLane: null,
-  }),
-  "connect-tunnel.ensure-identity": defineHostDaemonCommandDescriptor({
-    type: "connect-tunnel.ensure-identity",
-    schema: connectTunnelEnsureIdentityCommandSchema,
-    resultSchema: hostDaemonConnectTunnelIdentitySchema,
-    transport: "onlineRpc",
-    retryable: true,
     flushEventsBeforeResult: false,
     envLane: null,
   }),

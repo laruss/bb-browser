@@ -112,12 +112,6 @@ describe("PLUGIN_HOST_CALLS covers the bb object", () => {
         throw new Error("not called");
       },
       getBrowserHostStatus: () => ({ connected: false, hostCount: 0 }),
-      ensureSharedPortTunnel: () => {
-        throw new Error("not called");
-      },
-      validateSharedPortDeclaration: (_hostId, ports) => ports,
-      declareSharedPorts: () => {},
-      replaceDeclaredSharedPorts: () => {},
     });
   }
 
@@ -191,11 +185,10 @@ describe("what does not cross yet", () => {
   // A different axis, and one that only turned up once a plugin actually ran
   // in another process: these serialise fine and still cannot be requests,
   // because the member the plugin calls is synchronous.
-  it("is the three members that read host state synchronously", () => {
+  it("is the two members that read host state synchronously", () => {
     expect(synchronousHostStatePaths()).toEqual([
       "agents.registerTool",
       "browser.getStatus",
-      "hosts.declareSharedPorts",
     ]);
   });
 });

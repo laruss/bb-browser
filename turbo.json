@@ -1,27 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "tasks": {
-    "@bb/web#build": {
-      "inputs": [
-        "$TURBO_DEFAULT$",
-        "$TURBO_ROOT$/apps/web/package.json",
-        "$TURBO_ROOT$/apps/web/src/**",
-        "$TURBO_ROOT$/apps/web/tsconfig.json",
-        "$TURBO_ROOT$/apps/web/vite.config.ts",
-        "$TURBO_ROOT$/packages/tsconfig/*.json",
-        "$TURBO_ROOT$/bun.lock",
-        "$TURBO_ROOT$/package.json",
-        "$TURBO_ROOT$/turbo.json"
-      ],
-      "env": [
-        "CLOUDFLARE_ENV",
-        "VITE_POSTHOG_KEY",
-        "VITE_POSTHOG_HOST"
-      ],
-      "outputs": [
-        "dist/**"
-      ]
-    },
     // Mirrors "build" but also caches bundle-stats.json, which the
     // bb:bundle-stats Vite plugin writes beside dist for the boot-payload
     // budget check. Without it a cache hit would leave CI checking a stale

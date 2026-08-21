@@ -179,7 +179,7 @@ process.on("SIGTERM", () => server.close(() => process.exit(0)));
 `;
 }
 
-// Mocks curl to serve the redeem endpoint and answer the bb-app tarball
+// Mocks curl to answer the bb-app tarball
 // download with the given status; npm records invocations and fabricates a
 // bb-app that enrolls into whatever BB_DATA_DIR the script hands it.
 function writeServerInstallTools(
@@ -192,7 +192,6 @@ function writeServerInstallTools(
     join(fixture.binDir, "curl"),
     `#!/bin/sh
 case "$*" in
-  *redeem-machine*) printf '%s' '{"credential":"bbcm_durable","machineId":"machine-1"}' ;;
   *)
     output=
     while [ "$#" -gt 0 ]; do
@@ -529,40 +528,6 @@ describe("machine install script", () => {
     ).toEqual(
       new Set([realpathSync(firstDataDir), realpathSync(secondDataDir)]),
     );
-  }, SCRIPT_RUN_TIMEOUT_MS);
-
-  it("redeems and persists a connect machine code before joining through the tunnel", () => {
-    const fixture = createFixture();
-    const invocationPath = join(fixture.dataDir, "invocation");
-    writeServerInstallTools(fixture, 404);
-    writeEnrollingBbApp(fixture, invocationPath);
-    const result = runScript(
-      [
-        "--join-code",
-        "join-secret",
-        "--host-id",
-        "host-test",
-        "--server",
-        "https://sawyer.getbb.app",
-        "--machine-code",
-        "MACH-INE1",
-      ],
-      fixture,
-      { BB_INSTALL_SKIP_SERVICE: "1" },
-    );
-
-    expect(result.status, result.stderr).toBe(0);
-    expect(readFileSync(invocationPath, "utf8")).not.toContain("bbcm_durable");
-    expect(readFileSync(invocationPath, "utf8")).not.toContain(
-      "--machine-credential",
-    );
-    expect(
-      JSON.parse(readFileSync(join(fixture.dataDir, "config.json"), "utf8")),
-    ).toMatchObject({
-      connectMachineId: "machine-1",
-      machineCredential: "bbcm_durable",
-      serverUrl: "https://sawyer.getbb.app",
-    });
   }, SCRIPT_RUN_TIMEOUT_MS);
 
   it("installs an idempotent macOS launch agent for joined state", () => {

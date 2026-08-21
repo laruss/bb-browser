@@ -8,7 +8,7 @@ const repoRoot = path.resolve(__dirname, "../../..");
 const devInstance = resolveCurrentDevInstanceConfig(repoRoot);
 // Plugin RPCs accept only origins belonging to this checkout's app. Ladle is
 // the local review proxy for that same app, including when viewed through a
-// bb connect share, so present its upstream requests as the dev app origin.
+// reverse proxy, so present its upstream requests as the dev app origin.
 const trustedDevAppHeaders = {
   origin: `http://localhost:${devInstance.ports.appPort}`,
 };

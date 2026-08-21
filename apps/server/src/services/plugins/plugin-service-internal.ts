@@ -1,6 +1,5 @@
 import type { DbConnection } from "@bb/db";
 import type { DynamicTool, Thread } from "@bb/domain";
-import type { HostDaemonConnectTunnelIdentity } from "@bb/host-daemon-contract";
 import {
   pluginUpdateCheckEntrySchema,
   type InstalledPlugin,
@@ -18,7 +17,6 @@ import type {
   PluginBackgroundServiceRecord,
   PluginMentionTrigger,
 } from "./plugin-api.js";
-import type { HostSharedPortCoordinator } from "../../ws/host-shared-ports.js";
 export type {
   PluginApplyUpdateResult,
   PluginHandlerStats,
@@ -100,17 +98,6 @@ export interface PluginServiceDeps {
    * needs a crashloop to run out.
    */
   pluginProcessRestart?: import("./plugin-supervisor.js").PluginSupervisorOptions["restart"];
-  /** Omitted only by isolated plugin-runtime tests without a daemon plane. */
-  sharedPorts?: Pick<
-    HostSharedPortCoordinator,
-    | "declareSharedPorts"
-    | "validateSharedPortDeclaration"
-    | "replaceDeclarationsForOwner"
-    | "clearDeclarationsForOwner"
-  >;
-  ensureSharedPortTunnel?: (
-    hostId: string,
-  ) => Promise<HostDaemonConnectTunnelIdentity>;
   /** Thread DTO assembly for lifecycle events + plugin-signal broadcast +
    * the `plugins-changed` system broadcast on lifecycle completion. */
   hub: Pick<

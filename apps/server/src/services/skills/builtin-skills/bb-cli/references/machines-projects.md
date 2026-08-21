@@ -1,11 +1,10 @@
 # Machines, projects, environments, and providers
 
-Where a thread actually runs: remote access, enrolled machines, project
-sources, environments, and the provider/model catalog.
+Where a thread actually runs: enrolled machines, project sources,
+environments, and the provider/model catalog.
 
 - [Environment setup script](#environment-setup-script)
 - [Remote client](#remote-client)
-- [Remote access with bb connect](#remote-access-with-bb-connect)
 - [Execution machines](#execution-machines)
 - [Projects and environments](#projects-and-environments)
 - [Providers, models, and ACP agents](#providers-models-and-acp-agents)
@@ -31,41 +30,10 @@ sources, environments, and the provider/model catalog.
   server does not read the file.
 - Use `bb-app client ssh-target list --json` to inspect mappings.
 
-## Remote access with bb connect
-
-- `bb connect --code <code> --server https://<handle>.getbb.app` pairs this bb
-  server for browser access at `<handle>.getbb.app` (get the code from
-  https://getbb.app). Pairing returns immediately — the
-  server itself holds the tunnel and reconnects on restart, so there is no
-  foreground process.
-  In a source checkout, `bun run dev` automatically sets
-  `BB_DEV_CONNECT_BASE_URL` to the worktree's local Cloud origin. Connect uses
-  it only as the unpaired default; explicit `--server` and `--base-url` values
-  still win, including when pairing the dev bb with getbb.app.
-  `bb connect status` / `bb connect off` report and clear the pairing.
-  Port sharing works from a thread on any enrolled host. `bb connect expose
-<port>` resolves that thread's environment host and returns its public URL;
-  outside a thread it defaults to the server host. Pass `--host
-<name-or-id>` to override expose, unexpose, or shares. Server-host URLs use
-  the server label; machine-host URLs use the machine label and proxy directly
-  through its daemon. Shares are owner-session-gated, not public.
-  `bb connect status` shows every share's host and URL; `shares --json` includes
-  the resolved host plus `hostId`, `hostName`, `port`, and `url` per row.
-  `bb connect servers` lists every bb on the paired account (handle,
-  name, url, live) so callers can discover siblings; `--json` includes
-  `selfHandle` for deduping this server. When you start a local server the user
-  should open remotely, expose the port and give them the share URL. Remote
-  access is owned by the builtin `connect` plugin: `bb plugin disable connect`
-  cuts it off entirely; with bb connect still enabled, `bb plugin enable
-  connect` restores the command. Plugins → Connect shows the current URL, QR
-  code, shared ports, re-pair form, and disconnect control.
-
 ## Execution machines
 
-- Add remote execution machines from Settings → Machines. Its one-line
-  installer stores the bb connect machine credential locally and configures
-  both the daemon protocol and agent-launched `bb` CLI to traverse the account
-  gate; revoke a lost machine from the getbb.app dashboard. The installer uses
+- Add remote execution machines from Settings → Machines. The one-line
+  installer uses
   the server's exact `/install/bb-app.tgz` artifact (npm only on a 404) and
   enables daemon `--auto-update`; newer protocol mismatches update from that
   artifact with a persisted exponential retry backoff from 5 seconds to 5

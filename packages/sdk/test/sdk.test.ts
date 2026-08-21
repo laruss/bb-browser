@@ -1267,6 +1267,7 @@ describe("@bb/sdk", () => {
       cliCommand: null,
       capabilities: [],
       permissions: [],
+      sites: [],
       hasSettings: false,
       app: { hasApp: false, bundle: null },
       logoUrl: null,

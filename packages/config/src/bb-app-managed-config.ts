@@ -153,8 +153,6 @@ export const bbAppManagedConfigSchema = z
     customAcpAgents: customAcpAgentsSchema.optional(),
     customModels: z.array(customProviderModelSchema).optional(),
     sharedSkillRoots: providerNativeSkillRootsSchema.optional(),
-    machineCredential: z.string().min(1).optional(),
-    connectMachineId: z.string().min(1).optional(),
     serverUrl: z.string().min(1).optional(),
   })
   .strict();
@@ -165,8 +163,6 @@ const bbAppManagedConfigBoundarySchema = z
     customAcpAgents: z.array(z.unknown()).optional(),
     customModels: z.array(z.unknown()).optional(),
     sharedSkillRoots: providerNativeSkillRootsSchema.optional(),
-    machineCredential: z.string().min(1).optional(),
-    connectMachineId: z.string().min(1).optional(),
     serverUrl: z.string().min(1).optional(),
   })
   .strict();
@@ -276,12 +272,6 @@ export function parseBbAppManagedConfig(
   }
   if (parsed.serverUrl !== undefined) {
     config.serverUrl = parsed.serverUrl;
-  }
-  if (parsed.machineCredential !== undefined) {
-    config.machineCredential = parsed.machineCredential;
-  }
-  if (parsed.connectMachineId !== undefined) {
-    config.connectMachineId = parsed.connectMachineId;
   }
   return config;
 }

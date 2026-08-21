@@ -24,7 +24,6 @@ import {
 import { requireAuthenticatedDaemonSession } from "./session-state.js";
 import { readAttachment } from "../services/projects/attachments.js";
 import { handleHostSessionOpened } from "./session-owner-side-effects.js";
-import { resolveReportedConnectMachineId } from "./hosts.js";
 
 export function registerInternalSessionRoutes(app: Hono, deps: AppDeps): void {
   const { get, post } = typedRoutes<HostDaemonInternalSchema>(app, {
@@ -75,12 +74,7 @@ export function registerInternalSessionRoutes(app: Hono, deps: AppDeps): void {
       const previousSession = getLatestSessionForHost(deps.db, {
         hostId: daemon.hostId,
       });
-      const connectMachineId = resolveReportedConnectMachineId(
-        context,
-        payload.connectMachineId,
-      );
       upsertHost(deps.db, deps.hub, {
-        ...(connectMachineId !== undefined ? { connectMachineId } : {}),
         id: daemon.hostId,
         name: payload.hostName,
         type: daemon.hostType,
@@ -99,12 +93,6 @@ export function registerInternalSessionRoutes(app: Hono, deps: AppDeps): void {
         leaseTimeoutMs: LEASE_TIMEOUT_MS,
       });
       deps.hub.recordDaemonSessionPlatform(session.id, payload.platform);
-      deps.sharedPorts.recordHostConnectCapability({
-        hostId: daemon.hostId,
-        sessionId: session.id,
-        hasMachineCredential: payload.hasMachineCredential,
-      });
-
       await handleHostSessionOpened(deps, {
         activeThreads: payload.activeThreads,
         hostId: daemon.hostId,
@@ -128,9 +116,6 @@ export function registerInternalSessionRoutes(app: Hono, deps: AppDeps): void {
           heartbeatIntervalMs: HEARTBEAT_INTERVAL_MS,
           leaseTimeoutMs: LEASE_TIMEOUT_MS,
           watchSet: deps.watchInterests.reconcileWatchSetForHost(daemon.hostId),
-          connectShares: deps.sharedPorts.reconcileSharedPortsForHost(
-            daemon.hostId,
-          ),
           retiredEnvironmentIds,
         },
         201,
