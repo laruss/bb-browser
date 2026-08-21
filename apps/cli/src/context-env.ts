@@ -1,4 +1,4 @@
-import { loadCliConfig, type CliConfig } from "@bb/config/cli";
+import { loadCliConfig, type CliConfig } from "@patcher/config/cli";
 
 const VALID_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
 

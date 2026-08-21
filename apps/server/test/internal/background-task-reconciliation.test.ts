@@ -1,6 +1,6 @@
-import { closeSession, getThread, listEvents } from "@bb/db";
-import { HOST_DAEMON_PROTOCOL_VERSION } from "@bb/host-daemon-contract";
-import { threadScope, turnScope } from "@bb/domain";
+import { closeSession, getThread, listEvents } from "@patcher/db";
+import { HOST_DAEMON_PROTOCOL_VERSION } from "@patcher/host-daemon-contract";
+import { threadScope, turnScope } from "@patcher/domain";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { settleDanglingBackgroundTasks } from "../../src/services/threads/background-task-reconciliation.js";
 import { handleDaemonSocketClosed } from "../../src/internal/session-owner-side-effects.js";

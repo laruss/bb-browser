@@ -17,7 +17,7 @@
 //
 // See docs/architecture/browser-surface.md for the surfaces and docs/TODO.md for
 // why this is an example rather than a feature.
-import type { BbPluginApi } from "@bb/plugin-sdk";
+import type { BbPluginApi } from "@patcher/plugin-sdk";
 
 interface BookmarkRow {
   url: string;

@@ -54,13 +54,13 @@ jobs:
       matrix:
         include:
           - shard: server
-            filter: --filter=@bb/server
+            filter: --filter=@patcher/server
           - shard: app
-            filter: --filter=@bb/app
+            filter: --filter=@patcher/app
           - shard: integration
-            filter: --filter=@bb/integration-tests
+            filter: --filter=@patcher/integration-tests
           - shard: packages
-            filter: --filter='!@bb/server' --filter='!@bb/app' --filter='!@bb/integration-tests'
+            filter: --filter='!@patcher/server' --filter='!@patcher/app' --filter='!@patcher/integration-tests'
 
     steps:
       - name: Checkout repository

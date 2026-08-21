@@ -3,7 +3,7 @@ import {
   BB_DESKTOP_BROWSER_MAX_PAGE_SELECTION_LENGTH,
   BB_DESKTOP_BROWSER_MAX_PAGE_TEXT_LENGTH,
   bbDesktopBrowserPageReadResultSchema,
-} from "@bb/desktop-contract";
+} from "@patcher/desktop-contract";
 import {
   BB_DESKTOP_BROWSER_PAGE_READ_SCRIPT,
   BB_DESKTOP_BROWSER_PAGE_READ_WORLD_ID,
@@ -121,7 +121,7 @@ describe("parseBrowserPageReadContent", () => {
   });
 
   it("produces a payload the other package's schema accepts at full size", () => {
-    // The caps live in @bb/desktop-contract and the slicing lives here; this is
+    // The caps live in @patcher/desktop-contract and the slicing lives here; this is
     // what stops the two from drifting apart unnoticed.
     const parsed = parseBrowserPageReadContent({
       text: "a".repeat(BB_DESKTOP_BROWSER_MAX_PAGE_TEXT_LENGTH + 1),

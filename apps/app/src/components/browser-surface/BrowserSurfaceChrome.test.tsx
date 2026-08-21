@@ -8,7 +8,7 @@ import {
   screen,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { BbDesktopBrowserApi } from "@bb/desktop-contract";
+import type { BbDesktopBrowserApi } from "@patcher/desktop-contract";
 import {
   createBbDesktopApi,
   createNoopDesktopBrowserApi,
@@ -22,7 +22,7 @@ import {
   type OmniboxProvider,
 } from "@/lib/omnibox";
 import { createQueryClientTestHarness } from "@/test/queryClientTestHarness";
-import { BROWSER_SEARCH_ENGINE_QUERY_PLACEHOLDER } from "@bb/domain/browser-search-engine";
+import { BROWSER_SEARCH_ENGINE_QUERY_PLACEHOLDER } from "@patcher/domain/browser-search-engine";
 import { BrowserSurfaceChrome } from "./BrowserSurfaceChrome";
 
 /** Named rather than assumed: the provider has no default engine any more. */

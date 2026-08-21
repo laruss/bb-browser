@@ -23,7 +23,7 @@ import {
   setPluginStateSnapshotStatus,
   upsertInstalledPlugin,
   type DbConnection,
-} from "@bb/db";
+} from "@patcher/db";
 import { garbageCollectPluginArtifacts } from "../../../src/services/plugins/plugin-artifact-gc.js";
 import {
   createPluginStateSnapshotOnDisk,

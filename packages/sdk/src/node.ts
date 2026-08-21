@@ -1,8 +1,8 @@
-import { loadCliConfig, type CliConfig } from "@bb/config/cli";
+import { loadCliConfig, type CliConfig } from "@patcher/config/cli";
 import {
   createHostDaemonLocalClient,
   DEFAULT_HOST_DAEMON_LOCAL_BIND_HOST,
-} from "@bb/host-daemon-contract";
+} from "@patcher/host-daemon-contract";
 import { createBbSdk, type BbSdk } from "./core.js";
 import { createNodeWebsocketFactory } from "./node-websocket.js";
 import {

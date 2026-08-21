@@ -17,7 +17,7 @@ import type { z } from "zod";
 import type {
   PluginSettingDescriptor,
   PluginSettingDescriptors,
-} from "@bb/plugin-sdk";
+} from "@patcher/plugin-sdk";
 
 export class PluginSettingsValidationError extends Error {
   constructor(message: string) {

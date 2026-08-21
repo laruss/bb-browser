@@ -9,13 +9,13 @@ import {
 } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 import type { AnySQLiteColumn } from "drizzle-orm/sqlite-core";
-import { threadStatusValues } from "@bb/domain/thread-status";
+import { threadStatusValues } from "@patcher/domain/thread-status";
 import {
   threadChildOriginValues,
   threadOriginKindValues,
-} from "@bb/domain/thread-child-origin";
-import { threadVisibilityValues } from "@bb/domain/thread-visibility";
-import { DEFAULT_BROWSER_SEARCH_ENGINE_ID } from "@bb/domain/browser-search-engine";
+} from "@patcher/domain/thread-child-origin";
+import { threadVisibilityValues } from "@patcher/domain/thread-visibility";
+import { DEFAULT_BROWSER_SEARCH_ENGINE_ID } from "@patcher/domain/browser-search-engine";
 import type {
   EnvironmentStatus,
   FaviconColorPreference,
@@ -35,7 +35,7 @@ import type {
   ThreadEventType,
   WorkspaceProvisionType,
   ProjectKind,
-} from "@bb/domain";
+} from "@patcher/domain";
 
 export const authUsers = sqliteTable(
   "user",

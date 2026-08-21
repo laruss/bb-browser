@@ -19,7 +19,7 @@
  *   cap and a flag saying whether that was all of it.
  */
 
-import type { BbDesktopBrowserRoute } from "@bb/desktop-contract";
+import type { BbDesktopBrowserRoute } from "@patcher/desktop-contract";
 
 /**
  * Playwright's URL glob, which is the dialect route patterns are written in:

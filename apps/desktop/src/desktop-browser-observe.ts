@@ -27,7 +27,7 @@ import {
   BB_DESKTOP_BROWSER_MAX_URL_LENGTH,
   type BbDesktopBrowserConsoleEntry,
   type BbDesktopBrowserNetworkEntry,
-} from "@bb/desktop-contract";
+} from "@patcher/desktop-contract";
 
 /**
  * Entries kept per tab, per log. Sized to cover a page load's worth of requests

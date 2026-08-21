@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 
 import { cleanup, renderHook, waitFor } from "@testing-library/react";
-import type { ThreadPullRequest } from "@bb/domain";
-import type { EnvironmentPullRequestResponse } from "@bb/server-contract";
+import type { ThreadPullRequest } from "@patcher/domain";
+import type { EnvironmentPullRequestResponse } from "@patcher/server-contract";
 import { sdk } from "@/lib/sdk";
 import { createQueryClientTestHarness } from "@/test/queryClientTestHarness";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";

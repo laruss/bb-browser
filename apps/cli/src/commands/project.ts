@@ -5,7 +5,7 @@ import type {
   CreateProjectSourceRequest,
   ProjectResponse,
   UpdateProjectSourceRequest,
-} from "@bb/server-contract";
+} from "@patcher/server-contract";
 import mimeTypes from "mime-types";
 import { action } from "../action.js";
 import { createCliBbSdk } from "../client.js";

@@ -1,11 +1,11 @@
-import { getHost, upsertHost } from "@bb/db";
-import { isLoopbackAddress } from "@bb/config/loopback";
+import { getHost, upsertHost } from "@patcher/db";
+import { isLoopbackAddress } from "@patcher/config/loopback";
 import {
   hostDaemonEnrollKeyRequestSchema,
   hostDaemonEnrollRequestSchema,
   typedRoutes,
   type HostDaemonInternalSchema,
-} from "@bb/host-daemon-contract";
+} from "@patcher/host-daemon-contract";
 import type { Hono } from "hono";
 import type { AppDeps } from "../types.js";
 import { ApiError } from "../errors.js";

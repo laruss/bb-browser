@@ -14,7 +14,7 @@ import {
   type PluginPermission,
   type PluginThemeMeta,
   type ToolCallResponse,
-} from "@bb/domain";
+} from "@patcher/domain";
 import {
   PLUGIN_CLI_OUTPUT_MAX_BYTES,
   type PluginBrowserAuthChallenge,
@@ -32,13 +32,16 @@ import {
   type PluginCliExecutionResult,
   type PluginCliOutputLimitError,
   type PluginRpcError,
-} from "@bb/plugin-sdk";
+} from "@patcher/plugin-sdk";
 // The build engine's natives (esbuild, Tailwind oxide) are dynamically
 // imported inside buildPluginApp — importing this loads nothing heavy.
-import { buildPluginApp, createPluginDevLoop } from "@bb/plugin-build";
+import { buildPluginApp, createPluginDevLoop } from "@patcher/plugin-build";
 import { getPluginBuildToolchain } from "./build-toolchain.js";
-import { deleteSecretFile, readOrCreateSecretFile } from "@bb/secret-storage";
-import type { PluginCapabilitySummary } from "@bb/server-contract";
+import {
+  deleteSecretFile,
+  readOrCreateSecretFile,
+} from "@patcher/secret-storage";
+import type { PluginCapabilitySummary } from "@patcher/server-contract";
 import {
   claimPluginScheduledRun,
   deleteAllPluginSettings,
@@ -52,7 +55,7 @@ import {
   recordPluginScheduleResult,
   setInstalledPluginEnabled,
   type InstalledPluginRow,
-} from "@bb/db";
+} from "@patcher/db";
 import {
   getLastThreadErrorMessage,
   getLastThreadOutput,

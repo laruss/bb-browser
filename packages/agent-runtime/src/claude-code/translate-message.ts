@@ -5,8 +5,8 @@ import type {
   ThreadEvent,
   ThreadEventItem,
   ThreadEventTokenUsageBreakdown,
-} from "@bb/domain";
-import { threadScope, turnScope } from "@bb/domain";
+} from "@patcher/domain";
+import { threadScope, turnScope } from "@patcher/domain";
 import {
   toOptionalRecord,
   withParentToolCallId,

@@ -3,12 +3,12 @@
 // as bb's sidebar HTML preview. Scripts, relative assets, and normal web
 // resources work inside an opaque origin that cannot access the host page.
 import { useEffect, useState } from "react";
-import { Icon } from "@bb/shared-ui/icon";
+import { Icon } from "@patcher/shared-ui/icon";
 import {
   definePluginApp,
   useRpc,
   type PluginMessageDirectiveProps,
-} from "@bb/plugin-sdk/app";
+} from "@patcher/plugin-sdk/app";
 import type { inlineVisRpcContract } from "./server.js";
 
 type LoadState =

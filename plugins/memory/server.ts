@@ -9,7 +9,7 @@ import {
   defineRpcContract,
   type BbPluginApi,
   type PluginCliContext,
-} from "@bb/plugin-sdk";
+} from "@patcher/plugin-sdk";
 import { z } from "zod";
 
 const CATALOG_MAX_CHARS = 3_900;

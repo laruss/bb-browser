@@ -26,7 +26,7 @@ import { fork, type ChildProcess } from "node:child_process";
 import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { PluginPermission } from "@bb/domain";
+import type { PluginPermission } from "@patcher/domain";
 import {
   createPluginChannel,
   type PluginChannel,

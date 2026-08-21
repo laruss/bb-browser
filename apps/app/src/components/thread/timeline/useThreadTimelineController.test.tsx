@@ -4,7 +4,7 @@ import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import type {
   ThreadTimelineResponse,
   TimelineUserConversationRow,
-} from "@bb/server-contract";
+} from "@patcher/server-contract";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { BbHttpError, sdk } from "@/lib/sdk";
 import { OPTIMISTIC_TIMELINE_ROW_ID_PREFIX } from "@/lib/optimistic-timeline-row";

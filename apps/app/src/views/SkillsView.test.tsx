@@ -11,7 +11,7 @@ import {
 import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { focusManager } from "@tanstack/react-query";
-import type { SkillSummary } from "@bb/server-contract";
+import type { SkillSummary } from "@patcher/server-contract";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createQueryClientTestHarness } from "@/test/queryClientTestHarness";
 import { sdk } from "@/lib/sdk";

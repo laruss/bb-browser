@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   DEFAULT_ENV_SETUP_SCRIPT_NAME,
   type ProvisioningTranscriptEntry,
-} from "@bb/domain";
+} from "@patcher/domain";
 import { provisionWorkspace } from "../src/index.js";
 import { runGit } from "../src/git.js";
 import { withCheckoutMutationLock } from "../src/checkout-mutation-lock.js";

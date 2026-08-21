@@ -3,8 +3,8 @@ import { z } from "zod";
 /**
  * The vocabulary an agent uses to drive the browser surface.
  *
- * It lives in `@bb/domain` because both ends need it and neither owns it: the
- * server sends commands (`@bb/server-contract` wraps these in a WS signal), the
+ * It lives in `@patcher/domain` because both ends need it and neither owns it: the
+ * server sends commands (`@patcher/server-contract` wraps these in a WS signal), the
  * app executes them against its tab store and the Electron bridge, and the app
  * sends outcomes back (`clientMessageSchema` in ./change-kinds.ts wraps those).
  *

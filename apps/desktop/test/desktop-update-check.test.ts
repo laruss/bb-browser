@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { BbDesktopVersionFeed } from "@bb/desktop-contract";
+import type { BbDesktopVersionFeed } from "@patcher/desktop-contract";
 import {
   createDesktopUpdateService,
   DESKTOP_UPDATE_ACTIVE_MIN_INTERVAL_MS,

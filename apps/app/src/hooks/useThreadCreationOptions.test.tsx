@@ -4,7 +4,7 @@ import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import type {
   OnboardingAgentOverview,
   SystemExecutionOptionsResponse,
-} from "@bb/server-contract";
+} from "@patcher/server-contract";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { sdk } from "@/lib/sdk";
 import { createQueryClientTestHarness } from "@/test/queryClientTestHarness";

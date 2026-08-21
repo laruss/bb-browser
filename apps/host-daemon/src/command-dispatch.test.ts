@@ -1,13 +1,13 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import type { AgentRuntime } from "@bb/agent-runtime";
+import type { AgentRuntime } from "@patcher/agent-runtime";
 import type {
   HostDaemonInjectedSkillSource,
   ProviderCliInstallEvent,
   ProviderCliStatus,
-} from "@bb/host-daemon-contract";
-import type { HostWorkspace } from "@bb/host-workspace";
+} from "@patcher/host-daemon-contract";
+import type { HostWorkspace } from "@patcher/host-workspace";
 import { afterEach, describe, expect, it, vi, type Mock } from "vitest";
 import {
   dispatchCommand,

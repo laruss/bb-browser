@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { PLUGIN_PERMISSIONS } from "@bb/domain";
+import { PLUGIN_PERMISSIONS } from "@patcher/domain";
 import {
   ANSWERED_IN_THE_PLUGIN_PROCESS,
   createPluginHostCallServer,

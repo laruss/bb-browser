@@ -1,11 +1,11 @@
-# @bb/db
+# @patcher/db
 
 ## Migration Workflow
 
 Schema changes must be checked in as generated SQL migrations:
 
 ```sh
-bun run --filter @bb/db db:generate
+bun run --filter @patcher/db db:generate
 ```
 
 Review the generated SQL before committing it. `db:push` is intentionally not

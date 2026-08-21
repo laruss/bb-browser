@@ -16,7 +16,7 @@ import {
   type AppDefaultKeybindings,
   type AppKeybindingOverrides,
   type AppKeybindings,
-} from "@bb/domain";
+} from "@patcher/domain";
 import { KeyboardSettingsSection } from "./KeyboardSettingsSection";
 
 const testState = vi.hoisted(() => {
@@ -184,8 +184,9 @@ vi.mock("@/hooks/mutations/settings-mutations", () => ({
   }),
 }));
 
-vi.mock("@bb/shared-ui/button", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@bb/shared-ui/button")>();
+vi.mock("@patcher/shared-ui/button", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("@patcher/shared-ui/button")>();
   return {
     ...actual,
     Button: (props: ComponentProps<typeof actual.Button>) => {

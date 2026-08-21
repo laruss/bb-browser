@@ -1,4 +1,4 @@
-import type { ProjectSource } from "@bb/domain";
+import type { ProjectSource } from "@patcher/domain";
 import { EnvironmentPickerUI } from "./EnvironmentPicker";
 import { StoryCard, StoryRow } from "../../../.ladle/story-card";
 import {

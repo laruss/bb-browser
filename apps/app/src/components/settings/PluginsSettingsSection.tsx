@@ -5,7 +5,7 @@ import { appToast } from "@/components/ui/app-toast.js";
 import { pluginAdminErrorMessage } from "@/lib/plugin-admin-error";
 import { PluginIcon } from "@/components/plugin/PluginIcon";
 import { PluginSettingsSections } from "@/components/plugin/PluginSettingsSections";
-import { Button } from "@bb/shared-ui/button";
+import { Button } from "@patcher/shared-ui/button";
 import {
   Dialog,
   DialogContent,
@@ -13,20 +13,20 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@bb/shared-ui/dialog";
+} from "@patcher/shared-ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@bb/shared-ui/dropdown-menu";
-import { EmptyState } from "@bb/shared-ui/empty-state";
-import { Icon } from "@bb/shared-ui/icon";
-import { Input } from "@bb/shared-ui/input";
-import { Pill, type PillVariant } from "@bb/shared-ui/pill";
-import { cn } from "@bb/shared-ui/lib/utils";
+} from "@patcher/shared-ui/dropdown-menu";
+import { EmptyState } from "@patcher/shared-ui/empty-state";
+import { Icon } from "@patcher/shared-ui/icon";
+import { Input } from "@patcher/shared-ui/input";
+import { Pill, type PillVariant } from "@patcher/shared-ui/pill";
+import { cn } from "@patcher/shared-ui/lib/utils";
 import { SettingsWithControl } from "@/components/ui/settings-section.js";
-import { Switch } from "@bb/shared-ui/switch";
+import { Switch } from "@patcher/shared-ui/switch";
 import {
   applyPluginSettingsView,
   invalidatePluginList,

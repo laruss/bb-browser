@@ -1,18 +1,18 @@
 import type {
   DiscoveredSkill,
   HostDaemonOnlineRpcRequestMessage,
-} from "@bb/host-daemon-contract";
+} from "@patcher/host-daemon-contract";
 import { createHash } from "node:crypto";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { setExperiments } from "@bb/db";
-import { defaultExperiments } from "@bb/domain";
+import { setExperiments } from "@patcher/db";
+import { defaultExperiments } from "@patcher/domain";
 import {
   skillContentResponseSchema,
   skillFilesResponseSchema,
   skillListResponseSchema,
-} from "@bb/server-contract";
+} from "@patcher/server-contract";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { writeRegistrySkillProvenance } from "../../src/services/skills/registry-skill-provenance.js";
 import { registerHostRpcResponder } from "../helpers/host-rpc.js";

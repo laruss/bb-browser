@@ -1,5 +1,9 @@
 import { delimiter } from "node:path";
-import { defaultFeatureFlags, hostTypeSchema, type HostType } from "@bb/domain";
+import {
+  defaultFeatureFlags,
+  hostTypeSchema,
+  type HostType,
+} from "@patcher/domain";
 import { DEFAULTS } from "./defaults.js";
 import { defineEnvVar, type EnvVarParseArgs } from "./env.js";
 import {

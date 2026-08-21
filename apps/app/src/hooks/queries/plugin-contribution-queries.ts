@@ -1,6 +1,6 @@
 import { useQuery, type QueryKey } from "@tanstack/react-query";
-import { normalizeBrowserSearchEngineTemplate } from "@bb/domain/browser-search-engine";
-import { normalizePluginSitePattern } from "@bb/domain/browser-url-pattern";
+import { normalizeBrowserSearchEngineTemplate } from "@patcher/domain/browser-search-engine";
+import { normalizePluginSitePattern } from "@patcher/domain/browser-url-pattern";
 import {
   normalizePluginMentionTriggers,
   type PluginMentionTrigger,

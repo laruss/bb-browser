@@ -10,8 +10,8 @@ import type {
   BbDesktopBrowserControlResult,
   BbDesktopBrowserRecordResult,
   BbDesktopBrowserStorageResult,
-} from "@bb/desktop-contract";
-import type { BrowserCommandOutcome } from "@bb/domain";
+} from "@patcher/desktop-contract";
+import type { BrowserCommandOutcome } from "@patcher/domain";
 import { createBrowserFixedPanelTab } from "../fixed-panel-tabs-state";
 import {
   EMPTY_BROWSER_SURFACE_TABS_STATE,

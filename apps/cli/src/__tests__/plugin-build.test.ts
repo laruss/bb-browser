@@ -13,15 +13,15 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { PLUGIN_SDK_MAJOR, PLUGIN_SDK_VERSION } from "@bb/domain";
-import { scaffoldPlugin } from "@bb/templates/plugin-scaffold";
+import { PLUGIN_SDK_MAJOR, PLUGIN_SDK_VERSION } from "@patcher/domain";
+import { scaffoldPlugin } from "@patcher/templates/plugin-scaffold";
 import {
   buildPluginApp,
   resolvePluginBuildToolchain,
   type PluginBuildToolchain,
-} from "@bb/plugin-build";
+} from "@patcher/plugin-build";
 /**
- * The monorepo's own toolchain: resolved from `@bb/plugin-build`'s
+ * The monorepo's own toolchain: resolved from `@patcher/plugin-build`'s
  * devDependencies, so tests never download one.
  */
 function testToolchain() {
@@ -76,7 +76,7 @@ const FIXTURE_PACKAGE_JSON = JSON.stringify(
 const FIXTURE_APP_TSX = `
 import { useState } from "react";
 import { createRoot } from "react-dom/client";
-import { definePluginApp } from "@bb/plugin-sdk/app";
+import { definePluginApp } from "@patcher/plugin-sdk/app";
 
 void createRoot;
 

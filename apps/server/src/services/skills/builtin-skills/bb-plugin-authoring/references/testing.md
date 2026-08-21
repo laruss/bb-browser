@@ -3,12 +3,12 @@
 The vitest harness for backend and frontend, the live loop against a running
 bb, and the shipped plugins to copy patterns from.
 
-## Unit tests with `@bb/plugin-sdk/testing`
+## Unit tests with `@patcher/plugin-sdk/testing`
 
-`@bb/plugin-sdk/testing` is the official vitest harness for workspace and
+`@patcher/plugin-sdk/testing` is the official vitest harness for workspace and
 standalone plugins. The packed package ships runtime JavaScript and portable
 declarations for both testing subpaths. A scaffold still vendors the root/app
-types, so add `@bb/plugin-sdk` as a devDependency when tests import the
+types, so add `@patcher/plugin-sdk` as a devDependency when tests import the
 testing harness (plus its optional peers: `better-sqlite3` for backend tests;
 React, React DOM, Testing Library, and jsdom for frontend tests).
 
@@ -32,7 +32,7 @@ import {
   createFakePluginHost,
   makeThreadResponse,
   pluginPermissionsFromManifest,
-} from "@bb/plugin-sdk/testing";
+} from "@patcher/plugin-sdk/testing";
 import plugin from "./server";
 
 const { bb, harness } = createFakePluginHost({
@@ -74,7 +74,7 @@ agent tools/configure provider, mention providers). Pass
 `agentSkillIds` to `createFakePluginHost` to declare the manifest skill names
 available to the configure driver.
 
-Frontend (`app.tsx`) — `@bb/plugin-sdk/testing/app` (vitest + jsdom):
+Frontend (`app.tsx`) — `@patcher/plugin-sdk/testing/app` (vitest + jsdom):
 
 ```tsx
 // @vitest-environment jsdom
@@ -82,7 +82,7 @@ import {
   loadPluginApp,
   mountPluginContentScripts,
   renderSlot,
-} from "@bb/plugin-sdk/testing/app";
+} from "@patcher/plugin-sdk/testing/app";
 
 // The thunk matters: app.tsx binds the plugin runtime at module load, so
 // loadPluginApp installs the test runtime BEFORE importing it. (For static
@@ -155,7 +155,7 @@ BB Official plugins in `plugins/` (a bb checkout):
 - `github` — a gh-CLI-backed issue/PR browser in a single navPanel (with
   `headerContent`), subPath-based sub-navigation, shared-ui
   Tabs/Select/DropdownMenu/Badge/Skeleton + sonner toast throughout (in-repo
-  plugins import `@bb/shared-ui`; out-of-repo authors vendor the same
+  plugins import `@patcher/shared-ui`; out-of-repo authors vendor the same
   components from the registry), background sync service, rpc + realtime,
   project setting, a `bb github` CLI command, and agent-spawn buttons.
 - `docs` (stable plugin id `simple-notes`) — multi-host Docs vaults over

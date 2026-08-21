@@ -1,9 +1,9 @@
-import { getInstalledPlugin, type DbConnection } from "@bb/db";
+import { getInstalledPlugin, type DbConnection } from "@patcher/db";
 import type {
   InstalledPlugin,
   PluginCatalogSearchResult,
   PluginCatalogStatus,
-} from "@bb/server-contract";
+} from "@patcher/server-contract";
 import {
   builtinPluginSource,
   listBundledPluginRegistrations,

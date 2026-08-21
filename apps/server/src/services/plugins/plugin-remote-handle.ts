@@ -28,7 +28,7 @@ import type {
   PluginBackgroundServiceRecord,
   PluginHttpRouteRecord,
 } from "./plugin-api.js";
-import type { PluginBrowserToolbarContext } from "@bb/plugin-sdk";
+import type { PluginBrowserToolbarContext } from "@patcher/plugin-sdk";
 import type { PluginRegistrationSnapshot } from "./plugin-child-runtime.js";
 
 type HostChannel = PluginChannel<PluginCallbackKind, PluginHostCallPath>;

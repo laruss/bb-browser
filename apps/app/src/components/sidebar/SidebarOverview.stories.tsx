@@ -12,11 +12,11 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { createStore, Provider } from "jotai";
-import { PERSONAL_PROJECT_ID } from "@bb/domain";
+import { PERSONAL_PROJECT_ID } from "@patcher/domain";
 import type {
   SidebarBootstrapResponse,
   ThreadSearchResponse,
-} from "@bb/server-contract";
+} from "@patcher/server-contract";
 import {
   BRANCH_NAMES,
   HOST_IDS,
@@ -27,7 +27,7 @@ import {
 } from "../../../.ladle/story-fixtures";
 import { ProjectActionsProvider } from "@/components/project/ProjectActionsProvider";
 import { ThreadActionsProvider } from "@/components/thread/ThreadActionsProvider";
-import { Icon } from "@bb/shared-ui/icon";
+import { Icon } from "@patcher/shared-ui/icon";
 import {
   ProjectList,
   ProjectListActionButtons,

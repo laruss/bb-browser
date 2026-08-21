@@ -9,7 +9,7 @@ import {
   type BbDesktopBrowserPageScriptCallHandler,
   type BbDesktopBrowserPageScriptResult,
   type BbDesktopBrowserPageScripts,
-} from "@bb/desktop-contract";
+} from "@patcher/desktop-contract";
 import {
   createBbDesktopApi,
   createNoopDesktopBrowserApi,

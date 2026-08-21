@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { BB_DESKTOP_BROWSER_MAX_FAVICON_DATA_URL_LENGTH } from "@bb/desktop-contract";
+import { BB_DESKTOP_BROWSER_MAX_FAVICON_DATA_URL_LENGTH } from "@patcher/desktop-contract";
 import {
   BB_DESKTOP_BROWSER_MAX_FAVICON_BYTES,
   resolveBrowserFaviconDataUrl,

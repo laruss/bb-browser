@@ -6,7 +6,7 @@ import {
   resolveDevInstanceConfig,
   resolveInheritedDevSkillsRootPaths,
   toDevProcessEnv,
-} from "@bb/config/runtime";
+} from "@patcher/config/runtime";
 import { createDevTurboCommand } from "../src/commands/run-dev.js";
 import { migrateLegacyDevData } from "../src/lib/legacy-dev-data-migration.js";
 import {
@@ -204,9 +204,9 @@ describe("run-dev", () => {
         "turbo",
         "run",
         "dev",
-        "--filter=@bb/app",
-        "--filter=@bb/server",
-        "--filter=@bb/host-daemon",
+        "--filter=@patcher/app",
+        "--filter=@patcher/server",
+        "--filter=@patcher/host-daemon",
         "--ui",
         "tui",
         "--concurrency",

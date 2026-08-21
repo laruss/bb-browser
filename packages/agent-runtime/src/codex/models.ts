@@ -4,7 +4,7 @@ import {
   type AvailableModel,
   type ModelReasoningEffort,
   type ReasoningLevel,
-} from "@bb/domain";
+} from "@patcher/domain";
 import { z } from "zod";
 
 const DEFAULT_REASONING_EFFORTS: readonly ModelReasoningEffort[] =

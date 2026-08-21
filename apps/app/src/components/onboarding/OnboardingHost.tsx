@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
-import type { DiscoveredRepo } from "@bb/host-daemon-contract";
+import type { DiscoveredRepo } from "@patcher/host-daemon-contract";
 import { useSystemConfig } from "@/hooks/queries/system-queries";
 import { useUpdateGeneralSettings } from "@/hooks/mutations/settings-mutations";
 import { useCreateProject } from "@/hooks/mutations/project-mutations";

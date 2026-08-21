@@ -3,8 +3,8 @@ import {
   createFakePluginHost,
   pluginPermissionsFromManifest,
   type FakePluginHost,
-} from "@bb/plugin-sdk/testing";
-import type { PluginAgentConfigurationContext } from "@bb/plugin-sdk";
+} from "@patcher/plugin-sdk/testing";
+import type { PluginAgentConfigurationContext } from "@patcher/plugin-sdk";
 import plugin, { RENDERER_ID, TOOL_NAME } from "./server.js";
 import { TOOL_INPUT_JSON_SCHEMA } from "./tool-definition.js";
 import type { InteractionPayload, ToolResult } from "./contracts.js";

@@ -14,7 +14,7 @@ UI kit those components are built from.
 
 ## The app entry
 
-`app.tsx` default-exports `definePluginApp` from `@bb/plugin-sdk/app`.
+`app.tsx` default-exports `definePluginApp` from `@patcher/plugin-sdk/app`.
 React and the SDK are **never bundled** — `bb plugin build` shims them to
 the host's shared runtime, so the bundle only works inside bb.
 
@@ -29,7 +29,7 @@ import {
   useBbNavigate,
   useComposer,
   useComposerView,
-} from "@bb/plugin-sdk/app";
+} from "@patcher/plugin-sdk/app";
 import { toast } from "sonner"; // shimmed to the host toaster
 import { Button } from "@/components/ui/button"; // vendored source YOU own
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -225,7 +225,7 @@ Destructive actions deliberately route through the host's own flow, so there
 is no silent `delete`: deletion is recursive, and only bb can show the
 confirmation that counts the child threads.
 
-Unit-test a list with `renderSlot(...)` from `@bb/plugin-sdk/testing/app`:
+Unit-test a list with `renderSlot(...)` from `@patcher/plugin-sdk/testing/app`:
 seed rows with the `sidebarThreads` option and assert against
 `inspection.sidebarActionCalls`.
 
@@ -411,7 +411,7 @@ Versioned and additive-only:
   rendering `component` with `{ threadId: string, params: JsonValue | null }`.
   Omitting `run` opens a tab immediately with defaults. Write parameters are
   typed as the recursively JSON-safe `JsonValue` exported by both
-  `@bb/plugin-sdk` and `@bb/plugin-sdk/app`; they persist with the tab across reloads (null when
+  `@patcher/plugin-sdk` and `@patcher/plugin-sdk/app`; they persist with the tab across reloads (null when
   none was passed); identical action+params re-opens focus the existing
   tab (title refreshed), different params open sibling tabs. The tab pill
   shows your compact plugin icon + the tab title. Errors thrown from `run`

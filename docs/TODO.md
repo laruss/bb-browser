@@ -52,7 +52,7 @@ Reading order is the order in which they block each other.
 - **A keychain-backed secret store for the server side.** Present-tense
   weakness, not a feature: every plugin secret — an API token, a cookie a plugin
   saved, whatever a credential plugin would hold — is written by
-  `@bb/secret-storage` as a **plaintext file with `0600` permissions**
+  `@patcher/secret-storage` as a **plaintext file with `0600` permissions**
   (`packages/secret-storage/src/secret-file.ts`). Any process running as the user
   reads it, and so does anyone who gets a copy of the data directory: a backup, a
   synced folder, a laptop without FileVault.

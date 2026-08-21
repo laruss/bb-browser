@@ -1,7 +1,7 @@
 import {
   hostDaemonEnrollResponseSchema,
   type HostDaemonEnrollRequest,
-} from "@bb/host-daemon-contract";
+} from "@patcher/host-daemon-contract";
 
 interface EnrollHostArgs {
   fetchFn?: typeof fetch;

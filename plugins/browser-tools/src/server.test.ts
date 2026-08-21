@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   createFakePluginHost,
   pluginPermissionsFromManifest,
-} from "@bb/plugin-sdk/testing";
+} from "@patcher/plugin-sdk/testing";
 import type {
   PluginAgentConfigurationContext,
   PluginAgentToolResult,
-} from "@bb/plugin-sdk";
+} from "@patcher/plugin-sdk";
 import plugin from "./server.js";
 import { BROWSER_TOOL_NAMES } from "./tools.js";
 

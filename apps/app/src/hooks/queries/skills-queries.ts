@@ -3,7 +3,7 @@ import type {
   DeleteSkillRequest,
   SkillSummary,
   UpdateSkillRequest,
-} from "@bb/server-contract";
+} from "@patcher/server-contract";
 import { sdk } from "@/lib/sdk";
 import {
   projectSkillsQueryKey,

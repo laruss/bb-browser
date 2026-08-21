@@ -10,9 +10,9 @@ vi.setConfig({ testTimeout: 60_000 });
 import {
   buildPluginApp,
   resolvePluginBuildToolchain,
-} from "@bb/plugin-build";
+} from "@patcher/plugin-build";
 /**
- * The monorepo's own toolchain: resolved from `@bb/plugin-build`'s
+ * The monorepo's own toolchain: resolved from `@patcher/plugin-build`'s
  * devDependencies, so tests never download one.
  */
 function testToolchain() {
@@ -60,11 +60,11 @@ describe("GitHub official plugin frontend bundle", () => {
         return name !== "dist" && name !== "node_modules";
       },
     });
-    // The temp copy has no node_modules; link @bb/shared-ui (the plugin's UI
+    // The temp copy has no node_modules; link @patcher/shared-ui (the plugin's UI
     // components — its own deps resolve through the workspace realpath) so
     // buildPluginApp can bundle it. Shimmed packages — react, radix portal
     // families, sonner, vaul, pierre — never resolve from disk.
-    const sharedUiLink = join(pluginDir, "node_modules", "@bb", "shared-ui");
+    const sharedUiLink = join(pluginDir, "node_modules", "@patcher", "shared-ui");
     await mkdir(dirname(sharedUiLink), { recursive: true });
     await symlink(
       fileURLToPath(new URL("../../../../packages/shared-ui", import.meta.url)),

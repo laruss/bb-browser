@@ -1,12 +1,12 @@
-import type { SkillSummary } from "@bb/server-contract";
+import type { SkillSummary } from "@patcher/server-contract";
 import type {
   RegistryPagination,
   RegistrySkill,
   RegistrySkillDetail,
   RegistrySkillFile,
   RegistrySkillsPage,
-} from "@bb/server-contract";
-import { RESOURCE_GRID_PAGE_SIZE } from "@bb/shared-ui/resource-pagination";
+} from "@patcher/server-contract";
+import { RESOURCE_GRID_PAGE_SIZE } from "@patcher/shared-ui/resource-pagination";
 import { BbHttpError, sdk } from "@/lib/sdk";
 
 export type {

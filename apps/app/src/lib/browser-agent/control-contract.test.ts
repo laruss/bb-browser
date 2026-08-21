@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { bbDesktopBrowserControlOperationSchema } from "@bb/desktop-contract";
-import { browserControlOperationSchema } from "@bb/domain";
+import { bbDesktopBrowserControlOperationSchema } from "@patcher/desktop-contract";
+import { browserControlOperationSchema } from "@patcher/domain";
 
 /**
  * The fourth union written twice, for the reason the other three are (see

@@ -20,7 +20,7 @@ import {
   createPluginOmniboxSuggestionSource,
   OMNIBOX_DEBOUNCE_MS,
 } from "@/lib/omnibox";
-import { BROWSER_SEARCH_ENGINE_QUERY_PLACEHOLDER } from "@bb/domain/browser-search-engine";
+import { BROWSER_SEARCH_ENGINE_QUERY_PLACEHOLDER } from "@patcher/domain/browser-search-engine";
 import { createQueryClientTestHarness } from "@/test/queryClientTestHarness";
 import { BrowserSurfaceChrome } from "./BrowserSurfaceChrome";
 

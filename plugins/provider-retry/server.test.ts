@@ -3,7 +3,7 @@ import {
   createFakePluginHost,
   pluginPermissionsFromManifest,
   makeThreadResponse,
-} from "@bb/plugin-sdk/testing";
+} from "@patcher/plugin-sdk/testing";
 import plugin from "./server.js";
 import {
   ProviderRetryService,

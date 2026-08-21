@@ -16,7 +16,7 @@ import {
   type PluginThreadListRegistration,
   type PluginThreadHeaderActionRegistration,
   type PluginThreadPanelActionRegistration,
-} from "@bb/plugin-sdk";
+} from "@patcher/plugin-sdk";
 import {
   collectComposerCustomization,
   PLUGIN_SLOT_ID_PATTERN,
@@ -26,7 +26,7 @@ import {
   requireOptionalString,
   requireSlotId,
   requireUniqueId,
-} from "@bb/plugin-sdk/internal/composer-customization-validation";
+} from "@patcher/plugin-sdk/internal/composer-customization-validation";
 import type { PluginFrontendRecord } from "./plugin-frontend";
 import type { PluginRegistrationSet } from "./plugin-slots";
 
@@ -73,7 +73,7 @@ function requirePatternList(kind: string, value: unknown): string[] {
   });
 }
 
-/** Real `@bb/plugin-sdk/app` implementation of `definePluginApp`. */
+/** Real `@patcher/plugin-sdk/app` implementation of `definePluginApp`. */
 export function definePluginApp(setup: PluginAppSetup): PluginAppDefinition {
   if (typeof setup !== "function") {
     throw new Error("definePluginApp expects a setup function");
@@ -456,7 +456,7 @@ export function interpretPluginFrontends(
       const definition = record.module.default;
       if (!isPluginAppDefinition(definition)) {
         throw new Error(
-          "the bundle's default export is not definePluginApp(...) from @bb/plugin-sdk/app",
+          "the bundle's default export is not definePluginApp(...) from @patcher/plugin-sdk/app",
         );
       }
       deps.setRegistrations(

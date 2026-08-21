@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
-import { assertNever } from "@bb/core-ui";
-import type { WorkspaceStatus } from "@bb/domain";
-import type { WorkspaceResolutionFailure } from "@bb/host-daemon-contract";
-import { BbHttpError } from "@bb/sdk/browser";
+import { assertNever } from "@patcher/core-ui";
+import type { WorkspaceStatus } from "@patcher/domain";
+import type { WorkspaceResolutionFailure } from "@patcher/host-daemon-contract";
+import { BbHttpError } from "@patcher/sdk/browser";
 import { describeLifecycleError } from "@/lib/lifecycle-errors";
 
 export interface ThreadGitStatusDisplay {

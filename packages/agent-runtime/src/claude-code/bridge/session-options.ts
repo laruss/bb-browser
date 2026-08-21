@@ -6,7 +6,7 @@ import type {
   PermissionEscalation,
   ReasoningLevel,
   RuntimePermissionScope,
-} from "@bb/domain";
+} from "@patcher/domain";
 import type { ClaudePermissionMode } from "../interactive-contract.js";
 import { buildReadonlyBashUpdatedInput } from "./readonly-bash-policy.js";
 import type {

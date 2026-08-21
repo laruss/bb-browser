@@ -6,14 +6,14 @@ import {
   getEnvironment,
   getThread,
   updateThread,
-} from "@bb/db";
-import { turnScope } from "@bb/domain";
+} from "@patcher/db";
+import { turnScope } from "@patcher/domain";
 import type {
   DynamicTool,
   Environment,
   Thread,
   ToolCallResponse,
-} from "@bb/domain";
+} from "@patcher/domain";
 import type { AppDeps } from "../../types.js";
 import { runLiveHostCommand } from "../hosts/live-command.js";
 import { appendThreadEventInTransaction } from "./thread-events.js";

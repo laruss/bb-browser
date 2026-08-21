@@ -8,9 +8,9 @@ import {
   getInstalledPluginRegistration,
   migrate,
   type DbConnection,
-} from "@bb/db";
-import type { Logger } from "@bb/logger";
-import { derivePluginId } from "@bb/domain";
+} from "@patcher/db";
+import type { Logger } from "@patcher/logger";
+import { derivePluginId } from "@patcher/domain";
 import {
   createPluginService,
   type PluginService,

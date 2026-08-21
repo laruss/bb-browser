@@ -9,7 +9,7 @@
  * inventing a second dialect for the same job.
  *
  * Zod-free on purpose: this is reached from the plugin API, which the
- * out-of-process plugin host loads, and importing `@bb/domain`'s index there
+ * out-of-process plugin host loads, and importing `@patcher/domain`'s index there
  * costs ~38MB of RSS against a 90MB budget (see plugin-transport.md).
  *
  * Two properties this module is responsible for:

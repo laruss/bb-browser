@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { permissionsForApiPath } from "@bb/domain";
+import { permissionsForApiPath } from "@patcher/domain";
 import {
   createPluginApiFetch,
   createPluginApiIdentities,

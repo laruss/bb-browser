@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { BbSdk } from "@bb/sdk";
+import type { BbSdk } from "@patcher/sdk";
 import {
   applySdkPermissions,
   createPluginPermissionGate,

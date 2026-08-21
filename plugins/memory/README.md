@@ -36,7 +36,7 @@ bb memory add \
   --scope project \
   --name turbo-validation \
   --summary "Use Turbo for builds and typechecks" \
-  --details "Run bunx turbo run typecheck --filter=@bb/<pkg>." \
+  --details "Run bunx turbo run typecheck --filter=@patcher/<pkg>." \
   --kind procedure \
   --tag build \
   --tag testing \

@@ -17,7 +17,7 @@ import {
   useRpc,
   type PluginNavPanelProps,
   type PluginThreadPanelProps,
-} from "@bb/plugin-sdk/app";
+} from "@patcher/plugin-sdk/app";
 import type { githubRpcContract } from "./server.js";
 // Shimmed to the host's copy at build time (shared worker-pool context +
 // shiki stays out of the plugin bundle) — diffs render with the same syntax
@@ -25,8 +25,8 @@ import type { githubRpcContract } from "./server.js";
 import { parsePatchFiles, type FileDiffMetadata } from "@pierre/diffs";
 import { FileDiff as PierreFileDiff } from "@pierre/diffs/react";
 import { toast } from "sonner";
-import { Badge } from "@bb/shared-ui/badge";
-import { Button } from "@bb/shared-ui/button";
+import { Badge } from "@patcher/shared-ui/badge";
+import { Button } from "@patcher/shared-ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,18 +35,18 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@bb/shared-ui/dropdown-menu";
-import { Input } from "@bb/shared-ui/input";
+} from "@patcher/shared-ui/dropdown-menu";
+import { Input } from "@patcher/shared-ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@bb/shared-ui/select";
-import { Skeleton } from "@bb/shared-ui/skeleton";
-import { Tabs, TabsList, TabsTrigger } from "@bb/shared-ui/tabs";
-import { Textarea } from "@bb/shared-ui/textarea";
+} from "@patcher/shared-ui/select";
+import { Skeleton } from "@patcher/shared-ui/skeleton";
+import { Tabs, TabsList, TabsTrigger } from "@patcher/shared-ui/tabs";
+import { Textarea } from "@patcher/shared-ui/textarea";
 import { EmptyState } from "@/components/empty-state";
 import { Markdown } from "@/components/markdown-lite";
 import { PageBody } from "@/components/page-body";

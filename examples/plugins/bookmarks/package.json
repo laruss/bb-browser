@@ -29,7 +29,7 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@bb/plugin-sdk": "workspace:*",
+    "@patcher/plugin-sdk": "workspace:*",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "typescript": "^6.0.2",

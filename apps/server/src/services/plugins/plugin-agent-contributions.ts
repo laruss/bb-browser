@@ -1,4 +1,4 @@
-import type { ToolCallResponse } from "@bb/domain";
+import type { ToolCallResponse } from "@patcher/domain";
 import type {
   PluginAgentConfigurationContext,
   PluginAgentToolContext,

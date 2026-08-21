@@ -10,14 +10,14 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { getBuiltInAgentProviderInfo } from "@bb/agent-providers";
+import { getBuiltInAgentProviderInfo } from "@patcher/agent-providers";
 import {
   getThreadEventScopeTurnId,
   isStandaloneBuiltinCompactCommand,
   jsonValueSchema,
   requireThreadEventScopeTurnId,
   turnScope,
-} from "@bb/domain";
+} from "@patcher/domain";
 import type {
   ClientTurnRequestId,
   PermissionEscalation,
@@ -25,7 +25,7 @@ import type {
   ReasoningLevel,
   ServiceTier,
   ThreadEvent,
-} from "@bb/domain";
+} from "@patcher/domain";
 import type { ReasoningEffort as CodexReasoningEffort } from "./generated/codex-app-server/schema/ReasoningEffort.js";
 import type { JsonValue } from "./generated/codex-app-server/schema/serde_json/JsonValue.js";
 import type { ServerNotification as CodexServerNotification } from "./generated/codex-app-server/schema/ServerNotification.js";

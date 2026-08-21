@@ -1,4 +1,4 @@
-import { COARSE_POINTER_DOT_SIZE_CLASS } from "@bb/shared-ui/coarse-pointer-sizing";
+import { COARSE_POINTER_DOT_SIZE_CLASS } from "@patcher/shared-ui/coarse-pointer-sizing";
 import { CONTEXT_SELECTION_SURFACE_CLASS } from "@/components/ui/context-selection";
 
 export type SidebarUnreadDotTone = "default" | "error";

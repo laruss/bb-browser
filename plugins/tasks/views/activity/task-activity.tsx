@@ -7,16 +7,16 @@ import {
   Notification02Icon,
   NotificationOff02Icon,
 } from "@hugeicons/core-free-icons";
-import { Button } from "@bb/shared-ui/button";
+import { Button } from "@patcher/shared-ui/button";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@bb/shared-ui/tooltip";
-import { cn } from "@bb/shared-ui/lib/utils";
+} from "@patcher/shared-ui/tooltip";
+import { cn } from "@patcher/shared-ui/lib/utils";
 import { TasksEditor } from "../../editor/tasks-editor.js";
-import { useBbNavigate } from "@bb/plugin-sdk/app";
+import { useBbNavigate } from "@patcher/plugin-sdk/app";
 import {
   useMentionItems,
   useTasksQuery,

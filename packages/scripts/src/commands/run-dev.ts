@@ -6,7 +6,7 @@ import {
   resolveCurrentDevInstanceConfig,
   toDevProcessEnv,
   type DevInstanceConfig,
-} from "@bb/config/runtime";
+} from "@patcher/config/runtime";
 import { migrateLegacyDevData } from "../lib/legacy-dev-data-migration.js";
 import { runScriptProcess } from "../lib/process-helpers.js";
 
@@ -32,9 +32,9 @@ export function createDevTurboCommand(): DevTurboCommand {
       "turbo",
       "run",
       "dev",
-      "--filter=@bb/app",
-      "--filter=@bb/server",
-      "--filter=@bb/host-daemon",
+      "--filter=@patcher/app",
+      "--filter=@patcher/server",
+      "--filter=@patcher/host-daemon",
       "--ui",
       "tui",
       "--concurrency",

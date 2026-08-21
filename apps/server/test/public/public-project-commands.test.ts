@@ -1,12 +1,12 @@
-import { PERSONAL_PROJECT_ID } from "@bb/domain";
+import { PERSONAL_PROJECT_ID } from "@patcher/domain";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type {
   DiscoveredSkill,
   HostProviderCommand,
   HostDaemonOnlineRpcRequestMessage,
-} from "@bb/host-daemon-contract";
-import { commandListResponseSchema } from "@bb/server-contract";
+} from "@patcher/host-daemon-contract";
+import { commandListResponseSchema } from "@patcher/server-contract";
 import { describe, expect, it } from "vitest";
 import { registerHostRpcResponder } from "../helpers/host-rpc.js";
 import { readJson } from "../helpers/json.js";

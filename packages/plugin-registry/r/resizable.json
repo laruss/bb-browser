@@ -9,7 +9,7 @@
     "react-resizable-panels"
   ],
   "registryDependencies": [
-    "@bb/utils"
+    "@patcher/utils"
   ],
   "files": [
     {

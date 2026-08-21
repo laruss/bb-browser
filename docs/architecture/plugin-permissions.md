@@ -362,15 +362,15 @@ plugin that passes one and is refused by the other is worse than either alone.
 
 ## The fake host enforces the same list
 
-`@bb/plugin-sdk/testing` refuses what the server refuses, because a harness
+`@patcher/plugin-sdk/testing` refuses what the server refuses, because a harness
 that grants everything turns every plugin suite into evidence for a claim it
 never checked.
 
 Three pieces make it one decision rather than two:
 
-- **The `bb.sdk` area map lives in `@bb/domain`**, read by both hosts. The
+- **The `bb.sdk` area map lives in `@patcher/domain`**, read by both hosts. The
   server keeps the compile-time check that its keys cover `keyof BbSdk`, which
-  `@bb/domain` cannot do without depending on `@bb/sdk`.
+  `@patcher/domain` cannot do without depending on `@patcher/sdk`.
 - **The browser permission is named at each fake call site**, not in a table
   keyed by the fake's own labels. The fake speaks the SDK's vocabulary
   (`control.evaluate`) and the host charges the command it builds

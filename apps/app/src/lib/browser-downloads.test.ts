@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { BbDesktopBrowserDownload } from "@bb/desktop-contract";
+import type { BbDesktopBrowserDownload } from "@patcher/desktop-contract";
 import {
   acknowledgeBrowserDownloads,
   describeBrowserDownload,

@@ -139,7 +139,7 @@ function toolchainFrom(require: NodeRequire): PluginBuildToolchain | null {
  * The toolchain as resolved from this package's own dependencies, or null.
  *
  * Non-null in the monorepo and in tests, where these are devDependencies of
- * `@bb/plugin-build`. Null in a shipped server, CLI, or desktop app, which
+ * `@patcher/plugin-build`. Null in a shipped server, CLI, or desktop app, which
  * carry none of them — those fetch. Checked first so development never pays a
  * download and never gets a second copy of a toolchain it already has.
  */

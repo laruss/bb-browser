@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { cn } from "@bb/shared-ui/lib/utils";
-import { THREAD_JUMP_APP_COMMAND_IDS } from "@bb/domain";
+import { cn } from "@patcher/shared-ui/lib/utils";
+import { THREAD_JUMP_APP_COMMAND_IDS } from "@patcher/domain";
 import { Link, useNavigate } from "react-router-dom";
-import { Icon } from "@bb/shared-ui/icon";
-import { COARSE_POINTER_CHILD_ICON_BUTTON_CLASS } from "@bb/shared-ui/coarse-pointer-sizing";
-import { usePointerCoarse } from "@bb/shared-ui/hooks/use-pointer-coarse";
+import { Icon } from "@patcher/shared-ui/icon";
+import { COARSE_POINTER_CHILD_ICON_BUTTON_CLASS } from "@patcher/shared-ui/coarse-pointer-sizing";
+import { usePointerCoarse } from "@patcher/shared-ui/hooks/use-pointer-coarse";
 import { OverflowFade } from "@/components/ui/overflow-fade.js";
 import {
   Sidebar,

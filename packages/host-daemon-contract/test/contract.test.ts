@@ -1,5 +1,5 @@
-import { collectOptionalFieldPaths } from "@bb/test-helpers";
-import { threadScope, type JsonObject } from "@bb/domain";
+import { collectOptionalFieldPaths } from "@patcher/test-helpers";
+import { threadScope, type JsonObject } from "@patcher/domain";
 import { describe, expect, it } from "vitest";
 import * as contract from "../src/index.js";
 import {

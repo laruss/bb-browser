@@ -2,11 +2,11 @@ import type {
   AppKeybindingOverrides,
   AppSettings,
   Experiments,
-} from "@bb/domain";
+} from "@patcher/domain";
 import type {
   DiscoverReposResult,
   ProviderUsageResponse,
-} from "@bb/host-daemon-contract";
+} from "@patcher/host-daemon-contract";
 import type {
   SystemAttentionResponse,
   SystemConfigReloadResponse,
@@ -24,8 +24,8 @@ import type {
   SystemVersionQuery,
   SystemVersionResponse,
   SystemVoiceTranscriptionResponse,
-} from "@bb/server-contract";
-import { systemVoiceTranscriptionResponseSchema } from "@bb/server-contract";
+} from "@patcher/server-contract";
+import { systemVoiceTranscriptionResponseSchema } from "@patcher/server-contract";
 import { signalRequestArgs, type CreateSdkAreaArgs } from "./common.js";
 
 export interface SystemAttentionArgs {

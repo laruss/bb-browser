@@ -4,8 +4,8 @@ import { join } from "node:path";
 import {
   readBbAppRuntimeFile,
   writeBbAppRuntimeFile,
-} from "@bb/config/app-runtime-file";
-import type { VerifiedProcessOps } from "@bb/config/verified-process-stop";
+} from "@patcher/config/app-runtime-file";
+import type { VerifiedProcessOps } from "@patcher/config/verified-process-stop";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   readForeignRuntimeDetails,

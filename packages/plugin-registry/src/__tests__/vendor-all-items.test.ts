@@ -13,10 +13,10 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   buildPluginApp,
   resolvePluginBuildToolchain,
-} from "@bb/plugin-build";
+} from "@patcher/plugin-build";
 
 /**
- * The monorepo's own toolchain: resolved from `@bb/plugin-build`'s
+ * The monorepo's own toolchain: resolved from `@patcher/plugin-build`'s
  * devDependencies, so tests never download one.
  */
 function testToolchain() {

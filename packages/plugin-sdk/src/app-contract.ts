@@ -4,11 +4,11 @@ import type {
   PromptInput,
   ReasoningLevel,
   ServiceTier,
-} from "@bb/domain";
+} from "@patcher/domain";
 import type {
   CreateExecutionInputSources,
   CreateThreadEnvironmentArgs,
-} from "@bb/server-contract";
+} from "@patcher/server-contract";
 import type { JsonValue } from "./json-value.js";
 import type {
   PluginRpcCallArgs,
@@ -17,10 +17,10 @@ import type {
 } from "./rpc-contract.js";
 
 /**
- * The `@bb/plugin-sdk/app` contract (plugin design §5.2) — pure types with no
+ * The `@patcher/plugin-sdk/app` contract (plugin design §5.2) — pure types with no
  * side effects. The BB app imports these to keep its real implementation in
  * sync (`satisfies PluginSdkApp`). Plugin authors import the same shapes through
- * `@bb/plugin-sdk/app`.
+ * `@patcher/plugin-sdk/app`.
  *
  * Per-slot props are versioned contracts: additive-only within an SDK major.
  */
@@ -1429,18 +1429,18 @@ export interface BbNavigate {
 
 // ---------------------------------------------------------------------------
 // The whole runtime surface. Declaration-versus-runtime parity is tested
-// against the actual `@bb/plugin-sdk/app` module namespace.
+// against the actual `@patcher/plugin-sdk/app` module namespace.
 //
 // Components are deliberately NOT part of this surface (removed 2026-07-03,
 // plugin design §5.5): plugins vendor shadcn-style component source from the
-// BB registry (`npx shadcn add @bb/<name>`) and own it. `bb plugin build`
+// BB registry (`npx shadcn add @patcher/<name>`) and own it. `bb plugin build`
 // shims react + the shared-singleton packages (portal radix families,
 // sonner, vaul); everything else bundles per plugin. Freezing 65 component
 // prop types here made every host component change a plugin-breaking change.
 // ---------------------------------------------------------------------------
 
 /**
- * Everything `@bb/plugin-sdk/app` resolves to at runtime. The BB app builds
+ * Everything `@patcher/plugin-sdk/app` resolves to at runtime. The BB app builds
  * the real implementation and `satisfies` this interface; `bb plugin build`
  * shims the specifier to that object on `globalThis.__bbPluginRuntime`.
  */

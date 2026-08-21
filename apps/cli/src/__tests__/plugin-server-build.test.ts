@@ -2,13 +2,13 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { PLUGIN_SDK_MAJOR, PLUGIN_SDK_VERSION } from "@bb/domain";
+import { PLUGIN_SDK_MAJOR, PLUGIN_SDK_VERSION } from "@patcher/domain";
 import {
   buildPluginServer,
   resolvePluginBuildToolchain,
-} from "@bb/plugin-build";
+} from "@patcher/plugin-build";
 /**
- * The monorepo's own toolchain: resolved from `@bb/plugin-build`'s
+ * The monorepo's own toolchain: resolved from `@patcher/plugin-build`'s
  * devDependencies, so tests never download one.
  */
 function testToolchain() {
@@ -35,10 +35,10 @@ const FIXTURE_PACKAGE_JSON = JSON.stringify(
 );
 
 // A local import that must be inlined, and a type-only SDK import that must
-// be fully erased (no runtime `@bb/plugin-sdk` import in the bundle).
+// be fully erased (no runtime `@patcher/plugin-sdk` import in the bundle).
 const FIXTURE_LIB_TS = `export const greeting = "PREBUILT_LIB_MARKER";\n`;
 const FIXTURE_SERVER_TS = `
-import type { BbPluginApi } from "@bb/plugin-sdk";
+import type { BbPluginApi } from "@patcher/plugin-sdk";
 import { greeting } from "./lib.ts";
 
 export default function plugin(bb: BbPluginApi): void {
@@ -73,7 +73,7 @@ describe("buildPluginServer", () => {
     expect(js).toMatch(/export\s*\{|export default/);
     expect(js).toContain("PREBUILT_LIB_MARKER");
     // The SDK import was type-only — nothing of it may survive at runtime.
-    expect(js).not.toContain("@bb/plugin-sdk");
+    expect(js).not.toContain("@patcher/plugin-sdk");
     // CJS-dep shim banner (createRequire) is present.
     expect(js).toContain("createRequire");
 
@@ -94,13 +94,13 @@ describe("buildPluginServer", () => {
     });
   });
 
-  it("keeps a runtime @bb/plugin-sdk import external (bare specifier survives)", async () => {
+  it("keeps a runtime @patcher/plugin-sdk import external (bare specifier survives)", async () => {
     await writeFixture();
     await writeFile(
       join(root, "server.ts"),
       `
       import { greeting } from "./lib.ts";
-      import * as sdk from "@bb/plugin-sdk";
+      import * as sdk from "@patcher/plugin-sdk";
 
       export default function plugin(bb: { log: { info(msg: string): void } }): void {
         bb.log.info(greeting + Object.keys(sdk).length);
@@ -109,7 +109,7 @@ describe("buildPluginServer", () => {
     );
     const result = await buildPluginServer(root, TEST_BB_VERSION, await testToolchain());
     const js = await readFile(result.jsPath, "utf8");
-    expect(js).toMatch(/from\s*"@bb\/plugin-sdk"/);
+    expect(js).toMatch(/from\s*"@patcher\/plugin-sdk"/);
   });
 
   it("errors clearly when package.json has no bb.server entry", async () => {

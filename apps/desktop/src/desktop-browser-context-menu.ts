@@ -1,5 +1,5 @@
 import type { MenuItemConstructorOptions } from "electron";
-import type { BbDesktopBrowserContextMenuItem } from "@bb/desktop-contract";
+import type { BbDesktopBrowserContextMenuItem } from "@patcher/desktop-contract";
 
 // The right-click menu for a browsed page.
 //

@@ -6,7 +6,7 @@ import {
   PROJECT_CHANGE_KINDS,
   SYSTEM_CHANGE_KINDS,
   THREAD_CHANGE_KINDS,
-} from "@bb/domain";
+} from "@patcher/domain";
 import { createAppQueryClient } from "@/lib/query-client";
 import {
   archivedThreadsListQueryKey,

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { permissionModeSchema } from "@bb/domain";
+import { permissionModeSchema } from "@patcher/domain";
 import {
   pathsExistRequestSchema,
   pathsExistResponseSchema,
@@ -13,7 +13,7 @@ import {
   type ProviderCliInstallEvent,
   type ProviderCliInstallRequest,
   type ProviderCliStatusResponse,
-} from "@bb/host-daemon-contract";
+} from "@patcher/host-daemon-contract";
 
 /**
  * Query for `GET /hosts/:id/directory`, the interactive path browser's

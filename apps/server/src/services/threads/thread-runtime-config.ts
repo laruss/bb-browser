@@ -1,4 +1,4 @@
-import { getEnvironment, getHost, getProject } from "@bb/db";
+import { getEnvironment, getHost, getProject } from "@patcher/db";
 import type {
   DynamicTool,
   InstructionMode,
@@ -11,9 +11,9 @@ import type {
   ThreadTurnInitiator,
   WorkspaceProvisionType,
   EnvironmentStatus,
-} from "@bb/domain";
-import type { HostDaemonInjectedSkillSource } from "@bb/host-daemon-contract";
-import { renderTemplate } from "@bb/templates";
+} from "@patcher/domain";
+import type { HostDaemonInjectedSkillSource } from "@patcher/host-daemon-contract";
+import { renderTemplate } from "@patcher/templates";
 import { ApiError } from "../../errors.js";
 import type { AppDeps, LoggedWorkSessionDeps } from "../../types.js";
 import { throwEnvironmentNotReady } from "../lib/lifecycle-api-errors.js";

@@ -20,9 +20,9 @@ import type {
   UploadedPromptAttachment,
   WorkspacePathListResponse,
   WorkspaceFileListResponse,
-} from "@bb/server-contract";
-import { uploadedPromptAttachmentSchema } from "@bb/server-contract";
-import type { ProjectExecutionDefaults, ProjectSource } from "@bb/domain";
+} from "@patcher/server-contract";
+import { uploadedPromptAttachmentSchema } from "@patcher/server-contract";
+import type { ProjectExecutionDefaults, ProjectSource } from "@patcher/domain";
 import { signalRequestArgs, type CreateSdkAreaArgs } from "./common.js";
 
 export interface ProjectListArgs {

@@ -14,7 +14,7 @@ import {
   type OmniboxOpenTab,
 } from "./open-tabs";
 import { createOmniboxSearchProvider } from "./search";
-import { BROWSER_SEARCH_ENGINE_QUERY_PLACEHOLDER } from "@bb/domain/browser-search-engine";
+import { BROWSER_SEARCH_ENGINE_QUERY_PLACEHOLDER } from "@patcher/domain/browser-search-engine";
 
 /** Named rather than assumed: the provider has no default engine any more. */
 const GOOGLE_TEMPLATE = `https://www.google.com/search?q=${BROWSER_SEARCH_ENGINE_QUERY_PLACEHOLDER}`;

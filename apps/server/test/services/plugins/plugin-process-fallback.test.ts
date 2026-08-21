@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ChildProcess } from "node:child_process";
 import { afterEach, describe, expect, it } from "vitest";
-import { createConnection, migrate, type DbConnection } from "@bb/db";
+import { createConnection, migrate, type DbConnection } from "@patcher/db";
 import {
   createFakePluginHostProcess,
   type FakePluginHostProcess,

@@ -44,11 +44,11 @@ After copying the schema in, delete everything not reachable from the
 importers listed above (and the barrels), then verify:
 
 ```bash
-bunx turbo run typecheck --filter=@bb/agent-runtime
+bunx turbo run typecheck --filter=@patcher/agent-runtime
 ```
 
 TypeScript reports any over-deletion as a missing-module error; a green
-typecheck plus `bunx turbo run test --filter=@bb/agent-runtime` confirms
+typecheck plus `bunx turbo run test --filter=@patcher/agent-runtime` confirms
 the kept subset is complete. Keep it pruned to avoid re-vendoring dead types.
 
 ## Source of truth

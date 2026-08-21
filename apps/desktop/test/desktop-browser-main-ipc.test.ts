@@ -18,7 +18,7 @@ import {
   type BbDesktopBrowserSetVisibleRequest,
   type BbDesktopPageScriptBootstrap,
   type BbDesktopPageScriptRpcAnswer,
-} from "@bb/desktop-contract";
+} from "@patcher/desktop-contract";
 import {
   BB_DESKTOP_BROWSER_ATTACH_CHANNEL,
   BB_DESKTOP_BROWSER_CAPTURE_FULL_PAGE_CHANNEL,

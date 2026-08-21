@@ -26,7 +26,7 @@ import {
   type PendingInteractionGrantedPermissionProfile,
   type PermissionEscalation,
   type ReasoningLevel,
-} from "@bb/domain";
+} from "@patcher/domain";
 import {
   forkSession,
   type CanUseTool,

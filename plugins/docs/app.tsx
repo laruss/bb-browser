@@ -18,7 +18,7 @@ import {
   type PluginMessageDirectiveProps,
   type PluginNavPanelProps,
   type PluginThreadPanelProps,
-} from "@bb/plugin-sdk/app";
+} from "@patcher/plugin-sdk/app";
 import type { docsRpcContract } from "./server.js";
 import { parseMarkdownDocument } from "./markdown-document.js";
 import {
@@ -59,7 +59,7 @@ import {
   SidebarRightIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Button } from "@bb/shared-ui/button";
+import { Button } from "@patcher/shared-ui/button";
 import {
   Dialog,
   DialogContent,
@@ -67,18 +67,18 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@bb/shared-ui/dialog";
-import { Input } from "@bb/shared-ui/input";
-import { Skeleton } from "@bb/shared-ui/skeleton";
+} from "@patcher/shared-ui/dialog";
+import { Input } from "@patcher/shared-ui/input";
+import { Skeleton } from "@patcher/shared-ui/skeleton";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@bb/shared-ui/select";
-import { cn } from "@bb/shared-ui/lib/utils";
-import { usePortalScopeProps } from "@bb/shared-ui/lib/portal-scope";
+} from "@patcher/shared-ui/select";
+import { cn } from "@patcher/shared-ui/lib/utils";
+import { usePortalScopeProps } from "@patcher/shared-ui/lib/portal-scope";
 
 interface Vault {
   id: string;

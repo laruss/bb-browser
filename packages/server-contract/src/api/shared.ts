@@ -5,15 +5,15 @@ import {
   changedMessageLenientSchema,
   changedMessageSchema,
   gitBranchNameSchema,
-} from "@bb/domain";
-import type { GitBranchName } from "@bb/domain";
+} from "@patcher/domain";
+import type { GitBranchName } from "@patcher/domain";
 
 export {
   BRANCH_LIST_LIMIT_MAX,
   BRANCH_LIST_QUERY_MAX_LENGTH,
   FILE_LIST_LIMIT_MAX,
   FILE_LIST_QUERY_MAX_LENGTH,
-} from "@bb/domain";
+} from "@patcher/domain";
 
 interface IncludeQueryValidationArgs {
   allowedValues: readonly string[];
@@ -229,7 +229,7 @@ export type BrowserCommandRequestSignal = z.infer<
 /**
  * Lenient counterpart for INBOUND parsing on clients, mirroring
  * {@link pluginSignalLenientSchema}. Only the envelope is restated — the command
- * union itself is shared from `@bb/domain` rather than duplicated, because a
+ * union itself is shared from `@patcher/domain` rather than duplicated, because a
  * twelve-member union written twice would drift on the first addition.
  */
 export const browserCommandRequestSignalLenientSchema = z.object({

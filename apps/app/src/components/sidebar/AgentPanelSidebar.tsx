@@ -3,8 +3,8 @@ import {
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from "react";
-import { CompactViewportOverrideProvider } from "@bb/shared-ui/hooks/use-compact-viewport";
-import { cn } from "@bb/shared-ui/lib/utils";
+import { CompactViewportOverrideProvider } from "@patcher/shared-ui/hooks/use-compact-viewport";
+import { cn } from "@patcher/shared-ui/lib/utils";
 import { Sidebar, useCloseMobileSidebar } from "@/components/ui/sidebar.js";
 import { SectionSidebarIcon, SectionSidebarRow } from "./SectionSidebar";
 import { SidebarHistoryNavigationControls } from "./SidebarHistoryNavigationControls";

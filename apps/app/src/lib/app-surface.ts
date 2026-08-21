@@ -3,7 +3,7 @@ import {
   APP_SURFACE_HEADER_NAME,
   APP_SURFACE_WEB,
   type AppSurface,
-} from "@bb/config/app-surface";
+} from "@patcher/config/app-surface";
 
 export function getAppSurface(): AppSurface {
   if (typeof window !== "undefined" && window.bbDesktop !== undefined) {

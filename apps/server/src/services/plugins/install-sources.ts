@@ -13,7 +13,7 @@ import {
 } from "node:fs/promises";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import semver from "semver";
-import { spawnPortableOutputProcess } from "@bb/process-utils";
+import { spawnPortableOutputProcess } from "@patcher/process-utils";
 
 /**
  * Parsed `bb plugin install` source spec (design §6). The original spec is

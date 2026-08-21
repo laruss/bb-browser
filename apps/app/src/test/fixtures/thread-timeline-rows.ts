@@ -25,12 +25,12 @@ import type {
   TimelineWebFetchWorkRow,
   TimelineWebSearchWorkRow,
   TimelineWorkflowWorkRow,
-} from "@bb/server-contract";
+} from "@patcher/server-contract";
 import type {
   SystemMessageKind,
   SystemMessageSubject,
   ThreadTurnInitiator,
-} from "@bb/domain";
+} from "@patcher/domain";
 
 export interface RowBaseOverrideArgs {
   createdAt?: number;

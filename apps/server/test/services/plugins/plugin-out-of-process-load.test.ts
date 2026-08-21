@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { getPluginKvValue } from "@bb/db";
+import { getPluginKvValue } from "@patcher/db";
 import {
   createTestAppHarness,
   type TestAppHarness,

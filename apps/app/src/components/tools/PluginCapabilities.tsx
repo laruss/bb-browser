@@ -1,14 +1,14 @@
 import type { ReactNode } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@bb/shared-ui/button";
-import type { PluginCapability } from "@bb/server-contract";
-import { Icon, type IconName } from "@bb/shared-ui/icon";
+import { Button } from "@patcher/shared-ui/button";
+import type { PluginCapability } from "@patcher/server-contract";
+import { Icon, type IconName } from "@patcher/shared-ui/icon";
 import {
   ResourceDetailIncludesSection,
   ResourceStatus,
   type ResourceStatusTone,
-} from "@bb/shared-ui/resource-list";
-import { cn } from "@bb/shared-ui/lib/utils";
+} from "@patcher/shared-ui/resource-list";
+import { cn } from "@patcher/shared-ui/lib/utils";
 import { PluginBannerBar } from "@/components/tools/plugin-detail-banner";
 import {
   PluginDetailGlyph,

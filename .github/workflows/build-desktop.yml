@@ -56,13 +56,13 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Typecheck desktop and launcher
-        run: bunx turbo run typecheck --filter=@bb/desktop --filter=bb-app --output-logs=new-only
+        run: bunx turbo run typecheck --filter=@patcher/desktop --filter=bb-app --output-logs=new-only
 
       - name: Build desktop
-        run: bunx turbo run build --filter=@bb/desktop --output-logs=new-only
+        run: bunx turbo run build --filter=@patcher/desktop --output-logs=new-only
 
       - name: Test desktop and launcher
-        run: bunx turbo run test --filter=@bb/desktop --filter=bb-app --force --output-logs=new-only
+        run: bunx turbo run test --filter=@patcher/desktop --filter=bb-app --force --output-logs=new-only
 
       - name: Validate macOS signing secrets
         env:
@@ -109,13 +109,13 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: bunx turbo run desktop:build --filter=@bb/desktop --force --output-logs=new-only
+        run: bunx turbo run desktop:build --filter=@patcher/desktop --force --output-logs=new-only
 
       - name: Smoke test packaged desktop app
-        run: bunx turbo run smoke:packaged --filter=@bb/desktop --force --output-logs=new-only
+        run: bunx turbo run smoke:packaged --filter=@patcher/desktop --force --output-logs=new-only
 
       - name: Generate desktop version feed
-        run: bun run --filter @bb/desktop --elide-lines=0 desktop:version-feed
+        run: bun run --filter @patcher/desktop --elide-lines=0 desktop:version-feed
 
       - name: Plan release publication
         id: release_plan

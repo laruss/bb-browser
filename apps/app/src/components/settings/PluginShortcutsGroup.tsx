@@ -5,7 +5,7 @@ import {
   type AppCommandId,
   type AppKeybindings,
   type AppShortcut,
-} from "@bb/domain";
+} from "@patcher/domain";
 import { AppCommandShortcutPill } from "@/components/commands/AppCommandShortcutHint";
 import { getBbDesktopInfo } from "@/lib/bb-desktop";
 import {

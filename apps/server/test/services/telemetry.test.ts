@@ -1,7 +1,7 @@
 import { mkdtemp, readdir, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { DEFAULTS } from "@bb/config/defaults";
+import { DEFAULTS } from "@patcher/config/defaults";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createTelemetryService,

@@ -2,9 +2,9 @@
 
 import { cleanup, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { TooltipProvider } from "@bb/shared-ui/tooltip";
-import type { Host } from "@bb/domain";
-import type { ProviderCliKey } from "@bb/host-daemon-contract";
+import { TooltipProvider } from "@patcher/shared-ui/tooltip";
+import type { Host } from "@patcher/domain";
+import type { ProviderCliKey } from "@patcher/host-daemon-contract";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ProviderCliIssue } from "@/components/provider-cli/provider-cli-install";
 import type {

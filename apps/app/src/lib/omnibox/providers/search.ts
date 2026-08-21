@@ -1,4 +1,4 @@
-import { buildBrowserSearchUrl } from "@bb/domain/browser-search-engine";
+import { buildBrowserSearchUrl } from "@patcher/domain/browser-search-engine";
 import { normalizeBrowserUrl } from "@/lib/browser-url";
 import { OMNIBOX_DEFAULT_ACTION_SCORE } from "../default-action";
 import type { OmniboxProvider, OmniboxProviderSuggestion } from "../types";

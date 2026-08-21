@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import type { SkillProvider, SkillSummary } from "@bb/server-contract";
+import type { SkillProvider, SkillSummary } from "@patcher/server-contract";
 import bbLogoUrl from "../../../../../assets/bb-logo.svg";
 import {
   ResourcePagination,
   useResourcePagination,
   useResourceViewportPageSize,
-} from "@bb/shared-ui/resource-pagination";
+} from "@patcher/shared-ui/resource-pagination";
 import {
   ResourceCollectionPage,
   ResourceCollectionViewport,
@@ -18,8 +18,8 @@ import {
   ResourceRowDetailChevron,
   ResourceSortMenu,
   ResourceToolbar,
-} from "@bb/shared-ui/resource-list";
-import { cn } from "@bb/shared-ui/lib/utils";
+} from "@patcher/shared-ui/resource-list";
+import { cn } from "@patcher/shared-ui/lib/utils";
 import { TOOLS_OWNED_COLLECTION_LABEL } from "@/components/tools/tools-navigation";
 import {
   ConfirmDeleteDialog,

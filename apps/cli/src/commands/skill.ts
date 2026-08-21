@@ -1,8 +1,8 @@
 import { readFile } from "node:fs/promises";
 import { Command } from "commander";
-import { PERSONAL_PROJECT_ID } from "@bb/domain";
-import type { RegistrySkill } from "@bb/server-contract";
-import type { SkillsRegistryArea } from "@bb/sdk";
+import { PERSONAL_PROJECT_ID } from "@patcher/domain";
+import type { RegistrySkill } from "@patcher/server-contract";
+import type { SkillsRegistryArea } from "@patcher/sdk";
 import { action } from "../action.js";
 import { createCliBbSdk } from "../client.js";
 import { resolveMachineId } from "./machine.js";

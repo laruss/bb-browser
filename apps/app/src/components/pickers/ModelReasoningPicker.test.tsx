@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import type { AvailableModel, ReasoningLevel } from "@bb/domain";
+import type { AvailableModel, ReasoningLevel } from "@patcher/domain";
 import type {
   SystemExecutionOptionsResponse,
   SystemProvidersQuery,
-} from "@bb/server-contract";
+} from "@patcher/server-contract";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { systemExecutionOptionsQueryKey } from "@/hooks/queries/query-keys";
 import { createQueryClientTestHarness } from "@/test/queryClientTestHarness";

@@ -6,8 +6,8 @@ import type {
   Thread,
   ThreadListEntry,
   WorkspaceStatus,
-} from "@bb/domain";
-import type { ProjectResponse } from "@bb/server-contract";
+} from "@patcher/domain";
+import type { ProjectResponse } from "@patcher/server-contract";
 import { ClaudeIcon } from "../src/components/icons/ClaudeIcon";
 import { OpenAiIcon } from "../src/components/icons/OpenAiIcon";
 import { PiIcon } from "../src/components/icons/PiIcon";

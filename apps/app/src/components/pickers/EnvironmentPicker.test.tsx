@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import type { Host, ProjectSource } from "@bb/domain";
-import { HOST_DAEMON_PROTOCOL_VERSION } from "@bb/host-daemon-contract";
+import type { Host, ProjectSource } from "@patcher/domain";
+import { HOST_DAEMON_PROTOCOL_VERSION } from "@patcher/host-daemon-contract";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { EnvironmentPickerUI } from "./EnvironmentPicker";
 

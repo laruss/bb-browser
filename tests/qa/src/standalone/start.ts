@@ -32,7 +32,7 @@ function parseArgs() {
       const nextArg = process.argv[index + 1];
       if (nextArg !== "env" && nextArg !== "json") {
         throw new Error(
-          "Usage: bun run --filter @bb/qa standalone:start --format json|env",
+          "Usage: bun run --filter @patcher/qa standalone:start --format json|env",
         );
       }
       format = nextArg;
@@ -41,7 +41,7 @@ function parseArgs() {
     }
 
     throw new Error(
-      "Usage: bun run --filter @bb/qa standalone:start --format json|env",
+      "Usage: bun run --filter @patcher/qa standalone:start --format json|env",
     );
   }
 
@@ -129,9 +129,9 @@ async function main() {
     // cleanup command cds into the repo once and chains both scripts from there.
     const cleanupCommand =
       `cd ${shellQuote(repoRoot)} && ` +
-      `bun run --silent --filter @bb/qa --elide-lines=0 standalone:stop ` +
+      `bun run --silent --filter @patcher/qa --elide-lines=0 standalone:stop ` +
       `--state ${shellQuote(statePath)} && ` +
-      `bun run --silent --filter @bb/qa --elide-lines=0 standalone:cleanup`;
+      `bun run --silent --filter @patcher/qa --elide-lines=0 standalone:cleanup`;
     const restartDaemonCommand = buildDaemonRestartCommand({
       cwd: repoRoot,
       daemonPid: daemonProcess.pid,

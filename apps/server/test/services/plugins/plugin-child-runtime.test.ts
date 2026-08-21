@@ -4,8 +4,8 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
-import { PLUGIN_PERMISSIONS } from "@bb/domain";
-import type { JsonValue } from "@bb/domain";
+import { PLUGIN_PERMISSIONS } from "@patcher/domain";
+import type { JsonValue } from "@patcher/domain";
 import {
   createPluginChannel,
   type PluginChannel,
@@ -322,7 +322,7 @@ describe("a plugin in its own process", () => {
       {
         // `--conditions=source` is the repo idiom for running a workspace TS
         // entry (see agent-runtime's bridge-path.ts): without it the child
-        // resolves @bb/sdk's *published* entry, which lacks the Node-only
+        // resolves @patcher/sdk's *published* entry, which lacks the Node-only
         // exports this file needs. A packaged server forks a built entry and
         // needs neither flag.
         execArgv: [
@@ -392,7 +392,7 @@ describe("a plugin in its own process", () => {
     ).resolves.toBe("ДАЛЕКО");
   }, 30_000);
 
-  // `@bb/sdk` is not imported until a plugin asks for `bb.sdk`: it builds the
+  // `@patcher/sdk` is not imported until a plugin asks for `bb.sdk`: it builds the
   // whole public API surface at import time and costs the process ~100MB,
   // which most plugins never use. Deferring it is only safe if the deferred
   // load still produces a working SDK, and only a real process can say —

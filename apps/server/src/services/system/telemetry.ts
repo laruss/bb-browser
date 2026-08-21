@@ -1,7 +1,7 @@
 import { AsyncLocalStorage } from "node:async_hooks";
-import { DEFAULTS } from "@bb/config/defaults";
-import { readOrCreateSecretFile } from "@bb/secret-storage";
-import type { AppSurface } from "@bb/config/app-surface";
+import { DEFAULTS } from "@patcher/config/defaults";
+import { readOrCreateSecretFile } from "@patcher/secret-storage";
+import type { AppSurface } from "@patcher/config/app-surface";
 import type { ServerLogger } from "../../types.js";
 
 /**
@@ -16,7 +16,7 @@ import type { ServerLogger } from "../../types.js";
  * workflow state, so lost sends (offline, PostHog outage, process exit
  * mid-flight) are dropped without retry or persistence.
  *
- * A default public write-only PostHog key ships in @bb/config. Telemetry only
+ * A default public write-only PostHog key ships in @patcher/config. Telemetry only
  * activates for production server runs with a resolved release version (the
  * bb-app launcher and desktop app set NODE_ENV=production). Dev/source runs
  * never send, even if a test starts them in production mode.

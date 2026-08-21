@@ -7,9 +7,9 @@ import {
   migrate,
   upsertInstalledPlugin,
   type DbConnection,
-} from "@bb/db";
-import { PLUGIN_SDK_MAJOR, PLUGIN_SDK_VERSION } from "@bb/domain";
-import type { Logger } from "@bb/logger";
+} from "@patcher/db";
+import { PLUGIN_SDK_MAJOR, PLUGIN_SDK_VERSION } from "@patcher/domain";
+import type { Logger } from "@patcher/logger";
 import {
   createPluginService,
   type PluginService,

@@ -7,7 +7,7 @@ import {
   type AppThemeSelection,
   type FaviconColor,
   type FaviconColorPreference,
-} from "@bb/domain";
+} from "@patcher/domain";
 import { invalidateSystemConfig } from "@/hooks/cache-owners/system-cache-effects";
 import { useSystemConfig } from "@/hooks/queries/system-queries";
 import { sdk } from "@/lib/sdk";

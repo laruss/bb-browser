@@ -7,7 +7,7 @@ import {
   formatPendingInteractionSummary,
   formatPendingInteractionUserQuestionOptionLabel,
   summarizePendingInteractionRequestedPermissions,
-} from "@bb/core-ui";
+} from "@patcher/core-ui";
 import {
   isApprovalPendingInteractionPayload,
   isApprovalPendingInteractionResolution,
@@ -24,7 +24,7 @@ import {
   PendingInteractionResolution,
   type UserQuestionPendingInteractionPayload,
   type UserQuestionPendingInteractionResolution,
-} from "@bb/domain";
+} from "@patcher/domain";
 import { action } from "../../action.js";
 import { createCliBbSdk } from "../../client.js";
 import { renderBorderlessTable } from "../../table.js";

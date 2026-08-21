@@ -1,4 +1,4 @@
-import type { Environment, WorkspaceStatus } from "@bb/domain";
+import type { Environment, WorkspaceStatus } from "@patcher/domain";
 import { describe, expect, it } from "vitest";
 import {
   resolveEffectiveMergeBaseBranch,

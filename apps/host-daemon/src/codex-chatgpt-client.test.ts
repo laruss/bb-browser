@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import type { JsonObject, JsonValue } from "@bb/domain";
+import type { JsonObject, JsonValue } from "@patcher/domain";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { resetChatGptCloudflareCookiesForTests } from "./chatgpt-cloudflare-cookies.js";
 import {

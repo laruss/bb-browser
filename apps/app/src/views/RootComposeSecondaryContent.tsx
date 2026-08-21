@@ -14,16 +14,16 @@ import {
   PanelGroup,
   type ImperativePanelGroupHandle,
 } from "react-resizable-panels";
-import { PersistentResponsiveDrawerShell } from "@bb/shared-ui/responsive-overlay";
-import { useIsCompactViewport } from "@bb/shared-ui/hooks/use-compact-viewport";
+import { PersistentResponsiveDrawerShell } from "@patcher/shared-ui/responsive-overlay";
+import { useIsCompactViewport } from "@patcher/shared-ui/hooks/use-compact-viewport";
 import { ThreadSecondaryPanel } from "@/components/secondary-panel/ThreadSecondaryPanel";
 import { useDrawerPanelRealization } from "@/components/secondary-panel/useDrawerPanelRealization";
 import { secondaryPanelWidthPercentAtom } from "@/components/secondary-panel/threadSecondaryPanelAtoms";
-import { Skeleton } from "@bb/shared-ui/skeleton";
+import { Skeleton } from "@patcher/shared-ui/skeleton";
 import { PANEL_COLLAPSE_TRANSITION_CLASS } from "@/components/secondary-panel/panelTransitionTokens";
 import { PAGE_SHELL_CONTENT_STYLE } from "@/components/ui/page-shell-content-style.js";
 import { dispatchBrowserViewBoundsSync } from "@/lib/browser-view-bounds-sync";
-import { COARSE_POINTER_HEADER_ICON_BUTTON_CLASS } from "@bb/shared-ui/coarse-pointer-sizing";
+import { COARSE_POINTER_HEADER_ICON_BUTTON_CLASS } from "@patcher/shared-ui/coarse-pointer-sizing";
 import {
   CHROME_ROW_HEIGHT_CLASS,
   getBbDesktopInfo,
@@ -33,7 +33,7 @@ import {
 } from "@/lib/bb-desktop";
 import { PluginHomepageSections } from "@/components/plugin/PluginHomepageSections";
 import { usePluginComposerHost } from "@/components/plugin/plugin-composer-host";
-import { cn } from "@bb/shared-ui/lib/utils";
+import { cn } from "@patcher/shared-ui/lib/utils";
 import {
   useOptionalPaneContext,
   usePaneSecondaryPanelRegistration,

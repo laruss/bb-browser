@@ -60,7 +60,7 @@ browser's own open-tab and history rows.
 
 ## Tests
 
-`server.test.ts` runs against `@bb/plugin-sdk/testing` — no bb server, no
+`server.test.ts` runs against `@patcher/plugin-sdk/testing` — no bb server, no
 browser. The end-to-end path (install → contributions → suggest → run → spawned
 thread) is covered by `hero plugin: omnibox-agent` in
 `apps/server/test/services/plugins/heroes.test.ts`.

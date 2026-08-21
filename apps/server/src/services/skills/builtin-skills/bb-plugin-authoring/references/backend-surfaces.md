@@ -39,7 +39,7 @@ the handler and output before serialization; handler parameters and return
 values are inferred from the schemas.
 
 ```ts
-import { defineRpcContract, type BbPluginApi } from "@bb/plugin-sdk";
+import { defineRpcContract, type BbPluginApi } from "@patcher/plugin-sdk";
 import { z } from "zod";
 
 export const rpcContract = defineRpcContract({
@@ -69,7 +69,7 @@ In `app.tsx`, import only the backend contract's type. The backend module and
 its dependencies are erased from the frontend bundle:
 
 ```tsx
-import { useRpc } from "@bb/plugin-sdk/app";
+import { useRpc } from "@patcher/plugin-sdk/app";
 import type { rpcContract } from "./server";
 
 function IssuesButton() {
@@ -172,7 +172,7 @@ bb.cli.register({
 Agents discover plugin commands through the server-generated
 `plugin-commands` skill, which lists each command's `summary` and the
 `commands` usage lines — fill both in. Combined stdout and stderr must fit
-`PLUGIN_CLI_OUTPUT_MAX_BYTES` from `@bb/plugin-sdk` (1,048,576 UTF-8 bytes).
+`PLUGIN_CLI_OUTPUT_MAX_BYTES` from `@patcher/plugin-sdk` (1,048,576 UTF-8 bytes).
 The host rejects a larger result atomically as `plugin_cli_output_too_large`;
 it never clips it. Page growing collections, cap verbose fields, and use
 file/streaming commands for large content. Caveat: under the workspace

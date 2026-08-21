@@ -17,8 +17,8 @@ import {
   ThreadChat,
   useRealtime,
   useRpc,
-} from "@bb/plugin-sdk/app";
-import type { NewThreadRequest } from "@bb/plugin-sdk/app";
+} from "@patcher/plugin-sdk/app";
+import type { NewThreadRequest } from "@patcher/plugin-sdk/app";
 import { toast } from "sonner";
 import type { rpcContract } from "./server";
 import {

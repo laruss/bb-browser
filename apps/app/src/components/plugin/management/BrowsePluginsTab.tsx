@@ -10,7 +10,7 @@ import {
   ResourceMultiSelectMenu,
   ResourceSortMenu,
   ResourceToolbar,
-} from "@bb/shared-ui/resource-list";
+} from "@patcher/shared-ui/resource-list";
 import {
   ConfirmDeleteDialog,
   ConfirmDeleteDialogContent,

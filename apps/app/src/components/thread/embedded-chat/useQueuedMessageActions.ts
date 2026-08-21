@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from "react";
-import type { PromptInput, ThreadQueuedMessage } from "@bb/domain";
+import type { PromptInput, ThreadQueuedMessage } from "@patcher/domain";
 import type {
   QueuedMessageGroupBoundaryRequest,
   QueuedMessageProcessingAction,

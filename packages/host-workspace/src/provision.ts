@@ -3,7 +3,7 @@ import path from "node:path";
 import type {
   ProvisioningTranscriptEntry,
   WorkspaceStatus,
-} from "@bb/domain";
+} from "@patcher/domain";
 import type {
   CommitOptions,
   CommitResult,
@@ -42,7 +42,7 @@ import {
 import { resolveAdditionalWorkspaceWriteRoots } from "./workspace-write-roots.js";
 
 // ---------------------------------------------------------------------------
-// Options (discriminated union on workspaceProvisionType from @bb/domain)
+// Options (discriminated union on workspaceProvisionType from @patcher/domain)
 // ---------------------------------------------------------------------------
 
 type ProvisionProgressCallback = (entry: ProvisioningTranscriptEntry) => void;

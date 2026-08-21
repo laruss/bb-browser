@@ -20,7 +20,7 @@ import {
   BB_DESKTOP_BROWSER_MAX_VIDEO_FRAMES,
   BB_DESKTOP_BROWSER_MAX_VIDEO_FRAME_BASE64_LENGTH,
   type BbDesktopBrowserVideoFrame,
-} from "@bb/desktop-contract";
+} from "@patcher/desktop-contract";
 
 /**
  * What the screencast is asked for. Not caller-settable, deliberately: a knob

@@ -1,6 +1,6 @@
 import { createConnection } from "node:net";
 import { createInterface } from "node:readline";
-import { dynamicToolSchema, type DynamicTool } from "@bb/domain";
+import { dynamicToolSchema, type DynamicTool } from "@patcher/domain";
 import { z } from "zod";
 
 export const ACP_BRIDGE_MCP_SERVER_NAME = "bb-bridge";

@@ -10,7 +10,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
-import type { BbDesktopBrowserStateHandler } from "@bb/desktop-contract";
+import type { BbDesktopBrowserStateHandler } from "@patcher/desktop-contract";
 import {
   createBbDesktopApi,
   createNoopDesktopBrowserApi,

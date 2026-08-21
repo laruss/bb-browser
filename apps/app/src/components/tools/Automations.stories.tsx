@@ -11,7 +11,7 @@ import type {
   AutomationRunResponse,
   AutomationsOverviewResponse,
 } from "bb-plugin-automations/rpc-types";
-import { ResourceListState } from "@bb/shared-ui/resource-list";
+import { ResourceListState } from "@patcher/shared-ui/resource-list";
 import { AppBreadcrumbs } from "@/components/layout/AppBreadcrumbs";
 import { resolveAutomationBreadcrumbs } from "@/components/tools/tools-navigation";
 

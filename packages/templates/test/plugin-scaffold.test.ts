@@ -1,12 +1,12 @@
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { PLUGIN_SDK_VERSION } from "@bb/domain";
+import { PLUGIN_SDK_VERSION } from "@patcher/domain";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { scaffoldPlugin } from "../src/plugin-scaffold.js";
 
 /**
- * The scaffold ships @bb/plugin-sdk's bundled .d.ts into the new plugin's
+ * The scaffold ships @patcher/plugin-sdk's bundled .d.ts into the new plugin's
  * types/ dir so it typechecks without the (unpublished) workspace package on
  * disk. These guard that wiring; plugin-scaffold-external.test.ts performs the
  * actual outside-the-workspace typecheck with library checks enabled.
@@ -22,7 +22,7 @@ describe("scaffoldPlugin bundled types", () => {
     await rm(workDir, { recursive: true, force: true });
   });
 
-  it("ships root types and maps @bb/plugin-sdk to them (headless)", async () => {
+  it("ships root types and maps @patcher/plugin-sdk to them (headless)", async () => {
     const targetDir = join(workDir, "bb-plugin-headless");
     await scaffoldPlugin({
       targetDir,
@@ -42,7 +42,7 @@ describe("scaffoldPlugin bundled types", () => {
     const tsconfig = JSON.parse(
       await readFile(join(targetDir, "tsconfig.json"), "utf8"),
     );
-    expect(tsconfig.compilerOptions.paths["@bb/plugin-sdk"]).toEqual([
+    expect(tsconfig.compilerOptions.paths["@patcher/plugin-sdk"]).toEqual([
       "./types/bb-plugin-sdk.d.ts",
     ]);
     expect(tsconfig.compilerOptions.skipLibCheck).toBe(false);
@@ -63,7 +63,7 @@ describe("scaffoldPlugin bundled types", () => {
       branding: { icon: "Zap" },
       server: "./server.ts",
     });
-    expect(pkg.devDependencies["@bb/plugin-sdk"]).toBeUndefined();
+    expect(pkg.devDependencies["@patcher/plugin-sdk"]).toBeUndefined();
     expect(pkg.devDependencies["@types/react"]).toBeDefined();
     // server.ts imports zod and the build inlines it, so an install that omits
     // dev deps still has to produce a buildable plugin (see
@@ -98,7 +98,7 @@ describe("scaffoldPlugin bundled types", () => {
     const tsconfig = JSON.parse(
       await readFile(join(targetDir, "tsconfig.json"), "utf8"),
     );
-    expect(tsconfig.compilerOptions.paths["@bb/plugin-sdk/app"]).toEqual([
+    expect(tsconfig.compilerOptions.paths["@patcher/plugin-sdk/app"]).toEqual([
       "./types/bb-plugin-sdk-app.d.ts",
     ]);
     expect(tsconfig.include).toContain("app.tsx");
@@ -106,7 +106,7 @@ describe("scaffoldPlugin bundled types", () => {
     const components = JSON.parse(
       await readFile(join(targetDir, "components.json"), "utf8"),
     );
-    expect(components.registries["@bb"]).toBe(
+    expect(components.registries["@patcher"]).toBe(
       "https://raw.githubusercontent.com/get-bb/bb/desktop-v0.9.0/packages/plugin-registry/r/{name}.json",
     );
   });

@@ -7,7 +7,7 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
-import { TooltipProvider } from "@bb/shared-ui/tooltip";
+import { TooltipProvider } from "@patcher/shared-ui/tooltip";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { HEADER_PANE_ACTION_ICON_BUTTON_CLASS } from "@/components/layout/AppPageHeader";
 import { PaneContext, type PaneContextValue } from "./PaneContext";

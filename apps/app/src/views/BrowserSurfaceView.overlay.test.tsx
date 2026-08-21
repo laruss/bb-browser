@@ -9,7 +9,7 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
-import type { BbDesktopBrowserDownload } from "@bb/desktop-contract";
+import type { BbDesktopBrowserDownload } from "@patcher/desktop-contract";
 import { AppCommandProvider } from "@/components/commands/AppCommandProvider";
 import {
   createBbDesktopApi,

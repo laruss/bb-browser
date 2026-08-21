@@ -6,7 +6,7 @@ import {
   realtimeSubscriptionTargetKey,
   threadOpenSignalLenientSchema,
   threadPaneActionSignalLenientSchema,
-} from "@bb/server-contract";
+} from "@patcher/server-contract";
 import type {
   BrowserCommandRequestSignal,
   ClientMessage,
@@ -16,8 +16,8 @@ import type {
   ThreadOpenFile,
   ThreadOpenSignal,
   ThreadPaneActionSignal,
-} from "@bb/server-contract";
-import type { BrowserCommandResponseMessage } from "@bb/domain";
+} from "@patcher/server-contract";
+import type { BrowserCommandResponseMessage } from "@patcher/domain";
 import { buildDevWebSocketUrl } from "./dev-websocket-url";
 
 type ChangeCallback = (message: ChangedMessage) => void;

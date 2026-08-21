@@ -31,13 +31,13 @@ import {
   type BbProjectLinkState,
 } from "../manage/bb-project-link.js";
 import type { BbProjectOption } from "../../shared/contract.js";
-import { Button } from "@bb/shared-ui/button";
+import { Button } from "@patcher/shared-ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@bb/shared-ui/dropdown-menu";
+} from "@patcher/shared-ui/dropdown-menu";
 import {
   Command,
   CommandEmpty,
@@ -45,14 +45,14 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@bb/shared-ui/command";
+} from "@patcher/shared-ui/command";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@bb/shared-ui/popover";
-import { Icon } from "@bb/shared-ui/icon";
-import { cn } from "@bb/shared-ui/lib/utils";
+} from "@patcher/shared-ui/popover";
+import { Icon } from "@patcher/shared-ui/icon";
+import { cn } from "@patcher/shared-ui/lib/utils";
 
 export interface TaskPropertyUpdate {
   status?: TaskStatus;

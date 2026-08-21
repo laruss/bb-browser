@@ -2,10 +2,10 @@ import { createHash, randomUUID } from "node:crypto";
 import type { Dirent } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { resolveDataDirSkillsRootPath } from "@bb/config/skill-storage-paths";
-import type { AgentRuntimeSkillRoot } from "@bb/agent-runtime";
-import type { HostDaemonInjectedSkillSource } from "@bb/host-daemon-contract";
-import type { HostDaemonSkillTree } from "@bb/host-daemon-contract";
+import { resolveDataDirSkillsRootPath } from "@patcher/config/skill-storage-paths";
+import type { AgentRuntimeSkillRoot } from "@patcher/agent-runtime";
+import type { HostDaemonInjectedSkillSource } from "@patcher/host-daemon-contract";
+import type { HostDaemonSkillTree } from "@patcher/host-daemon-contract";
 import type { FetchSkillTree } from "./skill-trees.js";
 
 const STAGING_ROOT_SEGMENTS = ["runtime", "global-skills"] as const;

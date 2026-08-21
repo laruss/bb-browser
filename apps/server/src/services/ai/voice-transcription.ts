@@ -1,9 +1,13 @@
 import { Buffer } from "node:buffer";
-import { jsonValueSchema, type JsonObject, type JsonValue } from "@bb/domain";
+import {
+  jsonValueSchema,
+  type JsonObject,
+  type JsonValue,
+} from "@patcher/domain";
 import {
   parseProviderModelConfig,
   type ProviderModelInfo,
-} from "@bb/config/inference-model";
+} from "@patcher/config/inference-model";
 import type { LoggedWorkSessionDeps } from "../../types.js";
 import { ApiError } from "../../errors.js";
 import { runLiveCommandAndWait } from "../hosts/live-command-wait.js";

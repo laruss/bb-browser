@@ -11,12 +11,12 @@ import { MemoryRouter } from "react-router-dom";
 import type {
   InstalledPlugin,
   SystemConfigResponse,
-} from "@bb/server-contract";
+} from "@patcher/server-contract";
 import {
   defaultAppSettings,
   defaultAppTheme,
   defaultExperiments,
-} from "@bb/domain";
+} from "@patcher/domain";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createQueryClientTestHarness } from "@/test/queryClientTestHarness";
 import {

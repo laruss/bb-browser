@@ -5,7 +5,7 @@ import {
   resolveDataDirDatabasePath,
   resolveRuntimeDataDir,
   resolveRuntimeMode,
-} from "@bb/config/runtime";
+} from "@patcher/config/runtime";
 import { homedir } from "node:os";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";

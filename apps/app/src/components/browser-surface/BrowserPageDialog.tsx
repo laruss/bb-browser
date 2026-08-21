@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import type { BbDesktopBrowserDialog } from "@bb/desktop-contract";
-import { Icon } from "@bb/shared-ui/icon";
-import { cn } from "@bb/shared-ui/lib/utils";
+import type { BbDesktopBrowserDialog } from "@patcher/desktop-contract";
+import { Icon } from "@patcher/shared-ui/icon";
+import { cn } from "@patcher/shared-ui/lib/utils";
 
 /**
  * The app's own replacement for Chromium's native JavaScript dialog.

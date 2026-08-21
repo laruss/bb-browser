@@ -11,7 +11,7 @@ const packageTargets = [
     path: "packages/bb-app/package.json",
   },
   {
-    label: "@bb/desktop",
+    label: "@patcher/desktop",
     path: "apps/desktop/package.json",
   },
 ];
@@ -332,7 +332,7 @@ export async function bumpVersion(options) {
   }));
 
   await writePackageTargetsAtomically({ fileSystem, updates });
-  log(`Bumped: bb-app + @bb/desktop → ${newVersion}`);
+  log(`Bumped: bb-app + @patcher/desktop → ${newVersion}`);
 }
 
 async function main() {

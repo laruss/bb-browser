@@ -9,16 +9,16 @@ import {
   ResourceListState,
   ResourceOverflowMenu,
   type ResourceOverflowMenuItem,
-} from "@bb/shared-ui/resource-list";
-import { Switch } from "@bb/shared-ui/switch";
+} from "@patcher/shared-ui/resource-list";
+import { Switch } from "@patcher/shared-ui/switch";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@bb/shared-ui/tooltip";
-import { formatHomePathForDisplay } from "@bb/shared-ui/lib/utils";
-import { Icon } from "@bb/shared-ui/icon";
+} from "@patcher/shared-ui/tooltip";
+import { formatHomePathForDisplay } from "@patcher/shared-ui/lib/utils";
+import { Icon } from "@patcher/shared-ui/icon";
 import { PluginIcon } from "@/components/plugin/PluginIcon";
 import {
   PluginDetailReleaseControl,

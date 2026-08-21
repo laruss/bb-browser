@@ -6,13 +6,13 @@ import type {
   AppKeybinding,
   AppKeybindings,
   AppShortcut,
-} from "@bb/domain";
+} from "@patcher/domain";
 import {
   BROWSER_SELECT_TAB_APP_COMMAND_IDS,
   QUESTION_SELECT_APP_COMMAND_IDS,
   PANE_FOCUS_APP_COMMAND_IDS,
   THREAD_JUMP_APP_COMMAND_IDS,
-} from "@bb/domain";
+} from "@patcher/domain";
 
 interface ShortcutModifiers {
   mod?: boolean;
@@ -252,7 +252,7 @@ export const DEFAULT_APP_KEYBINDINGS: AppDefaultKeybindings = [
   // scoped exactly like `modelPicker.toggle` above. Alt is otherwise unused by
   // bb, the browser, and both desktop menus, so these chords shadow nothing.
   // macOS composes Option+<letter> into another character, so they match on the
-  // physical key — see `normalizeAppShortcutInputKey` in @bb/domain.
+  // physical key — see `normalizeAppShortcutInputKey` in @patcher/domain.
   binding(
     "modelPicker.cycleModel",
     "m",

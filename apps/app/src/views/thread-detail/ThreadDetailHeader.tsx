@@ -6,11 +6,11 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react";
-import { Button } from "@bb/shared-ui/button";
-import { COARSE_POINTER_TOOLBAR_ACTION_BUTTON_CLASS } from "@bb/shared-ui/coarse-pointer-sizing";
-import { Icon } from "@bb/shared-ui/icon";
-import { Pill } from "@bb/shared-ui/pill";
-import { useIsCompactViewport } from "@bb/shared-ui/hooks/use-compact-viewport";
+import { Button } from "@patcher/shared-ui/button";
+import { COARSE_POINTER_TOOLBAR_ACTION_BUTTON_CLASS } from "@patcher/shared-ui/coarse-pointer-sizing";
+import { Icon } from "@patcher/shared-ui/icon";
+import { Pill } from "@patcher/shared-ui/pill";
+import { useIsCompactViewport } from "@patcher/shared-ui/hooks/use-compact-viewport";
 import { SplitButton } from "@/components/ui/split-button.js";
 import {
   AppPageHeader,
@@ -23,7 +23,7 @@ import {
   MACOS_WINDOW_NO_DRAG_CLASS,
   shouldUseMacosDesktopChrome,
 } from "@/lib/bb-desktop";
-import { cn } from "@bb/shared-ui/lib/utils";
+import { cn } from "@patcher/shared-ui/lib/utils";
 import { useAppCommandShortcut } from "@/components/commands/AppCommandProvider";
 import { AppCommandShortcutHint } from "@/components/commands/AppCommandShortcutHint";
 import { ThreadTitleMentions } from "@/components/thread/ThreadTitleMentions";

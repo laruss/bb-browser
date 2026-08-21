@@ -2,8 +2,8 @@ import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import semver from "semver";
-import { PLUGIN_SDK_MAJOR } from "@bb/domain";
-import { assertValidPluginCompactIconSvg } from "@bb/plugin-build";
+import { PLUGIN_SDK_MAJOR } from "@patcher/domain";
+import { assertValidPluginCompactIconSvg } from "@patcher/plugin-build";
 
 export interface PluginArtifactMeta {
   sdkMajor: number;

@@ -9,12 +9,12 @@ import {
   listEnvironments,
   listQueuedThreadMessages,
   threads,
-} from "@bb/db";
-import { threadScope, turnScope, type ToolCallResponse } from "@bb/domain";
+} from "@patcher/db";
+import { threadScope, turnScope, type ToolCallResponse } from "@patcher/domain";
 import {
   groupHostDaemonEvents,
   type HostDaemonEventEnvelope,
-} from "@bb/host-daemon-contract";
+} from "@patcher/host-daemon-contract";
 import { describe, expect, it, vi } from "vitest";
 import { serve } from "@hono/node-server";
 import {

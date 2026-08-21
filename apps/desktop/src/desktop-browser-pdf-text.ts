@@ -1,4 +1,4 @@
-import { BB_DESKTOP_BROWSER_MAX_PAGE_TEXT_LENGTH } from "@bb/desktop-contract";
+import { BB_DESKTOP_BROWSER_MAX_PAGE_TEXT_LENGTH } from "@patcher/desktop-contract";
 
 /**
  * Reading a PDF tab as text, for the agent browser tools.

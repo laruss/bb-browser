@@ -7,14 +7,14 @@ import {
   setAppSettings,
   setExperiments,
   setThreadExecutionOverride,
-} from "@bb/db";
+} from "@patcher/db";
 import {
   DEFAULT_CLAUDE_CODE_MOCK_CLI_TRAFFIC_ENDPOINT,
   defaultAppSettings,
   defaultExperiments,
   encodeClientTurnRequestIdNumber,
-} from "@bb/domain";
-import type { DiscoveredSkill } from "@bb/host-daemon-contract";
+} from "@patcher/domain";
+import type { DiscoveredSkill } from "@patcher/host-daemon-contract";
 import { setPluginAgentContributions } from "../../src/services/plugins/plugin-agent-contributions.js";
 import { readSkillTreeManifest } from "../../src/services/skills/injected-skills.js";
 import type { PluginAgentToolContribution } from "../../src/services/plugins/plugin-service.js";

@@ -3,16 +3,19 @@ import {
   findProjectEnvironmentByHostPath,
   getEnvironment,
   getThread,
-} from "@bb/db";
+} from "@patcher/db";
 import type {
   ProjectExecutionDefaults,
   Project,
   Thread,
   ThreadOriginKind,
   ThreadVisibility,
-} from "@bb/domain";
-import { supportsNativeFork } from "@bb/agent-providers";
-import type { BaseBranchSpec, UnmanagedBranchSpec } from "@bb/server-contract";
+} from "@patcher/domain";
+import { supportsNativeFork } from "@patcher/agent-providers";
+import type {
+  BaseBranchSpec,
+  UnmanagedBranchSpec,
+} from "@patcher/server-contract";
 import type { LoggedPendingInteractionWorkSessionDeps } from "../../types.js";
 import { COMMAND_TIMEOUT_MS } from "../../constants.js";
 import { ApiError } from "../../errors.js";

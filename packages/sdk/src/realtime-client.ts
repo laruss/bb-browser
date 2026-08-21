@@ -2,12 +2,12 @@ import type {
   ChangedMessage,
   ClientMessage,
   RealtimeSubscriptionTarget,
-} from "@bb/domain";
-import { realtimeSubscriptionTargetKey } from "@bb/domain";
+} from "@patcher/domain";
+import { realtimeSubscriptionTargetKey } from "@patcher/domain";
 import {
   serverMessageLenientSchema,
   type ServerMessage,
-} from "@bb/server-contract";
+} from "@patcher/server-contract";
 import { resolveRealtimeUrl } from "./realtime-url.js";
 import type {
   BbRealtime,

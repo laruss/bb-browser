@@ -4,7 +4,7 @@ import {
   CLAUDE_XHIGH_CAPABLE_REASONING_EFFORTS,
   DEFAULT_CLAUDE_CODE_MODEL,
   type ClaudeCodeCatalogEntry,
-} from "@bb/agent-providers";
+} from "@patcher/agent-providers";
 import {
   cloneReasoningEfforts,
   HIGH_REASONING_EFFORT,
@@ -15,7 +15,7 @@ import {
   XHIGH_REASONING_EFFORT,
   type AvailableModel,
   type ModelReasoningEffort,
-} from "@bb/domain";
+} from "@patcher/domain";
 
 const OPUS_4_7_REASONING_EFFORTS: readonly ModelReasoningEffort[] =
   CLAUDE_XHIGH_CAPABLE_REASONING_EFFORTS;

@@ -1,4 +1,4 @@
-import { DEFAULT_CLAUDE_CODE_MOCK_CLI_TRAFFIC_CONFIG } from "@bb/domain";
+import { DEFAULT_CLAUDE_CODE_MOCK_CLI_TRAFFIC_CONFIG } from "@patcher/domain";
 import { describe, expect, it } from "vitest";
 import { decodeClaudeCodeJsonRpcRequest } from "../commands.js";
 

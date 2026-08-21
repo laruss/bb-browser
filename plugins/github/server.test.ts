@@ -1,10 +1,10 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
-import { defineRpcContract } from "@bb/plugin-sdk";
-import type { PluginRpcClient, PluginRpcHandlers } from "@bb/plugin-sdk";
+import { defineRpcContract } from "@patcher/plugin-sdk";
+import type { PluginRpcClient, PluginRpcHandlers } from "@patcher/plugin-sdk";
 import {
   createFakePluginHost,
   pluginPermissionsFromManifest,
-} from "@bb/plugin-sdk/testing";
+} from "@patcher/plugin-sdk/testing";
 import {
   fetchRepoItems,
   githubRpcContract,

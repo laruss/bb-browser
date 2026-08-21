@@ -1,4 +1,4 @@
-import { APP_SURFACE_HEADER_NAME } from "@bb/config/app-surface";
+import { APP_SURFACE_HEADER_NAME } from "@patcher/config/app-surface";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createBbDesktopApi } from "@/test/bb-desktop-test-utils";
 import { appSurfaceRequestInit, getAppSurface } from "./app-surface";

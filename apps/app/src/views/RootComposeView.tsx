@@ -19,12 +19,12 @@ import {
   type ReasoningLevel,
   type ServiceTier,
   type ThreadListEntry,
-} from "@bb/domain";
-import type { OpenInTargetContext } from "@bb/host-daemon-contract";
+} from "@patcher/domain";
+import type { OpenInTargetContext } from "@patcher/host-daemon-contract";
 import type {
   SidebarBootstrapResponse,
   TerminalSession,
-} from "@bb/server-contract";
+} from "@patcher/server-contract";
 import {
   NewThreadPromptBox,
   type NewThreadProjectConfig,
@@ -62,13 +62,13 @@ import {
   WorkspaceFilePreviewTabContent,
 } from "@/components/secondary-panel/ThreadSecondaryPanelTabContent";
 import { NewTabPage } from "@/components/secondary-panel/NewTabPage";
-import { EmptyStatePanel } from "@bb/shared-ui/empty-state";
-import { Icon } from "@bb/shared-ui/icon";
+import { EmptyStatePanel } from "@patcher/shared-ui/empty-state";
+import { Icon } from "@patcher/shared-ui/icon";
 import { PageShell } from "@/components/ui/page-shell.js";
-import { Button } from "@bb/shared-ui/button";
-import { useIsCompactViewport } from "@bb/shared-ui/hooks/use-compact-viewport";
-import { usePointerCoarse } from "@bb/shared-ui/hooks/use-pointer-coarse";
-import { COARSE_POINTER_COMPACT_ICON_SIZE_CLASS } from "@bb/shared-ui/coarse-pointer-sizing";
+import { Button } from "@patcher/shared-ui/button";
+import { useIsCompactViewport } from "@patcher/shared-ui/hooks/use-compact-viewport";
+import { usePointerCoarse } from "@patcher/shared-ui/hooks/use-pointer-coarse";
+import { COARSE_POINTER_COMPACT_ICON_SIZE_CLASS } from "@patcher/shared-ui/coarse-pointer-sizing";
 import { PluginIcon } from "@/components/plugin/PluginIcon";
 import {
   PluginPanelTabContent,

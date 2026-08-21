@@ -7,7 +7,7 @@ import type {
   WorkflowAgentState,
   WorkflowPhaseSnapshot,
   WorkflowProgressSnapshot,
-} from "@bb/domain";
+} from "@patcher/domain";
 import {
   LOCAL_BASH_TASK_TYPE,
   LOCAL_WORKFLOW_TASK_TYPE,
@@ -16,7 +16,7 @@ import {
   isSettledBackgroundTaskStatus,
   threadScope,
   turnScope,
-} from "@bb/domain";
+} from "@patcher/domain";
 import {
   claudeTaskNotificationMessageSchema,
   claudeTaskProgressMessageSchema,

@@ -1,5 +1,5 @@
-import { createProjectSource } from "@bb/db";
-import type { HostProviderCommand } from "@bb/host-daemon-contract";
+import { createProjectSource } from "@patcher/db";
+import type { HostProviderCommand } from "@patcher/host-daemon-contract";
 import { describe, expect, it } from "vitest";
 import { registerHostRpcResponder } from "../helpers/host-rpc.js";
 import { readJson } from "../helpers/json.js";

@@ -1,5 +1,5 @@
 // Backend tests for the slack-bot hero plugin, written against the official
-// harness (`@bb/plugin-sdk/testing`) — no bb server, no Slack.
+// harness (`@patcher/plugin-sdk/testing`) — no bb server, no Slack.
 import { createHmac } from "node:crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
@@ -7,7 +7,7 @@ import {
   pluginPermissionsFromManifest,
   makeThreadResponse,
   type FakePluginHost,
-} from "@bb/plugin-sdk/testing";
+} from "@patcher/plugin-sdk/testing";
 import slackBot from "./server";
 
 const SIGNING_SECRET = "test-signing-secret";

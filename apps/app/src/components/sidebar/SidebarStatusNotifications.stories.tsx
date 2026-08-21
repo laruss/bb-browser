@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import type { ThreadListEntry } from "@bb/domain";
-import type { ProjectResponse } from "@bb/server-contract";
+import type { ThreadListEntry } from "@patcher/domain";
+import type { ProjectResponse } from "@patcher/server-contract";
 import {
   BRANCH_NAMES,
   HOST_IDS,

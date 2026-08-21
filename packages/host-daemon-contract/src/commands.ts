@@ -25,7 +25,7 @@ import {
   BRANCH_LIST_QUERY_MAX_LENGTH,
   FILE_LIST_LIMIT_MAX,
   FILE_LIST_QUERY_MAX_LENGTH,
-} from "@bb/domain";
+} from "@patcher/domain";
 import { z } from "zod";
 import {
   pathsExistRequestSchema,
@@ -43,7 +43,7 @@ export {
   BRANCH_LIST_QUERY_MAX_LENGTH,
   FILE_LIST_LIMIT_MAX,
   FILE_LIST_QUERY_MAX_LENGTH,
-} from "@bb/domain";
+} from "@patcher/domain";
 const INJECTED_SKILL_NAME_PATTERN =
   /^(?!.*--)[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$/u;
 
@@ -651,7 +651,7 @@ export type HostCommandOrigin = z.infer<typeof hostCommandOriginSchema>;
 /**
  * A discovered provider skill or legacy slash command. The daemon returns the
  * raw parsed records; server policy (merge/de-dup/sort) is applied on
- * top. Mirrors `@bb/server-contract`'s `ProviderCommand` shape (the contract
+ * top. Mirrors `@patcher/server-contract`'s `ProviderCommand` shape (the contract
  * packages intentionally define matching record shapes independently, like
  * `hostPathEntrySchema` / `workspacePathEntrySchema`).
  */

@@ -2,9 +2,9 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import type {
   BbDesktopBrowserPagePromptAnswer,
   BbDesktopBrowserPagePromptDetails,
-} from "@bb/desktop-contract";
-import { Icon } from "@bb/shared-ui/icon";
-import { cn } from "@bb/shared-ui/lib/utils";
+} from "@patcher/desktop-contract";
+import { Icon } from "@patcher/shared-ui/icon";
+import { cn } from "@patcher/shared-ui/lib/utils";
 
 /**
  * The questions the network asks and only a human can answer: a site wanting a

@@ -9,8 +9,8 @@ import {
 import {
   providerCommandSection,
   type ProviderCommandSection,
-} from "@bb/server-contract";
-import { directoryFromPath } from "@bb/thread-view";
+} from "@patcher/server-contract";
+import { directoryFromPath } from "@patcher/thread-view";
 import { promptMentionResourceFromSuggestion } from "@/components/promptbox/editor/prompt-editor-serialization";
 import {
   promptCommandIconName,
@@ -18,9 +18,9 @@ import {
 } from "@/components/promptbox/mentions/prompt-mention-display";
 import { shouldLoadMoreCommandResults } from "@/components/promptbox/mentions/mention-menu-scroll";
 import { PluginIcon } from "@/components/plugin/PluginIcon";
-import { Icon, type IconName } from "@bb/shared-ui/icon";
+import { Icon, type IconName } from "@patcher/shared-ui/icon";
 import { TruncateStart } from "@/components/ui/truncate-start.js";
-import { cn } from "@bb/shared-ui/lib/utils";
+import { cn } from "@patcher/shared-ui/lib/utils";
 import type {
   ComposerCommandSuggestion,
   PromptMentionSuggestion,
@@ -212,7 +212,7 @@ function getMentionKey(item: PromptMentionSuggestion, index: number): string {
 }
 
 // Command sections use the shared `providerCommandSection` mapping from
-// @bb/server-contract. PromptBoxInternal runs `orderCommandSuggestions` — which
+// @patcher/server-contract. PromptBoxInternal runs `orderCommandSuggestions` — which
 // hoists exact name matches and hands back contiguous sections — before that
 // same array reaches rendering, keyboard navigation, and apply; the menu only
 // adds human-readable labels.

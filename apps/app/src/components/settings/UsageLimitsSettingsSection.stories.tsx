@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import type { Host } from "@bb/domain";
+import type { Host } from "@patcher/domain";
 import { StoryCard, StoryRow } from "../../../.ladle/story-card";
 import {
   UsageLimitsSettingsSectionContent,

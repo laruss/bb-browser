@@ -3,7 +3,7 @@ import {
   BB_DESKTOP_BROWSER_MAX_VIDEO_BASE64_LENGTH,
   BB_DESKTOP_BROWSER_MAX_VIDEO_FRAMES,
   BB_DESKTOP_BROWSER_MAX_VIDEO_FRAME_BASE64_LENGTH,
-} from "@bb/desktop-contract";
+} from "@patcher/desktop-contract";
 import { BrowserVideoRecording } from "../src/desktop-browser-video.js";
 
 describe("BrowserVideoRecording", () => {

@@ -25,7 +25,7 @@
  * own.
  */
 
-import type { JsonValue } from "@bb/domain";
+import type { JsonValue } from "@patcher/domain";
 
 /**
  * How a call behaves, which decides what a transport has to provide for it.

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { BbDesktopBrowserContextMenuItem } from "@bb/desktop-contract";
+import type { BbDesktopBrowserContextMenuItem } from "@patcher/desktop-contract";
 import {
   buildBrowserContextMenuTemplate,
   matchesContextMenuTarget,

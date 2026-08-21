@@ -9,7 +9,7 @@ import {
   type HostDaemonSessionCloseReason,
   type HostDaemonSessionOpenResponse,
   type HostDaemonDaemonWsMessage,
-} from "@bb/host-daemon-contract";
+} from "@patcher/host-daemon-contract";
 import { z } from "zod";
 import {
   DEFAULT_CONNECTION_TIMEOUT_MS,

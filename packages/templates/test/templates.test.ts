@@ -14,7 +14,7 @@ const packageRoot = path.resolve(
   "..",
 );
 
-describe("@bb/templates", () => {
+describe("@patcher/templates", () => {
   it("keeps generated templates in sync with source templates", () => {
     const result = spawnSync(
       process.execPath,

@@ -33,8 +33,8 @@ Four processes, from the recovered `system-overview.md`:
 | **App** (`apps/app`)                 | React SPA served by the server.                                                                                                                   |
 | **CLI** (`apps/cli`)                 | Scriptable `bb`, same capabilities as the app.                                                                                                    |
 
-Two contract packages define the boundaries: `@bb/server-contract`
-(clients ↔ server) and `@bb/host-daemon-contract` (server ↔ daemons).
+Two contract packages define the boundaries: `@patcher/server-contract`
+(clients ↔ server) and `@patcher/host-daemon-contract` (server ↔ daemons).
 Implementation packages never import across these boundaries.
 
 The Electron shell (`apps/desktop`) supervises the packaged runtime and loads the
@@ -94,7 +94,7 @@ Plugin manifest is the `bb` field of a plugin's own `package.json` (name,
 description, `branding.icon`, `server` entry, `app` entry). 13 bundled plugins
 under `plugins/` serve as live examples.
 
-`@bb/plugin-sdk` already exposes, verified in
+`@patcher/plugin-sdk` already exposes, verified in
 `packages/plugin-sdk/src/app-contract.ts` (1412 lines) and
 `backend-contract.ts` (715 lines):
 
@@ -139,7 +139,7 @@ both contract packages, `apps/desktop/src/desktop-browser-view.ts` and
 `packages/desktop-contract/src/browser.ts`.
 
 **Adapt**:
-`@bb/plugin-sdk` (add browser contribution points and a permission model),
+`@patcher/plugin-sdk` (add browser contribution points and a permission model),
 `apps/server/src/services/plugins/` (registration and lifecycle for the new
 points), the renderer browser chrome (promote out of the thread panel),
 `apps/desktop` window/menu wiring once a dedicated browser window is wanted.
@@ -225,7 +225,7 @@ to masquerade as migration regressions:
    skills and plugins appear in assertions, and the entry-count cap test sees
    1012 entries instead of 1000. This bites whenever the suite is run from a
    shell that exports it — notably from inside a Claude Code session. With the
-   variable unset, `@bb/host-daemon` is 46/46 files and 542/542 tests green.
+   variable unset, `@patcher/host-daemon` is 46/46 files and 542/542 tests green.
    **Run host-daemon checks as `env -u CLAUDE_CONFIG_DIR ...`.**
 2. **The pinned Node version is load-bearing, and `.nvmrc` is the only thing
    that says so.** Node 25 ships Web Storage globals enabled by default, and
@@ -233,7 +233,7 @@ to masquerade as migration regressions:
    object, with a `--localstorage-file was provided without a valid path`
    warning as the only clue. Every test touching `window.localStorage` then
    fails with `clear is not a function`: on 25.6.1 that is 46 tests in
-   `bb-plugin-tasks` alone, plus `@bb/host-watcher` and `@bb/qa`. On the pinned
+   `bb-plugin-tasks` alone, plus `@patcher/host-watcher` and `@patcher/qa`. On the pinned
    22.20.0 the same files pass. **Run the suite on the `.nvmrc` version**, and
    distrust any failure list gathered without checking `node --version` first.
 3. **Test parallelism is bounded on purpose, at two levels.** Vitest sizes its
@@ -247,7 +247,7 @@ to masquerade as migration regressions:
    **Both are needed**: capping a package protects it from its own greed, not
    from the ten uncapped packages queued alongside it — measured, a full run at
    turbo's default concurrency failed eight packages even with the per-package
-   caps in place, including `@bb/process-utils`, whose entire job is spawning
+   caps in place, including `@patcher/process-utils`, whose entire job is spawning
    processes. Lowering the outer number costs little: 8m16s at `--concurrency=2`
    against 7m26s at the default, because the long pole is the two largest
    packages either way.
@@ -294,7 +294,7 @@ the _project's_ `typescript` alias to it and linked `@typescript/old` →
 Two consequences, the second far worse than the first:
 
 - `rollup-plugin-dts` does a bare `import ts from "typescript"` and crashed, so
-  `@bb/plugin-sdk` and `packages/bb-app` could not build.
+  `@patcher/plugin-sdk` and `packages/bb-app` could not build.
 - The wrapper's `lib/tsc.js` is `require("@typescript/old/lib/tsc.js")`, so the
   wrapper's `tsc` **exited 0 having done nothing**. Typechecks only stayed real
   because `typescript-7` won the `tsc` bin-name collision in `node_modules/.bin`.
@@ -390,7 +390,7 @@ in `packages/plugin-sdk`: `@hugeicons/core-free-icons`, `@hugeicons/react`,
 `class-variance-authority`, `clsx`, `tailwind-merge` and `vaul`. They are now
 declared as `plugin-sdk` devDependencies at the same ranges the scaffold itself
 generates (`PLUGIN_STARTER_DEPENDENCIES` and
-`PLUGIN_STARTER_TYPE_DEPENDENCIES`), which restores `@bb/templates` to its
+`PLUGIN_STARTER_TYPE_DEPENDENCIES`), which restores `@patcher/templates` to its
 baseline 23/23.
 
 Expect more of these wherever a package imports something it never declared.
@@ -441,30 +441,30 @@ stdout contract the caller parses.
 
 ### Result against the baseline
 
-| Check                                 | pnpm baseline                     | bun                         |
-| ------------------------------------- | --------------------------------- | --------------------------- |
-| install, cold                         | 1m 44s                            | 48.6s                       |
-| `turbo run typecheck`                 | 58/58 tasks, 0 errors             | 58/58 tasks, 0 errors       |
-| `@bb/host-daemon` tests alone         | 46/46 files, 542/542              | 46/46 files, 542/542        |
-| `@bb/server` tests alone              | 161/161 files                     | 161/161 files               |
-| `@bb/templates` tests alone           | 23/23                             | 23/23                       |
-| `@bb/cli` tests alone                 | —                                 | 407/407                     |
-| `@bb/host-watcher` tests alone        | —                                 | 39/39                       |
-| `@bb/desktop` tests, `--maxWorkers=2` | not reached (run aborted earlier) | 32/32 files, 232/232        |
-| generated plugin runtime manifest     | —                                 | byte-identical to committed |
-| full suite, max parallelism           | spawn-heavy timeouts              | same timeouts               |
+| Check                                      | pnpm baseline                     | bun                         |
+| ------------------------------------------ | --------------------------------- | --------------------------- |
+| install, cold                              | 1m 44s                            | 48.6s                       |
+| `turbo run typecheck`                      | 58/58 tasks, 0 errors             | 58/58 tasks, 0 errors       |
+| `@patcher/host-daemon` tests alone         | 46/46 files, 542/542              | 46/46 files, 542/542        |
+| `@patcher/server` tests alone              | 161/161 files                     | 161/161 files               |
+| `@patcher/templates` tests alone           | 23/23                             | 23/23                       |
+| `@patcher/cli` tests alone                 | —                                 | 407/407                     |
+| `@patcher/host-watcher` tests alone        | —                                 | 39/39                       |
+| `@patcher/desktop` tests, `--maxWorkers=2` | not reached (run aborted earlier) | 32/32 files, 232/232        |
+| generated plugin runtime manifest          | —                                 | byte-identical to committed |
+| full suite, max parallelism                | spawn-heavy timeouts              | same timeouts               |
 
 Packages that need bounded parallelism to pass — every one spawns processes or
 boots whole stacks against a per-test timeout:
 
-| Package              | bun, `--maxWorkers=2`               |
-| -------------------- | ----------------------------------- |
-| `@bb/host-workspace` | 8/8 files                           |
-| `tests/integration`  | 25/25 files                         |
-| `@bb/desktop`        | 32/32 files, 232/232                |
-| `@bb/agent-runtime`  | 906/907 (the macOS pipe test below) |
+| Package                   | bun, `--maxWorkers=2`               |
+| ------------------------- | ----------------------------------- |
+| `@patcher/host-workspace` | 8/8 files                           |
+| `tests/integration`       | 25/25 files                         |
+| `@patcher/desktop`        | 32/32 files, 232/232                |
+| `@patcher/agent-runtime`  | 906/907 (the macOS pipe test below) |
 
-Inside `@bb/server` the same sensitivity is concentrated in
+Inside `@patcher/server` the same sensitivity is concentrated in
 `test/app/install-machine-script.test.ts`, which spawns real shells against a
 5s per-test timeout: running the package's 162 files together, one of its 14
 tests times out (not always the same one), and the file is 14/14 alone. Re-run
@@ -483,8 +483,8 @@ Reproduce with:
 bun install
 bunx turbo run typecheck
 env -u CLAUDE_CONFIG_DIR bunx turbo run test --concurrency=4 \
-  --filter='!@bb/desktop'
-env -u CLAUDE_CONFIG_DIR bun run --filter @bb/desktop --elide-lines=0 \
+  --filter='!@patcher/desktop'
+env -u CLAUDE_CONFIG_DIR bun run --filter @patcher/desktop --elide-lines=0 \
   test -- --maxWorkers=2
 ```
 
@@ -498,7 +498,7 @@ This was the migration's one deep finding, and it is a product bug rather than a
 test artifact.
 
 A plugin root lives anywhere on disk — a `path:` install, a git clone in the data
-dir, a scaffold in a temp directory. Its `server.ts` imports `@bb/plugin-sdk`,
+dir, a scaffold in a temp directory. Its `server.ts` imports `@patcher/plugin-sdk`,
 and nothing along that directory's own chain resolves the specifier. A packaged
 server handles this by shipping `plugin-sdk-runtime.js` next to the server bundle
 and aliasing to it. A source checkout had no such branch: the old comment said it
@@ -509,8 +509,8 @@ package in `node_modules/.pnpm/node_modules` — pnpm's hidden hoisted directory
 which holds every installed package and sits at a path the resolver probes from
 anywhere. That is a package-manager side effect, not a resolution guarantee.
 Under bun's isolated linker it does not exist, so every plugin loaded from
-outside the repo failed with `Cannot find module '@bb/plugin-sdk'`, which
-surfaced as 24 failures across four `@bb/server` test files.
+outside the repo failed with `Cannot find module '@patcher/plugin-sdk'`, which
+surfaced as 24 failures across four `@patcher/server` test files.
 
 Two things were needed:
 
@@ -525,16 +525,16 @@ Two things were needed:
 2. **Fixtures that load a plugin from source now link the server's
    `node_modules` into the plugin root.** Non-external imports (`zod`) are the
    plugin's own dependency by design — `PLUGIN_SERVER_EXTERNALS` deliberately
-   holds only `@bb/plugin-sdk` and `better-sqlite3` — so a fixture that skips a
+   holds only `@patcher/plugin-sdk` and `better-sqlite3` — so a fixture that skips a
    dependency install has to provide them. Linking makes that explicit instead of
    depending on the resolver's layout. The link is idempotent: several fixtures
    are rewritten in place to simulate a new tip.
 
 Worth knowing for the browser work ahead: this is exactly the class of bug the
 plugin platform will keep producing, because a plugin's module graph is resolved
-against a directory nobody controls. `@bb/server` is now 161/161 files green.
+against a directory nobody controls. `@patcher/server` is now 161/161 files green.
 
-Separately, `@bb/app`'s `vite.config.ts` needed an explicit `UserConfig`
+Separately, `@patcher/app`'s `vite.config.ts` needed an explicit `UserConfig`
 annotation on the exported `sharedViteConfig`: its inferred type named a `Plugin`
 type from whichever `rolldown` copy a transitive vite pulled in, which TypeScript
 rejects as non-portable (TS2883). Annotating is version-robust; pinning `vite`
@@ -569,9 +569,9 @@ applies to every consumer, and this workspace runs **two majors on purpose**:
 most packages declare `vitest@^4.1.1`, but `packages/tunnel-client` and
 `packages/tunnel-contract` declare `^3.0.0` (the baseline resolved both 3.2.6 and
 4.1.1). A blanket `"vitest": "4.1.1"` dragged those two across a major boundary
-and broke `@bb/tunnel-contract`'s typecheck — `@types/node` had reached it through
-vitest 3's graph, so `Buffer` stopped existing. `vite` has the same shape (6.x
-transitively, 8.x declared).
+and broke `packages/tunnel-contract`'s typecheck — `@types/node` had reached
+it through vitest 3's graph, so `Buffer` stopped existing. `vite` has the same
+shape (6.x transitively, 8.x declared).
 
 The pins for `vitest` and `vite` were dropped. What they were meant to achieve
 happened anyway: once installed, the lockfile records `vitest@4.1.1` and
@@ -587,7 +587,7 @@ override, not just the one that drifted.
 `bun install` re-extracts `better-sqlite3` from its cache, which restores the
 package's prebuilt binary and discards whatever ABI the local Node needs. Every
 `better-sqlite3` consumer then fails at `new Database(...)` with
-`NODE_MODULE_VERSION 127 … requires 141` — 124 of `@bb/server`'s 161 test files at
+`NODE_MODULE_VERSION 127 … requires 141` — 124 of `@patcher/server`'s 161 test files at
 once, which looks like a catastrophic regression and is not one.
 
 The repo already ships the fix (`scripts/ensure-native-modules.mjs`, which the
@@ -702,7 +702,7 @@ for Phase 7:
 - A Bun plugin host has to drop `bb.storage.database()` or re-point it at
   `bun:sqlite`, which changes a plugin-facing type
   (`backend-contract.ts` imports `Database` from better-sqlite3).
-- `@bb/plugin-sdk/testing` constructs the same handle, so a plugin author who
+- `@patcher/plugin-sdk/testing` constructs the same handle, so a plugin author who
   runs their suite under `bun test` hits the refusal today, host process or not.
 
 ### node-pty: loads, then the master fd disappears
@@ -779,9 +779,9 @@ on Node and 3/8 on Bun. Bun issue 4290 is the one to watch.
   A bundled plugin host cost **~204MB** before it loaded any plugin, against
   ~48MB for a bare Node process; thirteen of those at one process each is
   ~2.7GB. It now costs **~84MB**, and almost all of the difference was two
-  imports that nothing needed at startup: `@bb/sdk` builds the entire public
+  imports that nothing needed at startup: `@patcher/sdk` builds the entire public
   API client — every route, every zod schema — at import time (~100MB), and
-  `@bb/domain`'s index runs every schema in the package (~57MB) when three
+  `@patcher/domain`'s index runs every schema in the package (~57MB) when three
   subpath imports cover what the plugin API actually uses. The SDK is deferred
   behind a literal `require`, which keeps `getSdk()` synchronous: the bundler
   folds the module in and initialises it on the first call, so a plugin that

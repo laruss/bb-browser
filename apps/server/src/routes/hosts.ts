@@ -1,11 +1,11 @@
-import { getNonDestroyedHost, updateHost } from "@bb/db";
+import { getNonDestroyedHost, updateHost } from "@patcher/db";
 import {
   publicApiRoutes,
   typedRoutes,
   type PublicApiSchema,
-} from "@bb/server-contract";
+} from "@patcher/server-contract";
 import type { Hono } from "hono";
-import { HOST_DAEMON_PROTOCOL_VERSION } from "@bb/host-daemon-contract";
+import { HOST_DAEMON_PROTOCOL_VERSION } from "@patcher/host-daemon-contract";
 import type { AppDeps } from "../types.js";
 import { COMMAND_TIMEOUT_MS } from "../constants.js";
 import { ApiError } from "../errors.js";

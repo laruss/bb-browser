@@ -8,8 +8,8 @@
     "@radix-ui/react-tooltip"
   ],
   "registryDependencies": [
-    "@bb/portal-scope",
-    "@bb/utils"
+    "@patcher/portal-scope",
+    "@patcher/utils"
   ],
   "files": [
     {

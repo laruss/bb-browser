@@ -1,6 +1,9 @@
 import { Command } from "commander";
-import { threadStatusSchema, threadStatusValues } from "@bb/domain";
-import { ThreadWaitTimeoutError, ThreadWaitUnreachableError } from "@bb/sdk";
+import { threadStatusSchema, threadStatusValues } from "@patcher/domain";
+import {
+  ThreadWaitTimeoutError,
+  ThreadWaitUnreachableError,
+} from "@patcher/sdk";
 import { action, CliExitError } from "../../action.js";
 import { createCliBbSdk } from "../../client.js";
 import { outputJson, requireThreadId } from "../helpers.js";

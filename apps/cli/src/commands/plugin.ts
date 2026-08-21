@@ -6,17 +6,23 @@ import { createInterface } from "node:readline/promises";
 import { setTimeout as sleep } from "node:timers/promises";
 import { Command } from "commander";
 import { z } from "zod";
-import { derivePluginId } from "@bb/domain";
+import { derivePluginId } from "@patcher/domain";
 import type {
   InstalledPlugin as PluginEntry,
   PluginApplyUpdateResult,
   PluginCatalogSearchResult,
   PluginUpdateCheckEntry as PluginUpdateResult,
-} from "@bb/server-contract";
-import { installedPluginSchema } from "@bb/server-contract";
-import { BbHttpError } from "@bb/sdk";
-import { parseDataDirEnvValue, resolveProdDataDir } from "@bb/config/runtime";
-import { scaffoldPlugin, syncPluginTypes } from "@bb/templates/plugin-scaffold";
+} from "@patcher/server-contract";
+import { installedPluginSchema } from "@patcher/server-contract";
+import { BbHttpError } from "@patcher/sdk";
+import {
+  parseDataDirEnvValue,
+  resolveProdDataDir,
+} from "@patcher/config/runtime";
+import {
+  scaffoldPlugin,
+  syncPluginTypes,
+} from "@patcher/templates/plugin-scaffold";
 import { action } from "../action.js";
 import { cliFetch, createCliBbSdk } from "../client.js";
 import {
@@ -26,7 +32,7 @@ import {
   PLUGIN_TOOLCHAIN_PINS,
   resolvePluginBuildToolchain,
   type PluginBuildToolchain,
-} from "@bb/plugin-build";
+} from "@patcher/plugin-build";
 import { runPluginCliCommand } from "../plugin-cli-proxy.js";
 import { resolveBbCliVersion } from "../version.js";
 
@@ -955,7 +961,7 @@ export function registerPluginCommands(
   plugin
     .command("types [path]")
     .description(
-      "Write this bb's @bb/plugin-sdk declarations into the plugin's types/ directory (default: cwd); the authoritative, readable API surface for editors, tsc, and agents",
+      "Write this bb's @patcher/plugin-sdk declarations into the plugin's types/ directory (default: cwd); the authoritative, readable API surface for editors, tsc, and agents",
     )
     .option("--check", "Report whether types/ is current; write nothing")
     .action(

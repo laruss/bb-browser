@@ -6,8 +6,12 @@ import { createRequire, registerHooks } from "node:module";
 import { performance } from "node:perf_hooks";
 import { createJiti } from "jiti";
 import semver from "semver";
-import { PLUGIN_SDK_MAJOR, PLUGIN_SDK_VERSION, type Thread } from "@bb/domain";
-import { buildPluginApp } from "@bb/plugin-build";
+import {
+  PLUGIN_SDK_MAJOR,
+  PLUGIN_SDK_VERSION,
+  type Thread,
+} from "@patcher/domain";
+import { buildPluginApp } from "@patcher/plugin-build";
 import { getPluginBuildToolchain } from "./build-toolchain.js";
 import {
   createNodeBbSdk,
@@ -15,7 +19,7 @@ import {
   createRequestTimeoutFetch,
   DEFAULT_BB_REQUEST_TIMEOUT_MS,
   type BbSdk,
-} from "@bb/sdk";
+} from "@patcher/sdk";
 import {
   createPluginApiFetch,
   createPluginApiIdentities,
@@ -45,7 +49,7 @@ import {
   setPluginKvValue,
   upsertPluginSchedule,
   type InstalledPluginRow,
-} from "@bb/db";
+} from "@patcher/db";
 import { toThreadResponseFromThread } from "../threads/thread-runtime-display.js";
 import {
   loadPluginAppBundle,
@@ -1271,7 +1275,7 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
             : { alias: pluginExternalsAlias }),
         });
         // Same jiti instance for source and prebuilt dist/server.js, so the
-        // @bb/plugin-sdk resolution applies identically to both.
+        // @patcher/plugin-sdk resolution applies identically to both.
         const mod = (await jiti.import(
           await resolveServerEntry(row, manifest),
         )) as {

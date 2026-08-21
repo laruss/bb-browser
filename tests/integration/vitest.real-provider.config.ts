@@ -15,7 +15,7 @@ export default defineWorkspaceTestConfig({
     hookTimeout: Math.ceil(120_000 * timeoutScale),
     include: ["real/**/*.test.ts"],
     maxConcurrency: 20,
-    name: "@bb/integration-tests:real",
+    name: "@patcher/integration-tests:real",
     silent: "passed-only",
     testTimeout: Math.ceil(120_000 * timeoutScale),
   },

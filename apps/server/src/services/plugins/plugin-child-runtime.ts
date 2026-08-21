@@ -18,10 +18,13 @@
 
 import { createRequire } from "node:module";
 import { Hono } from "hono";
-import type { PluginPermission } from "@bb/domain";
-import type { BbSdk } from "@bb/sdk";
-import type { AppKeybindingOverrides, BrowserSearchEngine } from "@bb/domain";
-import type { PluginSettingDescriptors } from "@bb/plugin-sdk";
+import type { PluginPermission } from "@patcher/domain";
+import type { BbSdk } from "@patcher/sdk";
+import type {
+  AppKeybindingOverrides,
+  BrowserSearchEngine,
+} from "@patcher/domain";
+import type { PluginSettingDescriptors } from "@patcher/plugin-sdk";
 import type {
   BbPluginApi,
   PluginAgentToolExperimentalStatusLabels,
@@ -208,7 +211,7 @@ async function defaultLoadFactory(entry: string): Promise<PluginFactory> {
   const { createJiti } = await import("jiti");
   const { pluginExternalsAlias } = await import("./plugin-externals-alias.js");
   // The same alias the in-process loader uses. Without it the first plugin
-  // that imports `@bb/plugin-sdk` — which is most of them — fails to load, and
+  // that imports `@patcher/plugin-sdk` — which is most of them — fails to load, and
   // all the server sees is a process that died on bootstrap.
   const jiti = createJiti(import.meta.url, {
     moduleCache: false,
@@ -866,12 +869,12 @@ function snapshot(handle: PluginApiHandle): PluginRegistrationSnapshot {
 }
 
 /**
- * `@bb/sdk`, loaded the first time a plugin asks for `bb.sdk` — and loaded
+ * `@patcher/sdk`, loaded the first time a plugin asks for `bb.sdk` — and loaded
  * *synchronously*, because `getSdk()` is synchronous and the plugin-facing
  * contract (`bb.sdk.threads.list()`, `bb.sdk.guide.render()`) has members that
  * answer without awaiting anything.
  *
- * This is the single biggest thing a plugin process pays for. `@bb/sdk` pulls
+ * This is the single biggest thing a plugin process pays for. `@patcher/sdk` pulls
  * `createApiClient`, which builds the whole public API surface — every route,
  * every zod schema — at import time: **~100MB resident, in every plugin
  * process, whether or not the plugin ever touches the SDK.** Measured by
@@ -884,12 +887,14 @@ function snapshot(handle: PluginApiHandle): PluginRegistrationSnapshot {
  * `createRequire` resolves it from the workspace. Both branches load the same
  * module — only who resolves it differs.
  */
-let bbSdkModule: typeof import("@bb/sdk") | undefined;
+let bbSdkModule: typeof import("@patcher/sdk") | undefined;
 
-function loadBbSdk(): typeof import("@bb/sdk") {
+function loadBbSdk(): typeof import("@patcher/sdk") {
   bbSdkModule ??=
     typeof require === "function"
-      ? (require("@bb/sdk") as typeof import("@bb/sdk"))
-      : (createRequire(import.meta.url)("@bb/sdk") as typeof import("@bb/sdk"));
+      ? (require("@patcher/sdk") as typeof import("@patcher/sdk"))
+      : (createRequire(import.meta.url)(
+          "@patcher/sdk",
+        ) as typeof import("@patcher/sdk"));
   return bbSdkModule;
 }

@@ -15,14 +15,14 @@
  * `instanceof` — the class that threw it may be in another process.
  */
 
-import type { JsonValue } from "@bb/domain";
+import type { JsonValue } from "@patcher/domain";
 import type {
   PluginRpcError,
   PluginRpcValidationIssue,
   StandardSchemaV1,
   StandardSchemaV1Issue,
   StandardSchemaV1Result,
-} from "@bb/plugin-sdk";
+} from "@patcher/plugin-sdk";
 import type { PluginRpcHandler } from "./plugin-api.js";
 
 export class PluginRpcBoundaryError extends Error {

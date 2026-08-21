@@ -18,14 +18,14 @@ import {
   setQueuedThreadMessageGroupBoundary,
   setThreadExecutionOverride,
   upsertProjectExecutionDefaults,
-} from "@bb/db";
+} from "@patcher/db";
 import {
   encodeClientTurnRequestIdNumber,
   threadQueuedMessageSchema,
   threadScope,
   threadSchema,
   turnScope,
-} from "@bb/domain";
+} from "@patcher/domain";
 import {
   type TimelineRow,
   sidebarBootstrapResponseSchema,
@@ -38,8 +38,8 @@ import {
   threadWithIncludesResponseSchema,
   timelineTurnSummaryDetailsResponseSchema,
   uploadedPromptAttachmentSchema,
-} from "@bb/server-contract";
-import { renderTemplate } from "@bb/templates";
+} from "@patcher/server-contract";
+import { renderTemplate } from "@patcher/templates";
 import { z } from "zod";
 import { describe, expect, it, vi } from "vitest";
 import type { TelemetryService } from "../../src/services/system/telemetry.js";

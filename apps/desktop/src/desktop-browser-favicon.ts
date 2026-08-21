@@ -1,4 +1,4 @@
-import { BB_DESKTOP_BROWSER_MAX_FAVICON_DATA_URL_LENGTH } from "@bb/desktop-contract";
+import { BB_DESKTOP_BROWSER_MAX_FAVICON_DATA_URL_LENGTH } from "@patcher/desktop-contract";
 
 /**
  * Turning a page's declared favicon into something the trusted bb app may show.

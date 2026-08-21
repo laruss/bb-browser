@@ -1,6 +1,6 @@
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { encodeClientTurnRequestIdNumber } from "@bb/domain";
+import { encodeClientTurnRequestIdNumber } from "@patcher/domain";
 import { builtinPluginSource } from "../../../src/services/plugins/builtin-registry.js";
 import { buildThreadStartCommand } from "../../../src/services/threads/thread-commands.js";
 import { resolveExecutionOptions } from "../../../src/services/threads/thread-runtime-config.js";

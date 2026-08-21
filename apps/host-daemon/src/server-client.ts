@@ -22,8 +22,11 @@ import {
   type HostDaemonToolCallRequest,
   type HostDaemonToolCallResponse,
   type HostDaemonSkillTree,
-} from "@bb/host-daemon-contract";
-import type { PendingInteractionCreate, ToolCallRequest } from "@bb/domain";
+} from "@patcher/host-daemon-contract";
+import type {
+  PendingInteractionCreate,
+  ToolCallRequest,
+} from "@patcher/domain";
 import type { HostDaemonLogger } from "./logger.js";
 import type { EventPostResult } from "./event-sink.js";
 import { runtimeErrorLogFields } from "./error-utils.js";

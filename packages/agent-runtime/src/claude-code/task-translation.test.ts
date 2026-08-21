@@ -5,12 +5,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   DEFAULT_CLAUDE_CODE_MOCK_CLI_TRAFFIC_CONFIG,
   threadScope,
-} from "@bb/domain";
+} from "@patcher/domain";
 import type {
   ThreadEvent,
   ThreadEventBackgroundTaskItem,
   ThreadEventItem,
-} from "@bb/domain";
+} from "@patcher/domain";
 import { createClaudeCodeProviderAdapter } from "./adapter.js";
 import { CLAUDE_TASK_PROGRESS_THROTTLE_MS } from "./task-translation.js";
 

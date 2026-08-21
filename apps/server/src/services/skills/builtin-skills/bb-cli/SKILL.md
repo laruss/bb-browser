@@ -116,4 +116,4 @@ injected `plugin-commands` skill lists what is available.
 
 **Writing a plugin?** Use the `bb-plugin-authoring` skill — the complete
 authoring reference for the backend `BbPluginApi` and the frontend
-`@bb/plugin-sdk/app` contract. `bb guide plugins` has the short walkthrough.
+`@patcher/plugin-sdk/app` contract. `bb guide plugins` has the short walkthrough.

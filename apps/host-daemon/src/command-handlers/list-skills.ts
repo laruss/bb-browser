@@ -1,12 +1,12 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { resolveCodexHome } from "@bb/config/codex-home";
-import { resolveDataDirSkillsRootPath } from "@bb/config/skill-storage-paths";
+import { resolveCodexHome } from "@patcher/config/codex-home";
+import { resolveDataDirSkillsRootPath } from "@patcher/config/skill-storage-paths";
 import type {
   HostDaemonOnlineRpcResult,
   SkillRootKind,
-} from "@bb/host-daemon-contract";
+} from "@patcher/host-daemon-contract";
 import {
   CommandDispatchError,
   type CommandOf,

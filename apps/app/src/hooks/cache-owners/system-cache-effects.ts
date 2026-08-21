@@ -1,5 +1,5 @@
 import type { QueryKey } from "@tanstack/react-query";
-import type { SystemExecutionOptionsResponse } from "@bb/server-contract";
+import type { SystemExecutionOptionsResponse } from "@patcher/server-contract";
 import {
   allEnvironmentDiffFilesQueryKeyPrefix,
   allEnvironmentDiffPatchQueryKeyPrefix,

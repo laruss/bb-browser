@@ -1,21 +1,21 @@
-// Portable type declarations for `@bb/plugin-sdk`. Unpublished BB
+// Portable type declarations for `@patcher/plugin-sdk`. Unpublished BB
 // workspace contracts are flattened; public subpaths may reuse the
-// package root without requiring any other @bb/* package.
+// package root without requiring any other @patcher/* package.
 //
 // Confused by the API, or need a symbol that isn't here? Clone the BB repo
 // and read the real source: https://github.com/get-bb/bb
 
 import { ReactNode, ComponentType } from 'react';
 import { RenderResult } from '@testing-library/react';
-import { PluginHomepageSectionRegistration, PluginSettingsSectionRegistration, PluginNavPanelRegistration, PluginLeadingPanelRegistration, PluginThreadPanelActionRegistration, PluginNewThreadPanelActionRegistration, ComposerCustomization, PluginPendingInteractionRegistration, PluginSidebarFooterActionRegistration, PluginThreadListRegistration, PluginThreadHeaderActionRegistration, PluginFileOpenerRegistration, PluginMessageDirectiveRegistration, PluginMessageActionRegistration, PluginContentScriptRegistration, PluginComposerScope, PluginComposerTextEffect, PluginComposerMention, PluginComposerThreadRowStatus, BbNavigate, PluginAppDefinition, PluginRpcContract, StandardSchemaV1InferInput, PluginRpcResult, PluginRealtimeConnectionState, PluginSidebarThreadsState, PluginSidebarPullRequest, PluginSidebarThreadActions } from '@bb/plugin-sdk';
+import { PluginHomepageSectionRegistration, PluginSettingsSectionRegistration, PluginNavPanelRegistration, PluginLeadingPanelRegistration, PluginThreadPanelActionRegistration, PluginNewThreadPanelActionRegistration, ComposerCustomization, PluginPendingInteractionRegistration, PluginSidebarFooterActionRegistration, PluginThreadListRegistration, PluginThreadHeaderActionRegistration, PluginFileOpenerRegistration, PluginMessageDirectiveRegistration, PluginMessageActionRegistration, PluginContentScriptRegistration, PluginComposerScope, PluginComposerTextEffect, PluginComposerMention, PluginComposerThreadRowStatus, BbNavigate, PluginAppDefinition, PluginRpcContract, StandardSchemaV1InferInput, PluginRpcResult, PluginRealtimeConnectionState, PluginSidebarThreadsState, PluginSidebarPullRequest, PluginSidebarThreadActions } from '@patcher/plugin-sdk';
 
 /**
- * `@bb/plugin-sdk/testing/app` — the frontend plugin test harness. Tests a
+ * `@patcher/plugin-sdk/testing/app` — the frontend plugin test harness. Tests a
  * plugin's `app.tsx` source directly under vitest + jsdom, without the bb
  * host or the esbuild bundle:
  *
  * - {@link installTestPluginRuntime} fills `globalThis.__bbPluginRuntime.
- *   pluginSdkApp` with a test implementation of the `@bb/plugin-sdk/app`
+ *   pluginSdkApp` with a test implementation of the `@patcher/plugin-sdk/app`
  *   surface (the same seam `bb plugin build` shims to the real app). It must
  *   run BEFORE the plugin's `app.tsx` module evaluates, because that module
  *   binds the runtime at import time — so import `app.tsx` through
@@ -89,7 +89,7 @@ interface SidebarActionCall {
 /**
  * Install the test runtime at `globalThis.__bbPluginRuntime.pluginSdkApp`.
  * Idempotent per module instance; must run before the plugin's `app.tsx`
- * (and therefore `@bb/plugin-sdk/app`) is imported.
+ * (and therefore `@patcher/plugin-sdk/app`) is imported.
  */
 declare function installTestPluginRuntime(): void;
 interface CapturedPluginApp {

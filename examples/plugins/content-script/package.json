@@ -16,8 +16,8 @@
     "app": "./app.ts"
   },
   "devDependencies": {
-    "@bb/plugin-sdk": "workspace:*",
-    "@bb/tsconfig": "workspace:*",
+    "@patcher/plugin-sdk": "workspace:*",
+    "@patcher/tsconfig": "workspace:*",
     "typescript": "^6.0.2"
   }
 }

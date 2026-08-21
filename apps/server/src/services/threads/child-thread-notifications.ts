@@ -2,9 +2,9 @@ import type {
   PromptInput,
   SystemMessageSubject,
   ThreadEventTurnStatus,
-} from "@bb/domain";
-import { listActiveBackgroundTaskCountsByThreadIds } from "@bb/db";
-import { renderTemplate } from "@bb/templates";
+} from "@patcher/domain";
+import { listActiveBackgroundTaskCountsByThreadIds } from "@patcher/db";
+import { renderTemplate } from "@patcher/templates";
 import type { LoggedPendingInteractionWorkSessionDeps } from "../../types.js";
 import {
   buildParentSystemInputFromTemplateSlot,

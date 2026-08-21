@@ -20,7 +20,7 @@ import {
   ContextMenuSubContent,
   ContextMenuSubTrigger,
   ContextMenuTrigger,
-} from "@bb/shared-ui/context-menu";
+} from "@patcher/shared-ui/context-menu";
 import type {
   Components,
   ExtraProps,
@@ -36,7 +36,7 @@ import remarkMath from "remark-math";
 import "katex/dist/katex.min.css";
 import { ImageLightbox } from "./image-lightbox.js";
 import { CopyButton } from "./copy-button.js";
-import { Icon } from "@bb/shared-ui/icon";
+import { Icon } from "@patcher/shared-ui/icon";
 import { RouteAnchor } from "./app-route-anchor.js";
 import {
   getMarkdownCodeLanguage,
@@ -79,7 +79,7 @@ import {
 } from "./markdown-message-directives.js";
 import { normalizePromptBlockquoteBoundaries } from "./markdown-prompt-blockquote-boundaries.js";
 import { MarkdownMermaidDiagram } from "./markdown-mermaid-diagram.js";
-import type { PromptTextMention } from "@bb/domain";
+import type { PromptTextMention } from "@patcher/domain";
 import type { PromptMentionLinkResolver } from "@/components/promptbox/editor/prompt-mention-link";
 import type { TimelineTitleLinkResolver } from "@/components/thread/timeline/TimelineTitleView.js";
 import { usePreferredTheme, type Theme } from "@/hooks/useTheme";
@@ -88,7 +88,7 @@ import {
   useRewriteLocalhostLinksPreference,
 } from "@/lib/localhost-link-rewrite-preference";
 import { resolveRouteHref } from "@/lib/route-paths";
-import { cn } from "@bb/shared-ui/lib/utils";
+import { cn } from "@patcher/shared-ui/lib/utils";
 import remarkDirective from "remark-directive";
 
 export interface MarkdownPreviewProps {

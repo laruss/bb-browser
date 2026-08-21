@@ -1,8 +1,12 @@
 import { Link } from "react-router-dom";
-import type { ProviderCliKey } from "@bb/host-daemon-contract";
-import { Icon } from "@bb/shared-ui/icon";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@bb/shared-ui/tooltip";
-import { cn } from "@bb/shared-ui/lib/utils";
+import type { ProviderCliKey } from "@patcher/host-daemon-contract";
+import { Icon } from "@patcher/shared-ui/icon";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@patcher/shared-ui/tooltip";
+import { cn } from "@patcher/shared-ui/lib/utils";
 import { SidebarMenuItem } from "@/components/ui/sidebar.js";
 import { useUpdateInventory } from "@/hooks/useUpdateInventory";
 import {

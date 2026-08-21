@@ -15,7 +15,7 @@ import { shutdownDefaultListModelsRuntimes } from "./command-dispatch-support.js
 import { startLocalApiServer, type LocalApiServer } from "./local-api.js";
 import type { HostDaemonLocalApiConfig } from "./local-api-config.js";
 import type { HostDaemonLogger } from "./logger.js";
-import type { HostDaemonDaemonWsMessage } from "@bb/host-daemon-contract";
+import type { HostDaemonDaemonWsMessage } from "@patcher/host-daemon-contract";
 import {
   RuntimeManager,
   type RuntimeManagerReapIdleProviderSessionsArgs,
@@ -48,17 +48,17 @@ import {
 } from "./server-connection.js";
 import { runtimeErrorLogFields, summarizeError } from "./error-utils.js";
 import { ensureThreadStorageRoot } from "./thread-storage-root.js";
-import type { AgentRuntimeOptions } from "@bb/agent-runtime";
+import type { AgentRuntimeOptions } from "@patcher/agent-runtime";
 import { createProtocolSelfUpdater } from "./protocol-self-update.js";
 import {
   type HostType,
   type ToolCallRequest,
   type ToolCallResponse,
-} from "@bb/domain";
+} from "@patcher/domain";
 import {
   disposeParcelWatcherBackend,
   type HostWatcher,
-} from "@bb/host-watcher";
+} from "@patcher/host-watcher";
 
 interface SessionState {
   value: string | null;

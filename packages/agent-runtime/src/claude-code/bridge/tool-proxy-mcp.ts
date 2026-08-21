@@ -1,5 +1,5 @@
 import type { McpSdkServerConfigWithInstance } from "@anthropic-ai/claude-agent-sdk";
-import type { DynamicTool } from "@bb/domain";
+import type { DynamicTool } from "@patcher/domain";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {
   CallToolRequestSchema,

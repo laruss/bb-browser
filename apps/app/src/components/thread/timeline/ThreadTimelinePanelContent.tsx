@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
-import type { ThreadChildOrigin } from "@bb/domain";
-import { EmptyStatePanel } from "@bb/shared-ui/empty-state";
-import { Skeleton } from "@bb/shared-ui/skeleton";
+import type { ThreadChildOrigin } from "@patcher/domain";
+import { EmptyStatePanel } from "@patcher/shared-ui/empty-state";
+import { Skeleton } from "@patcher/shared-ui/skeleton";
 import type { PromptMentionLinkResolver } from "@/components/promptbox/editor/prompt-mention-link";
 import { ConversationTimeline } from "@/components/ui/conversation.js";
 import { useThread } from "@/hooks/queries/thread-queries";

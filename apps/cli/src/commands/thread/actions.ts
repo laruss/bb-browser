@@ -6,7 +6,7 @@ import {
   type ReasoningLevel,
   type ServiceTier,
   type ThreadVisibility,
-} from "@bb/domain";
+} from "@patcher/domain";
 import { action } from "../../action.js";
 import { createCliBbSdk } from "../../client.js";
 import {

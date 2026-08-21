@@ -6,7 +6,7 @@ import {
   canonicalPermissions,
   pluginPermissionSchema,
   type PluginPermission,
-} from "@bb/domain";
+} from "@patcher/domain";
 
 /**
  * The fake host's half of `bb.permissions`.

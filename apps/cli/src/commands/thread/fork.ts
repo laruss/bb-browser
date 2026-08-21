@@ -3,7 +3,7 @@ import {
   threadVisibilitySchema,
   type PromptInput,
   type Thread,
-} from "@bb/domain";
+} from "@patcher/domain";
 import { action } from "../../action.js";
 import { createCliBbSdk } from "../../client.js";
 import { resolveExplicitIdFlag } from "../../context-env.js";

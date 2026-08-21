@@ -1,7 +1,7 @@
 /** Provider integration tests using createAgentRuntime. */
 
 import { describe, expect, it } from "vitest";
-import type { ThreadEvent } from "@bb/domain";
+import type { ThreadEvent } from "@patcher/domain";
 import {
   cleanup,
   createTestRuntime,

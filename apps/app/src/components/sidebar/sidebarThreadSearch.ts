@@ -1,5 +1,5 @@
 import type { RefObject } from "react";
-import type { ThreadSearchMatch } from "@bb/server-contract";
+import type { ThreadSearchMatch } from "@patcher/server-contract";
 
 export const SIDEBAR_THREAD_SEARCH_LISTBOX_ID =
   "bb-sidebar-thread-search-results";

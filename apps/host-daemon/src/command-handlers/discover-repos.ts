@@ -6,7 +6,7 @@ import { basename, join } from "node:path";
 import type {
   DiscoverReposResult,
   DiscoveredRepo,
-} from "@bb/host-daemon-contract";
+} from "@patcher/host-daemon-contract";
 
 /**
  * Find candidate projects on this host: git repositories under the user's home

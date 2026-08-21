@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { PERSONAL_PROJECT_ID } from "@bb/domain";
-import type { ThreadSearchMatch } from "@bb/server-contract";
+import { PERSONAL_PROJECT_ID } from "@patcher/domain";
+import type { ThreadSearchMatch } from "@patcher/server-contract";
 import { makeThreadListEntry } from "../../../.ladle/story-fixtures";
 import { StoryCard, StoryRow } from "../../../.ladle/story-card";
 import { getThreadDisplayTitle } from "@/lib/thread-title";

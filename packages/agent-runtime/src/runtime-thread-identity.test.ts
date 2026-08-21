@@ -1,5 +1,5 @@
-import type { ThreadEvent } from "@bb/domain";
-import { turnScope } from "@bb/domain";
+import type { ThreadEvent } from "@patcher/domain";
+import { turnScope } from "@patcher/domain";
 import { describe, expect, it } from "vitest";
 import {
   RuntimeThreadIdentityRegistry,

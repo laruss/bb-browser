@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { ThreadTimelinePendingTodos } from "@bb/domain";
+import type { ThreadTimelinePendingTodos } from "@patcher/domain";
 import { StoryCard, StoryRow } from "../../../../.ladle/story-card";
 import { ThreadTodoCard } from "./ThreadTodoCard";
 

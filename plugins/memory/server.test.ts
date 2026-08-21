@@ -3,7 +3,7 @@ import {
   createFakePluginHost,
   pluginPermissionsFromManifest,
   type FakePluginHost,
-} from "@bb/plugin-sdk/testing";
+} from "@patcher/plugin-sdk/testing";
 import memoryPlugin from "./server";
 
 async function loadPlugin(): Promise<FakePluginHost> {

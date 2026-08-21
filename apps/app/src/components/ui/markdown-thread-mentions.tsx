@@ -4,8 +4,8 @@ import type { Nodes, Parent, PhrasingContent, Text } from "mdast";
 // plain `text` node can carry the custom element instructions below.
 import type {} from "mdast-util-to-hast";
 import { visit } from "unist-util-visit";
-import type { PromptTextMention } from "@bb/domain";
-import type { TimelineTitleLink } from "@bb/thread-view";
+import type { PromptTextMention } from "@patcher/domain";
+import type { TimelineTitleLink } from "@patcher/thread-view";
 import {
   PromptMentionPill,
   resolveThreadMentionResource,

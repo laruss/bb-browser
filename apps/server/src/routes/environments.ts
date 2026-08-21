@@ -1,11 +1,11 @@
 import path from "node:path";
-import { updateEnvironmentMetadata } from "@bb/db";
+import { updateEnvironmentMetadata } from "@patcher/db";
 import {
   type GitBranchRefClassification,
   resolveEnvironmentWorkspaceDisplayKind,
   type Environment,
   type ThreadPullRequest,
-} from "@bb/domain";
+} from "@patcher/domain";
 import {
   publicApiRoutes,
   typedRoutes,
@@ -13,7 +13,7 @@ import {
   type EnvironmentDiffFileQuery,
   type EnvironmentDiffQuery,
   type PublicApiSchema,
-} from "@bb/server-contract";
+} from "@patcher/server-contract";
 import type { Hono } from "hono";
 import type { AppDeps } from "../types.js";
 import {

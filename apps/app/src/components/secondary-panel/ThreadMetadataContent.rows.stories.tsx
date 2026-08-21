@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { EnvironmentDisplayHostContext } from "@bb/core-ui";
+import type { EnvironmentDisplayHostContext } from "@patcher/core-ui";
 import {
   ParentSelectorRow,
   EnvironmentRow,

@@ -60,7 +60,7 @@ await Promise.all([
     ...commonOptions,
     // The preload for browsed pages. Bundled like the others, and with one thing
     // to keep true: it imports only `electron` and type-only names, so nothing
-    // from @bb/desktop-contract (zod included) ends up in a website's renderer.
+    // from @patcher/desktop-contract (zod included) ends up in a website's renderer.
     entryPoints: [resolve(packageRoot, "src", "page-script-preload.ts")],
     external: ["electron"],
     format: "cjs",
@@ -105,4 +105,4 @@ await Promise.all([
   }),
 ]);
 
-process.stdout.write("@bb/desktop: built Electron entries\n");
+process.stdout.write("@patcher/desktop: built Electron entries\n");

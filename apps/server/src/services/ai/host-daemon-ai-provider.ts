@@ -1,7 +1,7 @@
 import {
   getBuiltInAgentProviderServerCapabilities,
   isAgentProviderId,
-} from "@bb/agent-providers";
+} from "@patcher/agent-providers";
 
 /**
  * Whether a configured AI-service provider string (from `BB_TRANSCRIPTION` /

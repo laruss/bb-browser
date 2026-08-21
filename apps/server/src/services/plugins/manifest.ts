@@ -6,8 +6,8 @@ import {
   isPluginOwnedIconPath,
   pluginPackageJsonSchema,
   type PluginPermission,
-} from "@bb/domain";
-import { assertValidPluginCompactIconSvg } from "@bb/plugin-build";
+} from "@patcher/domain";
+import { assertValidPluginCompactIconSvg } from "@patcher/plugin-build";
 
 export interface PluginManifest {
   /** Sanitized plugin id derived from the package name. */
@@ -32,7 +32,7 @@ export interface PluginManifest {
   };
   /**
    * `bb.permissions` — what this plugin may reach through `bb.browser` and
-   * `bb.sdk`. Undeclared means denied; see `@bb/domain`'s plugin-permissions
+   * `bb.sdk`. Undeclared means denied; see `@patcher/domain`'s plugin-permissions
    * for what that does and does not enforce.
    */
   permissions: readonly PluginPermission[] | undefined;
@@ -73,7 +73,7 @@ export interface PluginManifest {
   rootDir: string;
 }
 
-export { derivePluginId } from "@bb/domain";
+export { derivePluginId } from "@patcher/domain";
 
 /** Resolve a manifest-relative entry path, rejecting escapes out of rootDir. */
 function resolveEntry(rootDir: string, entry: string, label: string): string {

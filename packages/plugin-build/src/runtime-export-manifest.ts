@@ -8,7 +8,7 @@
 //   node packages/plugin-build/scripts/generate-runtime-export-manifest.mjs
 
 export const RUNTIME_EXPORT_MANIFEST: Record<string, readonly string[]> = {
-  "@bb/plugin-sdk/app": [
+  "@patcher/plugin-sdk/app": [
     "Markdown",
     "ThreadChat",
     "definePluginApp",

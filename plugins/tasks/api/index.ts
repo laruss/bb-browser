@@ -1,4 +1,4 @@
-import type { BbPluginApi, PluginRpcHandlers } from "@bb/plugin-sdk";
+import type { BbPluginApi, PluginRpcHandlers } from "@patcher/plugin-sdk";
 import {
   createTasksStore,
   type Attachment as StoredAttachment,

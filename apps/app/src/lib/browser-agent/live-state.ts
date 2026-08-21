@@ -1,7 +1,7 @@
 import type {
   BbDesktopBrowserApi,
   BbDesktopBrowserState,
-} from "@bb/desktop-contract";
+} from "@patcher/desktop-contract";
 
 /**
  * The navigation state the shell pushes for every browser view, kept where code

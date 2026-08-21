@@ -49,7 +49,7 @@ describe("plugin app runtime shim", () => {
     );
   });
 
-  it("re-derives @bb/plugin-sdk/app exports for every rebuild", async () => {
+  it("re-derives @patcher/plugin-sdk/app exports for every rebuild", async () => {
     const dir = await mkdtemp(join(tmpdir(), "bb-plugin-shim-"));
     tempDirs.push(dir);
     const facadePath = join(dir, "app-facade.mjs");
@@ -58,7 +58,7 @@ describe("plugin app runtime shim", () => {
     async function bundle(importName: string): Promise<string> {
       const result = await build({
         stdin: {
-          contents: `import { ${importName} } from "@bb/plugin-sdk/app"; export { ${importName} };`,
+          contents: `import { ${importName} } from "@patcher/plugin-sdk/app"; export { ${importName} };`,
           loader: "js",
           resolveDir: dir,
         },

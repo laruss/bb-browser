@@ -1,6 +1,6 @@
 import { AbortError } from "p-retry";
 import { describe, expect, it, vi } from "vitest";
-import type { PendingInteractionCreate } from "@bb/domain";
+import type { PendingInteractionCreate } from "@patcher/domain";
 import {
   createServerClient,
   ServerResponseError,

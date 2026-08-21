@@ -18,7 +18,7 @@ async function assertPathExists(pathToCheck, label) {
     await access(pathToCheck);
   } catch {
     throw new Error(
-      `Missing ${label} at ${pathToCheck}. Build @bb/app, @bb/server, and @bb/host-daemon before packaging bb-app.`,
+      `Missing ${label} at ${pathToCheck}. Build @patcher/app, @patcher/server, and @patcher/host-daemon before packaging bb-app.`,
     );
   }
 }
@@ -63,15 +63,15 @@ await buildPublicSdkDeclarations();
 
 await copyBuildOutput({
   from: resolve(workspaceRoot, "apps", "app", "dist"),
-  label: "@bb/app dist",
+  label: "@patcher/app dist",
   to: resolve(packageRoot, "app", "dist"),
 });
 await copyBuildOutput({
   from: resolve(workspaceRoot, "apps", "server", "dist"),
-  label: "@bb/server dist",
+  label: "@patcher/server dist",
   to: resolve(packageRoot, "server", "dist"),
 });
-// Builtin plugins are bundled at packaging time (not in @bb/server's build,
+// Builtin plugins are bundled at packaging time (not in @patcher/server's build,
 // which source checkouts don't need — the registry falls back to the repo's
 // plugins/<name> there). Runs in apps/server so tsx + workspace imports
 // resolve; writes straight into the packaged server dist.
@@ -95,7 +95,7 @@ await execFileAsync(
 );
 await copyBuildOutput({
   from: resolve(workspaceRoot, "apps", "host-daemon", "dist"),
-  label: "@bb/host-daemon dist",
+  label: "@patcher/host-daemon dist",
   to: resolve(packageRoot, "host-daemon", "dist"),
 });
 

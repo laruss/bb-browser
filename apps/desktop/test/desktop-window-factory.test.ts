@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { BrowserWindowConstructorOptions } from "electron";
 import { afterEach, describe, expect, it } from "vitest";
-import { BB_DESKTOP_WINDOW_KEY_ARGUMENT_PREFIX } from "@bb/desktop-contract";
+import { BB_DESKTOP_WINDOW_KEY_ARGUMENT_PREFIX } from "@patcher/desktop-contract";
 import {
   createDesktopWindowFactory,
   type DesktopBrowserWindow,

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import type { Attachment } from "../../shared/contract.js";
 import { formatBytes } from "./meta.js";
 import { ConfirmDialog } from "../../components/confirm-dialog.js";
-import { Icon } from "@bb/shared-ui/icon";
+import { Icon } from "@patcher/shared-ui/icon";
 
 /** Frontend twin of attachments/index.ts `buildAttachmentUrl`. */
 export function attachmentDownloadUrl(attachmentId: string): string {

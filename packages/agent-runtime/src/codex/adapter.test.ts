@@ -14,8 +14,8 @@ import {
   DEFAULT_CLAUDE_CODE_MOCK_CLI_TRAFFIC_CONFIG,
   threadScope,
   turnScope,
-} from "@bb/domain";
-import type { PromptInput, PromptMentionCommandOrigin } from "@bb/domain";
+} from "@patcher/domain";
+import type { PromptInput, PromptMentionCommandOrigin } from "@patcher/domain";
 
 import { createCodexProviderAdapter } from "./adapter.js";
 import type { CodexEvent } from "./adapter.js";

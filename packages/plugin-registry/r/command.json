@@ -10,8 +10,8 @@
     "lucide-react"
   ],
   "registryDependencies": [
-    "@bb/dialog",
-    "@bb/utils"
+    "@patcher/dialog",
+    "@patcher/utils"
   ],
   "files": [
     {

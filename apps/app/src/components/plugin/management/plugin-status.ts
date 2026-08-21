@@ -1,5 +1,5 @@
-import type { PluginRuntimeStatus } from "@bb/server-contract";
-import type { IconName } from "@bb/shared-ui/icon";
+import type { PluginRuntimeStatus } from "@patcher/server-contract";
+import type { IconName } from "@patcher/shared-ui/icon";
 import type { PluginListItem } from "@/hooks/queries/plugin-settings-queries";
 
 export interface PluginRuntimeStatusPresentation {

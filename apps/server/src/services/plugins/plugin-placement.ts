@@ -22,7 +22,7 @@
  * where a plugin is *asked* to run, not where it ends up.
  */
 
-import type { InstalledPluginRow } from "@bb/db";
+import type { InstalledPluginRow } from "@patcher/db";
 
 /** What the decision reads. A row, narrowed to the part that matters. */
 export type PluginPlacementInput = Pick<InstalledPluginRow, "provenance">;

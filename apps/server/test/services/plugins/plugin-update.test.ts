@@ -26,8 +26,8 @@ import {
   upsertPluginSchedule,
   upsertInstalledPlugin,
   type DbConnection,
-} from "@bb/db";
-import type { Logger } from "@bb/logger";
+} from "@patcher/db";
+import type { Logger } from "@patcher/logger";
 import { registerPluginRoutes } from "../../../src/routes/plugins.js";
 import {
   createPluginService,

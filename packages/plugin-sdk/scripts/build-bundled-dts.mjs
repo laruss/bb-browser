@@ -1,9 +1,9 @@
 // Generates the self-contained `.d.ts` bundles that `bb plugin new` ships into
 // a scaffolded plugin's `types/` directory, so authors get real BbPluginApi /
-// @bb/plugin-sdk/app types WITHOUT the (unpublished) @bb/* workspace packages
+// @patcher/plugin-sdk/app types WITHOUT the (unpublished) @patcher/* workspace packages
 // on disk.
 //
-// rollup-plugin-dts flattens @bb/plugin-sdk's own contracts plus every @bb/*
+// rollup-plugin-dts flattens @patcher/plugin-sdk's own contracts plus every @patcher/*
 // type it references (BbSdk, PromptInput, ThreadResponse, …) into the root
 // file. Testing subpaths reuse that already-portable root declaration through
 // the package's own public name instead of flattening the same contracts a
@@ -11,7 +11,7 @@
 // the consumer's own dependencies.
 //
 // The output is committed as bundled-types/*.d.ts (read at scaffold time by
-// @bb/templates via file path — no package edge, to avoid a dependency cycle).
+// @patcher/templates via file path — no package edge, to avoid a dependency cycle).
 // Run with --check to fail (in CI/typecheck) when the committed copy is stale.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -43,7 +43,7 @@ const outputs = {
 // Real npm packages the bundle imports from — kept external so they resolve
 // from the scaffold's devDependencies rather than being inlined.
 const EXTERNAL = [
-  /^@bb\/plugin-sdk$/,
+  /^@patcher\/plugin-sdk$/,
   /^@testing-library\/react($|\/)/,
   /^better-sqlite3/,
   /^hono($|\/)/,
@@ -52,9 +52,9 @@ const EXTERNAL = [
   /^zod($|\/)/,
 ];
 
-/** Resolve any `@bb/<pkg>[/<sub>]` to its `source` export target on disk. */
+/** Resolve any `@patcher/<pkg>[/<sub>]` to its `source` export target on disk. */
 function resolveBbSource(id) {
-  const match = /^@bb\/([^/]+)(\/.*)?$/.exec(id);
+  const match = /^@patcher\/([^/]+)(\/.*)?$/.exec(id);
   if (!match) return null;
   const pkgDir = path.join(pkgsDir, match[1]);
   const manifestPath = path.join(pkgDir, "package.json");
@@ -104,9 +104,9 @@ async function bundle(input) {
 }
 
 const HEADER = [
-  "// Portable type declarations for `@bb/plugin-sdk`. Unpublished BB",
+  "// Portable type declarations for `@patcher/plugin-sdk`. Unpublished BB",
   "// workspace contracts are flattened; public subpaths may reuse the",
-  "// package root without requiring any other @bb/* package.",
+  "// package root without requiring any other @patcher/* package.",
   "//",
   "// Confused by the API, or need a symbol that isn't here? Clone the BB repo",
   "// and read the real source: https://github.com/get-bb/bb",
@@ -148,7 +148,7 @@ for (const [fileName, content] of Object.entries(generated)) {
   if (check) {
     if (!unchanged) {
       console.error(
-        `bundled-types/${fileName} is stale. Run \`bun run --filter @bb/plugin-sdk build\`.`,
+        `bundled-types/${fileName} is stale. Run \`bun run --filter @patcher/plugin-sdk build\`.`,
       );
       stale = true;
     }

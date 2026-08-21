@@ -9,8 +9,8 @@ import {
   turnScope,
   type ProviderRawEvent,
   type ThreadEvent,
-} from "@bb/domain";
-import type { ProviderUnhandledEvent } from "@bb/domain";
+} from "@patcher/domain";
+import type { ProviderUnhandledEvent } from "@patcher/domain";
 import type { ProviderVisibilityMetadata } from "../provider-visibility.js";
 import type { JsonRpcMessage } from "../runtime-json-rpc.js";
 import { getStringProperty, isRecord } from "./provider-visibility-helpers.js";

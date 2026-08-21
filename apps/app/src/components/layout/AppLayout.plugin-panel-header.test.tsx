@@ -11,7 +11,7 @@ const viewportState = vi.hoisted(() => ({ compact: false }));
 // the shell that hosts the browser surface and the agent side panel.
 const desktopState = vi.hoisted(() => ({ browserAvailable: false }));
 
-vi.mock("@bb/shared-ui/hooks/use-compact-viewport", () => ({
+vi.mock("@patcher/shared-ui/hooks/use-compact-viewport", () => ({
   useIsCompactViewport: () => viewportState.compact,
   CompactViewportOverrideProvider: ({ children }: { children: ReactNode }) => (
     <>{children}</>

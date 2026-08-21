@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BB_DESKTOP_BROWSER_MAX_FULL_PAGE_DIMENSION } from "@bb/desktop-contract";
+import { BB_DESKTOP_BROWSER_MAX_FULL_PAGE_DIMENSION } from "@patcher/desktop-contract";
 import {
   BB_DESKTOP_BROWSER_CONTENT_SIZE_SCRIPT,
   parseBrowserCaptureRegion,

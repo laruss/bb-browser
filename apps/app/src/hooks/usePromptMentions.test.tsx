@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
 
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
-import type { SystemConfigResponse } from "@bb/server-contract";
+import type { SystemConfigResponse } from "@patcher/server-contract";
 import {
   defaultAppSettings,
   defaultAppTheme,
   defaultExperiments,
-} from "@bb/domain";
+} from "@patcher/domain";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { sdk } from "@/lib/sdk";
 import { createQueryClientTestHarness } from "@/test/queryClientTestHarness";

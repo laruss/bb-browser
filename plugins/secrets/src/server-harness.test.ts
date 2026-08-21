@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   createFakePluginHost,
   pluginPermissionsFromManifest,
-} from "@bb/plugin-sdk/testing";
+} from "@patcher/plugin-sdk/testing";
 import plugin from "./server.js";
 
 describe("secrets plugin server", () => {

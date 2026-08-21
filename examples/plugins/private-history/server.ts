@@ -18,7 +18,10 @@
 // it belongs to the user.
 //
 // The type-only import is erased at load time; this file runs as-is.
-import type { BbPluginApi, PluginBrowserHistoryRewrite } from "@bb/plugin-sdk";
+import type {
+  BbPluginApi,
+  PluginBrowserHistoryRewrite,
+} from "@patcher/plugin-sdk";
 
 /**
  * Query parameters dropped from a URL before it is stored.

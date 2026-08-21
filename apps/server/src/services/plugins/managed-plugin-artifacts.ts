@@ -10,8 +10,8 @@ import {
   type PluginExactResolution,
   type PluginProvenance,
   type PluginSourceIntent,
-} from "@bb/db";
-import { buildPluginApp, buildPluginServer } from "@bb/plugin-build";
+} from "@patcher/db";
+import { buildPluginApp, buildPluginServer } from "@patcher/plugin-build";
 import { getPluginBuildToolchain } from "./build-toolchain.js";
 import { validatePluginArtifactMeta } from "./app-bundle.js";
 import {

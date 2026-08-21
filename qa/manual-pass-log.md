@@ -258,8 +258,8 @@ Critical issues fixed during the pass:
 
 - `qa/manual-runbook.md` hard-coded stale provider model IDs. The runbook now resolves current models through `bb provider models` and uses `CODEX_MODEL`, `CLAUDE_MODEL`, and `PI_MODEL`.
 - `qa/manual-runbook.md` still documented removed `--thread` flags for `bb environment commit/promote/demote`; those commands now match the current CLI.
-- Bare bridge error notifications from Pi/Claude could leave threads stuck in `provisioning` because no terminal turn event was emitted. Bridge adapters now synthesize a failed turn for thread-scoped bridge errors, with regression coverage in `@bb/agent-runtime`.
-- The standalone daemon restart command did not reload the `.env` used by the original daemon, which dropped provider credentials after restart. The generated restart command now sources the env file without embedding secrets in state, with `@bb/qa` regression coverage.
+- Bare bridge error notifications from Pi/Claude could leave threads stuck in `provisioning` because no terminal turn event was emitted. Bridge adapters now synthesize a failed turn for thread-scoped bridge errors, with regression coverage in `@patcher/agent-runtime`.
+- The standalone daemon restart command did not reload the `.env` used by the original daemon, which dropped provider credentials after restart. The generated restart command now sources the env file without embedding secrets in state, with `@patcher/qa` regression coverage.
 
 Residual notes:
 
@@ -483,7 +483,7 @@ Validated:
 
 - Replayed known bad Claude thread `thr_m22cr9ggq7` from the active dev database (`<dev-data-dir>/bb.db`) through the server timeline builder. The rendered timeline had 13 rows, 6 `Unhandled Claude Code event` entries, and 0 such entries in the trailing 30 rendered lines.
 - Spot-checked all 13 unarchived development threads in the active dev database (`<dev-data-dir>/bb.db`) through `buildThreadTimeline`; 0 failed to project.
-- Re-ran malformed turn-scope projection coverage with `bunx turbo run test --filter=@bb/core-ui -- --run test/to-view-messages.turn-lifecycle.test.ts`; 9 tests passed.
+- Re-ran malformed turn-scope projection coverage with `bunx turbo run test --filter=@patcher/core-ui -- --run test/to-view-messages.turn-lifecycle.test.ts`; 9 tests passed.
 
 Notes:
 
@@ -557,7 +557,7 @@ Status: passed
 Validated:
 
 - Ran a live Claude Code SDK query from `packages/agent-runtime` with `effort: "high"` and `thinking: { type: "adaptive", display: "summarized" }`. The stream emitted 4 thinking deltas, 207 thinking characters, 1 final thinking block, and a successful result.
-- Ran a live query through bb's Claude bridge session helpers, using `buildSessionOptions` plus `SdkSession` from the built `@bb/agent-runtime` output. The resolved options included `thinking: { type: "adaptive", display: "summarized" }` and `effort: "high"`. The stream emitted 6 thinking deltas, 284 thinking characters, 1 final thinking block, and a successful result.
+- Ran a live query through bb's Claude bridge session helpers, using `buildSessionOptions` plus `SdkSession` from the built `@patcher/agent-runtime` output. The resolved options included `thinking: { type: "adaptive", display: "summarized" }` and `effort: "high"`. The stream emitted 6 thinking deltas, 284 thinking characters, 1 final thinking block, and a successful result.
 
 Notes:
 

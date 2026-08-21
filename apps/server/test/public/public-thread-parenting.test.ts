@@ -1,11 +1,11 @@
-import { getThread } from "@bb/db";
-import { threadSchema } from "@bb/domain";
+import { getThread } from "@patcher/db";
+import { threadSchema } from "@patcher/domain";
 import {
   apiErrorSchema,
   threadArchiveAllResponseSchema,
   threadChildSummaryResponseSchema,
   threadListResponseSchema,
-} from "@bb/server-contract";
+} from "@patcher/server-contract";
 import { describe, expect, it } from "vitest";
 import { waitForQueuedCommand } from "../helpers/commands.js";
 import { readJson } from "../helpers/json.js";

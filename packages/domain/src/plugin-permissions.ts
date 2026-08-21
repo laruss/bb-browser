@@ -170,7 +170,7 @@ export function canonicalPermissions(
  * Which permission opens each `bb.sdk` area, keyed by area name.
  *
  * Here rather than beside the server's gate because two hosts enforce it: the
- * bb server and `@bb/plugin-sdk/testing`'s fake. A second copy would drift,
+ * bb server and `@patcher/plugin-sdk/testing`'s fake. A second copy would drift,
  * and a drifting copy is exactly how a plugin's tests start lying about what
  * its manifest needs.
  *
@@ -181,7 +181,7 @@ export function canonicalPermissions(
  * `subscribe` is deliberately absent: it is a single function whose argument
  * picks the feed, so it goes through {@link permissionForRealtimeEvent}.
  * Whether this covers every area is checked where `BbSdk` is in scope —
- * `@bb/domain` cannot see that type.
+ * `@patcher/domain` cannot see that type.
  */
 export const PLUGIN_SDK_AREA_PERMISSIONS = {
   browserHistory: "history",

@@ -1,8 +1,8 @@
 import type Database from "better-sqlite3";
 import type { Context } from "hono";
 import type * as z from "zod";
-import type { BbSdk } from "@bb/sdk";
-import type { ThreadResponse } from "@bb/server-contract";
+import type { BbSdk } from "@patcher/sdk";
+import type { ThreadResponse } from "@patcher/server-contract";
 import type { JsonValue } from "./json-value.js";
 import type { PluginRpcContract, PluginRpcHandlers } from "./rpc-contract.js";
 
@@ -14,7 +14,7 @@ import type { PluginRpcContract, PluginRpcHandlers } from "./rpc-contract.js";
  * (apps/server/src/services/plugins/plugin-api.ts), which imports these
  * shapes so the contract and the implementation cannot drift. Plugin authors
  * import them type-only (`import type { BbPluginApi } from
- * "@bb/plugin-sdk"`); the import is erased when BB loads the file.
+ * "@patcher/plugin-sdk"`); the import is erased when BB loads the file.
  *
  * Runtime classes stay host-side. NeedsConfigurationError in particular is
  * matched by NAME, so plugin code needs no runtime import:

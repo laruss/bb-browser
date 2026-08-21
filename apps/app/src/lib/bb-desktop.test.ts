@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { BbDesktopInfo } from "@bb/desktop-contract";
+import type { BbDesktopInfo } from "@patcher/desktop-contract";
 import { createBbDesktopApi } from "@/test/bb-desktop-test-utils";
 import {
   MACOS_TRAFFIC_LIGHT_LEADING_RESERVE_CLASS,

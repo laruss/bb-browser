@@ -5,7 +5,7 @@
     // bb:bundle-stats Vite plugin writes beside dist for the boot-payload
     // budget check. Without it a cache hit would leave CI checking a stale
     // file, or none at all.
-    "@bb/app#build": {
+    "@patcher/app#build": {
       "dependsOn": [
         "topo"
       ],
@@ -44,7 +44,7 @@
         "dist/**"
       ]
     },
-    "@bb/sdk#test": {
+    "@patcher/sdk#test": {
       "dependsOn": [
         "//#ensure-native-modules",
         "topo"
@@ -71,15 +71,15 @@
     },
     "bb-app#build": {
       // copy-builtin-plugins bundles every plugin in BUNDLED_PLUGINS; the
-      // tasks plugin's app bundle imports the @bb/plugin-sdk root at runtime
+      // tasks plugin's app bundle imports the @patcher/plugin-sdk root at runtime
       // (shared RPC contract), so the SDK dist must exist first.
       "dependsOn": [
-        "@bb/app#build",
-        "@bb/server#build",
-        "@bb/host-daemon#build",
-        "@bb/cli#build",
-        "@bb/sdk#build",
-        "@bb/plugin-sdk#build"
+        "@patcher/app#build",
+        "@patcher/server#build",
+        "@patcher/host-daemon#build",
+        "@patcher/cli#build",
+        "@patcher/sdk#build",
+        "@patcher/plugin-sdk#build"
       ],
       "inputs": [
         "$TURBO_DEFAULT$",
@@ -110,14 +110,14 @@
       ]
     },
     "bb-plugin-tasks#build": {
-      // The tasks plugin's app bundle imports the @bb/plugin-sdk root at
+      // The tasks plugin's app bundle imports the @patcher/plugin-sdk root at
       // runtime (shared RPC contract), so the SDK dist must exist first.
       "dependsOn": [
         "topo",
-        "@bb/plugin-sdk#build"
+        "@patcher/plugin-sdk#build"
       ]
     },
-    "@bb/desktop#build": {
+    "@patcher/desktop#build": {
       "dependsOn": [
         "bb-app#build"
       ],
@@ -140,10 +140,10 @@
         "dist/**"
       ]
     },
-    "@bb/desktop#desktop:build": {
+    "@patcher/desktop#desktop:build": {
       "dependsOn": [
         "bb-app#build",
-        "@bb/desktop#build"
+        "@patcher/desktop#build"
       ],
       "cache": false,
       "outputs": [
@@ -153,14 +153,14 @@
         "*"
       ]
     },
-    "@bb/desktop#smoke:packaged": {
+    "@patcher/desktop#smoke:packaged": {
       "cache": false,
       "outputs": [],
       "passThroughEnv": [
         "*"
       ]
     },
-    "@bb/desktop#dev": {
+    "@patcher/desktop#dev": {
       "dependsOn": [
         "bb-app#build"
       ],
@@ -170,7 +170,7 @@
         "*"
       ]
     },
-    "@bb/desktop#start": {
+    "@patcher/desktop#start": {
       "dependsOn": [
         "bb-app#build"
       ],
@@ -188,7 +188,7 @@
       "cache": false,
       "outputs": []
     },
-    "@bb/app#dev": {
+    "@patcher/app#dev": {
       "cache": false,
       "persistent": true,
       "passThroughEnv": [
@@ -202,21 +202,21 @@
         "*"
       ]
     },
-    "@bb/host-daemon#dev": {
+    "@patcher/host-daemon#dev": {
       "cache": false,
       "persistent": true,
       "passThroughEnv": [
         "*"
       ]
     },
-    "@bb/server#dev": {
+    "@patcher/server#dev": {
       "cache": false,
       "persistent": true,
       "passThroughEnv": [
         "*"
       ]
     },
-    "@bb/host-daemon#start:prod": {
+    "@patcher/host-daemon#start:prod": {
       "dependsOn": [
         "build"
       ],
@@ -226,7 +226,7 @@
         "*"
       ]
     },
-    "@bb/server#start:prod": {
+    "@patcher/server#start:prod": {
       "dependsOn": [
         "build"
       ],
@@ -258,10 +258,10 @@
       "outputs": []
     },
     // Transit node (no package defines a `topo` script; nothing executes).
-    // It exists so tasks that resolve `@bb/*` imports to *sources* — vitest
+    // It exists so tasks that resolve `@patcher/*` imports to *sources* — vitest
     // and tsc both use the `source` export condition — hash the sources of
     // dependency packages. Without it, a change in e.g. packages/domain
-    // would cache-hit @bb/server#test/#typecheck and skip them stale.
+    // would cache-hit @patcher/server#test/#typecheck and skip them stale.
     "topo": {
       "dependsOn": [
         "^topo"
@@ -272,16 +272,16 @@
         "topo"
       ]
     },
-    "@bb/templates#typecheck": {
+    "@patcher/templates#typecheck": {
       // Templates embed the plugin SDK's generated declarations by file path.
       // Keep the check from racing the SDK build without adding a package edge,
-      // which would create a dependency cycle through @bb/sdk.
+      // which would create a dependency cycle through @patcher/sdk.
       "dependsOn": [
-        "@bb/plugin-sdk#build",
+        "@patcher/plugin-sdk#build",
         "topo"
       ]
     },
-    "@bb/integration-tests#typecheck": {
+    "@patcher/integration-tests#typecheck": {
       "dependsOn": [
         "topo"
       ],
@@ -306,10 +306,10 @@
         "$TURBO_ROOT$/vitest.shared.ts"
       ]
     },
-    "@bb/templates#test": {
+    "@patcher/templates#test": {
       "dependsOn": [
         "//#ensure-native-modules",
-        "@bb/plugin-sdk#build",
+        "@patcher/plugin-sdk#build",
         "topo"
       ],
       "inputs": [
@@ -324,7 +324,7 @@
       "cache": false,
       "outputs": []
     },
-    "@bb/integration-tests#test": {
+    "@patcher/integration-tests#test": {
       "dependsOn": [
         "//#ensure-native-modules",
         "topo"
@@ -350,7 +350,7 @@
         "$TURBO_ROOT$/vitest.shared.ts"
       ]
     },
-    "@bb/integration-tests#test:smoke": {
+    "@patcher/integration-tests#test:smoke": {
       "dependsOn": [
         "//#ensure-native-modules",
         "topo"
@@ -376,10 +376,10 @@
         "$TURBO_ROOT$/vitest.shared.ts"
       ]
     },
-    "@bb/integration-tests#test:integration": {
+    "@patcher/integration-tests#test:integration": {
       "dependsOn": [
         "//#ensure-native-modules",
-        "@bb/agent-runtime#test:integration",
+        "@patcher/agent-runtime#test:integration",
         "topo"
       ],
       "inputs": [
@@ -393,7 +393,7 @@
         "$TURBO_ROOT$/vitest.shared.ts"
       ]
     },
-    "@bb/plugin-sdk#build": {
+    "@patcher/plugin-sdk#build": {
       "inputs": [
         "$TURBO_DEFAULT$",
         "$TURBO_ROOT$/packages/*/package.json",
@@ -405,7 +405,7 @@
         "dist/**"
       ]
     },
-    "@bb/plugin-build#typecheck": {
+    "@patcher/plugin-build#typecheck": {
       "dependsOn": [
         "topo"
       ],
@@ -416,7 +416,7 @@
         "$TURBO_ROOT$/package.json"
       ]
     },
-    "@bb/plugin-registry#typecheck": {
+    "@patcher/plugin-registry#typecheck": {
       "dependsOn": [
         "topo"
       ],
@@ -425,7 +425,7 @@
         "$TURBO_ROOT$/packages/shared-ui/src/**"
       ]
     },
-    "@bb/plugin-registry#test": {
+    "@patcher/plugin-registry#test": {
       "dependsOn": [
         "//#ensure-native-modules",
         "topo"

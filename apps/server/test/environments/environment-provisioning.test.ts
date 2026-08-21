@@ -4,8 +4,8 @@ import {
   getThread,
   listEvents,
   threads,
-} from "@bb/db";
-import { systemThreadProvisioningEventDataSchema } from "@bb/domain";
+} from "@patcher/db";
+import { systemThreadProvisioningEventDataSchema } from "@patcher/domain";
 import { describe, expect, it, vi } from "vitest";
 import { ApiError } from "../../src/errors.js";
 import {

@@ -177,7 +177,7 @@ declines when it has no address input of its own to focus.
 - `BrowserSurfaceChrome.test.tsx` — mixed list for a real query, Enter before any
   suggestion arrives, highlighted row overriding the default action, click,
   Escape, blur, and navigation state filtered by tab.
-- Full `apps/app` suite: 2630 tests. `@bb/server`: 1436. Repo typecheck: 58/58.
+- Full `apps/app` suite: 2630 tests. `@patcher/server`: 1436. Repo typecheck: 58/58.
   `bun run lint`: 0 errors.
 
 ## The plugin contribution point
@@ -268,7 +268,7 @@ abort signal, so the shared request is cancelled exactly when the run is.
   navigating to the returned URL, and a failing plugin endpoint leaving the
   built-in rows intact.
 - `examples/plugins/omnibox-agent/server.test.ts` — the example against
-  `@bb/plugin-sdk/testing`.
+  `@patcher/plugin-sdk/testing`.
 
 ## Next
 

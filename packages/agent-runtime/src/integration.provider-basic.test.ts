@@ -2,7 +2,7 @@
 
 import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { requireThreadEventScopeTurnId } from "@bb/domain";
+import { requireThreadEventScopeTurnId } from "@patcher/domain";
 import {
   cleanup,
   createTestRuntime,

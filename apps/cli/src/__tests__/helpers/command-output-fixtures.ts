@@ -4,13 +4,13 @@ import type {
   PendingInteractionApprovalDecision,
   ProviderPendingInteraction,
   Thread,
-} from "@bb/domain";
+} from "@patcher/domain";
 import type {
   ThreadTimelineResponse,
   TimelineRow,
   TimelineRowBase,
   TimelineUserConversationRow,
-} from "@bb/server-contract";
+} from "@patcher/server-contract";
 
 interface TimelineBaseArgs {
   id: string;

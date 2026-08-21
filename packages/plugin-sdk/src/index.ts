@@ -1,5 +1,5 @@
 /**
- * `@bb/plugin-sdk` — the typed facade plugin authors compile against.
+ * `@patcher/plugin-sdk` — the typed facade plugin authors compile against.
  *
  * The root export carries the side-effect-free app types plus the backend
  * contract (`BbPluginApi`, the

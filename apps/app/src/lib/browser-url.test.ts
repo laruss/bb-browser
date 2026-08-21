@@ -1,4 +1,4 @@
-import { BROWSER_SEARCH_ENGINE_QUERY_PLACEHOLDER } from "@bb/domain/browser-search-engine";
+import { BROWSER_SEARCH_ENGINE_QUERY_PLACEHOLDER } from "@patcher/domain/browser-search-engine";
 import { describe, expect, it } from "vitest";
 import {
   getBrowserUrlHost,

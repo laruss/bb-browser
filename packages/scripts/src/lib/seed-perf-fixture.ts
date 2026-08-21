@@ -8,7 +8,7 @@ import {
   threadSearchSegments,
   threads,
   type DbConnection,
-} from "@bb/db";
+} from "@patcher/db";
 
 export interface SeedPerfFixtureOptions {
   /** Host id the seeded environments attach to. */

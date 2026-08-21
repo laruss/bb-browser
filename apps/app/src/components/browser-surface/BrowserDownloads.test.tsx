@@ -12,7 +12,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type {
   BbDesktopBrowserDownload,
   BbDesktopBrowserDownloadActionRequest,
-} from "@bb/desktop-contract";
+} from "@patcher/desktop-contract";
 import {
   createBbDesktopApi,
   createNoopDesktopBrowserApi,

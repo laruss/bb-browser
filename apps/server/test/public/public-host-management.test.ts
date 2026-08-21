@@ -4,12 +4,12 @@ import {
   getSessionById,
   getThread,
   updateHost,
-} from "@bb/db";
+} from "@patcher/db";
 import {
   createHostJoinCodeResponseSchema,
   type CreateHostJoinCodeResponse,
-} from "@bb/server-contract";
-import { HOST_DAEMON_PROTOCOL_VERSION } from "@bb/host-daemon-contract";
+} from "@patcher/server-contract";
+import { HOST_DAEMON_PROTOCOL_VERSION } from "@patcher/host-daemon-contract";
 import { describe, expect, it, vi } from "vitest";
 import { readJson } from "../helpers/json.js";
 import {

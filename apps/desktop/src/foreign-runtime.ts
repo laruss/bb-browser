@@ -3,9 +3,9 @@ import {
   clearOwnBbAppRuntimeFile,
   readBbAppRuntimeFile,
   type BbAppRuntimeFile,
-} from "@bb/config/app-runtime-file";
-import { stopVerifiedProcess } from "@bb/config/verified-process-stop";
-import type { VerifiedProcessOps } from "@bb/config/verified-process-stop";
+} from "@patcher/config/app-runtime-file";
+import { stopVerifiedProcess } from "@patcher/config/verified-process-stop";
+import type { VerifiedProcessOps } from "@patcher/config/verified-process-stop";
 
 /**
  * A "foreign runtime" is a bb this desktop app did not start: a `bb-app start`

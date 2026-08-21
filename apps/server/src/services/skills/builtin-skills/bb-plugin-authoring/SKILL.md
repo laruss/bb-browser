@@ -1,6 +1,6 @@
 ---
 name: bb-plugin-authoring
-description: Write, build, and install bb plugins. Use whenever the task is to create a bb plugin, extend bb itself, or add a bb CLI command, agent tool, background service, settings, panel, mention provider, or other bb surface via a plugin. Covers the entire backend BbPluginApi and the frontend @bb/plugin-sdk/app contract with working patterns.
+description: Write, build, and install bb plugins. Use whenever the task is to create a bb plugin, extend bb itself, or add a bb CLI command, agent tool, background service, settings, panel, mention provider, or other bb surface via a plugin. Covers the entire backend BbPluginApi and the frontend @patcher/plugin-sdk/app contract with working patterns.
 ---
 
 # Authoring bb plugins
@@ -76,7 +76,7 @@ does not cover:
    `bb plugin build` and `bb plugin dev` refresh them too.
 2. **Read `types/bb-plugin-sdk.d.ts`** (`-app.d.ts` for frontend symbols) —
    the authoritative surface, ~13,000 lines of readable declarations with doc
-   comments, and what the scaffold `tsconfig.json` maps `@bb/plugin-sdk` to.
+   comments, and what the scaffold `tsconfig.json` maps `@patcher/plugin-sdk` to.
 3. **`git clone --depth 1 https://github.com/get-bb/bb`** for host behavior or
    a reference implementation: `packages/plugin-sdk/src/`,
    `apps/server/src/services/plugins/`, `plugins/`.
@@ -88,7 +88,7 @@ to step 1.
 ## The backend factory
 
 ```ts
-import type { BbPluginApi } from "@bb/plugin-sdk";
+import type { BbPluginApi } from "@patcher/plugin-sdk";
 
 export default async function plugin(bb: BbPluginApi) {
   // Register surfaces here. Load-safe: settings, storage, http, rpc,
@@ -112,7 +112,7 @@ are additive, so registering multiple listeners is supported.
 Backend API imports normally stay type-only; the root runtime exports are
 `defineRpcContract`, supplied by BB for shared schema contracts, and the
 numeric `PLUGIN_CLI_OUTPUT_MAX_BYTES` ceiling:
-`import { defineRpcContract, type BbPluginApi } from "@bb/plugin-sdk"`.
+`import { defineRpcContract, type BbPluginApi } from "@patcher/plugin-sdk"`.
 Validator imports such as Zod are normal plugin runtime dependencies (and are
 bundled by `bb plugin build`).
 
@@ -127,7 +127,7 @@ bundled by `bb plugin build`).
 | [references/browser.md](references/browser.md)                   | `bb.browser` — omnibox, context menu, find bar, HTTP auth, PDF text, downloads, and driving tabs/pages                                                                                                  |
 | [references/frontend-slots.md](references/frontend-slots.md)     | the `bb.app` entry, every `app.slots.*` registration and its props, content scripts, crash isolation                                                                                                    |
 | [references/frontend-runtime.md](references/frontend-runtime.md) | `ThreadChat` and other host components, hooks (`useRpc`, `useComposer`, …), composer customizations, the vendored shadcn UI kit, styling                                                                |
-| [references/testing.md](references/testing.md)                   | `@bb/plugin-sdk/testing` unit tests, the live `bb plugin dev` loop, and which shipped plugin to copy                                                                                                    |
+| [references/testing.md](references/testing.md)                   | `@patcher/plugin-sdk/testing` unit tests, the live `bb plugin dev` loop, and which shipped plugin to copy                                                                                               |
 
 ## Gotchas
 

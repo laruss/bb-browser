@@ -1,7 +1,7 @@
 import {
   BB_DESKTOP_BROWSER_MAX_PAGE_SELECTION_LENGTH,
   BB_DESKTOP_BROWSER_MAX_PAGE_TEXT_LENGTH,
-} from "@bb/desktop-contract";
+} from "@patcher/desktop-contract";
 
 /**
  * Reading what a page says, for the agent browser tools.

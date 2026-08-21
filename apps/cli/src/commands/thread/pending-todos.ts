@@ -2,8 +2,8 @@ import type {
   ThreadTimelinePendingTodos,
   ThreadTimelinePendingTodoItem,
   ThreadTimelinePendingTodoItemStatus,
-} from "@bb/domain";
-import type { BbSdk } from "@bb/sdk";
+} from "@patcher/domain";
+import type { BbSdk } from "@patcher/sdk";
 
 export interface FetchThreadPendingTodosArgs {
   sdk: Pick<BbSdk, "threads">;

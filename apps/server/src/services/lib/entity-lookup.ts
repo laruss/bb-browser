@@ -7,9 +7,9 @@ import {
   getThread,
   listPublicHosts,
   type HostDaemonSessionRow,
-} from "@bb/db";
-import type { Environment, Host } from "@bb/domain";
-import type { DbConnection } from "@bb/db";
+} from "@patcher/db";
+import type { Environment, Host } from "@patcher/domain";
+import type { DbConnection } from "@patcher/db";
 import type { NotificationHub } from "../../ws/hub.js";
 import { ApiError } from "../../errors.js";
 import {

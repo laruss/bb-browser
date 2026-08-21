@@ -11,7 +11,7 @@ import { useEffect, type ComponentType } from "react";
 import { createStore, Provider } from "jotai";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { CompactViewportOverrideProvider } from "@bb/shared-ui/hooks/use-compact-viewport";
+import { CompactViewportOverrideProvider } from "@patcher/shared-ui/hooks/use-compact-viewport";
 import { SidebarProvider } from "@/components/ui/sidebar.js";
 import {
   resetPluginSlotStoreForTest,

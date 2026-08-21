@@ -82,14 +82,14 @@ import type {
   StandardSchemaV1Issue,
   StandardSchemaV1Result,
   JsonValue,
-} from "@bb/plugin-sdk";
-import type { PluginPermission } from "@bb/domain";
+} from "@patcher/plugin-sdk";
+import type { PluginPermission } from "@patcher/domain";
 import {
   BROWSER_SEARCH_ENGINE_QUERY_PLACEHOLDER,
   normalizeBrowserSearchEngineTemplate,
-} from "@bb/domain/browser-search-engine";
-import { BROWSER_PAGE_STYLE_MAX_CSS_LENGTH } from "@bb/domain/browser-page-style";
-import { BROWSER_PAGE_SCRIPT_MAX_CODE_LENGTH } from "@bb/domain/browser-page-script";
+} from "@patcher/domain/browser-search-engine";
+import { BROWSER_PAGE_STYLE_MAX_CSS_LENGTH } from "@patcher/domain/browser-page-style";
+import { BROWSER_PAGE_SCRIPT_MAX_CODE_LENGTH } from "@patcher/domain/browser-page-script";
 import { createFakePermissionGate } from "./fake-permissions.js";
 import {
   createFakeSdk,

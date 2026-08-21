@@ -4,8 +4,8 @@ import {
   type AppSettings,
   type AppThemeSelection,
   type Experiments,
-} from "@bb/domain";
-import type { SystemInstallCliSkillsRequest } from "@bb/server-contract";
+} from "@patcher/domain";
+import type { SystemInstallCliSkillsRequest } from "@patcher/server-contract";
 import { sdk } from "@/lib/sdk";
 import {
   invalidateGeneralSettingsDependencies,

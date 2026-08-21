@@ -3,7 +3,7 @@ import {
   APP_SURFACE_HEADER_NAME,
   parseAppSurface,
   type AppSurface,
-} from "@bb/config/app-surface";
+} from "@patcher/config/app-surface";
 import type { Context } from "hono";
 
 export const TRUSTED_REMOTE_ADDRESS_CONTEXT_KEY = "bbTrustedRemoteAddress";

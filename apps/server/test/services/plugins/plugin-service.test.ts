@@ -2,9 +2,9 @@ import { mkdtemp, mkdir, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createConnection, migrate, type DbConnection } from "@bb/db";
-import type { SystemChangeKind } from "@bb/domain";
-import type { Logger } from "@bb/logger";
+import { createConnection, migrate, type DbConnection } from "@patcher/db";
+import type { SystemChangeKind } from "@patcher/domain";
+import type { Logger } from "@patcher/logger";
 import {
   createPluginService,
   type PluginService,
@@ -119,7 +119,7 @@ describe("plugin service", () => {
     const rootDir = await writePlugin(workDir, {
       name: "bb-plugin-greeter",
       serverSource: `
-        import type { BbPluginApi } from "@bb/plugin-sdk";
+        import type { BbPluginApi } from "@patcher/plugin-sdk";
         export default function plugin(bb: any) {
           (globalThis as any).__greeterLoads = ((globalThis as any).__greeterLoads ?? 0) + 1;
           bb.log.info("hello from greeter");

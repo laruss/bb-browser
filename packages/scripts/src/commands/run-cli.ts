@@ -1,6 +1,6 @@
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { resolveCurrentDevProcessEnv } from "@bb/config/runtime";
+import { resolveCurrentDevProcessEnv } from "@patcher/config/runtime";
 import { runScriptProcess } from "../lib/process-helpers.js";
 
 interface CliExecution {

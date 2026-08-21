@@ -1,9 +1,13 @@
 import { setTimeout as delay } from "node:timers/promises";
-import { jsonObjectSchema, type JsonObject, type JsonValue } from "@bb/domain";
+import {
+  jsonObjectSchema,
+  type JsonObject,
+  type JsonValue,
+} from "@patcher/domain";
 import {
   parseProviderModelConfig,
   type ProviderModelInfo,
-} from "@bb/config/inference-model";
+} from "@patcher/config/inference-model";
 import { validateToolCall } from "@earendil-works/pi-ai";
 import type { Static, TSchema, Tool, ToolCall } from "@earendil-works/pi-ai";
 import { builtinModels } from "@earendil-works/pi-ai/providers/all";

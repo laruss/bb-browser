@@ -1,8 +1,8 @@
-import { heartbeatSession } from "@bb/db";
+import { heartbeatSession } from "@patcher/db";
 import {
   hasHostDaemonWebSocketProtocol,
   hostDaemonDaemonWsMessageSchema,
-} from "@bb/host-daemon-contract";
+} from "@patcher/host-daemon-contract";
 import { ApiError } from "../errors.js";
 import { verifyAuthenticatedDaemon } from "../internal/auth.js";
 import type { AppDeps } from "../types.js";

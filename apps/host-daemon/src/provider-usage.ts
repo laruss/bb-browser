@@ -8,7 +8,7 @@ import type {
   ProviderUsage,
   ProviderUsageResponse,
   ProviderUsageWindow,
-} from "@bb/host-daemon-contract";
+} from "@patcher/host-daemon-contract";
 import { z } from "zod";
 import {
   getChatGptCloudflareCookieHeader,

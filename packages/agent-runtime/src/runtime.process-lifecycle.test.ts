@@ -8,7 +8,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { turnScope, type ThreadEvent } from "@bb/domain";
+import { turnScope, type ThreadEvent } from "@patcher/domain";
 import type { ProviderAdapter } from "./provider-adapter.js";
 import { createAgentRuntimeWithAdapters } from "./runtime.js";
 import { RuntimeProviderProcessManager } from "./runtime-provider-process.js";

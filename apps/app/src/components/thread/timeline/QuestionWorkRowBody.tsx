@@ -1,9 +1,9 @@
 import type {
   PendingInteractionUserAnswer,
   PendingInteractionUserQuestionQuestion,
-} from "@bb/domain";
-import type { TimelineQuestionViewWorkRow } from "@bb/thread-view";
-import { formatPendingInteractionUserQuestionOptionLabel } from "@bb/core-ui";
+} from "@patcher/domain";
+import type { TimelineQuestionViewWorkRow } from "@patcher/thread-view";
+import { formatPendingInteractionUserQuestionOptionLabel } from "@patcher/core-ui";
 
 interface QuestionWorkRowBodyProps {
   row: TimelineQuestionViewWorkRow;
@@ -18,7 +18,7 @@ export function QuestionWorkRowBody({ row }: QuestionWorkRowBodyProps) {
   // `resolving` and `answered` both have a recorded answer set — the
   // projection wires `row.answers` from the resolution as soon as the user
   // submits. Pending and interrupted states are fully described by
-  // the row title (see `mapQuestionTitle` in @bb/thread-view), so their body
+  // the row title (see `mapQuestionTitle` in @patcher/thread-view), so their body
   // collapses out and the row renders title-only like web-search/web-fetch.
   if (row.lifecycle !== "answered" && row.lifecycle !== "resolving") {
     return null;

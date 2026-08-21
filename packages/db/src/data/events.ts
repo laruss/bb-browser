@@ -26,7 +26,7 @@ import type {
   ThreadEventScope,
   ThreadEventScopeKind,
   ThreadEventType,
-} from "@bb/domain";
+} from "@patcher/domain";
 import {
   LOCAL_AGENT_TASK_TYPE,
   LOCAL_BASH_TASK_TYPE,
@@ -36,7 +36,7 @@ import {
   getThreadEventScopeTurnId,
   parseStoredThreadEvent,
   systemThreadInterruptedReasonSchema,
-} from "@bb/domain";
+} from "@patcher/domain";
 import type {
   DbConnection,
   DbQueryConnection,

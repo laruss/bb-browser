@@ -1,6 +1,6 @@
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { PLUGIN_CLI_OUTPUT_MAX_BYTES } from "@bb/plugin-sdk";
+import { PLUGIN_CLI_OUTPUT_MAX_BYTES } from "@patcher/plugin-sdk";
 import type { PluginCliCommandInfo } from "./plugin-api.js";
 
 /**

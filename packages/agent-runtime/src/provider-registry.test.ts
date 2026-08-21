@@ -3,9 +3,9 @@ import { describe, expect, it } from "vitest";
 import {
   DEFAULT_CLAUDE_CODE_MOCK_CLI_TRAFFIC_CONFIG,
   turnScope,
-} from "@bb/domain";
+} from "@patcher/domain";
 import { createProviderForId } from "./provider-registry.js";
-import type { HostDaemonAcpLaunchSpec } from "@bb/host-daemon-contract";
+import type { HostDaemonAcpLaunchSpec } from "@patcher/host-daemon-contract";
 
 const dynamicAcpLaunchSpec: HostDaemonAcpLaunchSpec = {
   displayName: "Custom ACP",

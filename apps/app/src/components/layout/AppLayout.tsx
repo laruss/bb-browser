@@ -16,9 +16,9 @@ import {
 import { useAtom, useStore } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 import { Link, matchPath, useLocation, useNavigate } from "react-router-dom";
-import type { ProjectResponse } from "@bb/server-contract";
-import { Icon } from "@bb/shared-ui/icon";
-import { RESOURCE_ROUTE_LABEL_EVENT } from "@bb/shared-ui/resource-list";
+import type { ProjectResponse } from "@patcher/server-contract";
+import { Icon } from "@patcher/shared-ui/icon";
+import { RESOURCE_ROUTE_LABEL_EVENT } from "@patcher/shared-ui/resource-list";
 import {
   SidebarInset,
   SidebarProvider,
@@ -52,7 +52,7 @@ import {
 import { useRouteState } from "@/hooks/useRouteState";
 import { getThreadDisplayTitle } from "@/lib/thread-title";
 import { applyResizeCursor, clearResizeCursor } from "@/lib/resizeCursor";
-import { cn } from "@bb/shared-ui/lib/utils";
+import { cn } from "@patcher/shared-ui/lib/utils";
 import { ProjectPathDialog } from "@/components/dialogs/ProjectPathDialog";
 import { ProjectActionsMenu } from "@/components/project/ProjectActionsMenu";
 import { ProjectActionsProvider } from "@/components/project/ProjectActionsProvider";
@@ -95,7 +95,7 @@ import {
   useAppCommandHandler,
   useAppCommandShortcut,
 } from "@/components/commands/AppCommandProvider";
-import { useIsCompactViewport } from "@bb/shared-ui/hooks/use-compact-viewport";
+import { useIsCompactViewport } from "@patcher/shared-ui/hooks/use-compact-viewport";
 import {
   shouldRestoreIOSViewportOnKeyboardDismissal,
   useMobileVisualViewportHeight,

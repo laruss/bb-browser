@@ -8,7 +8,7 @@ import type {
   ThreadTimelineGoal,
   ThreadTimelineModelFallback,
   ThreadWithRuntime,
-} from "@bb/domain";
+} from "@patcher/domain";
 import {
   cleanup,
   fireEvent,
@@ -18,7 +18,7 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
-import type { TimelineWorkflowWorkRow } from "@bb/server-contract";
+import type { TimelineWorkflowWorkRow } from "@patcher/server-contract";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { workflowRow } from "@/test/fixtures/thread-timeline-rows";

@@ -1,4 +1,4 @@
-import { jsonValueSchema, pluginPermissionSchema } from "@bb/domain";
+import { jsonValueSchema, pluginPermissionSchema } from "@patcher/domain";
 import { z } from "zod";
 
 export const pluginRuntimeStatusSchema = z.enum([

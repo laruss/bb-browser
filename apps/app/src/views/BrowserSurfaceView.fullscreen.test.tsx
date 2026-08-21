@@ -9,7 +9,7 @@ import type {
   BbDesktopBrowserSetFullscreenRequest,
   BbDesktopWindowState,
   BbDesktopWindowStateChangeHandler,
-} from "@bb/desktop-contract";
+} from "@patcher/desktop-contract";
 import { AppCommandProvider } from "@/components/commands/AppCommandProvider";
 import { createNoopDesktopBrowserApi } from "@/test/bb-desktop-test-utils";
 import { createQueryClientTestHarness } from "@/test/queryClientTestHarness";

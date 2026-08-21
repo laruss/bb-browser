@@ -11,8 +11,8 @@ import type {
   ThreadEvent,
   ToolCallRequest,
   ToolCallResponse,
-} from "@bb/domain";
-import type { HostDaemonAcpLaunchSpec } from "@bb/host-daemon-contract";
+} from "@patcher/domain";
+import type { HostDaemonAcpLaunchSpec } from "@patcher/host-daemon-contract";
 
 export type AgentRuntimeShellEnvironment = Record<string, string>;
 

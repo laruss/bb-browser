@@ -7,32 +7,32 @@ import {
   type AgentRuntimeSkillRoot,
   type AgentRuntimeProcessExitInfo,
   type ReapedIdleProviderSession,
-} from "@bb/agent-runtime";
-import type { Logger } from "@bb/logger";
+} from "@patcher/agent-runtime";
+import type { Logger } from "@patcher/logger";
 import type {
   PendingInteractionCreate,
   PendingInteractionResolution,
   ThreadEvent,
   WorkspaceProvisionType,
-} from "@bb/domain";
-import { turnScope } from "@bb/domain";
+} from "@patcher/domain";
+import { turnScope } from "@patcher/domain";
 import type {
   HostDaemonActiveThread,
   HostDaemonEnvironmentChange,
   HostDaemonLoadedEnvironment,
   HostDaemonInjectedSkillSource,
-} from "@bb/host-daemon-contract";
+} from "@patcher/host-daemon-contract";
 import type {
   DataDirSkillsWatchError,
   HostWatcher,
   InjectedSkillsObservedChange,
-} from "@bb/host-watcher";
+} from "@patcher/host-watcher";
 import {
   provisionWorkspace,
   WorkspaceError,
   type HostWorkspace,
   type ProvisionWorkspaceArgs,
-} from "@bb/host-workspace";
+} from "@patcher/host-workspace";
 import {
   cleanupInjectedSkillStagingDirs,
   EMPTY_SKILL_CATALOG_HASH,

@@ -8,7 +8,7 @@ import {
   migrate,
   noopNotifier,
   upsertHost,
-} from "@bb/db";
+} from "@patcher/db";
 import { ApiError } from "../../src/errors.js";
 import {
   baseBranchSpecToStoredName,

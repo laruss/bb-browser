@@ -2,13 +2,13 @@ import { Command } from "commander";
 import type {
   CommitActionResponse,
   SquashMergeActionResponse,
-} from "@bb/server-contract";
+} from "@patcher/server-contract";
 import type {
   EnvironmentDiffArgs,
   EnvironmentDiffFileArgs,
   EnvironmentDiffPatchArgs,
   EnvironmentUpdateArgs,
-} from "@bb/sdk";
+} from "@patcher/sdk";
 import { action } from "../action.js";
 import { createCliBbSdk } from "../client.js";
 import {

@@ -2,7 +2,7 @@
 
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { BbDesktopInfo } from "@bb/desktop-contract";
+import type { BbDesktopInfo } from "@patcher/desktop-contract";
 import { createBbDesktopApi } from "@/test/bb-desktop-test-utils";
 import type { BrowserFixedPanelTab } from "@/lib/fixed-panel-tabs-state";
 import { createAppSurfaceTab } from "@/lib/browser-surface-tabs";
@@ -11,7 +11,7 @@ import {
   SIDEBAR_TRIGGER_TRAILING_RESERVE_CLASS,
 } from "@/lib/bb-desktop";
 import type { BrowserSurfaceTab } from "@/lib/browser-surface-tabs";
-import type { PluginBrowserTabStatus } from "@bb/plugin-sdk";
+import type { PluginBrowserTabStatus } from "@patcher/plugin-sdk";
 import {
   BrowserSurfaceTabStrip,
   resolveTabStripChromeReserveClassName,

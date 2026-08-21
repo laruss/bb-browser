@@ -3,8 +3,8 @@ import { constants as fsConstants } from "node:fs";
 import fs from "node:fs/promises";
 import { basename, delimiter, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { AgentRuntimeOptions } from "@bb/agent-runtime";
-import { assignIfDefined } from "@bb/config/objects";
+import type { AgentRuntimeOptions } from "@patcher/agent-runtime";
+import { assignIfDefined } from "@patcher/config/objects";
 
 interface ResolveLocalBbExecutableDirectoryOptions {
   cliExecutablePath?: string;
@@ -89,7 +89,7 @@ async function resolveCliEntryPath(cliExecutablePath: string): Promise<string> {
       } catch (error) {
         if (getErrorCode(error) === "EACCES") {
           throw new Error(
-            `Resolved bb CLI entry is not executable: ${cliEntryPath}. Build @bb/cli before starting the host daemon.`,
+            `Resolved bb CLI entry is not executable: ${cliEntryPath}. Build @patcher/cli before starting the host daemon.`,
           );
         }
         throw error;
@@ -98,7 +98,7 @@ async function resolveCliEntryPath(cliExecutablePath: string): Promise<string> {
   } catch (error) {
     if (getErrorCode(error) === "ENOENT") {
       throw new Error(
-        `Missing built bb CLI entry at ${cliEntryPath}. Build @bb/cli before starting the host daemon.`,
+        `Missing built bb CLI entry at ${cliEntryPath}. Build @patcher/cli before starting the host daemon.`,
       );
     }
     throw error;

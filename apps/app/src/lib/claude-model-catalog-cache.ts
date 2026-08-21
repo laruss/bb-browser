@@ -1,4 +1,4 @@
-import { availableModelSchema } from "@bb/domain";
+import { availableModelSchema } from "@patcher/domain";
 import { z } from "zod";
 import { createJsonLocalStorage } from "@/lib/browser-storage";
 

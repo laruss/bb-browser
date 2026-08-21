@@ -18,7 +18,7 @@ import { type PluginBuildToolchain } from "./toolchain.js";
  *
  * - `dist/server.js` (+ `.map`) — single node-platform ESM file with the
  *   plugin's npm deps inlined, so git:/npm: consumers never need npm or
- *   node_modules. `@bb/plugin-sdk` stays external — plugin authors only ever
+ *   node_modules. `@patcher/plugin-sdk` stays external — plugin authors only ever
  *   have its `.d.ts` types, so the specifier must survive to load time, where
  *   the server's loader aliases it to the SDK runtime bundle shipped next to
  *   the server (workspace resolution covers source checkouts). better-sqlite3
@@ -46,7 +46,7 @@ const NODE_ESM_REQUIRE_BANNER = [
  * real `dependency` — `packages/templates` scaffolds against this list.
  */
 export const PLUGIN_SERVER_EXTERNALS: readonly string[] = [
-  "@bb/plugin-sdk",
+  "@patcher/plugin-sdk",
   "better-sqlite3",
 ];
 

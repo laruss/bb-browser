@@ -3,7 +3,7 @@ import {
   permissionForBrowserCommand,
   type BrowserCommand,
   type PluginPermission,
-} from "@bb/domain";
+} from "@patcher/domain";
 import { createFakePluginHost } from "../fake-plugin-host.js";
 
 /**

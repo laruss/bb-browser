@@ -1,4 +1,4 @@
-import type { BbDesktopDefaultBrowserStatus } from "@bb/desktop-contract";
+import type { BbDesktopDefaultBrowserStatus } from "@patcher/desktop-contract";
 
 // Being the user's browser is a Launch Services registration, not a capability:
 // macOS builds its "Default web browser" list from the bundles that declare

@@ -47,7 +47,7 @@ tomorrow a write." This is the write.
 
 Reducing an error to data is usually lossy in a way that matters. Here it is
 not, because this codebase had already decided that **error identity is the
-name**: `@bb/plugin-sdk`'s contract says so ("Runtime classes stay host-side.
+name**: `@patcher/plugin-sdk`'s contract says so ("Runtime classes stay host-side.
 NeedsConfigurationError in particular is matched by NAME"),
 `isNeedsConfigurationError` tests `error.name`, and plugin authors are told to
 throw `Object.assign(new Error(msg), { name: "..." })`.
@@ -214,12 +214,12 @@ attacking — twice. `apps/server/scripts/measure-plugin-host.mjs` reproduces
 every number here: it builds the host the way the release does, forks it, and
 reads resident memory from the outside, because what a package costs is what it
 _runs_, not how many bytes of it were bundled. (A bundle-size breakdown says
-zod is 551 KB and luxon 258 KB; the memory says `@bb/sdk` is 149 MB and hono is
+zod is 551 KB and luxon 258 KB; the memory says `@patcher/sdk` is 149 MB and hono is
 0.5 MB.)
 
 ### What the 120 MB was
 
-**`@bb/sdk`: ~100 MB.** It pulls `createApiClient`, which constructs the whole
+**`@patcher/sdk`: ~100 MB.** It pulls `createApiClient`, which constructs the whole
 public API surface — every route, every schema — at import time, in every
 plugin process, whether or not the plugin ever touches `bb.sdk`. It is now
 loaded on first use. The awkward part is that `getSdk()` is synchronous and
@@ -231,20 +231,20 @@ process stays self-contained; under tsx there is no `require` in scope and
 one by a forked `plugin-host-entry.ts`, the bundled one by
 `plugin-host-bundle.test.ts`, which builds the real bundle.
 
-**`@bb/domain`'s index: ~57 MB.** Importing one constant from it runs every
+**`@patcher/domain`'s index: ~57 MB.** Importing one constant from it runs every
 schema in the package. `plugin-api.ts` and `plugin-permission-gate.ts` take
-subpaths now (`@bb/domain/browser-control`, `/plugin-permissions`,
+subpaths now (`@patcher/domain/browser-control`, `/plugin-permissions`,
 `/app-keybindings`, `/pending-interactions`, `/json-value`, `/browser-history`)
 — the same files, without the rest of the package. Same file means one copy in a
 process that also loads the index, so nothing is duplicated.
 
 The budget in `plugin-host-bundle.test.ts` is what keeps this honest, and it has
 already caught a barrel import walking back in: a history filter took one length
-cap from `@bb/domain`, and every host process went from ~67 MB to ~105 MB. A file
+cap from `@patcher/domain`, and every host process went from ~67 MB to ~105 MB. A file
 this list does not mention can still be in the graph — check before importing
 into anything `plugin-child-runtime.ts` reaches.
 
-**`@bb/db`: gone from the graph.** `plugin-api.ts` imported
+**`@patcher/db`: gone from the graph.** `plugin-api.ts` imported
 `registerSettingDescriptors` from `plugin-settings.ts`, and that module also
 reads and writes values — so every plugin process loaded drizzle and
 better-sqlite3 to get a validator. Describing settings and storing them are now
@@ -294,7 +294,7 @@ it is worth stating as a rule because it is what the numbers kept saying:
   of which ~9 MB is zod itself. A plugin that never drives a tab paid for all
   of it.
 - **zod, ~9 MB, three more ways in.** The interesting ones were not deferrals
-  but splits: `@bb/domain/plugin-permissions` is in every process (the gate
+  but splits: `@patcher/domain/plugin-permissions` is in every process (the gate
   reads its tables) and needed zod for a single `z.enum(PLUGIN_PERMISSIONS)`,
   and `plugin-api.ts` imported one number out of `pending-interactions.ts`'s 500
   lines of schemas. Both are now their own module — `plugin-permission-schema.ts`
@@ -465,7 +465,7 @@ A fixture importing `zod` failed to load in a plugin process with
 `Cannot find module 'zod'`, which read as the plugin process resolving
 differently. It does not: the same fixture fails the same way **in-process**.
 A bare source tree in a temp directory has no `node_modules` and nothing along
-its parent chain to find, and only `PLUGIN_SERVER_EXTERNALS` — `@bb/plugin-sdk`
+its parent chain to find, and only `PLUGIN_SERVER_EXTERNALS` — `@patcher/plugin-sdk`
 and `better-sqlite3` — is aliased to the server's copy. Real plugins have their
 dependencies installed in their own tree or inlined into `dist/server.js` at
 build time.

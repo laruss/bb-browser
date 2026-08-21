@@ -1,4 +1,4 @@
-import { defineRpcContract, type BbPluginApi } from "@bb/plugin-sdk";
+import { defineRpcContract, type BbPluginApi } from "@patcher/plugin-sdk";
 import { z } from "zod";
 
 export const MAX_CUSTOM_INSTRUCTIONS_LENGTH = 4096;

@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, webFrame } from "electron";
-import { appCommandIdSchema } from "@bb/domain";
+import { appCommandIdSchema } from "@patcher/domain";
 import {
   bbDesktopBrowserCaptureFullPageResultSchema,
   bbDesktopBrowserDownloadActionResultSchema,
@@ -86,7 +86,7 @@ import {
   type BbDesktopBrowserZoomHandler,
   bbDesktopBrowserZoomSchema,
   BB_DESKTOP_WINDOW_KEY_ARGUMENT_PREFIX,
-} from "@bb/desktop-contract";
+} from "@patcher/desktop-contract";
 import {
   BB_DESKTOP_CHECK_FOR_UPDATES_CHANNEL,
   BB_DESKTOP_GET_INFO_CHANNEL,

@@ -6,11 +6,11 @@ import {
   type ReactNode,
 } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import type { BbDesktopInfo } from "@bb/desktop-contract";
-import type { SystemVersionResponse } from "@bb/server-contract";
-import { Button, type ButtonProps } from "@bb/shared-ui/button";
-import { Icon } from "@bb/shared-ui/icon";
-import { cn } from "@bb/shared-ui/lib/utils";
+import type { BbDesktopInfo } from "@patcher/desktop-contract";
+import type { SystemVersionResponse } from "@patcher/server-contract";
+import { Button, type ButtonProps } from "@patcher/shared-ui/button";
+import { Icon } from "@patcher/shared-ui/icon";
+import { cn } from "@patcher/shared-ui/lib/utils";
 import {
   hasProviderCliAction,
   useProviderCliInstallRunner,

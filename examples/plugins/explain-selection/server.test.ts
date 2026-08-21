@@ -1,11 +1,11 @@
 // Backend tests for the explain-selection example, written against the official
-// harness (`@bb/plugin-sdk/testing`) — no bb server, no browser.
+// harness (`@patcher/plugin-sdk/testing`) — no bb server, no browser.
 import { describe, expect, it } from "vitest";
 import {
   createFakePluginHost,
   pluginPermissionsFromManifest,
   type FakePluginHost,
-} from "@bb/plugin-sdk/testing";
+} from "@patcher/plugin-sdk/testing";
 import explainSelection from "./server";
 
 const PROJECT_ID = "proj-1";

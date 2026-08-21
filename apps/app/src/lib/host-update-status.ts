@@ -1,5 +1,5 @@
-import type { Host } from "@bb/domain";
-import { HOST_DAEMON_PROTOCOL_VERSION } from "@bb/host-daemon-contract";
+import type { Host } from "@patcher/domain";
+import { HOST_DAEMON_PROTOCOL_VERSION } from "@patcher/host-daemon-contract";
 
 export function hostNeedsUpdate(host: Host): boolean {
   return (

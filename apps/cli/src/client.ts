@@ -1,4 +1,8 @@
-import { createNodeBbSdk, type BbSdk, type BbSdkContext } from "@bb/sdk/node";
+import {
+  createNodeBbSdk,
+  type BbSdk,
+  type BbSdkContext,
+} from "@patcher/sdk/node";
 
 export interface CreateCliBbSdkOptions {
   context?: BbSdkContext;

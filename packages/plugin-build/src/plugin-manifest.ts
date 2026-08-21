@@ -4,7 +4,7 @@ import {
   isPluginOwnedIconPath,
   pluginPackageJsonSchema,
   type PluginPackageJson,
-} from "@bb/domain";
+} from "@patcher/domain";
 import { assertValidPluginCompactIconSvg } from "./svg-asset.js";
 
 function resolveManifestPath(

@@ -1,7 +1,7 @@
 import { Command } from "commander";
-import type { AvailableModel } from "@bb/domain";
-import type { ProviderHostRoutingArgs } from "@bb/sdk";
-import type { SystemProviderInfo } from "@bb/server-contract";
+import type { AvailableModel } from "@patcher/domain";
+import type { ProviderHostRoutingArgs } from "@patcher/sdk";
+import type { SystemProviderInfo } from "@patcher/server-contract";
 import { action } from "../action.js";
 import { createCliBbSdk } from "../client.js";
 import { renderBorderlessTable } from "../table.js";

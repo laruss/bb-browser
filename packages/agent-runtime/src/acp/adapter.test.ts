@@ -4,7 +4,7 @@ import {
   DEFAULT_CLAUDE_CODE_MOCK_CLI_TRAFFIC_CONFIG,
   threadScope,
   turnScope,
-} from "@bb/domain";
+} from "@patcher/domain";
 import type { ProviderExecutionContext } from "../provider-adapter.js";
 import { promptTextInput } from "../test/prompt-input.js";
 import { createAcpProviderAdapter } from "./adapter.js";

@@ -11,7 +11,7 @@
 //   node packages/plugin-build/scripts/generate-plugin-theme.mjs [--check]
 //
 // `--check` exits 1 when the checked-in file is stale (wired into this
-// package's typecheck, same pattern as @bb/templates).
+// package's typecheck, same pattern as @patcher/templates).
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";

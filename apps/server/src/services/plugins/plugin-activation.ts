@@ -1,4 +1,4 @@
-import { PLUGIN_SDK_VERSION } from "@bb/domain";
+import { PLUGIN_SDK_VERSION } from "@patcher/domain";
 import {
   getInstalledPlugin,
   getPluginArtifact,
@@ -13,7 +13,7 @@ import {
   type PluginProvenance,
   type PluginSourceIntent,
   type PluginStateSnapshotRow,
-} from "@bb/db";
+} from "@patcher/db";
 import {
   createPluginStateSnapshotOnDisk,
   readPluginSnapshotRegistration,

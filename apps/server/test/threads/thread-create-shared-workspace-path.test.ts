@@ -1,5 +1,5 @@
-import { ensurePersonalProject, listEnvironments } from "@bb/db";
-import { PERSONAL_PROJECT_ID } from "@bb/domain";
+import { ensurePersonalProject, listEnvironments } from "@patcher/db";
+import { PERSONAL_PROJECT_ID } from "@patcher/domain";
 import { describe, expect, it } from "vitest";
 import { createThreadFromRequest } from "../../src/services/threads/thread-create.js";
 import { waitForQueuedCommand } from "../helpers/commands.js";

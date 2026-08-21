@@ -7,7 +7,7 @@
  * and produces `ThreadEvent[]`.
  */
 
-import { getBuiltInAgentProviderInfo } from "@bb/agent-providers";
+import { getBuiltInAgentProviderInfo } from "@patcher/agent-providers";
 import type {
   ApprovalPendingInteractionPayload,
   PendingInteractionApprovalDecision,
@@ -20,20 +20,20 @@ import type {
   UserQuestionPendingInteractionPayload,
   UserQuestionPendingInteractionResolution,
   ClaudeTaskToolOutput,
-} from "@bb/domain";
+} from "@patcher/domain";
 import {
   claudeTaskToolNameSchema,
   claudeTaskToolOutputSchema,
   jsonValueSchema,
   removeCommandMentionsFromPromptInput,
   threadScope,
-} from "@bb/domain";
+} from "@patcher/domain";
 import {
   isApprovalPendingInteractionPayload,
   isApprovalPendingInteractionResolution,
   isUserQuestionPendingInteractionPayload,
   isUserQuestionPendingInteractionResolution,
-} from "@bb/domain";
+} from "@patcher/domain";
 import { decodeNormalizedProviderToolCallRequest } from "../shared/provider-tool-call-contract.js";
 import { resolveAdapterPermissionPolicy } from "../shared/permission-policy.js";
 import { resolveBridgeProcessArgs } from "../shared/bridge-path.js";

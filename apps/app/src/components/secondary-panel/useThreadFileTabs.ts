@@ -1,5 +1,5 @@
 import { useCallback, useEffect } from "react";
-import type { TerminalSession } from "@bb/server-contract";
+import type { TerminalSession } from "@patcher/server-contract";
 import {
   useFixedPanelTabsState,
   useUpdateFixedPanelTabsState,

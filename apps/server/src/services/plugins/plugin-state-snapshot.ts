@@ -23,7 +23,7 @@ import {
   type DbConnection,
   type InstalledPluginRow,
   type PluginStateSnapshotRow,
-} from "@bb/db";
+} from "@patcher/db";
 
 const kvRowSchema = z.object({
   pluginId: z.string(),

@@ -1,10 +1,13 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import type { AgentRuntime } from "@bb/agent-runtime";
-import type { HostDaemonDaemonWsMessage } from "@bb/host-daemon-contract";
-import type { HostWorkspace } from "@bb/host-workspace";
-import { makeWorkspaceMergeBase, makeWorkspaceStatus } from "@bb/test-helpers";
+import type { AgentRuntime } from "@patcher/agent-runtime";
+import type { HostDaemonDaemonWsMessage } from "@patcher/host-daemon-contract";
+import type { HostWorkspace } from "@patcher/host-workspace";
+import {
+  makeWorkspaceMergeBase,
+  makeWorkspaceStatus,
+} from "@patcher/test-helpers";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { HostDaemonLogger } from "../logger.js";
 import { RuntimeManager } from "../runtime-manager.js";

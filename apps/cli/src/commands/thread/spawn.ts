@@ -3,8 +3,8 @@ import {
   PERSONAL_PROJECT_ID,
   threadVisibilitySchema,
   type Thread,
-} from "@bb/domain";
-import type { BaseBranchSpec, EnvironmentArgs } from "@bb/server-contract";
+} from "@patcher/domain";
+import type { BaseBranchSpec, EnvironmentArgs } from "@patcher/server-contract";
 import { action } from "../../action.js";
 import { createCliBbSdk } from "../../client.js";
 import {

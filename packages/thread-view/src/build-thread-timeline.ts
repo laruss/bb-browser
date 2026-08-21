@@ -13,7 +13,7 @@ import type {
   TimelineTurnRow,
   TimelineUserConversationRow,
   TimelineWorkflowWorkRow,
-} from "@bb/server-contract";
+} from "@patcher/server-contract";
 import {
   isBackgroundAgentTaskType,
   readTerminalOutputLines,
@@ -23,7 +23,7 @@ import {
   type ThreadTimelineGoal,
   type ThreadTimelineModelFallback,
   type ThreadTimelinePendingTodos,
-} from "@bb/domain";
+} from "@patcher/domain";
 import type {
   EventProjectionErrorMessage,
   EventProjectionFileEditChange,

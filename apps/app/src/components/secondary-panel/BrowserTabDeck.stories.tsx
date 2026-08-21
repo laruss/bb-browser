@@ -1,6 +1,6 @@
 import { useRef, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import type { BbDesktopBrowserState } from "@bb/desktop-contract";
+import type { BbDesktopBrowserState } from "@patcher/desktop-contract";
 import type { BrowserHistoryEntry } from "@/lib/browser-history";
 import { browserHistoryQueryKey } from "@/hooks/queries/query-keys";
 import type { BrowserFixedPanelTab } from "@/lib/fixed-panel-tabs-state";

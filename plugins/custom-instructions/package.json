@@ -24,11 +24,11 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@bb/shared-ui": "workspace:*",
+    "@patcher/shared-ui": "workspace:*",
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@bb/plugin-sdk": "workspace:*",
+    "@patcher/plugin-sdk": "workspace:*",
     "@testing-library/react": "^16.3.2",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",

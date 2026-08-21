@@ -1,11 +1,11 @@
 import type { ReactNode } from "react";
-import { Pill } from "@bb/shared-ui/pill";
+import { Pill } from "@patcher/shared-ui/pill";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@bb/shared-ui/tooltip";
+} from "@patcher/shared-ui/tooltip";
 
 /** Shared passive provenance badge for resources managed by bb. */
 export function ProvenancePill({

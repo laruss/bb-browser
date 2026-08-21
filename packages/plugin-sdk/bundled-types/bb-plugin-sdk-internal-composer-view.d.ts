@@ -1,6 +1,6 @@
-// Portable type declarations for `@bb/plugin-sdk`. Unpublished BB
+// Portable type declarations for `@patcher/plugin-sdk`. Unpublished BB
 // workspace contracts are flattened; public subpaths may reuse the
-// package root without requiring any other @bb/* package.
+// package root without requiring any other @patcher/* package.
 //
 // Confused by the API, or need a symbol that isn't here? Clone the BB repo
 // and read the real source: https://github.com/get-bb/bb

@@ -17,7 +17,7 @@ export default defineWorkspaceTestConfig({
       {
         extends: true,
         test: {
-          name: "@bb/server",
+          name: "@patcher/server",
           include: ["src/**/*.test.ts", "test/**/*.test.ts"],
           exclude: ["dist/**", "node_modules/**", ...isolationTests],
           isolate: false,
@@ -26,7 +26,7 @@ export default defineWorkspaceTestConfig({
       {
         extends: true,
         test: {
-          name: "@bb/server:isolated",
+          name: "@patcher/server:isolated",
           include: isolationTests,
         },
       },

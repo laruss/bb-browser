@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { runGit } from "@bb/host-workspace";
+import { runGit } from "@patcher/host-workspace";
 import { afterEach, describe, expect, it } from "vitest";
 import { isExpectedCommandDispatchError } from "../command-dispatch-support.js";
 import { cloneProject, resolveProjectCloneDefaultPath } from "./project.js";

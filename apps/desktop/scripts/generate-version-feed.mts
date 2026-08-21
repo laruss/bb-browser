@@ -5,7 +5,7 @@ import { z } from "zod";
 import {
   bbDesktopVersionFeedSchema,
   type BbDesktopVersionFeed,
-} from "@bb/desktop-contract";
+} from "@patcher/desktop-contract";
 import {
   createDesktopReleaseConfig,
   resolveDesktopReleaseChannel,

@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { ThreadEvent, ToolCallResponse } from "@bb/domain";
+import type { ThreadEvent, ToolCallResponse } from "@patcher/domain";
 import { createAgentRuntimeWithAdapters } from "./runtime.js";
 import { handleRuntimeProviderRequest } from "./runtime-provider-requests.js";
 import {

@@ -6,8 +6,8 @@ import type {
   EnvironmentLifecycleNoopReason,
   EnvironmentStatus,
   WorkspaceProvisionType,
-} from "@bb/domain";
-import { evaluateEnvironmentLifecycleEvent } from "@bb/domain";
+} from "@patcher/domain";
+import { evaluateEnvironmentLifecycleEvent } from "@patcher/domain";
 import type { DbConnection, DbTransaction } from "../connection.js";
 import type { DbNotifier } from "../notifier.js";
 import { environments } from "../schema.js";

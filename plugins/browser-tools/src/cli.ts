@@ -16,7 +16,7 @@ import type {
   PluginBrowserTrace,
   PluginBrowserVideo,
   PluginCliResult,
-} from "@bb/plugin-sdk";
+} from "@patcher/plugin-sdk";
 import { DEFAULT_PAGE_TEXT_MAX_LENGTH, explainBrowserError } from "./tools.js";
 import {
   NO_FFMPEG_MESSAGE,

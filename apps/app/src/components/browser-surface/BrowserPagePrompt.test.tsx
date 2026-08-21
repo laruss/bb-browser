@@ -2,7 +2,7 @@
 
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { BbDesktopBrowserPagePromptDetails } from "@bb/desktop-contract";
+import type { BbDesktopBrowserPagePromptDetails } from "@patcher/desktop-contract";
 import { BrowserPagePrompt } from "./BrowserPagePrompt";
 
 const AUTH: BbDesktopBrowserPagePromptDetails = {

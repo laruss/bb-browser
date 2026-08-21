@@ -1,6 +1,6 @@
 import { useState } from "react";
-import type { ThreadTimelineModelFallback } from "@bb/domain";
-import { Icon } from "@bb/shared-ui/icon";
+import type { ThreadTimelineModelFallback } from "@patcher/domain";
+import { Icon } from "@patcher/shared-ui/icon";
 import { PromptStackCard } from "@/components/promptbox/banner/PromptStackCard";
 import { rawStringLocalStorage } from "@/lib/browser-storage";
 

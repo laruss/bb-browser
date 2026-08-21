@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
-import type { Environment, JsonValue } from "@bb/domain";
+import type { Environment, JsonValue } from "@patcher/domain";
 import { createBbSdk } from "../src/core.js";
 import { createHttpTransport } from "../src/transport-http.js";
 import { ThreadWaitTimeoutError } from "../src/areas/threads.js";
@@ -102,7 +102,7 @@ function createFetchQueue(
   return { fetch: fetchMock, requests };
 }
 
-describe("@bb/sdk", () => {
+describe("@patcher/sdk", () => {
   it("sends thread pane presentation actions through the typed transport", async () => {
     const queue = createFetchQueue([{ body: { delivered: 3 } }]);
     const sdk = createBbSdk({
@@ -1245,14 +1245,14 @@ describe("@bb/sdk", () => {
   it("routes every typed plugin administration method through the transport", async () => {
     const plugin = {
       id: "notes",
-      source: "npm:@bb/notes@^1",
+      source: "npm:@patcher/notes@^1",
       rootDir: "/plugins/notes",
       version: "1.2.0",
       provenance: "catalog" as const,
       placement: null,
       isOrphanedBuiltin: false,
       catalogEntryId: "notes",
-      sourceDisplay: "npm · @bb/notes · tracks compatible",
+      sourceDisplay: "npm · @patcher/notes · tracks compatible",
       updateState: {},
       enabled: true,
       description: "Notes",
@@ -1290,7 +1290,7 @@ describe("@bb/sdk", () => {
       { body: { ok: true, plugin } },
       {
         body: {
-          requested: "npm:@bb/notes@^1",
+          requested: "npm:@patcher/notes@^1",
           resolved: "1.2.0",
           engines: { bb: ">=0.9", bbPluginSdk: "^0.2.0" },
           installedAt: 5,
@@ -1319,7 +1319,7 @@ describe("@bb/sdk", () => {
               description: "Notes",
               icon: null,
               category: "Productivity",
-              source: "npm:@bb/notes@^1",
+              source: "npm:@patcher/notes@^1",
               installed: true,
               compatible: true,
               incompatibleReason: null,
@@ -1338,7 +1338,7 @@ describe("@bb/sdk", () => {
 
     await expect(sdk.plugins.list()).resolves.toEqual({ plugins: [plugin] });
     await expect(
-      sdk.plugins.install({ source: "npm:@bb/notes@^1" }),
+      sdk.plugins.install({ source: "npm:@patcher/notes@^1" }),
     ).resolves.toEqual(plugin);
     await expect(
       sdk.plugins.catalog.install({
@@ -1369,7 +1369,7 @@ describe("@bb/sdk", () => {
         url: "http://bb.test/api/v1/plugins",
       },
       {
-        bodyText: JSON.stringify({ source: "npm:@bb/notes@^1" }),
+        bodyText: JSON.stringify({ source: "npm:@patcher/notes@^1" }),
         method: "POST",
         url: "http://bb.test/api/v1/plugins/install",
       },

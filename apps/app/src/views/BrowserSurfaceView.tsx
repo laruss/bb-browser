@@ -19,7 +19,7 @@ import { BrowserFindBar } from "@/components/browser-surface/BrowserFindBar";
 import { BrowserSurfaceChrome } from "@/components/browser-surface/BrowserSurfaceChrome";
 import { BrowserSurfaceTabStrip } from "@/components/browser-surface/BrowserSurfaceTabStrip";
 import { BrowserTabSwitcher } from "@/components/browser-surface/BrowserTabSwitcher";
-import { BROWSER_SELECT_TAB_APP_COMMAND_IDS } from "@bb/domain";
+import { BROWSER_SELECT_TAB_APP_COMMAND_IDS } from "@patcher/domain";
 import {
   useAppCommandHandler,
   useIndexedAppCommandHandlers,
@@ -42,7 +42,7 @@ import {
   usePluginBrowserTabStatuses,
 } from "@/lib/plugin-browser-tab-status";
 import { useDesktopWindowState } from "@/hooks/useDesktopWindowState";
-import { buildBrowserSearchUrl } from "@bb/domain/browser-search-engine";
+import { buildBrowserSearchUrl } from "@patcher/domain/browser-search-engine";
 import { useBrowserSearchEngine } from "@/lib/browser-search-engine";
 import { useBrowserFind } from "@/lib/browser-find";
 import { useBrowserHistorySearch } from "@/lib/browser-history";

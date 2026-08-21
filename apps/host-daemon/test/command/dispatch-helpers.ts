@@ -7,21 +7,24 @@ import type {
   AgentRuntime,
   AgentRuntimeExecutionOptions,
   AgentRuntimeProviderSession,
-} from "@bb/agent-runtime";
+} from "@patcher/agent-runtime";
 import type {
   ClientTurnRequestId,
   AvailableModel,
   DynamicTool,
   GitHostPullRequest,
   PromptInput,
-} from "@bb/domain";
-import type { HostDaemonAcpLaunchSpec } from "@bb/host-daemon-contract";
-import { makeWorkspaceMergeBase, makeWorkspaceStatus } from "@bb/test-helpers";
+} from "@patcher/domain";
+import type { HostDaemonAcpLaunchSpec } from "@patcher/host-daemon-contract";
+import {
+  makeWorkspaceMergeBase,
+  makeWorkspaceStatus,
+} from "@patcher/test-helpers";
 import type {
   HostWorkspace,
   ProvisionWorkspaceArgs,
   PullRequestActionOptions,
-} from "@bb/host-workspace";
+} from "@patcher/host-workspace";
 import { RuntimeManager } from "../../src/runtime-manager.js";
 import { listFilesRecursively } from "../../src/command-handlers/file-list.js";
 import { noopEventSink } from "../../src/command-dispatch-support.js";

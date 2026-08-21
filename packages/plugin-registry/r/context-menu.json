@@ -8,12 +8,12 @@
     "@radix-ui/react-context-menu"
   ],
   "registryDependencies": [
-    "@bb/coarse-pointer-sizing",
-    "@bb/icon",
-    "@bb/menu-item-hover",
-    "@bb/motion",
-    "@bb/portal-scope",
-    "@bb/utils"
+    "@patcher/coarse-pointer-sizing",
+    "@patcher/icon",
+    "@patcher/menu-item-hover",
+    "@patcher/motion",
+    "@patcher/portal-scope",
+    "@patcher/utils"
   ],
   "files": [
     {

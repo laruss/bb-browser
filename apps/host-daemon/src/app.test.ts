@@ -1,17 +1,17 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import type { AgentRuntime, AgentRuntimeOptions } from "@bb/agent-runtime";
+import type { AgentRuntime, AgentRuntimeOptions } from "@patcher/agent-runtime";
 import {
   turnScope,
   type PendingInteractionCreate,
   type ToolCallRequest,
-} from "@bb/domain";
+} from "@patcher/domain";
 import {
   hostDaemonInteractiveInterruptRequestSchema,
   type HostDaemonInteractiveRequestResponse,
-} from "@bb/host-daemon-contract";
-import type { HostWatcher } from "@bb/host-watcher";
+} from "@patcher/host-daemon-contract";
+import type { HostWatcher } from "@patcher/host-watcher";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   createHostDaemonApp,

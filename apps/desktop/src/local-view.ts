@@ -1,5 +1,5 @@
 import { stripVTControlCharacters } from "node:util";
-import { escapeHtmlText } from "@bb/domain";
+import { escapeHtmlText } from "@patcher/domain";
 
 export type LocalViewModel =
   | InfoViewModel

@@ -20,7 +20,7 @@
  */
 
 import { randomUUID } from "node:crypto";
-import type { JsonValue } from "@bb/domain";
+import type { JsonValue } from "@patcher/domain";
 import {
   receiveCancellation,
   watchForCancellation,

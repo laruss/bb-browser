@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useSyncExternalStore } from "react";
-import type { PromptTextMention } from "@bb/domain";
+import type { PromptTextMention } from "@patcher/domain";
 import type {
   PromptDraftAttachment,
   PromptDraftState,

@@ -25,8 +25,8 @@ import {
   threadTimelinePendingTodosSchema,
   threadVisibilitySchema,
   threadWithRuntimeSchema,
-} from "@bb/domain";
-import type { CallerExecutionInputSource } from "@bb/domain";
+} from "@patcher/domain";
+import type { CallerExecutionInputSource } from "@patcher/domain";
 import {
   timelineDeltaSchema,
   timelineRowSchema,

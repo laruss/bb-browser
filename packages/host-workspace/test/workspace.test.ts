@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import type { WorkspaceChangeStats } from "@bb/domain";
+import type { WorkspaceChangeStats } from "@patcher/domain";
 import { Workspace } from "../src/workspace.js";
 import { WorkspaceError } from "../src/git.js";
 import { runGit } from "../src/git.js";

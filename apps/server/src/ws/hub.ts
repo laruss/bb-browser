@@ -10,15 +10,15 @@ import {
   type BrowserCommandResponseMessage,
   type ThreadChangeKind,
   type ThreadChangeMetadata,
-} from "@bb/domain";
-import type { DbNotifier } from "@bb/db";
+} from "@patcher/domain";
+import type { DbNotifier } from "@patcher/db";
 import type {
   HostPlatform,
   HostDaemonOnlineRpcRequestMessage,
   HostDaemonOnlineRpcResponseMessage,
   HostDaemonServerWsMessage,
   HostDaemonSessionCloseReason,
-} from "@bb/host-daemon-contract";
+} from "@patcher/host-daemon-contract";
 import {
   browserCommandRequestSignalSchema,
   pluginSignalSchema,
@@ -31,7 +31,7 @@ import {
   type ThreadOpenFile,
   type ThreadOpenSplit,
   type TerminalServerMessage,
-} from "@bb/server-contract";
+} from "@patcher/server-contract";
 
 const TERMINAL_SOCKET_HIGH_WATER_BYTES = 1024 * 1024;
 // A 16 MiB raw burst expands to about 21.4 MiB as base64 + JSON. Keep

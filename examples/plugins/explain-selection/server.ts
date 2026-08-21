@@ -24,7 +24,7 @@
 // reload to show up, which is what CONFIGURE_HINT says.
 //
 // The type-only import is erased at load time; this file runs as-is.
-import type { BbPluginApi } from "@bb/plugin-sdk";
+import type { BbPluginApi } from "@patcher/plugin-sdk";
 
 const CONFIGURE_HINT =
   "Set project with `bb plugin config explain-selection`, " +

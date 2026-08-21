@@ -8,10 +8,10 @@
     "@radix-ui/react-select"
   ],
   "registryDependencies": [
-    "@bb/icon",
-    "@bb/motion",
-    "@bb/portal-scope",
-    "@bb/utils"
+    "@patcher/icon",
+    "@patcher/motion",
+    "@patcher/portal-scope",
+    "@patcher/utils"
   ],
   "files": [
     {

@@ -8,7 +8,7 @@ import {
   writeFile,
 } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative } from "node:path";
-import { derivePluginId, PLUGIN_SDK_VERSION } from "@bb/domain";
+import { derivePluginId, PLUGIN_SDK_VERSION } from "@patcher/domain";
 import {
   PLUGIN_SDK_APP_DTS,
   PLUGIN_SDK_DTS,
@@ -20,7 +20,7 @@ import {
 } from "./generated/plugin-starter-files.generated.js";
 
 /**
- * `bb plugin new` scaffold. Lives in @bb/templates because both the CLI
+ * `bb plugin new` scaffold. Lives in @patcher/templates because both the CLI
  * (which writes it) and the server test suite (which verifies the scaffold
  * actually loads through the plugin service) consume it.
  */
@@ -67,7 +67,7 @@ export interface SyncedPluginTypeFile {
 }
 
 /**
- * Write this build's bundled `@bb/plugin-sdk` declarations into a plugin's
+ * Write this build's bundled `@patcher/plugin-sdk` declarations into a plugin's
  * `types/` directory, creating it when absent.
  *
  * `bb plugin new` seeds these once, but the SDK surface grows with every BB
@@ -204,7 +204,7 @@ function enginesRange(bbVersion: string): string {
 
 /**
  * Git ref the scaffold's component registry URL pins to: the release tag
- * matching the running BB, so `npx shadcn add @bb/<name>` vendors component
+ * matching the running BB, so `npx shadcn add @patcher/<name>` vendors component
  * source version-matched to this install by construction. Dev builds
  * (0.0.0) track main.
  */
@@ -213,7 +213,7 @@ function registryRef(bbVersion: string): string {
 }
 
 /**
- * shadcn `components.json`: lets stock `npx shadcn add @bb/<name>` pull more
+ * shadcn `components.json`: lets stock `npx shadcn add @patcher/<name>` pull more
  * components from the BB registry (checked-in items served raw from GitHub;
  * see packages/plugin-registry). Registry components install into
  * components/ui/ + lib/ + hooks/ via the aliases below; `bb plugin build`
@@ -239,7 +239,7 @@ function componentsJsonSource(bbVersion: string): string {
         hooks: "@/hooks",
       },
       registries: {
-        "@bb": `https://raw.githubusercontent.com/get-bb/bb/${registryRef(bbVersion)}/packages/plugin-registry/r/{name}.json`,
+        "@patcher": `https://raw.githubusercontent.com/get-bb/bb/${registryRef(bbVersion)}/packages/plugin-registry/r/{name}.json`,
       },
     },
     null,
@@ -253,7 +253,7 @@ function serverEntrySource(packageName: string): string {
 //
 // The default export is a factory that receives the plugin API. BB supplies
 // the tiny defineRpcContract runtime helper; the API type remains type-only.
-import { defineRpcContract, type BbPluginApi } from "@bb/plugin-sdk";
+import { defineRpcContract, type BbPluginApi } from "@patcher/plugin-sdk";
 import { z } from "zod";
 
 export const rpcContract = defineRpcContract({
@@ -318,16 +318,16 @@ function appEntrySource(packageName: string): string {
   return `// ${packageName} — a BB plugin frontend entry.
 //
 // Compiled by \`bb plugin build\` into dist/app.js + dist/app.css. React and
-// @bb/plugin-sdk/app are provided by the BB app at load time (never bundled),
+// @patcher/plugin-sdk/app are provided by the BB app at load time (never bundled),
 // so this file must be loaded by BB, not imported directly.
 //
 // The components under components/ui/ are YOURS: vendored source (shadcn
 // model), edit freely. Add more from the BB registry with
-// \`npx shadcn add @bb/<name>\` (see components.json) — dialogs, dropdowns,
+// \`npx shadcn add @patcher/<name>\` (see components.json) — dialogs, dropdowns,
 // tables, the full shadcn set, version-matched to this BB install. Run
 // \`npm install\` once before \`bb plugin build\`.
 import { useState } from "react";
-import { definePluginApp, useBbContext, useRpc } from "@bb/plugin-sdk/app";
+import { definePluginApp, useBbContext, useRpc } from "@patcher/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import { Button } from "@/components/ui/button";
 import {
@@ -387,9 +387,9 @@ export default definePluginApp((app) => {
 /**
  * Typecheck-only tsconfig: server.ts compiles against the BbPluginApi contract
  * (type-only, erased at load time); app.tsx is included when the plugin
- * declares a frontend entry. `@bb/plugin-sdk` resolves to the bundled `.d.ts`
+ * declares a frontend entry. `@patcher/plugin-sdk` resolves to the bundled `.d.ts`
  * files shipped in `types/`, so authors get the root/app types without a
- * package install. Tests can install `@bb/plugin-sdk` for its testing subpaths.
+ * package install. Tests can install `@patcher/plugin-sdk` for its testing subpaths.
  */
 function tsconfigSource(app: boolean): string {
   return `${JSON.stringify(
@@ -405,8 +405,8 @@ function tsconfigSource(app: boolean): string {
         // (e.g. bun-types in a home directory) must not leak in.
         types: ["node"],
         paths: {
-          "@bb/plugin-sdk": ["./types/bb-plugin-sdk.d.ts"],
-          "@bb/plugin-sdk/app": ["./types/bb-plugin-sdk-app.d.ts"],
+          "@patcher/plugin-sdk": ["./types/bb-plugin-sdk.d.ts"],
+          "@patcher/plugin-sdk/app": ["./types/bb-plugin-sdk-app.d.ts"],
           // Vendored components import via "@/..." (shadcn convention);
           // esbuild reads this mapping too during `bb plugin build`.
           ...(app ? { "@/*": ["./*"] } : {}),
@@ -450,7 +450,7 @@ component registry (the full shadcn set, version-matched to your BB install
 via the pinned ref in \`components.json\`):
 
 \`\`\`
-npx shadcn add @bb/dialog @bb/select
+npx shadcn add @patcher/dialog @patcher/select
 \`\`\`
 
 Run \`npm install\` once before \`bb plugin build\` — the vendored components'
@@ -482,7 +482,7 @@ ${componentsSection}
   list alone, so a build-required package here rather than in
   \`devDependencies\` is what keeps your plugin installable. \`devDependencies\`
   is for types and tooling only (BB shims React, the portal primitives, and
-  \`@bb/plugin-sdk\` at runtime — never bundle them).
+  \`@patcher/plugin-sdk\` at runtime — never bundle them).
 
 ## Permissions
 
@@ -528,7 +528,7 @@ bb plugin config ${id} set greeting hi
 
 \`types/bb-plugin-sdk.d.ts\` (and \`types/bb-plugin-sdk-app.d.ts\` for the
 frontend) are the full, bundled BB plugin API — \`tsconfig.json\` maps
-\`@bb/plugin-sdk\` to them, so your editor and \`tsc\` see real types with no extra
+\`@patcher/plugin-sdk\` to them, so your editor and \`tsc\` see real types with no extra
 install. They are readable declarations: open them for an exact signature.
 
 The SDK surface grows with every BB release, and these are a copy. Refresh
@@ -591,7 +591,7 @@ export async function scaffoldPlugin(args: ScaffoldPluginArgs): Promise<void> {
         // omits dev deps: the packaged CLI runs with NODE_ENV=production, and
         // the server installs git: plugins with an explicit `--omit=dev`.
         // - zod: `server.ts` imports it and buildPluginServer externalizes only
-        //   @bb/plugin-sdk and better-sqlite3, so it is bundled, not provided.
+        //   @patcher/plugin-sdk and better-sqlite3, so it is bundled, not provided.
         // - starter deps: the vendored components' real runtime deps, bundled
         //   into dist/app.js (consumers get the prebuilt dist/ and need none).
         dependencies: {
@@ -599,7 +599,7 @@ export async function scaffoldPlugin(args: ScaffoldPluginArgs): Promise<void> {
           zod: "^4.3.6",
         },
         // Typecheck-only. The BbPluginApi/SDK types come from the bundled
-        // `.d.ts` in `types/` (tsconfig maps @bb/plugin-sdk to them), so the
+        // `.d.ts` in `types/` (tsconfig maps @patcher/plugin-sdk to them), so the
         // package is not needed for normal plugin source. These supply the real
         // npm types those declarations reference (hono/better-sqlite3 and the
         // root contract's React types) for packages generated source does not
@@ -626,7 +626,7 @@ export async function scaffoldPlugin(args: ScaffoldPluginArgs): Promise<void> {
   await writeFile(join(targetDir, "server.ts"), serverEntrySource(packageName));
   await writeFile(join(targetDir, "tsconfig.json"), tsconfigSource(app));
   // Bundled root/app declarations keep normal plugin source self-contained.
-  // Tests that use @bb/plugin-sdk/testing install the published package; the
+  // Tests that use @patcher/plugin-sdk/testing install the published package; the
   // exact root/app paths syncPluginTypes writes intentionally keep resolving
   // here. Seeding through the same function `bb plugin types` uses is what
   // stops a scaffolded plugin and a refreshed one from ever diverging.
@@ -634,7 +634,7 @@ export async function scaffoldPlugin(args: ScaffoldPluginArgs): Promise<void> {
   if (app) {
     await writeFile(join(targetDir, "app.tsx"), appEntrySource(packageName));
     // Vendored starter components (shadcn model — the author owns and edits
-    // them) + components.json so `npx shadcn add @bb/<name>` pulls more from
+    // them) + components.json so `npx shadcn add @patcher/<name>` pulls more from
     // the BB registry at the version tag matching this install.
     for (const file of PLUGIN_STARTER_FILES) {
       const filePath = join(targetDir, file.target);

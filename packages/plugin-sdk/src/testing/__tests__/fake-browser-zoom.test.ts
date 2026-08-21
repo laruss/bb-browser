@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   BROWSER_COMMAND_MAX_ZOOM_FACTOR,
   BROWSER_COMMAND_MIN_ZOOM_FACTOR,
-} from "@bb/domain";
+} from "@patcher/domain";
 import { createFakePluginHost } from "../fake-plugin-host.js";
 
 /**

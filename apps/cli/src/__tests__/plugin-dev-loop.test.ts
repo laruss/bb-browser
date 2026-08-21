@@ -1,5 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createPluginDevLoop, isIgnoredPluginDevPath } from "@bb/plugin-build";
+import {
+  createPluginDevLoop,
+  isIgnoredPluginDevPath,
+} from "@patcher/plugin-build";
 describe("createPluginDevLoop", () => {
   beforeEach(() => {
     vi.useFakeTimers();

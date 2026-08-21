@@ -6,7 +6,7 @@ import {
   setInstalledPluginSourceClassification,
   setInstalledPluginUpdateState,
   type InstalledPluginRow,
-} from "@bb/db";
+} from "@patcher/db";
 import { readPluginManifest } from "./manifest.js";
 import {
   createNpmResolverRun,

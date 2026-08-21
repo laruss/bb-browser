@@ -31,7 +31,7 @@ import {
   type AvailableModel,
   type PromptInput,
   type ReasoningLevel,
-} from "@bb/domain";
+} from "@patcher/domain";
 import { buildEditDiff } from "../../shared/adapter-utils.js";
 import {
   decodeToolCallResponsePayload,

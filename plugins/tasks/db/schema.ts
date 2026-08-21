@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@bb/plugin-sdk";
+import type { BbPluginApi } from "@patcher/plugin-sdk";
 
 type PluginDatabase = ReturnType<BbPluginApi["storage"]["database"]>;
 

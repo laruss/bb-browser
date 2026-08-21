@@ -1,13 +1,13 @@
 // The subpath, for the reason plugin-api.ts states: every plugin process
-// loads this file, and `@bb/domain`'s index runs every schema in the package.
+// loads this file, and `@patcher/domain`'s index runs every schema in the package.
 import {
   canonicalPermissions,
   permissionForRealtimeEvent,
   PLUGIN_SDK_AREA_PERMISSIONS,
   PLUGIN_SDK_METHOD_EXTRA_PERMISSIONS,
   type PluginPermission,
-} from "@bb/domain/plugin-permissions";
-import type { BbSdk } from "@bb/sdk";
+} from "@patcher/domain/plugin-permissions";
+import type { BbSdk } from "@patcher/sdk";
 
 /**
  * Enforcement for the permissions a plugin declared in `bb.permissions`.
@@ -21,7 +21,7 @@ import type { BbSdk } from "@bb/sdk";
  * What this is not is a security boundary. A plugin runs in the server's own
  * process; it can reach the loopback API directly with the base URL the host
  * gives it, or skip bb entirely and use `node:fs`. See
- * `@bb/domain`'s plugin-permissions module for the full argument.
+ * `@patcher/domain`'s plugin-permissions module for the full argument.
  */
 
 export class PluginPermissionError extends Error {
@@ -72,10 +72,10 @@ export function createPluginPermissionGate(
 }
 
 /**
- * The area map lives in `@bb/domain` because the fake plugin host enforces the
+ * The area map lives in `@patcher/domain` because the fake plugin host enforces the
  * same one — a second copy is how a plugin's tests start disagreeing with its
  * install. This is where its key set is checked against the type it has to
- * cover, which `@bb/domain` cannot do without depending on `@bb/sdk`: a
+ * cover, which `@patcher/domain` cannot do without depending on `@patcher/sdk`: a
  * missing area fails to compile here.
  */
 const SDK_AREA_PERMISSIONS: Readonly<

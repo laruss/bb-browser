@@ -12,13 +12,13 @@ import type {
   PromptInput,
   Thread,
   WorkspaceStatus,
-} from "@bb/domain";
+} from "@patcher/domain";
 import type {
   CommitActionResponse,
   EnvironmentActionFailureDetails,
   SquashMergeActionResponse,
-} from "@bb/server-contract";
-import { environmentActionFailureDetailsSchema } from "@bb/server-contract";
+} from "@patcher/server-contract";
+import { environmentActionFailureDetailsSchema } from "@patcher/server-contract";
 import { useDialogState } from "@/hooks/useDialogState";
 import type { ThreadGitActionDialogTarget } from "@/components/dialogs/ThreadGitActionDialog";
 import {

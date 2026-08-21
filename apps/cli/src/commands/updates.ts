@@ -1,6 +1,6 @@
 import { Command } from "commander";
-import type { Host } from "@bb/domain";
-import type { HostProviderCliStatusResponse } from "@bb/server-contract";
+import type { Host } from "@patcher/domain";
+import type { HostProviderCliStatusResponse } from "@patcher/server-contract";
 import { action } from "../action.js";
 import { createCliBbSdk } from "../client.js";
 import { renderBorderlessTable } from "../table.js";

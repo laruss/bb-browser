@@ -18,13 +18,13 @@ import type {
   ThreadEvent,
   ToolCallRequest,
   ToolCallResponse,
-} from "@bb/domain";
+} from "@patcher/domain";
 import {
   getThreadEventScopeTurnId,
   isApprovalPendingInteractionPayload,
   isUserQuestionPendingInteractionPayload,
-} from "@bb/domain";
-import { resolvePreferredTestModel } from "@bb/test-helpers";
+} from "@patcher/domain";
+import { resolvePreferredTestModel } from "@patcher/test-helpers";
 import { createAgentRuntime } from "../runtime.js";
 import { PI_BRIDGE_SESSION_DIR_ENV } from "../pi/bridge/session-paths.js";
 import type {

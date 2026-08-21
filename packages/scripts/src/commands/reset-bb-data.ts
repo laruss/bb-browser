@@ -1,7 +1,7 @@
 import { existsSync, rmSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, isAbsolute, resolve } from "node:path";
-import { resolveContainedPath } from "@bb/process-utils";
+import { resolveContainedPath } from "@patcher/process-utils";
 import readline from "node:readline/promises";
 import { fileURLToPath } from "node:url";
 import {
@@ -17,7 +17,7 @@ import {
   resolveCurrentDevInstanceConfig,
   resolveRuntimeDataDir,
   type BbRuntimeMode,
-} from "@bb/config/runtime";
+} from "@patcher/config/runtime";
 import { resolveScriptMode } from "../lib/script-config.js";
 
 const commandDir = dirname(fileURLToPath(import.meta.url));

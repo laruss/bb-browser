@@ -1,4 +1,4 @@
-# @bb/desktop
+# @patcher/desktop
 
 macOS Electron shell for bb. The desktop app loads the existing bb web UI and
 uses the packaged `bb-app` launcher for server and host-daemon lifecycle.
@@ -15,7 +15,7 @@ That starts the source dev server and the Electron shell through
 `scripts/bb-dev-app`. To run only the desktop package task directly:
 
 ```bash
-bunx turbo run dev --filter=@bb/desktop
+bunx turbo run dev --filter=@patcher/desktop
 ```
 
 The dev script builds `bb-app`, compiles the Electron main/preload files, and
@@ -31,7 +31,7 @@ directory.
 The launcher probes the checkout's Vite app port at startup and adapts:
 
 - **`bun run dev` is already running** (Vite reachable): the shell loads the Vite
-  dev URL, so you get live source and HMR for `@bb/app` changes — no rebuild
+  dev URL, so you get live source and HMR for `@patcher/app` changes — no rebuild
   needed. It still attaches to the same running server/daemon for all API/WS
   traffic. The launcher prints `app <url> (Vite dev server — live reload)`. This
   is the fast loop for iterating on the desktop UI.
@@ -48,7 +48,7 @@ packaged runtime and keeps native dependencies rebuilt for Electron's bundled
 Node runtime:
 
 ```bash
-bunx turbo run start --filter=@bb/desktop
+bunx turbo run start --filter=@patcher/desktop
 ```
 
 Electron is pinned to `41.7.0`, the highest stable line verified to rebuild the
@@ -59,17 +59,17 @@ Revisit the pin when `better-sqlite3` ships support or prebuilds for that ABI.
 ## Validation
 
 ```bash
-bunx turbo run typecheck --filter=@bb/desktop --filter=bb-app
-bunx turbo run build --filter=@bb/desktop
-bunx turbo run test --filter=@bb/desktop --filter=bb-app --force
-bunx turbo run dev --filter=@bb/desktop
+bunx turbo run typecheck --filter=@patcher/desktop --filter=bb-app
+bunx turbo run build --filter=@patcher/desktop
+bunx turbo run test --filter=@patcher/desktop --filter=bb-app --force
+bunx turbo run dev --filter=@patcher/desktop
 ```
 
 ## Packaging
 
 ```bash
-bunx turbo run desktop:build --filter=@bb/desktop
-bunx turbo run smoke:packaged --filter=@bb/desktop
+bunx turbo run desktop:build --filter=@patcher/desktop
+bunx turbo run smoke:packaged --filter=@patcher/desktop
 ```
 
 Artifacts are written under `apps/desktop/release/`. The desktop build is
@@ -84,7 +84,7 @@ macOS shows the normal Gatekeeper warning on first launch.
 
 ## Releasing
 
-`bb-app` and `@bb/desktop` versions are LOCKED in lockstep. The desktop package
+`bb-app` and `@patcher/desktop` versions are LOCKED in lockstep. The desktop package
 depends on `bb-app: workspace:*`, and the displayed release version string must
 match `packages/bb-app/package.json`.
 
@@ -209,7 +209,7 @@ desktop app:
 
 ```bash
 npx bb-app@latest
-bunx turbo run dev --filter=@bb/desktop
+bunx turbo run dev --filter=@patcher/desktop
 ```
 
 The desktop supervisor handles normal quits plus `SIGINT` and `SIGTERM`, and it

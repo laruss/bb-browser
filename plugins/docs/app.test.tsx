@@ -8,11 +8,11 @@ import {
   within,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { loadPluginApp, renderSlot } from "@bb/plugin-sdk/testing/app";
+import { loadPluginApp, renderSlot } from "@patcher/plugin-sdk/testing/app";
 
 const app = await loadPluginApp(() => import("./app"));
 
-// jsdom has no matchMedia; @bb/shared-ui's responsive overlays query it.
+// jsdom has no matchMedia; @patcher/shared-ui's responsive overlays query it.
 beforeEach(() => {
   Object.defineProperty(window, "matchMedia", {
     writable: true,

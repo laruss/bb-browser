@@ -1,8 +1,8 @@
 import { useEffect, useRef, type KeyboardEvent } from "react";
-import { BB_DESKTOP_BROWSER_MAX_FIND_QUERY_LENGTH } from "@bb/desktop-contract";
-import { COARSE_POINTER_HEADER_ICON_BUTTON_CLASS } from "@bb/shared-ui/coarse-pointer-sizing";
-import { Icon } from "@bb/shared-ui/icon";
-import { cn } from "@bb/shared-ui/lib/utils";
+import { BB_DESKTOP_BROWSER_MAX_FIND_QUERY_LENGTH } from "@patcher/desktop-contract";
+import { COARSE_POINTER_HEADER_ICON_BUTTON_CLASS } from "@patcher/shared-ui/coarse-pointer-sizing";
+import { Icon } from "@patcher/shared-ui/icon";
+import { cn } from "@patcher/shared-ui/lib/utils";
 import { CHROME_SUBTLE_ICON_BUTTON_FOREGROUND_CLASS } from "@/components/ui/chromeStyleTokens";
 import type { PluginBrowserFindActionContribution } from "@/hooks/queries/plugin-contribution-queries";
 import {

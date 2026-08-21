@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   createFakePluginHost,
   pluginPermissionsFromManifest,
-} from "@bb/plugin-sdk/testing";
+} from "@patcher/plugin-sdk/testing";
 import plugin, { MAX_CUSTOM_INSTRUCTIONS_LENGTH } from "./server";
 
 describe("custom instructions plugin", () => {

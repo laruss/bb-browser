@@ -2,8 +2,8 @@ import { useEffect } from "react";
 import {
   BB_DESKTOP_BROWSER_MAX_PAGE_SCRIPT_JSON_LENGTH,
   BB_DESKTOP_BROWSER_MAX_PAGE_SCRIPTS,
-} from "@bb/desktop-contract";
-import { matchesBrowserUrlPattern } from "@bb/domain/browser-url-pattern";
+} from "@patcher/desktop-contract";
+import { matchesBrowserUrlPattern } from "@patcher/domain/browser-url-pattern";
 import { usePluginContributions } from "@/hooks/queries/plugin-contribution-queries";
 import { callPluginRpc } from "@/lib/plugin-sdk-hooks";
 import { getDesktopBrowserApi } from "./bb-desktop";

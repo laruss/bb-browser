@@ -2,13 +2,13 @@ import type {
   HostDaemonCommand,
   HostDaemonOnlineRpcRequestMessage,
   HostDaemonOnlineRpcResponseMessage,
-} from "@bb/host-daemon-contract";
-import { WorkspaceError } from "@bb/host-workspace";
+} from "@patcher/host-daemon-contract";
+import { WorkspaceError } from "@patcher/host-workspace";
 import {
   encodeClientTurnRequestIdNumber,
   type ClientTurnRequestId,
   type PromptInput,
-} from "@bb/domain";
+} from "@patcher/domain";
 import { describe, expect, it, vi } from "vitest";
 import {
   CommandRouter,

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { BbDesktopBrowserApi } from "./browser.js";
-import type { AppCommandId } from "@bb/domain";
+import type { AppCommandId } from "@patcher/domain";
 
 const isoUtcDateTimeSchema = z.iso.datetime();
 

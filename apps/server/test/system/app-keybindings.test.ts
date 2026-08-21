@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { getAppKeybindingOverrides } from "@bb/db";
+import { getAppKeybindingOverrides } from "@patcher/db";
 import {
   BROWSER_SELECT_TAB_APP_COMMAND_IDS,
   PANE_FOCUS_APP_COMMAND_IDS,
   THREAD_JUMP_APP_COMMAND_IDS,
   applyAppKeybindingOverrides,
   appKeybindingOverridesSchema,
-} from "@bb/domain";
-import { systemConfigResponseSchema } from "@bb/server-contract";
+} from "@patcher/domain";
+import { systemConfigResponseSchema } from "@patcher/server-contract";
 import { readJson } from "../helpers/json.js";
 import { withTestHarness } from "../helpers/test-app.js";
 

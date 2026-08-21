@@ -3,7 +3,7 @@ import { nanoid } from "nanoid";
 import {
   BB_DESKTOP_BROWSER_MAX_TITLE_LENGTH,
   BB_DESKTOP_BROWSER_MAX_URL_LENGTH,
-} from "@bb/desktop-contract";
+} from "@patcher/desktop-contract";
 import {
   areFilePreviewLineRangesEqual,
   areEnvironmentFilePreviewSourcesEqual,

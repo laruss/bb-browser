@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import type { Host } from "@bb/domain";
+import type { Host } from "@patcher/domain";
 import { action } from "../action.js";
 import { createCliBbSdk } from "../client.js";
 import { renderBorderlessTable } from "../table.js";

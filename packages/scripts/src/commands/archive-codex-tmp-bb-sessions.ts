@@ -6,7 +6,7 @@ import type { Readable, Writable } from "node:stream";
 import { fileURLToPath } from "node:url";
 import readline from "node:readline/promises";
 import type { ChildProcessByStdio } from "node:child_process";
-import { resolveCodexHome } from "@bb/config/codex-home";
+import { resolveCodexHome } from "@patcher/config/codex-home";
 import { bold, cyan, dim, green, yellow, log } from "../lib/script-helpers.js";
 
 const DEFAULT_TMP_BB_PATTERNS: readonly string[] = [

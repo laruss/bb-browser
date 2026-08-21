@@ -1,5 +1,5 @@
-import { COARSE_POINTER_COMPACT_ICON_SIZE_CLASS } from "@bb/shared-ui/coarse-pointer-sizing";
-import { cn } from "@bb/shared-ui/lib/utils";
+import { COARSE_POINTER_COMPACT_ICON_SIZE_CLASS } from "@patcher/shared-ui/coarse-pointer-sizing";
+import { cn } from "@patcher/shared-ui/lib/utils";
 import { PluginIcon } from "@/components/plugin/PluginIcon";
 import {
   usePluginContributions,

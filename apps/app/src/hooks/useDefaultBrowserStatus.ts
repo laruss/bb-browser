@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import type { BbDesktopDefaultBrowserStatus } from "@bb/desktop-contract";
+import type { BbDesktopDefaultBrowserStatus } from "@patcher/desktop-contract";
 import { getBbDesktopInfo } from "@/lib/bb-desktop";
 
 /**

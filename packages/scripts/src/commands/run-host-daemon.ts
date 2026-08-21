@@ -8,15 +8,15 @@ import {
   resolvePortFromEnv,
   resolveRuntimeDataDir,
   type BbRuntimeMode,
-} from "@bb/config/runtime";
-import { loadServerUrlValue } from "@bb/config/server-url";
+} from "@patcher/config/runtime";
+import { loadServerUrlValue } from "@patcher/config/server-url";
 import {
   HOST_AUTH_FILE_NAME,
   HOST_ID_FILE_NAME,
   hostDaemonEnrollKeyResponseSchema,
   type HostDaemonEnrollKeyRequest,
-} from "@bb/host-daemon-contract";
-import { loadHostDaemonEntrypointConfig } from "@bb/config/host-daemon-entrypoint";
+} from "@patcher/host-daemon-contract";
+import { loadHostDaemonEntrypointConfig } from "@patcher/config/host-daemon-entrypoint";
 import type { HostDaemonRuntimeEnvironment } from "../lib/host-daemon-runtime.js";
 import { toHostDaemonProcessEnv } from "../lib/host-daemon-runtime.js";
 import {

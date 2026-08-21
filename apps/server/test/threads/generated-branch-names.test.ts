@@ -1,11 +1,16 @@
-import { createThread, getEnvironment, getThread, listEvents } from "@bb/db";
+import {
+  createThread,
+  getEnvironment,
+  getThread,
+  listEvents,
+} from "@patcher/db";
 import {
   type ResolvedThreadExecutionOptions,
   systemThreadProvisioningEventDataSchema,
   threadSchema,
   turnScope,
-} from "@bb/domain";
-import { groupHostDaemonEvents } from "@bb/host-daemon-contract";
+} from "@patcher/domain";
+import { groupHostDaemonEvents } from "@patcher/host-daemon-contract";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   internalAuthHeaders,

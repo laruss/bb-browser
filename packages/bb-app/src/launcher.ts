@@ -21,14 +21,14 @@ import {
   clearOwnBbAppRuntimeFile,
   formatBbAppRuntimeFilePath,
   readBbAppRuntimeFile,
-} from "@bb/config/app-runtime-file";
-import { stopVerifiedProcess } from "@bb/config/verified-process-stop";
+} from "@patcher/config/app-runtime-file";
+import { stopVerifiedProcess } from "@patcher/config/verified-process-stop";
 import {
   APP_SURFACE_ENV_NAME,
   APP_SURFACE_WEB,
   DEFAULT_APP_SURFACE,
   parseAppSurface,
-} from "@bb/config/app-surface";
+} from "@patcher/config/app-surface";
 import {
   BB_APP_MANAGED_CONFIG_KEYS,
   bbAppManagedEnvFileSchema,
@@ -41,21 +41,21 @@ import {
   type BbAppManagedConfigValues,
   type BbAppManagedEnvConfig,
   type BbAppManagedEnvFile,
-} from "@bb/config/bb-app-managed-config";
+} from "@patcher/config/bb-app-managed-config";
 import {
   formatClientConfigPath,
   normalizeClientServerOrigin,
   parseClientConfig,
   type ClientConfig,
-} from "@bb/config/client-config";
+} from "@patcher/config/client-config";
 import {
   validateInferenceFallbackModel,
   validateInferenceModel,
   validateTranscriptionModel,
-} from "@bb/config/inference-model";
-import { validateLogLevel } from "@bb/config/log-level";
-import { validateOptionalUrl } from "@bb/config/public-url";
-import { parseServerBindHost } from "@bb/config/server";
+} from "@patcher/config/inference-model";
+import { validateLogLevel } from "@patcher/config/log-level";
+import { validateOptionalUrl } from "@patcher/config/public-url";
+import { parseServerBindHost } from "@patcher/config/server";
 import {
   BB_PROD_HOST_DAEMON_PORT,
   BB_LOOPBACK_HOST,
@@ -65,7 +65,7 @@ import {
   resolvePortFromEnv,
   resolveProdDataDir,
   stripThreadContextEnv,
-} from "@bb/config/runtime";
+} from "@patcher/config/runtime";
 import { z } from "zod";
 
 const HOST_AUTH_FILE_NAME = "auth.json";

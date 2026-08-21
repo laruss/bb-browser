@@ -1,13 +1,13 @@
-import { listHosts, listNonDestroyedHostsByIds } from "@bb/db";
+import { listHosts, listNonDestroyedHostsByIds } from "@patcher/db";
 import type {
   CliSkillMachineStatus,
   SystemCliSkillsStatusResponse,
   SystemInstallCliSkillsResponse,
-} from "@bb/server-contract";
+} from "@patcher/server-contract";
 import type {
   HostGlobalSkillsStatusResult,
   HostInstallGlobalSkill,
-} from "@bb/host-daemon-contract";
+} from "@patcher/host-daemon-contract";
 import { COMMAND_TIMEOUT_MS } from "../../constants.js";
 import { ApiError } from "../../errors.js";
 import type { AppDeps } from "../../types.js";

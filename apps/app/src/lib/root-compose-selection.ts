@@ -1,6 +1,6 @@
 import { atom, useAtom, useSetAtom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
-import { PERSONAL_PROJECT_ID } from "@bb/domain";
+import { PERSONAL_PROJECT_ID } from "@patcher/domain";
 import { createLocalStorageSyncStorage } from "./browser-storage";
 
 const ROOT_COMPOSE_PROJECT_ID_STORAGE_KEY = "bb.root-compose.project-id";

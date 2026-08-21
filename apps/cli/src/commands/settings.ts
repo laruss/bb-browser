@@ -8,7 +8,7 @@ import {
   type AppSettings,
   type AppShortcut,
   type Experiments,
-} from "@bb/domain";
+} from "@patcher/domain";
 import { action } from "../action.js";
 import { createCliBbSdk } from "../client.js";
 import { outputJson } from "./helpers.js";

@@ -8,7 +8,7 @@ import {
   type BbPluginApi,
   type PluginCliContext,
   type PluginRpcHandlers,
-} from "@bb/plugin-sdk";
+} from "@patcher/plugin-sdk";
 import { z } from "zod";
 
 const DEFAULT_DIR = "~/Notes";

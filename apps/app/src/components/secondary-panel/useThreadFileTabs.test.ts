@@ -2,7 +2,7 @@
 
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { TerminalSession } from "@bb/server-contract";
+import type { TerminalSession } from "@patcher/server-contract";
 import { createElement, type ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {

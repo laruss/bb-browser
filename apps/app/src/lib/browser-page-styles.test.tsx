@@ -6,7 +6,7 @@ import {
   BB_DESKTOP_BROWSER_MAX_PAGE_STYLES,
   type BbDesktopBrowserApi,
   type BbDesktopBrowserPageStyles,
-} from "@bb/desktop-contract";
+} from "@patcher/desktop-contract";
 import {
   createBbDesktopApi,
   createNoopDesktopBrowserApi,

@@ -1,4 +1,4 @@
-import { BB_DESKTOP_BROWSER_MAX_FULL_PAGE_DIMENSION } from "@bb/desktop-contract";
+import { BB_DESKTOP_BROWSER_MAX_FULL_PAGE_DIMENSION } from "@patcher/desktop-contract";
 
 /**
  * Capturing the whole document rather than the visible viewport.

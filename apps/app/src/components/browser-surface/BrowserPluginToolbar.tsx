@@ -1,11 +1,11 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { cn } from "@bb/shared-ui/lib/utils";
+import { cn } from "@patcher/shared-ui/lib/utils";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@bb/shared-ui/tooltip";
+} from "@patcher/shared-ui/tooltip";
 import { PluginIcon } from "@/components/plugin/PluginIcon";
 import { invalidatePluginToolbarStates } from "@/hooks/cache-owners/plugin-cache-owner";
 import {

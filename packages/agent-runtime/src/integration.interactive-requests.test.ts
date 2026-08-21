@@ -16,7 +16,7 @@ import {
   type PendingInteractionApprovalDecision,
   type PendingInteractionApprovalSubject,
   type PendingInteractionCreate,
-} from "@bb/domain";
+} from "@patcher/domain";
 import { listAvailableProviderInfos } from "./provider-registry.js";
 import {
   cleanup,

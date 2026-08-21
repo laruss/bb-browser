@@ -11,17 +11,17 @@ import {
   createThread,
   openSession,
   upsertHost,
-} from "@bb/db";
+} from "@patcher/db";
 import {
   HOST_DAEMON_PROTOCOL_VERSION,
   HOST_ID_FILE_NAME,
-} from "@bb/host-daemon-contract";
+} from "@patcher/host-daemon-contract";
 import {
   encodeClientTurnRequestIdNumber,
   parseStoredThreadEvent,
   threadScope,
   turnScope,
-} from "@bb/domain";
+} from "@patcher/domain";
 import type {
   EnvironmentStatus,
   PermissionMode,
@@ -34,7 +34,7 @@ import type {
   ThreadOriginKind,
   ThreadVisibility,
   WorkspaceProvisionType,
-} from "@bb/domain";
+} from "@patcher/domain";
 import type { AppDeps } from "../../src/types.js";
 import { registerTestHostRpcCapture } from "./commands.js";
 

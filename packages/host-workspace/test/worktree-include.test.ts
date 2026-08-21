@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { WORKTREE_INCLUDE_FILE_NAME } from "@bb/domain";
+import { WORKTREE_INCLUDE_FILE_NAME } from "@patcher/domain";
 import { createWorktree } from "../src/provisioning.js";
 import { runGit } from "../src/git.js";
 import { copyWorktreeIncludeFiles } from "../src/worktree-include.js";

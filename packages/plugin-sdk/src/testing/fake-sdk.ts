@@ -3,8 +3,8 @@ import {
   PLUGIN_SDK_AREA_PERMISSIONS,
   PLUGIN_SDK_METHOD_EXTRA_PERMISSIONS,
   type PluginPermission,
-} from "@bb/domain";
-import type { BbPluginApi } from "@bb/plugin-sdk";
+} from "@patcher/domain";
+import type { BbPluginApi } from "@patcher/plugin-sdk";
 import type { FakePermissionGate } from "./fake-permissions.js";
 
 type BbSdk = BbPluginApi["sdk"];
@@ -98,7 +98,7 @@ export function createFakeSdk(options: {
     // A few methods cost more than their area because what they touch
     // straddles two. Charged here as well as in the host, or a plugin's own
     // tests would pass on a manifest the install refuses — which is the exact
-    // drift the shared map in @bb/domain exists to prevent.
+    // drift the shared map in @patcher/domain exists to prevent.
     const extras: readonly PluginPermission[] | undefined = (
       PLUGIN_SDK_METHOD_EXTRA_PERMISSIONS as Readonly<
         Record<string, readonly PluginPermission[]>

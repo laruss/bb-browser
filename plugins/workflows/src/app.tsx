@@ -13,11 +13,11 @@ import {
   activityRowClass,
   activityTextClass,
   type ActivityRowState,
-} from "@bb/shared-ui/activity-row-styles";
-import { Button } from "@bb/shared-ui/button";
-import { Icon } from "@bb/shared-ui/icon";
-import { cn } from "@bb/shared-ui/lib/utils";
-import { Skeleton } from "@bb/shared-ui/skeleton";
+} from "@patcher/shared-ui/activity-row-styles";
+import { Button } from "@patcher/shared-ui/button";
+import { Icon } from "@patcher/shared-ui/icon";
+import { cn } from "@patcher/shared-ui/lib/utils";
+import { Skeleton } from "@patcher/shared-ui/skeleton";
 import {
   WorkflowPhaseStrip,
   WorkflowProgress,
@@ -26,7 +26,7 @@ import {
   type WorkflowProgressAgentState,
   type WorkflowProgressSnapshot,
   type WorkflowStatusPillState,
-} from "@bb/shared-ui/workflow-progress";
+} from "@patcher/shared-ui/workflow-progress";
 import {
   definePluginApp,
   useBbNavigate,
@@ -34,7 +34,7 @@ import {
   useRpc,
   type PluginMessageDirectiveProps,
   type PluginThreadPanelProps,
-} from "@bb/plugin-sdk/app";
+} from "@patcher/plugin-sdk/app";
 import type { workflowUiRpcContract } from "./ui-contract.js";
 import type { WorkflowCallView, WorkflowRunView } from "./ui-contract.js";
 

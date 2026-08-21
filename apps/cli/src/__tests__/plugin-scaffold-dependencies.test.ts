@@ -4,8 +4,8 @@ import { join, relative } from "node:path";
 import {
   PLUGIN_SERVER_EXTERNALS,
   RUNTIME_SLOT_BY_SPECIFIER,
-} from "@bb/plugin-build";
-import { scaffoldPlugin } from "@bb/templates/plugin-scaffold";
+} from "@patcher/plugin-build";
+import { scaffoldPlugin } from "@patcher/templates/plugin-scaffold";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 /**
@@ -19,8 +19,8 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
  * The rule is derived from the build's own externals/shim lists rather than
  * restated here, so adding a shim or an external cannot leave this stale.
  * Lives in the CLI because `bb plugin new` writes the scaffold and
- * `bb plugin build` consumes it; @bb/templates cannot depend on
- * @bb/plugin-build without a workspace cycle.
+ * `bb plugin build` consumes it; @patcher/templates cannot depend on
+ * @patcher/plugin-build without a workspace cycle.
  */
 
 const DIRS_WITHOUT_BUNDLED_SOURCE = new Set([

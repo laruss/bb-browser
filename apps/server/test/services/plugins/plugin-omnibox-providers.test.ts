@@ -2,8 +2,8 @@ import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createConnection, migrate, type DbConnection } from "@bb/db";
-import type { Logger } from "@bb/logger";
+import { createConnection, migrate, type DbConnection } from "@patcher/db";
+import type { Logger } from "@patcher/logger";
 import {
   createPluginService,
   type PluginService,

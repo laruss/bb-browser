@@ -2,13 +2,13 @@ import {
   PERSONAL_PROJECT_ID,
   type ProjectSource,
   type ThreadListEntry,
-} from "@bb/domain";
+} from "@patcher/domain";
 import type {
   ProjectBranchesResponse,
   ProjectWithThreadsResponse,
   SidebarBootstrapResponse,
   TerminalSession,
-} from "@bb/server-contract";
+} from "@patcher/server-contract";
 import { describe, expect, it } from "vitest";
 import { parseEnvironmentValue } from "@/components/pickers/environment-picker-value";
 import type { ReuseThreadOption } from "@/components/pickers/WorktreePicker";

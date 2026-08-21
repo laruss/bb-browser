@@ -1,4 +1,4 @@
-import type { TimelineRow } from "@bb/server-contract";
+import type { TimelineRow } from "@patcher/server-contract";
 import { describe, expect, it } from "vitest";
 import {
   createTimelineEventFactory,
@@ -230,7 +230,7 @@ describe("completed turn summary rendering", () => {
         turnId: "turn-3",
       }),
       event.commandCompleted({
-        command: "pnpm exec turbo run test --filter=@bb/thread-view",
+        command: "pnpm exec turbo run test --filter=@patcher/thread-view",
         itemId: "tool-3",
         turnId: "turn-3",
       }),

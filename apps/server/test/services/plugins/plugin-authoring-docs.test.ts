@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import * as pluginSdkApp from "@bb/plugin-sdk/app";
+import * as pluginSdkApp from "@patcher/plugin-sdk/app";
 import {
   type BbPluginApi,
   type PluginAppBuilder,
@@ -30,7 +30,7 @@ import {
   type PluginThreadPanelProps,
   type ThreadChatMessageAction,
   type ThreadChatProps,
-} from "@bb/plugin-sdk";
+} from "@patcher/plugin-sdk";
 
 const FRONTEND_RUNTIME_EXPORT_NAMES = Object.keys(pluginSdkApp).sort();
 
@@ -391,7 +391,7 @@ describe("bb-plugin-authoring skill", () => {
     }
   });
 
-  it("documents every @bb/plugin-sdk/app runtime export", () => {
+  it("documents every @patcher/plugin-sdk/app runtime export", () => {
     for (const name of FRONTEND_RUNTIME_EXPORT_NAMES) {
       expect(skill, `${name} is not documented in the skill`).toContain(name);
     }

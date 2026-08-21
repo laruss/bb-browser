@@ -4,7 +4,7 @@ import {
   bbDesktopBrowserAttachRequestSchema,
   bbDesktopBrowserSetBoundsRequestSchema,
   bbDesktopBrowserStateSchema,
-} from "@bb/desktop-contract";
+} from "@patcher/desktop-contract";
 import {
   browserUrlHost,
   evaluatePopupRate,

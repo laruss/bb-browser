@@ -7,7 +7,7 @@ import {
   type BbDesktopBrowserCookie,
   type BbDesktopBrowserStorageItem,
   type BbDesktopBrowserStorageOperation,
-} from "@bb/desktop-contract";
+} from "@patcher/desktop-contract";
 
 /**
  * Reading and writing what a tab has stored, for the agent browser tools.

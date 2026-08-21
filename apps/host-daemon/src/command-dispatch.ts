@@ -8,7 +8,7 @@ import {
   HostDaemonOnlineRpcCommandType,
   HostDaemonOnlineRpcResult,
   HostDaemonSettledCommandType,
-} from "@bb/host-daemon-contract";
+} from "@patcher/host-daemon-contract";
 import semver from "semver";
 import {
   CommandDispatchError,
@@ -73,7 +73,7 @@ import {
   startThread,
   submitTurn,
 } from "./command-handlers/thread.js";
-import { WorkspaceError } from "@bb/host-workspace";
+import { WorkspaceError } from "@patcher/host-workspace";
 import { squashMerge } from "./command-handlers/workspace.js";
 import {
   cloneProject,

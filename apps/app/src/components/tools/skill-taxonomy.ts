@@ -2,7 +2,7 @@ import type {
   EditableSkillScope,
   SkillScope,
   SkillSummary,
-} from "@bb/server-contract";
+} from "@patcher/server-contract";
 
 export const SKILL_SCOPE_LABELS: Record<SkillScope, string> = {
   "bb-builtin": "Built-in",

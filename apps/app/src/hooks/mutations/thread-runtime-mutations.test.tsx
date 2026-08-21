@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
-import type { ThreadQueuedMessage } from "@bb/domain";
+import type { ThreadQueuedMessage } from "@patcher/domain";
 import type {
   ExistingThreadExecutionInputSources,
   ThreadTimelineResponse,
-} from "@bb/server-contract";
+} from "@patcher/server-contract";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { BbHttpError, sdk } from "@/lib/sdk";
 import { wsManager } from "@/lib/ws";

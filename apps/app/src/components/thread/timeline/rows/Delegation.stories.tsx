@@ -1,4 +1,4 @@
-import type { TimelineRow } from "@bb/server-contract";
+import type { TimelineRow } from "@patcher/server-contract";
 import { ThreadTimelineRows } from "@/components/thread/timeline";
 import {
   conversationRow,
@@ -275,7 +275,7 @@ const correctnessChild08: TimelineRow = {
     limit: 200,
   },
   output:
-    '1\timport type { DynamicTool, InstructionMode, ThreadEvent } from "@bb/domain";\n2\timport type {\n3\t  AdapterCommand,\n4\t  ProviderAdapterFactory,\n5\t  ProviderCommandPlan,\n6\t  ProviderRequestCommandPlan,\n7\t} from "./provider-adapter.j... [truncated]',
+    '1\timport type { DynamicTool, InstructionMode, ThreadEvent } from "@patcher/domain";\n2\timport type {\n3\t  AdapterCommand,\n4\t  ProviderAdapterFactory,\n5\t  ProviderCommandPlan,\n6\t  ProviderRequestCommandPlan,\n7\t} from "./provider-adapter.j... [truncated]',
   completedAt: 1778174307849,
   approvalStatus: null,
   activityIntents: [
@@ -306,7 +306,7 @@ const correctnessChild09: TimelineRow = {
       "/Users/michael/.bb-dev/worktrees/env_stt3jzymfp/bb/packages/agent-runtime/src/runtime-turn-state.ts",
   },
   output:
-    '1\timport type { ThreadEvent } from "@bb/domain";\n2\timport { requireThreadEventScopeTurnId } from "@bb/domain";\n3\t\n4\texport class RuntimeTurnState {\n5\t  private readonly activeTurnIdByThreadId = new Map<string, string>();\n6\t\n7\t  clear(): void {\n8\t    this.activeTurnIdByThreadId.clear();\n9\t  }\n10\t\n11\t... [truncated]',
+    '1\timport type { ThreadEvent } from "@patcher/domain";\n2\timport { requireThreadEventScopeTurnId } from "@patcher/domain";\n3\t\n4\texport class RuntimeTurnState {\n5\t  private readonly activeTurnIdByThreadId = new Map<string, string>();\n6\t\n7\t  clear(): void {\n8\t    this.activeTurnIdByThreadId.clear();\n9\t  }\n10\t\n11\t... [truncated]',
   completedAt: 1778174320113,
   approvalStatus: null,
   activityIntents: [
@@ -1033,7 +1033,7 @@ const maintainabilityChild14: TimelineRow = {
     limit: 80,
   },
   output:
-    '1\timport type { ThreadEvent } from "@bb/domain";\n2\timport { requireThreadEventScopeTurnId } from "@bb/domain";\n3\t\n4\texport class RuntimeTurnState {\n5\t  private readonly activeTurnIdByThreadId = new Map<string, string>();\n6\t\n7\t  clear(): void {\n8\t    this.activeTurnIdByThreadId.clear();\n9\t  }\n10\t\n11\t... [truncated]',
+    '1\timport type { ThreadEvent } from "@patcher/domain";\n2\timport { requireThreadEventScopeTurnId } from "@patcher/domain";\n3\t\n4\texport class RuntimeTurnState {\n5\t  private readonly activeTurnIdByThreadId = new Map<string, string>();\n6\t\n7\t  clear(): void {\n8\t    this.activeTurnIdByThreadId.clear();\n9\t  }\n10\t\n11\t... [truncated]',
   completedAt: 1778174334659,
   approvalStatus: null,
   activityIntents: [
@@ -1834,7 +1834,7 @@ const testQualityChild16: TimelineRow = {
       "/Users/michael/.bb-dev/worktrees/env_stt3jzymfp/bb/tests/integration/fake/smoke/tool-calls.test.ts",
   },
   output:
-    '1\timport { getThreadEventScopeTurnId } from "@bb/domain";\n2\timport { describe, expect, it } from "vitest";\n3\timport { getThreadEvents, sendTextMessage } from "../../helpers/api.js";\n4\timport {\n5\t  waitForEventType,\n6\t  waitForThreadStatus,\n7\t} from "../../helpers/assertions.js";\n8\timport { withHarne... [truncated]',
+    '1\timport { getThreadEventScopeTurnId } from "@patcher/domain";\n2\timport { describe, expect, it } from "vitest";\n3\timport { getThreadEvents, sendTextMessage } from "../../helpers/api.js";\n4\timport {\n5\t  waitForEventType,\n6\t  waitForThreadStatus,\n7\t} from "../../helpers/assertions.js";\n8\timport { withHarne... [truncated]',
   completedAt: 1778174340950,
   approvalStatus: null,
   activityIntents: [

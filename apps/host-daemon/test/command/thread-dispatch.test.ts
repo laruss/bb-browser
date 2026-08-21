@@ -1,15 +1,15 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import type { AgentRuntimeOptions } from "@bb/agent-runtime";
+import type { AgentRuntimeOptions } from "@patcher/agent-runtime";
 import type {
   HostDaemonAcpLaunchSpec,
   HostDaemonCommand,
-} from "@bb/host-daemon-contract";
+} from "@patcher/host-daemon-contract";
 import {
   encodeClientTurnRequestIdNumber,
   type ClientTurnRequestId,
   type PromptInput,
-} from "@bb/domain";
+} from "@patcher/domain";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   CommandDispatchError,

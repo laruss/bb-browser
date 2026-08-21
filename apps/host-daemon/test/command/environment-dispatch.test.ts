@@ -3,7 +3,7 @@ import {
   getPersonalWorkspaceRoot,
   WorkspaceError,
   type HostWorkspace,
-} from "@bb/host-workspace";
+} from "@patcher/host-workspace";
 import { dispatchCommand } from "../../src/command-dispatch.js";
 import type { EventSinkInput } from "../../src/event-sink.js";
 import {

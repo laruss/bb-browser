@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import * as domain from "@bb/domain";
-import type * as serverContract from "@bb/server-contract";
+import * as domain from "@patcher/domain";
+import type * as serverContract from "@patcher/server-contract";
 import {
   setupCommandOutputTestEnvironment,
   collectLogLines,

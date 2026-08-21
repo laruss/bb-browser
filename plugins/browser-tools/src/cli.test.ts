@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import {
   createFakePluginHost,
   pluginPermissionsFromManifest,
-} from "@bb/plugin-sdk/testing";
+} from "@patcher/plugin-sdk/testing";
 import plugin from "./server.js";
 
 /**

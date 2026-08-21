@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import type { PromptTextMention } from "@bb/domain";
+import type { PromptTextMention } from "@patcher/domain";
 import {
   createRef,
   useLayoutEffect,

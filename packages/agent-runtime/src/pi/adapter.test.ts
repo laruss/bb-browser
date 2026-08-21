@@ -7,7 +7,7 @@ import {
   DEFAULT_CLAUDE_CODE_MOCK_CLI_TRAFFIC_CONFIG,
   threadScope,
   turnScope,
-} from "@bb/domain";
+} from "@patcher/domain";
 import type { AgentSessionEvent } from "@earendil-works/pi-coding-agent";
 import {
   createPiModelContextWindowResolverFrom,

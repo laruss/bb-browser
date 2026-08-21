@@ -91,9 +91,9 @@ import {
   type BbDesktopBrowserState,
   type BbDesktopBrowserViewportBounds,
   type BbDesktopBrowserViewBounds,
-} from "@bb/desktop-contract";
-import type { AppCommandId, AppShortcutInput } from "@bb/domain";
-import { matchesBrowserUrlPattern } from "@bb/domain/browser-url-pattern";
+} from "@patcher/desktop-contract";
+import type { AppCommandId, AppShortcutInput } from "@patcher/domain";
+import { matchesBrowserUrlPattern } from "@patcher/domain/browser-url-pattern";
 import {
   BB_DESKTOP_BROWSER_DIALOG_CHANNEL,
   BB_DESKTOP_BROWSER_DOWNLOAD_CHANNEL,

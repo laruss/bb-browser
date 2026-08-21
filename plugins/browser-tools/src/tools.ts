@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { PluginBrowserPageState, PluginBrowserTab } from "@bb/plugin-sdk";
+import type { PluginBrowserPageState, PluginBrowserTab } from "@patcher/plugin-sdk";
 
 /**
  * Names, parameters and result formatting for the browser tools.

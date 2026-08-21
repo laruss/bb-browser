@@ -6,12 +6,12 @@ import {
   DEFAULT_CLAUDE_CODE_MOCK_CLI_TRAFFIC_CONFIG,
   threadScope,
   turnScope,
-} from "@bb/domain";
+} from "@patcher/domain";
 import type {
   PendingInteractionResolution,
   UserQuestionPendingInteractionPayload,
   UserQuestionPendingInteractionResolution,
-} from "@bb/domain";
+} from "@patcher/domain";
 import { promptTextInput } from "../test/prompt-input.js";
 import { createClaudeCodeProviderAdapter } from "./adapter.js";
 import {

@@ -1,4 +1,4 @@
-import type { BbDesktopBrowserApi } from "@bb/desktop-contract";
+import type { BbDesktopBrowserApi } from "@patcher/desktop-contract";
 
 /**
  * Owns the "only one browser view is visible at a time" invariant for a panel's

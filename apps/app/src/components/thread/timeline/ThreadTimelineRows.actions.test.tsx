@@ -12,9 +12,9 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useState, type ComponentProps, type ReactElement } from "react";
 import { MemoryRouter, useNavigate } from "react-router-dom";
-import { COMPACT_VIEWPORT_QUERY } from "@bb/shared-ui/hooks/use-compact-viewport";
-import { POINTER_COARSE_QUERY } from "@bb/shared-ui/hooks/use-pointer-coarse";
-import type { PluginMessageActionRegistration } from "@bb/plugin-sdk";
+import { COMPACT_VIEWPORT_QUERY } from "@patcher/shared-ui/hooks/use-compact-viewport";
+import { POINTER_COARSE_QUERY } from "@patcher/shared-ui/hooks/use-pointer-coarse";
+import type { PluginMessageActionRegistration } from "@patcher/plugin-sdk";
 import {
   conversationRow,
   delegationRow,

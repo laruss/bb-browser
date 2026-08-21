@@ -7,7 +7,7 @@ import type {
   PendingInteractionResolution,
   ThreadEvent,
   ToolCallResponse,
-} from "@bb/domain";
+} from "@patcher/domain";
 import { promptTextInput } from "./test/prompt-input.js";
 import type { DecodedInteractiveRequest } from "./provider-adapter.js";
 import { createAgentRuntimeWithAdapters } from "./runtime.js";

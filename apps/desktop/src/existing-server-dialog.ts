@@ -1,5 +1,5 @@
 import { BrowserWindow, ipcMain } from "electron";
-import { escapeHtmlText } from "@bb/domain";
+import { escapeHtmlText } from "@patcher/domain";
 import {
   BB_DESKTOP_EXISTING_SERVER_DIALOG_CHOOSE_CHANNEL,
   existingServerDialogChooseRequestSchema,

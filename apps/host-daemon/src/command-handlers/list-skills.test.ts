@@ -12,7 +12,7 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import type { DiscoveredSkill } from "@bb/host-daemon-contract";
+import type { DiscoveredSkill } from "@patcher/host-daemon-contract";
 import { discoverSkills } from "../command-discovery.js";
 import { CommandDispatchError } from "../command-dispatch-support.js";
 import {

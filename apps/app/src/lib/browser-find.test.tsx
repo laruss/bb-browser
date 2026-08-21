@@ -7,7 +7,7 @@ import type {
   BbDesktopBrowserFindRequest,
   BbDesktopBrowserFindResult,
   BbDesktopBrowserFindResultHandler,
-} from "@bb/desktop-contract";
+} from "@patcher/desktop-contract";
 import {
   createBbDesktopApi,
   createNoopDesktopBrowserApi,

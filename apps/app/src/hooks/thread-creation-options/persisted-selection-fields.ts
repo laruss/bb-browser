@@ -2,7 +2,11 @@ import { atom, useAtom, useStore } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 import { atomFamily } from "jotai-family";
 import { useCallback } from "react";
-import type { PermissionMode, ReasoningLevel, ServiceTier } from "@bb/domain";
+import type {
+  PermissionMode,
+  ReasoningLevel,
+  ServiceTier,
+} from "@patcher/domain";
 import {
   createLocalStorageEnumStorage,
   createLocalStorageSyncStorage,

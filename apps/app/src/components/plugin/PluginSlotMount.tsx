@@ -1,5 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
-import { Pill } from "@bb/shared-ui/pill";
+import { Pill } from "@patcher/shared-ui/pill";
 import {
   PluginContext,
   PluginSlotOwnershipContext,

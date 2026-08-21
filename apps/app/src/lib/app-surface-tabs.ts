@@ -1,5 +1,5 @@
 import { matchPath } from "react-router-dom";
-import type { IconName } from "@bb/shared-ui/icon";
+import type { IconName } from "@patcher/shared-ui/icon";
 import {
   activateBrowserSurfaceTab,
   addBrowserSurfaceTab,

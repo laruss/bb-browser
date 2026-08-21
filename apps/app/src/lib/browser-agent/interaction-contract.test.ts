@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { bbDesktopBrowserInteractionSchema } from "@bb/desktop-contract";
-import { browserInteractionSchema } from "@bb/domain";
+import { bbDesktopBrowserInteractionSchema } from "@patcher/desktop-contract";
+import { browserInteractionSchema } from "@patcher/domain";
 
 /**
- * The interaction union is written twice — once in `@bb/domain` for the wire
- * between the server and this app, once in `@bb/desktop-contract` for the wire
+ * The interaction union is written twice — once in `@patcher/domain` for the wire
+ * between the server and this app, once in `@patcher/desktop-contract` for the wire
  * between this app and the Electron shell. They are separate because only the
  * second one carries version skew, not because they mean different things, and
  * the executor forwards a value parsed by the first straight into the second.

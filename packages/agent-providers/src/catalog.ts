@@ -5,7 +5,7 @@ import type {
   ProviderComposerAction,
   ProviderInfo,
   ReasoningLevel,
-} from "@bb/domain";
+} from "@patcher/domain";
 
 const AGENT_PROVIDER_ID_VALUES = [
   "codex",
@@ -208,7 +208,7 @@ const ACP_SERVER_CAPABILITIES: ProviderServerCapabilities = {
  *      plan, goal, or an explicit empty array.
  *   4. `serverCapabilities` (`ProviderServerCapabilities`, backend-only):
  *      workflows, execution override, host-daemon AI services, reasoning ladder.
- *   5. Its adapter + factory in `@bb/agent-runtime` (`provider-registry.ts`).
+ *   5. Its adapter + factory in `@patcher/agent-runtime` (`provider-registry.ts`).
  * Host-local specifics stay with the daemon: provider CLI executable/install
  * metadata (`provider-cli-health.ts`) and injected-skill root layout
  * (`injected-skills.ts`), both keyed by this `info.id`.

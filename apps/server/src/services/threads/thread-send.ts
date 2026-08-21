@@ -2,8 +2,8 @@ import {
   getEnvironment,
   getThread,
   requireThreadLifecycleEventApplied,
-} from "@bb/db";
-import type { DbConnection, DbTransaction } from "@bb/db";
+} from "@patcher/db";
+import type { DbConnection, DbTransaction } from "@patcher/db";
 import type {
   ClientTurnRequestId,
   Environment,
@@ -12,9 +12,9 @@ import type {
   Thread,
   ThreadTurnInitiator,
   TurnRequestTarget,
-} from "@bb/domain";
-import type { SendMessageRequest } from "@bb/server-contract";
-import { renderTemplate } from "@bb/templates";
+} from "@patcher/domain";
+import type { SendMessageRequest } from "@patcher/server-contract";
+import { renderTemplate } from "@patcher/templates";
 import type {
   AppDeps,
   LoggedPendingInteractionWorkSessionDeps,

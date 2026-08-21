@@ -7,10 +7,10 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from "react";
-import type { BbDesktopBrowserState } from "@bb/desktop-contract";
-import { COARSE_POINTER_HEADER_ICON_BUTTON_CLASS } from "@bb/shared-ui/coarse-pointer-sizing";
-import { Icon } from "@bb/shared-ui/icon";
-import { cn } from "@bb/shared-ui/lib/utils";
+import type { BbDesktopBrowserState } from "@patcher/desktop-contract";
+import { COARSE_POINTER_HEADER_ICON_BUTTON_CLASS } from "@patcher/shared-ui/coarse-pointer-sizing";
+import { Icon } from "@patcher/shared-ui/icon";
+import { cn } from "@patcher/shared-ui/lib/utils";
 import {
   useAppCommandHandler,
   useAppCommandShortcut,

@@ -11,7 +11,7 @@ import {
   getBuiltinModels,
   getBuiltinProviders,
 } from "@earendil-works/pi-ai/providers/all";
-import { getBuiltInAgentProviderInfo } from "@bb/agent-providers";
+import { getBuiltInAgentProviderInfo } from "@patcher/agent-providers";
 import { z } from "zod";
 import type {
   ThreadEvent,
@@ -19,13 +19,13 @@ import type {
   ThreadEventItem,
   ThreadEventTokenUsage,
   ThreadEventTokenUsageBreakdown,
-} from "@bb/domain";
+} from "@patcher/domain";
 import {
   isStandaloneBuiltinCompactCommand,
   threadScope,
   toPositiveNumber,
   turnScope,
-} from "@bb/domain";
+} from "@patcher/domain";
 import { decodeNormalizedProviderToolCallRequest } from "../shared/provider-tool-call-contract.js";
 import { resolveBridgeProcessArgs } from "../shared/bridge-path.js";
 import { classifySessionExecutionSettingsChange } from "../execution-options.js";

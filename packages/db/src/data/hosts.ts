@@ -1,5 +1,5 @@
 import { and, eq, inArray, isNull } from "drizzle-orm";
-import type { HostChangeKind, HostType, PermissionMode } from "@bb/domain";
+import type { HostChangeKind, HostType, PermissionMode } from "@patcher/domain";
 import type { DbConnection, DbTransaction } from "../connection.js";
 import type { DbNotifier } from "../notifier.js";
 import { hosts } from "../schema.js";

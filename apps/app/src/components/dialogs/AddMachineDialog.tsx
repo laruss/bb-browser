@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import type { Host } from "@bb/domain";
-import { Button } from "@bb/shared-ui/button";
+import type { Host } from "@patcher/domain";
+import { Button } from "@patcher/shared-ui/button";
 import {
   Dialog,
   DialogContent,
@@ -9,8 +9,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@bb/shared-ui/dialog";
-import { Icon } from "@bb/shared-ui/icon";
+} from "@patcher/shared-ui/dialog";
+import { Icon } from "@patcher/shared-ui/icon";
 import { MachineStatusDot } from "@/components/machines/MachineStatusDot";
 import { useHosts } from "@/hooks/queries/host-queries";
 import { sdk } from "@/lib/sdk";

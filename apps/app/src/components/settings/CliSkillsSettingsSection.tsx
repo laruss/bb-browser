@@ -1,11 +1,11 @@
 import { useState } from "react";
-import type { Host } from "@bb/domain";
+import type { Host } from "@patcher/domain";
 import type {
   CliSkillMachineStatus,
   SystemCliSkillsStatusResponse,
   SystemInstallCliSkillsResponse,
-} from "@bb/server-contract";
-import { Button } from "@bb/shared-ui/button";
+} from "@patcher/server-contract";
+import { Button } from "@patcher/shared-ui/button";
 import {
   SettingsSection,
   SettingsWithControl,

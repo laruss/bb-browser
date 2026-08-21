@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { PLUGIN_PERMISSIONS } from "@bb/domain";
+import { PLUGIN_PERMISSIONS } from "@patcher/domain";
 import { PLUGIN_CALLBACKS } from "../../../src/services/plugins/plugin-callbacks.js";
 import {
   callbacksProducedByRegistrations,

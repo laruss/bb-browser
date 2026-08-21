@@ -1,9 +1,9 @@
 import {
   HOST_DAEMON_PROTOCOL_VERSION,
   createHostDaemonClient,
-} from "@bb/host-daemon-contract";
+} from "@patcher/host-daemon-contract";
 import { describe, expect, it } from "vitest";
-import { getHost, upsertHost } from "@bb/db";
+import { getHost, upsertHost } from "@patcher/db";
 import {
   createTestDaemonHostKey,
   startTestServer,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { bbDesktopBrowserObservationSchema } from "@bb/desktop-contract";
-import { browserObservationSchema } from "@bb/domain";
+import { bbDesktopBrowserObservationSchema } from "@patcher/desktop-contract";
+import { browserObservationSchema } from "@patcher/domain";
 
 /**
  * The observation union is written twice for the same reason the interaction

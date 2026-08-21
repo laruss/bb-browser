@@ -3,7 +3,7 @@ import {
   threadTabsSchema,
   type ThreadTab,
   type ThreadTabsResponse,
-} from "@bb/server-contract";
+} from "@patcher/server-contract";
 import { appToast } from "@/components/ui/app-toast";
 import {
   getCachedThreadTabs,

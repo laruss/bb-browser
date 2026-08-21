@@ -10,18 +10,18 @@ import {
   useState,
 } from "react";
 import { useAtomValue } from "jotai";
-import type { DiffFileEntry } from "@bb/server-contract";
-import { Icon } from "@bb/shared-ui/icon";
-import { EmptyStatePanel } from "@bb/shared-ui/empty-state";
+import type { DiffFileEntry } from "@patcher/server-contract";
+import { Icon } from "@patcher/shared-ui/icon";
+import { EmptyStatePanel } from "@patcher/shared-ui/empty-state";
 import { Panel, PanelResizeHandle } from "react-resizable-panels";
-import { Button } from "@bb/shared-ui/button";
+import { Button } from "@patcher/shared-ui/button";
 import { HEADER_PANE_ACTION_ICON_BUTTON_CLASS } from "@/components/layout/AppPageHeader";
 import { CHROME_SUBTLE_ICON_BUTTON_FOREGROUND_CLASS } from "@/components/ui/chromeStyleTokens";
 import {
   COARSE_POINTER_COMPACT_ICON_BUTTON_CLASS,
   COARSE_POINTER_HEADER_ICON_BUTTON_CLASS,
-} from "@bb/shared-ui/coarse-pointer-sizing";
-import { cn } from "@bb/shared-ui/lib/utils";
+} from "@patcher/shared-ui/coarse-pointer-sizing";
+import { cn } from "@patcher/shared-ui/lib/utils";
 import {
   PANEL_COLLAPSE_TRANSITION_CLASS,
   PANEL_RESIZE_HIT_AREA_MARGINS,
@@ -79,7 +79,11 @@ import { useAppCommandShortcut } from "@/components/commands/AppCommandProvider"
 import { AppCommandShortcutHint } from "@/components/commands/AppCommandShortcutHint";
 import type { AppShortcutPresentation } from "@/lib/app-keybindings";
 import { TabPill } from "@/components/ui/tab-pill";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@bb/shared-ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@patcher/shared-ui/tooltip";
 import { dispatchBrowserViewBoundsSync } from "@/lib/browser-view-bounds-sync";
 export type {
   GitDiffDisplayMode,

@@ -7,9 +7,9 @@ import {
   getThread,
   migrate,
   type DbConnection,
-} from "@bb/db";
-import { PERSONAL_PROJECT_ID } from "@bb/domain";
-import type { Logger } from "@bb/logger";
+} from "@patcher/db";
+import { PERSONAL_PROJECT_ID } from "@patcher/domain";
+import type { Logger } from "@patcher/logger";
 import {
   createPluginService,
   type PluginService,

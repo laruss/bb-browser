@@ -1,15 +1,15 @@
 import { useCallback, useMemo } from "react";
 import { useStore } from "jotai";
 import { useNavigate } from "react-router-dom";
-import { PERSONAL_PROJECT_ID, type ThreadListEntry } from "@bb/domain";
-import { useIsCompactViewport } from "@bb/shared-ui/hooks/use-compact-viewport";
+import { PERSONAL_PROJECT_ID, type ThreadListEntry } from "@patcher/domain";
+import { useIsCompactViewport } from "@patcher/shared-ui/hooks/use-compact-viewport";
 import type {
   PluginSidebarProject,
   PluginSidebarThread,
   PluginSidebarThreadActions,
   PluginSidebarThreadPullRequestState,
   PluginSidebarThreadsState,
-} from "@bb/plugin-sdk";
+} from "@patcher/plugin-sdk";
 import { useThreadActions } from "@/components/thread/ThreadActionsProvider";
 import {
   getEnvironmentPullRequestFromResponse,

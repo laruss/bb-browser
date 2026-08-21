@@ -3,8 +3,8 @@ import { useIsSidebarShowing } from "@/components/ui/sidebar.js";
 import {
   COARSE_POINTER_HEADER_ICON_BUTTON_CLASS,
   COARSE_POINTER_HEADER_REDUCED_GLYPH_ICON_BUTTON_CLASS,
-} from "@bb/shared-ui/coarse-pointer-sizing";
-import { useIsCompactViewport } from "@bb/shared-ui/hooks/use-compact-viewport";
+} from "@patcher/shared-ui/coarse-pointer-sizing";
+import { useIsCompactViewport } from "@patcher/shared-ui/hooks/use-compact-viewport";
 import {
   CHROME_ROW_CLASS,
   CHROME_ROW_HEIGHT_CLASS,
@@ -19,7 +19,7 @@ import {
 } from "@/lib/bb-desktop";
 import { useDesktopWindowState } from "@/hooks/useDesktopWindowState";
 import { useIsLeadingPanelShowing } from "./PluginLeadingPanel";
-import { cn } from "@bb/shared-ui/lib/utils";
+import { cn } from "@patcher/shared-ui/lib/utils";
 
 /**
  * Shared sizing for icon-only header action buttons (sidebar trigger, kebab

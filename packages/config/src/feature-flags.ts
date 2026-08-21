@@ -1,4 +1,4 @@
-import type { FeatureFlags } from "@bb/domain";
+import type { FeatureFlags } from "@patcher/domain";
 import {
   readEnvVarWithDefault,
   resolveEnvLoader,

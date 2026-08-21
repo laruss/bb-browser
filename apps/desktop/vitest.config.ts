@@ -11,6 +11,6 @@ export default defineWorkspaceTestConfig({
     // `ready`; this package contends with itself badly enough that the wait
     // fails even when nothing else is running. See SUBPROCESS_HEAVY_MAX_WORKERS.
     maxWorkers: SUBPROCESS_HEAVY_MAX_WORKERS,
-    name: "@bb/desktop",
+    name: "@patcher/desktop",
   },
 });

@@ -2,7 +2,7 @@ import type {
   BbDesktopApi,
   BbDesktopBrowserApi,
   BbDesktopWindowState,
-} from "@bb/desktop-contract";
+} from "@patcher/desktop-contract";
 
 // The window's title-bar row has pinned chrome at both ends, and the ends are
 // independent because they have different owners. These are fixed px geometry

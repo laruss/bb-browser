@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useBbNavigate, useRpc } from "@bb/plugin-sdk/app";
+import { useBbNavigate, useRpc } from "@patcher/plugin-sdk/app";
 import type { DelegationRpcContract } from "../../delegate/contract.js";
 import type {
   Preset,
@@ -17,16 +17,16 @@ import {
   savePresetDraft,
 } from "../manage/preset-dialog.js";
 import { useTasksRpc } from "../../shell/data.js";
-import { Button } from "@bb/shared-ui/button";
+import { Button } from "@patcher/shared-ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
-} from "@bb/shared-ui/dropdown-menu";
-import { Icon } from "@bb/shared-ui/icon";
-import { cn } from "@bb/shared-ui/lib/utils";
+} from "@patcher/shared-ui/dropdown-menu";
+import { Icon } from "@patcher/shared-ui/icon";
+import { cn } from "@patcher/shared-ui/lib/utils";
 
 /**
  * PR pill on a thread card: a real link to GitHub when the thread's

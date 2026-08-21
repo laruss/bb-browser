@@ -8,9 +8,9 @@ import {
   createAgentRuntimeWithAdapters,
   createFakeAdapter,
   type ProviderAdapterFactory,
-} from "@bb/agent-runtime/test";
-import type { DbConnection } from "@bb/db";
-import { defaultFeatureFlags } from "@bb/domain";
+} from "@patcher/agent-runtime/test";
+import type { DbConnection } from "@patcher/db";
+import { defaultFeatureFlags } from "@patcher/domain";
 import {
   acquireDaemonLock,
   createHostDaemonApp,
@@ -18,8 +18,8 @@ import {
   persistHostId,
   type HostDaemon,
   type HostDaemonApp,
-} from "@bb/host-daemon/test";
-import { createHostDaemonClient } from "@bb/host-daemon-contract";
+} from "@patcher/host-daemon/test";
+import { createHostDaemonClient } from "@patcher/host-daemon-contract";
 import { initDb } from "../../../apps/server/src/db.js";
 import { createLifecycleDedupers } from "../../../apps/server/src/lifecycle-dedupers.js";
 import { createApp } from "../../../apps/server/src/server.js";
@@ -40,7 +40,7 @@ import type {
 } from "../../../apps/server/src/types.js";
 import { NotificationHub } from "../../../apps/server/src/ws/hub.js";
 import { WatchInterestCoordinator } from "../../../apps/server/src/ws/watch-interests.js";
-import { createPublicApiClient } from "@bb/server-contract";
+import { createPublicApiClient } from "@patcher/server-contract";
 import { waitForHostConnected } from "./assertions.js";
 import { createIntegrationFetch } from "./fetch.js";
 import { removePathWithRetry } from "./remove-path.js";

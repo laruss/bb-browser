@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Icon, type IconName } from "@bb/shared-ui/icon";
+import { Icon, type IconName } from "@patcher/shared-ui/icon";
 import bbLogoUrl from "../../../../assets/bb-logo.svg";
 
 interface RootComposeEmptyWelcomeProps {

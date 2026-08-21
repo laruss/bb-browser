@@ -20,7 +20,7 @@ export type {
 } from "./rpc-contract.js";
 
 /**
- * `@bb/plugin-sdk/app` — typed facade over the BB app's plugin runtime.
+ * `@patcher/plugin-sdk/app` — typed facade over the BB app's plugin runtime.
  *
  * This module's runtime is never bundled into plugins: `bb plugin build`
  * swaps the specifier for a shim reading
@@ -32,7 +32,7 @@ export type {
  *
  * Hooks-only surface (the host-provided UI kit was removed 2026-07-03,
  * plugin design §5.5): components are vendored shadcn-style source from the
- * BB registry (`npx shadcn add @bb/<name>`); `toast` comes from
+ * BB registry (`npx shadcn add @patcher/<name>`); `toast` comes from
  * `import { toast } from "sonner"` (runtime-shimmed to the host toaster).
  */
 

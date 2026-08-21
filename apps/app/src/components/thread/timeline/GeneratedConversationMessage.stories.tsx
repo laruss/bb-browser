@@ -2,9 +2,9 @@ import type {
   PromptTextMention,
   SystemMessageKind,
   SystemMessageSubject,
-} from "@bb/domain";
-import type { TimelineTitleLink } from "@bb/thread-view";
-import type { TimelineRow } from "@bb/server-contract";
+} from "@patcher/domain";
+import type { TimelineTitleLink } from "@patcher/thread-view";
+import type { TimelineRow } from "@patcher/server-contract";
 import type { ReactNode } from "react";
 import { ConversationMessageContent } from "@/components/thread/timeline/ConversationMessageContent";
 import { ThreadTimelineRows } from "@/components/thread/timeline";

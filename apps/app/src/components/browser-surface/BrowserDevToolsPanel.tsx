@@ -2,9 +2,9 @@ import { useCallback, useEffect, useRef } from "react";
 import {
   clampBbDesktopBrowserViewBounds,
   type BbDesktopBrowserViewBounds,
-} from "@bb/desktop-contract";
-import { Icon } from "@bb/shared-ui/icon";
-import { cn } from "@bb/shared-ui/lib/utils";
+} from "@patcher/desktop-contract";
+import { Icon } from "@patcher/shared-ui/icon";
+import { cn } from "@patcher/shared-ui/lib/utils";
 import { CHROME_SUBTLE_ICON_BUTTON_FOREGROUND_CLASS } from "@/components/ui/chromeStyleTokens";
 import { getDesktopBrowserApi } from "@/lib/bb-desktop";
 import { BROWSER_VIEW_BOUNDS_SYNC_EVENT } from "@/lib/browser-view-bounds-sync";

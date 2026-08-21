@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState, type MouseEvent } from "react";
-import { Icon, type IconName } from "@bb/shared-ui/icon";
-import { cn } from "@bb/shared-ui/lib/utils";
+import { Icon, type IconName } from "@patcher/shared-ui/icon";
+import { cn } from "@patcher/shared-ui/lib/utils";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@bb/shared-ui/tooltip";
+} from "@patcher/shared-ui/tooltip";
 import { useAtomValue } from "jotai";
-import { matchesBrowserUrlPattern } from "@bb/domain/browser-url-pattern";
+import { matchesBrowserUrlPattern } from "@patcher/domain/browser-url-pattern";
 import { PluginSlotMount } from "@/components/plugin/PluginSlotMount";
 import {
   usePluginSlots,

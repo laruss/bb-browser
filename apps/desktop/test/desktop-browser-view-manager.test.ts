@@ -8,7 +8,7 @@ import {
   type BbDesktopBrowserDownload,
   type BbDesktopBrowserPageScriptCall,
   type BbDesktopBrowserViewBounds,
-} from "@bb/desktop-contract";
+} from "@patcher/desktop-contract";
 import { BB_DESKTOP_BROWSER_CONTENT_SIZE_SCRIPT } from "../src/desktop-browser-capture.js";
 import {
   BB_DESKTOP_BROWSER_DOWNLOAD_CHANNEL,

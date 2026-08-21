@@ -1,5 +1,5 @@
 import { BrowserWindow, ipcMain } from "electron";
-import { escapeHtmlText } from "@bb/domain";
+import { escapeHtmlText } from "@patcher/domain";
 import {
   BB_DESKTOP_SERVER_URL_DIALOG_CANCEL_CHANNEL,
   BB_DESKTOP_SERVER_URL_DIALOG_SUBMIT_CHANNEL,

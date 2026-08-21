@@ -4,7 +4,7 @@ import type { Nodes, Parent, PhrasingContent, Text } from "mdast";
 // plain `text` node can carry the custom element instructions below.
 import type {} from "mdast-util-to-hast";
 import { visit } from "unist-util-visit";
-import type { PromptTextMention } from "@bb/domain";
+import type { PromptTextMention } from "@patcher/domain";
 import {
   normalizePromptTextMentions,
   PromptMentionPill,

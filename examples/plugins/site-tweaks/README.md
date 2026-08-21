@@ -90,5 +90,5 @@ bb plugin dev            # rebuild + reload on save
 ```
 
 `bun run test` in this directory exercises the backend against
-`@bb/plugin-sdk/testing`, including the refusal an install would make if `matches`
+`@patcher/plugin-sdk/testing`, including the refusal an install would make if `matches`
 named a site the manifest does not.

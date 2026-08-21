@@ -15,7 +15,7 @@
  * failure this repo keeps rediscovering.
  */
 
-import type { JsonValue } from "@bb/domain";
+import type { JsonValue } from "@patcher/domain";
 import type {
   PluginNotifyHandler,
   PluginRequestHandler,

@@ -3,7 +3,7 @@ import type {
   BbPluginApi,
   PluginCliContext,
   PluginCliResult,
-} from "@bb/plugin-sdk";
+} from "@patcher/plugin-sdk";
 import { z } from "zod";
 
 import {

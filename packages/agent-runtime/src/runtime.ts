@@ -3,14 +3,14 @@ import { z } from "zod";
 import {
   normalizeProviderThreadNameEvent,
   toProviderExternalThreadName,
-} from "@bb/domain";
+} from "@patcher/domain";
 import type {
   DynamicTool,
   InstructionMode,
   ProviderErrorCategory,
   ThreadEvent,
-} from "@bb/domain";
-import type { HostDaemonAcpLaunchSpec } from "@bb/host-daemon-contract";
+} from "@patcher/domain";
+import type { HostDaemonAcpLaunchSpec } from "@patcher/host-daemon-contract";
 import type {
   AdapterCommand,
   ProviderAdapter,

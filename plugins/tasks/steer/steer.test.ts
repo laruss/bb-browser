@@ -2,7 +2,7 @@ import {
   createFakePluginHost,
   pluginPermissionsFromManifest,
   makeThreadResponse,
-} from "@bb/plugin-sdk/testing";
+} from "@patcher/plugin-sdk/testing";
 import { describe, expect, it } from "vitest";
 import { createTasksStore } from "../db";
 import { deliverCommentToLatestAgent } from ".";

@@ -1,7 +1,7 @@
 import {
   createFakePluginHost,
   pluginPermissionsFromManifest,
-} from "@bb/plugin-sdk/testing";
+} from "@patcher/plugin-sdk/testing";
 import { readdirSync, readFileSync } from "node:fs";
 import { extname, relative, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";

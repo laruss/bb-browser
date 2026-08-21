@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import type { ThreadListEntry } from "@bb/domain";
+import type { ThreadListEntry } from "@patcher/domain";
 import { cleanup, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it } from "vitest";

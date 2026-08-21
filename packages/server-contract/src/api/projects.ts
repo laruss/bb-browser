@@ -10,7 +10,7 @@ import {
   projectSourceSchema,
   promptHistoryEntrySchema,
   threadListEntrySchema,
-} from "@bb/domain";
+} from "@patcher/domain";
 import {
   branchListQuerySchema,
   isCommaSeparatedIncludeQueryValue,

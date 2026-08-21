@@ -20,20 +20,20 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Icon, type IconName } from "@bb/shared-ui/icon";
+import { Icon, type IconName } from "@patcher/shared-ui/icon";
 import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuSeparator,
   ContextMenuTrigger,
-} from "@bb/shared-ui/context-menu";
-import { cn } from "@bb/shared-ui/lib/utils";
+} from "@patcher/shared-ui/context-menu";
+import { cn } from "@patcher/shared-ui/lib/utils";
 import { useDragClickSuppression } from "@/components/ui/use-drag-click-suppression";
-import type { PluginBrowserTabStatus } from "@bb/plugin-sdk";
+import type { PluginBrowserTabStatus } from "@patcher/plugin-sdk";
 import { pluginIconName } from "@/components/plugin/PluginIcon";
 import { useDesktopWindowState } from "@/hooks/useDesktopWindowState";
-import { useIsCompactViewport } from "@bb/shared-ui/hooks/use-compact-viewport";
+import { useIsCompactViewport } from "@patcher/shared-ui/hooks/use-compact-viewport";
 import { useOptionalIsSidebarShowing } from "@/components/ui/sidebar.js";
 import {
   CHROME_ROW_HEIGHT_CLASS,

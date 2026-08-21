@@ -8,7 +8,7 @@ import type {
   HostDaemonRpcCommand,
   HostDaemonRpcResultForCommand,
   HostDaemonCommandEnvironmentLane,
-} from "@bb/host-daemon-contract";
+} from "@patcher/host-daemon-contract";
 import { performance } from "node:perf_hooks";
 import {
   hostDaemonEnvironmentLaneForCommand,
@@ -17,7 +17,7 @@ import {
   parseHostDaemonCommandResultForCommand,
   parseHostDaemonOnlineRpcResultForCommand,
   shouldFlushEventsBeforeReportingCommandResult,
-} from "@bb/host-daemon-contract";
+} from "@patcher/host-daemon-contract";
 import {
   dispatchCommand,
   dispatchOnlineRpcCommand,

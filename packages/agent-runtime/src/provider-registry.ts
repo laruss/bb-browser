@@ -10,8 +10,8 @@ import {
   isAcpProviderId,
   isAgentProviderId,
   listBuiltInAgentProviderInfos,
-} from "@bb/agent-providers";
-import type { ProviderInfo } from "@bb/domain";
+} from "@patcher/agent-providers";
+import type { ProviderInfo } from "@patcher/domain";
 import { createAcpProviderAdapter } from "./acp/adapter.js";
 import {
   acpProfileFromLaunchSpec,

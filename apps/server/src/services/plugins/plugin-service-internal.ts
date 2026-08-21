@@ -1,12 +1,12 @@
-import type { DbConnection } from "@bb/db";
-import type { DynamicTool, Thread } from "@bb/domain";
+import type { DbConnection } from "@patcher/db";
+import type { DynamicTool, Thread } from "@patcher/domain";
 import {
   pluginUpdateCheckEntrySchema,
   type InstalledPlugin,
   type PluginApplyUpdateResult,
   type PluginRuntimeStatus,
   type PluginSourceDetail,
-} from "@bb/server-contract";
+} from "@patcher/server-contract";
 import type { ServerLogger } from "../../types.js";
 import type { NotificationHub } from "../../ws/hub.js";
 import type { BundledPluginRegistration } from "./builtin-registry.js";
@@ -23,7 +23,7 @@ export type {
   PluginRuntimeStatus,
   PluginServiceEntry,
   PluginUpdateCheckEntry,
-} from "@bb/server-contract";
+} from "@patcher/server-contract";
 
 /** Live state of one registered background service. */
 export type PluginServiceState = "running" | "backoff" | "stopped";

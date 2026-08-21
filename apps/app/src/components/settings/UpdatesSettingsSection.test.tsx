@@ -10,9 +10,9 @@ import {
 } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Host } from "@bb/domain";
-import type { BbDesktopApi, BbDesktopInfo } from "@bb/desktop-contract";
-import { HOST_DAEMON_PROTOCOL_VERSION } from "@bb/host-daemon-contract";
+import type { Host } from "@patcher/domain";
+import type { BbDesktopApi, BbDesktopInfo } from "@patcher/desktop-contract";
+import { HOST_DAEMON_PROTOCOL_VERSION } from "@patcher/host-daemon-contract";
 import type {
   ProviderCliIssue,
   ProviderCliActionableIssue,

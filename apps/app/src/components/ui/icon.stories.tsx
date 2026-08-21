@@ -1,11 +1,11 @@
-import { Icon, ICON_NAMES, type IconName } from "@bb/shared-ui/icon";
-import { Button } from "@bb/shared-ui/button";
+import { Icon, ICON_NAMES, type IconName } from "@patcher/shared-ui/icon";
+import { Button } from "@patcher/shared-ui/button";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@bb/shared-ui/tooltip";
+} from "@patcher/shared-ui/tooltip";
 import { StoryCard, StoryRow } from "../../../.ladle/story-card";
 
 export default {

@@ -1,11 +1,11 @@
 import { eq } from "drizzle-orm";
-import { events, getThread } from "@bb/db";
-import { threadScope, turnScope } from "@bb/domain";
+import { events, getThread } from "@patcher/db";
+import { threadScope, turnScope } from "@patcher/domain";
 import {
   groupHostDaemonEvents,
   hostDaemonEventBatchResponseSchema,
   type HostDaemonEventEnvelope,
-} from "@bb/host-daemon-contract";
+} from "@patcher/host-daemon-contract";
 import { describe, expect, it } from "vitest";
 import { buildThreadTimeline } from "../../src/services/threads/timeline.js";
 import {

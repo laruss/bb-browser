@@ -10,7 +10,7 @@
 // It costs no permission, unlike the page style in server.ts: this is bb reacting
 // to its own address bar, not code reaching into a page.
 import { useCallback, useEffect, useState } from "react";
-import { definePluginApp, useRealtime, useRpc } from "@bb/plugin-sdk/app";
+import { definePluginApp, useRealtime, useRpc } from "@patcher/plugin-sdk/app";
 import type { rpcContract } from "./server";
 import { repoFromUrl } from "./server";
 

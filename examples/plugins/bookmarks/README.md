@@ -70,7 +70,7 @@ still reach and deliberately not enough for one you cannot.
 bun run --cwd examples/plugins/bookmarks test
 ```
 
-Against `@bb/plugin-sdk/testing` — no bb server, no browser, but a real SQLite
+Against `@patcher/plugin-sdk/testing` — no bb server, no browser, but a real SQLite
 file in a temp directory, so the store is exercised rather than mocked. The
 end-to-end pass over the three routes the app actually calls lives in the server
 suite, as `hero plugin: bookmarks` in

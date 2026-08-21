@@ -97,7 +97,7 @@ serviceTier?, executionInputSources, environment, input }`. Forward it
 
   ```tsx
   // app.tsx
-  import { experimental_NewThreadComposer as NewThreadComposer } from "@bb/plugin-sdk/app";
+  import { experimental_NewThreadComposer as NewThreadComposer } from "@patcher/plugin-sdk/app";
 
   <NewThreadComposer
     defaultProjectId={projectId}
@@ -200,20 +200,20 @@ banners?, richText? })`. Omitted `scopes` means all thread, queued-message,
 ## UI components
 
 **Vendored shadcn source you own** (the shadcn model; the
-old host-provided component kit is REMOVED — `@bb/plugin-sdk/app` exports
+old host-provided component kit is REMOVED — `@patcher/plugin-sdk/app` exports
 only `definePluginApp` + the hooks):
 
-- Builtin plugins in this repo import shared UI from `@bb/shared-ui` (the
+- Builtin plugins in this repo import shared UI from `@patcher/shared-ui` (the
   single source of truth the app also consumes and the registry generates
   from); external and example plugins still vendor source through the registry.
 - `bb plugin new --app` pre-vendors button, card, input, dialog (plus their
   support files: `lib/utils`, `lib/portal-scope`, icon, responsive-overlay,
   drawer, hooks) into `components/ui/` etc., and writes a `components.json`
-  whose `@bb` registry is pinned to the release tag matching the running
+  whose `@patcher` registry is pinned to the release tag matching the running
   BB. Import via the `@/*` alias: `import { Button } from
 "@/components/ui/button"` (tsconfig maps it; `bb plugin build` reads it).
-- Add more with stock shadcn tooling: `npx shadcn add @bb/select
-@bb/table` — the BB registry carries the full stock set (~44 items:
+- Add more with stock shadcn tooling: `npx shadcn add @patcher/select
+@patcher/table` — the BB registry carries the full stock set (~44 items:
   accordion, alert-dialog, calendar, chart, command, form, sheet, table,
   …), generated from the BB app's own component source, so vendored code is
   version-matched to your BB by construction. Edit the copies freely; they

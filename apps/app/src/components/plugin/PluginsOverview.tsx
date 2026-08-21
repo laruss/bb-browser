@@ -4,7 +4,7 @@ import {
   ResourcePagination,
   useResourcePagination,
   useResourceViewportPageSize,
-} from "@bb/shared-ui/resource-pagination";
+} from "@patcher/shared-ui/resource-pagination";
 import {
   ResourceCollectionPage,
   ResourceCollectionViewport,
@@ -13,7 +13,7 @@ import {
   ResourceSortMenu,
   ResourceToolbar,
   type ResourceCollectionMode,
-} from "@bb/shared-ui/resource-list";
+} from "@patcher/shared-ui/resource-list";
 import {
   CREATE_PLUGIN_PROMPT,
   CreateWithTemplatesButton,

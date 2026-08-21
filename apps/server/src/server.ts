@@ -4,8 +4,8 @@ import { performance } from "node:perf_hooks";
 import { extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Hono } from "hono";
-import { terminalWebSocketQuerySchema } from "@bb/server-contract";
-import { permissionsForApiPath } from "@bb/domain";
+import { terminalWebSocketQuerySchema } from "@patcher/server-contract";
+import { permissionsForApiPath } from "@patcher/domain";
 import {
   PLUGIN_API_ID_HEADER,
   PLUGIN_API_KEY_HEADER,
@@ -15,7 +15,7 @@ import { cors } from "hono/cors";
 import {
   buildLocalAppOrigins,
   type BuildLocalAppOriginsArgs,
-} from "@bb/config/local-app-origins";
+} from "@patcher/config/local-app-origins";
 import type { AppDeps, ServerAppDeps } from "./types.js";
 import { ApiError, errorToResponse } from "./errors.js";
 import { registerEnvironmentRoutes } from "./routes/environments.js";
@@ -74,7 +74,7 @@ import {
   createBbAppArtifactService,
   type BbAppArtifactService,
 } from "./services/install/bb-app-artifact.js";
-import { HOST_DAEMON_PROTOCOL_VERSION } from "@bb/host-daemon-contract";
+import { HOST_DAEMON_PROTOCOL_VERSION } from "@patcher/host-daemon-contract";
 import {
   createPluginCatalogService,
   type PluginCatalogService,

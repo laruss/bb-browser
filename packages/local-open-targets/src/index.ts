@@ -9,8 +9,8 @@ import {
   type WorkspaceOpenTarget,
   type WorkspaceOpenTargetIcon,
   type WorkspaceOpenTargetId,
-} from "@bb/host-daemon-contract";
-import { sanitizeInheritedChildProcessEnv } from "@bb/process-utils";
+} from "@patcher/host-daemon-contract";
+import { sanitizeInheritedChildProcessEnv } from "@patcher/process-utils";
 import {
   BASIC_FILE_OPEN_CAPABILITIES,
   FILE_MANAGER_OPEN_CAPABILITIES,

@@ -3,7 +3,7 @@ import type {
   BbDesktopBrowserApi,
   BbDesktopBrowserState,
   BbDesktopBrowserStateHandler,
-} from "@bb/desktop-contract";
+} from "@patcher/desktop-contract";
 import {
   getBrowserLiveState,
   resetBrowserLiveState,

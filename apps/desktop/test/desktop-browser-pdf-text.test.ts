@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { BB_DESKTOP_BROWSER_MAX_PAGE_TEXT_LENGTH } from "@bb/desktop-contract";
+import { BB_DESKTOP_BROWSER_MAX_PAGE_TEXT_LENGTH } from "@patcher/desktop-contract";
 import {
   BB_DESKTOP_BROWSER_MAX_PDF_BYTES,
   browserPdfFailureReason,

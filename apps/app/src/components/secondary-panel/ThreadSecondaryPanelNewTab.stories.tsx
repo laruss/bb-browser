@@ -4,7 +4,7 @@ import type {
   ThreadStoragePathListResponse,
   WorkspacePathEntry,
   WorkspacePathListResponse,
-} from "@bb/server-contract";
+} from "@patcher/server-contract";
 import { StoryCard, StoryRow } from "../../../.ladle/story-card";
 import { WithDesktopBrowser } from "../../../.ladle/story-desktop";
 import { createAppQueryClient } from "@/lib/query-client";
@@ -16,7 +16,7 @@ import { ThreadSecondaryPanel } from "./ThreadSecondaryPanel";
 import type { SecondaryPanelFileTab } from "./ThreadSecondaryPanel";
 import { NewTabPage } from "./NewTabPage";
 import type { FileSearchSelection } from "./useThreadFileTabs";
-import { Icon } from "@bb/shared-ui/icon";
+import { Icon } from "@patcher/shared-ui/icon";
 import {
   getThreadRecentItemsStorageKey,
   type ThreadRecentItem,

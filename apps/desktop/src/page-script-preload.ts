@@ -30,7 +30,7 @@ import type {
   BbDesktopPageScriptBootstrap,
   BbDesktopPageScriptRpcAnswer,
   BbDesktopPageScriptWorld,
-} from "@bb/desktop-contract";
+} from "@patcher/desktop-contract";
 import {
   BB_DESKTOP_PAGE_SCRIPT_BOOTSTRAP_CHANNEL,
   BB_DESKTOP_PAGE_SCRIPT_RPC_CHANNEL,

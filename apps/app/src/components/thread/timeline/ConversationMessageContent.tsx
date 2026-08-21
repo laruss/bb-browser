@@ -3,10 +3,10 @@ import type {
   TimelineConversationAttachments,
   TimelineRowBase,
   TimelineUserConversationRow,
-} from "@bb/server-contract";
-import type { PromptTextMention, ThreadChildOrigin } from "@bb/domain";
-import { fileNameFromPath } from "@bb/thread-view";
-import { cn } from "@bb/shared-ui/lib/utils";
+} from "@patcher/server-contract";
+import type { PromptTextMention, ThreadChildOrigin } from "@patcher/domain";
+import { fileNameFromPath } from "@patcher/thread-view";
+import { cn } from "@patcher/shared-ui/lib/utils";
 import {
   MarkdownPreview,
   type MarkdownThreadMentions,

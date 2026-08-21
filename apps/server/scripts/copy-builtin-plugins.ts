@@ -5,8 +5,11 @@ import {
   buildPluginApp,
   buildPluginServer,
   resolvePluginBuildToolchain,
-} from "@bb/plugin-build";
-import { isPluginOwnedIconPath, pluginPackageJsonSchema } from "@bb/domain";
+} from "@patcher/plugin-build";
+import {
+  isPluginOwnedIconPath,
+  pluginPackageJsonSchema,
+} from "@patcher/domain";
 import { z } from "zod";
 import {
   BUILTIN_PLUGINS_DIRECTORY_NAME,

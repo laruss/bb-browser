@@ -13,13 +13,13 @@ import type {
   RuntimeThreadExecutionOptions,
   ServiceTier,
   ThreadEvent,
-} from "@bb/domain";
+} from "@patcher/domain";
 import type {
   ProviderInboundRequest,
   ProviderRuntimeEvent,
 } from "./runtime-json-rpc.js";
 import type { AgentRuntimeSkillRoot } from "./types.js";
-import type { HostDaemonAcpLaunchSpec } from "@bb/host-daemon-contract";
+import type { HostDaemonAcpLaunchSpec } from "@patcher/host-daemon-contract";
 
 export interface ProviderTranslationContext {
   threadId?: string;

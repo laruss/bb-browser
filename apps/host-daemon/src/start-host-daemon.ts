@@ -3,15 +3,19 @@ import { dirname } from "node:path";
 import {
   loadHostDaemonStartConfig,
   type HostDaemonConnectionConfig,
-} from "@bb/config/host-daemon";
-import type { HostType, ToolCallRequest, ToolCallResponse } from "@bb/domain";
+} from "@patcher/config/host-daemon";
+import type {
+  HostType,
+  ToolCallRequest,
+  ToolCallResponse,
+} from "@patcher/domain";
 import {
   createHostWatcher,
   createSubprocessParcelWatcherBackend,
   setParcelWatcherBackend,
   type HostWatcher,
-} from "@bb/host-watcher";
-import { createLogger } from "@bb/logger";
+} from "@patcher/host-watcher";
+import { createLogger } from "@patcher/logger";
 import { type CreateHostDaemonAppOptions, createHostDaemonApp } from "./app.js";
 import {
   readHostAuthState,

@@ -1,6 +1,9 @@
-import type { DiscoveredSkill, SkillRootKind } from "@bb/host-daemon-contract";
+import type {
+  DiscoveredSkill,
+  SkillRootKind,
+} from "@patcher/host-daemon-contract";
 import { createHash } from "node:crypto";
-import type { SkillProvider } from "@bb/server-contract";
+import type { SkillProvider } from "@patcher/server-contract";
 import { describe, expect, it } from "vitest";
 import {
   assembleSkillList,

@@ -1,9 +1,9 @@
 import { useMemo } from "react";
 import { useQueries } from "@tanstack/react-query";
-import type { Host } from "@bb/domain";
-import type { ProviderCliStatusResponse } from "@bb/host-daemon-contract";
-import type { SystemVersionResponse } from "@bb/server-contract";
-import type { BbDesktopInfo } from "@bb/desktop-contract";
+import type { Host } from "@patcher/domain";
+import type { ProviderCliStatusResponse } from "@patcher/host-daemon-contract";
+import type { SystemVersionResponse } from "@patcher/server-contract";
+import type { BbDesktopInfo } from "@patcher/desktop-contract";
 import {
   buildProviderCliIssue,
   isProviderCliIssue,

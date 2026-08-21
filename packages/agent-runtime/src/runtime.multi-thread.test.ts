@@ -2,7 +2,7 @@ import { writeFileSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import type { ThreadEvent } from "@bb/domain";
+import type { ThreadEvent } from "@patcher/domain";
 import { createAgentRuntimeWithAdapters } from "./runtime.js";
 import { fakeProviderScriptPath } from "./test/index.js";
 import type { AgentRuntime } from "./types.js";

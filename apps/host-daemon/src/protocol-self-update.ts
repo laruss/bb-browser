@@ -2,7 +2,7 @@ import { execFile } from "node:child_process";
 import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { delimiter, dirname, join } from "node:path";
 import { promisify } from "node:util";
-import { HOST_DAEMON_PROTOCOL_VERSION } from "@bb/host-daemon-contract";
+import { HOST_DAEMON_PROTOCOL_VERSION } from "@patcher/host-daemon-contract";
 import type { HostDaemonLogger } from "./logger.js";
 import type { FetchFn } from "./server-client.js";
 import { usesSecureInternalFetchTransport } from "./server-client.js";

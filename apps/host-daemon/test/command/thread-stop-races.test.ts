@@ -3,19 +3,19 @@ import { writeFile } from "node:fs/promises";
 import type {
   AgentRuntime,
   AgentRuntimeProcessExitInfo,
-} from "@bb/agent-runtime";
+} from "@patcher/agent-runtime";
 import {
   createAgentRuntimeWithAdapters,
   createFakeAdapter,
   type ProviderAdapter,
   type ProviderAdapterFactory,
-} from "@bb/agent-runtime/test";
+} from "@patcher/agent-runtime/test";
 import {
   encodeClientTurnRequestIdNumber,
   type ClientTurnRequestId,
   type ThreadEvent,
-} from "@bb/domain";
-import type { HostDaemonOnlineRpcResponseMessage } from "@bb/host-daemon-contract";
+} from "@patcher/domain";
+import type { HostDaemonOnlineRpcResponseMessage } from "@patcher/host-daemon-contract";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { dispatchCommand } from "../../src/command-dispatch.js";
 import {

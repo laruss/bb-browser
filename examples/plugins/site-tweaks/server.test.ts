@@ -1,5 +1,5 @@
 // Backend tests for the site-tweaks example, against the official harness
-// (`@bb/plugin-sdk/testing`) — no bb server and no browser, but a real SQLite file
+// (`@patcher/plugin-sdk/testing`) — no bb server and no browser, but a real SQLite file
 // in a temp directory and the *same refusals the install makes*, which is the
 // point of running the double rather than mocking `bb`.
 import { describe, expect, it } from "vitest";
@@ -8,7 +8,7 @@ import {
   pluginPermissionsFromManifest,
   pluginSitesFromManifest,
   type FakePluginHost,
-} from "@bb/plugin-sdk/testing";
+} from "@patcher/plugin-sdk/testing";
 import siteTweaks, { repoFromUrl } from "./server";
 
 /**

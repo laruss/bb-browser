@@ -10,7 +10,7 @@
     "lucide-react"
   ],
   "registryDependencies": [
-    "@bb/utils"
+    "@patcher/utils"
   ],
   "files": [
     {

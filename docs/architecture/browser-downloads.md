@@ -294,12 +294,12 @@ against our own shell.
   downloaded opens and reveals, **a path it did not write is refused and
   nothing is touched** (including a plausible one inside the downloads folder),
   and the OS refusal passed through as a failure.
-- Full suites: `@bb/desktop` 44 files / 472 tests, `@bb/app` 357 files / 2770
+- Full suites: `@patcher/desktop` 44 files / 472 tests, `@patcher/app` 357 files / 2770
   tests. Repo typecheck 59/59, `bunx turbo run lint` clean.
 
 **Written but not executed:** `plugin-browser-downloads.test.ts` (fan-out to two
 handlers, isolation of a throwing one, failure and refusal states, a malformed
-payload refused, the cross-origin guard). No `@bb/server` test runs on this
+payload refused, the cross-origin guard). No `@patcher/server` test runs on this
 machine — its forked workers are killed before they report, and the
 pre-existing `plugin-omnibox-providers.test.ts` fails identically, so this is
 the environment rather than the change. `bun run ensure-native-modules` is the

@@ -21,11 +21,11 @@ import type {
   AgentRuntimeCodexSkillRoot,
   AgentRuntimePiSkillRoot,
   AgentRuntimeSkillRoot,
-} from "@bb/agent-runtime";
+} from "@patcher/agent-runtime";
 import type {
   HostDaemonInjectedSkillSource,
   HostDaemonSkillTree,
-} from "@bb/host-daemon-contract";
+} from "@patcher/host-daemon-contract";
 import {
   cleanupInjectedSkillStagingDirs,
   ensureDataDirSkillsRootPath,

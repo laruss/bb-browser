@@ -3,7 +3,7 @@ import {
   findProjectEnvironmentByHostPath,
   hasLiveThreadAtHostPath,
   type DbConnection,
-} from "@bb/db";
+} from "@patcher/db";
 import { isBbManagedWorkspacePath } from "./worktree-paths.js";
 
 /**

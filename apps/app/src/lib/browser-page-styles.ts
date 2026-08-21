@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { BB_DESKTOP_BROWSER_MAX_PAGE_STYLES } from "@bb/desktop-contract";
+import { BB_DESKTOP_BROWSER_MAX_PAGE_STYLES } from "@patcher/desktop-contract";
 import { usePluginContributions } from "@/hooks/queries/plugin-contribution-queries";
 import { getDesktopBrowserApi } from "./bb-desktop";
 

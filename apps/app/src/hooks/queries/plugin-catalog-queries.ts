@@ -5,7 +5,7 @@ import type {
   PluginCatalogStatus as SdkPluginCatalogStatus,
   PluginSourceDetail as SdkPluginSourceDetail,
   PluginUpdateCheckEntry,
-} from "@bb/server-contract";
+} from "@patcher/server-contract";
 import { useQuery, type QueryKey } from "@tanstack/react-query";
 import { createPluginsClient } from "./plugin-client";
 import { toEpochMs } from "./plugin-settings-queries";

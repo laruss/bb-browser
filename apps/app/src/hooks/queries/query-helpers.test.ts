@@ -3,19 +3,19 @@ import type {
   ThreadListEntry,
   ThreadWithRuntime,
   WorkspaceStatus,
-} from "@bb/domain";
+} from "@patcher/domain";
 import {
   makeWorkspaceMergeBase,
   makeWorkspaceStatus,
   makeWorkspaceWorkingTree,
-} from "@bb/test-helpers";
+} from "@patcher/test-helpers";
 import type {
   EnvironmentDiffBranchesResponse,
   EnvironmentStatusResponse,
   ProjectBranchesResponse,
   ThreadResponse,
   ThreadTimelineResponse,
-} from "@bb/server-contract";
+} from "@patcher/server-contract";
 import {
   getCachedEnvironmentRefWorkspaceStateInvalidationQueryKeys,
   getEnvironmentWorkspaceStateInvalidationQueryKeys,

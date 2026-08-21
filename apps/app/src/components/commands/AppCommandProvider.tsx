@@ -19,7 +19,7 @@ import {
   type AppCommandId,
   type AppKeybindings,
   type AppShortcut,
-} from "@bb/domain";
+} from "@patcher/domain";
 import {
   runPluginCommand,
   usePluginContributions,

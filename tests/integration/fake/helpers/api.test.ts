@@ -1,4 +1,4 @@
-import type { Environment } from "@bb/domain";
+import type { Environment } from "@patcher/domain";
 import { describe, expect, it } from "vitest";
 import { requireEnvironmentMergeBaseBranch } from "../../helpers/api.js";
 

@@ -26,7 +26,7 @@ export interface PluginKvStore {
 export type PluginSettingsReader = (
   descriptors: PluginSettingDescriptors,
 ) => Promise<Record<string, unknown>>;
-// By subpath, not through `@bb/domain`'s index, and the reason is measured:
+// By subpath, not through `@patcher/domain`'s index, and the reason is measured:
 // this module is the one every plugin process loads, and the index runs every
 // schema in the package at import time — ~57MB resident, against ~25MB for the
 // three files anything here actually uses.
@@ -39,20 +39,20 @@ import type {
   BrowserCookie,
   BrowserInteraction,
   BrowserStorageItem,
-} from "@bb/domain/browser-control";
-import { PLUGIN_INTERACTION_MAX_TITLE_LENGTH } from "@bb/domain/plugin-interaction-limits";
+} from "@patcher/domain/browser-control";
+import { PLUGIN_INTERACTION_MAX_TITLE_LENGTH } from "@patcher/domain/plugin-interaction-limits";
 import {
   BROWSER_PAGE_STYLE_ID_PATTERN,
   BROWSER_PAGE_STYLE_MAX_CSS_LENGTH,
   BROWSER_PAGE_STYLE_MAX_ID_LENGTH,
   BROWSER_PAGE_STYLE_MAX_MATCHES,
-} from "@bb/domain/browser-page-style";
+} from "@patcher/domain/browser-page-style";
 import {
   BROWSER_PAGE_SCRIPT_ID_PATTERN,
   BROWSER_PAGE_SCRIPT_MAX_CODE_LENGTH,
   BROWSER_PAGE_SCRIPT_MAX_ID_LENGTH,
   BROWSER_PAGE_SCRIPT_MAX_MATCHES,
-} from "@bb/domain/browser-page-script";
+} from "@patcher/domain/browser-page-script";
 import {
   BROWSER_SEARCH_ENGINE_ID_PATTERN,
   BROWSER_SEARCH_ENGINE_MAX_ID_LENGTH,
@@ -60,16 +60,16 @@ import {
   BROWSER_SEARCH_ENGINE_QUERY_PLACEHOLDER,
   normalizeBrowserSearchEngineTemplate,
   type BrowserSearchEngine,
-} from "@bb/domain/browser-search-engine";
+} from "@patcher/domain/browser-search-engine";
 import type {
   AppKeybindingOverride,
   AppKeybindingOverrides,
-} from "@bb/domain/app-keybindings";
+} from "@patcher/domain/app-keybindings";
 import {
   permissionForBrowserCommand,
   type PluginPermission,
-} from "@bb/domain/plugin-permissions";
-import type { JsonValue } from "@bb/domain/json-value";
+} from "@patcher/domain/plugin-permissions";
+import type { JsonValue } from "@patcher/domain/json-value";
 import type {
   BbPluginApi,
   PluginAgentConfiguration,
@@ -128,8 +128,8 @@ import type {
   PluginThreadEventName,
   PluginUi,
   StandardSchemaV1,
-} from "@bb/plugin-sdk";
-import type { BbSdk, ThreadForkArgs, ThreadSpawnArgs } from "@bb/sdk";
+} from "@patcher/plugin-sdk";
+import type { BbSdk, ThreadForkArgs, ThreadSpawnArgs } from "@patcher/sdk";
 import type { ServerLogger } from "../../types.js";
 import type { PluginInteractionResult } from "../interactions/pending-interactions.js";
 import { appendPluginLogLine } from "./plugin-log.js";
@@ -143,7 +143,7 @@ import {
 // process, where that would be ~60MB of native machinery for a validator.
 import { registerSettingDescriptors } from "./plugin-setting-descriptors.js";
 
-// The backend plugin API contract lives in @bb/plugin-sdk (plugin authors
+// The backend plugin API contract lives in @patcher/plugin-sdk (plugin authors
 // compile against it); this module implements it. Re-exported so server code
 // keeps one import site for plugin API types.
 export type {
@@ -203,7 +203,7 @@ export type {
   PluginThreadEventPayloads,
   PluginUi,
   StandardSchemaV1,
-} from "@bb/plugin-sdk";
+} from "@patcher/plugin-sdk";
 
 /**
  * Thrown when a plugin calls into an API handle that has been invalidated by
@@ -3342,16 +3342,16 @@ function loadCronParser(): typeof import("cron-parser") {
 }
 
 let browserControlModule:
-  | typeof import("@bb/domain/browser-control")
+  | typeof import("@patcher/domain/browser-control")
   | undefined;
 
-function loadBrowserControl(): typeof import("@bb/domain/browser-control") {
+function loadBrowserControl(): typeof import("@patcher/domain/browser-control") {
   browserControlModule ??=
     typeof require === "function"
-      ? (require("@bb/domain/browser-control") as typeof import("@bb/domain/browser-control"))
+      ? (require("@patcher/domain/browser-control") as typeof import("@patcher/domain/browser-control"))
       : (createRequire(import.meta.url)(
-          "@bb/domain/browser-control",
-        ) as typeof import("@bb/domain/browser-control"));
+          "@patcher/domain/browser-control",
+        ) as typeof import("@patcher/domain/browser-control"));
   return browserControlModule;
 }
 
@@ -3366,16 +3366,16 @@ function loadZod(): typeof import("zod") {
 }
 
 let appKeybindingsModule:
-  | typeof import("@bb/domain/app-keybindings")
+  | typeof import("@patcher/domain/app-keybindings")
   | undefined;
 
-function loadAppKeybindings(): typeof import("@bb/domain/app-keybindings") {
+function loadAppKeybindings(): typeof import("@patcher/domain/app-keybindings") {
   appKeybindingsModule ??=
     typeof require === "function"
-      ? (require("@bb/domain/app-keybindings") as typeof import("@bb/domain/app-keybindings"))
+      ? (require("@patcher/domain/app-keybindings") as typeof import("@patcher/domain/app-keybindings"))
       : (createRequire(import.meta.url)(
-          "@bb/domain/app-keybindings",
-        ) as typeof import("@bb/domain/app-keybindings"));
+          "@patcher/domain/app-keybindings",
+        ) as typeof import("@patcher/domain/app-keybindings"));
   return appKeybindingsModule;
 }
 

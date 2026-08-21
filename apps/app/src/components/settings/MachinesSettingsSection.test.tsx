@@ -7,14 +7,14 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
-import type { Host } from "@bb/domain";
-import { HOST_DAEMON_PROTOCOL_VERSION } from "@bb/host-daemon-contract";
+import type { Host } from "@patcher/domain";
+import { HOST_DAEMON_PROTOCOL_VERSION } from "@patcher/host-daemon-contract";
 import {
   defaultAppSettings,
   defaultAppTheme,
   defaultExperiments,
-} from "@bb/domain";
-import type { SystemConfigResponse } from "@bb/server-contract";
+} from "@patcher/domain";
+import type { SystemConfigResponse } from "@patcher/server-contract";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { sdk } from "@/lib/sdk";

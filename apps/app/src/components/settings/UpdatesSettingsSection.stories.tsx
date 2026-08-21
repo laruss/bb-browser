@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
-import type { Host } from "@bb/domain";
-import { Button } from "@bb/shared-ui/button";
-import { Icon } from "@bb/shared-ui/icon";
-import { HOST_DAEMON_PROTOCOL_VERSION } from "@bb/host-daemon-contract";
+import type { Host } from "@patcher/domain";
+import { Button } from "@patcher/shared-ui/button";
+import { Icon } from "@patcher/shared-ui/icon";
+import { HOST_DAEMON_PROTOCOL_VERSION } from "@patcher/host-daemon-contract";
 import type { ProviderCliIssue } from "@/components/provider-cli/provider-cli-install";
 import type { UpdateInventoryMachine } from "@/hooks/useUpdateInventory";
 import {

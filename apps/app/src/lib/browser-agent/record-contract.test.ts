@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { bbDesktopBrowserRecordOperationSchema } from "@bb/desktop-contract";
-import { browserRecordOperationSchema } from "@bb/domain";
+import { bbDesktopBrowserRecordOperationSchema } from "@patcher/desktop-contract";
+import { browserRecordOperationSchema } from "@patcher/domain";
 
 /**
  * The fifth union written twice — and the first that is deliberately *not* the

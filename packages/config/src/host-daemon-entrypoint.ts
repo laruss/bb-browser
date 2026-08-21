@@ -1,4 +1,4 @@
-import type { HostType } from "@bb/domain";
+import type { HostType } from "@patcher/domain";
 import {
   readOptionalEnvVar,
   resolveEnvLoader,

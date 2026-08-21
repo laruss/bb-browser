@@ -1,4 +1,4 @@
-import type { TimelineUserConversationRow } from "@bb/server-contract";
+import type { TimelineUserConversationRow } from "@patcher/server-contract";
 
 /**
  * Detect the closing bracket of a `[bb …]` prefix on non-user messages so the

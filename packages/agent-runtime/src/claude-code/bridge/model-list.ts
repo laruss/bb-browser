@@ -1,5 +1,5 @@
 import { query, type Options } from "@anthropic-ai/claude-agent-sdk";
-import type { AvailableModel } from "@bb/domain";
+import type { AvailableModel } from "@patcher/domain";
 import { buildClaudeCodeModels } from "../model-list.js";
 import { translateMissingClaudeCliError } from "./missing-cli-error.js";
 import { resolveClaudeCodeExecutable } from "./session-options.js";

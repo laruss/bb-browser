@@ -11,8 +11,8 @@ import {
   permissionModeSchema,
   pluginThemeMetaSchema,
   providerInfoSchema,
-} from "@bb/domain";
-import { hostPlatformSchema } from "@bb/host-daemon-contract";
+} from "@patcher/domain";
+import { hostPlatformSchema } from "@patcher/host-daemon-contract";
 
 export const systemExecutionOptionsModelLoadErrorCodeSchema = z.enum([
   "missing_executable",
@@ -112,8 +112,8 @@ export interface SystemVoiceTranscriptionForm {
 
 // SystemProviderInfo is the same shape as ProviderInfo from domain.
 // Re-export with the API-facing name for backward compatibility.
-export { providerInfoSchema as systemProviderInfoSchema } from "@bb/domain";
-export type { ProviderInfo as SystemProviderInfo } from "@bb/domain";
+export { providerInfoSchema as systemProviderInfoSchema } from "@patcher/domain";
+export type { ProviderInfo as SystemProviderInfo } from "@patcher/domain";
 
 export const systemVoiceTranscriptionResponseSchema = z.object({
   text: z.string(),

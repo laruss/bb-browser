@@ -2,11 +2,11 @@ import { z } from "zod";
 import {
   USER_QUESTION_MAX_OPTIONS,
   USER_QUESTION_MAX_QUESTIONS,
-} from "@bb/domain";
+} from "@patcher/domain";
 import type {
   PendingInteractionGrantedPermissionProfile,
   PendingInteractionGrantablePermissionProfile,
-} from "@bb/domain";
+} from "@patcher/domain";
 import type { ResolvedAdapterPermissionPolicy } from "../shared/permission-policy.js";
 
 export const CLAUDE_PERMISSION_REQUEST_APPROVAL_METHOD =

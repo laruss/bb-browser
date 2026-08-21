@@ -42,11 +42,11 @@ vi.mock("@/components/ui/bottom-anchored-scroll-body.js", () => ({
   }),
 }));
 
-vi.mock("@bb/shared-ui/hooks/use-compact-viewport", () => ({
+vi.mock("@patcher/shared-ui/hooks/use-compact-viewport", () => ({
   useIsCompactViewport: () => mocks.isCompactViewport,
 }));
 
-vi.mock("@bb/shared-ui/hooks/use-pointer-coarse", () => ({
+vi.mock("@patcher/shared-ui/hooks/use-pointer-coarse", () => ({
   usePointerCoarse: () => mocks.isPointerCoarse,
 }));
 

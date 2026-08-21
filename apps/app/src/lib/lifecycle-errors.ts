@@ -1,9 +1,9 @@
-import { assertNever } from "@bb/core-ui";
-import { BbHttpError } from "@bb/sdk/browser";
+import { assertNever } from "@patcher/core-ui";
+import { BbHttpError } from "@patcher/sdk/browser";
 import {
   lifecycleApiErrorSchema,
   type LifecycleApiError,
-} from "@bb/server-contract";
+} from "@patcher/server-contract";
 import { HttpError } from "./api";
 
 export type LifecycleErrorSeverity = "info" | "warning" | "error";

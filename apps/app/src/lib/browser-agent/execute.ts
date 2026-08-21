@@ -6,7 +6,7 @@ import {
   type BrowserCommandOutcome,
   type BrowserCommandValue,
   type BrowserTabSnapshot,
-} from "@bb/domain";
+} from "@patcher/domain";
 import type {
   BbDesktopBrowserApi,
   BbDesktopBrowserCaptureFullPageResult,
@@ -18,7 +18,7 @@ import type {
   BbDesktopBrowserSnapshotResult,
   BbDesktopBrowserState,
   BbDesktopBrowserStorageResult,
-} from "@bb/desktop-contract";
+} from "@patcher/desktop-contract";
 import type { BrowserFixedPanelTab } from "../fixed-panel-tabs-state";
 import { normalizeBrowserUrl } from "../browser-url";
 import {

@@ -2,11 +2,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type {
   PluginMessageDirectiveProps,
   PluginThreadPanelProps,
-} from "@bb/plugin-sdk";
-import { useBbNavigate, useRealtime } from "@bb/plugin-sdk/app";
-import { Button } from "@bb/shared-ui/button";
-import { Icon } from "@bb/shared-ui/icon";
-import { Skeleton } from "@bb/shared-ui/skeleton";
+} from "@patcher/plugin-sdk";
+import { useBbNavigate, useRealtime } from "@patcher/plugin-sdk/app";
+import { Button } from "@patcher/shared-ui/button";
+import { Icon } from "@patcher/shared-ui/icon";
+import { Skeleton } from "@patcher/shared-ui/skeleton";
 import type { Task } from "../../shared/contract.js";
 import { useTasksRpc } from "../../shell/data.js";
 import { TasksRefreshProvider } from "../../shell/refresh.js";

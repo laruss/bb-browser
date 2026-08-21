@@ -1,5 +1,5 @@
 import type { BrowserWindowConstructorOptions } from "electron";
-import { BB_DESKTOP_WINDOW_KEY_ARGUMENT_PREFIX } from "@bb/desktop-contract";
+import { BB_DESKTOP_WINDOW_KEY_ARGUMENT_PREFIX } from "@patcher/desktop-contract";
 import {
   MIN_WINDOW_HEIGHT,
   MIN_WINDOW_WIDTH,

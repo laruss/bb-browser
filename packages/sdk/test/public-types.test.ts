@@ -27,7 +27,7 @@ import type {
   ThemeSetInput as RootThemeSetInput,
   ThreadSectionListResult as RootThreadSectionList,
   ThreadSpawnResult as RootThreadSpawn,
-} from "@bb/sdk";
+} from "@patcher/sdk";
 import type {
   BbSdk as BrowserBbSdk,
   BbRealtimeConnectionEvent as BrowserRealtimeConnection,
@@ -54,7 +54,7 @@ import type {
   ThemeSetInput as BrowserThemeSetInput,
   ThreadSectionListResult as BrowserThreadSectionList,
   ThreadSpawnResult as BrowserThreadSpawn,
-} from "@bb/sdk/browser";
+} from "@patcher/sdk/browser";
 import type {
   BbSdk as CoreBbSdk,
   BbRealtimeConnectionEvent as CoreRealtimeConnection,
@@ -81,7 +81,7 @@ import type {
   ThemeSetInput as CoreThemeSetInput,
   ThreadSectionListResult as CoreThreadSectionList,
   ThreadSpawnResult as CoreThreadSpawn,
-} from "@bb/sdk/core";
+} from "@patcher/sdk/core";
 import type {
   BbSdk as NodeBbSdk,
   BbRealtimeConnectionEvent as NodeRealtimeConnection,
@@ -108,7 +108,7 @@ import type {
   ThemeSetInput as NodeThemeSetInput,
   ThreadSectionListResult as NodeThreadSectionList,
   ThreadSpawnResult as NodeThreadSpawn,
-} from "@bb/sdk/node";
+} from "@patcher/sdk/node";
 
 interface RootSurface {
   environmentStatus: RootEnvironmentStatus;

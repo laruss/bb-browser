@@ -19,9 +19,9 @@ import {
   TextItalicIcon,
 } from "@hugeicons/core-free-icons";
 import type { SuggestionProps } from "@tiptap/suggestion";
-import { Button } from "@bb/shared-ui/button";
-import { usePointerCoarse } from "@bb/shared-ui/hooks/use-pointer-coarse";
-import { cn } from "@bb/shared-ui/lib/utils";
+import { Button } from "@patcher/shared-ui/button";
+import { usePointerCoarse } from "@patcher/shared-ui/hooks/use-pointer-coarse";
+import { cn } from "@patcher/shared-ui/lib/utils";
 import {
   createEditorExtensions,
   type MentionItem,

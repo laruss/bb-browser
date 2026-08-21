@@ -8,22 +8,22 @@ import {
   type AppTheme,
   type FaviconColorPreference,
   type PluginThemeMeta,
-} from "@bb/domain";
+} from "@patcher/domain";
 import type {
   WorkspaceOpenTarget,
   WorkspaceOpenTargetId,
-} from "@bb/host-daemon-contract";
-import { Button } from "@bb/shared-ui/button";
-import { Icon } from "@bb/shared-ui/icon";
-import { Switch } from "@bb/shared-ui/switch";
-import { COARSE_POINTER_ICON_SIZE_CLASS } from "@bb/shared-ui/coarse-pointer-sizing";
+} from "@patcher/host-daemon-contract";
+import { Button } from "@patcher/shared-ui/button";
+import { Icon } from "@patcher/shared-ui/icon";
+import { Switch } from "@patcher/shared-ui/switch";
+import { COARSE_POINTER_ICON_SIZE_CLASS } from "@patcher/shared-ui/coarse-pointer-sizing";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@bb/shared-ui/dropdown-menu";
+} from "@patcher/shared-ui/dropdown-menu";
 import { PageShell } from "@/components/ui/page-shell.js";
 import {
   SettingsSection,
@@ -73,7 +73,7 @@ import {
   getRootComposeRoutePath,
 } from "@/lib/route-paths";
 import { useNavigateToThreadAfterCreatePreference } from "@/lib/root-compose-create-preference";
-import { cn } from "@bb/shared-ui/lib/utils";
+import { cn } from "@patcher/shared-ui/lib/utils";
 import {
   resolvePreferredWorkspaceOpenTarget,
   supportsWorkspaceOpenTargetCapability,

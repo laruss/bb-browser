@@ -17,7 +17,7 @@ import {
   DEFAULT_CLAUDE_CODE_MOCK_CLI_TRAFFIC_CONFIG,
   type JsonValue,
   type PermissionEscalation,
-} from "@bb/domain";
+} from "@patcher/domain";
 
 const { forkSessionMock, queryMock } = vi.hoisted(() => ({
   forkSessionMock: vi.fn(),

@@ -4,7 +4,7 @@ import {
   DEFAULT_BROWSER_SEARCH_ENGINE_ID,
   resolveBrowserSearchEngine,
   type BrowserSearchEngine,
-} from "@bb/domain/browser-search-engine";
+} from "@patcher/domain/browser-search-engine";
 import { usePluginContributions } from "@/hooks/queries/plugin-contribution-queries";
 import { useSystemConfig } from "@/hooks/queries/system-queries";
 

@@ -3,19 +3,19 @@ import * as React from "react";
 import { flushSync } from "react-dom";
 import { Slot } from "@radix-ui/react-slot";
 
-import { useIsCompactViewport } from "@bb/shared-ui/hooks/use-compact-viewport";
+import { useIsCompactViewport } from "@patcher/shared-ui/hooks/use-compact-viewport";
 import { useBrowserDimmingModal } from "@/hooks/useBrowserDimmingModal";
-import { cn } from "@bb/shared-ui/lib/utils";
-import { Button } from "@bb/shared-ui/button";
-import { COARSE_POINTER_HEADER_ICON_BUTTON_CLASS } from "@bb/shared-ui/coarse-pointer-sizing";
-import { Skeleton } from "@bb/shared-ui/skeleton";
-import { Icon } from "@bb/shared-ui/icon";
+import { cn } from "@patcher/shared-ui/lib/utils";
+import { Button } from "@patcher/shared-ui/button";
+import { COARSE_POINTER_HEADER_ICON_BUTTON_CLASS } from "@patcher/shared-ui/coarse-pointer-sizing";
+import { Skeleton } from "@patcher/shared-ui/skeleton";
+import { Icon } from "@patcher/shared-ui/icon";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@bb/shared-ui/tooltip";
+} from "@patcher/shared-ui/tooltip";
 
 const SIDEBAR_WIDTH = "16rem";
 const SIDEBAR_WIDTH_MOBILE = "min(90vw, 320px)";

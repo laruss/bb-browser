@@ -19,7 +19,7 @@ import {
   jsonRpcEnvelopeSchema,
   type BridgeToolCallRequest,
 } from "../../shared/bridge-tool-calls.js";
-import type { ThreadEventContextWindowUsage } from "@bb/domain";
+import type { ThreadEventContextWindowUsage } from "@patcher/domain";
 import {
   SessionManager,
   type AgentSessionEvent,

@@ -14,7 +14,7 @@ import {
   closePanesForThreadsAtom,
   type ClosePanesForThreadsResult,
 } from "@/lib/split-layout/atoms";
-import type { Thread } from "@bb/domain";
+import type { Thread } from "@patcher/domain";
 import {
   useArchiveThreadAndChildren,
   useDeleteThread,

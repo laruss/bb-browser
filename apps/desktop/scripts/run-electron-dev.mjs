@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import {
   resolveCurrentDevInstanceConfig,
   toDevProcessEnv,
-} from "@bb/config/runtime";
+} from "@patcher/config/runtime";
 
 const require = createRequire(import.meta.url);
 const electronBinary = require("electron");
@@ -62,20 +62,20 @@ if (viteReachable) {
   childEnv.BB_DESKTOP_APP_URL = appUrl;
 }
 
-process.stdout.write(`@bb/desktop: instance ${devConfig.instanceId}\n`);
-process.stdout.write(`@bb/desktop: data ${dataDir}\n`);
+process.stdout.write(`@patcher/desktop: instance ${devConfig.instanceId}\n`);
+process.stdout.write(`@patcher/desktop: data ${dataDir}\n`);
 process.stdout.write(
-  `@bb/desktop: server http://127.0.0.1:${devConfig.ports.serverPort}\n`,
+  `@patcher/desktop: server http://127.0.0.1:${devConfig.ports.serverPort}\n`,
 );
 process.stdout.write(
-  `@bb/desktop: daemon http://127.0.0.1:${devConfig.ports.hostDaemonPort}\n`,
+  `@patcher/desktop: daemon http://127.0.0.1:${devConfig.ports.hostDaemonPort}\n`,
 );
 process.stdout.write(
   viteReachable
-    ? `@bb/desktop: app ${appUrl} (Vite dev server — live reload)\n`
-    : `@bb/desktop: app (own bb-app runtime — no Vite dev server on ${appUrl})\n`,
+    ? `@patcher/desktop: app ${appUrl} (Vite dev server — live reload)\n`
+    : `@patcher/desktop: app (own bb-app runtime — no Vite dev server on ${appUrl})\n`,
 );
-process.stdout.write(`@bb/desktop: user-data ${desktopUserDataDir}\n`);
+process.stdout.write(`@patcher/desktop: user-data ${desktopUserDataDir}\n`);
 
 // Extra Chromium/Electron switches for dev automation (e.g.
 // BB_DESKTOP_ELECTRON_ARGS="--remote-debugging-port=9223" for CDP-driven QA).

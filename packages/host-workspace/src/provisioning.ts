@@ -6,12 +6,12 @@ import {
   createTerminalOutputLineReader,
   readTerminalOutputLines,
   type ProvisioningTranscriptEntry,
-} from "@bb/domain";
+} from "@patcher/domain";
 import {
   sanitizeInheritedChildProcessEnv,
   spawnPortableOutputProcess,
   type PortableOutputChildProcess,
-} from "@bb/process-utils";
+} from "@patcher/process-utils";
 import { Workspace } from "./workspace.js";
 import { tryWithCheckoutMutationLock } from "./checkout-mutation-lock.js";
 import {

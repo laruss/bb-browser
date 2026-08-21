@@ -6,15 +6,15 @@ import type {
   PromptTextMention,
   ThreadQueuedMessage,
   WorkspaceStatus,
-} from "@bb/domain";
+} from "@patcher/domain";
 import {
   formatEnvironmentDisplay,
   type EnvironmentDisplayHostContext,
-} from "@bb/core-ui";
+} from "@patcher/core-ui";
 import type {
   SystemExecutionOptionsModelLoadError,
   ThreadContextWindowUsage,
-} from "@bb/server-contract";
+} from "@patcher/server-contract";
 import {
   FollowUpPromptBox,
   type FollowUpSubmitMode,

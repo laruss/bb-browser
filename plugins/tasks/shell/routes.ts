@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useBbNavigate } from "@bb/plugin-sdk/app";
+import { useBbNavigate } from "@patcher/plugin-sdk/app";
 
 /** The nav panel `path` registered in app.tsx; panel URLs are /plugins/tasks/<PANEL_PATH>/<subPath>. */
 export const PANEL_PATH = "tasks";

@@ -1,6 +1,6 @@
 import semver from "semver";
 import { z } from "zod";
-import type { SystemVersionResponse } from "@bb/server-contract";
+import type { SystemVersionResponse } from "@patcher/server-contract";
 import type { ServerLogger, ServerRuntimeConfig } from "../../types.js";
 
 const NPM_LATEST_URL = "https://registry.npmjs.org/bb-app/latest";

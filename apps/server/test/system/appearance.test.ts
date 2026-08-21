@@ -1,12 +1,12 @@
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { getStoredFaviconColor, getStoredThemeId } from "@bb/db";
-import { appThemeSchema, formatPluginThemeId } from "@bb/domain";
+import { getStoredFaviconColor, getStoredThemeId } from "@patcher/db";
+import { appThemeSchema, formatPluginThemeId } from "@patcher/domain";
 import {
   themeCatalogResponseSchema,
   systemConfigResponseSchema,
-} from "@bb/server-contract";
+} from "@patcher/server-contract";
 import { readJson } from "../helpers/json.js";
 import { withTestHarness } from "../helpers/test-app.js";
 

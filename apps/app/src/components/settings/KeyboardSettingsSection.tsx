@@ -14,12 +14,12 @@ import {
   type AppKeybindings,
   type AppKeybindingOverrides,
   type AppShortcut,
-} from "@bb/domain";
-import { Button } from "@bb/shared-ui/button";
-import { Icon } from "@bb/shared-ui/icon";
-import { Input } from "@bb/shared-ui/input";
-import { Switch } from "@bb/shared-ui/switch";
-import { cn } from "@bb/shared-ui/lib/utils";
+} from "@patcher/domain";
+import { Button } from "@patcher/shared-ui/button";
+import { Icon } from "@patcher/shared-ui/icon";
+import { Input } from "@patcher/shared-ui/input";
+import { Switch } from "@patcher/shared-ui/switch";
+import { cn } from "@patcher/shared-ui/lib/utils";
 import {
   APP_COMMAND_GROUPS,
   getAppCommandMetadata,

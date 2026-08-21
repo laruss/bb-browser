@@ -3,7 +3,7 @@ import type {
   ThreadPullRequest,
   WorkspaceFileStatus,
   WorkspaceStatus,
-} from "@bb/domain";
+} from "@patcher/domain";
 import {
   ThreadPromptContextBanner,
   type ContextBannerMergeBaseConfig,

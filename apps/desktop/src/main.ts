@@ -20,19 +20,19 @@ import { autoUpdater } from "electron-updater";
 import {
   APP_SURFACE_DESKTOP,
   APP_SURFACE_ENV_NAME,
-} from "@bb/config/app-surface";
-import type { AppKeybindings } from "@bb/domain";
+} from "@patcher/config/app-surface";
+import type { AppKeybindings } from "@patcher/domain";
 import {
   bbDesktopThemeSchema,
   type BbDesktopDefaultBrowserStatus,
   type BbDesktopInfo,
   type BbDesktopWindowState,
-} from "@bb/desktop-contract";
+} from "@patcher/desktop-contract";
 import {
   serverMessageLenientSchema,
   systemConfigResponseSchema,
   type ClientMessage,
-} from "@bb/server-contract";
+} from "@patcher/server-contract";
 import { z } from "zod";
 import {
   assertPathExists,

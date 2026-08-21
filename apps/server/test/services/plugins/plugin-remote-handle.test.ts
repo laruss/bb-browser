@@ -19,7 +19,7 @@ import {
   remoteBackgroundService,
   remoteHttpRoute,
 } from "../../../src/services/plugins/plugin-remote-handle.js";
-import type { JsonValue } from "@bb/domain";
+import type { JsonValue } from "@patcher/domain";
 
 /**
  * The two callbacks that could not cross, now crossing.

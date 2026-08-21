@@ -6,7 +6,7 @@ import type {
   WorkspaceFileStatus,
   WorkspaceFileStatusKind,
   WorkspaceStatus,
-} from "@bb/domain";
+} from "@patcher/domain";
 import os from "node:os";
 import path from "node:path";
 import {

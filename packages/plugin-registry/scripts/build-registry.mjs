@@ -9,20 +9,20 @@
 //   (currently empty) override map for swapping a component-src file for a
 //   registry-only flavor.
 // - packages/shared-ui/src/components/ui/*.tsx — component source, verbatim.
-//   @bb/shared-ui is itself the plugin/registry flavor: its portal-scope and
+//   @patcher/shared-ui is itself the plugin/registry flavor: its portal-scope and
 //   useBrowserDimmingModal leaves are already the no-op/plugin variants (the
 //   app injects its own flavors at build time), so no override is needed.
 //
 // Every file in an item's transitive @/-import closure becomes its own
 // registry item (named from its basename), referenced via
-// registryDependencies — `npx shadcn add @bb/dialog` pulls the closure
+// registryDependencies — `npx shadcn add @patcher/dialog` pulls the closure
 // automatically. Bare npm imports become item `dependencies` (react and
 // react-dom excluded: the plugin runtime provides them; the shimmed
 // radix/sonner/vaul packages are KEPT as dependencies — the build shims them
 // at bundle time, but plugin authors need their types to typecheck).
 //
 // Output: r/<item>.json + r/index.json, checked in; `--check` exits 1 on any
-// drift (wired into this package's typecheck/test like @bb/templates).
+// drift (wired into this package's typecheck/test like @patcher/templates).
 import { mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
@@ -196,10 +196,10 @@ for (const [itemName, relPath] of [...fileByItem.entries()].sort()) {
       ? {
           // Namespaced: the shadcn CLI resolves UNPREFIXED registryDependencies
           // against the default ui.shadcn.com registry, not the originating
-          // one — cross-item references must carry @bb/ explicitly.
+          // one — cross-item references must carry @patcher/ explicitly.
           registryDependencies: [...registryDependencies]
             .sort()
-            .map((name) => `@bb/${name}`),
+            .map((name) => `@patcher/${name}`),
         }
       : {}),
     files: [
@@ -219,7 +219,7 @@ generatedFiles.set(
   JSON.stringify(
     {
       $comment:
-        "BB plugin component registry index. Install via: npx shadcn add @bb/<name> (see the bb-plugin-authoring skill).",
+        "BB plugin component registry index. Install via: npx shadcn add @patcher/<name> (see the bb-plugin-authoring skill).",
       items: indexEntries.sort((a, b) => a.name.localeCompare(b.name)),
     },
     null,

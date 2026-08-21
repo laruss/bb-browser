@@ -12,7 +12,7 @@ import {
   threadEventSchema,
   toolCallRequestSchema,
   toolCallResponseSchema,
-} from "@bb/domain";
+} from "@patcher/domain";
 import { z } from "zod";
 import type { Endpoint } from "./common.js";
 import type {

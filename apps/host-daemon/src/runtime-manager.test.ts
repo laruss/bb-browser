@@ -3,17 +3,20 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
-import type { AgentRuntime, AgentRuntimeOptions } from "@bb/agent-runtime";
-import type { ThreadEvent } from "@bb/domain";
-import { turnScope } from "@bb/domain";
-import type { HostDaemonInjectedSkillSource } from "@bb/host-daemon-contract";
-import type { HostWatcher } from "@bb/host-watcher";
+import type { AgentRuntime, AgentRuntimeOptions } from "@patcher/agent-runtime";
+import type { ThreadEvent } from "@patcher/domain";
+import { turnScope } from "@patcher/domain";
+import type { HostDaemonInjectedSkillSource } from "@patcher/host-daemon-contract";
+import type { HostWatcher } from "@patcher/host-watcher";
 import {
   provisionWorkspace,
   type HostWorkspace,
   type ProvisionWorkspaceArgs,
-} from "@bb/host-workspace";
-import { makeWorkspaceMergeBase, makeWorkspaceStatus } from "@bb/test-helpers";
+} from "@patcher/host-workspace";
+import {
+  makeWorkspaceMergeBase,
+  makeWorkspaceStatus,
+} from "@patcher/test-helpers";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   RuntimeManager,

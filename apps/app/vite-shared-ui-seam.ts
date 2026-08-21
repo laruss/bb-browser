@@ -5,7 +5,7 @@ import type { Plugin } from "vite";
 const appDir = dirname(fileURLToPath(import.meta.url));
 
 /**
- * The shared UI kit (@bb/shared-ui) ships the plugin/no-op flavor of two
+ * The shared UI kit (@patcher/shared-ui) ships the plugin/no-op flavor of two
  * environment leaves so its component source stays byte-identical across the
  * app, builtin plugins, and the shadcn registry (see packages/shared-ui and
  * packages/plugin-registry). Only the host app has real implementations:

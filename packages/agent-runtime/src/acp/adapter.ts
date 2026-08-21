@@ -13,21 +13,21 @@ import {
   buildAcpProviderInfo,
   getBuiltInAgentProviderInfo,
   isAgentProviderId,
-} from "@bb/agent-providers";
+} from "@patcher/agent-providers";
 import type {
   PendingInteractionApprovalDecision,
   ThreadEvent,
   ThreadEventItem,
   ThreadEventItemStatus,
   ThreadEventPlanStep,
-} from "@bb/domain";
+} from "@patcher/domain";
 import {
   isApprovalPendingInteractionPayload,
   isApprovalPendingInteractionResolution,
   isStandaloneBuiltinCompactCommand,
   threadScope,
   turnScope,
-} from "@bb/domain";
+} from "@patcher/domain";
 import { z } from "zod";
 import type {
   AdapterCommand,

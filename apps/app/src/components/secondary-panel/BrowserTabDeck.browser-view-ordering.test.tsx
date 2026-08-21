@@ -7,14 +7,14 @@ import type {
   BbDesktopBrowserSetBoundsRequest,
   BbDesktopBrowserSetVisibleRequest,
   BbDesktopBrowserState,
-} from "@bb/desktop-contract";
+} from "@patcher/desktop-contract";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { BrowserFixedPanelTab } from "@/lib/fixed-panel-tabs-state";
 import {
   createBbDesktopApi,
   createNoopDesktopBrowserApi,
 } from "@/test/bb-desktop-test-utils";
-import { POINTER_COARSE_QUERY } from "@bb/shared-ui/hooks/use-pointer-coarse";
+import { POINTER_COARSE_QUERY } from "@patcher/shared-ui/hooks/use-pointer-coarse";
 import { createQueryClientTestHarness } from "@/test/queryClientTestHarness";
 import { BrowserTabDeck } from "./BrowserTabDeck";
 import { resetBrowserViewPersistence } from "./browserViewVisibilityCoordinator";

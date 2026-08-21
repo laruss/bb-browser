@@ -3,7 +3,7 @@ import type {
   ThreadTimelineResponse,
   TimelinePaginationCursor,
   TimelineRow,
-} from "@bb/server-contract";
+} from "@patcher/server-contract";
 import { useConnectionAwareQueryState } from "@/hooks/queries/connection-aware-query-state";
 import { isTransientReadError } from "@/hooks/queries/query-helpers";
 import { useThreadTimeline } from "@/hooks/queries/thread-queries";

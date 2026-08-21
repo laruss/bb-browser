@@ -1,7 +1,7 @@
 import {
   BB_DESKTOP_BROWSER_MAX_ZOOM_FACTOR,
   BB_DESKTOP_BROWSER_MIN_ZOOM_FACTOR,
-} from "@bb/desktop-contract";
+} from "@patcher/desktop-contract";
 
 /**
  * Page zoom steps, and how to walk them.

@@ -1,5 +1,5 @@
 {
-  "name": "@bb/desktop",
+  "name": "@patcher/desktop",
   "version": "0.37.0",
   "private": true,
   "description": "macOS Electron shell for bb",
@@ -28,11 +28,11 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@bb/config": "workspace:*",
-    "@bb/desktop-contract": "workspace:*",
-    "@bb/domain": "workspace:*",
-    "@bb/server-contract": "workspace:*",
-    "@bb/tsconfig": "workspace:*",
+    "@patcher/config": "workspace:*",
+    "@patcher/desktop-contract": "workspace:*",
+    "@patcher/domain": "workspace:*",
+    "@patcher/server-contract": "workspace:*",
+    "@patcher/tsconfig": "workspace:*",
     "@types/node": "^24.9.0",
     "@types/semver": "^7.7.0",
     "electron": "41.7.0",

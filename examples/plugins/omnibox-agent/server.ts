@@ -23,7 +23,7 @@
 // point the browser at the BB app the plugin itself runs inside.
 //
 // The type-only import is erased at load time; this file runs as-is.
-import type { BbPluginApi } from "@bb/plugin-sdk";
+import type { BbPluginApi } from "@patcher/plugin-sdk";
 
 const CONFIGURE_HINT =
   "Set project with `bb plugin config omnibox-agent`, " +

@@ -167,7 +167,7 @@ describe("resolveLocalBbExecutableDirectory", () => {
         cliExecutablePath: cliEntryPath,
       }),
     ).rejects.toThrow(
-      `Missing built bb CLI entry at ${cliEntryPath}. Build @bb/cli before starting the host daemon.`,
+      `Missing built bb CLI entry at ${cliEntryPath}. Build @patcher/cli before starting the host daemon.`,
     );
   });
 
@@ -181,7 +181,7 @@ describe("resolveLocalBbExecutableDirectory", () => {
         cliExecutablePath: cliEntryPath,
       }),
     ).rejects.toThrow(
-      `Resolved bb CLI entry is not executable: ${cliEntryPath}. Build @bb/cli before starting the host daemon.`,
+      `Resolved bb CLI entry is not executable: ${cliEntryPath}. Build @patcher/cli before starting the host daemon.`,
     );
   });
 

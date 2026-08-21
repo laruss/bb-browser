@@ -6,7 +6,7 @@ import {
 export default defineWorkspaceTestConfig({
   test: {
     silent: "passed-only",
-    name: "@bb/host-daemon",
+    name: "@patcher/host-daemon",
     include: ["src/**/*.test.ts", "test/**/*.test.ts"],
     exclude: ["dist/**", "node_modules/**"],
     env: {

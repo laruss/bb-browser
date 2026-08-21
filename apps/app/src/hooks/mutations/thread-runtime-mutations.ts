@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { ThreadQueuedMessage } from "@bb/domain";
+import type { ThreadQueuedMessage } from "@patcher/domain";
 import type {
   CreateQueuedMessageRequest,
   CreateThreadRequest,
@@ -7,7 +7,7 @@ import type {
   SendQueuedMessageResponse,
   ThreadQueuedMessageListResponse,
   UpdateQueuedMessageRequest,
-} from "@bb/server-contract";
+} from "@patcher/server-contract";
 import { BbHttpError, sdk } from "@/lib/sdk";
 import { wsManager } from "@/lib/ws";
 import type { QueuedMessageReorderRequest } from "@/lib/queued-message-reorder";

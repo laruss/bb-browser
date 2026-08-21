@@ -1,8 +1,8 @@
 import {
   ResourceCreateButton,
   type ResourceCreateMenuAction,
-} from "@bb/shared-ui/resource-list";
-import type { IconName } from "@bb/shared-ui/icon";
+} from "@patcher/shared-ui/resource-list";
+import type { IconName } from "@patcher/shared-ui/icon";
 import {
   CREATE_AUTOMATION_PROMPT,
   CREATE_SKILL_PROMPT,

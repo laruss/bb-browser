@@ -15,16 +15,16 @@ import type {
   BbDesktopBrowserState,
   BbDesktopBrowserViewportBounds,
   BbDesktopBrowserViewBounds,
-} from "@bb/desktop-contract";
-import { clampBbDesktopBrowserViewBounds } from "@bb/desktop-contract";
+} from "@patcher/desktop-contract";
+import { clampBbDesktopBrowserViewBounds } from "@patcher/desktop-contract";
 import {
   COARSE_POINTER_COMPACT_ICON_SIZE_SHRINK_CLASS,
   COARSE_POINTER_HEADER_ICON_BUTTON_CLASS,
   COARSE_POINTER_TEXT_SM_CLASS,
-} from "@bb/shared-ui/coarse-pointer-sizing";
-import { Icon } from "@bb/shared-ui/icon";
+} from "@patcher/shared-ui/coarse-pointer-sizing";
+import { Icon } from "@patcher/shared-ui/icon";
 import { getBbDesktopInfo, getDesktopBrowserApi } from "@/lib/bb-desktop";
-import { cn } from "@bb/shared-ui/lib/utils";
+import { cn } from "@patcher/shared-ui/lib/utils";
 import {
   getBrowserUrlSecurity,
   getBrowserUrlHost,
@@ -35,7 +35,7 @@ import { useBrowserHistory } from "@/lib/browser-history";
 import { BROWSER_VIEW_BOUNDS_SYNC_EVENT } from "@/lib/browser-view-bounds-sync";
 import { useIsBrowserDimmingModalOpen } from "@/hooks/useBrowserDimmingModal";
 import { useDefaultBrowserStatus } from "@/hooks/useDefaultBrowserStatus";
-import { usePointerCoarse } from "@bb/shared-ui/hooks/use-pointer-coarse";
+import { usePointerCoarse } from "@patcher/shared-ui/hooks/use-pointer-coarse";
 import { BrowserPageDialog } from "@/components/browser-surface/BrowserPageDialog";
 import { BrowserPagePrompt } from "@/components/browser-surface/BrowserPagePrompt";
 import { resolvePluginBrowserAuth } from "@/hooks/queries/plugin-contribution-queries";

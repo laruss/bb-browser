@@ -1,5 +1,5 @@
-import { cn } from "@bb/shared-ui/lib/utils";
-import { PANE_FOCUS_APP_COMMAND_IDS } from "@bb/domain";
+import { cn } from "@patcher/shared-ui/lib/utils";
+import { PANE_FOCUS_APP_COMMAND_IDS } from "@patcher/domain";
 import { useAtom, useAtomValue, useStore } from "jotai";
 import {
   Fragment,
@@ -75,8 +75,8 @@ import {
 import { AppBreadcrumbs } from "@/components/layout/AppBreadcrumbs";
 import { resourceRouteLabelAtom } from "@/components/layout/resourceRouteLabelAtom";
 import { resolveAutomationBreadcrumbs } from "@/components/tools/tools-navigation";
-import { Button } from "@bb/shared-ui/button";
-import { Icon } from "@bb/shared-ui/icon";
+import { Button } from "@patcher/shared-ui/button";
+import { Icon } from "@patcher/shared-ui/icon";
 import { CHROME_SUBTLE_ICON_BUTTON_FOREGROUND_CLASS } from "@/components/ui/chromeStyleTokens";
 import { usePluginSlots } from "@/lib/plugin-slots";
 import {

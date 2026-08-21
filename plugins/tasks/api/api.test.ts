@@ -4,7 +4,7 @@ import {
   createFakePluginHost,
   pluginPermissionsFromManifest,
   makeThreadResponse,
-} from "@bb/plugin-sdk/testing";
+} from "@patcher/plugin-sdk/testing";
 import { describe, expect, it, vi } from "vitest";
 import { buildAttachmentUrl, registerAttachments } from "../attachments";
 import { tasksRpcContract } from "../shared/contract";

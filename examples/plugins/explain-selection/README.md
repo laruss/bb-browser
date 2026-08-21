@@ -69,7 +69,7 @@ nothing it writes can undo "to the end of the message".
 
 ## Tests
 
-`server.test.ts` runs against `@bb/plugin-sdk/testing` — no bb server, no
+`server.test.ts` runs against `@patcher/plugin-sdk/testing` — no bb server, no
 browser. The end-to-end path (install → contributions → picked entry → spawned
 thread → the selection in the agent's first message) is covered by `hero plugin:
 explain-selection` in `apps/server/test/services/plugins/heroes.test.ts`, which

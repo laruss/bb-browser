@@ -4,14 +4,14 @@ import {
   openSession,
   upsertHost,
   updateHost,
-} from "@bb/db";
+} from "@patcher/db";
 import {
   HOST_DAEMON_PROTOCOL_VERSION,
   hostDaemonProjectAttachmentContentQuerySchema,
   hostDaemonSessionOpenRequestSchema,
   typedRoutes,
   type HostDaemonInternalSchema,
-} from "@bb/host-daemon-contract";
+} from "@patcher/host-daemon-contract";
 import type { Hono } from "hono";
 import type { AppDeps } from "../types.js";
 import { HEARTBEAT_INTERVAL_MS, LEASE_TIMEOUT_MS } from "../constants.js";

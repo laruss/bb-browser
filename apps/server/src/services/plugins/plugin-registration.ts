@@ -11,7 +11,7 @@ import {
   type PluginExactResolution,
   type PluginProvenance,
   type PluginSourceIntent,
-} from "@bb/db";
+} from "@patcher/db";
 import {
   BUNDLED_PLUGINS,
   builtinPluginSource,

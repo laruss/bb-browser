@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { EmptyState } from "@bb/shared-ui/empty-state";
-import { Switch } from "@bb/shared-ui/switch";
+import { EmptyState } from "@patcher/shared-ui/empty-state";
+import { Switch } from "@patcher/shared-ui/switch";
 import {
   ResourceListPanel,
   ResourceRow,
   ResourceRowDetailChevron,
-} from "@bb/shared-ui/resource-list";
+} from "@patcher/shared-ui/resource-list";
 import { ProvenancePill } from "@/components/tools/ProvenancePill";
 import { appToast } from "@/components/ui/app-toast.js";
 import { invalidatePluginList } from "@/hooks/cache-owners/plugin-cache-owner";

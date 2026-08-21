@@ -2,8 +2,11 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { DEFAULT_ENV_SETUP_SCRIPT_NAME } from "@bb/domain";
-import { shellSingleQuote, waitForSetupMarkerCount } from "@bb/test-helpers";
+import { DEFAULT_ENV_SETUP_SCRIPT_NAME } from "@patcher/domain";
+import {
+  shellSingleQuote,
+  waitForSetupMarkerCount,
+} from "@patcher/test-helpers";
 import { Workspace } from "../src/workspace.js";
 import {
   buildSetupScriptCommand,

@@ -3,9 +3,9 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { getLatestThreadSequence, getThread } from "@bb/db";
-import { turnScope } from "@bb/domain";
-import { threadTimelineResponseSchema } from "@bb/server-contract";
+import { getLatestThreadSequence, getThread } from "@patcher/db";
+import { turnScope } from "@patcher/domain";
+import { threadTimelineResponseSchema } from "@patcher/server-contract";
 import {
   generatedSkillsRootPath,
   pluginCommandsSkillDir,

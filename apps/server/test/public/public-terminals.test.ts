@@ -4,12 +4,15 @@ import {
   listTerminalSessions,
   updateTerminalSession,
   updateTerminalSessions,
-} from "@bb/db";
-import type { EnvironmentStatus, TerminalSessionCloseReason } from "@bb/domain";
+} from "@patcher/db";
+import type {
+  EnvironmentStatus,
+  TerminalSessionCloseReason,
+} from "@patcher/domain";
 import {
   hostDaemonServerWsMessageSchema,
   type HostDaemonServerWsMessage,
-} from "@bb/host-daemon-contract";
+} from "@patcher/host-daemon-contract";
 import {
   apiErrorSchema,
   terminalListResponseSchema,
@@ -17,7 +20,7 @@ import {
   terminalOutputResponseSchema,
   type TerminalServerMessage,
   terminalSessionSchema,
-} from "@bb/server-contract";
+} from "@patcher/server-contract";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { readJson } from "../helpers/json.js";
 import {

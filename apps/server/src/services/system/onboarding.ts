@@ -1,16 +1,16 @@
-import { listBuiltInAgentProviderInfos } from "@bb/agent-providers";
+import { listBuiltInAgentProviderInfos } from "@patcher/agent-providers";
 import type {
   DiscoverReposResult,
   ProviderCliKey,
   ProviderUsage,
-} from "@bb/host-daemon-contract";
+} from "@patcher/host-daemon-contract";
 import type {
   OnboardingAgent,
   OnboardingTelemetryEvent,
   OnboardingAgentOverview,
   SystemProvidersQuery,
   SystemOnboardingReposQuery,
-} from "@bb/server-contract";
+} from "@patcher/server-contract";
 import type { AppDeps } from "../../types.js";
 import { COMMAND_TIMEOUT_MS } from "../../constants.js";
 import { callHostRetryableOnlineRpc } from "../hosts/online-rpc.js";

@@ -16,7 +16,7 @@
  * - `bb.browser`'s six command namespaces are one serialisable command union on
  *   a message bus already. They appear here as a single entry rather than
  *   ~40 near-identical ones; the per-command list that matters is
- *   `permissionForBrowserCommand` in @bb/domain.
+ *   `permissionForBrowserCommand` in @patcher/domain.
  *
  * What is left is the part with no described shape yet, and it has its own
  * obstacles — recorded as `argsCross: false` with a `note`, exactly as the
@@ -346,7 +346,7 @@ export const PLUGIN_HOST_CALLS = {
     argsCross: true,
     resultCrosses: true,
     cancellable: true,
-    note: "Stands for every method under browser.tabs / page / navigation / storage / control / recording. One entry because they are one thing: a `BrowserCommand` union already travelling over a message bus to the app window. The per-command list is `permissionForBrowserCommand` in @bb/domain, which is also what gates them.",
+    note: "Stands for every method under browser.tabs / page / navigation / storage / control / recording. One entry because they are one thing: a `BrowserCommand` union already travelling over a message bus to the app window. The per-command list is `permissionForBrowserCommand` in @patcher/domain, which is also what gates them.",
   },
 
   // -- Events, status, hosts ------------------------------------------------

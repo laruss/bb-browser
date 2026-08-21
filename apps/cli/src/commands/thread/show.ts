@@ -2,7 +2,7 @@ import { Command } from "commander";
 import {
   formatThreadTimelineText,
   type ThreadTimelineTextFormat,
-} from "@bb/thread-view";
+} from "@patcher/thread-view";
 import {
   resolveEnvironmentMergeBaseBranch,
   type Environment,
@@ -11,12 +11,12 @@ import {
   type ThreadPullRequest,
   type ThreadTimelinePendingTodos,
   type WorkspaceStatus,
-} from "@bb/domain";
-import type { BbSdk } from "@bb/sdk";
+} from "@patcher/domain";
+import type { BbSdk } from "@patcher/sdk";
 import type {
   EnvironmentDiffQuery,
   ThreadTimelineResponse,
-} from "@bb/server-contract";
+} from "@patcher/server-contract";
 import { action } from "../../action.js";
 import { createCliBbSdk } from "../../client.js";
 import {

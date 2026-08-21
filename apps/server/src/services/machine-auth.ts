@@ -3,9 +3,9 @@ import { sql } from "drizzle-orm";
 import { betterAuth } from "better-auth";
 import { apiKey } from "@better-auth/api-key";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
-import { authApiKeys, authUsers, type DbConnection } from "@bb/db";
-import { hostTypeSchema, type HostType } from "@bb/domain";
-import { readOrCreateSecretFile } from "@bb/secret-storage";
+import { authApiKeys, authUsers, type DbConnection } from "@patcher/db";
+import { hostTypeSchema, type HostType } from "@patcher/domain";
+import { readOrCreateSecretFile } from "@patcher/secret-storage";
 import { z } from "zod";
 import type { ServerLogger } from "../types.js";
 

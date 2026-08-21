@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import type { ThreadListEntry, ThreadPullRequest } from "@bb/domain";
-import type { EnvironmentDisplayHostContext } from "@bb/core-ui";
+import type { ThreadListEntry, ThreadPullRequest } from "@patcher/domain";
+import type { EnvironmentDisplayHostContext } from "@patcher/core-ui";
 import {
   makeEnvironment,
   makeThread,

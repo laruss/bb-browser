@@ -137,7 +137,7 @@ The complete manifest, with the optional fields SKILL.md leaves out:
   `bb.browser.getStatus()` are ungated: they reach the plugin's own resources
   or report only whether a browser window is connected.
 
-  `@bb/plugin-sdk/testing` enforces the same list, so a suite that exercises
+  `@patcher/plugin-sdk/testing` enforces the same list, so a suite that exercises
   a surface the manifest omits fails in the test rather than on install — pass
   `pluginPermissionsFromManifest(import.meta.url)` and it reads this file.
 

@@ -1,6 +1,6 @@
 import path from "node:path";
-import type { DiscoveredSkill } from "@bb/host-daemon-contract";
-import type { SkillSummary } from "@bb/server-contract";
+import type { DiscoveredSkill } from "@patcher/host-daemon-contract";
+import type { SkillSummary } from "@patcher/server-contract";
 import { COMMAND_TIMEOUT_MS } from "../../constants.js";
 import type { LoggedWorkSessionDeps } from "../../types.js";
 import { callHostRetryableOnlineRpc } from "../hosts/online-rpc.js";

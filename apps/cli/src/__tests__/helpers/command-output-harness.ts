@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, expect, vi } from "vitest";
 import { Command } from "commander";
-import { createApiClient, type ApiClient } from "@bb/server-contract";
-import type { BbSdkContext } from "@bb/sdk";
+import { createApiClient, type ApiClient } from "@patcher/server-contract";
+import type { BbSdkContext } from "@patcher/sdk";
 
 const readlineState = vi.hoisted(() => ({
   question: vi.fn(),
@@ -19,9 +19,13 @@ vi.mock("../../client.js", async () => {
   const { cliFetch } =
     await vi.importActual<typeof import("../../client.js")>("../../client.js");
   const { createBbSdk } =
-    await vi.importActual<typeof import("@bb/sdk/core")>("@bb/sdk/core");
+    await vi.importActual<typeof import("@patcher/sdk/core")>(
+      "@patcher/sdk/core",
+    );
   const { createHttpTransport } =
-    await vi.importActual<typeof import("@bb/sdk/node")>("@bb/sdk/node");
+    await vi.importActual<typeof import("@patcher/sdk/node")>(
+      "@patcher/sdk/node",
+    );
   const toResponse = (resolved: MockTransportResolved): Response =>
     resolved instanceof Response
       ? resolved

@@ -3,7 +3,7 @@
  * only when asked to.
  *
  * Most of what `plugin-api.ts` can pull in is deferred, because a plugin that
- * never touches an area should not pay for it — `@bb/sdk` alone costs ~100MB
+ * never touches an area should not pay for it — `@patcher/sdk` alone costs ~100MB
  * resident. So something has to prove that a plugin which *does* touch one
  * still gets a working object, in the form the host actually ships: bundled.
  *

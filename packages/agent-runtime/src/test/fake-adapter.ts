@@ -10,7 +10,7 @@ import {
   type PendingInteractionUserQuestionOption,
   type ProviderCapabilities,
   type ThreadEvent,
-} from "@bb/domain";
+} from "@patcher/domain";
 import type {
   AdapterCommand,
   BuildInteractiveResponseArgs,

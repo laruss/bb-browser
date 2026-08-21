@@ -5,8 +5,8 @@ import {
   compactThreadTimelineSummaryEvents,
   type AcceptedClientRequestContext,
   type ThreadEventWithMeta,
-} from "@bb/thread-view";
-import type { ClientTurnRequestId, Thread } from "@bb/domain";
+} from "@patcher/thread-view";
+import type { ClientTurnRequestId, Thread } from "@patcher/domain";
 import type {
   ThreadConversationOutlineItem,
   ThreadConversationOutlineResponse,
@@ -16,7 +16,7 @@ import type {
   TimelineSystemRow,
   ThreadTimelineResponse,
   TimelineTurnSummaryDetailsResponse,
-} from "@bb/server-contract";
+} from "@patcher/server-contract";
 import {
   findStoredTimelineWindowByteBudgetFloor,
   findTimelineWindowBudgetFloorSequence,
@@ -45,14 +45,14 @@ import {
   listStoredTurnStartedRowsByTurnIdsUpToSequence,
   listTimelineSegmentAnchorsDescending,
   scopedItemRefKey,
-} from "@bb/db";
+} from "@patcher/db";
 import type {
   DbConnection,
   InlineOutputCharLimit,
   ScopedItemRef,
   StandardTimelineSegmentAnchorRow,
   StoredEventRow,
-} from "@bb/db";
+} from "@patcher/db";
 import { ApiError } from "../../errors.js";
 import { roundDurationMs } from "../lib/duration.js";
 import { parseStoredEvent } from "./thread-data.js";

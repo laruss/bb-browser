@@ -7,7 +7,7 @@
 // Ships disabled. An agent driving this browser acts inside the user's real
 // logged-in session, and BB has no plugin permission model yet, so turning it on
 // is the user's decision (`bb plugin enable browser-tools`).
-import type { BbPluginApi, PluginAgentToolResult } from "@bb/plugin-sdk";
+import type { BbPluginApi, PluginAgentToolResult } from "@patcher/plugin-sdk";
 import { registerBrowserToolsCli } from "./cli.js";
 import {
   BROWSER_TOOLS_INSTRUCTIONS,

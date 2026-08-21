@@ -10,7 +10,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { DynamicTool, ReasoningLevel } from "@bb/domain";
+import type { DynamicTool, ReasoningLevel } from "@patcher/domain";
 import {
   captureBridgeJsonRpcOutput,
   type BridgeJsonRpcOutputMessage,

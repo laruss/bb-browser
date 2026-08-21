@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { turnScope, type PromptTextMention } from "@bb/domain";
+import { turnScope, type PromptTextMention } from "@patcher/domain";
 import {
   createTimelineEventFactory,
   type TimelineEventFactory,

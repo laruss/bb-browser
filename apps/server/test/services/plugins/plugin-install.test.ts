@@ -22,10 +22,10 @@ import {
   listPluginArtifacts,
   migrate,
   type DbConnection,
-} from "@bb/db";
-import type { Logger } from "@bb/logger";
-import { scaffoldPlugin } from "@bb/templates/plugin-scaffold";
-import { PLUGIN_SDK_MAJOR, PLUGIN_SDK_VERSION } from "@bb/domain";
+} from "@patcher/db";
+import type { Logger } from "@patcher/logger";
+import { scaffoldPlugin } from "@patcher/templates/plugin-scaffold";
+import { PLUGIN_SDK_MAJOR, PLUGIN_SDK_VERSION } from "@patcher/domain";
 import { validatePluginArtifactMeta } from "../../../src/services/plugins/app-bundle.js";
 import {
   gitArtifactCacheDir,

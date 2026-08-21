@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@bb/shared-ui/button";
-import { Icon } from "@bb/shared-ui/icon";
+import { Button } from "@patcher/shared-ui/button";
+import { Icon } from "@patcher/shared-ui/icon";
 import { appToast } from "@/components/ui/app-toast.js";
 import { pluginAdminErrorMessage } from "@/lib/plugin-admin-error";
 import { SettingsWithControl } from "@/components/ui/settings-section.js";

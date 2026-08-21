@@ -3,12 +3,12 @@ import { existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { createConnection, migrate } from "@bb/db";
+import { createConnection, migrate } from "@patcher/db";
 import {
   resolveCurrentDevInstanceConfig,
   resolveDataDirDatabasePath,
   resolveProdDataDir,
-} from "@bb/config/runtime";
+} from "@patcher/config/runtime";
 import { seedPerfFixture } from "../lib/seed-perf-fixture.js";
 import { bold, cyan, dim, green, log, endStep } from "../lib/script-helpers.js";
 

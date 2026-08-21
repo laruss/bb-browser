@@ -2,7 +2,7 @@ import type {
   Environment,
   WorkspaceFileStatus,
   WorkspaceFileStatusKind,
-} from "@bb/domain";
+} from "@patcher/domain";
 import type { WorkspaceChangedFilesSection } from "@/components/workspace/workspace-change-summary";
 import { describe, expect, it } from "vitest";
 import {

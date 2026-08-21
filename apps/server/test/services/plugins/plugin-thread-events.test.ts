@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import { threadScope, turnScope } from "@bb/domain";
+import { threadScope, turnScope } from "@patcher/domain";
 import { applyLoggedThreadLifecycleEvent } from "../../../src/services/threads/lifecycle-outcome.js";
 import { createThreadRecord } from "../../../src/services/threads/thread-create-helpers.js";
 import type { ThreadCreateServiceRequest } from "../../../src/services/threads/thread-create-request.js";

@@ -1,7 +1,7 @@
 import type {
   BrowserHistoryEntry,
   BrowserHistoryQuery,
-} from "@bb/server-contract";
+} from "@patcher/server-contract";
 import { signalRequestArgs, type CreateSdkAreaArgs } from "./common.js";
 
 export interface BrowserHistoryListArgs {

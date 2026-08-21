@@ -1,6 +1,6 @@
-// Portable type declarations for `@bb/plugin-sdk`. Unpublished BB
+// Portable type declarations for `@patcher/plugin-sdk`. Unpublished BB
 // workspace contracts are flattened; public subpaths may reuse the
-// package root without requiring any other @bb/* package.
+// package root without requiring any other @patcher/* package.
 //
 // Confused by the API, or need a symbol that isn't here? Clone the BB repo
 // and read the real source: https://github.com/get-bb/bb
@@ -10658,10 +10658,10 @@ type PluginRpcCallArgs<Method extends PluginRpcMethodContract> = null extends Pl
 type PluginRpcResult<Method extends PluginRpcMethodContract> = StandardSchemaV1InferOutput<Method["output"]>;
 
 /**
- * The `@bb/plugin-sdk/app` contract (plugin design §5.2) — pure types with no
+ * The `@patcher/plugin-sdk/app` contract (plugin design §5.2) — pure types with no
  * side effects. The BB app imports these to keep its real implementation in
  * sync (`satisfies PluginSdkApp`). Plugin authors import the same shapes through
- * `@bb/plugin-sdk/app`.
+ * `@patcher/plugin-sdk/app`.
  *
  * Per-slot props are versioned contracts: additive-only within an SDK major.
  */
@@ -11947,7 +11947,7 @@ interface BbNavigate {
     }): boolean;
 }
 /**
- * Everything `@bb/plugin-sdk/app` resolves to at runtime. The BB app builds
+ * Everything `@patcher/plugin-sdk/app` resolves to at runtime. The BB app builds
  * the real implementation and `satisfies` this interface; `bb plugin build`
  * shims the specifier to that object on `globalThis.__bbPluginRuntime`.
  */
@@ -13307,7 +13307,7 @@ interface BbSdk extends BbRealtime {
  * (apps/server/src/services/plugins/plugin-api.ts), which imports these
  * shapes so the contract and the implementation cannot drift. Plugin authors
  * import them type-only (`import type { BbPluginApi } from
- * "@bb/plugin-sdk"`); the import is erased when BB loads the file.
+ * "@patcher/plugin-sdk"`); the import is erased when BB loads the file.
  *
  * Runtime classes stay host-side. NeedsConfigurationError in particular is
  * matched by NAME, so plugin code needs no runtime import:

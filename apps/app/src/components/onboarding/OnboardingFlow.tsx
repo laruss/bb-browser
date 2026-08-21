@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import type { OnboardingAgent } from "@bb/server-contract";
-import type { DiscoveredRepo } from "@bb/host-daemon-contract";
-import { Badge } from "@bb/shared-ui/badge";
-import { Button } from "@bb/shared-ui/button";
-import { Checkbox } from "@bb/shared-ui/checkbox";
+import type { OnboardingAgent } from "@patcher/server-contract";
+import type { DiscoveredRepo } from "@patcher/host-daemon-contract";
+import { Badge } from "@patcher/shared-ui/badge";
+import { Button } from "@patcher/shared-ui/button";
+import { Checkbox } from "@patcher/shared-ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -12,9 +12,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@bb/shared-ui/dialog";
-import { Icon } from "@bb/shared-ui/icon";
-import { cn } from "@bb/shared-ui/lib/utils";
+} from "@patcher/shared-ui/dialog";
+import { Icon } from "@patcher/shared-ui/icon";
+import { cn } from "@patcher/shared-ui/lib/utils";
 import { getProviderIconInfo } from "@/lib/provider-icon";
 import { useLocalPathPicker } from "@/hooks/useLocalPathPicker";
 import { ProjectPathDialog } from "@/components/dialogs/ProjectPathDialog";

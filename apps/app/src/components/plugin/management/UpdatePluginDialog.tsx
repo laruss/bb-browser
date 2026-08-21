@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@bb/shared-ui/button";
+import { Button } from "@patcher/shared-ui/button";
 import {
   Dialog,
   DialogContent,
@@ -8,8 +8,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@bb/shared-ui/dialog";
-import { Icon } from "@bb/shared-ui/icon";
+} from "@patcher/shared-ui/dialog";
+import { Icon } from "@patcher/shared-ui/icon";
 import { appToast } from "@/components/ui/app-toast.js";
 import { pluginAdminErrorMessage } from "@/lib/plugin-admin-error";
 import { invalidatePluginList } from "@/hooks/cache-owners/plugin-cache-owner";

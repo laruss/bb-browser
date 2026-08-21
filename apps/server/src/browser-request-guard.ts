@@ -1,7 +1,7 @@
 import {
   buildLocalAppOrigins,
   type BuildLocalAppOriginsArgs,
-} from "@bb/config/local-app-origins";
+} from "@patcher/config/local-app-origins";
 import type { ServerRuntimeConfig } from "./types.js";
 
 export interface BrowserRequestGuardDeps {
