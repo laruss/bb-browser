@@ -51,6 +51,13 @@ occurrences across 2 488 files**: `@bb/*` 4 969, `BB_*` 2 807, `bb.*` 2 492,
 472 → **86**, and none of the 86 is cloud any more — they are repository and
 npm URLs in `package.json` files (phase 7), test hostnames, and prose.
 
+After phase 2 the `@bb/*` column is **0** everywhere except this file, and the
+tree is at **14 227 occurrences across 1 263 files**: `BB_*` 2 807, `bb.*`
+2 481, `Bb*` 1 935, `bb-plugin-*` 834, `bb-app` 610, `get-bb` / `getbb.app` 88.
+By tree: `apps` 6 131 / 696 files, `packages` 4 882 / 344, `plugins` 1 886 /
+122, `examples` 478 / 57, `docs` 328 / 13, `tests` 92 / 16, `scripts` 37 / 4,
+`.github` 18 / 2.
+
 ## Traps
 
 These are the reasons this is a phased plan and not one `sed`.
@@ -248,18 +255,72 @@ without updating the `@bb/sdk` and `@bb/cli` fixtures, and the committed
 failed once under full parallel load and passed alone and on rerun — the
 load-sensitivity caveat in [bb-migration.md](bb-migration.md), not a defect.
 
-### Phase 2 — `@bb/*` → `@patcher/*`, packages and paths
+### Phase 2 — `@bb/*` → `@patcher/*` — **done** (`6c5ab591a`, `4494d9152`)
 
-- All `package.json` names and `workspace:*` deps, imports, `turbo` filters,
-  tsconfig `paths` and `references`, vitest configs, `.github` filters,
-  `apps/app/components.json`, `packages/plugin-registry/registry.json` and
-  `r/*.json`.
-- `git mv` the 56 `bb`-named files and `packages/bb-app` → `packages/patcher-app`;
-  fix relative imports and the `files` / `bin` / `exports` entries that name them.
-- Regenerate `bun.lock` as a separate commit.
+All 34 workspace packages, every import and `workspace:*` dependency, the turbo
+filters, tsconfig `paths`, vitest configs, `.github` filters,
+`apps/app/components.json`, the plugin component registry, and the root private
+package name. 2 037 files, 4 687 replacements.
 
-**Verify:** `bun install`; `bunx turbo run typecheck` (task count drops from 58
-by the packages deleted in phase 1); `bunx turbo run build`.
+`bun.lock` followed in its own commit on the assumption that regenerating it is
+a dependency upgrade. It was not, this time: 298 lines changed, every one of
+them naming the old or the new scope, and no line carrying a semver moved.
+
+**This phase moved no files, though the bullet list it replaced promised 56.**
+Phases 3–7 claim the same renames, more specifically, and a file renamed one
+phase before the identifier inside it renames is simply touched twice. Every
+overlap went to the later phase:
+
+| Deferred                                                                  | To                                                                 |
+| ------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| npm name `bb-app`, the four bins, `packages/bb-app`, `publish-bb-app.yml` | 7 — one unit with the release pipeline and the artifact downloader |
+| `bb-plugin-*` names, manifest key, `bundled-types/bb-plugin-sdk*.d.ts`    | 5                                                                  |
+| `bb-guide-*.md`, `assets/bb-logo*`                                        | 6                                                                  |
+| `.bb-env-setup.sh`, `reset-bb-data`, `archive-codex-tmp-bb-sessions`      | 4                                                                  |
+| `bb-desktop.ts`, `bb-app-bridge.ts`, `bb-process.ts`                      | 3 — they travel with `BbDesktop*`                                  |
+
+The one row that could **not** be deferred is `@bb/plugin-sdk`, which the
+phase-5 table lists as part of the plugin contract. Here the plugin-author-facing
+specifier and the workspace package name are the same string — all 24 bundled
+and example plugins declare it as a real dependency — so leaving it behind would
+have split the scope. It moved with the other 33. Its bundled `.d.ts`
+_filenames_ did not; those stay with the rest of the plugin contract.
+
+**Three things worth carrying into phases 3–5,** which are the same kind of
+tree-wide token pass.
+
+1. **Anchor on the following character, not on `\b`.** `@bb` was replaced only
+   where the next character could not continue an identifier or a hostname.
+   That spares `machine-auth@bb.internal` — a persisted system-user email, not
+   a package — while still catching the escaped `@bb\/` inside regex literals,
+   the bare `"@bb"` used as a path segment in `node_modules` joins, and the
+   scaffold's registry alias key. Print the histogram of following characters
+   before writing: over 4 687 hits it was `/`, `\`, `"`, and one backtick.
+2. **Two source files carry literal NUL bytes** as composite-key separators
+   (`PluginNewThreadComposer.tsx`, `packages/db/src/data/events.ts`), so a
+   "skip binaries" guard skips them silently. Rewrite those byte-preserving
+   (latin1 round-trip) and assert the NUL count is unchanged.
+3. **`bun install` leaves the old scope directories behind.** 66
+   `node_modules/@bb` directories survived with live symlinks; a missed `@bb/*`
+   import would have kept resolving and the build would have stayed green.
+   Delete them before trusting a verification run. The same command cleared
+   seven orphaned `node_modules` trees left by phase 1's deletions.
+
+**Exposed, not caused:** the scaffold's shadcn registry alias is now `@patcher`
+while its URL still points at `raw.githubusercontent.com/get-bb/bb`. Phase 7
+owns that URL; the alias had to move with the registry items it names.
+
+**Verified** on Node 22.20.0: `bunx turbo run typecheck --force` 54/54, `lint`
+clean, `bunx turbo run build` 13/13, `env -u CLAUDE_CONFIG_DIR bun run test`
+54/54. `@patcher/host-workspace` failed twice under full parallel load and
+passed alone at 8/8 files and 194/194 tests — the load-sensitivity caveat in
+[bb-migration.md](bb-migration.md), as with `@bb/server` in phase 1.
+
+Formatting: 365 of the 2 037 changed files fail prettier, but 275 of them
+already failed at the parent commit — verified by extracting those exact paths
+from `HEAD` and running the repo-pinned prettier 3.8.3 against them. The new
+scope is five characters longer, so 90 import statements overflowed the print
+width; those were formatted and the pre-existing 275 left alone.
 
 ### Phase 3 — `Bb*` identifiers and globals
 
@@ -294,7 +355,8 @@ runs a production build from source; `bun run reset:dev` targets
 
 - Manifest key, `engines`, keyword, package names for the 13 bundled plugins,
   the 12 examples, and the server test fixtures.
-- SDK specifier, bundled type filenames, scaffold tsconfig `paths`.
+- Bundled type filenames and scaffold tsconfig `paths`. The SDK specifier
+  itself already moved in phase 2.
 - `bb.*` → `patcher.*` across permission ids, contribution points, storage and
   settings namespaces, branding keys.
 - `"bb-builtin"` / `"bb-official"` plugin sources.
@@ -329,9 +391,11 @@ available default browser, then restore.
 ### Phase 7 — External identity
 
 - New git remote; the 465 `github.com` links that point at the old repo.
-- npm: publish `patcher-app` (check availability first); rename the four bins;
+- npm: publish `patcher-app` (check availability first); rename the four bins
+  and `packages/bb-app` → `packages/patcher-app`;
   `.github/workflows/publish-bb-app.yml` → `publish-patcher-app.yml`;
-  `check-version-lockstep.mjs`.
+  `check-version-lockstep.mjs`. The directory, the published name, the bins,
+  the release workflow, and `bb-app-artifact.ts` move together or not at all.
 - Auto-update feed base URL and the `desktop-latest` / `desktop-nightly` release
   tags in the new repo.
 - Telemetry: new PostHog project for `PATCHER_POSTHOG_API_KEY`, and update the
