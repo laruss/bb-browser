@@ -3,7 +3,7 @@
     "Budget for the boot payload: the entry chunk plus its static-import",
     "closure. That is the JavaScript a phone must download, parse and compile",
     "before the app renders anything, so it is the number that decides how",
-    "slow bb feels on mobile.",
+    "slow Patcher feels on mobile.",
     "",
     "Chunks behind a dynamic import are deliberately not counted. Moving code",
     "behind React.lazy or import() is the fix this budget exists to encourage.",
