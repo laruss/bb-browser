@@ -555,7 +555,7 @@ afterEach(() => {
   threadStore.clear();
   panelCallbacks.clear();
   resetPluginSlotStoreForTest();
-  delete window.bbDesktop;
+  delete window.patcherDesktop;
   window.localStorage.clear();
   window.sessionStorage.clear();
 });
@@ -1647,7 +1647,7 @@ describe("SplitThreadArea", () => {
       updateDownloaded: false,
       version: "0.0.0-test",
     };
-    window.bbDesktop = createPatcherDesktopApi(desktopInfo);
+    window.patcherDesktop = createPatcherDesktopApi(desktopInfo);
     setPluginSlotRegistrations("docs", {
       homepageSections: [],
       settingsSections: [],
@@ -1690,7 +1690,7 @@ describe("SplitThreadArea", () => {
       updateDownloaded: false,
       version: "0.0.0-test",
     };
-    window.bbDesktop = createPatcherDesktopApi(desktopInfo);
+    window.patcherDesktop = createPatcherDesktopApi(desktopInfo);
     setPluginSlotRegistrations("test-plugin", {
       homepageSections: [],
       settingsSections: [],
@@ -1738,7 +1738,7 @@ describe("SplitThreadArea", () => {
       updateDownloaded: false,
       version: "0.0.0-test",
     };
-    window.bbDesktop = createPatcherDesktopApi(desktopInfo);
+    window.patcherDesktop = createPatcherDesktopApi(desktopInfo);
     sidebarState.showing = false;
     setPluginSlotRegistrations("test-plugin", {
       homepageSections: [],

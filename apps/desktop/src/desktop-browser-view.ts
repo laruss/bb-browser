@@ -349,8 +349,14 @@ function truncate(value: string, max: number): string {
 /**
  * Isolated, persistent partition for the in-app browser. Cookies/storage never
  * touch the Patcher app session (`defaultSession`) or the user's real browser.
+ *
+ * The name is the on-disk directory under the app's `userData`, so changing it
+ * abandons whatever the old name holds. That cost was already paid: the rename
+ * moved `productName` from "bb" to "Patcher", which relocates `userData`
+ * itself, so no install can reach its old cookies by either name.
+ * `wire-values.test.ts` pins this string — nothing else notices it changing.
  */
-export const PATCHER_BROWSER_PARTITION = "persist:bb-browser";
+export const PATCHER_BROWSER_PARTITION = "persist:patcher-browser";
 
 /**
  * `did-fail-load` reports aborted main-frame loads (a user navigating away, a

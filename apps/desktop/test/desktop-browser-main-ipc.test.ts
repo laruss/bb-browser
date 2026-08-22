@@ -1287,7 +1287,7 @@ describe("registerDesktopBrowserIpc", () => {
           pluginId: "site-tweaks",
           scriptId: "toolbar",
           matches: ["https://github.com/**"],
-          code: "bb.ready(function(){})",
+          code: "patcher.ready(function(){})",
         },
       ],
     };

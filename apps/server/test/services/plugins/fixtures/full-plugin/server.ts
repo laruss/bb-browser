@@ -124,7 +124,7 @@ export default function plugin(patcher: any): void {
   patcher.browser.registerPageScript({
     id: "toolbar",
     matches: ["https://example.test/**"],
-    code: "bb.ready(function () { document.title = 'seen'; });",
+    code: "patcher.ready(function () { document.title = 'seen'; });",
   });
 
   patcher.browser.registerAuthProvider(() => null);

@@ -172,7 +172,7 @@ either a screen Patcher has not drawn (below) or a decision nobody has needed ye
 - **Per-site permission toggles and a cookie count** in the site panel. Patcher's
   permission policy is fixed in the shell, so there is nothing per-site to toggle
   yet.
-- **Incognito and profiles.** One fixed `persist:bb-browser` partition.
+- **Incognito and profiles.** One fixed `persist:patcher-browser` partition.
 - **Picture-in-picture and media keys**; **DRM will not play** at all (no Widevine
   in Electron).
 - **One overlay owner per window.** Freezing the page for a panel is owned in two

@@ -66,7 +66,7 @@ function installColorSchemeMediaQuery(initialDark: boolean): {
 
 afterEach(() => {
   cleanup();
-  delete window.bbDesktop;
+  delete window.patcherDesktop;
   window.localStorage.clear();
   vi.restoreAllMocks();
   vi.resetModules();
@@ -78,7 +78,7 @@ describe("desktop theme synchronization", () => {
     const setThemeCalls: PatcherDesktopTheme[] = [];
     const desktopApi = createPatcherDesktopApi(desktopInfo);
     desktopApi.setTheme = (theme) => setThemeCalls.push(theme);
-    window.bbDesktop = desktopApi;
+    window.patcherDesktop = desktopApi;
 
     const { useDesktopThemeSync } = await import("./useDesktopThemeSync");
     const { usePreferredTheme } = await import("./useTheme");

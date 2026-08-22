@@ -107,28 +107,18 @@ function buildApi(pluginId: string): PageScriptApi {
 
 function runWorld(world: PatcherDesktopPageScriptWorld): void {
   try {
+    // One name, exposed once: a second `exposeInIsolatedWorld` for the same
+    // world throws and aborts the rest of this preload (see the header), so an
+    // alias would have to be an assignment queued after it. There is nothing
+    // to alias — no shipped Patcher build ever exposed page scripts under `bb`.
     contextBridge.exposeInIsolatedWorld(
       world.worldId,
-      "bb",
+      "patcher",
       buildApi(world.pluginId),
     );
   } catch {
-    // Nothing to run in a world that has no `bb`; the next plugin still gets its.
+    // Nothing to run in a world that took no API; the next plugin still gets its.
     return;
-  }
-  // `patcher` is the name page scripts should use; `bb` is frozen because a
-  // script written against an older shell keeps working. It is an assignment
-  // rather than a second `exposeInIsolatedWorld` because a second expose for
-  // the same world throws and aborts the rest of this preload (see the header).
-  // It is queued before the scripts below, so they see both names.
-  try {
-    void webFrame
-      .executeJavaScriptInIsolatedWorld(world.worldId, [
-        { code: "globalThis.patcher ??= globalThis.bb;" },
-      ])
-      .catch(() => {});
-  } catch {
-    // A world that will not take the alias still runs its scripts under `bb`.
   }
   for (const script of world.scripts) {
     try {

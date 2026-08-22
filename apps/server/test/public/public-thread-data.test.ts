@@ -4523,7 +4523,7 @@ describe("public thread data routes", () => {
       expect(fileResponse.headers.get("cache-control")).toBe("no-store");
       const body = await fileResponse.text();
       expect(body).toBe(html);
-      expect(body).not.toContain("window.bb");
+      expect(body).not.toContain("window.patcher");
     });
   });
 

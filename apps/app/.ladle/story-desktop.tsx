@@ -77,7 +77,7 @@ interface WithDesktopBrowserProps {
 }
 
 /**
- * Installs an inert `window.bbDesktop` so stories can exercise the desktop-only
+ * Installs an inert `window.patcherDesktop` so stories can exercise the desktop-only
  * browser surface — the launcher's "Open browser" entry and the browser tab.
  * The bridge is set synchronously during render (before children read
  * `isDesktopBrowserAvailable()`, which runs at render time) and removed on
@@ -88,13 +88,13 @@ export function WithDesktopBrowser({
   browserState = null,
   children,
 }: WithDesktopBrowserProps) {
-  if (typeof window !== "undefined" && window.bbDesktop === undefined) {
-    window.bbDesktop = createStoryDesktopApi(browserState);
+  if (typeof window !== "undefined" && window.patcherDesktop === undefined) {
+    window.patcherDesktop = createStoryDesktopApi(browserState);
   }
   useEffect(() => {
     return () => {
       if (typeof window !== "undefined") {
-        delete window.bbDesktop;
+        delete window.patcherDesktop;
       }
     };
   }, []);

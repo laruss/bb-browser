@@ -95,7 +95,7 @@ const MACOS_DESKTOP_INFO: PatcherDesktopInfo = {
 
 afterEach(() => {
   cleanup();
-  delete window.bbDesktop;
+  delete window.patcherDesktop;
 });
 
 // The surface draws no page header, so this strip owns the window's title-bar
@@ -278,7 +278,7 @@ describe("browser surface tab strip hit target", () => {
   // tailwind-merge applied over the close control's `absolute` and dropped the
   // control into the strip's flow, outside the tab it belongs to.
   it("keeps the close control positioned inside its tab in desktop chrome", () => {
-    window.bbDesktop = createPatcherDesktopApi(MACOS_DESKTOP_INFO);
+    window.patcherDesktop = createPatcherDesktopApi(MACOS_DESKTOP_INFO);
     renderStrip([browserTab("tab-1", "One")]);
 
     const close = screen.getByRole("button", { name: "Close One" });

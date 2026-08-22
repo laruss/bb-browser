@@ -1219,7 +1219,7 @@ API or what the documentation is allowed to claim:
 - **Before the page's own first script.** The preload runs when the document exists
   and the parser has produced nothing — `document.documentElement` is still null.
   That is genuinely `document_start`, earlier than a page style lands, so a script
-  can patch what the page is about to use. It is also why `bb.ready` exists: a
+  can patch what the page is about to use. It is also why `patcher.ready` exists: a
   generated script whose first line touches `document.body` would otherwise throw
   every time.
 - **A world per plugin, invisible in both directions.** Two scripts of one plugin

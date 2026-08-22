@@ -1,9 +1,9 @@
 import { z } from "zod";
 
 export const PATCHER_DESKTOP_SERVER_URL_DIALOG_SUBMIT_CHANNEL =
-  "bb-desktop:server-url-dialog:submit";
+  "patcher-desktop:server-url-dialog:submit";
 export const PATCHER_DESKTOP_SERVER_URL_DIALOG_CANCEL_CHANNEL =
-  "bb-desktop:server-url-dialog:cancel";
+  "patcher-desktop:server-url-dialog:cancel";
 
 export const serverUrlDialogSubmitRequestSchema = z
   .object({

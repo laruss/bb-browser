@@ -188,10 +188,13 @@ function createChatGptHeaders(auth: CodexChatGptAuthCredentials): Headers {
   const headers = new Headers();
   headers.set("Authorization", `Bearer ${auth.accessToken}`);
   headers.set("chatgpt-account-id", auth.accountId);
-  // Frozen: see docs/architecture/rename-to-patcher.md. `originator` is
-  // OpenAI's field, not ours, and an unrecognized value would fail every
-  // request with nothing to read.
-  headers.set("originator", "bb");
+  // `originator` is OpenAI's field, not ours. Unfrozen with the rest of the
+  // rename (rename-to-patcher.md records the decision) on the reading that an
+  // unregistered value is accepted — which is the only reading under which the
+  // inherited `bb` worked here at all. Not verifiable from this repo: if the
+  // backend does allowlist values, every ChatGPT request 401s/403s and this one
+  // line is the revert.
+  headers.set("originator", "patcher");
   headers.set("User-Agent", "patcher-host-daemon");
   if (auth.isFedrampAccount) {
     headers.set("X-OpenAI-Fedramp", "true");

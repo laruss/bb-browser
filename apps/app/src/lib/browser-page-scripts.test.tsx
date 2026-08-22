@@ -37,7 +37,7 @@ const SCRIPT: PluginBrowserPageScriptContribution = {
   pluginId: "site-tweaks",
   scriptId: "toolbar",
   matches: ["https://github.com/**"],
-  code: "bb.ready(function(){})",
+  code: "patcher.ready(function(){})",
 };
 
 const CALL: PatcherDesktopBrowserPageScriptCall = {
@@ -63,7 +63,7 @@ function installShell(
   const answers: PatcherDesktopBrowserPageScriptResult[] = [];
   const listeners = new Set<PatcherDesktopBrowserPageScriptCallHandler>();
   let unsubscribes = 0;
-  window.bbDesktop = createPatcherDesktopApi(desktopInfo, {
+  window.patcherDesktop = createPatcherDesktopApi(desktopInfo, {
     ...createNoopDesktopBrowserApi(),
     setPageScripts(request) {
       pushes.push(request);
@@ -96,7 +96,7 @@ afterEach(() => {
   cleanup();
   contributions.value = undefined;
   vi.unstubAllGlobals();
-  delete window.bbDesktop;
+  delete window.patcherDesktop;
 });
 
 function stubRpc(
@@ -281,7 +281,7 @@ describe("useBrowserPageScripts", () => {
 
   it("says nothing to a shell that has no such channel", () => {
     contributions.value = { browserPageScripts: [SCRIPT] };
-    window.bbDesktop = createPatcherDesktopApi(
+    window.patcherDesktop = createPatcherDesktopApi(
       desktopInfo,
       createNoopDesktopBrowserApi(),
     );

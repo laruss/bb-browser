@@ -68,39 +68,35 @@ const ENGLISH_DOUBLE_B_ALL = new RegExp(ENGLISH_DOUBLE_B_SOURCE, "giu");
  * declares.
  */
 const ALLOW = [
-  // --- Frozen wire strings (see the Frozen table in the plan) --------------
+  // --- The values that used to be frozen -----------------------------------
+  // All six were unfrozen and renamed; three of the justifications turned out
+  // to be wrong (the plan's Frozen table records which). What is left is the
+  // old name appearing in a comment that explains the new one, and each of
+  // those is pinned by a test naming the value it now carries.
   {
-    why: "IPC channel values; the desktop shell attaches to any healthy server, so renderer and main routinely differ in build",
-    word: /^bb-desktop$/u,
-  },
-  {
-    why: "exposeInMainWorld name across the same mixed-build boundary",
-    word: /^bbDesktop$/u,
-  },
-  {
-    why: "the page-script API name, exposed alongside `patcher` rather than replaced",
+    why: "a comment recording the partition rename's actual cost: userData moved with productName, so the old cookies were unreachable either way",
     word: /^bb$/u,
-    line: /bb\.ready|globalThis\.bb|window\.bb|dataset\.bb/u,
+    line: /moved `productName` from "bb"/u,
   },
   {
-    why: "the preload that exposes the frozen page-script name, and the comments explaining why it stays",
+    why: "comments on OpenAI's originator field, where the inherited value is the one fact that argues the new one is accepted",
     word: /^bb$/u,
-    path: /^apps\/desktop\/src\/page-script-preload\.ts$/u,
+    line: /inherited `bb` worked here at all|go back to the inherited `bb`/u,
   },
   {
-    why: "the WebSocket subprotocol, negotiated before the version handshake",
+    why: "the audit's own worked example of what it cannot see: a `bb` that became a `patcher`",
+    word: /^bb$/u,
+    line: /a `bb` that became a/u,
+  },
+  {
+    why: "the two preloads name the global they no longer expose, which is the whole reason one name is enough",
+    word: /^(?:bb|bbDesktop)$/u,
+    line: /never shipped a build that reads `bbDesktop`|ever exposed page scripts under `bb`/u,
+  },
+  {
+    why: "the assertion that an out-of-date daemon's subprotocol is now refused; the old value is the case worth stating",
     word: /^bb-host-daemon$/u,
-    line: /bb-host-daemon\.v1/u,
-  },
-  {
-    why: "OpenAI's originator field; an unrecognized value fails every request",
-    word: /^bb$/u,
-    line: /headers\.set\("originator"/u,
-  },
-  {
-    why: "the Electron partition name is an on-disk directory; renaming it wipes every site cookie",
-    word: /^bb-browser$/u,
-    line: /persist:bb-browser/u,
+    line: /hasHostDaemonWebSocketProtocol\("bb-host-daemon/u,
   },
 
   // --- Physical database names kept on purpose -----------------------------

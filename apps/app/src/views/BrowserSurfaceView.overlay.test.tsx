@@ -117,7 +117,7 @@ function renderSurface() {
   const downloadListeners: Array<
     (download: PatcherDesktopBrowserDownload) => void
   > = [];
-  window.bbDesktop = createPatcherDesktopApi(desktopInfo, {
+  window.patcherDesktop = createPatcherDesktopApi(desktopInfo, {
     ...createNoopDesktopBrowserApi(),
     setOverlay,
     onDownload(listener) {
@@ -184,7 +184,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   window.localStorage.removeItem(getBrowserSurfaceTabsStorageKey());
-  delete window.bbDesktop;
+  delete window.patcherDesktop;
   vi.unstubAllGlobals();
 });
 

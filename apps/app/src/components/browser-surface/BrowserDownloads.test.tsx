@@ -74,7 +74,7 @@ function renderChrome() {
   const onPageOverlayChange = vi.fn();
   const listeners: Array<(download: PatcherDesktopBrowserDownload) => void> =
     [];
-  window.bbDesktop = createPatcherDesktopApi(desktopInfo, {
+  window.patcherDesktop = createPatcherDesktopApi(desktopInfo, {
     ...createNoopDesktopBrowserApi(),
     downloadAction,
     onDownload(listener) {

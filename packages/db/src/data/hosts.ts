@@ -68,9 +68,10 @@ export function upsertHost(
       .set({
         name: input.name,
         type: input.type,
-        // The cloud that set this is gone; the column is kept (see the
-        // rename plan's Frozen table) but nothing writes it any more, so an
-        // update must preserve whatever an older build left behind.
+        // The cloud that set this is gone. The column stays — dropping one
+        // costs a migration plus ~30 regenerated drizzle snapshots for no
+        // functional gain — but nothing writes it any more, so an update must
+        // preserve whatever an older build left behind.
         connectMachineId: existing.connectMachineId,
         destroyedAt:
           input.destroyedAt !== undefined

@@ -178,7 +178,7 @@ That makes the first diagnostic question answerable in one command: if
   real URL rather than reusing `resolveBrowserAddressInput`'s search fallback:
   silently searching is right for a human typing and wrong for an agent that
   passed a malformed address.
-- **No new session reach.** Everything stays in the `persist:bb-browser`
+- **No new session reach.** Everything stays in the `persist:patcher-browser`
   partition. No cookie, download, permission or devtools access is added.
 - **No page eval.** The obvious next tool after `getText` would be a
   general "evaluate this JS in the page", which is a remote-code-execution

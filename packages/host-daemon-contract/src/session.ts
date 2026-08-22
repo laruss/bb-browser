@@ -29,7 +29,16 @@ import {
 } from "./commands.js";
 import { hostPlatformSchema } from "./local.js";
 
-export const HOST_DAEMON_WEBSOCKET_PROTOCOL = "bb-host-daemon.v1";
+// The WebSocket subprotocol. Renaming it is safe only because the protocol
+// version is checked first, over HTTP: `POST /internal/session/open` carries
+// `protocolVersion` and the daemon opens its socket with the session id that
+// call returns (apps/host-daemon/src/server-connection.ts, the only caller,
+// always passes a null session id, so the HTTP call always happens first). An
+// out-of-date daemon is therefore rejected at the handshake that can tell it to
+// update, and never reaches this string. That is also why version 109 exists:
+// without it, a 108 daemon would pass the version check and then fail the
+// socket with a 400 it cannot read. `contract.test.ts` pins the value.
+export const HOST_DAEMON_WEBSOCKET_PROTOCOL = "patcher-host-daemon.v1";
 
 export const hostDaemonActiveThreadSchema = z.object({
   threadId: z.string().min(1),

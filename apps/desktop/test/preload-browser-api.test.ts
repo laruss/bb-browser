@@ -129,7 +129,7 @@ const electronMock = vi.hoisted(() => {
     contextBridge: {
       exposeInMainWorld(name: string, api: unknown): void {
         exposedNames.push(name);
-        if (name === "bbDesktop" || name === "patcherDesktop") {
+        if (name === "patcherDesktop") {
           exposedApi = api as PatcherDesktopApi;
           return;
         }
@@ -142,12 +142,12 @@ const electronMock = vi.hoisted(() => {
       invoke(channel: string, payload?: unknown): Promise<unknown> {
         invokeCalls.push(channel);
         invokePayloads.push(payload);
-        if (channel === "bb-desktop:browser:read-page") {
+        if (channel === "patcher-desktop:browser:read-page") {
           return readPageReply === null
             ? Promise.resolve(null)
             : readPageReply();
         }
-        if (channel === "bb-desktop:get-window-state") {
+        if (channel === "patcher-desktop:get-window-state") {
           return Promise.resolve(desktopWindowState);
         }
         return Promise.resolve(desktopInfo);
@@ -190,9 +190,8 @@ async function loadPreload(): Promise<PatcherDesktopApi> {
   process.env.PATCHER_DESKTOP_VERSION = "0.0.0-test";
   await import("../src/preload.js");
   const api = electronMock.exposedApi;
-  // Both names carry the same object: `patcherDesktop` for new renderers and
-  // the frozen `bbDesktop` for ones built before the rename.
-  expect(electronMock.exposedNames).toContain("bbDesktop");
+  // The renderer reads this global by name and nothing else on that boundary
+  // can notice it changing, so the name is asserted here as a wire value.
   expect(electronMock.exposedNames).toContain("patcherDesktop");
   expect(api).not.toBeNull();
   if (api === null) {
@@ -469,7 +468,7 @@ describe("desktop preload browser API", () => {
     // browser ones are this test's business.
     expect(
       electronMock.invokeCalls.filter((channel) =>
-        channel.startsWith("bb-desktop:browser:"),
+        channel.startsWith("patcher-desktop:browser:"),
       ),
     ).toEqual([
       PATCHER_DESKTOP_BROWSER_READ_PAGE_CHANNEL,

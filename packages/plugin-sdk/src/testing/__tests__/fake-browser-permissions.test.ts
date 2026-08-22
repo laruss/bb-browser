@@ -342,7 +342,7 @@ describe("contribution points", () => {
     const script = {
       id: "toolbar",
       matches: ["https://github.com/**"],
-      code: "bb.ready(function(){})",
+      code: "patcher.ready(function(){})",
     };
 
     patcher.browser.registerPageScript(script);

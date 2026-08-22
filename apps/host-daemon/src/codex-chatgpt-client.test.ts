@@ -281,6 +281,11 @@ describe("Codex ChatGPT client", () => {
     expect(headers.get("authorization")).toBe(`Bearer ${accessToken}`);
     expect(headers.get("chatgpt-account-id")).toBe("account-123");
     expect(headers.get("openai-beta")).toBe("responses=experimental");
+    // `originator` is OpenAI's field and the value we send is unverifiable from
+    // here, so it is pinned: if this ever has to go back to the inherited `bb`
+    // because the backend allowlists values, the change lands in one place.
+    expect(headers.get("originator")).toBe("patcher");
+    expect(headers.get("User-Agent")).toBe("patcher-host-daemon");
     const requestBody = JSON.parse(textBodyFromInit(init));
     expect(requestBody).toMatchObject({
       model: "gpt-5.6-luna",

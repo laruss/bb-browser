@@ -88,7 +88,7 @@ function renderChrome(
   const onActivateTab = vi.fn();
   const onPageOverlayChange = vi.fn();
   const browser = { ...createNoopDesktopBrowserApi(), navigate };
-  window.bbDesktop = createPatcherDesktopApi(desktopInfo, browser);
+  window.patcherDesktop = createPatcherDesktopApi(desktopInfo, browser);
 
   // A query client because the site-info panel fetches what plugins know about
   // the site when it opens; the rest of the chrome needs none.
@@ -364,7 +364,7 @@ describe("BrowserSurfaceChrome", () => {
         return () => {};
       },
     };
-    window.bbDesktop = createPatcherDesktopApi(desktopInfo, browser);
+    window.patcherDesktop = createPatcherDesktopApi(desktopInfo, browser);
     const { wrapper: Wrapper } = createQueryClientTestHarness();
     render(
       <Wrapper>
@@ -406,7 +406,7 @@ describe("BrowserSurfaceChrome", () => {
 
   it("ignores state pushed for another tab", () => {
     const listeners: ((state: unknown) => void)[] = [];
-    window.bbDesktop = createPatcherDesktopApi(desktopInfo, {
+    window.patcherDesktop = createPatcherDesktopApi(desktopInfo, {
       ...createNoopDesktopBrowserApi(),
       onState(listener) {
         listeners.push(listener as (state: unknown) => void);

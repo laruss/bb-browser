@@ -136,7 +136,7 @@ describe("usePluginContributions", () => {
           pluginId: "notes",
           scriptId: "toolbar",
           matches: ["https://github.com/**"],
-          code: "bb.ready(function(){})",
+          code: "patcher.ready(function(){})",
         },
         // Dropped for the same reason a style is, with more at stake: this one
         // decides which sites get to run a plugin's program.
@@ -220,7 +220,7 @@ describe("usePluginContributions", () => {
             pluginId: "notes",
             scriptId: "toolbar",
             matches: ["https://github.com/**"],
-            code: "bb.ready(function(){})",
+            code: "patcher.ready(function(){})",
           },
         ],
         commands: [

@@ -41,7 +41,7 @@ function installShell(
   overrides: Partial<PatcherDesktopBrowserApi> = {},
 ): PatcherDesktopBrowserPageStyles[] {
   const pushes: PatcherDesktopBrowserPageStyles[] = [];
-  window.bbDesktop = createPatcherDesktopApi(desktopInfo, {
+  window.patcherDesktop = createPatcherDesktopApi(desktopInfo, {
     ...createNoopDesktopBrowserApi(),
     setPageStyles(request) {
       pushes.push(request);
@@ -54,7 +54,7 @@ function installShell(
 afterEach(() => {
   cleanup();
   contributions.value = undefined;
-  delete window.bbDesktop;
+  delete window.patcherDesktop;
 });
 
 describe("useBrowserPageStyles", () => {
@@ -119,7 +119,7 @@ describe("useBrowserPageStyles", () => {
     contributions.value = { browserPageStyles: [STYLE] };
     // No `setPageStyles`: an older shell, whose strict parser would drop the
     // payload anyway.
-    window.bbDesktop = createPatcherDesktopApi(
+    window.patcherDesktop = createPatcherDesktopApi(
       desktopInfo,
       createNoopDesktopBrowserApi(),
     );

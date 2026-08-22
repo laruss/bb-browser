@@ -90,7 +90,7 @@ export interface PatcherDesktopApi extends PatcherDesktopInfo {
   /**
    * Control surface for the desktop-only web browser tab. The renderer drives
    * a hardened, isolated Electron `WebContentsView` through these methods; the
-   * web build has no `window.bbDesktop`, so this surface is desktop-only by
+   * web build has no `window.patcherDesktop`, so this surface is desktop-only by
    * construction.
    */
   browser: PatcherDesktopBrowserApi;
@@ -182,14 +182,14 @@ export interface PatcherDesktopApi extends PatcherDesktopInfo {
    * Open a URL in the user's default system browser, leaving the in-app
    * browser tab. The main process only honors `http(s)` URLs — the address
    * originates from a possibly-hostile page, so other schemes are dropped.
-   * No-op on the web build where `window.bbDesktop` is undefined.
+   * No-op on the web build where `window.patcherDesktop` is undefined.
    */
   openExternalUrl(url: string): void;
   /**
    * Push the renderer's theme preference to the Electron main process so the
    * NSWindow appearance — traffic lights and inactive title-bar chrome —
    * follows Patcher's explicit theme or the OS when set to system. No-op on the web
-   * build where `window.bbDesktop` is undefined.
+   * build where `window.patcherDesktop` is undefined.
    */
   setTheme(theme: PatcherDesktopTheme): void;
 }

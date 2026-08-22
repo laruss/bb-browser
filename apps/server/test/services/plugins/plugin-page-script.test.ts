@@ -28,7 +28,7 @@ const SCRIPT_SOURCE = `
     patcher.browser.registerPageScript({
       id: "toolbar",
       matches: ["https://github.com/**"],
-      code: "bb.ready(function () { document.title = 'seen'; });",
+      code: "patcher.ready(function () { document.title = 'seen'; });",
     });
   }
 `;
@@ -113,7 +113,7 @@ describe("plugin page scripts (patcher.browser.registerPageScript)", () => {
         pluginId: "script",
         scriptId: "toolbar",
         matches: ["https://github.com/**"],
-        code: "bb.ready(function () { document.title = 'seen'; });",
+        code: "patcher.ready(function () { document.title = 'seen'; });",
       },
     ]);
   });
@@ -219,7 +219,7 @@ describe("plugin page scripts (patcher.browser.registerPageScript)", () => {
             patcher.browser.registerPageScript({
               id: "browser-only",
               matches: ["https://github.com/**"],
-              code: "document.body.dataset.bb = navigator.userAgent;",
+              code: "document.body.dataset.patcher = navigator.userAgent;",
             });
           }
         `,

@@ -75,7 +75,7 @@ function renderSurface(initialWindowFullScreen: boolean): FullscreenHarness {
       calls.push(request);
     },
   };
-  window.bbDesktop = {
+  window.patcherDesktop = {
     ...desktopInfo,
     browser,
     async checkForUpdates() {
@@ -147,7 +147,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   window.localStorage.removeItem(getBrowserSurfaceTabsStorageKey());
-  delete window.bbDesktop;
+  delete window.patcherDesktop;
 });
 
 describe("BrowserSurfaceView: giving the page the whole window", () => {

@@ -1113,10 +1113,10 @@ contextBridge.exposeInMainWorld(
   PATCHER_DESKTOP_SPELLCHECK_GLOBAL_NAME,
   patcherSpellcheckApi,
 );
-// Two names, one object. The renderer is served by whichever server the
-// shell attached to, so an old SPA can run against this shell and a new SPA
-// against an older one. `bbDesktop` is therefore frozen and stays exposed;
-// `patcherDesktop` is what new renderers read. See the Frozen table in
-// docs/architecture/rename-to-patcher.md.
-contextBridge.exposeInMainWorld("bbDesktop", patcherDesktopApi);
+// One name. The renderer is served by whichever server the shell attached to,
+// so a renderer built before this rename would find nothing here — but Patcher
+// has never shipped a build that reads `bbDesktop`, so there is no such
+// renderer to keep working, and carrying the old name would only mean two
+// spellings for every future reader to check. `preload-wire-values.test.ts`
+// pins the name, because nothing else on this boundary can notice it changing.
 contextBridge.exposeInMainWorld("patcherDesktop", patcherDesktopApi);

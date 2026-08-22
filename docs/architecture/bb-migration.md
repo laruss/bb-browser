@@ -162,7 +162,7 @@ systems before their dependencies are understood; neither has been audited.
 ## Invariants that must not break
 
 1. **`HOST_DAEMON_PROTOCOL_VERSION`** (`packages/host-daemon-contract/src/commands.ts`,
-   currently `108`) must be incremented whenever anything on the server ↔ daemon
+   currently `109`) must be incremented whenever anything on the server ↔ daemon
    wire can change. A passing TypeScript build is not evidence of wire
    compatibility: enrolled machines may still run an older daemon, and the
    version mismatch is what triggers their update. Without a bump an old daemon

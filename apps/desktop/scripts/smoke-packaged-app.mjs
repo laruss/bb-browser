@@ -81,16 +81,16 @@ function renderSmokePage(expectedDesktopVersion) {
   let ok = false;
   let reason = "";
   try {
-    if (typeof window.bbDesktop !== "object" || window.bbDesktop === null) {
-      reason = "missing window.bbDesktop";
-    } else if (typeof window.bbDesktop.getInfo !== "function") {
-      reason = "missing window.bbDesktop.getInfo";
+    if (typeof window.patcherDesktop !== "object" || window.patcherDesktop === null) {
+      reason = "missing window.patcherDesktop";
+    } else if (typeof window.patcherDesktop.getInfo !== "function") {
+      reason = "missing window.patcherDesktop.getInfo";
     } else {
-      const info = await window.bbDesktop.getInfo();
+      const info = await window.patcherDesktop.getInfo();
       const expectedVersion = ${JSON.stringify(expectedDesktopVersion)};
       ok =
-        window.bbDesktop.platform === "macos" &&
-        window.bbDesktop.version === expectedVersion &&
+        window.patcherDesktop.platform === "macos" &&
+        window.patcherDesktop.version === expectedVersion &&
         info.version === expectedVersion;
       reason = ok ? "" : "unexpected desktop bridge info";
     }

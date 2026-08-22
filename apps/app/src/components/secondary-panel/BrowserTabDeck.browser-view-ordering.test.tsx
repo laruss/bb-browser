@@ -100,7 +100,7 @@ function createRecordingBrowserApi(): RecordingBrowserApi {
 }
 
 function installDesktopBrowser(api: PatcherDesktopBrowserApi): void {
-  window.bbDesktop = createPatcherDesktopApi(desktopInfo, api);
+  window.patcherDesktop = createPatcherDesktopApi(desktopInfo, api);
 }
 
 function createMatchMedia(
@@ -180,7 +180,7 @@ describe("BrowserTabDeck native browser first-show ordering", () => {
     vi.restoreAllMocks();
     resetBrowserViewPersistence();
     window.localStorage.clear();
-    delete window.bbDesktop;
+    delete window.patcherDesktop;
     Object.defineProperty(window, "matchMedia", {
       configurable: true,
       writable: true,

@@ -8,11 +8,11 @@ import type { PatcherDesktopDefaultBrowserStatus } from "@patcher/desktop-contra
 // the OS to make it so.
 
 export const PATCHER_DESKTOP_GET_DEFAULT_BROWSER_CHANNEL =
-  "bb-desktop:get-default-browser";
+  "patcher-desktop:get-default-browser";
 export const PATCHER_DESKTOP_REQUEST_DEFAULT_BROWSER_CHANNEL =
-  "bb-desktop:request-default-browser";
+  "patcher-desktop:request-default-browser";
 export const PATCHER_DESKTOP_DEFAULT_BROWSER_CHANGED_CHANNEL =
-  "bb-desktop:default-browser-changed";
+  "patcher-desktop:default-browser-changed";
 
 /**
  * Both, always. A browser that owns `https` and not `http` is a browser that

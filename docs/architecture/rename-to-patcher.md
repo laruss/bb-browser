@@ -12,21 +12,23 @@ copyright is unchanged.
 
 Companion to [bb-migration.md](bb-migration.md), which records what this fork
 inherited and which invariants survive. Read its **Invariants** section before
-touching anything in the "Frozen" table below.
+touching a wire value; the six that were meant to keep their `bb`, and why all
+six were renamed anyway, are under [Unfrozen](#unfrozen-the-six-values-that-were-going-to-keep-their-bb).
 
 ## Decisions this plan is built on
 
-| Decision                           | Choice                                                                                                          |
-| ---------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| Compatibility with bb installs     | **Clean break.** No dual reads, no fallbacks, no state migration. Old bb data stays where it is and is ignored. |
-| Naming style                       | **Full words**: `PATCHER_*` env, `@patcher/*` scope, `patcher` binary, `~/.patcher`.                            |
-| Cloud (`apps/web`, `apps/connect`) | **Removed from the fork**, along with the tunnel/connect packages and the `connect` plugin. Done in phase 1.    |
-| Wire strings                       | **Frozen.** Constant names and types are renamed; the string values on the IPC wire are not.                    |
+| Decision                           | Choice                                                                                                                                                                             |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Compatibility with bb installs     | **Clean break.** No dual reads, no fallbacks, no state migration. Old bb data stays where it is and is ignored.                                                                    |
+| Naming style                       | **Full words**: `PATCHER_*` env, `@patcher/*` scope, `patcher` binary, `~/.patcher`.                                                                                               |
+| Cloud (`apps/web`, `apps/connect`) | **Removed from the fork**, along with the tunnel/connect packages and the `connect` plugin. Done in phase 1.                                                                       |
+| Wire strings                       | **Frozen — then not.** Six values were held back; all six were renamed once their reasons were checked. See [Unfrozen](#unfrozen-the-six-values-that-were-going-to-keep-their-bb). |
 
 The clean break is what makes this plan tractable: every "how do we migrate the
-user's X" question collapses into "pick the new name." The one deliberate
-exception is the Frozen table, and it is frozen for a reason that has nothing to
-do with bb — see below.
+user's X" question collapses into "pick the new name." The Frozen table was the
+one deliberate exception, and it did not survive contact with the code: three of
+its six reasons described a boundary that is not where they said it was, and a
+fourth priced a cost the rename had already paid.
 
 ## Scale
 
@@ -140,27 +142,51 @@ These are the reasons this is a phased plan and not one `sed`.
    files under `apps/` conflicts with everything. Run each phase in a window
    between browser-gaps tasks, land it, then resume.
 
-## Frozen: strings that keep their `bb` values
+## Unfrozen: the six values that were going to keep their `bb`
 
-Renamed as identifiers, **not** as values.
+This section used to be a Frozen table: six wire values renamed as identifiers
+but not as values, each with a reason. All six were renamed in the end, and the
+reason is worth more than the outcome — **three of the six justifications were
+wrong, and each was wrong in the same way.** They named a boundary without
+checking where the boundary actually is.
 
-| What                                    | Where                                                                       | Why                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| --------------------------------------- | --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 74 × `"bb-desktop:*"` IPC channel names | `apps/desktop/src/desktop-browser-ipc.ts` etc.                              | bb-migration.md invariant 2, and it applies to Patcher against itself: the shell attaches to any healthy server with **no version handshake**, so renderer and main process routinely come from different builds. Renaming a channel value breaks old-SPA/new-shell instantly.                                                                                                                                                                                                                                                                                                |
-| `exposeInMainWorld("bbDesktop")`        | `apps/desktop/src/preload.ts`                                               | Same mixed-build boundary. **`bbLogViewer` was listed here and does not belong**: the log viewer's HTML is a template literal built by the same main process that installs its preload and handed to `loadURL`, so both sides are always one build. It was renamed outright in phase 3.                                                                                                                                                                                                                                                                                       |
-| `exposeInIsolatedWorld(..., "bb", ...)` | `apps/desktop/src/page-script-preload.ts:112`                               | Public page-script API (`bb.ready`). Same boundary.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `"bb-host-daemon.v1"`                   | `packages/host-daemon-contract/src/session.ts:32`                           | The WebSocket subprotocol, and the only frozen string phase 6 discovered. It is negotiated **before** the protocol-version handshake, so renaming it turns an out-of-date daemon's "Needs update" into a socket error with nothing to read. The version number is what should reject an old daemon; the subprotocol is what lets it get far enough to be told.                                                                                                                                                                                                                |
-| `originator: "bb"`                      | `apps/host-daemon/src/codex-chatgpt-client.ts:194`, `provider-usage.ts:216` | Sent to the ChatGPT backend. `originator` is **OpenAI's** field, not ours, and whether the backend allowlists values is not knowable from here. Two readings fit the evidence — an unregistered `bb` works today, so anything works; or upstream registered `bb` and `patcher` is not. The costs are not symmetric: keeping it is a wrong string no user sees, changing it may 403 every Codex request. Frozen until someone flips it against a live ChatGPT account and watches one request. The `User-Agent` beside it is free-form and did move, to `patcher-host-daemon`. |
-| `persist:bb-browser`                    | `apps/desktop/src/desktop-browser-view.ts:353`                              | The partition name is the on-disk directory. Renaming it wipes every site cookie and session. No user-facing value in changing it.                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| What                                    | Where                                                               | The stated reason, and what was true                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| --------------------------------------- | ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 74 × `"bb-desktop:*"` IPC channel names | `apps/desktop/src/desktop-browser-ipc.ts` etc.                      | **Wrong.** Said renaming a channel breaks old-SPA/new-shell. The renderer never names a channel — it calls a method on the bridge. Every occurrence of the literal, and every importer of the constants, is inside `apps/desktop`: the main process and the preloads, which `scripts/build.mjs` esbuilds into the same `dist/` as `main.js`. Preload and main are therefore always one build. The mixed-build boundary is the bridge's **method surface and payload schemas** — bb-migration.md invariant 2, which says exactly that and says nothing about channel names. |
+| `exposeInMainWorld("bbDesktop")`        | `apps/desktop/src/preload.ts`                                       | **Right about the boundary, wrong about the cost.** This name really is read by a renderer that may come from another build — but no shipped Patcher build ever read it, because Patcher has not shipped. The alias would have been kept for a renderer that cannot exist.                                                                                                                                                                                                                                                                                                 |
+| `exposeInIsolatedWorld(..., "bb", ...)` | `apps/desktop/src/page-script-preload.ts`                           | Same, plus the shipped docs already taught `patcher.ready`. The alias was an assignment queued after the expose, because a second `exposeInIsolatedWorld` for one world throws and aborts the preload — so dropping it also removed a step that could fail.                                                                                                                                                                                                                                                                                                                |
+| `"bb-host-daemon.v1"`                   | `packages/host-daemon-contract/src/session.ts`                      | **Wrong, and backwards.** Said the subprotocol is negotiated _before_ the version handshake, so renaming it would turn "Needs update" into an unreadable socket error. The version handshake is `POST /internal/session/open` over HTTP and it comes **first**: `server-connection.ts` is the only caller of `connectWebSocket`, always passes a null session id, so the session must be opened before a socket URL exists. An out-of-date daemon is rejected where it can be told to update, and never reaches the subprotocol.                                           |
+| `originator: "bb"`                      | `apps/host-daemon/src/codex-chatgpt-client.ts`, `provider-usage.ts` | **Still not verifiable from here** — `originator` is OpenAI's field. Renamed on the reading that an unregistered value is accepted, which is the only reading under which the inherited `bb` worked at all. If the backend does allowlist values, every ChatGPT request fails and the two `headers.set` lines are the revert. This is the one entry that wants a live check against a real account.                                                                                                                                                                        |
+| `persist:bb-browser`                    | `apps/desktop/src/desktop-browser-view.ts`                          | **Wrong.** Said renaming wipes every site cookie. It does — and so does the rename that already happened: `productName` went from "bb" to "Patcher", which moves `userData` itself, so no install could reach its old partition under either name. The cost was paid before this table was written.                                                                                                                                                                                                                                                                        |
 
-**Refinement, not a rename:** where the frozen string is a _developer-facing
-API_ — `bbDesktop` and the page-script `bb` — expose the new name **in addition**
-to the old one. An additive exposure crosses no wire and breaks no parser, so
-plugin authors get `patcher.ready(...)` while `bb.ready(...)` keeps working for
-older renderers. Document `bb` as the deprecated alias.
+`HOST_DAEMON_PROTOCOL_VERSION` 108 → 109 for the subprotocol rename. Nothing on
+the wire changed shape, which is precisely why the version has to say it: a 108
+daemon would otherwise pass the version check and then be refused the socket
+with a 400 it has no way to read.
 
-Every frozen string goes into the audit allow-list with this file as the
-justification, so the phase-8 gate does not flag them forever.
+**What replaced the allow-list entries.** Six ALLOW rules went away and no rule
+took their place, because an allow-list is the wrong instrument here. The audit
+cannot see a renamed wire value in either direction — replacing `bb` with
+`patcher` inside a string removes the token the forward scan matches and adds
+one the reverse scan ignores — and typecheck cannot either, because each value
+has exactly one definition site. Only `bbDesktop` had a test. So each renamed
+value is now pinned by a test that names it:
+
+- `apps/desktop/test/wire-values.test.ts` — every `*_CHANNEL` export across the
+  six IPC modules carries the `patcher-desktop:` prefix, the partition is
+  `persist:patcher-browser`, and the page-script preload exposes `patcher` into
+  a plugin's isolated world (asserted by importing it against a stubbed
+  `electron`, so it is the behaviour and not the source text).
+- `apps/desktop/test/preload-browser-api.test.ts` — the renderer-facing global
+  is `patcherDesktop`; `preload-build.test.ts` proves it again from a packaged
+  bundle under real Electron.
+- `packages/host-daemon-contract/test/contract.test.ts` — the subprotocol value,
+  what `buildHostDaemonWebSocketProtocols()` advertises, and that the old value
+  is now refused.
+- `apps/host-daemon/src/codex-chatgpt-client.test.ts` — the `originator` header.
+
+The three ALLOW rules that remain are the mirror image: comments that name an
+old value on purpose, because the old value is the argument for the new one.
 
 ## Name table
 
@@ -402,7 +428,8 @@ something persisted.
 
 **Two things the inventory contradicted.**
 
-1. **`bbLogViewer` was in the Frozen table and does not belong there.** The
+1. **`bbLogViewer` was in the Frozen table and does not belong there.** (The
+   first of four such entries; see [Unfrozen](#unfrozen-the-six-values-that-were-going-to-keep-their-bb).) The
    log viewer's HTML is a template literal built by the same main process
    that installs `log-viewer-preload.cjs`, handed to `loadURL` — one build on
    both sides, no server-served renderer, no mixed build. Renamed outright;

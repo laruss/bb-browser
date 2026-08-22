@@ -1052,15 +1052,38 @@ describe("host-daemon local schemas", () => {
 });
 
 describe("host-daemon command schemas", () => {
-  // Version 108 renamed the daemon's environment contract. The daemon builds
-  // the agent shell itself: it injects the thread-context variables, strips
-  // inherited ones by prefix, and puts the CLI shim on PATH. A pre-rename
-  // daemon injects `BB_*` and a `bb` shim, so a thread the server started
-  // would run agents that cannot see their own thread id. Nothing on the wire
-  // changed, which is why the version has to say it — enrolled machines must
-  // update rather than connect and quietly break.
-  it("uses protocol version 108 after renaming the daemon environment", () => {
-    expect(HOST_DAEMON_PROTOCOL_VERSION).toBe(108);
+  // Two renames, two bumps, neither of which changed a message shape.
+  //
+  // 108 renamed the daemon's environment contract. The daemon builds the agent
+  // shell itself: it injects the thread-context variables, strips inherited
+  // ones by prefix, and puts the CLI shim on PATH. A pre-rename daemon
+  // injects `BB_*` and a `bb` shim, so a thread the server started would run
+  // agents that cannot see their own thread id.
+  //
+  // 109 renamed the WebSocket subprotocol (see session.ts). A 108 daemon would
+  // pass the version check and then be refused the socket with a 400 it has no
+  // way to read, so the version is what turns that into "Needs update".
+  //
+  // Nothing on the wire changed either time, which is why the version has to
+  // say it — enrolled machines must update rather than connect and quietly
+  // break.
+  it("uses protocol version 109 after renaming the daemon subprotocol", () => {
+    expect(HOST_DAEMON_PROTOCOL_VERSION).toBe(109);
+  });
+
+  // The subprotocol is agreed between two processes by string, so no build
+  // notices it changing, and the rename audit cannot see a `bb` that became a
+  // `patcher`. Pinned as the value: a diff that renames it lands here.
+  it("negotiates the socket under the Patcher subprotocol", () => {
+    expect(contract.HOST_DAEMON_WEBSOCKET_PROTOCOL).toBe(
+      "patcher-host-daemon.v1",
+    );
+    expect(contract.buildHostDaemonWebSocketProtocols()).toEqual([
+      "patcher-host-daemon.v1",
+    ]);
+    expect(contract.hasHostDaemonWebSocketProtocol("bb-host-daemon.v1")).toBe(
+      false,
+    );
   });
 
   it("binds Plan cancellation to a required turn id and typed result", () => {

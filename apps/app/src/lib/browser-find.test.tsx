@@ -49,7 +49,7 @@ function installDesktopBrowser(
     },
     ...overrides,
   };
-  window.bbDesktop = createPatcherDesktopApi(desktopInfo, browser);
+  window.patcherDesktop = createPatcherDesktopApi(desktopInfo, browser);
   return {
     commands,
     pushResult(result) {
@@ -75,7 +75,7 @@ function renderFind(
 
 afterEach(() => {
   cleanup();
-  delete window.bbDesktop;
+  delete window.patcherDesktop;
 });
 
 describe("describeBrowserFindMatches", () => {

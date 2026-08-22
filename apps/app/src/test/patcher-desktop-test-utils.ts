@@ -30,7 +30,7 @@ export function createNoopDesktopBrowserApi(): PatcherDesktopBrowserApi {
 }
 
 /**
- * A full {@link PatcherDesktopApi} stub for tests that need `window.bbDesktop`. The
+ * A full {@link PatcherDesktopApi} stub for tests that need `window.patcherDesktop`. The
  * update/info methods echo `info`; theme and external-open are no-ops. Pass a
  * custom `browser` to exercise the browser control surface. Tests that drive
  * live info changes or assert on method spies build their own stub instead.

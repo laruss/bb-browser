@@ -99,7 +99,7 @@ export function getPatcherDesktopInfo(): PatcherDesktopInfoResult {
   if (typeof window === "undefined") {
     return null;
   }
-  return window.patcherDesktop ?? window.bbDesktop ?? null;
+  return window.patcherDesktop ?? null;
 }
 
 export function shouldUseMacosDesktopChrome(
@@ -148,7 +148,7 @@ export function closeDesktopWindow(): boolean {
 
 /**
  * The desktop browser control surface, or `null` on the web build (where
- * `window.bbDesktop` is undefined). Also tolerates a desktop build whose
+ * `window.patcherDesktop` is undefined). Also tolerates a desktop build whose
  * preload predates the browser surface. This is the single gate for the
  * desktop-only browser tab entry and the `WebContentsView` host.
  */

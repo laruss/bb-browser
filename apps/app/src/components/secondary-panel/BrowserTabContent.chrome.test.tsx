@@ -75,7 +75,7 @@ function browserState(
 }
 
 function renderBrowserChrome(harness: BrowserChromeHarness, initialUrl = "") {
-  window.bbDesktop = createPatcherDesktopApi(desktopInfo, harness.api);
+  window.patcherDesktop = createPatcherDesktopApi(desktopInfo, harness.api);
   // The tab records what it visits in the server-backed history store, so it
   // needs a query client even when the test is only about its chrome.
   const { wrapper } = createQueryClientTestHarness();
@@ -112,7 +112,7 @@ describe("BrowserTabContent persistent navigation", () => {
     cleanup();
     vi.restoreAllMocks();
     window.localStorage.clear();
-    delete window.bbDesktop;
+    delete window.patcherDesktop;
   });
 
   it("keeps the top navigation visible through pointer and focus changes", () => {

@@ -269,7 +269,7 @@ So the engine is now a _declared_ choice: Patcher ships a few, plugins declare m
 setting picks among them. Declared rather than asked, like context-menu items, is
 what keeps Enter synchronous. The payoff beyond the setting is that an engine need
 not be a search engine — a plugin route that spawns an agent thread is a legal
-one, which is the thing an agent-first browser wants from its address bar. No incognito or profiles: one fixed `persist:bb-browser` partition.
+one, which is the thing an agent-first browser wants from its address bar. No incognito or profiles: one fixed `persist:patcher-browser` partition.
 No autofill or password manager. ~~No per-tab mute~~ — done, from the tab's menu
 and over `tabs.mute`; still no audio _indicator_, no picture-in-picture and no
 media keys, and no Widevine in Electron, so DRM streaming will not play. Session restore carries URLs only — no scroll position, no form state.

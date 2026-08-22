@@ -7,8 +7,8 @@ import {
 import { getPatcherDesktopInfo } from "./patcher-desktop";
 
 export function getAppSurface(): AppSurface {
-  // Through the accessor, so the `patcherDesktop` → `bbDesktop` fallback that
-  // an older shell depends on lives in exactly one place.
+  // Through the accessor, so the global the preload exposes is named in
+  // exactly one place.
   if (getPatcherDesktopInfo() !== null) {
     return APP_SURFACE_DESKTOP;
   }

@@ -90,7 +90,7 @@ function stubPluginEndpoints(): FetchCall[] {
 
 function renderChrome() {
   const navigate = vi.fn();
-  window.bbDesktop = createPatcherDesktopApi(desktopInfo, {
+  window.patcherDesktop = createPatcherDesktopApi(desktopInfo, {
     ...createNoopDesktopBrowserApi(),
     navigate,
   });

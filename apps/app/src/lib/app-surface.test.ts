@@ -29,22 +29,16 @@ describe("app surface request metadata", () => {
     expect(headers.get("x-existing")).toBe("kept");
   });
 
-  // Both global names, because the shell exposes the same object under each and
-  // the accessor prefers `patcherDesktop`. A test that only ever installs the
-  // frozen `bbDesktop` passes even if the new name is read wrongly.
-  it.each(["bbDesktop", "patcherDesktop"] as const)(
-    "marks Electron preload requests as desktop via window.%s",
-    (globalName) => {
-      vi.stubGlobal("window", {
-        [globalName]: createPatcherDesktopApi(desktopInfo),
-      });
+  it("marks Electron preload requests as desktop", () => {
+    vi.stubGlobal("window", {
+      patcherDesktop: createPatcherDesktopApi(desktopInfo),
+    });
 
-      const init = appSurfaceRequestInit();
+    const init = appSurfaceRequestInit();
 
-      expect(getAppSurface()).toBe("desktop");
-      expect(new Headers(init.headers).get(APP_SURFACE_HEADER_NAME)).toBe(
-        "desktop",
-      );
-    },
-  );
+    expect(getAppSurface()).toBe("desktop");
+    expect(new Headers(init.headers).get(APP_SURFACE_HEADER_NAME)).toBe(
+      "desktop",
+    );
+  });
 });

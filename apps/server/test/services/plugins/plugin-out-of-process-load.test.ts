@@ -95,7 +95,7 @@ const PAGE_SCRIPT_PLUGIN = `
     patcher.browser.registerPageScript({
       id: "toolbar",
       matches: ["https://github.com/**"],
-      code: "bb.ready(function () { document.title = 'seen'; });",
+      code: "patcher.ready(function () { document.title = 'seen'; });",
     });
   }
 `;
@@ -205,7 +205,7 @@ describe("loading a plugin into a plugin process", () => {
         pluginId: "remote",
         scriptId: "toolbar",
         matches: ["https://github.com/**"],
-        code: "bb.ready(function () { document.title = 'seen'; });",
+        code: "patcher.ready(function () { document.title = 'seen'; });",
       },
     ]);
   }, 30_000);

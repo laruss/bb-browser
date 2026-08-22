@@ -12,11 +12,11 @@ import {
 // it, so the same page ends up loaded twice.
 describe("browser surface tab storage key", () => {
   afterEach(() => {
-    Reflect.deleteProperty(window, "bbDesktop");
+    Reflect.deleteProperty(window, "patcherDesktop");
   });
 
   function withWindowKey(windowKey: string): string {
-    Object.defineProperty(window, "bbDesktop", {
+    Object.defineProperty(window, "patcherDesktop", {
       configurable: true,
       value: { windowKey },
     });
@@ -40,12 +40,12 @@ describe("browser surface tab storage key", () => {
 
 describe("adopting a pre-window-scoping tab list", () => {
   afterEach(() => {
-    Reflect.deleteProperty(window, "bbDesktop");
+    Reflect.deleteProperty(window, "patcherDesktop");
     window.localStorage.clear();
   });
 
   function useWindow(windowKey: string): string {
-    Object.defineProperty(window, "bbDesktop", {
+    Object.defineProperty(window, "patcherDesktop", {
       configurable: true,
       value: { windowKey },
     });

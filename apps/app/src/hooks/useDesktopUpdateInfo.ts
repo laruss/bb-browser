@@ -24,7 +24,7 @@ export interface DesktopUpdateInfo {
  * its info object into React state.
  */
 export function useDesktopUpdateInfo(): DesktopUpdateInfo {
-  // The preload script installs `window.bbDesktop` before this bundle runs, so
+  // The preload script installs `window.patcherDesktop` before this bundle runs, so
   // the bridge is readable on the first render; only its info is asynchronous.
   const [desktopApi] = useState<PatcherDesktopApi | null>(() =>
     getPatcherDesktopInfo(),

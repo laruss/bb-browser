@@ -1165,7 +1165,7 @@ Deliverable: `examples/plugins/site-tweaks`, with no change to the browser core.
 `patcher.browser.registerPageScript`, permission `pageScript.register`, scoped by the
 same `patcher.sites` and checked by the same membership rule. The script runs in an
 isolated world of the plugin's own with two names in it: `patcher.rpc` — the plugin's own
-backend and nothing else — and `bb.ready`.
+backend and nothing else — and `patcher.ready`.
 
 The mechanism is a **session preload registered only while a page script is
 declared**, not CDP. CDP would have done more (subframes, bindings), but it would
@@ -1179,7 +1179,7 @@ than assumption:
 
 - **`document_start` timing: reached.** The preload runs when the document exists
   and the parser has produced nothing — earlier than `insertCSS` lands, and earlier
-  than the page's own first script. `bb.ready` exists because of it.
+  than the page's own first script. `patcher.ready` exists because of it.
 - **Subframes: still out of reach, deliberately.** A session preload does not run in
   subframes without `nodeIntegrationInSubFrames`, which is experimental and would
   change every browsed page rather than the matching ones.

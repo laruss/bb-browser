@@ -3536,7 +3536,7 @@ describe("DesktopBrowserViewManager dialogs", () => {
   function dialogPushesOf(hostWindow: FakeHostWindow): unknown[] {
     const pushes: unknown[] = [];
     for (const message of hostWindow.webContents.sentMessages) {
-      if (message.channel === "bb-desktop:browser:dialog") {
+      if (message.channel === "patcher-desktop:browser:dialog") {
         pushes.push(message.payload);
       }
     }
@@ -7670,7 +7670,7 @@ describe("plugin page scripts", () => {
     pluginId: "site-tweaks",
     scriptId: "toolbar",
     matches: ["https://github.com/**"],
-    code: "bb.ready(function(){})",
+    code: "patcher.ready(function(){})",
   };
 
   function attachTab(url: string): {
@@ -7747,7 +7747,7 @@ describe("plugin page scripts", () => {
         pluginId: "site-tweaks",
         worldId: 9001,
         scripts: [
-          { scriptId: "toolbar", code: "bb.ready(function(){})" },
+          { scriptId: "toolbar", code: "patcher.ready(function(){})" },
           { scriptId: "second", code: "/* second */" },
         ],
       },

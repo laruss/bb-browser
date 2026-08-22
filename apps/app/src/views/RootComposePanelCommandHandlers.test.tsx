@@ -80,7 +80,7 @@ function dispatchControlShortcut(key: string): KeyboardEvent {
 
 afterEach(() => {
   cleanup();
-  delete window.bbDesktop;
+  delete window.patcherDesktop;
 });
 
 describe("RootComposePanelCommandHandlers", () => {
@@ -91,7 +91,7 @@ describe("RootComposePanelCommandHandlers", () => {
     const secondClose = vi.fn(() => true);
     const desktopCloseHandlers =
       new Set<PatcherDesktopCloseWindowRequestHandler>();
-    window.bbDesktop = {
+    window.patcherDesktop = {
       ...createPatcherDesktopApi(desktopInfo),
       onCloseWindowRequest(listener) {
         desktopCloseHandlers.add(listener);

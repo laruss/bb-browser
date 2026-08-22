@@ -38,7 +38,7 @@ function renderSurface(
     closeWindow,
   }: { appScreen?: ReactNode; closeWindow?: () => void } = {},
 ) {
-  window.bbDesktop = {
+  window.patcherDesktop = {
     ...createPatcherDesktopApi(desktopInfo, browserApi),
     // Absent by default, which is a shell older than the call and the web
     // build — both of which must keep the older behaviour.

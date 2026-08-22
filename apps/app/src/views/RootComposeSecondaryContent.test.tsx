@@ -37,7 +37,7 @@ interface RenderRootComposeArgs {
 }
 
 type TestDesktopWindow = {
-  bbDesktop?: { platform: "macos" };
+  patcherDesktop?: { platform: "macos" };
 };
 
 const panelGroupState = vi.hoisted(() => ({
@@ -47,11 +47,13 @@ const panelGroupState = vi.hoisted(() => ({
 const noop = () => {};
 
 function setMacosDesktopChrome(): void {
-  (window as unknown as TestDesktopWindow).bbDesktop = { platform: "macos" };
+  (window as unknown as TestDesktopWindow).patcherDesktop = {
+    platform: "macos",
+  };
 }
 
 function clearDesktopChrome(): void {
-  delete (window as unknown as TestDesktopWindow).bbDesktop;
+  delete (window as unknown as TestDesktopWindow).patcherDesktop;
 }
 
 vi.mock("jotai", async (importOriginal) => ({
