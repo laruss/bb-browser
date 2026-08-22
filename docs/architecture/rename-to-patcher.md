@@ -216,14 +216,14 @@ with the cloud removal anyway; `linked_bb_project_id` is already mapped to
 
 ### Desktop identity
 
-| Old                                                    | New                                |
-| ------------------------------------------------------ | ---------------------------------- |
-| appId `dev.bb.desktop` / `.nightly`                    | `app.patcher.desktop` / `.nightly` |
-| `productName: "bb"`                                    | `"Patcher"`                        |
-| window `title: "bb"`                                   | `"Patcher"`                        |
-| `assets/bb-logo*.{png,svg}` (5)                        | new artwork                        |
-| `apps/desktop/assets/icon*.{png,icns}` (5)             | new artwork                        |
-| update feed `github.com/get-bb/bb/releases/download/…` | new repo                           |
+| Old                                                    | New                                 |
+| ------------------------------------------------------ | ----------------------------------- |
+| appId `dev.bb.desktop` / `.nightly`                    | `app.patcher.desktop` / `.nightly`  |
+| `productName: "bb"`                                    | `"Patcher"`                         |
+| window `title: "bb"`                                   | `"Patcher"`                         |
+| `assets/bb-logo*.{png,svg}` (5)                        | `assets/patcher-{icon,logo}.*` (5)  |
+| `apps/desktop/assets/icon*.{png,icns}` (5)             | the new mark, one plate per channel |
+| update feed `github.com/get-bb/bb/releases/download/…` | new repo                            |
 
 A new appId is a new application: its own `userData`, no auto-update link to
 the old one, and re-registration with Launch Services as the default browser.
@@ -645,7 +645,7 @@ files that have never been prettier-clean and only looked new because they had
 just been renamed. Regenerating put them back, and the tree settles at 417
 pre-existing failures.
 
-### Phase 6 — Product identity — **done** (`c4c65f27e`), except the artwork
+### Phase 6 — Product identity — **done** (`c4c65f27e`)
 
 758 files, +3 970 / −3 723, 20 renames. By tree: `apps` 459, `packages` 183,
 `plugins` 47, `examples` 31, `tests` 12, `docs` 10, `scripts` 5, `qa` 3,
@@ -721,11 +721,11 @@ the filename to the phase-8 allow-list.
 again before the first release costs nothing; after that it is a new
 application.
 
-**Not done: the artwork.** `assets/bb-logo*.{png,svg}` (5) and
-`apps/desktop/assets/icon*.{png,icns}` (5) still carry the old mark. Their
-names were left alone on purpose — renaming a file to `patcher-logo.svg` while
-the image still says bb hides an unfinished deliverable from both the reader
-and the phase-8 audit. They need design, not a rename.
+**Deferred at the time: the artwork.** `assets/bb-logo*.{png,svg}` (5) and
+`apps/desktop/assets/icon*.{png,icns}` (5) still carried the old mark, and
+their names were left alone on purpose — renaming a file to `patcher-logo.svg`
+while the image still says bb hides an unfinished deliverable from both the
+reader and the phase-8 audit. Landed after phase 7; see **Artwork** below.
 
 **Verified** on Node 22.20.0: `typecheck --force` 54/54, `lint` clean (0
 errors, 152 pre-existing warnings), `build` 13/13,
@@ -879,10 +879,9 @@ has never been released and the workflow's `npm view patcher-app versions` will
 404 on the first run until it is. No release tags: `desktop-latest` and
 `desktop-nightly` do not exist in the renamed repo, so the auto-update feed
 resolves to nothing until the first desktop build publishes them. No PostHog
-project. No Discord. And the **artwork is still outstanding from phase 6** —
-`assets/bb-logo*.{png,svg}` and `apps/desktop/assets/icon*.{png,icns}` — which
-is why `smoke:packaged` and the `lsregister` default-browser check stay
-deferred.
+project. No Discord. The artwork was still outstanding from phase 6 when this
+phase landed, and with it `smoke:packaged` and the `lsregister` default-browser
+check; both are covered in **Artwork** below.
 
 ### Phase 8 — Audit gate
 
@@ -903,16 +902,67 @@ Add `scripts/rename-audit.mjs`, wired into CI:
 `Tasks: N successful, M total` line, not `$?`. Then `bun run lint`,
 `bunx turbo run typecheck`, `smoke:tarball`, `smoke:packaged`.
 
+## Artwork
+
+Landed after phase 7 from a chosen concept — a geometric black **P** with a red
+square patch at its lower right, on a cream rounded plate. Two source SVGs, one
+generator, nineteen rasters.
+
+**Two sources, because the app inverts one of them.** `assets/patcher-icon.svg`
+is the full mark: plate, ink P, red patch. `assets/patcher-logo.svg` is the
+glyph alone in a single fill, and it has to be single-fill because the three
+places the app renders it apply `dark:invert` and `brightness-0 invert` —
+a CSS inversion turns a red patch cyan. So the in-app mark carries the patch as
+**shape**, not colour, and the patch is offset 1.5 units clear of the bowl it
+touches in the colour version. That gap is the whole reason the mark still
+reads at 16px in a sidebar; tangent to the bowl, monochrome, it merges into a
+blob.
+
+**`scripts/build-brand-assets.mjs`** renders everything else from that geometry:
+the repository PNGs, three desktop icons and two `.icns`, the five hand-authored
+PWA bases, and six favicons. It is deliberately **not** CI-gated — these are
+committed binaries that change only when the mark does — but
+`generate-pwa-icons` still is, so the two run in order. It resolves `sharp`
+through `createRequire` against `apps/app` rather than adding a root
+dependency, because a dependency change here is never incidental
+(bb-migration.md invariant 4).
+
+**The PWA plate is a lighter cream than the desktop plate, on purpose.**
+`generate-pwa-icons` derives forty tinted variants and two alpha masks with a
+luma threshold: at or above 245 a pixel is backing, below it is glyph.
+`#F5F1E8` measures 241.2. Left at that, every colour variant would have tinted
+the whole tile instead of the mark, and both monochrome masks would have
+carried a faint full-canvas square. `#FAF8F4` measures 248.2 and is
+indistinguishable at icon size.
+
+**Three plates, one mark.** Cream for stable, `#378055` for dev, `#F9D71C` for
+nightly — the dev and nightly colours are the ones the old icons used, so the
+Dock still means what it used to. Desktop icons sit on the macOS 824-of-1024
+grid; the previous stable icon did not, and rendered visibly larger than its
+neighbours.
+
+**Removed:** `bb-logo-dev.png` and `bb-logo-black-white-bg-discord.png`. Both
+were unreferenced, and the second names a link phase 7 deleted. Both READMEs
+now embed `assets/patcher-icon.png` in place of two `user-attachments` URLs
+that pointed at images uploaded to bb's GitHub account.
+
+**The two checks the artwork was blocking both pass.** `bun run package` builds
+`Patcher.app` with the new `icon.icns`, and `smoke:packaged` launches it green.
+Registering that bundle with `lsregister` puts **Patcher.app** in the macOS
+browser candidate list for `https` — alongside Safari, Arc and Chrome — with
+the user's actual default untouched before and after. That is the whole point
+of the `CFBundleURLTypes` declaration, and it is the first time it has been
+confirmed under `app.patcher.desktop`.
+
+**Still bb:** `assets/app-screenshot.png`. It is a screenshot, not a mark — full
+of `BB-` task keys and a project literally named `bb` — and replacing it means
+running Patcher with plausible data, not editing artwork. It is the last
+deliberate `bb` in the tree that is neither frozen nor history.
+
 ## Open items
 
-- **Logo and icon artwork** — `assets/bb-logo*.{png,svg}` (5, of which
-  `bb-logo.svg` is imported by two app views) and
-  `apps/desktop/assets/icon{,-dev,-nightly}.{png,icns}` (5). All ten still
-  carry the old mark. They need design, not a rename, and the five `bb-logo*`
-  filenames stay as they are until the images change, so the gap stays visible
-  to the audit instead of hiding behind a Patcher-shaped name.
-  `smoke:packaged` and the `lsregister` default-browser check are blocked on
-  them.
+- **A product screenshot of Patcher.** `assets/app-screenshot.png` is still
+  bb's, and the root README leads with it.
 - **First release.** `patcher-app` has never been published, and the
   `desktop-latest` / `desktop-nightly` tags do not exist in the renamed repo,
   so the auto-update feed resolves to nothing. The publish workflow's
