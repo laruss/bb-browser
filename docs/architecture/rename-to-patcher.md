@@ -1,9 +1,14 @@
 # bb → Patcher: Rename Plan
 
-How this fork stops being a fork of `get-bb/bb` and becomes Patcher. Written
-before the work so each phase can be executed and verified on its own, and so
-nothing that looks mechanical gets applied to something that is actually a
-contract.
+How this fork of `get-bb/bb` became Patcher. Written before the work so each
+phase could be executed and verified on its own, and so nothing that looks
+mechanical got applied to something that is actually a contract.
+
+**All eight phases are done**, and `bun run audit:rename` holds the line in CI.
+What is left is listed under [Open items](#open-items); none of it is a rename.
+The fork is not disowned — the READMEs say what Patcher is a fork of, the
+GitHub repository was renamed in place so the fork edge survives, and the MIT
+copyright is unchanged.
 
 Companion to [bb-migration.md](bb-migration.md), which records what this fork
 inherited and which invariants survive. Read its **Invariants** section before
@@ -883,24 +888,112 @@ project. No Discord. The artwork was still outstanding from phase 6 when this
 phase landed, and with it `smoke:packaged` and the `lsregister` default-browser
 check; both are covered in **Artwork** below.
 
-### Phase 8 — Audit gate
+### Phase 8 — Audit gate — **done** (`e240e5d19`)
 
-Add `scripts/rename-audit.mjs`, wired into CI:
+`scripts/rename-audit.mjs`, `bun run audit:rename`, and a step in CI's `checks`
+job. 927 occurrences of `bb` remain in the tree and every one of them is
+answered by one of 29 rules that says why it stays.
 
-- Forward check — residual `bb` tokens:
-  `(?<![A-Za-z0-9_-])[Bb][Bb](?![A-Za-z0-9_-])|@bb/|\bBB_[A-Z]|\bBb[A-Z]`
-- Allow-list, each entry justified: the Frozen table's strings; the English
-  words `bubble`, `abbrev`, `clobber`, `grabbing`, `stubbed`, `stubborn`,
-  `rubber`, `tabbable`; `tinyglobby`; `bbedit.png`;
-  `0063_broken_robbie_robertson.sql`; hex digests.
-- Reverse check — accidental damage from the new name:
-  `(?<!dis)patcher` outside the expected set, so `CommandDispatchError` and
-  `dispatcher` do not drown the signal.
+**The forward scan is blunt on purpose, against this plan's own advice.** The
+regex sketched here —
+`(?<![A-Za-z0-9_-])[Bb][Bb](?![A-Za-z0-9_-])|@bb/|\bBB_[A-Z]|\bBb[A-Z]` —
+excludes `-` and `_` from its boundaries, so it cannot see `bb-desktop` (78),
+`bbDesktop` (77), `rollback_bb_version` (60), `bb_connect` (33) or
+`bb-migration` (26). That is most of what is left, and worse, it is exactly the
+shape the next leftover will take: somebody adds `bb-something` and the gate
+says nothing. So the scan matches **any word containing `bb` in any case** and
+the allow-list carries the noise. A clever pattern that skips `bubble` also
+skips the token nobody thought of.
 
-**Full verification:** on Node 22.20.0 (`.nvmrc`),
+**The reverse scan checks only the left side.** `(?<!dis)patcher` as written
+here would have flagged forty legitimate things on the first run: the issued
+key prefixes `patcherde_` and `patcherdh_`, and every markdown anchor generated
+from a `patcher.log`-style heading — `#patcherlog`, `#patchersettings`,
+`#patcherbackground--services-and-schedules`. `patcher` **followed** by
+lowercase is ordinary. `patcher` with a lowercase letter or digit welded to its
+**left** is damage — `clopatcherer` out of `clobber`, `apatcherrev` out of
+`abbrev`, a hex digest grown a word in its middle — and `dispatch` is the only
+thing that legitimately runs into it from that side.
+
+**The gate found fifteen leftovers on its first run**, each one a blind spot of
+an earlier pass's anchor:
+
+- `BB-specific`, `BB-thread`, `BB-side`, `BB-shimmed`, `BB-published` — phase
+  6's uppercase rule excluded a following `-`, so the hyphenated compounds
+  survived while bare `BB` moved.
+- `_bb_` — markdown italics. `_` was a boundary character in every pass, so a
+  word emphasised with underscores was invisible to all of them.
+- A **broken table-of-contents anchor**:
+  `[patcher.cli — an agent-facing \`patcher\` subcommand](#patchercli--an-agent-facing-bb-subcommand)`.
+The heading moved in phase 7 and the link did not. This is the phase-5 trap
+again, and the forward scan caught it for free because the stale anchor still
+contained `bb`.
+- Nine fixture paths and ids: `/Users/test-bb`, `/tmp/custom-bb-*`,
+  `*/bb-foo-*`, `*/bb-bar-*`, `code-bb-abc123`, `/nonexistent-bb-test-dir`,
+  `definitely-not-a-real-binary-bb`, `other-owner/bb.git`, and a padded project
+  id `proj_bb0000…`.
+- `__bb_timeline_truncation_noop__`, a JSON path chosen to be one no event
+  payload can contain, evaluated inside SQLite and never stored.
+- `bbapp`, the misspelled word a spellchecker test adds to the dictionary.
+
+**Three holes in the allow-list, found by attacking it.** A gate that has never
+failed is not known to work, so the rules were tested against a file that
+deliberately contained one of each token class. That test found the audit
+excusing things it should have caught:
+
+- The aaa/bbb placeholder rule matched `([A-Za-z])\1+` — which matches a bare
+  **`bb`**. Every bare `bb` in the tree was being justified as a placeholder,
+  including `@bb/thing` and `bb plugin list` in the probe. It now requires
+  three repeats.
+- A base64 rule keyed on length alone excused `BbSomethingLongEnoughToLook`.
+  It now also demands a shouted uppercase run or two digits — the things a
+  digest has and an identifier does not.
+- The page-script rule's line pattern included a backticked `` `bb` ``, which
+  excused any comment that merely mentioned the name — including a comment
+  written for this very workflow step. Narrowed to the actual dereferences plus
+  the one preload file.
+
+An allow-list needs a negative test as much as the scan does. Rule order
+matters too: the specific rules run first, so `--list` attributes each
+occurrence to the narrowest reason that covers it rather than the broadest.
+
+**Anchors were swept separately.** A GitHub-accurate slugifier over every
+same-file `](#…)` link in every tracked markdown file — remembering that GitHub
+does not collapse runs of whitespace, so an em-dash heading yields two hyphens
+— found three hits, all of them this file quoting a broken anchor as an
+example. Zero real breaks. The checker was not shipped: it cannot tell a link
+from a link quoted inside backticks, and a gate with a known false-positive
+class trains people to ignore it. The one real break it found was already
+caught by the forward scan, because a stale anchor still contains the old
+token; the case it would add is a heading renamed with no `bb` on either side,
+which is docs hygiene rather than rename damage.
+
+**What the rules justify**, largest first: English words and library names
+(192), digests and opaque ids (207), the frozen IPC channels (78) and
+`bbDesktop` (77), `rollback_bb_version` (60), camelCase seams like `tabButton`
+(45), `bb_connect` (33), `dispatcher` on the reverse side (28), `bb-migration`
+(26), the QA pass log (25), the page-script API (24), the `BB-` issue keys
+(19), BBEdit (16), npm integrity fragments (12), aaa/bbb placeholders (11), the
+fork attribution (10), upstream transcript captures (10),
+`linked_bb_project_id` (8), and single-digit tails for the partition name, the
+originator, the subprotocol, the migration filename and the deliberate `BB_*`
+comment.
+
+**Noted, not deleted:** `apps/server/test/public/app-scaffold-template.digest.json`
+is unreferenced — nothing has read it since before this rename — and it names
+`src/bb-sdk.d.ts` in a template that no longer exists in the tree. It is
+allow-listed by path rather than quietly removed, because it was dead before
+any of this started.
+
+**Verified** on Node 22.20.0: `audit:rename` clean, `typecheck --force` 54/54,
+`build --force` 13/13, `lint` clean (0 errors, 152 pre-existing warnings),
+generated set with no drift, `env -u CLAUDE_CONFIG_DIR bun run test` **54/54 under full load**.
+
+The full set, for anyone repeating it: on Node 22.20.0 from `.nvmrc`,
 `env -u CLAUDE_CONFIG_DIR bun run test` — read turbo's
-`Tasks: N successful, M total` line, not `$?`. Then `bun run lint`,
-`bunx turbo run typecheck`, `smoke:tarball`, `smoke:packaged`.
+`Tasks: N successful, M total` line, not `$?` — then `bun run audit:rename`,
+`bun run lint`, `bunx turbo run typecheck`, `smoke:tarball`, and
+`smoke:packaged` against a `bun run --filter @patcher/desktop package` build.
 
 ## Artwork
 
