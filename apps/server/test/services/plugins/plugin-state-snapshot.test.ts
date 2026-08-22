@@ -180,7 +180,7 @@ describe("plugin activation snapshots and garbage collection", () => {
       JSON.stringify({
         ...legacyRegistration,
         provenance: "marketplace",
-        marketplaceId: "patcher-official",
+        marketplaceId: "bb-official",
         marketplaceEntryId: "legacy-entry",
       }),
     );
@@ -221,7 +221,7 @@ describe("plugin activation snapshots and garbage collection", () => {
       JSON.stringify({
         ...legacyRegistration,
         provenance: "marketplace",
-        marketplaceId: "patcher-official",
+        marketplaceId: "bb-official",
         marketplaceEntryId: "legacy-entry",
       }),
     );

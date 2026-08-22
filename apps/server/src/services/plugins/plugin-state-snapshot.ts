@@ -266,7 +266,11 @@ export async function readPluginSnapshotRegistration(args: {
   const installed = getInstalledPlugin(args.db, legacy.id);
   if (
     legacy.provenance === "marketplace" &&
-    marketplaceId === "patcher-official" &&
+    // Not renamed: this is read out of a registration file an *older* build
+    // wrote, and the only build that ever wrote a `marketplace` provenance
+    // wrote `bb-official` with it. Renaming the literal makes the branch
+    // unreachable, which is not the same thing as removing it.
+    marketplaceId === "bb-official" &&
     marketplaceEntryId !== null &&
     installed?.provenance === "catalog" &&
     installed.catalogEntryId === marketplaceEntryId

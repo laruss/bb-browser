@@ -86,7 +86,7 @@ const ALLOW = [
   {
     why: "the audit's own worked example of what it cannot see: a `bb` that became a `patcher`",
     word: /^bb$/u,
-    line: /a `bb` that became a/u,
+    line: /a `bb` that became a|replacing `bb` with `patcher`/u,
   },
   {
     why: "the two preloads name the global they no longer expose, which is the whole reason one name is enough",
@@ -116,6 +116,28 @@ const ALLOW = [
   {
     why: "the tasks plugin's own column, already mapped to linkedPatcherProjectId above store.ts",
     word: /^linked_bb_project_id$/u,
+  },
+
+  // --- Values older builds wrote, read by compatibility paths -------------
+  // These are not history and not identifiers: they are the exact bytes an
+  // upstream build put into a user's database or state file, matched by a
+  // WHERE clause or an `===`. Renaming one does not break a build — it makes
+  // the path that reads it unreachable, which is the quietest failure in this
+  // whole rename.
+  {
+    why: "migration 0072 repairs rows upstream wrote; its own values, and the fixtures that prove it matches them",
+    word: /^(?:bb-official|bb)$/u,
+    path: /^packages\/db\/(?:drizzle\/0072_bizarre_the_liberteens\.sql|test\/migrate\.test\.ts)$/u,
+  },
+  {
+    why: "the marketplace id inside a plugin registration file an older build wrote, and its fixtures",
+    word: /^bb-official$/u,
+    path: /^apps\/server\/(?:src\/services\/plugins\/plugin-state-snapshot\.ts|test\/services\/plugins\/plugin-state-snapshot\.test\.ts)$/u,
+  },
+  {
+    why: "the comment naming the folder-era localStorage keys this build deliberately does not read",
+    word: /^bb$/u,
+    line: /bb\.sidebar\.folderSectionOrder|bb\.sidebar\.collapsedFolders/u,
   },
 
   // --- History: things that happened under the old name --------------------
