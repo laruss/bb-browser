@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Icon, type IconName } from "@patcher/shared-ui/icon";
-import patcherLogoUrl from "../../../../assets/bb-logo.svg";
+import patcherLogoUrl from "../../../../assets/patcher-logo.svg";
 
 interface RootComposeEmptyWelcomeProps {
   /** Reveal the composer, optionally prefilled with a starter prompt. */

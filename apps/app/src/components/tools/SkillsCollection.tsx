@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import type { SkillProvider, SkillSummary } from "@patcher/server-contract";
-import patcherLogoUrl from "../../../../../assets/bb-logo.svg";
+import patcherLogoUrl from "../../../../../assets/patcher-logo.svg";
 import {
   ResourcePagination,
   useResourcePagination,
