@@ -108,7 +108,7 @@ describe("hero plugin: agent-enrichment (Phase 2 surfaces)", () => {
       required: ["query"],
     });
     expect(command.instructions).toContain(
-      'The following instructions come from the BB plugin "agent-enrichment" for its tool "docs_search":',
+      'The following instructions come from the Patcher plugin "agent-enrichment" for its tool "docs_search":',
     );
     expect(command.instructions).toContain(
       "Use the docs_search tool to look up repo conventions",
@@ -169,7 +169,7 @@ describe("hero plugin: agent-enrichment (Phase 2 surfaces)", () => {
     ).toBe(0);
 
     // The CLI command and the native tool share one search helper — the
-    // tool call above is now `bb docs last`.
+    // tool call above is now `patcher docs last`.
     const last = await harness.app.request(
       "http://127.0.0.1:3334/api/v1/plugins/agent-enrichment/cli",
       {

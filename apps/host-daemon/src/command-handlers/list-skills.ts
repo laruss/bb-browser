@@ -82,7 +82,7 @@ function classifySkillRoot(
     // Provider plugin discovery currently exposes a display namespace but not
     // the registry's canonical plugin id. Keep plugin skills unique by their
     // authoritative root path until that discovery contract grows a stable
-    // plugin identity; native/bb skills below are path-independent.
+    // plugin identity; native/patcher skills below are path-independent.
     return {
       identitySeed: `plugin:${resolution.providerId}:${root.namePrefix}:${rootPath}`,
       rootKind: "plugin",
@@ -297,7 +297,7 @@ export async function deleteHostSkill(
 }
 
 /**
- * Overwrite an existing bb skill's SKILL.md. Same confinement as delete: path
+ * Overwrite an existing patcher skill's SKILL.md. Same confinement as delete: path
  * built host-side from `(scope, name, cwd)`, name a single safe segment, and the
  * resolved target must be exactly `<patcher-root>/<name>` of an existing skill (one
  * whose SKILL.md already exists). Edits only — never creates a new skill.

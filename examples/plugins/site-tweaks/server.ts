@@ -179,7 +179,7 @@ export default function plugin(patcher: PatcherPluginApi) {
     `,
   });
 
-  // The in-page half. `bb` inside this string is `PluginPageScriptApi` — two
+  // The in-page half. `patcher` inside this string is `PluginPageScriptApi` — two
   // members, `rpc` and `ready` — and the code runs in an isolated world of this
   // plugin's own, before GitHub's own scripts do.
   //

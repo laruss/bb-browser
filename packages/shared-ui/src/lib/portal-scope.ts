@@ -7,7 +7,7 @@
  * `[data-patcher-plugin]` mount, and must carry its own scope root for the
  * plugin's compiled stylesheet (`@scope ([data-patcher-plugin="<id>"], …)`) to
  * reach it. `__PATCHER_PLUGIN_ID__` is an esbuild define stamped by
- * `bb plugin build`; outside that pipeline (registry copies, tests) it is
+ * `patcher plugin build`; outside that pipeline (registry copies, tests) it is
  * undefined and the generic root attribute alone keeps legacy behavior. In
  * the host app the same hook reads the plugin-slot context instead, so host
  * overlays stay out of plugin scopes. The portaled-overlay marker is shared

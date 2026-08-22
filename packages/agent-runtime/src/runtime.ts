@@ -250,7 +250,7 @@ function resolveThreadStoragePath(
 
 /**
  * Coordinates provider processes for an environment and bridges provider
- * JSON-RPC traffic into bb thread events, dynamic tool calls, and pending
+ * JSON-RPC traffic into patcher thread events, dynamic tool calls, and pending
  * interactions.
  */
 export function createAgentRuntime(options: AgentRuntimeOptions): AgentRuntime {
@@ -477,7 +477,7 @@ function createAgentRuntimeInternal(
       sendJsonRpcError({
         child: args.proc.child,
         id: args.parsedId,
-        message: `Unable to resolve BB thread id for ${args.requestKind} on provider thread "${args.providerThreadId}"`,
+        message: `Unable to resolve Patcher thread id for ${args.requestKind} on provider thread "${args.providerThreadId}"`,
       });
       return null;
     }
@@ -485,7 +485,7 @@ function createAgentRuntimeInternal(
       sendJsonRpcError({
         child: args.proc.child,
         id: args.parsedId,
-        message: `${formatProviderRequestKindForSentence(args.requestKind)} thread hint "${args.threadIdHint}" did not match resolved BB thread "${resolvedThreadId}" for provider thread "${args.providerThreadId}"`,
+        message: `${formatProviderRequestKindForSentence(args.requestKind)} thread hint "${args.threadIdHint}" did not match resolved Patcher thread "${resolvedThreadId}" for provider thread "${args.providerThreadId}"`,
       });
       return null;
     }
@@ -989,7 +989,7 @@ function createAgentRuntimeInternal(
 
       if (targetThreadIds.length === 0) {
         options.onStderr?.(
-          `Dropping unscoped provider event ${event.type}; no bb thread could be resolved`,
+          `Dropping unscoped provider event ${event.type}; no Patcher thread could be resolved`,
         );
         continue;
       }
@@ -1524,7 +1524,7 @@ function createAgentRuntimeInternal(
             });
             // An ambiguous threadId is not sufficient to adopt a provider
             // thread, but it is safe to use for best-effort cleanup because
-            // the BB staging id is unique to this rewind operation.
+            // the Patcher staging id is unique to this rewind operation.
             providerThreadIdForCleanup =
               result.providerThreadId ??
               result.thread?.id ??

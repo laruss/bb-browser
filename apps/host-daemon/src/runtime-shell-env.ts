@@ -13,8 +13,8 @@ interface ResolveLocalPatcherExecutableDirectoryOptions {
 export interface PrepareRuntimeShellEnvOptions {
   patcherExecutableDirectory: string;
   /**
-   * Absolute path to the daemon-managed `bb` executable. Defaults to
-   * `<patcherExecutableDirectory>/bb`. Injected as `PATCHER_CLI` so agent shells can
+   * Absolute path to the daemon-managed `patcher` executable. Defaults to
+   * `<patcherExecutableDirectory>/patcher`. Injected as `PATCHER_CLI` so agent shells can
    * invoke it even when PATH is rewritten (ACP providers).
    */
   patcherExecutablePath?: string;
@@ -60,7 +60,7 @@ const USER_SHELL_ENV_TIMEOUT_MS = 3_000;
 const USER_SHELL_ENV_FORCE_KILL_AFTER_MS = 1_000;
 
 function getDefaultCliExecutablePath(): string {
-  return fileURLToPath(new URL("../../cli/bin/bb", import.meta.url));
+  return fileURLToPath(new URL("../../cli/bin/patcher", import.meta.url));
 }
 
 function getErrorCode(error: unknown): string | undefined {
@@ -359,7 +359,7 @@ export async function resolveLocalPatcherExecutablePath(
 
 /** Platform-stable name of the Patcher CLI file inside `PATCHER_CLI_DIR` / daemon dist. */
 export function patcherExecutableFileName(): string {
-  return "bb";
+  return "patcher";
 }
 
 export function resolvePatcherExecutablePathInDirectory(

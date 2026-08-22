@@ -263,7 +263,7 @@ describe("@patcher/sdk", () => {
           type: "localFile",
           path: "payload-uploaded.bin",
           name: "payload.bin",
-          mimeType: "application/x-bb-test",
+          mimeType: "application/x-patcher-test",
           sizeBytes: binary.byteLength,
         },
         status: 201,
@@ -271,7 +271,7 @@ describe("@patcher/sdk", () => {
     };
     const sdk = createPatcherSdk({
       transport: createHttpTransport({
-        baseUrl: "https://remote-bb.test/",
+        baseUrl: "https://remote-patcher.test/",
         fetch: authenticatedFetch,
         runtime: "node",
       }),
@@ -281,19 +281,19 @@ describe("@patcher/sdk", () => {
       sdk.projects.attachments.upload({
         clientFile: binary,
         filename: "payload.bin",
-        mimeType: "application/x-bb-test",
+        mimeType: "application/x-patcher-test",
         projectId: "proj_remote",
       }),
     ).resolves.toEqual({
       type: "localFile",
       path: "payload-uploaded.bin",
       name: "payload.bin",
-      mimeType: "application/x-bb-test",
+      mimeType: "application/x-patcher-test",
       sizeBytes: binary.byteLength,
     });
 
     expect(forwardedRequest?.url).toBe(
-      "https://remote-bb.test/api/v1/projects/proj_remote/attachments",
+      "https://remote-patcher.test/api/v1/projects/proj_remote/attachments",
     );
     expect(forwardedRequest?.method).toBe("POST");
     expect(forwardedRequest?.headers.get("authorization")).toBe(
@@ -309,7 +309,7 @@ describe("@patcher/sdk", () => {
       throw new Error("Expected multipart attachment file");
     }
     expect(file.name).toBe("payload.bin");
-    expect(file.type).toBe("application/x-bb-test");
+    expect(file.type).toBe("application/x-patcher-test");
     expect(new Uint8Array(await file.arrayBuffer())).toEqual(binary);
   });
 
@@ -425,13 +425,13 @@ describe("@patcher/sdk", () => {
       new Response("remote text", {
         headers: {
           "content-type": "text/plain",
-          "x-bb-content-encoding": "utf8",
+          "x-patcher-content-encoding": "utf8",
         },
       }),
       new Response(new Uint8Array([0, 1, 254, 255]), {
         headers: {
           "content-type": "application/octet-stream",
-          "x-bb-content-encoding": "base64",
+          "x-patcher-content-encoding": "base64",
         },
       }),
     ];

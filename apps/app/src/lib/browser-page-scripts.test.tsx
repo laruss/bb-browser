@@ -45,8 +45,8 @@ const CALL: PatcherDesktopBrowserPageScriptCall = {
   tabId: "browser:a",
   pluginId: "site-tweaks",
   method: "notes",
-  input: '{"repo":"patcher/bb"}',
-  url: "https://github.com/patcher/bb",
+  input: '{"repo":"patcher/browser"}',
+  url: "https://github.com/patcher/browser",
 };
 
 interface Shell {
@@ -191,7 +191,7 @@ describe("useBrowserPageScripts", () => {
     expect(calls).toEqual([
       {
         url: "/api/v1/plugins/site-tweaks/rpc/notes",
-        body: { repo: "patcher/bb" },
+        body: { repo: "patcher/browser" },
       },
     ]);
   });

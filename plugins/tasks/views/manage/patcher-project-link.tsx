@@ -10,11 +10,11 @@ import {
 const NO_LINK = "__none__";
 
 /**
- * UI state for the linked-bb-project picker. Shared by NewProjectDialog and
+ * UI state for the linked-patcher-project picker. Shared by NewProjectDialog and
  * the detail rail.
  */
 export interface PatcherProjectLinkState {
-  /** bb project id chosen from the Select. */
+  /** patcher project id chosen from the Select. */
   selection: string | null;
 }
 

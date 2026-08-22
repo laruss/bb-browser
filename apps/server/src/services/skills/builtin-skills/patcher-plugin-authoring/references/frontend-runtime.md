@@ -192,7 +192,7 @@ banners?, richText? })`. Omitted `scopes` means all thread, queued-message,
   name from plugin CSS. Decorations are paint-only and never mutate the draft.
   `richText.onDraftChange(draft, view)` observes the debounced
   `ComposerStructuredDraft`, including mention ranges.
-- Use a vendored BB prompt icon-button recipe for native-matching action chrome
+- Use a vendored Patcher prompt icon-button recipe for native-matching action chrome
   and provide an accessible label. Each component/callback is isolated so one
   failing customization does not degrade the native composer. Complete
   reference: `examples/plugins/composer-customization`.
@@ -206,17 +206,17 @@ only `definePluginApp` + the hooks):
 - Builtin plugins in this repo import shared UI from `@patcher/shared-ui` (the
   single source of truth the app also consumes and the registry generates
   from); external and example plugins still vendor source through the registry.
-- `bb plugin new --app` pre-vendors button, card, input, dialog (plus their
+- `patcher plugin new --app` pre-vendors button, card, input, dialog (plus their
   support files: `lib/utils`, `lib/portal-scope`, icon, responsive-overlay,
   drawer, hooks) into `components/ui/` etc., and writes a `components.json`
   whose `@patcher` registry is pinned to the release tag matching the running
-  BB. Import via the `@/*` alias: `import { Button } from
-"@/components/ui/button"` (tsconfig maps it; `bb plugin build` reads it).
+  Patcher. Import via the `@/*` alias: `import { Button } from
+"@/components/ui/button"` (tsconfig maps it; `patcher plugin build` reads it).
 - Add more with stock shadcn tooling: `npx shadcn add @patcher/select
-@patcher/table` — the BB registry carries the full stock set (~44 items:
+@patcher/table` — the Patcher registry carries the full stock set (~44 items:
   accordion, alert-dialog, calendar, chart, command, form, sheet, table,
-  …), generated from the BB app's own component source, so vendored code is
-  version-matched to your BB by construction. Edit the copies freely; they
+  …), generated from the Patcher app's own component source, so vendored code is
+  version-matched to your Patcher by construction. Edit the copies freely; they
   never change out from under you. Re-running `shadcn add` is the manual
   update path.
 - `toast`: `import { toast } from "sonner"` — runtime-shimmed to the host's
@@ -238,7 +238,7 @@ only `definePluginApp` + the hooks):
   `plugins/github/app.tsx`.
 - Everything else bundles from YOUR `node_modules` (hugeicons, lucide,
   cva/clsx/tailwind-merge, form/calendar/chart libs): run `npm install`
-  after adding components (`bb plugin new` runs the first one; `shadcn add`
+  after adding components (`patcher plugin new` runs the first one; `shadcn add`
   installs each item's declared deps). Consumers never need npm — ship your
   built `dist/`.
 - Styling: Tailwind classes compile against the host theme's live CSS

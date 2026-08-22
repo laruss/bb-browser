@@ -33,13 +33,13 @@ describe("resolvePatcherAppVersion", () => {
     ).toBe("4.5.6");
   });
 
-  it("reads the bb-app package.json adjacent to the binary", async () => {
+  it("reads the patcher-app package.json adjacent to the binary", async () => {
     const packageRoot = join(tempRoot, "package-root");
     const binDir = join(packageRoot, "host-daemon", "dist");
     await mkdir(binDir, { recursive: true });
     await writeFile(
       join(packageRoot, "package.json"),
-      JSON.stringify({ name: "bb-app", version: "0.0.7" }),
+      JSON.stringify({ name: "patcher-app", version: "0.0.7" }),
     );
     expect(
       resolvePatcherAppVersion({
@@ -49,7 +49,7 @@ describe("resolvePatcherAppVersion", () => {
     ).toBe("0.0.7");
   });
 
-  it("ignores adjacent package.json files that are not bb-app", async () => {
+  it("ignores adjacent package.json files that are not patcher-app", async () => {
     const repoRoot = join(tempRoot, "repo");
     const cliDistDir = join(repoRoot, "apps", "cli", "dist");
     await mkdir(cliDistDir, { recursive: true });
@@ -61,11 +61,11 @@ describe("resolvePatcherAppVersion", () => {
       join(repoRoot, "apps", "cli", "package.json"),
       JSON.stringify({ name: "@patcher/cli", version: "0.0.1" }),
     );
-    const patcherAppDir = join(repoRoot, "packages", "bb-app");
+    const patcherAppDir = join(repoRoot, "packages", "patcher-app");
     await mkdir(patcherAppDir, { recursive: true });
     await writeFile(
       join(patcherAppDir, "package.json"),
-      JSON.stringify({ name: "bb-app", version: "0.1.2" }),
+      JSON.stringify({ name: "patcher-app", version: "0.1.2" }),
     );
     expect(
       resolvePatcherAppVersion({
@@ -75,7 +75,7 @@ describe("resolvePatcherAppVersion", () => {
     ).toBe("0.1.2");
   });
 
-  it("falls back to the dev sentinel when no bb-app package.json is found", () => {
+  it("falls back to the dev sentinel when no patcher-app package.json is found", () => {
     expect(
       resolvePatcherAppVersion({
         env: {},

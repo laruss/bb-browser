@@ -214,7 +214,7 @@ export function WorkspacePath() {
         <RowStage>
           <WorkspacePathRow
             environment={makeEnvironment({
-              path: "/srv/repos/bb-linked-worktree",
+              path: "/srv/repos/patcher-linked-worktree",
               managed: false,
               workspaceProvisionType: "unmanaged",
             })}

@@ -60,7 +60,7 @@ function json(value: object, status = 200): Response {
   });
 }
 
-describe("bb plugin catalog", () => {
+describe("patcher plugin catalog", () => {
   setupCommandOutputTestEnvironment();
   const register: CommandRegistrar = (program) =>
     registerPluginCommands(program, () => "http://server");
@@ -148,7 +148,7 @@ describe("bb plugin catalog", () => {
       entryId: "linear",
     });
     expect(collectLogPayloads(vi.mocked(console.log)).join("\n")).toContain(
-      "bundled with BB",
+      "bundled with Patcher",
     );
   });
 

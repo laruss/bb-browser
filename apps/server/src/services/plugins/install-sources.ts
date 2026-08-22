@@ -16,7 +16,7 @@ import semver from "semver";
 import { spawnPortableOutputProcess } from "@patcher/process-utils";
 
 /**
- * Parsed `bb plugin install` source spec (design §6). The original spec is
+ * Parsed `patcher plugin install` source spec (design §6). The original spec is
  * retained for display/diagnostics; normalized persistence is authoritative.
  */
 export type ParsedPluginSource =

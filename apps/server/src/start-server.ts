@@ -14,7 +14,7 @@ import { pluginProcessPolicy } from "./services/plugins/plugin-placement.js";
 import { resolveBuiltinSkillsRootPath } from "./services/skills/builtin-skills-copy.js";
 import { SkillTreeRegistry } from "./services/skills/injected-skills.js";
 import { createAppVersionService } from "./services/system/app-version.js";
-import { createPatcherAppManagedConfigReloader } from "./services/system/bb-app-managed-config.js";
+import { createPatcherAppManagedConfigReloader } from "./services/system/patcher-app-managed-config.js";
 import { startEventLoopStallMonitor } from "./services/system/event-loop-stall-monitor.js";
 import {
   runPeriodicSweeps,
@@ -107,7 +107,7 @@ export async function runServer(serverConfig: ServerConfig): Promise<void> {
     logger,
   });
 
-  // Telemetry only operates in production runs (the bb-app launcher and the
+  // Telemetry only operates in production runs (the patcher-app launcher and the
   // desktop app both set NODE_ENV=production); dev/source runs never send.
   const telemetry = await createTelemetryService({
     apiKey: serverConfig.PATCHER_POSTHOG_API_KEY,

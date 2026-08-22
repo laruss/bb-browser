@@ -107,7 +107,7 @@ export function seedSession(deps: Pick<AppDeps, "db" | "hub">, hostId: string) {
     instanceId: "instance-1",
     hostName: "Test Host",
     hostType: "persistent",
-    dataDir: `/tmp/bb-host-data/${hostId}`,
+    dataDir: `/tmp/patcher-host-data/${hostId}`,
     protocolVersion: HOST_DAEMON_PROTOCOL_VERSION,
     heartbeatIntervalMs: 5_000,
     leaseTimeoutMs: 30_000,

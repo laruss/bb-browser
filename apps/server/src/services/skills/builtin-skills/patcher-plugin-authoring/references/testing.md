@@ -133,31 +133,31 @@ schedules run only when driven (no restart timers or cron sweep); storage is
 process-local and secrets stay in memory; `patcher.sdk` is always bound and
 unstubbed calls throw; cross-plugin collisions are outside one fake host. The
 frontend harness validates registrations and JSON/composer behavior but does
-not reproduce BB layout/CSS, persistence, routing, crash boundaries, or
+not reproduce Patcher layout/CSS, persistence, routing, crash boundaries, or
 multi-plugin arbitration. Use a live loop for those host boundaries.
 
 ## Live loop against a running Patcher
 
-- `bb plugin dev` is the loop: save → rebuild (if `patcher.app`) → reload; open
+- `patcher plugin dev` is the loop: save → rebuild (if `patcher.app`) → reload; open
   app pages pick new UI up live. Build/reload failures print and keep
   watching.
-- `bb plugin list` shows status, services, schedules (with last_error),
-  handler stats, and the CLI command; `bb plugin logs <id> -f` follows
+- `patcher plugin list` shows status, services, schedules (with last_error),
+  handler stats, and the CLI command; `patcher plugin logs <id> -f` follows
   `patcher.log` output. Add `--json` to any plugin command for machine output.
 - Exercise wire surfaces directly: `curl -X POST -H "content-type:
 application/json" -d '{}' <server>/api/v1/plugins/<id>/rpc/<method>`,
-  `bb <command> …` for the CLI, `bb plugin run <id> …` as the explicit form.
+  `patcher <command> …` for the CLI, `patcher plugin run <id> …` as the explicit form.
 - Keep pure logic in plain functions/modules so it is unit-testable without
   a Patcher server; the factory file should mostly wire registrations.
 
-BB Official plugins in `plugins/` (a Patcher checkout):
+Patcher Official plugins in `plugins/` (a Patcher checkout):
 
 - `github` — a gh-CLI-backed issue/PR browser in a single navPanel (with
   `headerContent`), subPath-based sub-navigation, shared-ui
   Tabs/Select/DropdownMenu/Badge/Skeleton + sonner toast throughout (in-repo
   plugins import `@patcher/shared-ui`; out-of-repo authors vendor the same
   components from the registry), background sync service, rpc + realtime,
-  project setting, a `bb github` CLI command, and agent-spawn buttons.
+  project setting, a `patcher github` CLI command, and agent-spawn buttons.
 - `docs` (stable plugin id `simple-notes`) — multi-host Docs vaults over
   `patcher.sdk.files`, with a Tiptap
   markdown WYSIWYG, nested navigation, images and sandboxed HTML, CLI/HTTP

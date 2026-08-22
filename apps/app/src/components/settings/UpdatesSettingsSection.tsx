@@ -39,7 +39,8 @@ import { formatRelativeTime } from "@/lib/relative-time";
 import { openUrlInExternalBrowser } from "@/lib/url-open-routing";
 import { sdk } from "@/lib/sdk";
 
-const CHANGELOG_URL = "https://github.com/get-bb/bb/blob/main/CHANGELOG.md";
+const CHANGELOG_URL =
+  "https://github.com/laruss/patcher-browser/blob/main/CHANGELOG.md";
 
 /**
  * The rows and the machine bands above them share one text edge: names start
@@ -317,7 +318,7 @@ export function PatcherAppUpdateRows({
   if (systemVersion === undefined) {
     return (
       <UpdatesRow>
-        <RowName name="bb-app" current={null} latest={null} />
+        <RowName name="patcher-app" current={null} latest={null} />
         <RowActions>
           <RowStatus>Checking…</RowStatus>
         </RowActions>
@@ -327,7 +328,7 @@ export function PatcherAppUpdateRows({
 
   const name = (
     <RowName
-      name="bb-app"
+      name="patcher-app"
       current={systemVersion.currentVersion}
       latest={
         systemVersion.updateAvailable ? systemVersion.latestVersion : null

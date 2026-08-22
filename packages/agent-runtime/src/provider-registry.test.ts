@@ -64,29 +64,32 @@ describe("provider registry", () => {
     const claudeProvider = createProviderForId("claude-code", {
       additionalWorkspaceWriteRoots: [],
       bridgeNodeEnv,
-      bridgeNodeExecutablePath: "/Applications/Patcher.app/Contents/MacOS/bb",
+      bridgeNodeExecutablePath:
+        "/Applications/Patcher.app/Contents/MacOS/patcher",
     });
     const piProvider = createProviderForId("pi", {
       additionalWorkspaceWriteRoots: [],
       bridgeNodeEnv,
-      bridgeNodeExecutablePath: "/Applications/Patcher.app/Contents/MacOS/bb",
+      bridgeNodeExecutablePath:
+        "/Applications/Patcher.app/Contents/MacOS/patcher",
     });
     const acpProvider = createProviderForId("acp-cursor", {
       additionalWorkspaceWriteRoots: [],
       bridgeNodeEnv,
-      bridgeNodeExecutablePath: "/Applications/Patcher.app/Contents/MacOS/bb",
+      bridgeNodeExecutablePath:
+        "/Applications/Patcher.app/Contents/MacOS/patcher",
     });
 
     expect(claudeProvider.process.command).toBe(
-      "/Applications/Patcher.app/Contents/MacOS/bb",
+      "/Applications/Patcher.app/Contents/MacOS/patcher",
     );
     expect(claudeProvider.process.env).toEqual(bridgeNodeEnv);
     expect(piProvider.process.command).toBe(
-      "/Applications/Patcher.app/Contents/MacOS/bb",
+      "/Applications/Patcher.app/Contents/MacOS/patcher",
     );
     expect(piProvider.process.env).toEqual(bridgeNodeEnv);
     expect(acpProvider.process.command).toBe(
-      "/Applications/Patcher.app/Contents/MacOS/bb",
+      "/Applications/Patcher.app/Contents/MacOS/patcher",
     );
     expect(acpProvider.process.env).toEqual(bridgeNodeEnv);
   });

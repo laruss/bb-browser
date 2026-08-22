@@ -8,8 +8,7 @@
 
 # Patcher
 
-[![npm version](https://img.shields.io/npm/v/bb-app.svg)](https://www.npmjs.com/package/bb-app)
-[![Join Discord](https://img.shields.io/badge/Discord-Join%20server-5865F2?logo=discord&logoColor=white)](https://discord.gg/kvBU6tJhcJ)
+[![npm version](https://img.shields.io/npm/v/patcher-app.svg)](https://www.npmjs.com/package/patcher-app)
 
 Patcher is an agentic IDE that builds itself. It can control, customize, and automate
 itself, laying the groundwork for your own software factory.
@@ -22,6 +21,11 @@ or hand off to another agent.
 > Patcher is in active development. Core architecture is stable, but workflows
 > and surfaces are still evolving.
 
+Patcher is a fork of [bb](https://github.com/get-bb/bb) by Michael Yong, and
+keeps its MIT license. It is developed independently: it has its own data
+directory, ports, package names, and plugin contract, and it neither reads nor
+migrates the state of a bb install. The two can be installed side by side.
+
 <p align="center">
   <img alt="Patcher desktop app showing a code review thread, dispatch panel, and task board" src="assets/app-screenshot.png" width="800">
 </p>
@@ -32,7 +36,7 @@ or hand off to another agent.
 
 The recommended way to start using Patcher is the desktop app:
 
-**[Download the latest desktop app](https://github.com/get-bb/bb/releases/tag/desktop-latest)**
+**[Download the latest desktop app](https://github.com/laruss/patcher-browser/releases/tag/desktop-latest)**
 
 The desktop build is currently macOS Apple Silicon (arm64) only. Intel Mac and
 Linux users should run Patcher with `npx` instead. On Windows, run Patcher inside
@@ -41,14 +45,14 @@ install WSL2 first, then run the same `npx` command below from your WSL2 (Linux)
 shell. Native Windows PowerShell and CMD are not supported.
 
 Early adopters can install
-**[Patcher Nightly](https://github.com/get-bb/bb/releases/tag/desktop-nightly)**
+**[Patcher Nightly](https://github.com/laruss/patcher-browser/releases/tag/desktop-nightly)**
 alongside the stable desktop app. It has a separate application identity,
 yellow icon, and auto-update feed.
 
 ### Or run it anywhere with npx
 
 ```bash
-npx bb-app@latest
+npx patcher-app@latest
 ```
 
 Then open `http://localhost:38986`.
@@ -56,22 +60,24 @@ Then open `http://localhost:38986`.
 To run the newest automated build instead:
 
 ```bash
-npx bb-app@nightly
+npx patcher-app@nightly
 ```
 
 Patcher uses the provider CLI you already have authenticated.
 
 For install requirements, provider setup, configuration, and package-focused
 docs, start with
-[`packages/bb-app`](./packages/bb-app/README.md).
+[`packages/patcher-app`](./packages/patcher-app/README.md).
 
 ### Telemetry
 
-Production runs (the desktop app and `npx bb-app`) send anonymous usage
-telemetry (app starts, thread creation counts, and user message counts) to help
-us understand adoption. Identification is a random per-install id stored in your
+Patcher currently sends no telemetry: it ships with an empty PostHog key, and
+an empty key disables the sender. The code path is still there, and if a key is
+ever configured, production runs (the desktop app and `npx patcher-app`) would
+send anonymous usage telemetry (app starts, thread creation counts, and user
+message counts). Identification would be a random per-install id stored in your
 data dir — no user, host, project, workspace, or message content is ever
-attached. Development/source runs never send. Opt out any run with
+attached. Development/source runs never send. Opt out of any run with
 `PATCHER_TELEMETRY=false`. See
 [`apps/server/src/services/system/telemetry.ts`](./apps/server/src/services/system/telemetry.ts).
 
@@ -89,7 +95,7 @@ a data directory under
 `~/.patcher-dev/<checkout-instance>/` and deterministic high ports derived from the
 checkout path. The checkout instance id is the sanitized path to the checkout,
 relative to your home directory, plus a short hash suffix. Separate worktrees
-can run alongside each other and the packaged `npx bb-app@latest` instance.
+can run alongside each other and the packaged `npx patcher-app@latest` instance.
 
 To run that same source dev server with the Electron desktop shell:
 
@@ -146,15 +152,15 @@ bun run start
 ```
 
 That builds only the app, server, and host-daemon runtime artifacts, then runs
-the launcher directly against those workspace outputs. Use the `bb-app`
-tarball smoke task when validating the published `npx bb-app@latest` package
+the launcher directly against those workspace outputs. Use the `patcher-app`
+tarball smoke task when validating the published `npx patcher-app@latest` package
 layout.
 
 ```bash
-bun run bb --help            # built CLI, targets the default/prod instance
+bun run patcher --help            # built CLI, targets the default/prod instance
 bun run reset                # clear production state
 
-bun run bb:dev --help        # source CLI, targets this checkout's dev instance
+bun run patcher:dev --help        # source CLI, targets this checkout's dev instance
 bun run reset:dev            # clear this checkout's dev state
 
 bun run reset:all            # clear both production and dev states
@@ -201,14 +207,14 @@ The usual cause is `ignore-scripts=true` in your `~/.npmrc`. Set the
 install scripts:
 
 ```bash
-npm_config_ignore_scripts=false npx bb-app@latest
+npm_config_ignore_scripts=false npx patcher-app@latest
 ```
 
 For a permanent install with the same setting, use:
 
 ```bash
-npm_config_ignore_scripts=false npm install -g bb-app
-bb-app
+npm_config_ignore_scripts=false npm install -g patcher-app
+patcher-app
 ```
 
 The environment variable applies to that one command only. Keep

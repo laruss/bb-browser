@@ -231,7 +231,7 @@ export const STORY_PROJECT_SOURCES: readonly ProjectSource[] = [
     projectId: PROJECT_IDS.patcher,
     type: "local_path",
     hostId: HOST_IDS.remote,
-    path: "/home/michael/bb",
+    path: "/home/michael/patcher",
     isDefault: false,
     createdAt: 0,
     updatedAt: 0,

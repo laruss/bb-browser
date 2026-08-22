@@ -7,7 +7,7 @@ frontend, from an agent, from the CLI, from a timer, or from the outside world.
 - [patcher.rpc — the frontend data plane](#patcherrpc--the-frontend-data-plane)
 - [patcher.realtime](#patcherrealtime)
 - [patcher.background — services and schedules](#patcherbackground--services-and-schedules)
-- [patcher.cli — an agent-facing `bb` subcommand](#patchercli--an-agent-facing-bb-subcommand)
+- [patcher.cli — an agent-facing `patcher` subcommand](#patchercli--an-agent-facing-bb-subcommand)
 - [patcher.ui.requestInput](#patcheruirequestinput--replace-the-composer-with-a-blocking-plugin-form)
 - [patcher.agents — native tools and session configuration](#patcheragents--native-tools-and-conditional-session-configuration)
 - [patcher.ui — host-rendered UI](#patcherui--host-rendered-ui-no-frontend-bundle-needed)
@@ -23,7 +23,7 @@ Auth modes:
 
 - `"local"` (default) — request must come from a local Patcher app origin.
   Right for anything the Patcher frontend calls.
-- `"token"` — requires the per-plugin token (`bb plugin token <id>`;
+- `"token"` — requires the per-plugin token (`patcher plugin token <id>`;
   `--rotate` generates a new one, invalidating the old) via the
   `x-patcher-plugin-token` header or `?token=`. Right for external scripts
   and machines you control.
@@ -127,7 +127,7 @@ patcher.background.schedule("sync", "*/5 * * * *", async () => {
 - Semantics differ on throw: a service throwing `NeedsConfigurationError`
   transitions the whole plugin to `needs-configuration` and stops
   restarting until the next load; a schedule throw (any error) only lands
-  in the schedule's `last_status`/`last_error` shown by `bb plugin list`.
+  in the schedule's `last_status`/`last_error` shown by `patcher plugin list`.
 - `NeedsConfigurationError` is matched **by name**, so no runtime import is
   needed: `throw Object.assign(new Error(msg), { name:
 "NeedsConfigurationError" })`. Pair it with `patcher.status.needsConfiguration`
@@ -138,15 +138,15 @@ patcher.background.schedule("sync", "*/5 * * * *", async () => {
 const initial = await settings.get();
 if (!initial.apiKey)
   patcher.status.needsConfiguration(
-    "Set apiKey with `bb plugin config <id>`, then reload.",
+    "Set apiKey with `patcher plugin config <id>`, then reload.",
   );
 ```
 
-## patcher.cli — an agent-facing `bb` subcommand
+## patcher.cli — an agent-facing `patcher` subcommand
 
 One top-level command per plugin; a second `register` in one factory
 execution is rejected.
-Users and agents run `bb <name> …` like any core command; the Patcher CLI
+Users and agents run `patcher <name> …` like any core command; the Patcher CLI
 proxies it to the server, where `run` executes.
 
 ```ts
@@ -158,11 +158,11 @@ patcher.cli.register({
     {
       name: "today",
       summary: "Today's weather",
-      usage: "bb weather today <city>",
+      usage: "patcher weather today <city>",
     },
   ],
   async run(argv, ctx) {
-    // argv EXCLUDES the command name: `bb weather today sf` → argv = ["today", "sf"]
+    // argv EXCLUDES the command name: `patcher weather today sf` → argv = ["today", "sf"]
     // ctx: { cwd?, threadId?, projectId? } — whatever the invoking CLI knew
     return { exitCode: 0, stdout: "sunny" }; // { exitCode, stdout?, stderr? }
   },
@@ -177,7 +177,7 @@ The host rejects a larger result atomically as `plugin_cli_output_too_large`;
 it never clips it. Page growing collections, cap verbose fields, and use
 file/streaming commands for large content. Caveat: under the workspace
 sandbox (Accept Edits / Approve for me), Claude's macOS sandbox permits
-loopback, so `bb` CLI calls (including plugin commands) work sandboxed;
+loopback, so `patcher` CLI calls (including plugin commands) work sandboxed;
 Linux and other provider sandboxes may still block loopback, in which case
 those calls need escalation approval.
 
@@ -217,7 +217,7 @@ patcher.agents.registerTool({
   name: "docs_search", // [a-zA-Z0-9_-]+, unique ACROSS plugins
   description: "Search the bundled docs.",
   instructions: "Prefer docs_search over guessing conventions.", // optional, appended to thread instructions
-  // Optional experimental native timeline labels. Without these, BB shows
+  // Optional experimental native timeline labels. Without these, Patcher shows
   // its normal tool name and arguments. Errors/interruptions keep that
   // standard rendering so the failing tool remains identifiable.
   experimental_statusLabels: {
@@ -231,7 +231,7 @@ patcher.agents.registerTool({
 });
 
 // All tools and manifest skills are static registrations. configure() only
-// selects this plugin's own ids when BB resolves a thread/session config.
+// selects this plugin's own ids when Patcher resolves a thread/session config.
 patcher.agents.configure((context) => ({
   tools: context.provider.id === "codex" ? ["docs_search"] : [],
   skills: context.project.kind === "standard" ? ["repo-conventions"] : [],
@@ -257,18 +257,18 @@ duplicate registrations are rejected; across plugins the earlier plugin wins
 and yours is dropped with the reason in your status detail.
 
 `experimental_statusLabels` is optional and supplies static, concise labels
-keyed by BB's timeline row status (`pending`, `completed`). Each label is
-limited to 80 characters; a longer label rejects the registration. BB snapshots the
+keyed by Patcher's timeline row status (`pending`, `completed`). Each label is
+limited to 80 characters; a longer label rejects the registration. Patcher snapshots the
 labels into each plugin tool-call event; it is not a frontend bundle hook. A
 status with no label — error, interrupted, or awaiting approval — falls back
-to BB's standard `Running tool …` / `Ran tool …` wording, as does omitting the
+to Patcher's standard `Running tool …` / `Ran tool …` wording, as does omitting the
 field entirely.
 
 `contributeInstructions` is **synchronous** and runs on the thread-start
 path — keep it cheap. Prefer `skills/` for standing knowledge; use this
 only when the text must reflect live plugin state at resolution time.
 
-Ordering is standard BB instructions, selected tools' static snippets,
+Ordering is standard Patcher instructions, selected tools' static snippets,
 `contributeInstructions` output, `configure` dynamic instructions, data-dir
 user instructions, then workspace instructions. Tool snippets are rejected at
 registration above 4096 characters; each legacy/dynamic callback contribution
@@ -290,7 +290,7 @@ throwing callback fail closed for that plugin only. Dynamic `instructions` are
 truncated to 4096 characters.
 
 Resolution happens for `thread.start` and `turn.submit`. A selected tool set
-takes effect only when the provider session is next started/resumed; BB never
+takes effect only when the provider session is next started/resumed; Patcher never
 hot-mutates a running provider session. Instructions follow the same rule: a
 live provider session keeps the instructions it was constructed with, and
 changed instructions apply when the session is next constructed.
@@ -346,7 +346,7 @@ load order.
 
 ## patcher.ui — a command of your own
 
-`registerKeybinding` rebinds a command **BB already has**. This adds one it has
+`registerKeybinding` rebinds a command **Patcher already has**. This adds one it has
 never heard of, with the chord that runs it:
 
 ```ts
@@ -364,7 +364,7 @@ patcher.ui.registerCommand({
 
 Four rules, each with a reason worth knowing:
 
-- **The chord is required.** BB has no command palette, so a command without one
+- **The chord is required.** Patcher has no command palette, so a command without one
   could never be run; a registration with no `shortcut.key` fails at load rather
   than sitting there doing nothing.
 - **`run` is handed nothing.** A chord that carried the current page would give
@@ -372,15 +372,15 @@ Four rules, each with a reason worth knowing:
   instead — `patcher.browser.page.getUrl()`, `patcher.browser.tabs.list()` — and the
   permission that already governs seeing the user's page (`tabs.read`) is the one
   that applies. This is also why `registerCommand` itself costs no permission.
-- **BB's own bindings win.** Your chord is matched only after every one of BB's has
-  declined, the user's own rebindings included — but BB's bindings are _scoped_, so
-  a chord BB uses outside the browser can still be yours inside it (`Mod+D` is
+- **Patcher's own bindings win.** Your chord is matched only after every one of Patcher's has
+  declined, the user's own rebindings included — but Patcher's bindings are _scoped_, so
+  a chord Patcher uses outside the browser can still be yours inside it (`Mod+D` is
   `diff.toggle`, which excludes a focused browser; the bookmarks example takes it
   from there). Settings → Keyboard lists your command under "Plugin shortcuts" and
-  names BB's command when it shares the chord. Between plugins, the lowest plugin id
+  names Patcher's command when it shares the chord. Between plugins, the lowest plugin id
   wins.
 - **It never fires while the user is typing**, or while a dialog is open — the same
-  scope BB's own shortcuts follow.
+  scope Patcher's own shortcuts follow.
 
 Two of your own commands on one chord is refused at load: that is a mistake you
 can fix, unlike two plugins wanting the same chord.

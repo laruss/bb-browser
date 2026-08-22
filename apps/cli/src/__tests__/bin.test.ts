@@ -42,17 +42,17 @@ describe("Patcher bin wrapper", () => {
       JSON.stringify({ name: "Patcher", private: true }),
     );
     await copyFile(
-      join(repoRoot, "apps", "cli", "bin", "bb"),
-      join(fakeBinDir, "bb"),
+      join(repoRoot, "apps", "cli", "bin", "patcher"),
+      join(fakeBinDir, "patcher"),
     );
-    await chmod(join(fakeBinDir, "bb"), 0o755);
+    await chmod(join(fakeBinDir, "patcher"), 0o755);
     return fakeRepoRoot;
   }
 
   /**
    * A stand-in for the package manager the wrapper builds with.
    *
-   * It has to be named for whichever one `bin/bb` actually calls: a stub named
+   * It has to be named for whichever one `bin/patcher` actually calls: a stub named
    * for the wrong one is never consulted, the real binary runs against a
    * fixture repo that has no scripts, and the failure ("Script not found") is
    * about the fixture rather than about the wrapper.
@@ -80,7 +80,7 @@ NODE
 `);
 
     const result = await execFileAsync(
-      join(fakeRepoRoot, "apps", "cli", "bin", "bb"),
+      join(fakeRepoRoot, "apps", "cli", "bin", "patcher"),
       ["status", "--json"],
       {
         cwd: fakeRepoRoot,
@@ -115,7 +115,7 @@ exit 42
     );
 
     const result = await execFileAsync(
-      join(fakeRepoRoot, "apps", "cli", "bin", "bb"),
+      join(fakeRepoRoot, "apps", "cli", "bin", "patcher"),
       ["--help"],
       {
         cwd: fakeRepoRoot,

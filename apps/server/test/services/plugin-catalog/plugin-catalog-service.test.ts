@@ -88,9 +88,9 @@ describe("bundled plugin catalog service", () => {
       BUNDLED_PLUGINS.map((plugin) => plugin.name).sort(),
     );
     expect(results).toHaveLength(catalog.status().pluginCount);
-    expect(results.some((entry) => entry.category === "Included with BB")).toBe(
-      false,
-    );
+    expect(
+      results.some((entry) => entry.category === "Included with Patcher"),
+    ).toBe(false);
     expect([...new Set(results.map((entry) => entry.category))]).toEqual(
       PLUGIN_CATALOG_CATEGORIES,
     );

@@ -77,22 +77,22 @@ that the user can open in Patcher.
 
 ## CLI
 
-The plugin registers the agent-discoverable `bb docs` command:
+The plugin registers the agent-discoverable `patcher docs` command:
 
 ```sh
-bb docs vaults --json
-bb docs vault-add Work /home/me/work-docs host_workstation
-bb docs list --vault personal --json
-bb docs read projects/plan.md --vault personal
-bb docs pull projects/plan.md --vault personal --into ./docs-work
+patcher docs vaults --json
+patcher docs vault-add Work /home/me/work-docs host_workstation
+patcher docs list --vault personal --json
+patcher docs read projects/plan.md --vault personal
+patcher docs pull projects/plan.md --vault personal --into ./docs-work
 # Edit ./docs-work/projects/plan.md with an ordinary editor or agent file tool.
-bb docs status ./docs-work --diff
-bb docs push ./docs-work
+patcher docs status ./docs-work --diff
+patcher docs push ./docs-work
 
-bb docs pull projects --folder --vault personal --into ./docs-work
-bb docs pull --all --vault personal --into ./docs-work
-bb docs push ./docs-work --dry-run --diff
-bb docs push ./docs-work --delete
+patcher docs pull projects --folder --vault personal --into ./docs-work
+patcher docs pull --all --vault personal --into ./docs-work
+patcher docs push ./docs-work --dry-run --diff
+patcher docs push ./docs-work --delete
 ```
 
 ### Sync workspace contract
@@ -162,7 +162,7 @@ its existing compare-and-swap behavior.
 ## Token-authenticated HTTP API
 
 The stable internal plugin ID remains `simple-notes`. Generate or inspect its
-token with `bb plugin token simple-notes`, then send it in
+token with `patcher plugin token simple-notes`, then send it in
 `x-patcher-plugin-token` to these JSON endpoints:
 
 ```text
@@ -193,7 +193,7 @@ state client-side.
 ## Install
 
 ```sh
-bb plugin install simple-notes
-bb plugin config simple-notes set directory "~/Notes"
-bb plugin reload simple-notes
+patcher plugin install simple-notes
+patcher plugin config simple-notes set directory "~/Notes"
+patcher plugin reload simple-notes
 ```

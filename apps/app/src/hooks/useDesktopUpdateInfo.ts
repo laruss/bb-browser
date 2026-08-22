@@ -11,7 +11,7 @@ export interface DesktopUpdateInfo {
   /**
    * Whether this is the desktop shell at all. Known on the first render,
    * unlike `desktopInfo`, which only arrives once the shell answers. Callers
-   * deciding whether bb updates itself must gate on this — gating on
+   * deciding whether patcher updates itself must gate on this — gating on
    * `desktopInfo` would treat the desktop as a web install until then and
    * surface the npm upgrade path that the desktop never uses.
    */

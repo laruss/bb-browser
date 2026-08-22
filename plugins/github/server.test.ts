@@ -18,7 +18,7 @@ function assertGithubFrontendInference(
   client: PluginRpcClient<typeof githubRpcContract>,
 ) {
   expectTypeOf(
-    client.call("getPull", { repo: "get-bb/bb", number: 694 }),
+    client.call("getPull", { repo: "laruss/patcher-browser", number: 694 }),
   ).toEqualTypeOf<
     Promise<{
       pull: {
@@ -75,7 +75,10 @@ function assertGithubFrontendInference(
   >();
 
   // @ts-expect-error issue numbers must be numeric.
-  void client.call("getIssue", { repo: "get-bb/bb", number: "694" });
+  void client.call("getIssue", {
+    repo: "laruss/patcher-browser",
+    number: "694",
+  });
   // @ts-expect-error unknown filter values are rejected by the contract.
   void client.call("listItems", { kind: "discussion" });
 }
@@ -132,13 +135,15 @@ describe("GitHub RPC contract", () => {
   });
 
   it("rejects CLI arguments that would otherwise broaden a repository query", () => {
-    expect(validateGithubCliArgs(["issues", "get-bb/bb"])).toBeNull();
+    expect(
+      validateGithubCliArgs(["issues", "laruss/patcher-browser"]),
+    ).toBeNull();
     expect(validateGithubCliArgs(["issues", "bad/repo/shape"])).toContain(
       "expected owner/repo",
     );
-    expect(validateGithubCliArgs(["prs", "get-bb/bb", "extra"])).toContain(
-      "Unexpected argument",
-    );
+    expect(
+      validateGithubCliArgs(["prs", "laruss/patcher-browser", "extra"]),
+    ).toContain("Unexpected argument");
     expect(validateGithubCliArgs(["repos", "--json"])).toContain(
       "does not accept arguments",
     );
@@ -176,7 +181,10 @@ describe("GitHub RPC contract", () => {
       }),
     ).rejects.toMatchObject({ code: "invalid_input" });
     await expect(
-      harness.callRpc("startWork", { repo: "get-bb/bb", number: 694 }),
+      harness.callRpc("startWork", {
+        repo: "laruss/patcher-browser",
+        number: 694,
+      }),
     ).rejects.toMatchObject({ code: "invalid_output" });
   });
 });

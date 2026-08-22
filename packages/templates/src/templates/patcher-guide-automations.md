@@ -7,14 +7,14 @@ intent: Help agents create, edit, inspect, and run automations through the CLI.
 Automations schedule recurring or one-shot work. Agent automations run a prompt
 in a thread; script automations run stored code without model usage.
 
-  bb automation list --project <id>
-  bb automation show <automationId> --project <id>
-  bb automation create --project <id> --name <name> <schedule> <execution>
-  bb automation update <automationId> --project <id> [changes]
-  bb automation pause|resume <automationId> --project <id>
-  bb automation run <automationId> --project <id>
-  bb automation runs <automationId> --project <id> [--limit <count>]
-  bb automation delete <automationId> --project <id> --yes
+  patcher automation list --project <id>
+  patcher automation show <automationId> --project <id>
+  patcher automation create --project <id> --name <name> <schedule> <execution>
+  patcher automation update <automationId> --project <id> [changes]
+  patcher automation pause|resume <automationId> --project <id>
+  patcher automation run <automationId> --project <id>
+  patcher automation runs <automationId> --project <id> [--limit <count>]
+  patcher automation delete <automationId> --project <id> --yes
 
 Schedules:
 

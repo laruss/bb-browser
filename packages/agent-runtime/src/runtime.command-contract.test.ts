@@ -218,7 +218,7 @@ describe("createAgentRuntime command contracts", () => {
     const runtime = createAgentRuntimeWithAdapters({
       workspacePath: tmpDir,
       additionalWorkspaceWriteRoots: [
-        "/repo/.git/worktrees/bb13",
+        "/repo/.git/worktrees/patcher13",
         "/repo/.git/objects",
       ],
       onEvent: () => {},
@@ -236,7 +236,7 @@ describe("createAgentRuntime command contracts", () => {
     try {
       await runtime.ensureProvider({ providerId: "fake" });
       expect(capturedAdditionalWorkspaceWriteRoots).toEqual([
-        "/repo/.git/worktrees/bb13",
+        "/repo/.git/worktrees/patcher13",
         "/repo/.git/objects",
       ]);
     } finally {

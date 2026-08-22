@@ -32,7 +32,7 @@ What the declaration is actually for, in the order the value arrives:
    that reaches for something it did not ask for throws with the permission
    named and the fix in the message. That is what makes plan Phase 6's loop
    converge rather than silently do more than the user asked.
-3. **It is something to show.** `bb plugin list` prints it, and install prints
+3. **It is something to show.** `patcher plugin list` prints it, and install prints
    it for a `path:` source. The app does not: `installedPluginSchema` carries
    the declared set — for a disabled plugin too, since the manifest is the
    record and that is exactly when someone wants to look — but nothing in the
@@ -182,8 +182,8 @@ Three decisions inside that are worth keeping:
 
 `https://**/**` is allowed — a dark-mode or declutter plugin legitimately wants
 every site — so the honesty of this permission rests on the list being shown before
-anyone agrees to it. `bb plugin install` prints it above the confirmation ("It will
-restyle pages on: …") and `bb plugin info` lists it, both read from the manifest on
+anyone agrees to it. `patcher plugin install` prints it above the confirmation ("It will
+restyle pages on: …") and `patcher plugin info` lists it, both read from the manifest on
 disk, which is the path an agent-generated plugin takes.
 
 **The app does not show it, and does not show permissions either.** That gap
@@ -209,7 +209,7 @@ signed-in user can see — and it has a channel to the plugin's backend. A plugi
 user let declutter GitHub has not thereby been let read what they do there, and one
 permission covering both would have made that distinction unsayable.
 
-The disclosure follows the split: `bb plugin install` prints "It will restyle pages
+The disclosure follows the split: `patcher plugin install` prints "It will restyle pages
 on: …" for one and "It will run its own code on pages of: …" for the other, each only
 if the permission that grants it was declared. A site list nothing is allowed to use
 grants nothing, and says nothing.

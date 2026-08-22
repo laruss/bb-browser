@@ -73,7 +73,7 @@ import {
 import {
   createPatcherAppArtifactService,
   type PatcherAppArtifactService,
-} from "./services/install/bb-app-artifact.js";
+} from "./services/install/patcher-app-artifact.js";
 import { HOST_DAEMON_PROTOCOL_VERSION } from "@patcher/host-daemon-contract";
 import {
   createPluginCatalogService,
@@ -336,10 +336,10 @@ export function createApp(
       protocolVersion: HOST_DAEMON_PROTOCOL_VERSION,
     });
   });
-  // bb-app is public on npm. A paired tunnel can expose an unpublished build
+  // patcher-app is public on npm. A paired tunnel can expose an unpublished build
   // slightly before release; serving the exact server build is an accepted
   // tradeoff so remote daemons cannot be stranded by protocol skew.
-  app.get("/install/bb-app.tgz", async (context) => {
+  app.get("/install/patcher-app.tgz", async (context) => {
     const tarball = await readFile(
       await patcherAppArtifactService.getTarballPath(),
     );

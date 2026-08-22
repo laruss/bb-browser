@@ -267,7 +267,7 @@ const SETTINGS_DROPDOWN_CONTENT_CLASS =
   "min-w-[var(--radix-dropdown-menu-trigger-width)]";
 
 const CREATE_CUSTOM_PALETTE_PROMPT =
-  "Create a custom Patcher palette. First run `bb theme dir` to find the custom theme directory. Ask me for the palette name and visual direction, then create `<theme-dir>/<name>/theme.css` with light and dark theme variables compatible with Patcher's theme tokens.";
+  "Create a custom Patcher palette. First run `patcher theme dir` to find the custom theme directory. Ask me for the palette name and visual direction, then create `<theme-dir>/<name>/theme.css` with light and dark theme variables compatible with Patcher's theme tokens.";
 const PALETTE_SETTING_DESCRIPTION =
   "Palettes change Patcher's colors across light and dark mode. Choose a built-in palette or create one from a prompt.";
 

@@ -57,7 +57,7 @@ function systemConfig(browserSearchEngineId: string): SystemConfigResponse {
     primaryHostId: null,
     primaryHostPlatform: null,
     voiceTranscriptionEnabled: false,
-    dataDir: "/tmp/bb-test",
+    dataDir: "/tmp/patcher-test",
   };
 }
 

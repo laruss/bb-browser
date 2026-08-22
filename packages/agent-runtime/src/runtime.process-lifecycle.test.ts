@@ -1064,7 +1064,7 @@ rl.on("line", (line) => {
   });
 
   it("scrubs inherited Patcher runtime env vars before spawning provider processes", async () => {
-    vi.stubEnv("PATCHER_DATA_DIR", "/tmp/leaked-bb-data");
+    vi.stubEnv("PATCHER_DATA_DIR", "/tmp/leaked-patcher-data");
     vi.stubEnv("PATCHER_SERVER_PORT", "38986");
     vi.stubEnv("NODE_ENV", "development");
     vi.stubEnv("OPENAI_API_KEY", "external-secret");
@@ -1418,7 +1418,7 @@ rl.on("line", (line) => {
       workspacePath: tmpDir,
       skillRoots: [
         {
-          id: "bb-cli",
+          id: "patcher-cli",
           providerId: "codex",
           skillDirectoryRootPath: join(tmpDir, "skill-root"),
         },
@@ -1518,7 +1518,7 @@ rl.on("line", (line) => {
       workspacePath: tmpDir,
       skillRoots: [
         {
-          id: "bb-cli",
+          id: "patcher-cli",
           providerId: "codex",
           skillDirectoryRootPath: join(tmpDir, "skill-root"),
         },

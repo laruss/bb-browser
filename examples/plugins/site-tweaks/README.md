@@ -36,7 +36,7 @@ fight the site's stylesheet.
 runs its own code in them. `patcher.sites` says which pages — for both. Nothing reaches
 anything without both halves, and every `matches` must be one of the declared
 patterns **verbatim**, so widening the reach means editing the manifest, which is
-the line whoever installs this actually reads. `bb plugin install` prints both
+the line whoever installs this actually reads. `patcher plugin install` prints both
 claims above the confirmation.
 
 They are two permissions over one list on purpose: a plugin the user let restyle
@@ -68,7 +68,7 @@ Also measured:
   no elements yet — `document.documentElement` is null. Hence `patcher.ready` for
   anything touching the DOM, and hence the ability to patch what the page is about
   to use.
-- **In an isolated world of this plugin's own.** GitHub cannot see `bb` or anything
+- **In an isolated world of this plugin's own.** GitHub cannot see `patcher` or anything
   the script defines, and cannot shadow what it reads. Another plugin's scripts get
   their own world.
 - **Main frame only**, like the css.
@@ -85,8 +85,8 @@ It is bounded: JSON in and out, an answer size limit, and a rate limit per tab.
 ## Running it
 
 ```
-bb plugin install ./examples/plugins/site-tweaks
-bb plugin dev            # rebuild + reload on save
+patcher plugin install ./examples/plugins/site-tweaks
+patcher plugin dev            # rebuild + reload on save
 ```
 
 `bun run test` in this directory exercises the backend against

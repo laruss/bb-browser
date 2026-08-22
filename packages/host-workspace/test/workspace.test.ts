@@ -52,8 +52,10 @@ async function makeTempDir(prefix: string): Promise<string> {
 async function initRepo(): Promise<string> {
   const repoPath = await makeTempDir("patcher-workspace-repo-");
   await runGit(["init", "-b", "main"], { cwd: repoPath });
-  await runGit(["config", "user.name", "BB Tests"], { cwd: repoPath });
-  await runGit(["config", "user.email", "patcher@example.com"], { cwd: repoPath });
+  await runGit(["config", "user.name", "Patcher Tests"], { cwd: repoPath });
+  await runGit(["config", "user.email", "patcher@example.com"], {
+    cwd: repoPath,
+  });
   await fs.writeFile(path.join(repoPath, "README.md"), "hello\n", "utf8");
   await runGit(["add", "README.md"], { cwd: repoPath });
   await runGit(["commit", "-m", "Initial commit"], { cwd: repoPath });
@@ -79,10 +81,7 @@ function parseFirstIntegerMatch(text: string, pattern: RegExp): number {
 function parseShortstat(shortstat: string): DiffStats {
   return {
     filesCount: parseFirstIntegerMatch(shortstat, /(\d+)\s+files?\s+changed/u),
-    insertions: parseFirstIntegerMatch(
-      shortstat,
-      /(\d+)\s+insertions?\(\+\)/u,
-    ),
+    insertions: parseFirstIntegerMatch(shortstat, /(\d+)\s+insertions?\(\+\)/u),
     deletions: parseFirstIntegerMatch(shortstat, /(\d+)\s+deletions?\(-\)/u),
   };
 }
@@ -883,7 +882,9 @@ describe("Workspace", () => {
 
   it("does not serialize different linked worktree checkout mutations", async () => {
     const repoPath = await initRepo();
-    const worktreeParent = await makeTempDir("patcher-workspace-lock-worktrees-");
+    const worktreeParent = await makeTempDir(
+      "patcher-workspace-lock-worktrees-",
+    );
     const worktreePath = path.join(worktreeParent, "feature");
     await runGit(["worktree", "add", "-b", "feature", worktreePath, "main"], {
       cwd: repoPath,
@@ -1154,8 +1155,10 @@ describe("Workspace", () => {
   it("returns null when HEAD is unavailable in an empty repository", async () => {
     const repoPath = await makeTempDir("patcher-workspace-empty-repo-");
     await runGit(["init", "-b", "main"], { cwd: repoPath });
-    await runGit(["config", "user.name", "BB Tests"], { cwd: repoPath });
-    await runGit(["config", "user.email", "patcher@example.com"], { cwd: repoPath });
+    await runGit(["config", "user.name", "Patcher Tests"], { cwd: repoPath });
+    await runGit(["config", "user.email", "patcher@example.com"], {
+      cwd: repoPath,
+    });
 
     const workspace = new Workspace(repoPath);
 

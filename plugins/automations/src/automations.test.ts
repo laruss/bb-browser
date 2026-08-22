@@ -690,24 +690,24 @@ describe("Patcher CLI injection for script runs", () => {
   it("prefers the env pointers over PATH and macOS install locations", () => {
     expect(
       patcherBinaryCandidates({
-        PATCHER_CLI: "/daemon/bundle/bb",
+        PATCHER_CLI: "/daemon/bundle/patcher",
         PATCHER_CLI_DIR: "/other/dir",
       })[0],
-    ).toBe("/daemon/bundle/bb");
+    ).toBe("/daemon/bundle/patcher");
     // The server process gets PATCHER_CLI_DIR, not PATCHER_CLI, from the launcher.
     expect(
       patcherBinaryCandidates({ PATCHER_CLI_DIR: "/daemon/bundle" })[0],
-    ).toBe("/daemon/bundle/bb");
+    ).toBe("/daemon/bundle/patcher");
   });
 
   it("expands PATH itself so every candidate is absolute", () => {
     // The resolved value is handed to scripts as PATCHER_CLI, which is documented
-    // as absolute; a bare "bb" would re-resolve if a script edits PATH.
+    // as absolute; a bare "patcher" would re-resolve if a script edits PATH.
     expect(patcherBinaryCandidates({ PATH: "/usr/bin:/opt/tools" })).toEqual([
-      "/usr/bin/bb",
-      "/opt/tools/bb",
-      "/opt/homebrew/bin/bb",
-      "/usr/local/bin/bb",
+      "/usr/bin/patcher",
+      "/opt/tools/patcher",
+      "/opt/homebrew/bin/patcher",
+      "/usr/local/bin/patcher",
     ]);
     expect(
       patcherBinaryCandidates({ PATH: "/usr/bin" }).every((c) =>
@@ -718,12 +718,12 @@ describe("Patcher CLI injection for script runs", () => {
 
   it("drops entries that would resolve against the wrong directory", () => {
     // An empty PATH entry means the cwd, which for a script run is the
-    // automation scripts directory — a `bb` dropped there is not the CLI.
+    // automation scripts directory — a `patcher` dropped there is not the CLI.
     expect(patcherBinaryCandidates({ PATH: "/usr/bin::/bin" })).toEqual([
-      "/usr/bin/bb",
-      "/bin/bb",
-      "/opt/homebrew/bin/bb",
-      "/usr/local/bin/bb",
+      "/usr/bin/patcher",
+      "/bin/patcher",
+      "/opt/homebrew/bin/patcher",
+      "/usr/local/bin/patcher",
     ]);
     // Blank or relative env pointers are skipped, not resolved against cwd.
     expect(
@@ -732,25 +732,25 @@ describe("Patcher CLI injection for script runs", () => {
         PATCHER_CLI_DIR: "",
         PATH: "",
       }),
-    ).toEqual(["/opt/homebrew/bin/bb", "/usr/local/bin/bb"]);
+    ).toEqual(["/opt/homebrew/bin/patcher", "/usr/local/bin/patcher"]);
     expect(
       patcherBinaryCandidates({
-        PATCHER_CLI: "./bb",
+        PATCHER_CLI: "./patcher",
         PATCHER_CLI_DIR: "rel/dir",
         PATH: "",
       }),
-    ).toEqual(["/opt/homebrew/bin/bb", "/usr/local/bin/bb"]);
+    ).toEqual(["/opt/homebrew/bin/patcher", "/usr/local/bin/patcher"]);
   });
 
   it("prepends Patcher's directory to PATH only when it is absolute", () => {
-    expect(scriptPathEnv("/daemon/bundle/bb", "/usr/bin:/bin")).toBe(
+    expect(scriptPathEnv("/daemon/bundle/patcher", "/usr/bin:/bin")).toBe(
       "/daemon/bundle:/usr/bin:/bin",
     );
     // Guard against a relative path ever reaching here: dirname() would be "."
     // and would put the scripts directory ahead of the system PATH.
-    expect(scriptPathEnv("bb", "/usr/bin:/bin")).toBe("/usr/bin:/bin");
+    expect(scriptPathEnv("patcher", "/usr/bin:/bin")).toBe("/usr/bin:/bin");
     expect(scriptPathEnv(null, "/usr/bin:/bin")).toBe("/usr/bin:/bin");
-    expect(scriptPathEnv("/daemon/bundle/bb", undefined)).toBe(
+    expect(scriptPathEnv("/daemon/bundle/patcher", undefined)).toBe(
       "/daemon/bundle",
     );
   });

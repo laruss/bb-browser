@@ -135,7 +135,7 @@ describe("claude-code background task translation", () => {
     expect(finalItem.status).toBe("completed");
     expect(finalItem.taskStatus).toBe("completed");
     expect(finalItem.summary).toBe(
-      'Dynamic workflow "Tiny fixture workflow for BB capture" completed',
+      'Dynamic workflow "Tiny fixture workflow for Patcher capture" completed',
     );
     expect(finalItem.usage).toEqual({
       totalTokens: 26674,
@@ -359,7 +359,7 @@ describe("claude-code background task translation", () => {
       command: {
         type: "thread/resume",
         threadId: "patcher-thread-1",
-        cwd: "/tmp/bb-fixture/workspace",
+        cwd: "/tmp/patcher-fixture/workspace",
         providerThreadId: "claude-session-1",
         options: {
           claudeCodeMockCliTraffic: DEFAULT_CLAUDE_CODE_MOCK_CLI_TRAFFIC_CONFIG,
@@ -390,7 +390,7 @@ describe("claude-code background task translation", () => {
       command: {
         type: "thread/resume",
         threadId: "patcher-thread-1",
-        cwd: "/tmp/bb-fixture/workspace",
+        cwd: "/tmp/patcher-fixture/workspace",
         providerThreadId: "claude-session-1",
         options: {
           claudeCodeMockCliTraffic: DEFAULT_CLAUDE_CODE_MOCK_CLI_TRAFFIC_CONFIG,
@@ -432,7 +432,7 @@ describe("claude-code background task translation", () => {
       command: {
         type: "thread/resume",
         threadId: "patcher-thread-1",
-        cwd: "/tmp/bb-fixture/workspace",
+        cwd: "/tmp/patcher-fixture/workspace",
         providerThreadId: "claude-session-1",
         options: {
           claudeCodeMockCliTraffic: DEFAULT_CLAUDE_CODE_MOCK_CLI_TRAFFIC_CONFIG,

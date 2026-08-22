@@ -8,7 +8,7 @@ describe("computeMutedPrefixLength", () => {
     );
   });
 
-  it("returns 0 when text does not start with [bb", () => {
+  it("returns 0 when text does not start with [patcher", () => {
     expect(computeMutedPrefixLength("system", "hello world")).toBe(0);
     expect(computeMutedPrefixLength("agent", "[other] body")).toBe(0);
   });

@@ -25,7 +25,7 @@ function resolveThreadPaneTarget(id: string | undefined): ResolvedId {
     return { id: context, source: "env" };
   }
   throw new Error(
-    "Missing thread ID. Pass <threadId> or run inside a BB thread.",
+    "Missing thread ID. Pass <threadId> or run inside a Patcher thread.",
   );
 }
 
@@ -35,10 +35,10 @@ export function registerPaneCommand(
 ): void {
   parent
     .command("pane")
-    .description("Maximize or restore a thread pane in connected BB apps")
+    .description("Maximize or restore a thread pane in connected Patcher apps")
     .usage("<maximize|restore|toggle> [id] [options]")
     .argument("<action>", "Pane action: maximize, restore, or toggle")
-    .argument("[id]", "Thread ID. Omit inside a BB thread.")
+    .argument("[id]", "Thread ID. Omit inside a Patcher thread.")
     .option("--json", "Print machine-readable JSON output")
     .action(
       action(

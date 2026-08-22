@@ -81,7 +81,7 @@ function formatAttachments(
     .map(
       (attachment) =>
         `- ${attachment.fileName} · ${attachment.id}\n` +
-        `  Fetch with: bb tasks attachment get ${attachment.id} --out <path>`,
+        `  Fetch with: patcher tasks attachment get ${attachment.id} --out <path>`,
     )
     .join("\n");
 }
@@ -112,7 +112,7 @@ export function buildSeedPrompt(input: SeedPromptInput): string {
     markdownSection("Recent comments", formatComments(input.recentComments)),
     markdownSection(
       "Report-back contract",
-      `You are working on task ${input.task.key}. Use the Patcher tasks CLI: comment substantive updates (bb tasks comment ${input.task.key} --body ...), attach result artifacts, set status when done (bb tasks update ${input.task.key} --status in_review) or explain blockage in a comment. Your thread is already attached to the task.`,
+      `You are working on task ${input.task.key}. Use the Patcher tasks CLI: comment substantive updates (patcher tasks comment ${input.task.key} --body ...), attach result artifacts, set status when done (patcher tasks update ${input.task.key} --status in_review) or explain blockage in a comment. Your thread is already attached to the task.`,
     ),
   ];
 
@@ -200,7 +200,7 @@ async function presetSpawnEnvironment(
   if (hostId === null) {
     throw new DelegationError(
       "spawn_target_invalid",
-      "Could not create a worktree because BB has no default machine",
+      "Could not create a worktree because Patcher has no default machine",
     );
   }
   return {

@@ -26,7 +26,7 @@ async function createRemoteRepo(root: string): Promise<string> {
   await runGit(
     [
       "-c",
-      "user.name=BB Test",
+      "user.name=Patcher Test",
       "-c",
       "user.email=patcher@example.test",
       "commit",

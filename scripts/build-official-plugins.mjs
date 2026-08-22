@@ -32,12 +32,12 @@ for (const plugin of selected) {
 
 const patcherPackage = JSON.parse(
   await readFile(
-    resolve(repositoryRoot, "packages/bb-app/package.json"),
+    resolve(repositoryRoot, "packages/patcher-app/package.json"),
     "utf8",
   ),
 );
 if (typeof patcherPackage.version !== "string") {
-  throw new Error("packages/bb-app/package.json is missing a version");
+  throw new Error("packages/patcher-app/package.json is missing a version");
 }
 
 for (const plugin of selected) {

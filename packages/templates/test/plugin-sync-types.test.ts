@@ -14,10 +14,10 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { syncPluginTypes } from "../src/plugin-scaffold.js";
 
 /**
- * `bb plugin new` seeds types/ once, but the SDK surface grows every release,
+ * `patcher plugin new` seeds types/ once, but the SDK surface grows every release,
  * so a plugin scaffolded months ago typechecks against declarations that no
  * longer describe the running Patcher. syncPluginTypes is the refresh; these guard
- * the behavior the CLI (`bb plugin types`, build, dev) depends on.
+ * the behavior the CLI (`patcher plugin types`, build, dev) depends on.
  */
 describe("syncPluginTypes", () => {
   let rootDir: string;
@@ -100,7 +100,7 @@ describe("syncPluginTypes", () => {
   });
 
   /**
-   * `bb plugin build` and `bb plugin dev` refresh declarations without being
+   * `patcher plugin build` and `patcher plugin dev` refresh declarations without being
    * asked, and building a plugin never runs its code — so cloning an untrusted
    * plugin and building it must not write outside that plugin. Both link forms
    * redirected the write before this was guarded.

@@ -31,14 +31,14 @@ function buildTestRestartCommand(): string {
     cwd: "/repo",
     daemonPid: 123,
     daemonPort: 456,
-    dataDir: "/tmp/bb root",
+    dataDir: "/tmp/patcher root",
     entrypoint: "/repo/apps/host-daemon/dist/index.js",
     envFilePath: "/repo/.env",
     hostId: "host_123",
     instanceId: "instance_123",
-    logPath: "/tmp/bb logs/host-daemon.log",
+    logPath: "/tmp/patcher logs/host-daemon.log",
     parentPid: 789,
-    pidPath: "/tmp/bb-restart.pid",
+    pidPath: "/tmp/patcher-restart.pid",
     serverUrl: "http://127.0.0.1:3334",
   });
 }
@@ -298,7 +298,7 @@ describe("standalone restart command", () => {
     expect(command).toContain("PATCHER_RESTART_DAEMON_PID_PATH=");
     expect(command).toContain("/repo/apps/host-daemon/dist/index.js");
     expect(command).toContain(
-      "</dev/null >> '/tmp/bb logs/host-daemon.log' 2>&1",
+      "</dev/null >> '/tmp/patcher logs/host-daemon.log' 2>&1",
     );
     expect(command).toContain("'http://127.0.0.1:3334/api/v1/hosts'");
     expect(command).toContain(

@@ -13,7 +13,7 @@ const execFileAsync = promisify(execFile);
  * download one. A bundled binary is 40–80MB in every auto-update payload, a
  * GPL build inside a proprietary distribution, and one more thing to sign; a
  * downloaded one is worse, because Patcher would be executing a binary that was
- * never part of a Patcher release. The audience here runs `bb` in a terminal and
+ * never part of a Patcher release. The audience here runs `patcher` in a terminal and
  * their agents have shell access, so the honest answer is to use the ffmpeg
  * they have — and to make its absence a message that fixes itself rather than a
  * dead end.
@@ -215,4 +215,4 @@ export async function installFfmpegWithBrew(args: {
 
 /** What to say when there is no encoder, wherever the miss happened. */
 export const NO_FFMPEG_MESSAGE =
-  "No ffmpeg found. Run `bb browser install-ffmpeg`, or install it yourself (`brew install ffmpeg`), or point PATCHER_FFMPEG at one.";
+  "No ffmpeg found. Run `patcher browser install-ffmpeg`, or install it yourself (`brew install ffmpeg`), or point PATCHER_FFMPEG at one.";

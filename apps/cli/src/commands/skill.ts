@@ -243,7 +243,7 @@ export function registerSkillCommands(
     .requiredOption("--file <path>", "Local SKILL.md to upload")
     .requiredOption(
       "--revision <sha256>",
-      "Revision returned by bb skill show --json",
+      "Revision returned by patcher skill show --json",
     )
     .action(
       action(async (skillId: string, options: SkillUpdateOptions) => {

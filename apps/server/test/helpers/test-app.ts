@@ -15,7 +15,7 @@ import {
   createAppVersionService,
   type AppVersionService,
 } from "../../src/services/system/app-version.js";
-import { createPatcherAppManagedConfigReloader } from "../../src/services/system/bb-app-managed-config.js";
+import { createPatcherAppManagedConfigReloader } from "../../src/services/system/patcher-app-managed-config.js";
 import { createNoopTelemetryService } from "../../src/services/system/telemetry.js";
 import { TerminalSessionLifecycle } from "../../src/services/terminals/terminal-session-lifecycle.js";
 import { resolveThreadStorageRootPath } from "../../src/services/threads/thread-storage.js";

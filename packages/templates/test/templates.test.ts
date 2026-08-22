@@ -40,7 +40,7 @@ describe("@patcher/templates", () => {
   it("documents project creation machine routing", () => {
     const guide = renderTemplate("patcherGuideProjects", {});
 
-    expect(guide).toContain("bb project create --name");
+    expect(guide).toContain("patcher project create --name");
     expect(guide).toContain("--machine <id-or-name>");
     expect(guide).toContain("--host <id-or-name>");
     expect(guide).toContain("local CLI machine fallback");
@@ -49,7 +49,7 @@ describe("@patcher/templates", () => {
   it("documents complete automation execution replacement", () => {
     const guide = renderTemplate("patcherGuideAutomations", {});
 
-    expect(guide).toContain("bb automation update <automationId>");
+    expect(guide).toContain("patcher automation update <automationId>");
     expect(guide).toContain("replace the previous execution completely");
     expect(guide).toContain("--env-json");
     expect(guide).toContain("--permission-mode <accept-edits|auto|full>");

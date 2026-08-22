@@ -39,7 +39,7 @@ describe("server startup diagnostics", () => {
   it("binds the default server listener to IPv4 loopback", async () => {
     const serverConfig = loadServerConfig({
       env: {
-        PATCHER_DATA_DIR: "/tmp/bb-server-listener-test",
+        PATCHER_DATA_DIR: "/tmp/patcher-server-listener-test",
         PATCHER_HOST_DAEMON_PORT: "49162",
         PATCHER_SERVER_PORT: "49161",
         NODE_ENV: "development",

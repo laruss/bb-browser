@@ -20,7 +20,7 @@ const PACKAGED_NATIVE_PACKAGE_NAMES = [
 // content-addressed store (node_modules/.bun), so an in-place rebuild clobbers the node-ABI binary
 // every other workspace package (and the server test suite) relies on. Instead
 // `npmRebuild` is disabled and we fetch the Electron prebuild into the packaged
-// copy here, leaving the shared store untouched. Desktop dev runs bb-app with
+// copy here, leaving the shared store untouched. Desktop dev runs patcher-app with
 // the host Node executable so it can use the workspace's normal Node-ABI binary.
 const NATIVE_MODULE_PLATFORM = "darwin";
 

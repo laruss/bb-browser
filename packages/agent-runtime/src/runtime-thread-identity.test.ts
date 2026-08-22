@@ -128,7 +128,7 @@ describe("RuntimeThreadIdentityRegistry", () => {
     await expect(identityPromise).resolves.toBeNull();
   });
 
-  it("stamps projected events with the resolved bb thread id", () => {
+  it("stamps projected events with the resolved patcher thread id", () => {
     const event: ThreadEvent = {
       type: "turn/started",
       threadId: "provider-thread-1",

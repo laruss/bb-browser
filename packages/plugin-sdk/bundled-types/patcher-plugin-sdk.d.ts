@@ -1,9 +1,9 @@
-// Portable type declarations for `@patcher/plugin-sdk`. Unpublished BB
+// Portable type declarations for `@patcher/plugin-sdk`. Unpublished Patcher
 // workspace contracts are flattened; public subpaths may reuse the
 // package root without requiring any other @patcher/* package.
 //
-// Confused by the API, or need a symbol that isn't here? Clone the BB repo
-// and read the real source: https://github.com/get-bb/bb
+// Confused by the API, or need a symbol that isn't here? Clone the Patcher repo
+// and read the real source: https://github.com/laruss/patcher-browser
 
 import * as react from 'react';
 import { ComponentType, ReactNode } from 'react';
@@ -2600,8 +2600,8 @@ type SkillFilesResponse = z$1.infer<typeof skillFilesResponseSchema>;
 declare const projectResponseSchema: z$1.ZodObject<{
     id: z$1.ZodString;
     kind: z$1.ZodEnum<{
-        standard: "standard";
         personal: "personal";
+        standard: "standard";
     }>;
     name: z$1.ZodString;
     gitRemoteUrl: z$1.ZodNullable<z$1.ZodString>;
@@ -2622,8 +2622,8 @@ type ProjectResponse = z$1.infer<typeof projectResponseSchema>;
 declare const projectWithThreadsResponseSchema: z$1.ZodObject<{
     id: z$1.ZodString;
     kind: z$1.ZodEnum<{
-        standard: "standard";
         personal: "personal";
+        standard: "standard";
     }>;
     name: z$1.ZodString;
     gitRemoteUrl: z$1.ZodNullable<z$1.ZodString>;
@@ -2723,8 +2723,8 @@ declare const projectWithThreadsResponseSchema: z$1.ZodObject<{
             ultra: "ultra";
         }>;
         permissionMode: z$1.ZodEnum<{
-            "accept-edits": "accept-edits";
             auto: "auto";
+            "accept-edits": "accept-edits";
             full: "full";
         }>;
     }, z$1.core.$strip>>;
@@ -3143,8 +3143,8 @@ declare const environmentPullRequestResponseSchema: z$1.ZodDiscriminatedUnion<[z
             }>>;
         }, z$1.core.$strict>;
         attention: z$1.ZodEnum<{
-            none: "none";
             blocked: "blocked";
+            none: "none";
             merged: "merged";
             draft: "draft";
             closed: "closed";
@@ -6408,9 +6408,9 @@ declare const installedPluginSchema: z$1.ZodObject<{
     }, z$1.core.$strip>>>;
     permissions: z$1.ZodDefault<z$1.ZodArray<z$1.ZodEnum<{
         workspace: "workspace";
-        threads: "threads";
         "page.interact": "page.interact";
         "page.record": "page.record";
+        threads: "threads";
         shell: "shell";
         history: "history";
         "tabs.read": "tabs.read";
@@ -6548,9 +6548,9 @@ declare const pluginListResponseSchema: z$1.ZodObject<{
         }, z$1.core.$strip>>>;
         permissions: z$1.ZodDefault<z$1.ZodArray<z$1.ZodEnum<{
             workspace: "workspace";
-            threads: "threads";
             "page.interact": "page.interact";
             "page.record": "page.record";
+            threads: "threads";
             shell: "shell";
             history: "history";
             "tabs.read": "tabs.read";
@@ -6690,9 +6690,9 @@ declare const pluginReloadResponseSchema: z$1.ZodObject<{
         }, z$1.core.$strip>>>;
         permissions: z$1.ZodDefault<z$1.ZodArray<z$1.ZodEnum<{
             workspace: "workspace";
-            threads: "threads";
             "page.interact": "page.interact";
             "page.record": "page.record";
+            threads: "threads";
             shell: "shell";
             history: "history";
             "tabs.read": "tabs.read";
@@ -6806,8 +6806,8 @@ declare const systemExecutionOptionsResponseSchema: z$1.ZodObject<{
             supportsUserQuestion: z$1.ZodBoolean;
             supportsFork: z$1.ZodBoolean;
             supportedPermissionModes: z$1.ZodArray<z$1.ZodEnum<{
-                "accept-edits": "accept-edits";
                 auto: "auto";
+                "accept-edits": "accept-edits";
                 full: "full";
             }>>;
         }, z$1.core.$strip>;
@@ -6838,8 +6838,8 @@ declare const systemExecutionOptionsResponseSchema: z$1.ZodObject<{
         available: z$1.ZodBoolean;
     }, z$1.core.$strip>>;
     permissionCeiling: z$1.ZodEnum<{
-        "accept-edits": "accept-edits";
         auto: "auto";
+        "accept-edits": "accept-edits";
         full: "full";
     }>;
     models: z$1.ZodArray<z$1.ZodObject<{
@@ -7387,7 +7387,7 @@ declare const systemAttentionResponseSchema: z$1.ZodObject<{
 type SystemAttentionResponse = z$1.infer<typeof systemAttentionResponseSchema>;
 /**
  * Theme catalog: the on-disk custom-theme directory plus the discovered custom
- * themes and the active palette. Drives `bb theme list` / `bb theme dir`.
+ * themes and the active palette. Drives `patcher theme list` / `patcher theme dir`.
  */
 declare const themeCatalogResponseSchema: z$1.ZodObject<{
     dir: z$1.ZodString;
@@ -8357,10 +8357,10 @@ declare const createThreadRequestSchema: z$1.ZodObject<{
         ultra: "ultra";
     }>>;
     permissionMode: z$1.ZodOptional<z$1.ZodPipe<z$1.ZodUnion<readonly [z$1.ZodEnum<{
-        "accept-edits": "accept-edits";
         auto: "auto";
+        "accept-edits": "accept-edits";
         full: "full";
-    }>, z$1.ZodLiteral<"workspace-write">]>, z$1.ZodTransform<"accept-edits" | "auto" | "full", "accept-edits" | "auto" | "full" | "workspace-write">>>;
+    }>, z$1.ZodLiteral<"workspace-write">]>, z$1.ZodTransform<"auto" | "accept-edits" | "full", "auto" | "accept-edits" | "full" | "workspace-write">>>;
     executionInputSources: z$1.ZodOptional<z$1.ZodObject<{
         providerId: z$1.ZodOptional<z$1.ZodEnum<{
             explicit: "explicit";
@@ -8601,10 +8601,10 @@ declare const forkThreadRequestSchema: z$1.ZodObject<{
     }, z$1.core.$strip>>>>;
     title: z$1.ZodOptional<z$1.ZodString>;
     permissionMode: z$1.ZodOptional<z$1.ZodPipe<z$1.ZodUnion<readonly [z$1.ZodEnum<{
-        "accept-edits": "accept-edits";
         auto: "auto";
+        "accept-edits": "accept-edits";
         full: "full";
-    }>, z$1.ZodLiteral<"workspace-write">]>, z$1.ZodTransform<"accept-edits" | "auto" | "full", "accept-edits" | "auto" | "full" | "workspace-write">>>;
+    }>, z$1.ZodLiteral<"workspace-write">]>, z$1.ZodTransform<"auto" | "accept-edits" | "full", "auto" | "accept-edits" | "full" | "workspace-write">>>;
     visibility: z$1.ZodDefault<z$1.ZodEnum<{
         visible: "visible";
         hidden: "hidden";
@@ -8720,10 +8720,10 @@ declare const sendMessageRequestSchema: z$1.ZodObject<{
         ultra: "ultra";
     }>>;
     permissionMode: z$1.ZodOptional<z$1.ZodPipe<z$1.ZodUnion<readonly [z$1.ZodEnum<{
-        "accept-edits": "accept-edits";
         auto: "auto";
+        "accept-edits": "accept-edits";
         full: "full";
-    }>, z$1.ZodLiteral<"workspace-write">]>, z$1.ZodTransform<"accept-edits" | "auto" | "full", "accept-edits" | "auto" | "full" | "workspace-write">>>;
+    }>, z$1.ZodLiteral<"workspace-write">]>, z$1.ZodTransform<"auto" | "accept-edits" | "full", "auto" | "accept-edits" | "full" | "workspace-write">>>;
     executionInputSources: z$1.ZodOptional<z$1.ZodObject<{
         model: z$1.ZodOptional<z$1.ZodEnum<{
             explicit: "explicit";
@@ -8948,10 +8948,10 @@ declare const editMessageRequestSchema: z$1.ZodObject<{
         ultra: "ultra";
     }>>;
     permissionMode: z$1.ZodOptional<z$1.ZodPipe<z$1.ZodUnion<readonly [z$1.ZodEnum<{
-        "accept-edits": "accept-edits";
         auto: "auto";
+        "accept-edits": "accept-edits";
         full: "full";
-    }>, z$1.ZodLiteral<"workspace-write">]>, z$1.ZodTransform<"accept-edits" | "auto" | "full", "accept-edits" | "auto" | "full" | "workspace-write">>>;
+    }>, z$1.ZodLiteral<"workspace-write">]>, z$1.ZodTransform<"auto" | "accept-edits" | "full", "auto" | "accept-edits" | "full" | "workspace-write">>>;
     executionInputSources: z$1.ZodOptional<z$1.ZodObject<{
         model: z$1.ZodOptional<z$1.ZodEnum<{
             explicit: "explicit";
@@ -9078,10 +9078,10 @@ declare const createQueuedMessageRequestSchema: z$1.ZodObject<{
         ultra: "ultra";
     }>>;
     permissionMode: z$1.ZodOptional<z$1.ZodPipe<z$1.ZodUnion<readonly [z$1.ZodEnum<{
-        "accept-edits": "accept-edits";
         auto: "auto";
+        "accept-edits": "accept-edits";
         full: "full";
-    }>, z$1.ZodLiteral<"workspace-write">]>, z$1.ZodTransform<"accept-edits" | "auto" | "full", "accept-edits" | "auto" | "full" | "workspace-write">>>;
+    }>, z$1.ZodLiteral<"workspace-write">]>, z$1.ZodTransform<"auto" | "accept-edits" | "full", "auto" | "accept-edits" | "full" | "workspace-write">>>;
     executionInputSources: z$1.ZodOptional<z$1.ZodObject<{
         model: z$1.ZodOptional<z$1.ZodEnum<{
             explicit: "explicit";
@@ -9303,8 +9303,8 @@ declare const sendQueuedMessageResponseSchema: z$1.ZodObject<{
             ultra: "ultra";
         }>;
         permissionMode: z$1.ZodEnum<{
-            "accept-edits": "accept-edits";
             auto: "auto";
+            "accept-edits": "accept-edits";
             full: "full";
         }>;
         serviceTier: z$1.ZodEnum<{
@@ -9675,9 +9675,9 @@ declare const threadWithIncludesResponseSchema: z$1.ZodObject<{
         isGitRepo: z$1.ZodBoolean;
         isWorktree: z$1.ZodBoolean;
         workspaceProvisionType: z$1.ZodEnum<{
-            personal: "personal";
-            "managed-worktree": "managed-worktree";
             unmanaged: "unmanaged";
+            "managed-worktree": "managed-worktree";
+            personal: "personal";
         }>;
         branchName: z$1.ZodNullable<z$1.ZodString>;
         baseBranch: z$1.ZodNullable<z$1.ZodString>;
@@ -9705,8 +9705,8 @@ declare const threadWithIncludesResponseSchema: z$1.ZodObject<{
             connected: "connected";
         }>;
         maxPermissionMode: z$1.ZodEnum<{
-            "accept-edits": "accept-edits";
             auto: "auto";
+            "accept-edits": "accept-edits";
             full: "full";
         }>;
         lastSeenAt: z$1.ZodNullable<z$1.ZodNumber>;
@@ -9981,8 +9981,8 @@ declare const threadQueuedMessageListResponseSchema: z$1.ZodArray<z$1.ZodObject<
         ultra: "ultra";
     }>;
     permissionMode: z$1.ZodEnum<{
-        "accept-edits": "accept-edits";
         auto: "auto";
+        "accept-edits": "accept-edits";
         full: "full";
     }>;
     serviceTier: z$1.ZodEnum<{
@@ -10350,8 +10350,8 @@ declare const threadTimelineResponseSchema: z$1.ZodObject<{
         originalModel: z$1.ZodString;
         fallbackModel: z$1.ZodString;
         reason: z$1.ZodEnum<{
-            provider: "provider";
             refusal: "refusal";
+            provider: "provider";
         }>;
         message: z$1.ZodString;
     }, z$1.core.$strip>>;
@@ -10616,7 +10616,7 @@ interface PluginRpcError {
 /**
  * The validator-neutral subset of Standard Schema v1 used by plugin RPC.
  * Zod 4 schemas implement this interface directly; other validators can do
- * the same without becoming part of BB's public protocol.
+ * the same without becoming part of Patcher's public protocol.
  */
 interface StandardSchemaV1<Input = unknown, Output = Input> {
     readonly "~standard": {
@@ -10659,7 +10659,7 @@ type PluginRpcResult<Method extends PluginRpcMethodContract> = StandardSchemaV1I
 
 /**
  * The `@patcher/plugin-sdk/app` contract (plugin design §5.2) — pure types with no
- * side effects. The BB app imports these to keep its real implementation in
+ * side effects. The Patcher app imports these to keep its real implementation in
  * sync (`satisfies PluginSdkApp`). Plugin authors import the same shapes through
  * `@patcher/plugin-sdk/app`.
  *
@@ -10885,7 +10885,7 @@ interface PluginLeadingPanelRegistration {
     id: string;
     /** Named in the rail's tooltip, and its accessible name. */
     title: string;
-    /** Icon hint (BB icon name); unknown names fall back to a generic icon. */
+    /** Icon hint (Patcher icon name); unknown names fall back to a generic icon. */
     icon: string;
     /** Rendered as the whole panel body; it owns its own scrolling. */
     component: ComponentType<PluginLeadingPanelProps>;
@@ -10908,7 +10908,7 @@ interface PluginNavPanelRegistration {
     /** Unique within the plugin; letters, digits, `-`, `_`. */
     id: string;
     title: string;
-    /** Icon hint (BB icon name); unknown names fall back to a generic icon. */
+    /** Icon hint (Patcher icon name); unknown names fall back to a generic icon. */
     icon: string;
     /** URL segment under `/plugins/<pluginId>/`; letters, digits, `-`, `_`. */
     path: string;
@@ -10961,7 +10961,7 @@ interface PluginThreadPanelActionRegistration {
     /** Label of the action row in the panel's new-tab launcher. */
     title: string;
     /**
-     * Icon hint (BB icon name) used when the plugin ships no logo; the
+     * Icon hint (Patcher icon name) used when the plugin ships no logo; the
      * launcher row and opened tabs prefer the plugin's logo.
      */
     icon?: string;
@@ -11004,7 +11004,7 @@ interface PluginNewThreadPanelActionRegistration {
     id: string;
     /** Label of the action row in the panel's new-tab launcher. */
     title: string;
-    /** Icon hint (BB icon name) used when the plugin ships no logo. */
+    /** Icon hint (Patcher icon name) used when the plugin ships no logo. */
     icon?: string;
     /** Rendered inside every panel tab this action opens. */
     component: ComponentType<PluginNewThreadPanelProps>;
@@ -11039,7 +11039,7 @@ interface PluginSidebarFooterActionRegistration {
     id: string;
     /** Tooltip and accessible label for the icon button. */
     title: string;
-    /** Icon hint (BB icon name); unknown names fall back to a generic icon. */
+    /** Icon hint (Patcher icon name); unknown names fall back to a generic icon. */
     icon: string;
     /**
      * Runs when the user activates the action (e.g. call `openSettings()`,
@@ -11371,7 +11371,7 @@ interface PluginMessageActionRegistration {
     id: string;
     /** Tooltip / menu label for the action. */
     title: string;
-    /** Icon hint (BB icon name); unknown names fall back to a generic icon. */
+    /** Icon hint (Patcher icon name); unknown names fall back to a generic icon. */
     icon?: string;
     /**
      * Runs when the user activates the action. Errors (sync or async) are
@@ -11554,7 +11554,7 @@ interface ComposerCustomization {
 interface ComposerPlusMenuItem {
     id: string;
     label: string;
-    /** BB icon name; unknown names fall back to the generic plugin icon. */
+    /** Patcher icon name; unknown names fall back to the generic plugin icon. */
     icon?: string;
     /** Accessible description for the host-rendered row. */
     description?: string;
@@ -11614,7 +11614,7 @@ interface PluginComposerTextEffect {
  * be squeezed to its icon is one glyph with a label behind it.
  */
 interface PluginBrowserTabStatus {
-    /** BB icon-name hint; unknown names fall back to the generic plugin icon. */
+    /** Patcher icon-name hint; unknown names fall back to the generic plugin icon. */
     icon: string;
     /** Accessible label for the mark, and its tooltip. */
     label: string;
@@ -11626,7 +11626,7 @@ interface PluginBrowserTabStatus {
 }
 /** Host-rendered status that temporarily replaces a thread's draft glyph. */
 interface PluginComposerThreadRowStatus {
-    /** BB icon-name hint; unknown names fall back to the generic plugin icon. */
+    /** Patcher icon-name hint; unknown names fall back to the generic plugin icon. */
     icon: string;
     /** Accessible label for the status glyph. */
     label: string;
@@ -11710,7 +11710,7 @@ interface ThreadChatMessageAction {
     id: string;
     /** Tooltip / menu label for the action. */
     title: string;
-    /** Icon hint (BB icon name); unknown names fall back to a generic icon. */
+    /** Icon hint (Patcher icon name); unknown names fall back to a generic icon. */
     icon?: string;
     /**
      * Message roles the action applies to. Omitted = both user and assistant
@@ -11726,7 +11726,7 @@ interface ThreadChatMessageAction {
 /**
  * Props of the host-owned `ThreadChat` component — one thread's chat
  * (timeline, and for the composer variants the full send/queue/draft
- * engine), rendered by the BB app inside a plugin slot. This is the
+ * engine), rendered by the Patcher app inside a plugin slot. This is the
  * deliberate exception to the no-host-components rule (§5.5): a stable
  * product capability, not a UI kit. Versioned additive like slot props;
  * internal timeline rows, query hooks, and prompt-box configuration are
@@ -11800,7 +11800,7 @@ interface NewThreadRequest {
  * full new-thread compose surface (prompt editor with @-mentions and expand,
  * attachments, provider/model/reasoning picker, voice, submit, and the row
  * beneath with project, environment, branch-from, and permission mode),
- * rendered by the BB app inside a plugin slot.
+ * rendered by the Patcher app inside a plugin slot.
  *
  * It is the create-side counterpart to `ThreadChat`: same deliberate
  * exception to the no-host-components rule (§5.5), same additive versioning.
@@ -11947,8 +11947,8 @@ interface PatcherNavigate {
     }): boolean;
 }
 /**
- * Everything `@patcher/plugin-sdk/app` resolves to at runtime. The BB app builds
- * the real implementation and `satisfies` this interface; `bb plugin build`
+ * Everything `@patcher/plugin-sdk/app` resolves to at runtime. The Patcher app builds
+ * the real implementation and `satisfies` this interface; `patcher plugin build`
  * shims the specifier to that object on `globalThis.__patcherPluginRuntime`.
  */
 interface PluginSdkApp {
@@ -12500,7 +12500,7 @@ interface PluginIdArgs {
 interface PluginInstallArgs {
     source: string;
 }
-/** Install an entry from BB's official catalog. */
+/** Install an entry from Patcher's official catalog. */
 interface PluginCatalogInstallArgs {
     entryId: string;
 }
@@ -13303,11 +13303,11 @@ interface PatcherSdk extends PatcherRealtime {
  * The backend plugin API contract — the `patcher` object handed to a plugin's
  * `server.ts` factory (`export default function plugin(patcher: PatcherPluginApi)`).
  *
- * Types only: the implementation lives in the BB server
+ * Types only: the implementation lives in the Patcher server
  * (apps/server/src/services/plugins/plugin-api.ts), which imports these
  * shapes so the contract and the implementation cannot drift. Plugin authors
  * import them type-only (`import type { PatcherPluginApi } from
- * "@patcher/plugin-sdk"`); the import is erased when BB loads the file.
+ * "@patcher/plugin-sdk"`); the import is erased when Patcher loads the file.
  *
  * Runtime classes stay host-side. NeedsConfigurationError in particular is
  * matched by NAME, so plugin code needs no runtime import:
@@ -13434,9 +13434,9 @@ interface PluginHttp {
     /**
      * Register an HTTP route, mounted at
      * `/api/v1/plugins/<id>/http/<path>`. Auth modes (default "local"):
-     * - "local": Origin/Host must be a local BB app origin; non-GET requires
+     * - "local": Origin/Host must be a local Patcher app origin; non-GET requires
      *   content-type application/json (forces a CORS preflight).
-     * - "token": requires the per-plugin token (`bb plugin token <id>`) via
+     * - "token": requires the per-plugin token (`patcher plugin token <id>`) via
      *   the x-patcher-plugin-token header or ?token=.
      * - "none": no checks — only for signature-verified webhooks.
      */
@@ -13480,7 +13480,7 @@ interface PluginBackground {
      * durable row keyed (pluginId, name) is upserted at load; the periodic
      * sweep claims due rows with a CAS on next_run_at, but only while this
      * plugin is loaded. Failures land in last_status/last_error, visible in
-     * `bb plugin list`.
+     * `patcher plugin list`.
      */
     schedule(name: string, cron: string, fn: () => void | Promise<void>): void;
 }
@@ -13539,7 +13539,7 @@ interface PluginCliExecutionResult {
     error?: PluginCliOutputLimitError;
 }
 interface PluginCliRegistration {
-    /** Top-level command name (`bb <name> …`): lowercase [a-z0-9-]+, and not
+    /** Top-level command name (`patcher <name> …`): lowercase [a-z0-9-]+, and not
      * a core Patcher command (see RESERVED_PATCHER_CLI_COMMANDS in the server). */
     name: string;
     summary: string;
@@ -13550,7 +13550,7 @@ interface PluginCliRegistration {
 }
 interface PluginCli {
     /**
-     * Register this plugin's `bb` subcommand. One registration per factory
+     * Register this plugin's `patcher` subcommand. One registration per factory
      * execution; a repeated call is rejected. Core Patcher commands always win
      * name collisions; reserved names are rejected at registration.
      */
@@ -13579,8 +13579,8 @@ interface PluginAgentToolContext {
     signal: AbortSignal;
 }
 /**
- * Native timeline labels for a plugin tool, keyed by BB's own timeline row
- * status. This is experimental: BB may refine its presentation contract
+ * Native timeline labels for a plugin tool, keyed by Patcher's own timeline row
+ * status. This is experimental: Patcher may refine its presentation contract
  * before the field is stabilized.
  */
 interface PluginAgentToolExperimentalStatusLabels {
@@ -13602,10 +13602,10 @@ interface PluginAgentToolRegistrationBase {
      */
     instructions?: string;
     /**
-     * Optional native timeline labels. When omitted, BB shows the standard
+     * Optional native timeline labels. When omitted, Patcher shows the standard
      * tool name and arguments (for example, `Ran tool search_docs …`). Labels
      * apply only while the call is pending and after successful completion;
-     * approval, error, and interruption states keep BB's standard rendering.
+     * approval, error, and interruption states keep Patcher's standard rendering.
      */
     experimental_statusLabels?: PluginAgentToolExperimentalStatusLabels;
 }
@@ -13684,7 +13684,7 @@ interface PluginAgents {
      * an already-running session is not hot-mutated. Instructions follow the
      * same boundary: a live provider session keeps the instructions it was
      * constructed with, and a changed selection applies when the session is
-     * next constructed. Skill changes follow BB's environment runtime policy:
+     * next constructed. Skill changes follow Patcher's environment runtime policy:
      * a busy runtime keeps its current catalog until a safe relaunch. Side chats
      * are ordinary plugin-owned forks here — read `origin` to detect them — and
      * their returned tool, skill, and dynamic-instruction selections apply at the
@@ -14644,7 +14644,7 @@ interface PluginBrowserConsoleEntry {
 /**
  * One request the tab finished. `status` is null when there was no response —
  * `error` then carries Chromium's `net::ERR_*` name, including for a request
- * BB's own session firewall refused.
+ * Patcher's own session firewall refused.
  */
 interface PluginBrowserNetworkEntry {
     method: string;
@@ -15313,7 +15313,7 @@ interface PluginBrowser {
     /**
      * Drive the browser surface's tabs, pages and navigation.
      *
-     * These need a **connected browser window** — the BB desktop app with its
+     * These need a **connected browser window** — the Patcher desktop app with its
      * browser surface — which is never guaranteed and is certainly absent while
      * factories run. Call them from handlers, tools and services, never at load
      * time, and expect `BrowserHostUnavailableError` when nothing is connected.
@@ -15336,7 +15336,7 @@ interface PluginEvents {
 }
 interface PluginServerApi {
     /**
-     * This BB server's own loopback base URL (e.g. "http://127.0.0.1:38986"),
+     * This Patcher server's own loopback base URL (e.g. "http://127.0.0.1:38986"),
      * which serves the SPA + /api + /ws. For plugins that proxy or relay
      * traffic back to the server itself (e.g. a tunnel). Bind-gated like
      * `patcher.sdk`: reading it before the server is listening throws, so prefer
@@ -15347,16 +15347,16 @@ interface PluginServerApi {
 interface PluginStatusApi {
     /**
      * Mark this plugin `needs-configuration` (with a message shown in
-     * `bb plugin list` and the UI) instead of failing — e.g. a factory or
+     * `patcher plugin list` and the UI) instead of failing — e.g. a factory or
      * service that finds no API key configured. Cleared on the next load;
      * saving settings does not auto-reload in V1, so ask the user to
-     * `bb plugin reload <id>` after configuring.
+     * `patcher plugin reload <id>` after configuring.
      */
     needsConfiguration(message: string): void;
 }
 /**
  * The API object handed to a plugin's factory (design §4). Implemented by
- * the BB server; this contract is what plugin `server.ts` files compile
+ * the Patcher server; this contract is what plugin `server.ts` files compile
  * against.
  */
 interface PatcherPluginApi {
@@ -15376,7 +15376,7 @@ interface PatcherPluginApi {
     readonly realtime: PluginRealtime;
     /** Long-lived services + cron schedules (design §4.8). */
     readonly background: PluginBackground;
-    /** Agent-facing `bb` CLI subcommand (design §4.4). */
+    /** Agent-facing `patcher` CLI subcommand (design §4.4). */
     readonly cli: PluginCli;
     /** Per-turn agent context contributions (design §4.4). */
     readonly agents: PluginAgents;
@@ -15392,7 +15392,7 @@ interface PatcherPluginApi {
     readonly server: PluginServerApi;
     /** Server-to-daemon host control-plane declarations. */
     /**
-     * The full BB SDK, bound to this server over loopback (design §4.1).
+     * The full Patcher SDK, bound to this server over loopback (design §4.1).
      * Bind-gated: reading this before the host binds the SDK throws. The real
      * server binds it before loading plugins, so it is available from the
      * moment factories run there — but isolated harnesses may not, so prefer

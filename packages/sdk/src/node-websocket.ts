@@ -51,7 +51,7 @@ export function wrapNodeWsWebsocket(
 
 /**
  * Node 22+ ships a global WebSocket; older supported Node versions (20.x)
- * fall back to the `ws` package so bb.subscribe works out of the box everywhere.
+ * fall back to the `ws` package so patcher.subscribe works out of the box everywhere.
  *
  * `headers` forces the `ws` path whatever the runtime: the global WebSocket
  * has no way to set request headers, and a socket that has to say who it is

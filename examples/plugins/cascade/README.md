@@ -78,13 +78,13 @@ flat index (`lib/rows.ts`) — never stored.
 ## Install
 
 ```
-bb plugin install ./examples/plugins/cascade
+patcher plugin install ./examples/plugins/cascade
 ```
 
 Then open **Cascade** in the sidebar. After editing sources:
 
 ```
-bb plugin reload cascade
+patcher plugin reload cascade
 ```
 
 ## Keymap

@@ -75,7 +75,7 @@ const noop = () => {};
 const SIDEBAR_NAVIGATION_STORY_QUERY_KEY = sidebarNavigationQueryKey();
 
 const patcherProject = makeProject({
-  id: "proj_story_bb",
+  id: "proj_story_patcher",
   name: "Patcher",
 });
 const docsProject = makeProject({

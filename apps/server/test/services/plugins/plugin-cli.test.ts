@@ -22,7 +22,7 @@ const CLI_SOURCE = `
       name: "acme",
       summary: "Acme tools",
       commands: [
-        { name: "issues", summary: "List issues", usage: "bb acme issues [--json]" },
+        { name: "issues", summary: "List issues", usage: "patcher acme issues [--json]" },
       ],
       async run(argv: string[], ctx: any) {
         if (argv[0] === "fail") return { exitCode: 3, stderr: "acme failed" };
@@ -132,7 +132,7 @@ describe("plugin CLI commands (patcher.cli.register + endpoints + skill + logs)"
             {
               name: "issues",
               summary: "List issues",
-              usage: "bb acme issues [--json]",
+              usage: "patcher acme issues [--json]",
             },
           ],
         },
@@ -140,7 +140,7 @@ describe("plugin CLI commands (patcher.cli.register + endpoints + skill + logs)"
       mentionProviders: [],
       omniboxProviders: [],
     });
-    // bb plugin list shows the registered command too.
+    // patcher plugin list shows the registered command too.
     const entry = harness.pluginService.list().find((p) => p.id === "acme");
     expect(entry?.cliCommand).toEqual({ name: "acme", summary: "Acme tools" });
   });
@@ -343,8 +343,8 @@ describe("plugin CLI commands (patcher.cli.register + endpoints + skill + logs)"
     expect(content).toContain("name: plugin-commands");
     expect(content).toContain("capped at 1048576 UTF-8 bytes");
     expect(content).toContain("plugin_cli_output_too_large");
-    expect(content).toContain("## bb acme — Acme tools");
-    expect(content).toContain("bb acme issues [--json]");
+    expect(content).toContain("## patcher acme — Acme tools");
+    expect(content).toContain("patcher acme issues [--json]");
 
     // The generated root resolves through the injected-skill machinery.
     const sources = resolveInjectedSkillSources(testLogger, {
@@ -370,8 +370,8 @@ describe("plugin CLI commands (patcher.cli.register + endpoints + skill + logs)"
     );
     await harness.pluginService.reload("acme");
     const reloaded = await readFile(skillFile, "utf8");
-    expect(reloaded).toContain("## bb acme2 — Acme v2");
-    expect(reloaded).not.toContain("## bb acme —");
+    expect(reloaded).toContain("## patcher acme2 — Acme v2");
+    expect(reloaded).not.toContain("## patcher acme —");
   });
 
   it("patcher.log writes JSONL to the plugin log file and the tail endpoint serves it", async () => {

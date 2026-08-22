@@ -1,4 +1,4 @@
-// Builds the BB plugin component registry (plugin design §5.5): shadcn
+// Builds the Patcher plugin component registry (plugin design §5.5): shadcn
 // registry-item JSONs generated from the shared UI kit's component source, so
 // the registry can never drift from the UI the app and builtin plugins ship.
 //
@@ -53,9 +53,7 @@ function resolveLocal(specifier, importerRel) {
   if (specifier.startsWith("@/")) {
     base = specifier.slice(2);
   } else if (specifier.startsWith(".")) {
-    base = path.normalize(
-      path.join(path.dirname(importerRel), specifier),
-    );
+    base = path.normalize(path.join(path.dirname(importerRel), specifier));
   } else {
     return null;
   }
@@ -78,7 +76,8 @@ function resolveLocal(specifier, importerRel) {
 
 function importSpecifiersOf(content) {
   const specs = [];
-  const re = /(?:^|\n)\s*(?:import|export)[^;]*?from\s+["']([^"']+)["']|(?:^|\n)\s*import\s+["']([^"']+)["']/g;
+  const re =
+    /(?:^|\n)\s*(?:import|export)[^;]*?from\s+["']([^"']+)["']|(?:^|\n)\s*import\s+["']([^"']+)["']/g;
   let match;
   while ((match = re.exec(content)) !== null) {
     specs.push(match[1] ?? match[2]);
@@ -89,9 +88,7 @@ function importSpecifiersOf(content) {
 /** npm package name of a bare specifier ("@scope/pkg/sub" → "@scope/pkg"). */
 function npmPackageOf(specifier) {
   const parts = specifier.split("/");
-  return specifier.startsWith("@")
-    ? parts.slice(0, 2).join("/")
-    : parts[0];
+  return specifier.startsWith("@") ? parts.slice(0, 2).join("/") : parts[0];
 }
 
 /** react/react-dom come from the plugin runtime; never item dependencies. */
@@ -101,9 +98,7 @@ const RUNTIME_PROVIDED = new Set(["react", "react-dom"]);
 function itemNameFor(relPath) {
   const base = path.basename(relPath).replace(/\.(tsx?|jsx?)$/, "");
   // camelCase hooks (useBrowserDimmingModal) → kebab-case item names.
-  return base
-    .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
-    .toLowerCase();
+  return base.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
 }
 
 /** shadcn item type + install target for an app-src-relative path. */
@@ -132,7 +127,9 @@ const queue = [];
 for (const name of config.uiItems) {
   const relPath = `components/ui/${name}.tsx`;
   if (!existsSync(sourcePathFor(relPath))) {
-    throw new Error(`uiItem "${name}" has no source at packages/shared-ui/src/${relPath}`);
+    throw new Error(
+      `uiItem "${name}" has no source at packages/shared-ui/src/${relPath}`,
+    );
   }
   queue.push(relPath);
 }
@@ -180,15 +177,14 @@ function pinned(pkg) {
 const generatedFiles = new Map(); // filename → content string
 const indexEntries = [];
 for (const [itemName, relPath] of [...fileByItem.entries()].sort()) {
-  const { content, dependencies, registryDependencies } =
-    itemMeta.get(relPath);
+  const { content, dependencies, registryDependencies } = itemMeta.get(relPath);
   const { type, target } = classify(relPath);
   const item = {
     $schema: "https://ui.shadcn.com/schema/registry-item.json",
     name: itemName,
     type,
     title: itemName,
-    description: `BB ${type.replace("registry:", "")} "${itemName}" — vendored from the BB app's own source (version-matched to this BB release).`,
+    description: `Patcher ${type.replace("registry:", "")} "${itemName}" — vendored from the Patcher app's own source (version-matched to this Patcher release).`,
     ...(dependencies.size > 0
       ? { dependencies: [...dependencies].sort().map(pinned) }
       : {}),
@@ -219,7 +215,7 @@ generatedFiles.set(
   JSON.stringify(
     {
       $comment:
-        "BB plugin component registry index. Install via: npx shadcn add @patcher/<name> (see the patcher-plugin-authoring skill).",
+        "Patcher plugin component registry index. Install via: npx shadcn add @patcher/<name> (see the patcher-plugin-authoring skill).",
       items: indexEntries.sort((a, b) => a.name.localeCompare(b.name)),
     },
     null,
@@ -244,7 +240,9 @@ for (const [name, content] of generatedFiles) {
     : null;
   if (existing !== content) {
     stale = true;
-    staleReasons.push(existing === null ? `missing r/${name}` : `changed r/${name}`);
+    staleReasons.push(
+      existing === null ? `missing r/${name}` : `changed r/${name}`,
+    );
   }
 }
 
@@ -262,7 +260,9 @@ if (check) {
   for (const [name, content] of generatedFiles) {
     await writeFile(path.join(outDir, name), content);
   }
-  console.log(`wrote ${generatedFiles.size} files to r/ (${fileByItem.size} items)`);
+  console.log(
+    `wrote ${generatedFiles.size} files to r/ (${fileByItem.size} items)`,
+  );
 } else {
   console.log(`plugin registry up to date (${fileByItem.size} items)`);
 }

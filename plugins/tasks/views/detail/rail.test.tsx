@@ -82,7 +82,7 @@ function detailRpc(
 }
 
 describe("dispatch target rail control", () => {
-  it("links a discovered bb project", async () => {
+  it("links a discovered patcher project", async () => {
     const updateCalls: Array<Record<string, unknown>> = [];
     const slot = renderSlot(
       app.navPanels[0]!,

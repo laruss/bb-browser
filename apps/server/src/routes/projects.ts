@@ -642,7 +642,7 @@ export function registerProjectRoutes(app: Hono, deps: AppDeps): void {
         },
       });
       return createDaemonFileContentResponse(result, {
-        headers: { "x-bb-content-encoding": result.contentEncoding },
+        headers: { "x-patcher-content-encoding": result.contentEncoding },
       });
     } catch (error) {
       return remapDaemonFileRouteError(error);

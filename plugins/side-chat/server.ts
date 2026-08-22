@@ -5,7 +5,7 @@
 // the host-owned `ThreadChat` component.
 //
 // Server-owned policy lives here: the reply-anchor seed rule and the
-// empty-fork cleanup sweep. The archive cascade is BB's own: a hidden fork
+// empty-fork cleanup sweep. The archive cascade is Patcher's own: a hidden fork
 // retires with its source thread whether or not this plugin is enabled.
 import { defineRpcContract, type PatcherPluginApi } from "@patcher/plugin-sdk";
 import { z } from "zod";

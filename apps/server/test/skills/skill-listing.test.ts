@@ -149,14 +149,14 @@ describe("assembleSkillList", () => {
   }
 
   it("de-dupes a Patcher skill discovered under both providers", () => {
-    const Patcher = discovered(
+    const patcher = discovered(
       "shared",
       "patcher-data-dir",
       "/data/skills/shared/SKILL.md",
     );
     const result = assembleSkillList([
-      { provider: "claude-code", skills: [Patcher] },
-      { provider: "codex", skills: [Patcher] },
+      { provider: "claude-code", skills: [patcher] },
+      { provider: "codex", skills: [patcher] },
     ]);
     expect(result).toHaveLength(1);
     expect(result[0]).toMatchObject({

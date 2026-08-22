@@ -93,7 +93,10 @@ async function makeTempDir(prefix: string): Promise<string> {
 async function initRepo(): Promise<string> {
   const repoPath = await makeTempDir("patcher-workspace-repo-");
   await runGit({ args: ["init", "-b", "main"], cwd: repoPath });
-  await runGit({ args: ["config", "user.name", "BB Tests"], cwd: repoPath });
+  await runGit({
+    args: ["config", "user.name", "Patcher Tests"],
+    cwd: repoPath,
+  });
   await runGit({
     args: ["config", "user.email", "patcher@example.com"],
     cwd: repoPath,

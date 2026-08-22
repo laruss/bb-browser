@@ -48,21 +48,21 @@ Skills (.patcher/skills/):
   A project skill overrides a user or builtin skill with the same name. Two
   skills with the same name within one source collide and are both dropped.
 
-  Use `bb skill list` to inspect installed and discovered skills and copy the
-  opaque skill ID. `bb skill show|files <skill-id>` reads that exact skill;
-  `bb skill show <skill-id> --json` returns the revision required by `bb skill
-  update <skill-id> --revision <sha256>`. `bb skill delete <skill-id>` and
+  Use `patcher skill list` to inspect installed and discovered skills and copy the
+  opaque skill ID. `patcher skill show|files <skill-id>` reads that exact skill;
+  `patcher skill show <skill-id> --json` returns the revision required by `patcher skill
+  update <skill-id> --revision <sha256>`. `patcher skill delete <skill-id>` and
   update are restricted to editable, user-owned skills. These workspace-scoped
   commands default to `PATCHER_PROJECT_ID`, then the personal project; pass
   `--project` or `--environment` when a different workspace is required.
 
-  Use `bb skill search` to browse skills.sh, `bb skill registry detail
+  Use `patcher skill search` to browse skills.sh, `patcher skill registry detail
   <registry-skill-id>` to inspect metadata and the bounded file preview, and
-  `bb skill install <registry-skill-id>` to install that canonical registry
+  `patcher skill install <registry-skill-id>` to install that canonical registry
   identity into Patcher user skills. Registry commands are server-wide and do not
   accept workspace selectors.
 
-  Use `bb skill install-cli-skills` to copy Patcher's built-in CLI skills into a
+  Use `patcher skill install-cli-skills` to copy Patcher's built-in CLI skills into a
   machine's global agent skill roots (`~/.agents/skills` and
   `~/.claude/skills`) so agents running outside Patcher can drive it. It installs on
   every connected machine unless you pass `--machine <id-or-name>`, which is
@@ -70,7 +70,7 @@ Skills (.patcher/skills/):
   only when more than one is enrolled. Machines install independently, so the
   command reports each machine's outcome and exits non-zero if any failed. The
   install replaces a previously installed copy of the same skill and leaves
-  other skills alone. `bb skill cli-skills-status` reports whether each machine
+  other skills alone. `patcher skill cli-skills-status` reports whether each machine
   is installed, out of date, missing, or unknown (disconnected or unreachable);
   the settings row shows the same as a badge.
 

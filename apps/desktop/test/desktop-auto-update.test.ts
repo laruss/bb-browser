@@ -38,7 +38,7 @@ class DesktopAutoUpdaterAdapterStub implements DesktopAutoUpdaterAdapter {
   autoInstallOnAppQuit: boolean | null = null;
   checkForUpdatesCalls = 0;
   downloadUpdateResult: Promise<Array<string>> = Promise.resolve([
-    "/tmp/bb.zip",
+    "/tmp/patcher.zip",
   ]);
   downloadUpdateCalls = 0;
   feedConfigs: DesktopAutoUpdateFeedConfig[] = [];
@@ -162,7 +162,7 @@ function createUpdateCheckResult(version: string): UpdateCheckResult {
 function createDownloadedEvent(version: string): UpdateDownloadedEvent {
   return {
     ...createUpdateInfo(version),
-    downloadedFile: "/tmp/bb.zip",
+    downloadedFile: "/tmp/patcher.zip",
   };
 }
 
@@ -293,7 +293,7 @@ describe("desktop auto-update service", () => {
     expect(updater.autoDownload).toBe(false);
     expect(updater.downloadUpdateCalls).toBe(1);
 
-    download.resolve(["/tmp/bb.zip"]);
+    download.resolve(["/tmp/patcher.zip"]);
     await download.promise;
     await Promise.resolve();
 

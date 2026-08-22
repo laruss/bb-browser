@@ -178,10 +178,10 @@ describe("plugin wire surfaces (http/rpc dispatcher + realtime)", () => {
     expect(foreignOrigin.status).toBe(403);
     expect(await foreignOrigin.json()).toMatchObject({
       ok: false,
-      error: expect.stringContaining("not a local BB app origin"),
+      error: expect.stringContaining("not a local Patcher app origin"),
     });
 
-    // Merely copying a known BB port is insufficient when the hostile origin
+    // Merely copying a known Patcher port is insufficient when the hostile origin
     // hostname is unrelated to the request hostname.
     const copiedPort = await harness.app.request(
       `${BASE}/api/v1/plugins/wire/http/hello`,

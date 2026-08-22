@@ -3,7 +3,7 @@
 // when text is selected."
 //
 // Select text on a browsed page, right-click, "Explain with Agent": the plugin
-// spawns a BB thread whose prompt quotes the selection, then opens that thread
+// spawns a Patcher thread whose prompt quotes the selection, then opens that thread
 // in a browser tab.
 //
 // The same explanation is on the *tab* menu as "Explain this page", which is the
@@ -27,8 +27,8 @@
 import type { PatcherPluginApi } from "@patcher/plugin-sdk";
 
 const CONFIGURE_HINT =
-  "Set project with `bb plugin config explain-selection`, " +
-  "then `bb plugin reload explain-selection`.";
+  "Set project with `patcher plugin config explain-selection`, " +
+  "then `patcher plugin reload explain-selection`.";
 
 /**
  * The selection is text a web page wrote, so the prompt has to carry it as data.
@@ -82,7 +82,7 @@ export default async function plugin(patcher: PatcherPluginApi) {
   const settings = patcher.settings.define({
     project: {
       type: "project",
-      label: "BB project for explanations",
+      label: "Patcher project for explanations",
       description: '"Explain with Agent" spawns threads in this project.',
     },
   });
@@ -110,7 +110,7 @@ export default async function plugin(patcher: PatcherPluginApi) {
       throw new Error(`explain-selection is not configured. ${CONFIGURE_HINT}`);
     }
 
-    // BB fills in origin "plugin" and originPluginId automatically, so the
+    // Patcher fills in origin "plugin" and originPluginId automatically, so the
     // thread is attributed to this plugin in the thread list.
     const thread = await patcher.sdk.threads.spawn({
       projectId: project,

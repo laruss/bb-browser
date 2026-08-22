@@ -30,7 +30,7 @@ function renderHelpText(): string {
   return `
   ${bold("Patcher seed-perf-db")}
 
-  Seed a large, realistic BB database for performance testing.
+  Seed a large, realistic Patcher database for performance testing.
 
   ${dim("Usage")}
     bun run seed:perf [options]

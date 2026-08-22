@@ -3,11 +3,11 @@
 An inbox-style replacement for Patcher's sidebar thread list, and the reference
 example for `app.slots.experimental_threadList`.
 
-This plugin is an example. BB does not bundle it or list it in the official
-plugin catalog. Install it from a BB checkout:
+This plugin is an example. Patcher does not bundle it or list it in the official
+plugin catalog. Install it from a Patcher checkout:
 
 ```sh
-bb plugin install ./examples/plugins/t3sidebar
+patcher plugin install ./examples/plugins/t3sidebar
 ```
 
 Turn it on in **Settings → Appearance → Sidebar**. Patcher's own list stays the
@@ -78,10 +78,10 @@ header shows no parent chip.
 The plugin API ships **no components**. Status glyphs and the right-click menu
 are both this plugin's own: `indicator` arrives as data, and every menu item is
 one call on `experimental_useSidebarThreadActions`. Choosing them is the point
-of a replaced sidebar. Deletion still routes through `requestDelete`, so BB
+of a replaced sidebar. Deletion still routes through `requestDelete`, so Patcher
 shows its confirmation dialog rather than a plugin deleting a subtree silently.
 The small icon and select components also live in this example. The example
-does not import BB's private shared UI package.
+does not import Patcher's private shared UI package.
 
 ## Where the lifecycle lives
 

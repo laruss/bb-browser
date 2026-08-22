@@ -77,7 +77,7 @@ fi
 
 LAUNCHER_NAME="${PATCHER_DEV_LAUNCHER_NAME:-$(sanitize_label "${repo_label}")}"
 if [[ -z "${LAUNCHER_NAME}" ]]; then
-  LAUNCHER_NAME="bb"
+  LAUNCHER_NAME="patcher"
 fi
 
 DEV_SESSION="patcher-dev-app-${LAUNCHER_NAME}-dev"
@@ -113,7 +113,7 @@ Usage:
       Print branch, ports, process status, and useful URLs.
 
   scripts/patcher-dev-app env
-      Print shell exports for using bun run bb:dev against this dev instance.
+      Print shell exports for using bun run patcher:dev against this dev instance.
 
   scripts/patcher-dev-app logs [dev|desktop|launcher]
       Follow launcher logs. Defaults to the dev server log.

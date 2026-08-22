@@ -257,7 +257,7 @@ describe("browser-tools failure messages", () => {
     );
 
     expect(isError(result)).toBe(true);
-    expect(textOf(result)).toContain("open the BB desktop app");
+    expect(textOf(result)).toContain("open the Patcher desktop app");
   });
 
   it("explains a refused URL instead of silently searching for it", async () => {

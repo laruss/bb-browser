@@ -18,7 +18,7 @@ import { resolveServerOwnedSkillCatalogEntries } from "./injected-skills.js";
  * The built-in skills published to a machine's global agent skill roots so
  * agents running outside Patcher can drive Patcher through its CLI.
  */
-export const GLOBAL_CLI_SKILL_NAMES: readonly string[] = ["bb-cli"];
+export const GLOBAL_CLI_SKILL_NAMES: readonly string[] = ["patcher-cli"];
 
 /**
  * Status reads are a page-load nicety, so they give up well before the install

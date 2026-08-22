@@ -253,15 +253,15 @@ const ONLINE_RPC_RESPONSE_RESULT_FIXTURES: OnlineRpcResponseResultFixtures = {
   "host.global_skills_status": {
     entries: [
       {
-        name: "bb-cli",
-        path: "/home/user/.agents/skills/bb-cli",
+        name: "patcher-cli",
+        path: "/home/user/.agents/skills/patcher-cli",
         treeHash: "c".repeat(64),
       },
     ],
   },
   "host.install_global_skills": {
     installations: [
-      { name: "bb-cli", path: "/home/user/.agents/skills/bb-cli" },
+      { name: "patcher-cli", path: "/home/user/.agents/skills/patcher-cli" },
     ],
   },
   "host.caffeinate": {
@@ -438,10 +438,10 @@ const ONLINE_RPC_RESPONSE_RESULT_FIXTURES: OnlineRpcResponseResultFixtures = {
   "workspace.discover_repos": {
     repos: [
       {
-        path: "/home/user/projects/bb",
+        path: "/home/user/projects/patcher",
         name: "Patcher",
         lastActivityAt: "2026-08-05T00:00:00.000Z",
-        originUrl: "https://github.com/example/bb",
+        originUrl: "https://github.com/example/patcher",
         agentSeen: true,
         agentSeenAt: "2026-08-04T00:00:00.000Z",
       },
@@ -458,7 +458,7 @@ const ONLINE_RPC_RESPONSE_RESULT_FIXTURES: OnlineRpcResponseResultFixtures = {
       number: 42,
       title: "Add host RPC guard",
       state: "OPEN",
-      url: "https://github.com/acme/bb/pull/42",
+      url: "https://github.com/acme/patcher/pull/42",
       isDraft: false,
       baseRefName: "main",
       headRefName: "feature/host-rpc",
@@ -1055,7 +1055,7 @@ describe("host-daemon command schemas", () => {
   // Version 108 renamed the daemon's environment contract. The daemon builds
   // the agent shell itself: it injects the thread-context variables, strips
   // inherited ones by prefix, and puts the CLI shim on PATH. A 107 daemon
-  // injects `BB_*` and a `bb` shim, so a thread the server started would run
+  // injects `BB_*` and a `patcher` shim, so a thread the server started would run
   // agents that cannot see their own thread id. Nothing on the wire changed,
   // which is why the version has to say it — enrolled machines must update
   // rather than connect and quietly break.
@@ -1204,7 +1204,7 @@ describe("host-daemon command schemas", () => {
         environmentId: "env_personal",
         initiator: null,
         workspaceProvisionType: "personal",
-        targetPath: "/tmp/bb/personal-workspaces/env_personal",
+        targetPath: "/tmp/patcher/personal-workspaces/env_personal",
       }),
     ).toMatchObject({
       type: "environment.provision",

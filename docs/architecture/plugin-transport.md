@@ -135,13 +135,13 @@ hanging it.
 ## The plugin process
 
 `plugin-child-runtime.ts` is a plugin running in its own process, and the
-decision that shapes it is what it does **not** contain: a second `bb`.
+decision that shapes it is what it does **not** contain: a second `patcher`.
 
 `createPluginApi` already took every host-facing capability as an injected
 function. That was always the seam — it just pointed at the server. So the
 plugin's process builds the _same_ object with those functions pointed at the
 channel, and there is one copy of what `patcher.storage.kv.set` means, of the 256KB
-limit, of every error string. A hand-written plugin-side `bb` would have been
+limit, of every error string. A hand-written plugin-side `patcher` would have been
 the third time this repo paid for two descriptions of one thing.
 
 Making that possible took one narrow change: `createPluginApi` took a
@@ -176,7 +176,7 @@ anything when the function returns `unknown`: `undefined` is a perfectly good
 
 Building it surfaced something the catalogue had no field for.
 `createPluginApi` takes three capabilities as **synchronous** functions, and
-the `bb` members behind them do not await:
+the `patcher` members behind them do not await:
 
 | Path                       | Why it cannot be a request                                 |
 | -------------------------- | ---------------------------------------------------------- |
@@ -282,11 +282,11 @@ with the backoff switched off.
 ### And what the next 17 MB was
 
 The first pass took out the two biggest imports. The second took out the idea
-that a plugin process should load an area of `bb` the plugin never calls, and
+that a plugin process should load an area of `patcher` the plugin never calls, and
 it is worth stating as a rule because it is what the numbers kept saying:
 
 > Nothing in `plugin-api.ts`'s startup path should be there for a corner of
-> `bb` this plugin has not touched.
+> `patcher` this plugin has not touched.
 
 - **cron-parser (luxon), ~11 MB** — one call, validating a cron expression at
   `patcher.background.schedule`. A plugin with no schedules paid for a date library.
@@ -316,7 +316,7 @@ trade than the megabytes are worth.
 
 `plugin-host-call-server.ts` receives a `PluginHostCallPath` and performs it
 against the server's real dependencies — the other end of every call the
-plugin's `bb` makes.
+plugin's `patcher` makes.
 
 It takes **the same options object `createPluginApi` does**. The loader builds
 those capabilities once and hands the same object either to `createPluginApi`
@@ -370,7 +370,7 @@ The hook takes the plugin's row rather than its id because the policy reads
 
 Where a plugin ended up is then **reported, not inferred**: `placement` on the
 list entry is `"process"`, `"server"`, or null for a plugin that is not loaded,
-and `bb plugin list` prints it. Intent and outcome differ here — the move is
+and `patcher plugin list` prints it. Intent and outcome differ here — the move is
 best effort — so a policy that says "process" and a plugin that fell back to the
 server is a state an operator has to be able to see. The reason for the fallback
 is already in `statusDetail`.
@@ -396,7 +396,7 @@ finishes into a live instance nobody holds while the same plugin runs here —
 one plugin, two live copies, one of them invisible.
 
 A fallback costs a second run of the factory, which is survivable only because
-a factory has always had to be re-runnable (`bb plugin reload` re-runs it on
+a factory has always had to be re-runnable (`patcher plugin reload` re-runs it on
 every reload).
 
 And every fallback is **named in the plugin's status detail**, not just logged.
@@ -437,7 +437,7 @@ the old one. So recovery worked and the plugin was unreachable anyway: every
 call came back `plugin channel … closed`. The remote handle holds the instance
 id and looks the channel up per call now. (What a restart does not refresh is
 the registration snapshot: the reinstated process runs the same entry file, and
-picking up an edited plugin is what `bb plugin reload` is for.)
+picking up an edited plugin is what `patcher plugin reload` is for.)
 
 When the crash budget runs out, the supervisor stops trying — and that used to
 be the whole story. The plugins in that process stayed registered with shut

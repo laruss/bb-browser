@@ -11,7 +11,7 @@ Every command supports --json for machine-readable output.
 
 Spawning:
 
-  bb thread spawn --project <id> --prompt "..." [options]
+  patcher thread spawn --project <id> --prompt "..." [options]
 
     --prompt <prompt>              Initial prompt (required)
     --title <title>                Thread title
@@ -61,7 +61,7 @@ Spawning:
 
 Forking:
 
-  bb thread fork <source-thread-id> [options]
+  patcher thread fork <source-thread-id> [options]
 
     --prompt <prompt>              Optional first prompt; omit for an idle fork
     --source-seq-end <seq>         Fork at this source event sequence (tip by default)
@@ -79,7 +79,7 @@ Forking:
 
 Editing a sent message (requires the `editMessages` experiment):
 
-  bb thread edit-message <id> --message "Replacement text"
+  patcher thread edit-message <id> --message "Replacement text"
     --self                              Target the current thread (PATCHER_THREAD_ID)
     --expected-request-sequence <seq>   Select the message and reject a stale target
 
@@ -92,7 +92,7 @@ Editing a sent message (requires the `editMessages` experiment):
 
 Listing:
 
-  bb thread list                           List threads
+  patcher thread list                           List threads
     --project <id>                         Filter by project
     --parent-thread <id>                   Filter by parent thread
     --archived                             Show only archived threads
@@ -100,19 +100,19 @@ Listing:
     --unsectioned                          Show only threads outside sections
     --include-hidden                       Include hidden threads
 
-  bb thread search <query>                 Search threads and messages
-  bb thread history <id>                   List prompt history
+  patcher thread search <query>                 Search threads and messages
+  patcher thread history <id>                   List prompt history
 
 Sections:
 
-  bb thread section list
-  bb thread section create <name>
-  bb thread section rename <id> <name>
-  bb thread section delete <id> [--yes]
+  patcher thread section list
+  patcher thread section create <name>
+  patcher thread section rename <id> <name>
+  patcher thread section delete <id> [--yes]
 
 Inspecting:
 
-  bb thread show [id]                      Show thread details and pull request status
+  patcher thread show [id]                      Show thread details and pull request status
     --self                                 Target current thread
     --work-status                          Include git working-tree status
     --git-diff                             Include git diff
@@ -123,16 +123,16 @@ Inspecting:
 
   Shows pull request status for the attached environment branch when available.
 
-  bb thread log [id]                       Show thread event log
+  patcher thread log [id]                       Show thread event log
     --self                                 Target current thread
     --format <format>                      Output format: json, minimal, verbose
     --limit <count>                        Limit entries
     --after-seq <seq>                      Paginate after sequence number
 
-  bb thread output [id]                    Get the final output of a thread
+  patcher thread output [id]                    Get the final output of a thread
     --self                                 Target current thread
 
-  bb thread wait <id>                      Wait for a thread status or event (defaults to --status idle)
+  patcher thread wait <id>                      Wait for a thread status or event (defaults to --status idle)
     --status <status>                      Wait for this status
     --event <type>                         Wait for this event type
     --timeout <seconds>                    Timeout in seconds (default: 1200 / 20 min)
@@ -140,28 +140,28 @@ Inspecting:
 
 Opening threads and files in the app:
 
-  bb thread open <path>                    Open a file in the current BB thread panel
-  bb thread open <thread-id> [path]        Open a thread, optionally with a panel file
+  patcher thread open <path>                    Open a file in the current Patcher thread panel
+  patcher thread open <thread-id> [path]        Open a thread, optionally with a panel file
     --line <number>                        Line number to focus
     --split <placement>                    right, down, left, top, or replace
-  bb thread pane <action> [thread-id]      Maximize, restore, or toggle an open thread pane
+  patcher thread pane <action> [thread-id]      Maximize, restore, or toggle an open thread pane
 
-  Inside a BB thread, PATCHER_THREAD_ID selects the current thread automatically and
+  Inside a Patcher thread, PATCHER_THREAD_ID selects the current thread automatically and
   the thread ID argument is omitted for file-only opens. Pass an explicit thread
-  ID with --split to open another thread. Outside a BB thread, pass the thread ID
+  ID with --split to open another thread. Outside a Patcher thread, pass the thread ID
   as the first argument. A thread already open in a pane is focused instead of
   duplicated. Edge placement creates panes through the eighth pane; at eight
   panes, it replaces the focused pane.
-  Pane actions broadcast to connected BB app windows and affect the matching
+  Pane actions broadcast to connected Patcher app windows and affect the matching
   already-open pane without changing its split tree.
   Paths can be thread-relative workspace paths, or absolute paths inside the
   target thread workspace. Absolute paths under PATCHER_THREAD_STORAGE open as
   thread-storage files for the current thread. Use this for Markdown or HTML
-  artifacts you create for the user so they open in the BB IDE.
+  artifacts you create for the user so they open in the Patcher IDE.
 
 Messaging:
 
-  bb thread tell <id> <message>            Send a follow-up message
+  patcher thread tell <id> <message>            Send a follow-up message
     --mode <mode>                          Message mode: steer (default), queue, or auto
     --model <model>                        Model override for this turn
     --reasoning-level <level>              Reasoning level override
@@ -172,13 +172,13 @@ Messaging:
   turn. Use --mode queue for non-urgent follow-ups that can wait until the agent
   is free.
 
-  bb thread stop [id]                      Stop an active or provisioning thread
-  bb thread retry [id]                     Continue a subscription-limited turn
+  patcher thread stop [id]                      Stop an active or provisioning thread
+  patcher thread retry [id]                     Continue a subscription-limited turn
     --self                                 Target current thread
     --request-id <id>                      Require an exact failed request id
-  bb thread compact [id]                   Request compaction of an idle or errored thread's context
-  bb thread cancel-plan [id]               Exit the provider's active Plan mode
-  bb thread clear-goal [id]                Clear the provider's active Goal
+  patcher thread compact [id]                   Request compaction of an idle or errored thread's context
+  patcher thread cancel-plan [id]               Exit the provider's active Plan mode
+  patcher thread clear-goal [id]                Clear the provider's active Goal
     --self                                 Target current thread
 
   `thread compact` enqueues the same structured /compact turn used by the
@@ -194,7 +194,7 @@ Messaging:
 
 Ownership:
 
-  bb thread update [id]                    Update thread metadata
+  patcher thread update [id]                    Update thread metadata
     --self                                 Target current thread
     --title <title>                        Set title
     --parent-thread <id>                   Assign to a parent thread
@@ -203,34 +203,34 @@ Ownership:
     --clear-section                        Remove section assignment
     --visibility <visibility>              Set visible or hidden
 
-  bb thread read [id]                      Mark read
-  bb thread unread [id]                    Mark unread
-  bb thread reorder-pinned <id> [--after <id>] [--before <id>]
+  patcher thread read [id]                      Mark read
+  patcher thread unread [id]                    Mark unread
+  patcher thread reorder-pinned <id> [--after <id>] [--before <id>]
 
 Queued messages:
 
-  bb thread queue list <thread-id>
-  bb thread queue create <thread-id> <message>
-  bb thread queue update <thread-id> <message-id> <message> [--file <path>] [--image <path>]
-  bb thread queue send <thread-id> <message-id> [--mode auto|steer]
-  bb thread queue reorder <thread-id> <message-id> [--after <id>] [--before <id>]
-  bb thread queue group <thread-id> <boundary-id> --prefix <comma-separated-ids>
-  bb thread queue delete <thread-id> <message-id>
+  patcher thread queue list <thread-id>
+  patcher thread queue create <thread-id> <message>
+  patcher thread queue update <thread-id> <message-id> <message> [--file <path>] [--image <path>]
+  patcher thread queue send <thread-id> <message-id> [--mode auto|steer]
+  patcher thread queue reorder <thread-id> <message-id> [--after <id>] [--before <id>]
+  patcher thread queue group <thread-id> <boundary-id> --prefix <comma-separated-ids>
+  patcher thread queue delete <thread-id> <message-id>
 
 Persisted panel tabs:
 
-  bb thread tabs show <thread-id>
-  bb thread tabs set <thread-id> --expected-revision <n> --tabs-json '<json>'
+  patcher thread tabs show <thread-id>
+  patcher thread tabs set <thread-id> --expected-revision <n> --tabs-json '<json>'
 
 Lifecycle:
 
-  bb thread archive [id]                   Archive a thread (and children/hidden forks)
+  patcher thread archive [id]                   Archive a thread (and children/hidden forks)
     --self                                 Archive current thread
 
-  bb thread unarchive [id]                 Unarchive a thread
+  patcher thread unarchive [id]                 Unarchive a thread
     --self                                 Unarchive current thread
 
-  bb thread delete <id>                    Delete permanently
+  patcher thread delete <id>                    Delete permanently
     --yes                                  Skip confirmation
 
 Read-only commands require a thread ID or --self where supported.

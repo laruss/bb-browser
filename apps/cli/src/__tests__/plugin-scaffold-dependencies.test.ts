@@ -18,8 +18,8 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
  *
  * The rule is derived from the build's own externals/shim lists rather than
  * restated here, so adding a shim or an external cannot leave this stale.
- * Lives in the CLI because `bb plugin new` writes the scaffold and
- * `bb plugin build` consumes it; @patcher/templates cannot depend on
+ * Lives in the CLI because `patcher plugin new` writes the scaffold and
+ * `patcher plugin build` consumes it; @patcher/templates cannot depend on
  * @patcher/plugin-build without a workspace cycle.
  */
 

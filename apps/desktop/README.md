@@ -1,7 +1,7 @@
 # @patcher/desktop
 
 macOS Electron shell for Patcher. The desktop app loads the existing Patcher web UI and
-uses the packaged `bb-app` launcher for server and host-daemon lifecycle.
+uses the packaged `patcher-app` launcher for server and host-daemon lifecycle.
 
 ## Development
 
@@ -18,7 +18,7 @@ That starts the source dev server and the Electron shell through
 bunx turbo run dev --filter=@patcher/desktop
 ```
 
-The dev script builds `bb-app`, compiles the Electron main/preload files, and
+The dev script builds `patcher-app`, compiles the Electron main/preload files, and
 opens Electron directly. By default it uses the same checkout-scoped
 `~/.patcher-dev/<checkout-instance>` data directory and deterministic high ports as
 the main repo dev launcher; it prints the resolved data dir, server URL, and
@@ -35,9 +35,9 @@ The launcher probes the checkout's Vite app port at startup and adapts:
   needed. It still attaches to the same running server/daemon for all API/WS
   traffic. The launcher prints `app <url> (Vite dev server — live reload)`. This
   is the fast loop for iterating on the desktop UI.
-- **`bun run dev` is not running**: the shell starts its own `bb-app` runtime and
+- **`bun run dev` is not running**: the shell starts its own `patcher-app` runtime and
   loads the built UI it serves, so you must rebuild (re-run this task) to pick up
-  source changes. The launcher prints `app (own bb-app runtime — …)`.
+  source changes. The launcher prints `app (own patcher-app runtime — …)`.
 
 The override is plumbed via `PATCHER_DESKTOP_APP_URL`, which the launcher only sets
 when Vite is confirmed reachable; it is never set in packaged builds, so
@@ -59,9 +59,9 @@ Revisit the pin when `better-sqlite3` ships support or prebuilds for that ABI.
 ## Validation
 
 ```bash
-bunx turbo run typecheck --filter=@patcher/desktop --filter=bb-app
+bunx turbo run typecheck --filter=@patcher/desktop --filter=patcher-app
 bunx turbo run build --filter=@patcher/desktop
-bunx turbo run test --filter=@patcher/desktop --filter=bb-app --force
+bunx turbo run test --filter=@patcher/desktop --filter=patcher-app --force
 bunx turbo run dev --filter=@patcher/desktop
 ```
 
@@ -84,9 +84,9 @@ macOS shows the normal Gatekeeper warning on first launch.
 
 ## Releasing
 
-`bb-app` and `@patcher/desktop` versions are LOCKED in lockstep. The desktop package
-depends on `bb-app: workspace:*`, and the displayed release version string must
-match `packages/bb-app/package.json`.
+`patcher-app` and `@patcher/desktop` versions are LOCKED in lockstep. The desktop package
+depends on `patcher-app: workspace:*`, and the displayed release version string must
+match `packages/patcher-app/package.json`.
 
 To bump for a release:
 
@@ -98,7 +98,7 @@ Then commit and ship through the normal `sawyer-next` → `main` flow. You can a
 use `--patch`, `--minor`, or `--major` instead of an explicit version.
 
 CI enforces this lockstep. Direct edits that leave
-`packages/bb-app/package.json` and `apps/desktop/package.json` with different
+`packages/patcher-app/package.json` and `apps/desktop/package.json` with different
 versions fail the build. Never edit either package version directly for a
 release; use `scripts/bump-version.mjs` so both files move together.
 
@@ -107,10 +107,10 @@ immutable releases and `desktop-latest` for the moving pointer.
 
 ## Nightly channel
 
-The scheduled `publish-bb-app.yml` workflow runs from `main` every day at
+The scheduled `publish-patcher-app.yml` workflow runs from `main` every day at
 3:00 AM Pacific (`America/Los_Angeles`, including daylight-saving changes). It
 derives a unique version such as `0.34.1-nightly.<run-id>.<attempt>` without
-committing that version, publishes `bb-app` with the npm `nightly` dist-tag,
+committing that version, publishes `patcher-app` with the npm `nightly` dist-tag,
 and builds the desktop app from that same lockstep version.
 
 To publish or dry-run the channel manually from `main`, dispatch the same
@@ -126,11 +126,11 @@ The nightly desktop is a separate installation:
 - icon: `assets/icon-nightly.icns` and `assets/icon-nightly.png`
 
 Download it from
-[`desktop-nightly`](https://github.com/get-bb/bb/releases/tag/desktop-nightly)
+[`desktop-nightly`](https://github.com/laruss/patcher-browser/releases/tag/desktop-nightly)
 or run the CLI build with:
 
 ```bash
-npx bb-app@nightly
+npx patcher-app@nightly
 ```
 
 Stable and nightly desktop bundles can coexist. Electron-owned preferences,
@@ -198,22 +198,22 @@ Use the View menu to toggle DevTools. To open them automatically on launch, set
 `PATCHER_DESKTOP_OPEN_DEVTOOLS=1`:
 
 ```bash
-PATCHER_DESKTOP_OPEN_DEVTOOLS=1 apps/desktop/release/mac-arm64/Patcher.app/Contents/MacOS/bb
+PATCHER_DESKTOP_OPEN_DEVTOOLS=1 apps/desktop/release/mac-arm64/Patcher.app/Contents/MacOS/patcher
 ```
 
-When the desktop app spawns `bb-app`, server and daemon logs land under
+When the desktop app spawns `patcher-app`, server and daemon logs land under
 `~/.patcher/logs/` or `$PATCHER_DATA_DIR/logs/` when `PATCHER_DATA_DIR` is set.
 
 To verify attach-if-found manually, start a compatible Patcher first, then launch the
 desktop app:
 
 ```bash
-npx bb-app@latest
+npx patcher-app@latest
 bunx turbo run dev --filter=@patcher/desktop
 ```
 
 The desktop supervisor handles normal quits plus `SIGINT` and `SIGTERM`, and it
-writes a PID file so the next launch can reap a stale Electron-owned `bb-app`
+writes a PID file so the next launch can reap a stale Electron-owned `patcher-app`
 launcher. Hard crashes such as process aborts, segfaults, or kernel-level kills
 cannot run cleanup in the crashing process; the startup PID-file reap is the
 recovery path for those cases.

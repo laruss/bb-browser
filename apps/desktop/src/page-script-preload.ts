@@ -7,7 +7,7 @@
 //
 //   * **Nothing is exposed to the page.** The APIs go into per-plugin *isolated
 //     worlds* via `contextBridge.exposeInIsolatedWorld`. The page's own world
-//     gets nothing — no `bb`, no `require`, no `process` — which is what keeps
+//     gets nothing — no `patcher`, no `require`, no `process` — which is what keeps
 //     the shell's standing rule (a browsed page never receives a Patcher bridge)
 //     true even though a preload now exists.
 //   * **The shell decides what runs here.** This asks, synchronously, at document

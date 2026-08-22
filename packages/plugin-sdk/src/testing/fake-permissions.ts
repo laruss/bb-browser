@@ -98,7 +98,7 @@ export function createFakePermissionError(
     new Error(
       `${what} needs the "${permission}" permission, which plugin ` +
         `"${pluginId}" does not declare. Add it to "patcher.permissions" in the ` +
-        `plugin's package.json, then run \`bb plugin reload ${pluginId}\`.`,
+        `plugin's package.json, then run \`patcher plugin reload ${pluginId}\`.`,
     ),
     { name: "PluginPermissionError", permission, pluginId },
   );

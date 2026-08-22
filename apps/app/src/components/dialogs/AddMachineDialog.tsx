@@ -58,7 +58,7 @@ function formatCountdown(remainingMs: number): string {
  * The pairing one-liner. S9 ships the install script this command downloads;
  * the flag names and order here are the contract it must honor
  * (`--join-code`, `--host-id`, `--server`, mapping onto
- * `bb-app host-daemon join`).
+ * `patcher-app host-daemon join`).
  *
  * Uses the direct server URL reported by system config, which may differ from
  * the frontend origin in source development.

@@ -4,7 +4,7 @@ import { createRequire } from "node:module";
 import type Database from "better-sqlite3";
 import type { z } from "zod";
 /**
- * The two host-owned stores `bb` reads through, injected rather than reached.
+ * The two host-owned stores `patcher` reads through, injected rather than reached.
  *
  * They were `db: DbConnection` until the plugin boundary needed this object to
  * build in a plugin's own process too, where there is no patcher.db to open — and
@@ -207,7 +207,7 @@ export type {
 
 /**
  * Thrown when a plugin calls into an API handle that has been invalidated by
- * reload/disable (pi's stale-context discipline): captured `bb` references
+ * reload/disable (pi's stale-context discipline): captured `patcher` references
  * from a previous load fail loudly instead of acting on dead state.
  */
 export class PluginContextStaleError extends Error {
@@ -318,7 +318,7 @@ export interface PluginRpcHandler {
 export interface PluginAgentToolRecord {
   name: string;
   description: string;
-  /** Native timeline labels, null when the standard BB title should render. */
+  /** Native timeline labels, null when the standard Patcher title should render. */
   experimentalStatusLabels: PluginAgentToolExperimentalStatusLabels | null;
   /** Instructions snippet for the thread-instructions assembly; null when
    * the registration carried none (description-only). */
@@ -337,7 +337,7 @@ export interface PluginAgentToolRecord {
 }
 
 /**
- * Core `bb` CLI top-level command names (plus commander's built-in help).
+ * Core `patcher` CLI top-level command names (plus commander's built-in help).
  * Plugin CLI commands may not shadow these. Maintained by hand — kept in
  * sync with apps/cli/src/index.ts by
  * apps/cli/src/__tests__/plugin-cli-proxy.test.ts.
@@ -439,7 +439,7 @@ const RPC_METHOD_PATTERN = /^[a-zA-Z0-9_-]+$/;
 // Service/schedule names appear in status text and plugin_schedules rows.
 const BACKGROUND_NAME_PATTERN = /^[a-zA-Z0-9_-]+$/;
 
-// CLI command names become `bb <name>` invocations.
+// CLI command names become `patcher <name>` invocations.
 const CLI_COMMAND_NAME_PATTERN = /^[a-z0-9-]+$/;
 
 // Agent tool names are shown to (and called by) the model.
@@ -745,7 +745,7 @@ function resolveDeclaredMatches(args: {
       throw new Error(
         `${kind} "${id}" matches ${JSON.stringify(pattern)}, which plugin "${pluginId}" does not declare in "patcher.sites". ` +
           (declared.length === 0
-            ? `That list is empty — add the site there, then run \`bb plugin reload ${pluginId}\`.`
+            ? `That list is empty — add the site there, then run \`patcher plugin reload ${pluginId}\`.`
             : `It declares: ${declared.join(", ")}.`),
       );
     }
@@ -923,7 +923,7 @@ export function createPluginApi(options: {
 
   const prefix = `[plugin:${pluginId}]`;
   // Every patcher.log line goes to the prefixed server log and, as JSONL, to the
-  // per-plugin log file served by GET /plugins/:id/logs (`bb plugin logs`).
+  // per-plugin log file served by GET /plugins/:id/logs (`patcher plugin logs`).
   function emitLog(
     level: "debug" | "info" | "warn" | "error",
     message: string,
@@ -3323,11 +3323,11 @@ export function createPluginApi(options: {
 }
 
 /**
- * Two packages this module needs for one corner of `bb` each, loaded on the
+ * Two packages this module needs for one corner of `patcher` each, loaded on the
  * first call rather than at import.
  *
  * This file is the one every plugin process loads, and most of what it drags in
- * is for a part of `bb` a given plugin never touches: cron parsing costs
+ * is for a part of `patcher` a given plugin never touches: cron parsing costs
  * ~11MB resident and matters only to a plugin with a schedule, the browser
  * control schemas cost ~23MB (~9MB of it zod itself) and matter only to a
  * plugin that drives a tab. Deferring both takes a host process from ~84MB to

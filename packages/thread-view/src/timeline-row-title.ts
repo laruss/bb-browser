@@ -423,7 +423,7 @@ function mapExecutionTitle(row: TimelineExecutionWorkRow): TimelineTitle {
     status: row.status,
   });
   const isCommand = row.workKind === "command";
-  // Keyed by BB's own row status, so a state with no plugin label (error,
+  // Keyed by Patcher's own row status, so a state with no plugin label (error,
   // interrupted, waiting, denied) falls through to the standard rendering
   // and the failing tool stays identifiable.
   const statusLabels = isCommand ? undefined : row.statusLabels;

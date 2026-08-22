@@ -57,11 +57,11 @@ export interface StartLocalApiServerOptions {
   hostId: string;
   localApiConfig: HostDaemonLocalApiConfig;
   serverUrl: string;
-  /** Port the BB server binds on (parsed from `serverUrl` upstream so the
+  /** Port the Patcher server binds on (parsed from `serverUrl` upstream so the
    * daemon doesn't need to depend on server config). Used to build the CORS
    * allowlist. */
   serverPort: number;
-  /** Vite dev port for the BB app frontend; allowed origin for CORS when set. */
+  /** Vite dev port for the Patcher app frontend; allowed origin for CORS when set. */
   devAppPort?: number;
   /** Optional public app origin (e.g. `https://app.example.com`); allowed
    * origin for CORS when the frontend is served from a non-localhost domain. */
@@ -171,7 +171,7 @@ async function resolveOpenPathInTargetArgs({
   if (sshAuthority === null) {
     throw new WorkspaceOpenTargetError({
       code: "remote_mapping_missing",
-      message: `No SSH target configured for host ${request.context.hostId} on ${serverOrigin}. Run: bb-app client ssh-target set ${serverOrigin} <ssh-target>`,
+      message: `No SSH target configured for host ${request.context.hostId} on ${serverOrigin}. Run: patcher-app client ssh-target set ${serverOrigin} <ssh-target>`,
     });
   }
 

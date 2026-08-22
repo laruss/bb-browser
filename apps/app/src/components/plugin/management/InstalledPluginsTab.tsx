@@ -43,7 +43,7 @@ export function InstalledPluginsTab({
 
   if (plugins.length === 0) {
     return (
-      <EmptyState message="No plugins installed. Browse BB Official, create a plugin, or run bb plugin install <source>." />
+      <EmptyState message="No plugins installed. Browse Patcher Official, create a plugin, or run patcher plugin install <source>." />
     );
   }
 
@@ -116,7 +116,7 @@ export function InstalledPluginRow({
         title={plugin.name ?? plugin.id}
         titleMeta={
           isOfficialProvenance(plugin.provenance) ? (
-            <ProvenancePill label="BB Official" />
+            <ProvenancePill label="Patcher Official" />
           ) : undefined
         }
         description={plugin.description}

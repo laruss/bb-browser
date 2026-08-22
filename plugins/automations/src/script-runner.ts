@@ -21,7 +21,7 @@ let resolvedPatcherPath: string | null = null;
 
 /** Warning prepended to a script's output when Patcher could not be injected. */
 export const PATCHER_NOT_INJECTED_WARNING =
-  "[Patcher] warning: could not locate the Patcher CLI, so `bb` is not on PATH for this script.";
+  "[Patcher] warning: could not locate the Patcher CLI, so `patcher` is not on PATH for this script.";
 
 async function commandWorks(command: string, args: string[]): Promise<boolean> {
   try {
@@ -37,7 +37,7 @@ async function commandWorks(command: string, args: string[]): Promise<boolean> {
  *
  * Every candidate is an absolute path. The resolved value is handed to scripts
  * as `PATCHER_CLI`, which is documented as an absolute path, and a script is free to
- * rewrite `PATH` before it runs `"$PATCHER_CLI"` — a bare `bb` would then resolve to
+ * rewrite `PATH` before it runs `"$PATCHER_CLI"` — a bare `patcher` would then resolve to
  * a different binary, or to none. Expanding `PATH` here rather than letting the
  * shell do it also keeps the probe and the script on the same executable.
  *
@@ -64,18 +64,18 @@ export function patcherBinaryCandidates(env: NodeJS.ProcessEnv): string[] {
   }
   const fromCliDir = env.PATCHER_CLI_DIR?.trim();
   if (fromCliDir !== undefined && fromCliDir.length > 0) {
-    pushIfAbsolute(join(fromCliDir, "bb"));
+    pushIfAbsolute(join(fromCliDir, "patcher"));
   }
   // Empty PATH entries mean "the current directory". Scripts run inside the
-  // automation scripts directory, so honouring one would let a file named `bb`
+  // automation scripts directory, so honouring one would let a file named `patcher`
   // dropped next to a script stand in for the CLI.
   for (const entry of (env.PATH ?? "").split(delimiter)) {
     const trimmed = entry.trim();
     if (trimmed.length > 0) {
-      pushIfAbsolute(join(trimmed, "bb"));
+      pushIfAbsolute(join(trimmed, "patcher"));
     }
   }
-  candidates.push("/opt/homebrew/bin/bb", "/usr/local/bin/bb");
+  candidates.push("/opt/homebrew/bin/patcher", "/usr/local/bin/patcher");
   return candidates;
 }
 
@@ -92,7 +92,7 @@ async function isExecutableFile(candidate: string): Promise<boolean> {
 
 /**
  * Locate the Patcher CLI so it can be put on a script's PATH. Returns null rather
- * than throwing: injection is a convenience for scripts that call `bb`, not a
+ * than throwing: injection is a convenience for scripts that call `patcher`, not a
  * precondition for running one. Failing the whole automation here meant a
  * script that never mentions Patcher still died before its first line.
  *
@@ -130,7 +130,9 @@ export function scriptPathEnv(
     return basePath;
   }
   const patcherDir = dirname(patcherPath);
-  return basePath.length > 0 ? `${patcherDir}${delimiter}${basePath}` : patcherDir;
+  return basePath.length > 0
+    ? `${patcherDir}${delimiter}${basePath}`
+    : patcherDir;
 }
 
 export function isWakeAgentSuppressed(output: string): boolean {
@@ -167,7 +169,9 @@ export interface ScriptRunOutcome {
   skipReason: string | null;
 }
 
-export function mapScriptResultToRun(result: ScriptRunResult): ScriptRunOutcome {
+export function mapScriptResultToRun(
+  result: ScriptRunResult,
+): ScriptRunOutcome {
   if (result.timedOut) {
     return {
       status: "failed",
@@ -220,7 +224,10 @@ function trimOutput(output: string): string {
   return `${output.slice(0, SCRIPT_OUTPUT_MAX_BYTES)}\n[output truncated]\n`;
 }
 
-function combinedOutput(stdout: string | Buffer, stderr: string | Buffer): string {
+function combinedOutput(
+  stdout: string | Buffer,
+  stderr: string | Buffer,
+): string {
   return trimOutput(`${String(stdout)}${String(stderr)}`);
 }
 
@@ -252,12 +259,14 @@ export async function executeStoredScript(args: {
     automationId: args.automationId,
     scriptFile: args.scriptFile,
   });
-  const interpreter = args.interpreter ?? resolveDefaultInterpreter(args.scriptFile);
+  const interpreter =
+    args.interpreter ?? resolveDefaultInterpreter(args.scriptFile);
   const command = resolveInterpreterCommand(interpreter);
   const patcherPath = await resolvePatcherBinary();
   // A script that never calls Patcher must still run, so an unresolved CLI only
   // costs the PATH injection and leaves a note in the captured output.
-  const warning = patcherPath === null ? `${PATCHER_NOT_INJECTED_WARNING}\n` : "";
+  const warning =
+    patcherPath === null ? `${PATCHER_NOT_INJECTED_WARNING}\n` : "";
   const scriptEnv: NodeJS.ProcessEnv = {
     ...process.env,
     ...(args.env ?? {}),

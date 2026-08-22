@@ -1,7 +1,7 @@
 // Backend tests for the site-tweaks example, against the official harness
 // (`@patcher/plugin-sdk/testing`) — no Patcher server and no browser, but a real SQLite file
 // in a temp directory and the *same refusals the install makes*, which is the
-// point of running the double rather than mocking `bb`.
+// point of running the double rather than mocking `patcher`.
 import { describe, expect, it } from "vitest";
 import {
   createFakePluginHost,
@@ -67,10 +67,10 @@ describe("repoFromUrl", () => {
 
   it("answers null for github pages that are not a repository", () => {
     expect(repoFromUrl("https://github.com/")).toBeNull();
-    expect(repoFromUrl("https://github.com/bb")).toBeNull();
+    expect(repoFromUrl("https://github.com/patcher")).toBeNull();
     // `/settings/keys` looks exactly like `/owner/repo` and is not one.
     expect(repoFromUrl("https://github.com/settings/keys")).toBeNull();
-    expect(repoFromUrl("https://github.com/orgs/bb/people")).toBeNull();
+    expect(repoFromUrl("https://github.com/orgs/patcher/people")).toBeNull();
   });
 
   // The panel is scoped by the host, but `browserUrl` is still a page address

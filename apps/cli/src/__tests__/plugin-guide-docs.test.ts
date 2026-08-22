@@ -4,8 +4,8 @@ import { renderTemplate } from "@patcher/templates";
 import { registerPluginCommands } from "../commands/plugin.js";
 
 /**
- * Durability test for the plugins guide chapter (`bb guide plugins`): every
- * `bb plugin <subcommand>` and every declared option flag must be mentioned
+ * Durability test for the plugins guide chapter (`patcher guide plugins`): every
+ * `patcher plugin <subcommand>` and every declared option flag must be mentioned
  * there. Adding a subcommand or flag without documenting it fails here.
  */
 function buildPluginCommand(): Command {
@@ -26,16 +26,16 @@ describe("plugins guide chapter", () => {
 
     const guide = renderTemplate("patcherGuidePlugins", {});
     for (const name of names) {
-      // Allow pipe-joined forms like "bb plugin enable|disable <id>".
-      const pattern = new RegExp(`bb plugin (?:[a-z-]+\\|)*${name}\\b`);
+      // Allow pipe-joined forms like "patcher plugin enable|disable <id>".
+      const pattern = new RegExp(`patcher plugin (?:[a-z-]+\\|)*${name}\\b`);
       expect(
         guide,
-        `"bb plugin ${name}" is not documented in patcher-guide-plugins.md`,
+        `"patcher plugin ${name}" is not documented in patcher-guide-plugins.md`,
       ).toMatch(pattern);
     }
   });
 
-  it("mentions every declared bb plugin option flag", () => {
+  it("mentions every declared patcher plugin option flag", () => {
     const plugin = buildPluginCommand();
     const guide = renderTemplate("patcherGuidePlugins", {});
     let optionCount = 0;
@@ -50,7 +50,7 @@ describe("plugins guide chapter", () => {
         expect(forms.length).toBeGreaterThan(0);
         expect(
           forms.some((form) => guide.includes(form)),
-          `"bb plugin ${command.name()}" flag "${option.flags}" is not documented in patcher-guide-plugins.md`,
+          `"patcher plugin ${command.name()}" flag "${option.flags}" is not documented in patcher-guide-plugins.md`,
         ).toBe(true);
       }
     }

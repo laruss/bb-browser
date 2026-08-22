@@ -21,7 +21,7 @@ import { createPluginArtifactMeta } from "./plugin-artifact-meta.js";
 import { validatePluginBuildManifest } from "./plugin-manifest.js";
 
 /**
- * `bb plugin build` — compile a plugin's `patcher.app` entry (app.tsx) into a
+ * `patcher plugin build` — compile a plugin's `patcher.app` entry (app.tsx) into a
  * runtime-loadable frontend bundle:
  *
  * - `dist/app.js` — single ESM file, production jsx-runtime forced. The
@@ -139,7 +139,7 @@ async function shimModuleSource(
     `const runtime = globalThis.__patcherPluginRuntime;`,
     `if (runtime == null || runtime.${slot} == null) {`,
     `  throw new Error(${JSON.stringify(
-      `Cannot load "${specifier}": this bundle must be loaded by the BB app, which provides the shared plugin runtime (globalThis.__patcherPluginRuntime).`,
+      `Cannot load "${specifier}": this bundle must be loaded by the Patcher app, which provides the shared plugin runtime (globalThis.__patcherPluginRuntime).`,
     )});`,
     `}`,
     `const mod = runtime.${slot};`,
@@ -485,9 +485,9 @@ export async function buildPluginApp(
       platform: "browser",
       target: "es2022",
       // Production jsx-runtime, always — the host only guarantees the dev
-      // runtime for `bb plugin dev`, and dev-transformed output in a
+      // runtime for `patcher plugin dev`, and dev-transformed output in a
       // production page is how subtle double-React bugs start. Deliberately
-      // a single mode: `bb plugin dev` builds through here too, so the
+      // a single mode: `patcher plugin dev` builds through here too, so the
       // reserved jsxDevRuntime shim slot is unreachable from our own output.
       // Enabling dev JSX would take a dev-mode build flag that flips jsxDev
       // and relies on that reserved slot.

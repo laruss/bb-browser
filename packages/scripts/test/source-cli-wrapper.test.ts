@@ -39,7 +39,7 @@ function buildCleanEnv(): NodeJS.ProcessEnv {
 
 function runSourcePatcher(args: string[]): Promise<SourceCliResult> {
   return new Promise((resolvePromise, rejectPromise) => {
-    const child = spawn("bun", ["run", "--silent", "bb", ...args], {
+    const child = spawn("bun", ["run", "--silent", "patcher", ...args], {
       cwd: repoRoot,
       env: buildCleanEnv(),
     });

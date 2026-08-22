@@ -89,7 +89,7 @@ function stdout(result: {
   return result.stdout;
 }
 
-describe("bb tasks CLI", () => {
+describe("patcher tasks CLI", () => {
   it("lists seed-demo in help while retaining the explicit confirmation guard", async () => {
     const { patcher, harness } = createFakePluginHost({
       permissions: pluginPermissionsFromManifest(import.meta.url),
@@ -656,7 +656,7 @@ describe("bb tasks CLI", () => {
         "Linked",
         "--prefix",
         "LINK",
-        "--link-bb-project",
+        "--link-patcher-project",
         context.projectId,
       ]),
     );
@@ -687,7 +687,7 @@ describe("bb tasks CLI", () => {
       exitCode: 1,
       stdout: "",
       stderr:
-        "no tracker project is linked to BB project proj_missing; pass --project or link one with bb tasks project update",
+        "no tracker project is linked to Patcher project proj_missing; pass --project or link one with patcher tasks project update",
     });
 
     await harness.dispose();
@@ -765,7 +765,7 @@ describe("bb tasks CLI", () => {
       "ATOM",
       "--rename-prefix",
       "NEXT",
-      "--link-bb-project",
+      "--link-patcher-project",
       "not-a-project-id",
     ]);
     expect(invalidProjectUpdate).toMatchObject({ exitCode: 1, stdout: "" });
@@ -1255,7 +1255,7 @@ describe("bb tasks CLI", () => {
         `Failed to attach ${boomPath}: simulated blob write failure`,
       );
       expect(human.stdout).toContain(
-        `Retry with: bb tasks attachment add MIX-2 --file ${boomPath}`,
+        `Retry with: patcher tasks attachment add MIX-2 --file ${boomPath}`,
       );
     } finally {
       await rm(directory, { recursive: true, force: true });
@@ -1292,7 +1292,7 @@ describe("bb tasks CLI", () => {
                     number: 12,
                     title: "BB-15 Show PRs in tasks",
                     state: "draft",
-                    url: "https://github.com/acme/bb/pull/12",
+                    url: "https://github.com/acme/patcher/pull/12",
                     baseRefName: "main",
                     headRefName: "patcher/bb-15",
                     updatedAt: "2026-07-16T10:00:00.000Z",
@@ -1348,7 +1348,7 @@ describe("bb tasks CLI", () => {
     const shown = stdout(await harness.runCli(["show", "PRS-1"]));
     expect(shown).toContain("Pull requests");
     expect(shown).toContain("#12  draft  BB-15 Show PRs in tasks");
-    expect(shown).toContain("https://github.com/acme/bb/pull/12");
+    expect(shown).toContain("https://github.com/acme/patcher/pull/12");
     // Genuine absence (no environment, or gh reported no PR) stays quiet —
     // it must not read as a failed lookup.
     expect(shown).not.toContain("PR lookup unavailable");
@@ -1358,7 +1358,7 @@ describe("bb tasks CLI", () => {
     );
     expect(payload.pullRequests).toEqual([
       {
-        url: "https://github.com/acme/bb/pull/12",
+        url: "https://github.com/acme/patcher/pull/12",
         number: 12,
         title: "BB-15 Show PRs in tasks",
         state: "draft",

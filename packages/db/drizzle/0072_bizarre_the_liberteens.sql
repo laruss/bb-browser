@@ -37,7 +37,7 @@ FROM `marketplaces`
 WHERE
 	`id` = 'patcher-official'
 	AND `source_kind` = 'git'
-	AND `location` = 'https://github.com/ymichael/bb.git'
+	AND `location` = 'https://github.com/ymichael/patcher.git'
 	AND `requested_git_ref` = 'main'
 	AND `catalog_json` IS NOT NULL
 LIMIT 1;
@@ -54,7 +54,7 @@ SET
 				WHERE
 					`id` = 'patcher-official'
 					AND `source_kind` = 'git'
-					AND `location` = 'https://github.com/ymichael/bb.git'
+					AND `location` = 'https://github.com/ymichael/patcher.git'
 					AND `requested_git_ref` = 'main'
 			)
 			THEN `catalog_entry_id`
@@ -70,7 +70,7 @@ SET
 				WHERE
 					`id` = 'patcher-official'
 					AND `source_kind` = 'git'
-					AND `location` = 'https://github.com/ymichael/bb.git'
+					AND `location` = 'https://github.com/ymichael/patcher.git'
 					AND `requested_git_ref` = 'main'
 			)
 			THEN 'catalog'

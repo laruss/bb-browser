@@ -344,7 +344,7 @@ describe("plugin app bundles (build policy, inventory, asset routes)", () => {
     await writeAppPluginFixture(rootDir, { name: "patcher-plugin-aged" });
     await harness.pluginService.installPath(rootDir);
 
-    // Simulate a bundle built by an older BB: same major, older version.
+    // Simulate a bundle built by an older Patcher: same major, older version.
     const metaPath = join(rootDir, "dist", "app.meta.json");
     await writeFile(
       metaPath,
@@ -410,7 +410,7 @@ describe("plugin app bundles (build policy, inventory, asset routes)", () => {
     expect(js.status).toBe(200);
   });
 
-  it("refreshes the served bundle hash on reload-by-id after dist changes (bb plugin dev cycle)", async () => {
+  it("refreshes the served bundle hash on reload-by-id after dist changes (patcher plugin dev cycle)", async () => {
     // The P3.4 dev loop depends on exactly this: rebuild dist on disk, then
     // POST /plugins/reload?id=<id> must serve a fresh content hash so open
     // pages re-import the bundle. npm-style registration (handwritten dist,

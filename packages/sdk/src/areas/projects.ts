@@ -469,7 +469,9 @@ export function createProjectsArea(args: CreateSdkAreaArgs): ProjectsArea {
         ),
       );
       const bytes = new Uint8Array(await response.arrayBuffer());
-      const contentEncoding = response.headers.get("x-bb-content-encoding");
+      const contentEncoding = response.headers.get(
+        "x-patcher-content-encoding",
+      );
       if (contentEncoding !== "utf8" && contentEncoding !== "base64") {
         throw new Error(
           "Project file response is missing its content encoding",

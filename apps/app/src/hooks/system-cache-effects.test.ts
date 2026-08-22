@@ -203,7 +203,7 @@ describe("system cache effects", () => {
       source: "npm",
       updateAvailable: true,
       isDevelopment: false,
-      upgradeCommand: "npx bb-app@latest",
+      upgradeCommand: "npx patcher-app@latest",
     });
 
     invalidateRealtimeQueriesAfterServerReconnect({ queryClient });
@@ -316,9 +316,7 @@ describe("system cache effects", () => {
     invalidateRealtimeQueriesAfterServerReconnect({ queryClient });
 
     // The TOC has an observer, so reconnect invalidation refetches it.
-    await vi.waitFor(() =>
-      expect(diffFilesQueryFn).toHaveBeenCalledTimes(1),
-    );
+    await vi.waitFor(() => expect(diffFilesQueryFn).toHaveBeenCalledTimes(1));
     // The observer-less patch entry is evicted so a stale patch can't survive
     // the reconnect.
     expect(queryClient.getQueryData(diffPatchKey)).toBeUndefined();

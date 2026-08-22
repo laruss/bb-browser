@@ -38,7 +38,7 @@ describe("provider unhandled events", () => {
     const event = createUnhandledProviderEvent({
       providerId: "codex",
       rawType: "sdk/custom",
-      turnId: "turn_bb_owned",
+      turnId: "turn_patcher_owned",
       rawEvent: {
         jsonrpc: "2.0",
         method: "sdk/message",
@@ -46,7 +46,7 @@ describe("provider unhandled events", () => {
       },
     });
 
-    expect(event.scope).toEqual({ kind: "turn", turnId: "turn_bb_owned" });
+    expect(event.scope).toEqual({ kind: "turn", turnId: "turn_patcher_owned" });
   });
 
   it("ignores a provider-supplied turn id the caller did not vouch for", () => {

@@ -20,11 +20,11 @@ export type {
 } from "./rpc-contract.js";
 
 /**
- * `@patcher/plugin-sdk/app` — typed facade over the BB app's plugin runtime.
+ * `@patcher/plugin-sdk/app` — typed facade over the Patcher app's plugin runtime.
  *
- * This module's runtime is never bundled into plugins: `bb plugin build`
+ * This module's runtime is never bundled into plugins: `patcher plugin build`
  * swaps the specifier for a shim reading
- * `globalThis.__patcherPluginRuntime.pluginSdkApp` (which the BB app fills with
+ * `globalThis.__patcherPluginRuntime.pluginSdkApp` (which the Patcher app fills with
  * its real implementation before importing any plugin bundle). The re-export
  * below mirrors that shim so code importing this package directly (plugin
  * unit tests, tooling) resolves the same objects when a runtime is
@@ -32,7 +32,7 @@ export type {
  *
  * Hooks-only surface (the host-provided UI kit was removed 2026-07-03,
  * plugin design §5.5): components are vendored shadcn-style source from the
- * BB registry (`npx shadcn add @patcher/<name>`); `toast` comes from
+ * Patcher registry (`npx shadcn add @patcher/<name>`); `toast` comes from
  * `import { toast } from "sonner"` (runtime-shimmed to the host toaster).
  */
 

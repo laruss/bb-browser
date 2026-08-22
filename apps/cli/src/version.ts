@@ -23,7 +23,7 @@ function readPatcherAppVersionAt(packageJsonPath: string): string | null {
     const result = patcherAppPackageJsonSchema.safeParse(
       JSON.parse(readFileSync(packageJsonPath, "utf8")),
     );
-    if (!result.success || result.data.name !== "bb-app") {
+    if (!result.success || result.data.name !== "patcher-app") {
       return null;
     }
     return result.data.version;
@@ -40,7 +40,9 @@ function trimEnvValue(value: string | undefined): string | undefined {
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
-export function resolvePatcherAppVersion(args: ResolvePatcherAppVersionArgs): string {
+export function resolvePatcherAppVersion(
+  args: ResolvePatcherAppVersionArgs,
+): string {
   const envValue = trimEnvValue(args.env.PATCHER_APP_VERSION);
   if (envValue !== undefined) {
     return envValue;
@@ -56,10 +58,12 @@ export function resolvePatcherAppVersion(args: ResolvePatcherAppVersionArgs): st
     const workspaceCandidatePath = join(
       currentDir,
       "packages",
-      "bb-app",
+      "patcher-app",
       "package.json",
     );
-    const workspaceCandidateVersion = readPatcherAppVersionAt(workspaceCandidatePath);
+    const workspaceCandidateVersion = readPatcherAppVersionAt(
+      workspaceCandidatePath,
+    );
     if (workspaceCandidateVersion !== null) {
       return workspaceCandidateVersion;
     }

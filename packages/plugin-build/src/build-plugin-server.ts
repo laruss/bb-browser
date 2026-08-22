@@ -13,7 +13,7 @@ import { validatePluginBuildManifest } from "./plugin-manifest.js";
 import { type PluginBuildToolchain } from "./toolchain.js";
 
 /**
- * `bb plugin build` — compile a plugin's `patcher.server` entry into a
+ * `patcher plugin build` — compile a plugin's `patcher.server` entry into a
  * self-contained backend bundle (prebuilt distribution, design §6):
  *
  * - `dist/server.js` (+ `.map`) — single node-platform ESM file with the

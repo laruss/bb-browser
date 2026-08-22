@@ -3,7 +3,7 @@
 // (react@19.2.4 + the shimmed radix/sonner/vaul packages), derived
 // from SDK source/build metadata and the host app's installed copies.
 // Consumed by
-// `bb plugin build` to emit static ESM re-export shims over
+// `patcher plugin build` to emit static ESM re-export shims over
 // globalThis.__patcherPluginRuntime. Regenerate after upgrading a shimmed package:
 //   node packages/plugin-build/scripts/generate-runtime-export-manifest.mjs
 

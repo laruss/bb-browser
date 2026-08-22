@@ -10,11 +10,11 @@ import type { PluginRpcContract, PluginRpcHandlers } from "./rpc-contract.js";
  * The backend plugin API contract — the `patcher` object handed to a plugin's
  * `server.ts` factory (`export default function plugin(patcher: PatcherPluginApi)`).
  *
- * Types only: the implementation lives in the BB server
+ * Types only: the implementation lives in the Patcher server
  * (apps/server/src/services/plugins/plugin-api.ts), which imports these
  * shapes so the contract and the implementation cannot drift. Plugin authors
  * import them type-only (`import type { PatcherPluginApi } from
- * "@patcher/plugin-sdk"`); the import is erased when BB loads the file.
+ * "@patcher/plugin-sdk"`); the import is erased when Patcher loads the file.
  *
  * Runtime classes stay host-side. NeedsConfigurationError in particular is
  * matched by NAME, so plugin code needs no runtime import:
@@ -170,9 +170,9 @@ export interface PluginHttp {
   /**
    * Register an HTTP route, mounted at
    * `/api/v1/plugins/<id>/http/<path>`. Auth modes (default "local"):
-   * - "local": Origin/Host must be a local BB app origin; non-GET requires
+   * - "local": Origin/Host must be a local Patcher app origin; non-GET requires
    *   content-type application/json (forces a CORS preflight).
-   * - "token": requires the per-plugin token (`bb plugin token <id>`) via
+   * - "token": requires the per-plugin token (`patcher plugin token <id>`) via
    *   the x-patcher-plugin-token header or ?token=.
    * - "none": no checks — only for signature-verified webhooks.
    */
@@ -230,7 +230,7 @@ export interface PluginBackground {
    * durable row keyed (pluginId, name) is upserted at load; the periodic
    * sweep claims due rows with a CAS on next_run_at, but only while this
    * plugin is loaded. Failures land in last_status/last_error, visible in
-   * `bb plugin list`.
+   * `patcher plugin list`.
    */
   schedule(name: string, cron: string, fn: () => void | Promise<void>): void;
 }
@@ -306,7 +306,7 @@ export interface PluginCliExecutionResult {
 }
 
 export interface PluginCliRegistration {
-  /** Top-level command name (`bb <name> …`): lowercase [a-z0-9-]+, and not
+  /** Top-level command name (`patcher <name> …`): lowercase [a-z0-9-]+, and not
    * a core Patcher command (see RESERVED_PATCHER_CLI_COMMANDS in the server). */
   name: string;
   summary: string;
@@ -321,7 +321,7 @@ export interface PluginCliRegistration {
 
 export interface PluginCli {
   /**
-   * Register this plugin's `bb` subcommand. One registration per factory
+   * Register this plugin's `patcher` subcommand. One registration per factory
    * execution; a repeated call is rejected. Core Patcher commands always win
    * name collisions; reserved names are rejected at registration.
    */
@@ -352,8 +352,8 @@ export interface PluginAgentToolContext {
 }
 
 /**
- * Native timeline labels for a plugin tool, keyed by BB's own timeline row
- * status. This is experimental: BB may refine its presentation contract
+ * Native timeline labels for a plugin tool, keyed by Patcher's own timeline row
+ * status. This is experimental: Patcher may refine its presentation contract
  * before the field is stabilized.
  */
 export interface PluginAgentToolExperimentalStatusLabels {
@@ -376,10 +376,10 @@ export interface PluginAgentToolRegistrationBase {
    */
   instructions?: string;
   /**
-   * Optional native timeline labels. When omitted, BB shows the standard
+   * Optional native timeline labels. When omitted, Patcher shows the standard
    * tool name and arguments (for example, `Ran tool search_docs …`). Labels
    * apply only while the call is pending and after successful completion;
-   * approval, error, and interruption states keep BB's standard rendering.
+   * approval, error, and interruption states keep Patcher's standard rendering.
    */
   experimental_statusLabels?: PluginAgentToolExperimentalStatusLabels;
 }
@@ -462,7 +462,7 @@ export interface PluginAgents {
    * an already-running session is not hot-mutated. Instructions follow the
    * same boundary: a live provider session keeps the instructions it was
    * constructed with, and a changed selection applies when the session is
-   * next constructed. Skill changes follow BB's environment runtime policy:
+   * next constructed. Skill changes follow Patcher's environment runtime policy:
    * a busy runtime keeps its current catalog until a safe relaunch. Side chats
    * are ordinary plugin-owned forks here — read `origin` to detect them — and
    * their returned tool, skill, and dynamic-instruction selections apply at the
@@ -1511,7 +1511,7 @@ export interface PluginBrowserConsoleEntry {
 /**
  * One request the tab finished. `status` is null when there was no response —
  * `error` then carries Chromium's `net::ERR_*` name, including for a request
- * BB's own session firewall refused.
+ * Patcher's own session firewall refused.
  */
 export interface PluginBrowserNetworkEntry {
   method: string;
@@ -2226,7 +2226,7 @@ export interface PluginBrowser {
   /**
    * Drive the browser surface's tabs, pages and navigation.
    *
-   * These need a **connected browser window** — the BB desktop app with its
+   * These need a **connected browser window** — the Patcher desktop app with its
    * browser surface — which is never guaranteed and is certainly absent while
    * factories run. Call them from handlers, tools and services, never at load
    * time, and expect `BrowserHostUnavailableError` when nothing is connected.
@@ -2258,7 +2258,7 @@ export interface PluginEvents {
 
 export interface PluginServerApi {
   /**
-   * This BB server's own loopback base URL (e.g. "http://127.0.0.1:38986"),
+   * This Patcher server's own loopback base URL (e.g. "http://127.0.0.1:38986"),
    * which serves the SPA + /api + /ws. For plugins that proxy or relay
    * traffic back to the server itself (e.g. a tunnel). Bind-gated like
    * `patcher.sdk`: reading it before the server is listening throws, so prefer
@@ -2274,17 +2274,17 @@ export interface PluginServerApi {
 export interface PluginStatusApi {
   /**
    * Mark this plugin `needs-configuration` (with a message shown in
-   * `bb plugin list` and the UI) instead of failing — e.g. a factory or
+   * `patcher plugin list` and the UI) instead of failing — e.g. a factory or
    * service that finds no API key configured. Cleared on the next load;
    * saving settings does not auto-reload in V1, so ask the user to
-   * `bb plugin reload <id>` after configuring.
+   * `patcher plugin reload <id>` after configuring.
    */
   needsConfiguration(message: string): void;
 }
 
 /**
  * The API object handed to a plugin's factory (design §4). Implemented by
- * the BB server; this contract is what plugin `server.ts` files compile
+ * the Patcher server; this contract is what plugin `server.ts` files compile
  * against.
  */
 export interface PatcherPluginApi {
@@ -2304,7 +2304,7 @@ export interface PatcherPluginApi {
   readonly realtime: PluginRealtime;
   /** Long-lived services + cron schedules (design §4.8). */
   readonly background: PluginBackground;
-  /** Agent-facing `bb` CLI subcommand (design §4.4). */
+  /** Agent-facing `patcher` CLI subcommand (design §4.4). */
   readonly cli: PluginCli;
   /** Per-turn agent context contributions (design §4.4). */
   readonly agents: PluginAgents;
@@ -2320,7 +2320,7 @@ export interface PatcherPluginApi {
   readonly server: PluginServerApi;
   /** Server-to-daemon host control-plane declarations. */
   /**
-   * The full BB SDK, bound to this server over loopback (design §4.1).
+   * The full Patcher SDK, bound to this server over loopback (design §4.1).
    * Bind-gated: reading this before the host binds the SDK throws. The real
    * server binds it before loading plugins, so it is available from the
    * moment factories run there — but isolated harnesses may not, so prefer

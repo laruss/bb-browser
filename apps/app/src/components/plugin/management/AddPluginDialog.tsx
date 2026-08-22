@@ -130,7 +130,7 @@ function AddPluginDialogContent({
         </DialogTitle>
         <DialogDescription>
           {initial !== null
-            ? "Install this official plugin, bundled with BB."
+            ? "Install this official plugin, bundled with Patcher."
             : "Install from npm, a Git repository, or a local path."}
         </DialogDescription>
       </DialogHeader>

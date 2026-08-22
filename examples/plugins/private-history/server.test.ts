@@ -84,7 +84,7 @@ describe("private-history", () => {
 
   it("says it needs configuring only while no host is named", async () => {
     expect((await load()).harness.needsConfigurationMessages).toEqual([
-      expect.stringContaining("bb plugin config private-history"),
+      expect.stringContaining("patcher plugin config private-history"),
     ]);
     expect(
       (await load({ hosts: "internal.example" })).harness

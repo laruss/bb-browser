@@ -254,7 +254,7 @@ export function resolveMessageSenderThreadId(
   }
   // Sender attribution is allowed across projects: the cross-thread message
   // template tells the receiving agent to reply via
-  // `bb thread tell {{senderThreadId}}`, which is how coordinator/worker
+  // `patcher thread tell {{senderThreadId}}`, which is how coordinator/worker
   // threads in different projects message each other. Existence and not-deleted
   // are still required so the reply target is a live thread.
 

@@ -1327,7 +1327,7 @@ describe("workflow service policy integration", () => {
     expect(text).toContain(run.id);
     expect(text).toContain("failed");
     expect(text).toContain("[truncated]");
-    expect(text).toContain(`bb workflows status ${run.id}`);
+    expect(text).toContain(`patcher workflows status ${run.id}`);
     expect(text).not.toContain("�");
   });
 });

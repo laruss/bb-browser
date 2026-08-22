@@ -36,8 +36,8 @@ describe("resolveNewPluginTarget", () => {
 });
 
 /**
- * `bb plugin new` runs npm itself, and the packaged CLI runs with
- * NODE_ENV=production (bb-app's launcher sets it), which npm reads as
+ * `patcher plugin new` runs npm itself, and the packaged CLI runs with
+ * NODE_ENV=production (patcher-app's launcher sets it), which npm reads as
  * `omit=dev`. Issue #1133: npm skipped the packages the scaffold needs, exited
  * 0, and the CLI reported success for a plugin that could not build.
  *
@@ -72,7 +72,7 @@ for (const name of Object.keys(installed)) {
 }
 `;
 
-describe.sequential("bb plugin new dependency install", () => {
+describe.sequential("patcher plugin new dependency install", () => {
   const originalCwd = process.cwd();
   let workDir: string;
   let logged: string[];
@@ -108,7 +108,7 @@ describe.sequential("bb plugin new dependency install", () => {
     const program = new Command();
     program.exitOverride();
     registerPluginCommands(program, () => "http://localhost");
-    await program.parseAsync(["node", "bb", "plugin", "new", ...args]);
+    await program.parseAsync(["node", "patcher", "plugin", "new", ...args]);
   }
 
   async function isInstalled(

@@ -60,12 +60,12 @@ function createDesktopVersionFeed(version) {
     minimumSystemVersion: null,
     files: [
       {
-        url: "https://example.invalid/bb.zip",
+        url: "https://example.invalid/Patcher.zip",
         sha512: "smoke",
         size: 0,
       },
     ],
-    path: "bb.zip",
+    path: "Patcher.zip",
     sha512: "smoke",
     stagingPercentage: null,
   };

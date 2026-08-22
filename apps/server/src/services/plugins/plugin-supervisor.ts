@@ -175,7 +175,7 @@ export interface PluginSupervisor {
   /** Every live instance, in start order. */
   states(): SupervisedPluginState[];
   /**
-   * Live processes, for tests and for `bb plugin list`. A plugin appears twice
+   * Live processes, for tests and for `patcher plugin list`. A plugin appears twice
    * for as long as a reload swap has two of its instances alive.
    */
   processes(): { key: PluginProcessKey; pluginIds: string[]; pid?: number }[];

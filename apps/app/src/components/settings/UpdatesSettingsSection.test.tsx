@@ -202,7 +202,7 @@ function makeInventory(overrides: Partial<UpdateInventory>): UpdateInventory {
       source: "npm",
       updateAvailable: false,
       isDevelopment: false,
-      upgradeCommand: "npx bb-app@latest",
+      upgradeCommand: "npx patcher-app@latest",
     },
     desktopInfo: null,
     appUpdateAvailable: false,
@@ -391,7 +391,7 @@ describe("UpdatesSettingsSection", () => {
       source: "npm" as const,
       updateAvailable: true,
       isDevelopment: false,
-      upgradeCommand: "npx bb-app@latest",
+      upgradeCommand: "npx patcher-app@latest",
     };
     useUpdateInventoryMock.mockReturnValue(
       makeInventory({
@@ -404,7 +404,7 @@ describe("UpdatesSettingsSection", () => {
     vi.mocked(sdk.system.version).mockResolvedValue(availableVersion);
 
     renderSection();
-    expect(screen.getByText("npx bb-app@latest")).toBeDefined();
+    expect(screen.getByText("npx patcher-app@latest")).toBeDefined();
     expect(screen.getByText("0.0.6")).toBeDefined();
 
     fireEvent.click(screen.getByRole("button", { name: "Check for updates" }));

@@ -17,8 +17,8 @@ import {
 
 /**
  * The catalogue is only worth what it is checked against. A hand-written list
- * of what `bb` exposes is a second description of the object, free to agree
- * with itself while both drift — so this walks the real `bb` a plugin is
+ * of what `patcher` exposes is a second description of the object, free to agree
+ * with itself while both drift — so this walks the real `patcher` a plugin is
  * handed and requires every member to be in the list, and every listed path to
  * still exist.
  *
@@ -118,7 +118,7 @@ describe("PLUGIN_HOST_CALLS covers the Patcher object", () => {
   it("names every member a plugin can reach on Patcher", () => {
     const handle = buildApi();
     const reachable = walk(handle.api, "");
-    // The settings handle has no path on `bb` — it only exists once a plugin
+    // The settings handle has no path on `patcher` — it only exists once a plugin
     // calls define — so it is walked from the object define returns.
     for (const [path, key] of walk(
       handle.api.settings.define({}),

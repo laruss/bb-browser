@@ -55,7 +55,7 @@ export const BUILTIN_PLUGINS = [
   },
   {
     // Ships disabled: an agent using these acts inside the user's real
-    // logged-in browsing session, and BB has no plugin permission model yet, so
+    // logged-in browsing session, and Patcher has no plugin permission model yet, so
     // enabling it is the user's call.
     name: "browser-tools",
     pluginId: "browser-tools",

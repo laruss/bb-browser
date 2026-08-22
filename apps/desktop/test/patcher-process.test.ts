@@ -86,11 +86,11 @@ describe("Patcher app process", () => {
     const runtime = resolvePatcherAppProcessRuntime({
       env: {},
       isPackaged: true,
-      processExecPath: "/Applications/Patcher.app/Contents/MacOS/bb",
+      processExecPath: "/Applications/Patcher.app/Contents/MacOS/patcher",
     });
 
     expect(runtime).toEqual({
-      executablePath: "/Applications/Patcher.app/Contents/MacOS/bb",
+      executablePath: "/Applications/Patcher.app/Contents/MacOS/patcher",
       mode: "electron-node",
     });
     expect(

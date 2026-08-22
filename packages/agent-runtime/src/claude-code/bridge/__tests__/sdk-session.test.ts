@@ -239,7 +239,7 @@ describe("SdkSession", () => {
     const session = new SdkSession(
       {
         ...defaultOptions,
-        plugins: [{ type: "local", path: "/tmp/bb-skills" }],
+        plugins: [{ type: "local", path: "/tmp/patcher-skills" }],
       },
       onMessage,
       onDone,
@@ -250,7 +250,7 @@ describe("SdkSession", () => {
     expect(queryMock).toHaveBeenCalledWith(
       expect.objectContaining({
         options: expect.objectContaining({
-          plugins: [{ type: "local", path: "/tmp/bb-skills" }],
+          plugins: [{ type: "local", path: "/tmp/patcher-skills" }],
         }),
       }),
     );
@@ -449,7 +449,7 @@ describe("SdkSession", () => {
     const session = new SdkSession(
       {
         ...defaultOptions,
-        additionalDirectories: ["/repo/.git/worktrees/bb13"],
+        additionalDirectories: ["/repo/.git/worktrees/patcher13"],
         sandbox: {
           enabled: true,
           autoAllowBashIfSandboxed: true,
@@ -466,7 +466,7 @@ describe("SdkSession", () => {
     expect(queryMock).toHaveBeenCalledWith(
       expect.objectContaining({
         options: expect.objectContaining({
-          additionalDirectories: ["/repo/.git/worktrees/bb13"],
+          additionalDirectories: ["/repo/.git/worktrees/patcher13"],
           sandbox: {
             enabled: true,
             autoAllowBashIfSandboxed: true,

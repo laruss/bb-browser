@@ -89,7 +89,7 @@ async function runGit(
 async function initRepo(): Promise<string> {
   const repoPath = await makeTempDir("patcher-runtime-manager-repo-");
   await runGit(["init", "-b", "main"], { cwd: repoPath });
-  await runGit(["config", "user.name", "BB Tests"], { cwd: repoPath });
+  await runGit(["config", "user.name", "Patcher Tests"], { cwd: repoPath });
   await runGit(["config", "user.email", "patcher@example.com"], {
     cwd: repoPath,
   });
@@ -1106,7 +1106,7 @@ describe("RuntimeManager", () => {
     const runtimeOptions: RuntimeOptionsRef = { current: null };
     const manager = new RuntimeManager({
       provisionWorkspace,
-      threadStorageRootPath: "/tmp/bb-thread-storage",
+      threadStorageRootPath: "/tmp/patcher-thread-storage",
       createRuntime: (options) => {
         runtimeOptions.current = options;
         return createFakeRuntime();
@@ -1119,7 +1119,7 @@ describe("RuntimeManager", () => {
     });
 
     expect(runtimeOptions.current?.additionalWorkspaceWriteRoots).toEqual([
-      "/tmp/bb-thread-storage",
+      "/tmp/patcher-thread-storage",
     ]);
   });
 
@@ -1130,7 +1130,7 @@ describe("RuntimeManager", () => {
       provisionWorkspace,
       createRuntime,
       shellEnv: {
-        PATH: "/tmp/bb-bin:/usr/bin",
+        PATH: "/tmp/patcher-bin:/usr/bin",
         PATCHER_SERVER_URL: "http://127.0.0.1:3334",
       },
     });
@@ -1143,7 +1143,7 @@ describe("RuntimeManager", () => {
     expect(createRuntime).toHaveBeenCalledWith(
       expect.objectContaining({
         shellEnv: {
-          PATH: "/tmp/bb-bin:/usr/bin",
+          PATH: "/tmp/patcher-bin:/usr/bin",
           PATCHER_SERVER_URL: "http://127.0.0.1:3334",
         },
       }),
@@ -1185,7 +1185,7 @@ describe("RuntimeManager", () => {
       provisionWorkspace,
       createRuntime,
       shellEnv: {
-        PATH: "/tmp/bb-bin:/home/me/.local/bin:/usr/bin",
+        PATH: "/tmp/patcher-bin:/home/me/.local/bin:/usr/bin",
         PATCHER_SERVER_URL: "http://127.0.0.1:3334",
         OPENAI_API_KEY: "test-openai-key",
       },
@@ -1199,10 +1199,10 @@ describe("RuntimeManager", () => {
     expect(createRuntime).toHaveBeenCalledWith(
       expect.objectContaining({
         env: {
-          PATH: "/tmp/bb-bin:/home/me/.local/bin:/usr/bin",
+          PATH: "/tmp/patcher-bin:/home/me/.local/bin:/usr/bin",
         },
         shellEnv: {
-          PATH: "/tmp/bb-bin:/home/me/.local/bin:/usr/bin",
+          PATH: "/tmp/patcher-bin:/home/me/.local/bin:/usr/bin",
           PATCHER_SERVER_URL: "http://127.0.0.1:3334",
           OPENAI_API_KEY: "test-openai-key",
         },
@@ -1217,7 +1217,7 @@ describe("RuntimeManager", () => {
       provisionWorkspace,
       createRuntime,
       shellEnv: {
-        PATH: "/tmp/bb-bin:/usr/bin",
+        PATH: "/tmp/patcher-bin:/usr/bin",
       },
     });
 
@@ -1241,7 +1241,7 @@ describe("RuntimeManager", () => {
         shellEnv: {
           GITHUB_TOKEN: "test-github-token",
           OPENAI_API_KEY: "test-openai-key",
-          PATH: "/tmp/bb-bin:/usr/bin",
+          PATH: "/tmp/patcher-bin:/usr/bin",
         },
       }),
     );

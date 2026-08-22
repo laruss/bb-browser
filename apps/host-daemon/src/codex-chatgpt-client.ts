@@ -188,8 +188,11 @@ function createChatGptHeaders(auth: CodexChatGptAuthCredentials): Headers {
   const headers = new Headers();
   headers.set("Authorization", `Bearer ${auth.accessToken}`);
   headers.set("chatgpt-account-id", auth.accountId);
+  // Frozen: see docs/architecture/rename-to-patcher.md. `originator` is
+  // OpenAI's field, not ours, and an unrecognized value would fail every
+  // request with nothing to read.
   headers.set("originator", "bb");
-  headers.set("User-Agent", "bb-host-daemon");
+  headers.set("User-Agent", "patcher-host-daemon");
   if (auth.isFedrampAccount) {
     headers.set("X-OpenAI-Fedramp", "true");
   }
@@ -199,7 +202,7 @@ function createChatGptHeaders(auth: CodexChatGptAuthCredentials): Headers {
 function createOpenAiHeaders(auth: CodexOpenAiApiKeyCredentials): Headers {
   const headers = new Headers();
   headers.set("Authorization", `Bearer ${auth.apiKey}`);
-  headers.set("User-Agent", "bb-host-daemon");
+  headers.set("User-Agent", "patcher-host-daemon");
   return headers;
 }
 

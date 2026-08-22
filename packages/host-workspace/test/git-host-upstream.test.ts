@@ -13,7 +13,7 @@ const tempDirs: string[] = [];
 const localBranch = "patcher/review-github-issue-1235-thr_test";
 const forkRemote = "review-fork";
 const upstreamBranch = "per-turn-permission-escalation";
-const forkRemoteUrl = "git@github.com:fork-owner/bb.git";
+const forkRemoteUrl = "git@github.com:fork-owner/patcher.git";
 const qualifiedUpstream = `fork-owner:${upstreamBranch}`;
 
 function pullRequestJson(): string {
@@ -21,7 +21,7 @@ function pullRequestJson(): string {
     number: 1236,
     title: "Apply execution settings without replacing sessions",
     state: "OPEN",
-    url: "https://github.com/acme/bb/pull/1236",
+    url: "https://github.com/acme/patcher/pull/1236",
     isDraft: false,
     baseRefName: "main",
     headRefName: upstreamBranch,
@@ -45,14 +45,16 @@ async function createTrackedForkWorkspace(
 ): Promise<string> {
   const workspacePath = await makeTempDir("patcher-pr-upstream-workspace-");
   await runGit(["init", "-b", localBranch], { cwd: workspacePath });
-  await runGit(["config", "user.name", "BB Tests"], { cwd: workspacePath });
+  await runGit(["config", "user.name", "Patcher Tests"], {
+    cwd: workspacePath,
+  });
   await runGit(["config", "user.email", "patcher@example.com"], {
     cwd: workspacePath,
   });
   await fs.writeFile(path.join(workspacePath, "README.md"), "test\n", "utf8");
   await runGit(["add", "README.md"], { cwd: workspacePath });
   await runGit(["commit", "-m", "Initial commit"], { cwd: workspacePath });
-  await runGit(["remote", "add", "origin", "git@github.com:acme/bb.git"], {
+  await runGit(["remote", "add", "origin", "git@github.com:acme/patcher.git"], {
     cwd: workspacePath,
   });
   await runGit(["remote", "add", forkRemote, remoteUrl], {
@@ -79,14 +81,16 @@ async function createManagedBaseTrackedWorkspace(): Promise<string> {
     "patcher-pr-base-upstream-workspace-",
   );
   await runGit(["init", "-b", localBranch], { cwd: workspacePath });
-  await runGit(["config", "user.name", "BB Tests"], { cwd: workspacePath });
+  await runGit(["config", "user.name", "Patcher Tests"], {
+    cwd: workspacePath,
+  });
   await runGit(["config", "user.email", "patcher@example.com"], {
     cwd: workspacePath,
   });
   await fs.writeFile(path.join(workspacePath, "README.md"), "test\n", "utf8");
   await runGit(["add", "README.md"], { cwd: workspacePath });
   await runGit(["commit", "-m", "Initial commit"], { cwd: workspacePath });
-  await runGit(["remote", "add", "origin", "git@github.com:acme/bb.git"], {
+  await runGit(["remote", "add", "origin", "git@github.com:acme/patcher.git"], {
     cwd: workspacePath,
   });
   await runGit(["update-ref", "refs/remotes/origin/main", "HEAD"], {
@@ -189,7 +193,7 @@ describe("pull request lookup for differently named upstream branches", () => {
 
   it("uses the local branch when a differently named remote aliases origin", async () => {
     const workspacePath = await createTrackedForkWorkspace(
-      "git@github.com:acme/bb.git",
+      "git@github.com:acme/patcher.git",
     );
     const { logPath } = await installFakeGh("found");
 
@@ -228,7 +232,7 @@ describe("pull request lookup for differently named upstream branches", () => {
 
   it("never passes an untrusted upstream URL to gh", async () => {
     const workspacePath = await createTrackedForkWorkspace(
-      "https://httpbin.org/fork-owner/bb.git",
+      "https://httpbin.org/fork-owner/patcher.git",
     );
     const { logPath } = await installFakeGh("found");
     vi.stubEnv("GH_ENTERPRISE_TOKEN", "dummy-enterprise-token");

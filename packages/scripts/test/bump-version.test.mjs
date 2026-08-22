@@ -31,11 +31,11 @@ function createTestRepo({ patcherAppVersion, desktopVersion }) {
   const repoRoot = mkdtempSync(join(tmpdir(), "patcher-bump-version-"));
   testRoots.push(repoRoot);
 
-  mkdirSync(join(repoRoot, "packages", "bb-app"), { recursive: true });
+  mkdirSync(join(repoRoot, "packages", "patcher-app"), { recursive: true });
   mkdirSync(join(repoRoot, "apps", "desktop"), { recursive: true });
   writeFileSync(
-    join(repoRoot, "packages", "bb-app", "package.json"),
-    createPackageJson({ name: "bb-app", version: patcherAppVersion }),
+    join(repoRoot, "packages", "patcher-app", "package.json"),
+    createPackageJson({ name: "patcher-app", version: patcherAppVersion }),
   );
   writeFileSync(
     join(repoRoot, "apps", "desktop", "package.json"),
@@ -79,7 +79,9 @@ describe("bump-version", () => {
 
     expect(result.status).not.toBe(0);
     expect(result.stderr).toContain("Invalid version: not-semver");
-    expect(readVersion(repoRoot, "packages/bb-app/package.json")).toBe("0.0.6");
+    expect(readVersion(repoRoot, "packages/patcher-app/package.json")).toBe(
+      "0.0.6",
+    );
     expect(readVersion(repoRoot, "apps/desktop/package.json")).toBe("0.0.6");
   });
 
@@ -90,7 +92,7 @@ describe("bump-version", () => {
     });
     const originalPatcherAppContent = readPackageContent(
       repoRoot,
-      "packages/bb-app/package.json",
+      "packages/patcher-app/package.json",
     );
     const originalDesktopContent = readPackageContent(
       repoRoot,
@@ -100,11 +102,11 @@ describe("bump-version", () => {
 
     expect(result.status).not.toBe(0);
     expect(result.stderr).toContain(
-      "New version 0.0.7 must be greater than current max 0.0.9 across bb-app=0.0.6 @patcher/desktop=0.0.9.",
+      "New version 0.0.7 must be greater than current max 0.0.9 across patcher-app=0.0.6 @patcher/desktop=0.0.9.",
     );
-    expect(readPackageContent(repoRoot, "packages/bb-app/package.json")).toBe(
-      originalPatcherAppContent,
-    );
+    expect(
+      readPackageContent(repoRoot, "packages/patcher-app/package.json"),
+    ).toBe(originalPatcherAppContent);
     expect(readPackageContent(repoRoot, "apps/desktop/package.json")).toBe(
       originalDesktopContent,
     );
@@ -119,9 +121,11 @@ describe("bump-version", () => {
 
     expect(result.status).toBe(0);
     expect(result.stdout).toContain(
-      "Bumped: bb-app + @patcher/desktop → 0.0.7",
+      "Bumped: patcher-app + @patcher/desktop → 0.0.7",
     );
-    expect(readVersion(repoRoot, "packages/bb-app/package.json")).toBe("0.0.7");
+    expect(readVersion(repoRoot, "packages/patcher-app/package.json")).toBe(
+      "0.0.7",
+    );
     expect(readVersion(repoRoot, "apps/desktop/package.json")).toBe("0.0.7");
   });
 
@@ -132,7 +136,7 @@ describe("bump-version", () => {
     });
     const originalPatcherAppContent = readPackageContent(
       repoRoot,
-      "packages/bb-app/package.json",
+      "packages/patcher-app/package.json",
     );
     const originalDesktopContent = readPackageContent(
       repoRoot,
@@ -163,14 +167,14 @@ describe("bump-version", () => {
     ).rejects.toThrow("simulated rename failure");
 
     expect(renameCalls).toBe(2);
-    expect(readPackageContent(repoRoot, "packages/bb-app/package.json")).toBe(
-      originalPatcherAppContent,
-    );
+    expect(
+      readPackageContent(repoRoot, "packages/patcher-app/package.json"),
+    ).toBe(originalPatcherAppContent);
     expect(readPackageContent(repoRoot, "apps/desktop/package.json")).toBe(
       originalDesktopContent,
     );
     expect(
-      readdirSync(join(repoRoot, "packages", "bb-app")),
+      readdirSync(join(repoRoot, "packages", "patcher-app")),
     ).not.toContainEqual(expect.stringMatching(/^\.tmp-/u));
     expect(readdirSync(join(repoRoot, "apps", "desktop"))).not.toContainEqual(
       expect.stringMatching(/^\.tmp-/u),
@@ -197,7 +201,7 @@ describe("prepare-nightly-version", () => {
     );
   });
 
-  it("updates bb-app and desktop to the same nightly version", async () => {
+  it("updates patcher-app and desktop to the same nightly version", async () => {
     const repoRoot = createTestRepo({
       patcherAppVersion: "1.2.3",
       desktopVersion: "1.2.3",
@@ -210,7 +214,7 @@ describe("prepare-nightly-version", () => {
         runId: "987654",
       }),
     ).resolves.toBe("1.2.4-nightly.987654.1");
-    expect(readVersion(repoRoot, "packages/bb-app/package.json")).toBe(
+    expect(readVersion(repoRoot, "packages/patcher-app/package.json")).toBe(
       "1.2.4-nightly.987654.1",
     );
     expect(readVersion(repoRoot, "apps/desktop/package.json")).toBe(

@@ -115,9 +115,9 @@ export interface PluginServiceDeps {
    * hand, and a host without it simply refuses browser calls.
    */
   browserBridge?: import("../browser/browser-bridge.js").BrowserBridge;
-  /** BB data dir: plugin database files and secrets live under <dataDir>/plugins/<id>/. */
+  /** Patcher data dir: plugin database files and secrets live under <dataDir>/plugins/<id>/. */
   dataDir: string;
-  /** BB app version, checked against manifests' engines.patcher range. */
+  /** Patcher app version, checked against manifests' engines.patcher range. */
   appVersion: string;
   /** Declared first-party plugins bundled with the app; test-only override. */
   bundledPlugins?: readonly BundledPluginRegistration[];

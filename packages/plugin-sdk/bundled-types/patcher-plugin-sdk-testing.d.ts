@@ -1,9 +1,9 @@
-// Portable type declarations for `@patcher/plugin-sdk`. Unpublished BB
+// Portable type declarations for `@patcher/plugin-sdk`. Unpublished Patcher
 // workspace contracts are flattened; public subpaths may reuse the
 // package root without requiring any other @patcher/* package.
 //
-// Confused by the API, or need a symbol that isn't here? Clone the BB repo
-// and read the real source: https://github.com/get-bb/bb
+// Confused by the API, or need a symbol that isn't here? Clone the Patcher repo
+// and read the real source: https://github.com/laruss/patcher-browser
 
 import { PatcherPluginApi, PluginSettingValue, PluginAgentToolExperimentalStatusLabels, PluginAgentToolContext, PluginAgentToolResult, PluginCliCommandInfo, PluginCliContext, PluginCliResult, PluginHttpAuthMode, PluginHttpHandler, PluginMentionTrigger, PluginMentionSearchContext, PluginMentionItem, PluginBrowserConsoleEntry, PluginBrowserNetworkEntry, PluginBrowserCookie, PluginBrowserStorageItem, PluginBrowserErrorCode, JsonValue, PluginCliExecutionResult, PluginThreadEventName, PluginThreadEventPayloads, PluginAgentConfigurationContext, PluginSettingDescriptors, PluginAgentConfiguration, PluginOmniboxSuggestContext, PluginOmniboxSuggestion, PluginOmniboxRunContext, PluginOmniboxRunResult, PluginKeybinding, PluginBrowserDownloadHandler, PluginBrowserContextMenuItemRegistration, PluginBrowserFindActionRegistration, PluginBrowserTabActionRegistration, PluginBrowserSiteInfoProviderRegistration, PluginBrowserToolbarItemRegistration, PluginBrowserNewTabWidgetRegistration, PluginCommandRegistration, PluginBrowserSearchEngineRegistration, PluginBrowserPageStyleRegistration, PluginBrowserPageScriptRegistration, PluginBrowserAuthProvider, PluginBrowserPdfTextProvider, PluginBrowserExternalLinkHandler, PluginBrowserHistoryFilter, PluginInteractionRequest } from '@patcher/plugin-sdk';
 
@@ -125,7 +125,7 @@ declare function createFakeSdk(options: {
 };
 
 /**
- * `createFakePluginHost` — an in-process stand-in for the BB server's plugin
+ * `createFakePluginHost` — an in-process stand-in for the Patcher server's plugin
  * runtime (apps/server/src/services/plugins/plugin-api.ts), for unit-testing
  * a plugin's `server.ts` without a server. `patcher` satisfies {@link PatcherPluginApi};
  * `harness` drives and inspects it.
@@ -353,7 +353,7 @@ interface FakePluginInspectionState {
     /** Every `patcher.browser.*` call, in order. */
     readonly browserCalls: readonly FakeBrowserCall[];
 }
-/** Deterministic inputs that stand in for behavior normally driven by BB. */
+/** Deterministic inputs that stand in for behavior normally driven by Patcher. */
 interface FakePluginBehaviorDrivers {
     /** Drive the stand-in browser surface behind `patcher.browser.*`. */
     browser: FakeBrowserDrivers;
@@ -375,7 +375,7 @@ interface FakePluginBehaviorDrivers {
     /**
      * Invoke the plugin's CLI command with host semantics: the result's
      * exitCode must be a number, stdout/stderr default to "", and a throwing
-     * run() becomes `{ exitCode: 1, stderr: "bb <name> failed: …" }`.
+     * run() becomes `{ exitCode: 1, stderr: "patcher <name> failed: …" }`.
      */
     runCli(argv: string[], ctx?: PluginCliContext): Promise<PluginCliExecutionResult>;
     /**

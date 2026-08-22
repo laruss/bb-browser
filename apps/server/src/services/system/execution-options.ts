@@ -14,7 +14,7 @@ import {
   formatCustomAcpAgentProviderId,
   type CustomAcpAgent,
   type CustomProviderModel,
-} from "@patcher/config/bb-app-managed-config";
+} from "@patcher/config/patcher-app-managed-config";
 import {
   reasoningEffortsForLevels,
   type AvailableModel,

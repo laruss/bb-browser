@@ -3,7 +3,7 @@ import { basename, join } from "node:path";
 import { z } from "zod";
 
 /**
- * A running `bb-app start` writes this file into its data directory and removes
+ * A running `patcher-app start` writes this file into its data directory and removes
  * it on exit. It lets another process on the same machine identify the running
  * Patcher, describe it to a person, and stop it.
  *
@@ -12,7 +12,7 @@ import { z } from "zod";
  * simply writes nothing; readers must treat a missing file as "unknown", not as
  * "not running".
  */
-export const PATCHER_APP_RUNTIME_FILE_NAME = "bb-app-runtime.json";
+export const PATCHER_APP_RUNTIME_FILE_NAME = "patcher-app-runtime.json";
 
 export const patcherAppRuntimeFileSchema = z.object({
   /** Absolute path of the entry module. Readers verify it against `ps`. */
@@ -108,7 +108,7 @@ export async function clearPatcherAppRuntimeFile(
 /**
  * Remove the record only while it still names `pid`. A second launcher that
  * overwrote the file must not delete the live launcher's record when it exits,
- * because `bb-app stop` would then be unable to find the Patcher that is running.
+ * because `patcher-app stop` would then be unable to find the Patcher that is running.
  */
 export async function clearOwnPatcherAppRuntimeFile(args: {
   dataDir: string;

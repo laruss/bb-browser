@@ -54,7 +54,7 @@ const AUTOMATION_STATUS_FILTER_OPTIONS = [
   { id: "paused", label: "Paused" },
 ] as const;
 
-export const CREATE_AUTOMATION_PROMPT = "Create a new bb automation to ";
+export const CREATE_AUTOMATION_PROMPT = "Create a new Patcher automation to ";
 export const AUTOMATION_CREATE_TEMPLATES = [
   {
     label: "CI failure triage",
@@ -169,9 +169,7 @@ function isAutomationProjectFilter(
 function isAutomationStatusFilter(
   value: string,
 ): value is AutomationStatusFilter {
-  return AUTOMATION_STATUS_FILTER_OPTIONS.some(
-    (option) => option.id === value,
-  );
+  return AUTOMATION_STATUS_FILTER_OPTIONS.some((option) => option.id === value);
 }
 
 function applyAutomationSortDirection(

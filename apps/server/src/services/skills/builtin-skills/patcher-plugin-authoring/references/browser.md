@@ -1,4 +1,4 @@
-# patcher.browser — the BB desktop browser surface
+# patcher.browser — the Patcher desktop browser surface
 
 Hooks the browser asks a plugin about (omnibox, context menu, find bar, HTTP
 auth, PDF text, downloads, history) and the API that drives tabs and pages.
@@ -215,7 +215,7 @@ for this site, and whether recording is off for it.
 The address row is where the browser keeps what applies to the page you are
 looking at _right now_: a star that knows whether this page is saved, a reader
 mode, "open this in the other browser". Your control sits between the address bar
-and BB's own buttons.
+and Patcher's own buttons.
 
 Needs `toolbar.register` — its own permission because of `state` below: it is
 asked about every page the user opens, on navigation, without the user doing
@@ -241,7 +241,7 @@ patcher.browser.registerToolbarItem({
     const saved = await patcher.storage.kv.get(key);
     if (saved) await patcher.storage.kv.delete(key);
     else await patcher.storage.kv.set(key, { title: context.title });
-    // Nothing else to do: BB asks `state` again once this resolves.
+    // Nothing else to do: Patcher asks `state` again once this resolves.
   },
 });
 ```
@@ -265,7 +265,7 @@ are trimmed to 60 characters.
 
 ## patcher.browser — a section on the new-tab screen
 
-A new tab is the one moment the browser has nothing to show. BB fills it with
+A new tab is the one moment the browser has nothing to show. Patcher fills it with
 recently visited pages; a widget adds a section under that — saved pages, a
 reading list, the tabs you closed yesterday.
 
@@ -297,7 +297,7 @@ of saved pages behaves like part of the browser. `http` and `https` only — a
 
 Asked each time a new-tab screen appears, concurrently with every other widget,
 time-boxed to 2s and failure-isolated: one that throws or hangs is left out and
-BB's own recents still render. At most 12 rows; titles and subtitles are trimmed to
+Patcher's own recents still render. At most 12 rows; titles and subtitles are trimmed to
 200 characters.
 
 The screen is the same one the thread panel's browser shows, so a widget appears in
@@ -461,7 +461,7 @@ and the bar does not wait on it — report through your own surfaces.
 
 ## patcher.browser — answering a site's login prompt
 
-When a browsed page hits HTTP authentication, BB asks every registered provider
+When a browsed page hits HTTP authentication, Patcher asks every registered provider
 before it asks the user. This is where a password manager plugs in.
 
 ```ts
@@ -483,7 +483,7 @@ is not a credential a plugin can look up.
 
 ## patcher.browser — reading a PDF the browser cannot
 
-BB reads a PDF tab as text by refetching the document through the browsing
+Patcher reads a PDF tab as text by refetching the document through the browsing
 session and parsing it. A scan has nothing to parse — its pages are images —
 and that is the one case a provider is asked about.
 
@@ -500,7 +500,7 @@ patcher.browser.registerPdfTextProvider(async (document) => {
 });
 ```
 
-Providers are **only** asked for a document BB has already parsed and found no
+Providers are **only** asked for a document Patcher has already parsed and found no
 text in, so this is not a way to intercept ordinary reads — a PDF with a text
 layer never reaches one. They are asked in plugin id order, the first non-empty
 answer wins, and declining, throwing, answering with the wrong shape and running
@@ -513,7 +513,7 @@ up on screen while it runs.
 
 ## patcher.browser — taking over downloads
 
-BB writes a browser download to the user's downloads folder, then hands it to
+Patcher writes a browser download to the user's downloads folder, then hands it to
 every registered handler. This is where a plugin re-homes, renames, consumes or
 deletes downloads.
 
@@ -522,7 +522,7 @@ import { rename } from "node:fs/promises";
 
 patcher.browser.registerDownloadHandler(async (download) => {
   // state: "completed" | "cancelled" | "interrupted" | "refused".
-  // Only "completed" has a file behind it; "refused" is BB's own rate limit
+  // Only "completed" has a file behind it; "refused" is Patcher's own rate limit
   // and never wrote anything, so its savePath is null.
   if (download.state !== "completed" || download.savePath === null) return;
   if (download.mimeType !== "application/pdf") return;
@@ -540,7 +540,7 @@ for the browser.
 
 ## patcher.browser — routing a link the system opened
 
-While BB is the user's default browser, macOS hands it every web link clicked in
+While Patcher is the user's default browser, macOS hands it every web link clicked in
 another app — Mail, Slack, a terminal. Each one is offered to the registered
 handlers before it becomes a tab, which is where a plugin decides _where_ it
 goes.
@@ -565,7 +565,7 @@ patcher.browser.registerExternalLinkHandler((link) => {
 Handlers are asked in plugin id order and the **first decision wins**: two
 handlers rewriting one click would fight over it. Declining, throwing, answering
 with the wrong shape and running past the **2s** box all mean the same thing —
-ask the next one, and open the link in a tab exactly as BB would with no plugins
+ask the next one, and open the link in a tab exactly as Patcher would with no plugins
 at all. The box is the tightest of the browser hooks after the history filter,
 because the user is waiting for the link they just clicked.
 
@@ -574,7 +574,7 @@ would be a reader for the local disk. `handled: true` opens nothing, and holds
 even if the address alongside it was refused.
 
 Costs `externalLink.handle`, which is a standing read of every address the user
-opens from outside BB — declare it knowing that is what the manifest says.
+opens from outside Patcher — declare it knowing that is what the manifest says.
 
 ## patcher.browser — deciding what the browser remembers
 
@@ -605,7 +605,7 @@ it happens.
 
 ## patcher.browser — driving the browser surface
 
-Tabs, pages and navigation of the BB desktop app's browser. Needs a connected
+Tabs, pages and navigation of the Patcher desktop app's browser. Needs a connected
 browser window, so call these from handlers, tools and services — never at load
 time, where nothing is connected yet.
 
@@ -760,8 +760,8 @@ Two more rules worth building around:
   `videoStart`/`videoStop` film one tab through the browser's screencast, which
   only paints while that tab is visible, and hand back JPEG frames with their
   timings rather than a playable file: Patcher bundles no video encoder, so making a
-  video out of them is `ffmpeg`'s job — `bb browser video-stop <dir> --encode`
-  runs the system's, and `bb browser install-ffmpeg` installs one. Both are capped and both report what they
+  video out of them is `ffmpeg`'s job — `patcher browser video-stop <dir> --encode`
+  runs the system's, and `patcher browser install-ffmpeg` installs one. Both are capped and both report what they
   dropped — read `droppedSteps`/`droppedFrames` before telling anyone a session
   was quiet.
 
@@ -780,5 +780,5 @@ Rows land in the same ranked list as the browser's address, search, open-tab
 and history rows. Score 1 belongs to the browser's default action — what Enter
 does with nothing selected — and plugin rows lose score ties to the built-in
 providers, so a plugin can never take the top row away from what the user
-typed. Handlers run server-side; changing them and running `bb plugin reload`
+typed. Handlers run server-side; changing them and running `patcher plugin reload`
 updates the omnibox with no browser-core change.

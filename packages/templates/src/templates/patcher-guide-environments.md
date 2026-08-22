@@ -10,7 +10,7 @@ Environment commands
 Environments determine where threads run. Multiple threads can share an environment
 (e.g., a coding thread and a review thread in the same worktree).
 
-Making your repo work with bb:
+Making your repo work with patcher:
 
   Commit a .patcher-env-setup.sh script at the repo root when new Patcher worktrees need
   repo-specific setup. After Patcher creates a new managed worktree environment, it
@@ -21,7 +21,7 @@ Making your repo work with bb:
   files, so an untracked .patcher-env-setup.sh in your source checkout will not be
   present and will not run.
 
-  BB runs the hook as `env bash .patcher-env-setup.sh` with cwd set to the new
+  Patcher runs the hook as `env bash .patcher-env-setup.sh` with cwd set to the new
   workspace. POSIX shell setup scripts are not supported on Windows. The hook
   inherits the host daemon's sanitized environment: NODE_ENV and every PATCHER_*
   variable are removed, and Patcher does not inject PATCHER_PROJECT_ID, PATCHER_ENVIRONMENT_ID,
@@ -58,59 +58,59 @@ Making your repo work with bb:
   dependencies in .patcher-env-setup.sh instead of listing them here.
 
   For files that customize agent instructions and skills (AGENTS.md,
-  .patcher/AGENTS.md, .patcher/skills/), run `bb guide agent-configuration`.
+  .patcher/AGENTS.md, .patcher/skills/), run `patcher guide agent-configuration`.
 
-  bb environment show <id>                Show environment details (path, branch, status)
+  patcher environment show <id>                Show environment details (path, branch, status)
 
-  bb environment status <id>              Show workspace status
+  patcher environment status <id>              Show workspace status
     --merge-base-branch <branch>          Include merge-base status
 
-  bb environment branches <id>            List local and remote branches
+  patcher environment branches <id>            List local and remote branches
     --query <query>                       Filter branch names
     --limit <count>                       Limit local and remote results
 
-  bb environment paths <id>               Search workspace paths
+  patcher environment paths <id>               Search workspace paths
     --query <query>                       Fuzzy path query
     --limit <count>                       Maximum results
     --files                               Include only files unless combined with --directories
     --directories                         Include only directories unless combined with --files
 
-  bb environment diff <id>                Show file summary and full git diff
-  bb environment diff-files <id>          List changed-file metadata
+  patcher environment diff <id>                Show file summary and full git diff
+  patcher environment diff-files <id>          List changed-file metadata
     --target <target>                     uncommitted, branch_committed, all, or commit (required)
     --merge-base-branch <branch>          Required for branch_committed and all
     --sha <sha>                           Required for commit
 
-  bb environment diff-file <id>           Read one side of a changed file
+  patcher environment diff-file <id>           Read one side of a changed file
     --target <target>                     Diff target (required)
     --path <path>                         Repository-relative path (required)
     --side <old|new>                      File side (required)
     --merge-base-ref <sha>                Required for branch_committed and all
     --sha <sha>                           Required for commit
 
-  bb environment diff-patch <id>          Fetch selected file patches
+  patcher environment diff-patch <id>          Fetch selected file patches
     --target <target>                     Diff target (required)
     --path <path>                         Changed path; repeat for multiple files (required)
     --merge-base-branch <branch>          Required for branch_committed and all
     --sha <sha>                           Required for commit
 
-  bb environment update <id>              Update environment metadata
+  patcher environment update <id>              Update environment metadata
     --merge-base-branch <branch>          Set merge-base branch override
     --clear-merge-base-branch             Clear merge-base override
     --name <name>                         Set display name
     --clear-name                          Clear display name
 
-  bb environment commit <id>              Create a commit in the environment
+  patcher environment commit <id>              Create a commit in the environment
 
-  bb environment squash-merge <id>        Squash-merge into a target branch
+  patcher environment squash-merge <id>        Squash-merge into a target branch
     --merge-base-branch <branch>          Target branch (required)
 
-  bb environment archive-threads <id>     Archive all threads in an environment
+  patcher environment archive-threads <id>     Archive all threads in an environment
 
-  bb environment pull-request show <id>   Inspect a pull request
-  bb environment pull-request ready <id>  Mark a pull request ready
-  bb environment pull-request draft <id>  Convert a pull request to draft
-  bb environment pull-request merge <id>  Merge a pull request
+  patcher environment pull-request show <id>   Inspect a pull request
+  patcher environment pull-request ready <id>  Mark a pull request ready
+  patcher environment pull-request draft <id>  Convert a pull request to draft
+  patcher environment pull-request merge <id>  Merge a pull request
     --method <method>                     merge, squash, or rebase
 
 Every inspection command accepts an arbitrary environment ID and supports

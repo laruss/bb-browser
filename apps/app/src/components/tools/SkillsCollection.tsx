@@ -56,7 +56,8 @@ const RESOURCE_PROVIDER_FILTERS: readonly ResourceProviderFilter[] = (
   Object.keys(RESOURCE_PROVIDER_FILTER_ORDER) as ResourceProviderFilter[]
 ).sort(
   (left, right) =>
-    RESOURCE_PROVIDER_FILTER_ORDER[left] - RESOURCE_PROVIDER_FILTER_ORDER[right],
+    RESOURCE_PROVIDER_FILTER_ORDER[left] -
+    RESOURCE_PROVIDER_FILTER_ORDER[right],
 );
 
 const RESOURCE_SKILL_SOURCE_FILTERS: readonly ResourceSkillSourceFilter[] = [
@@ -90,7 +91,7 @@ function skillSourceFilterId(skill: SkillSummary): ResourceSkillSourceFilter {
 function skillSourceFilterLabel(source: ResourceSkillSourceFilter): string {
   switch (source) {
     case "patcher-official":
-      return "BB Official";
+      return "Patcher Official";
     case "included":
       return "Included in plugin";
     case "user":
@@ -101,7 +102,9 @@ function skillSourceFilterLabel(source: ResourceSkillSourceFilter): string {
 function isResourceSkillSourceFilter(
   value: string,
 ): value is ResourceSkillSourceFilter {
-  return value === "included" || value === "patcher-official" || value === "user";
+  return (
+    value === "included" || value === "patcher-official" || value === "user"
+  );
 }
 
 // The filter menu hands back plain strings, so both selections are narrowed on
@@ -218,7 +221,7 @@ function SkillRow({
       title={skill.name}
       titleMeta={
         skill.scope === "patcher-builtin" ? (
-          <ProvenancePill label="BB Official" />
+          <ProvenancePill label="Patcher Official" />
         ) : skill.scope === "plugin" ? (
           <ProvenancePill
             label="Included"
@@ -456,7 +459,7 @@ export function SkillsOverview({
       actions={
         <CreateWithTemplatesButton
           kind="skill"
-          label="New bb skill"
+          label="New patcher skill"
           onCreate={onCreateSkill}
         />
       }
@@ -636,9 +639,9 @@ export function SkillDetailDialogView({
       titleBadge={
         skill.scope === "patcher-builtin"
           ? {
-              label: "BB Official",
+              label: "Patcher Official",
               tooltip: "Ships with Patcher",
-              accessibleLabel: `${skill.name} is BB Official`,
+              accessibleLabel: `${skill.name} is Patcher Official`,
             }
           : bundledPluginName !== null
             ? {

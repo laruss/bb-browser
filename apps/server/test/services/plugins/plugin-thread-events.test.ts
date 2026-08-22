@@ -462,7 +462,7 @@ describe("plugin thread lifecycle events", () => {
         expect(entry?.statusDetail).toContain("thread.idle handler failed");
       });
 
-      // The stats travel through GET /api/v1/plugins for bb plugin list.
+      // The stats travel through GET /api/v1/plugins for patcher plugin list.
       const response = await harness.app.request("/api/v1/plugins");
       expect(response.status).toBe(200);
       const body = (await response.json()) as {

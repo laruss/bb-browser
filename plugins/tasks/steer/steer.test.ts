@@ -101,7 +101,7 @@ describe("comment notification delivery", () => {
               type: "text",
               text:
                 "New comment on task PLUG-1 from Sawyer: Please include the regression test.\n\n" +
-                "Treat this as updated context for your work on this task; reply via bb tasks comment PLUG-1 when relevant.",
+                "Treat this as updated context for your work on this task; reply via patcher tasks comment PLUG-1 when relevant.",
               mentions: [],
             },
           ],

@@ -1,7 +1,7 @@
 // patcher-plugin-agent-enrichment — the "agent enrichment" hero plugin.
 //
 // A headless plugin whose entire surface is agent-facing:
-// - patcher.cli.register: a `bb docs` command that both humans and agents (via
+// - patcher.cli.register: a `patcher docs` command that both humans and agents (via
 //   bash) use to search the bundled docs/ folder
 // - patcher.agents.registerTool: `docs_search`, the same search as a native
 //   dynamic tool with zod-validated parameters (schema'd, permission-visible
@@ -11,13 +11,13 @@
 // - patcher.ui.registerMentionProvider: `@`-mention the bundled docs from the
 //   composer; the picked doc's body is resolved at send time and attached
 //   as agent-only context
-// - patcher.settings.define: a boolean rendered in BB's settings UI
+// - patcher.settings.define: a boolean rendered in Patcher's settings UI
 // - patcher.storage.kv: caches the last search (CLI and tool share it)
 // - skills/repo-conventions: a conventional skills/ directory, auto-imported
 //   into every thread's skills through the plugin skills tier
 //
-// The `zod` import resolves from BB's own dependencies when this plugin is
-// loaded by a BB server running from a source checkout; if you copy this
+// The `zod` import resolves from Patcher's own dependencies when this plugin is
+// loaded by a Patcher server running from a source checkout; if you copy this
 // plugin elsewhere, run `npm install` in the plugin directory first.
 import { readdir, readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
@@ -29,8 +29,8 @@ const docsDir = join(dirname(fileURLToPath(import.meta.url)), "docs");
 
 const USAGE = [
   "Usage:",
-  "  bb docs search <query...>   Search the bundled docs and print matching lines",
-  "  bb docs last                Show the cached last search",
+  "  patcher docs search <query...>   Search the bundled docs and print matching lines",
+  "  patcher docs last                Show the cached last search",
 ].join("\n");
 
 const DOC_FILE_PATTERN = /^[a-z0-9-]+\.md$/;
@@ -52,7 +52,7 @@ export default async function plugin(patcher: PatcherPluginApi) {
     },
   });
 
-  // The one search implementation behind every surface: the `bb docs` CLI
+  // The one search implementation behind every surface: the `patcher docs` CLI
   // command and the `docs_search` native tool share it (and the last-search
   // kv cache with it).
   async function search(query: string): Promise<string[]> {
@@ -103,12 +103,12 @@ export default async function plugin(patcher: PatcherPluginApi) {
       {
         name: "search",
         summary: "Search the docs and print matching lines",
-        usage: "bb docs search <query...>",
+        usage: "patcher docs search <query...>",
       },
       {
         name: "last",
         summary: "Show the cached last search",
-        usage: "bb docs last",
+        usage: "patcher docs last",
       },
     ],
     async run(argv) {

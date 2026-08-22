@@ -28,7 +28,7 @@ export interface BuiltInThemeMeta {
 }
 
 /**
- * Built-in palette metadata, shared by the CLI (`bb theme list`) and the
+ * Built-in palette metadata, shared by the CLI (`patcher theme list`) and the
  * Settings picker. The actual CSS strings live in the frontend registry; this
  * is just the id/name/description list the server validates against.
  */
@@ -111,7 +111,9 @@ export const faviconColorPreferenceSchema = z.enum([
   "default",
   ...FAVICON_COLORS,
 ]);
-export type FaviconColorPreference = z.infer<typeof faviconColorPreferenceSchema>;
+export type FaviconColorPreference = z.infer<
+  typeof faviconColorPreferenceSchema
+>;
 
 export const defaultFaviconColor: FaviconColorPreference = "default";
 

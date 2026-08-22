@@ -33,7 +33,7 @@ export interface SdkSessionOptions {
   pathToClaudeCodeExecutable?: Options["pathToClaudeCodeExecutable"];
   plugins?: Options["plugins"];
   thinking?: Options["thinking"];
-  /** Flag-tier settings (highest user-controlled tier); BB owns this layer. */
+  /** Flag-tier settings (highest user-controlled tier); Patcher owns this layer. */
   settings?: Options["settings"];
 }
 

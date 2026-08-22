@@ -3,7 +3,7 @@
   "name": "skeleton",
   "type": "registry:ui",
   "title": "skeleton",
-  "description": "BB ui \"skeleton\" — vendored from the BB app's own source (version-matched to this BB release).",
+  "description": "Patcher ui \"skeleton\" — vendored from the Patcher app's own source (version-matched to this Patcher release).",
   "registryDependencies": [
     "@patcher/utils"
   ],

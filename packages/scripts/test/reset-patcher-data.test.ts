@@ -40,7 +40,7 @@ describe("reset-patcher-data", () => {
 
   it("ignores PATCHER_DATA_DIR for the development target", () => {
     vi.stubEnv("NODE_ENV", "development");
-    vi.stubEnv("PATCHER_DATA_DIR", "~/custom-bb");
+    vi.stubEnv("PATCHER_DATA_DIR", "~/custom-patcher");
 
     expect(resolveResetTargets(new Set())).toEqual([
       expectedDevDataDir({
@@ -67,10 +67,10 @@ describe("reset-patcher-data", () => {
 
   it("lets PATCHER_DATA_DIR override the production target for --all", () => {
     vi.stubEnv("NODE_ENV", "production");
-    vi.stubEnv("PATCHER_DATA_DIR", "~/custom-bb");
+    vi.stubEnv("PATCHER_DATA_DIR", "~/custom-patcher");
 
     expect(resolveResetTargets(new Set(["--all"]))).toEqual([
-      join(os.homedir(), "custom-bb"),
+      join(os.homedir(), "custom-patcher"),
       expectedDevDataDir({
         homeDir: os.homedir(),
         repoRoot,
@@ -80,10 +80,10 @@ describe("reset-patcher-data", () => {
 
   it("lets PATCHER_DATA_DIR override the single reset target", () => {
     vi.stubEnv("NODE_ENV", "production");
-    vi.stubEnv("PATCHER_DATA_DIR", "~/custom-bb");
+    vi.stubEnv("PATCHER_DATA_DIR", "~/custom-patcher");
 
     expect(resolveResetTargets(new Set())).toEqual([
-      join(os.homedir(), "custom-bb"),
+      join(os.homedir(), "custom-patcher"),
     ]);
   });
 

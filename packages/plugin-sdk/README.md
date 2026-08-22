@@ -1,8 +1,8 @@
 # @patcher/plugin-sdk
 
-The typed facade BB plugin authors compile against. The root preserves the
+The typed facade Patcher plugin authors compile against. The root preserves the
 complete `PatcherPluginApi` and `PatcherSdk` contract; `./app` is the frontend runtime
-that `bb plugin build` replaces with BB's shared implementation.
+that `patcher plugin build` replaces with Patcher's shared implementation.
 
 The authoritative contracts are the exported declarations in
 [`src/backend-contract.ts`](src/backend-contract.ts) and
@@ -46,7 +46,7 @@ for a cleanup-safe editor enhancement.
 
 The packed package includes executable JavaScript and portable declarations
 for `@patcher/plugin-sdk/testing` and `@patcher/plugin-sdk/testing/app`; neither subpath
-imports BB workspace packages or source TypeScript at runtime. Install the SDK
+imports Patcher workspace packages or source TypeScript at runtime. Install the SDK
 with the test stack used by your plugin (the peer dependencies are optional so
 headless plugins do not install a browser harness):
 
@@ -116,7 +116,7 @@ import is unavoidable.
 The backend fake matches observable schema-RPC validation/errors and strict
 JSON results, additive events, keyed-registration failures, atomic reload,
 settings, KV/database storage, conditional agent configuration, request input,
-and disposal order. HTTP runs through Hono but does not enforce BB's local or
+and disposal order. HTTP runs through Hono but does not enforce Patcher's local or
 token authentication. Background services and schedules run only when driven;
 there are no restart timers or cron sweeps. Storage is process-local in a
 temporary directory, secrets are kept in memory, `patcher.sdk` is always bound and
@@ -126,13 +126,13 @@ fake host.
 The frontend harness matches registration validation, content-script mount and
 cleanup ordering, RPC/realtime JSON
 boundaries, panel and slot props, navigation recording, and composer text,
-scope, quote, mention, focus, and clear behavior. It does not reproduce BB
+scope, quote, mention, focus, and clear behavior. It does not reproduce Patcher
 layout, CSS, persistence, routing, host authentication, crash boundaries, or
-multi-plugin arbitration; use a live BB test for those boundaries.
+multi-plugin arbitration; use a live Patcher test for those boundaries.
 
 ## Declaration surface
 
-The complete root declaration flattens the unpublished BB workspace contracts.
+The complete root declaration flattens the unpublished Patcher workspace contracts.
 The testing declarations reuse that public `@patcher/plugin-sdk` root instead of
 embedding a second copy, and no declaration depends on unpublished `@patcher/*`
 packages. Genuine npm types (`hono`, `better-sqlite3`, `zod`, React, and Testing

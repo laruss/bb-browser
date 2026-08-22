@@ -25,9 +25,10 @@ import {
  * devDependencies, so tests never download one.
  */
 function testToolchain() {
-  return resolvePluginBuildToolchain(join(tmpdir(), "patcher-toolchain-unused"));
+  return resolvePluginBuildToolchain(
+    join(tmpdir(), "patcher-toolchain-unused"),
+  );
 }
-
 
 const TEST_PATCHER_VERSION = "0.9.0-test";
 
@@ -111,7 +112,11 @@ describe("buildPluginApp", () => {
 
   it("builds an ESM bundle with runtime shims, plugin-scoped CSS, and the SDK meta sidecar", async () => {
     await writeFixture();
-    const result = await buildPluginApp(root, TEST_PATCHER_VERSION, await testToolchain());
+    const result = await buildPluginApp(
+      root,
+      TEST_PATCHER_VERSION,
+      await testToolchain(),
+    );
 
     const js = await readFile(result.jsPath, "utf8");
     // ESM output.
@@ -182,7 +187,11 @@ describe("buildPluginApp", () => {
       `import "./app.css";\n${FIXTURE_APP_TSX}`,
     );
 
-    const { cssPath } = await buildPluginApp(root, TEST_PATCHER_VERSION, await testToolchain());
+    const { cssPath } = await buildPluginApp(
+      root,
+      TEST_PATCHER_VERSION,
+      await testToolchain(),
+    );
     const css = await readFile(cssPath, "utf8");
 
     expect(css).toContain(".fixture-highlight");
@@ -191,16 +200,22 @@ describe("buildPluginApp", () => {
     expect(css.match(/@scope/g)).toHaveLength(1);
   });
 
-  it("throws at import time without the BB runtime and loads once slots are set", async () => {
+  it("throws at import time without the Patcher runtime and loads once slots are set", async () => {
     await writeFixture();
-    const { jsPath } = await buildPluginApp(root, TEST_PATCHER_VERSION, await testToolchain());
+    const { jsPath } = await buildPluginApp(
+      root,
+      TEST_PATCHER_VERSION,
+      await testToolchain(),
+    );
     const url = pathToFileURL(jsPath).href;
 
     await expect(import(/* @vite-ignore */ url)).rejects.toThrow(
-      /must be loaded by the BB app/,
+      /must be loaded by the Patcher app/,
     );
 
-    (globalThis as { __patcherPluginRuntime?: unknown }).__patcherPluginRuntime = {
+    (
+      globalThis as { __patcherPluginRuntime?: unknown }
+    ).__patcherPluginRuntime = {
       react: { useState: () => [0, () => {}] },
       reactDomClient: { createRoot: () => ({}) },
       jsxRuntime: { jsx: () => ({}), jsxs: () => ({}), Fragment: {} },
@@ -211,7 +226,8 @@ describe("buildPluginApp", () => {
       const mod = await import(/* @vite-ignore */ `${url}?with-runtime`);
       expect(mod.default).toBeDefined();
     } finally {
-      delete (globalThis as { __patcherPluginRuntime?: unknown }).__patcherPluginRuntime;
+      delete (globalThis as { __patcherPluginRuntime?: unknown })
+        .__patcherPluginRuntime;
     }
   });
 
@@ -229,7 +245,11 @@ describe("buildPluginApp", () => {
         `export default () => [Dialog, AlertDialog, toast, Drawer, parsePatchFiles, FileDiff];`,
       ].join("\n"),
     );
-    const { jsPath } = await buildPluginApp(root, TEST_PATCHER_VERSION, await testToolchain());
+    const { jsPath } = await buildPluginApp(
+      root,
+      TEST_PATCHER_VERSION,
+      await testToolchain(),
+    );
     const js = await readFile(jsPath, "utf8");
     for (const slot of [
       "radixDialog",
@@ -255,7 +275,11 @@ describe("buildPluginApp", () => {
       `import { jsxDEV } from "react/jsx-dev-runtime";\n` +
         `export default () => jsxDEV("div", { children: "x" }, undefined, false, undefined, undefined);\n`,
     );
-    const { jsPath } = await buildPluginApp(root, TEST_PATCHER_VERSION, await testToolchain());
+    const { jsPath } = await buildPluginApp(
+      root,
+      TEST_PATCHER_VERSION,
+      await testToolchain(),
+    );
     const js = await readFile(jsPath, "utf8");
     expect(js).toContain(".jsxDevRuntime");
     expect(js).not.toMatch(/from\s*["']react/);
@@ -263,7 +287,11 @@ describe("buildPluginApp", () => {
 
   it("keeps the previous dist artifacts intact when a rebuild fails after esbuild", async () => {
     await writeFixture();
-    const first = await buildPluginApp(root, TEST_PATCHER_VERSION, await testToolchain());
+    const first = await buildPluginApp(
+      root,
+      TEST_PATCHER_VERSION,
+      await testToolchain(),
+    );
     const originalJs = await readFile(first.jsPath, "utf8");
     const originalCss = await readFile(first.cssPath, "utf8");
     const originalMeta = await readFile(first.metaPath, "utf8");
@@ -308,16 +336,16 @@ describe("buildPluginApp", () => {
         },
       }),
     );
-    await expect(buildPluginApp(root, TEST_PATCHER_VERSION, await testToolchain())).rejects.toThrow(
-      /no frontend entry/,
-    );
+    await expect(
+      buildPluginApp(root, TEST_PATCHER_VERSION, await testToolchain()),
+    ).rejects.toThrow(/no frontend entry/);
   });
 
   it("errors when patcher.app points at a missing file", async () => {
     await writeFile(join(root, "package.json"), FIXTURE_PACKAGE_JSON);
-    await expect(buildPluginApp(root, TEST_PATCHER_VERSION, await testToolchain())).rejects.toThrow(
-      /missing file/,
-    );
+    await expect(
+      buildPluginApp(root, TEST_PATCHER_VERSION, await testToolchain()),
+    ).rejects.toThrow(/missing file/);
   });
 
   it("validates a path-shaped branding.icon before building", async () => {
@@ -331,17 +359,21 @@ describe("buildPluginApp", () => {
       JSON.stringify(packageJson, null, 2),
     );
 
-    await expect(buildPluginApp(root, TEST_PATCHER_VERSION, await testToolchain())).rejects.toThrow(
-      /patcher\.branding\.icon points at a missing file/,
-    );
+    await expect(
+      buildPluginApp(root, TEST_PATCHER_VERSION, await testToolchain()),
+    ).rejects.toThrow(/patcher\.branding\.icon points at a missing file/);
 
     await mkdir(join(root, "assets"));
     await writeFile(join(root, "assets", "icon.svg"), "<svg/>");
-    const result = await buildPluginApp(root, TEST_PATCHER_VERSION, await testToolchain());
+    const result = await buildPluginApp(
+      root,
+      TEST_PATCHER_VERSION,
+      await testToolchain(),
+    );
     expect(result.jsPath).toBe(join(root, "dist", "app.js"));
   });
 
-  it("builds the `bb plugin new --app` scaffold end to end", async () => {
+  it("builds the `patcher plugin new --app` scaffold end to end", async () => {
     const targetDir = join(root, "patcher-plugin-scaffolded");
     await scaffoldPlugin({
       targetDir,
@@ -349,7 +381,7 @@ describe("buildPluginApp", () => {
       patcherVersion: "0.9.0",
       app: true,
     });
-    // The vendored starter components bundle real npm deps (`bb plugin new`
+    // The vendored starter components bundle real npm deps (`patcher plugin new`
     // runs npm install for authors); the offline test links them from the
     // repo's own install instead.
     await linkScaffoldDeps(targetDir, [
@@ -360,15 +392,21 @@ describe("buildPluginApp", () => {
       "@hugeicons/react",
       "@hugeicons/core-free-icons",
     ]);
-    const result = await buildPluginApp(targetDir, TEST_PATCHER_VERSION, await testToolchain());
+    const result = await buildPluginApp(
+      targetDir,
+      TEST_PATCHER_VERSION,
+      await testToolchain(),
+    );
     const js = await readFile(result.jsPath, "utf8");
     expect(js).toContain("globalThis.__patcherPluginRuntime");
     const css = await readFile(result.cssPath, "utf8");
     expect(css).toContain(".rounded-md");
 
     // The scaffold's default export must be a definePluginApp product the
-    // host interpreter accepts (a stub runtime stands in for the BB app).
-    (globalThis as { __patcherPluginRuntime?: unknown }).__patcherPluginRuntime = {
+    // host interpreter accepts (a stub runtime stands in for the Patcher app).
+    (
+      globalThis as { __patcherPluginRuntime?: unknown }
+    ).__patcherPluginRuntime = {
       // The vendored starter components bundle radix Slot, which calls
       // forwardRef at module scope — the stub must provide it.
       react: { forwardRef: (render: unknown) => render },
@@ -388,7 +426,8 @@ describe("buildPluginApp", () => {
       expect(mod.default?.__patcherPluginApp).toBe(true);
       expect(typeof mod.default?.setup).toBe("function");
     } finally {
-      delete (globalThis as { __patcherPluginRuntime?: unknown }).__patcherPluginRuntime;
+      delete (globalThis as { __patcherPluginRuntime?: unknown })
+        .__patcherPluginRuntime;
     }
   });
 });

@@ -2,7 +2,7 @@
 
 ## 1. Project Overview
 
-This project is an **agent-first, Chromium-based desktop browser** built from a fork of `get-bb/bb`.
+This project is an **agent-first, Chromium-based desktop browser** built from a fork of `laruss/patcher-browser`.
 
 The main idea is not simply to add an AI sidebar to an existing browser.
 
@@ -32,7 +32,7 @@ The long-term product concept is:
 
 The initial implementation should be created as a fork of:
 
-`get-bb/bb`
+`laruss/patcher-browser`
 
 Patcher already provides several pieces of infrastructure that are useful for this project:
 
@@ -345,7 +345,7 @@ export default definePlugin({
 
   activate(browser) {
     // register browser functionality
-  }
+  },
 });
 ```
 
@@ -405,11 +405,11 @@ browser.omnibox.registerProvider({
 
         action: {
           agent: "claude",
-          prompt: query
-        }
-      }
+          prompt: query,
+        },
+      },
     ];
-  }
+  },
 });
 ```
 
@@ -420,7 +420,7 @@ browser.sidebar.registerPanel({
   id: "research",
   title: "Research",
   icon: "search",
-  component: ResearchPanel
+  component: ResearchPanel,
 });
 ```
 
@@ -431,7 +431,7 @@ browser.contextMenu.registerItem({
   id: "explain-selection",
 
   when: {
-    selection: true
+    selection: true,
   },
 
   title: "Explain with Claude",
@@ -439,9 +439,9 @@ browser.contextMenu.registerItem({
   async execute(context) {
     await browser.agent.run({
       agent: "claude",
-      prompt: `Explain this text:\n\n${context.selection}`
+      prompt: `Explain this text:\n\n${context.selection}`,
     });
-  }
+  },
 });
 ```
 
@@ -491,12 +491,7 @@ Example:
 
 ```json
 {
-  "permissions": [
-    "tabs.read",
-    "tabs.modify",
-    "page.read",
-    "omnibox.register"
-  ]
+  "permissions": ["tabs.read", "tabs.modify", "page.read", "omnibox.register"]
 }
 ```
 
@@ -1147,8 +1142,8 @@ userscript to do.
 > result in a **browser-native** panel rather than injected DOM.
 
 **A note on Phase 8's "page scripts".** That line was read as satisfied by the
-frontend `app.contentScripts` surface, which is trusted code in *Patcher's own* page.
-Running a plugin's code in a *browsed* page is a different thing entirely and was
+frontend `app.contentScripts` surface, which is trusted code in _Patcher's own_ page.
+Running a plugin's code in a _browsed_ page is a different thing entirely and was
 never built. This phase is where it belongs.
 
 ### Stage A — CSS, and a permission that names sites (done)
@@ -1159,8 +1154,8 @@ panel appears only while the active tab is on a matching site.
 
 Taken first because it closes the largest share of the ask — "remove or alter
 parts of a site" is usually one CSS rule — while running no plugin code in the
-page and reading nothing back, which reduces the consent question to *which
-sites*. That made it the right place to introduce the repository's first
+page and reading nothing back, which reduces the consent question to _which
+sites_. That made it the right place to introduce the repository's first
 host-scoped permission on the safest possible capability.
 
 Deliverable: `examples/plugins/site-tweaks`, with no change to the browser core.
@@ -1472,4 +1467,3 @@ The core product differentiator is not simply having AI inside a browser.
 It is:
 
 > **A programmable browser where coding agents can create new browser capabilities on demand.**
-

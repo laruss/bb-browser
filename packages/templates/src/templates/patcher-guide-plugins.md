@@ -3,17 +3,17 @@ kind: instruction
 title: Patcher Guide — Plugins
 summary: Command reference for installing, configuring, running, and authoring Patcher plugins and their contributed CLI commands.
 intent: Provide complete plugin command documentation plus an authoring walkthrough for agents and humans building Patcher plugins.
-editingNotes: Keep flags accurate against the CLI implementation (apps/cli/src/commands/plugin.ts) and the server plugin service; a CLI test asserts every `bb plugin` subcommand appears in this chapter. The full authoring reference is the patcher-plugin-authoring builtin skill.
+editingNotes: Keep flags accurate against the CLI implementation (apps/cli/src/commands/plugin.ts) and the server plugin service; a CLI test asserts every `patcher plugin` subcommand appears in this chapter. The full authoring reference is the patcher-plugin-authoring builtin skill.
 ---
 Plugin commands
 
 A Patcher plugin is a TypeScript package that extends the Patcher server in-process:
 background services, cron schedules, HTTP/RPC endpoints, thread lifecycle
-handlers, settings, storage — and `bb` CLI subcommands that agents and humans
+handlers, settings, storage — and `patcher` CLI subcommands that agents and humans
 run like any other command. Plugins are full-trust code inside the server.
 
 Plugins are on by default. Builtin plugins (`builtin:<name>`) ship with Patcher;
-user-installed plugins come from `bb plugin install` or the official store.
+user-installed plugins come from `patcher plugin install` or the official store.
 Plugin state lives under `<patcher-data-dir>/plugins/<id>/` (per-plugin SQLite file,
 secrets, logs).
 
@@ -23,34 +23,34 @@ agent task instructions; blank text contributes nothing.
 
 The opt-in builtin Provider retry plugin continues Codex and Claude Code
 turns after a structured subscription window resets. Enable it under
-Extensions → Plugins or run `bb plugin enable provider-retry`. It keeps its
+Extensions → Plugins or run `patcher plugin enable provider-retry`. It keeps its
 timers in memory, coordinates waits by machine/provider subscription, and adds
 a composer banner with a Cancel action while an automatic retry is pending.
 The banner disappears when the retry starts, is cancelled, or the user
 continues the thread. A server restart or plugin reload clears pending timers
 without changing the original failed thread. Inspect it with
-`bb provider-retry status`. See `bb guide providers` for the eligibility rules.
+`patcher provider-retry status`. See `patcher guide providers` for the eligibility rules.
 Prior output or tool activity does not block recovery. Its `maximumWait`
 setting defaults to `6 hours`; choose `24 hours` or `No limit` from the plugin
 detail page, or configure it with
-`bb plugin config provider-retry set maximumWait <value>`.
+`patcher plugin config provider-retry set maximumWait <value>`.
 
 The builtin Workflows plugin runs durable provider-independent JavaScript
 orchestration. It is disabled on fresh installations; enable `workflows` under
-Extensions → Plugins or run `bb plugin enable workflows` before using:
+Extensions → Plugins or run `patcher plugin enable workflows` before using:
 
-  bb workflows validate (--script '<javascript>'|--source '<javascript>'|
+  patcher workflows validate (--script '<javascript>'|--source '<javascript>'|
                         --file <path>|--name <name>)
-  bb workflows run (--script '<javascript>'|--source '<javascript>'|
+  patcher workflows run (--script '<javascript>'|--source '<javascript>'|
                    --file <path>|--name <name>)
                    [--args '<json>'] [--resume <run-id>]
-  bb workflows status <run-id>
-  bb workflows history <run-id> [--cursor <call-index>] [--limit <1-100>]
-  bb workflows list [--limit <1-50>]
-  bb workflows stop <run-id>
+  patcher workflows status <run-id>
+  patcher workflows history <run-id> [--cursor <call-index>] [--limit <1-100>]
+  patcher workflows list [--limit <1-50>]
+  patcher workflows stop <run-id>
 
-Commands must run from a BB project thread. Workflows has six plugin
-settings, configurable with `bb plugin config workflows set <key> <value>`:
+Commands must run from a Patcher project thread. Workflows has six plugin
+settings, configurable with `patcher plugin config workflows set <key> <value>`:
 `maxActiveRuns` (default 4, range 1–32), `maxConcurrentAgents` (8, 1–64),
 `maxAgentCalls` (100, 1–1000), `totalRunTimeoutMs` (86400000, 60000–604800000),
 `retentionDays` (30, 1–3650), and `maxNotificationBytes` (16384,
@@ -62,13 +62,13 @@ summaries. Detailed run and call records are paged JSONL: redirect `history`
 into `$PATCHER_THREAD_STORAGE` before inspecting it, and continue with the final
 page record's `nextCursor`. The invoking shell writes
 that file on the thread's execution host, so this works the same on local and
-remote hosts without granting the plugin arbitrary filesystem access. Use `bb
-provider list --environment "$PATCHER_ENVIRONMENT_ID" --json` and then `bb provider
+remote hosts without granting the plugin arbitrary filesystem access. Use `patcher
+provider list --environment "$PATCHER_ENVIRONMENT_ID" --json` and then `patcher provider
 models <provider-id> --environment "$PATCHER_ENVIRONMENT_ID" --json` before writing
 an explicit selection; never guess ACP model IDs.
 
 The Memory plugin is an opt-in install, bundled with the app:
-`bb plugin install memory`. Once installed, it injects a compact global and
+`patcher plugin install memory`. Once installed, it injects a compact global and
 current-project memory index into agent context and progressively discloses
 full records through CLI-only commands. Because its store works across
 providers, we recommend disabling provider-native memory under Settings →
@@ -76,30 +76,30 @@ Providers to avoid duplicate or conflicting stores. Settings → Memory lists
 every global and project memory and supports version-checked edits and soft
 deletion.
 
-  bb memory catalog [--scope project|global|all] [--json]
-  bb memory search <query> [--scope project|global|all] [--json]
-  bb memory get <id> [--scope project|global|all] [--json]
-  bb memory add --scope project|global --name <name> --summary <text>
+  patcher memory catalog [--scope project|global|all] [--json]
+  patcher memory search <query> [--scope project|global|all] [--json]
+  patcher memory get <id> [--scope project|global|all] [--json]
+  patcher memory add --scope project|global --name <name> --summary <text>
                 --details <text> --reason <text> [--kind <kind>]
                 [--tag <tag>]... [--importance <0-100>] [--pinned] [--json]
-  bb memory update <id> --expected-version <n> [fields...] [--json]
-  bb memory forget <id> --expected-version <n> --reason <text> [--json]
-  bb memory history <id> [--scope project|global|all] [--limit 1-100] [--json]
+  patcher memory update <id> --expected-version <n> [fields...] [--json]
+  patcher memory forget <id> --expected-version <n> --reason <text> [--json]
+  patcher memory history <id> [--scope project|global|all] [--limit 1-100] [--json]
 
 Project writes use the invoking CLI's current project. Global writes require
 the explicit `--scope global` flag.
 
 The Docs plugin is an opt-in official plugin bundled with the app:
-`bb plugin install docs`. Read-only discovery remains direct, while edits use
+`patcher plugin install docs`. Read-only discovery remains direct, while edits use
 a manifest-backed local workspace:
 
-  bb docs vaults [--json]
-  bb docs list [--vault <id>] [--json]
-  bb docs read <path> [--vault <id>]
-  bb docs pull <path> [--folder] [--vault <id>] [--into <dir>]
-  bb docs pull --all [--vault <id>] [--into <dir>]
-  bb docs status [workspace-dir] [--delete] [--diff] [--json]
-  bb docs push [workspace-dir] [--delete] [--dry-run] [--diff] [--json]
+  patcher docs vaults [--json]
+  patcher docs list [--vault <id>] [--json]
+  patcher docs read <path> [--vault <id>]
+  patcher docs pull <path> [--folder] [--vault <id>] [--into <dir>]
+  patcher docs pull --all [--vault <id>] [--into <dir>]
+  patcher docs status [workspace-dir] [--delete] [--diff] [--json]
+  patcher docs push [workspace-dir] [--delete] [--dry-run] [--diff] [--json]
 
 Pull preserves vault-relative paths and writes `.patcher-docs-state.json`; edit the
 ordinary files and leave that state file untouched. Push uses pulled SHA-256
@@ -111,21 +111,21 @@ CLI's working directory is on a non-primary host. Direct `write`, `mkdir`,
 `move`, and `remove` remain only as deprecated compatibility commands.
 
 The Tasks plugin is an opt-in official plugin bundled with the app:
-`bb plugin install tasks`. It adds a task tracker, agent delegation,
-and the `bb tasks` command. Common agent operations are:
+`patcher plugin install tasks`. It adds a task tracker, agent delegation,
+and the `patcher tasks` command. Common agent operations are:
 
-  bb tasks show <key-or-id> [--json]
-  bb tasks list [--project <prefix-or-id>] [filters...] [--sort manual|priority|due] [--limit 1-500] [--cursor <opaque>] [--json]
-  bb tasks comment <key-or-id> (--body <markdown> | --body-file <path>) [--json]
-  bb tasks attachment add <key-or-comment-id> --file <path> [--json]
-  bb tasks attachment get <attachment-id> --out <path> [--json]
-  bb tasks attach <key-or-id> [--json]
-  bb tasks update <key-or-id> --status in_review [--json]
-  bb tasks update <key-or-id> (--parent <parent-key-or-id> | --no-parent) [--json]
+  patcher tasks show <key-or-id> [--json]
+  patcher tasks list [--project <prefix-or-id>] [filters...] [--sort manual|priority|due] [--limit 1-500] [--cursor <opaque>] [--json]
+  patcher tasks comment <key-or-id> (--body <markdown> | --body-file <path>) [--json]
+  patcher tasks attachment add <key-or-comment-id> --file <path> [--json]
+  patcher tasks attachment get <attachment-id> --out <path> [--json]
+  patcher tasks attach <key-or-id> [--json]
+  patcher tasks update <key-or-id> --status in_review [--json]
+  patcher tasks update <key-or-id> (--parent <parent-key-or-id> | --no-parent) [--json]
 
-Run `bb tasks --help` for project, folder, task, label, attachment, and demo-data
+Run `patcher tasks --help` for project, folder, task, label, attachment, and demo-data
 commands, plus preset management, delegation, and attached-thread inspection.
-Delegated threads are attached automatically; use `bb tasks attach` only when
+Delegated threads are attached automatically; use `patcher tasks attach` only when
 work started outside Tasks. Task update resolves both task keys and IDs for
 `--parent`; use `--no-parent` to promote a subtask to the top level. File paths
 in tasks commands resolve on the invoking machine (the thread's machine inside
@@ -141,7 +141,7 @@ snapshot.
 The builtin Secrets plugin provides a secure credential form and guarded
 dotenv reconciliation:
 
-  bb secret request <NAME...> --write-env <path>
+  patcher secret request <NAME...> --write-env <path>
                     [--purpose <text>] [--describe <NAME> <text>]...
 
 The command blocks until the user submits or cancels the form. Secret values
@@ -149,9 +149,9 @@ never appear in command arguments, model-visible output, or persisted
 interaction data; success prints only the path, variable names, and
 added/updated/unchanged counts.
 
-  bb plugin search <query>       Search BB's official plugins (bundled with
+  patcher plugin search <query>       Search Patcher's official plugins (bundled with
                                  the app)
-  bb plugin install <entry>      Install a bundled official plugin by name
+  patcher plugin install <entry>      Install a bundled official plugin by name
                                  (github, docs, memory, tasks), a Git repository
                                  URL, local path, builtin:<name>,
                                  git:<url>[@<ref>], or
@@ -164,40 +164,40 @@ added/updated/unchanged counts.
                                  Omitted npm specs, ranges, dist-tags, omitted
                                  Git refs, and Git branches track; exact npm
                                  versions, Git tags, and Git commits are pinned
-  bb plugin outdated             Check installed plugins for compatible
+  patcher plugin outdated             Check installed plugins for compatible
                                  updates (table; --json for raw results).
                                  Columns: installed, latest compatible,
                                  blocked newer (incompatible releases not
                                  selected), status. Dev builds (Patcher 0.0.0)
                                  annotate that engines.patcher is not enforced
-  bb plugin update <id> | --all  Apply compatible updates for one plugin or
+  patcher plugin update <id> | --all  Apply compatible updates for one plugin or
                                  every tracking plugin with an update. Same
                                  full-trust confirmation as
                                  install (--yes skips; non-TTY refuses without
                                  --yes). Use outdated to preview; pinned
                                  installs stay put
-  bb plugin list                 Status, services, schedules, handler timings
-  bb plugin source <id> [--json] Show requested/resolved source, engine ranges,
+  patcher plugin list                 Status, services, schedules, handler timings
+  patcher plugin source <id> [--json] Show requested/resolved source, engine ranges,
                                  install time, and recent activation history
-  bb plugin enable|disable <id>  Load or unload an installed plugin
-  bb plugin reload [id]          Re-run factories against current sources
-  bb plugin config <id> [set <key> <value> | unset <key>]
+  patcher plugin enable|disable <id>  Load or unload an installed plugin
+  patcher plugin reload [id]          Re-run factories against current sources
+  patcher plugin config <id> [set <key> <value> | unset <key>]
                                  Show or change a plugin's declared settings
-  bb plugin logs <id> [-n N] [-f]  Print (or follow) a plugin's patcher.log output
-  bb plugin run <id> [args...]   Run the plugin's CLI command explicitly
-  bb plugin token <id> [--rotate]  Print the token for auth:"token" HTTP
+  patcher plugin logs <id> [-n N] [-f]  Print (or follow) a plugin's patcher.log output
+  patcher plugin run <id> [args...]   Run the plugin's CLI command explicitly
+  patcher plugin token <id> [--rotate]  Print the token for auth:"token" HTTP
                                  routes; --rotate generates a new token,
                                  invalidating the old one
-  bb plugin remove <id>          Uninstall (managed git:/npm: files deleted;
+  patcher plugin remove <id>          Uninstall (managed git:/npm: files deleted;
                                  builtin removals are remembered)
-  bb plugin new <name> [--app]   Scaffold a new plugin and install its npm
+  patcher plugin new <name> [--app]   Scaffold a new plugin and install its npm
                                  dependencies (no server required; --app adds
                                  a frontend entry, app.tsx, plus a
                                  typecheck-only tsconfig.json)
-  bb plugin types [path]         Write this Patcher's @patcher/plugin-sdk declarations
+  patcher plugin types [path]         Write this Patcher's @patcher/plugin-sdk declarations
                                  into the plugin's types/ (default: cwd);
                                  --check reports staleness and writes nothing
-  bb plugin build [path]         Compile the plugin into dist/ — the backend
+  patcher plugin build [path]         Compile the plugin into dist/ — the backend
                                  bundle (server.js, server.meta.json) and,
                                  when patcher.app is declared, the frontend bundle
                                  (app.js, app.css, app.meta.json). Each
@@ -205,31 +205,31 @@ added/updated/unchanged counts.
                                  artifactFormatVersion, pluginId, pluginVersion,
                                  and builtWith (Patcher + plugin SDK versions); no
                                  server required
-  bb plugin dev [path]           Watch a plugin's sources (default: cwd) and
+  patcher plugin dev [path]           Watch a plugin's sources (default: cwd) and
                                  on every change rebuild its frontend bundle
                                  (if it declares patcher.app) and reload the
                                  plugin; Ctrl+C to stop
 
-BB Official plugins
+Patcher Official plugins
 
-BB's official plugins — GitHub, Docs, Memory, and Tasks — ship bundled inside
+Patcher's official plugins — GitHub, Docs, Memory, and Tasks — ship bundled inside
 the app itself. They appear in Extensions → Plugins → Browse
 and install with one click from the local bundled copy: no network, no
 download, no separate release. Install from the CLI by bare name
-(`bb plugin install github`, `bb plugin install docs`, `bb plugin install
-memory`, or `bb plugin install tasks`). Installed official plugins are pinned
-to the bundled copy and update automatically when the BB app updates.
+(`patcher plugin install github`, `patcher plugin install docs`, `patcher plugin install
+memory`, or `patcher plugin install tasks`). Installed official plugins are pinned
+to the bundled copy and update automatically when the Patcher app updates.
 
-For direct git:/npm: installs, updates are manual: `bb plugin outdated`
-checks tracking sources and `bb plugin update` applies compatible candidates.
+For direct git:/npm: installs, updates are manual: `patcher plugin outdated`
+checks tracking sources and `patcher plugin update` applies compatible candidates.
 Reinstalling an already-installed managed plugin is refused — use
-`bb plugin update`. A failed activation restores the pre-update snapshot and
+`patcher plugin update`. A failed activation restores the pre-update snapshot and
 leaves the latest failure visible as needing attention. Exact npm versions,
 git tags and commits, path sources, and bundled official plugins are pinned;
 npm ranges/omitted specs/dist-tags, omitted Git refs (the repository default
 branch), and Git branches track compatible updates.
 
-`bb plugin search <query>` matches id, display name, description, and
+`patcher plugin search <query>` matches id, display name, description, and
 category across the bundled official plugins (status: installed / compatible
 / requires newer Patcher). Install an official plugin by its bare name. Direct
 HTTP(S) Git repository URLs, `path:`, `npm:`, `git:`, and `builtin:`
@@ -255,27 +255,27 @@ a machine, Patcher downloads a pinned esbuild + Tailwind set into
 a prebuilt npm plugin never triggers that download.
 
 To build a plugin yourself — in CI, or to check it compiles without a running
-Patcher — depend on the published `bb-app` package and call the CLI:
+Patcher — depend on the published `patcher-app` package and call the CLI:
 
 ```jsonc
 // your plugin's package.json
-"devDependencies": { "bb-app": "^0.35.1" },
-"scripts": { "build": "bb plugin build" }
+"devDependencies": { "patcher-app": "^0.35.1" },
+"scripts": { "build": "patcher plugin build" }
 ```
 
-`bb plugin build` talks to no server. Depending on `bb-app@X` builds with
+`patcher plugin build` talks to no server. Depending on `patcher-app@X` builds with
 exactly that release's shim configuration, so the bundle cannot be built
 against a mismatched host runtime. Cache the toolchain directory in CI to skip
-the download on later runs. Only `bb plugin dev` needs a running Patcher, because
+the download on later runs. Only `patcher plugin dev` needs a running Patcher, because
 it reloads the installed plugin after each rebuild.
 
 The backend half is prebuilt too: when a builtin/official/git/npm install
 ships a dist/server.js built for the running SDK major, the server loads it
 instead of the TypeScript source. Path installs always load server.ts from
-source, so `bb plugin dev`/reload see edits immediately.
+source, so `patcher plugin dev`/reload see edits immediately.
 
-`bb plugin dev` is the edit loop: it requires the directory to already be
-installed as a plugin (`bb plugin install .` first), ignores dist/,
+`patcher plugin dev` is the edit loop: it requires the directory to already be
+installed as a plugin (`patcher plugin install .` first), ignores dist/,
 node_modules/, and .git/, batches saves, and prints one line per cycle. A
 build or reload failure prints the error and keeps watching (a failed build
 skips that cycle's reload). Reloads reach open app pages live — changed
@@ -326,26 +326,26 @@ backend contract import with `useRpc<typeof contract>()` for exact frontend
 method/input/result inference. The server validates both schemas and rejects
 non-JSON results (including cyclic and non-finite values) with structured
 error codes. Components are vendored shadcn source the plugin owns (the
-shadcn model): `bb plugin new --app` pre-vendors a starter set into
-components/ui/ and `npx shadcn add @patcher/<name>` pulls more from the BB
+shadcn model): `patcher plugin new --app` pre-vendors a starter set into
+components/ui/ and `npx shadcn add @patcher/<name>` pulls more from the Patcher
 component registry (the full stock shadcn set, version-matched to the
-running BB via the pinned ref in components.json). `import { toast } from
+running Patcher via the pinned ref in components.json). `import { toast } from
 "sonner"` reaches the host toaster; react, the portaling radix families,
 sonner, vaul, and @pierre/diffs (the app's syntax-highlighted diff
 renderer) are runtime-shimmed (never bundled), everything else
-bundles from the plugin's node_modules (`npm install` for authors; BB installs
+bundles from the plugin's node_modules (`npm install` for authors; Patcher installs
 release packages with their declared production dependencies). A crashing slot collapses to a
 "plugin <id> crashed" chip without
 touching the rest of the app. Installed plugins and their declared settings
-(same data as `bb plugin config`) also appear under Extensions → Plugins.
+(same data as `patcher plugin config`) also appear under Extensions → Plugins.
 
 Plugin CLI commands: a plugin can register one top-level subcommand (for
-example `bb github …`). Unknown `bb` commands are looked up against installed
+example `patcher github …`). Unknown `patcher` commands are looked up against installed
 plugins and proxied to the server, so plugin commands work exactly like core
 commands; core command names always win. Inside agent threads the generated
 `plugin-commands` skill lists the available plugin commands.
 
-Settings changes do not auto-reload a plugin — run `bb plugin reload <id>`
+Settings changes do not auto-reload a plugin — run `patcher plugin reload <id>`
 after configuring. Add --json to plugin commands for machine-readable output.
 Plugin CLI stdout plus stderr is capped at 1,048,576 UTF-8 bytes from the
 shared `@patcher/plugin-sdk` constant. Results above the ceiling are rejected in
@@ -355,8 +355,8 @@ large content.
 
 Authoring a plugin
 
-The loop: `bb plugin new <name>` scaffolds `./patcher-plugin-<name>` (add --app
-for a frontend entry); `bb plugin install .` registers it; `bb plugin dev`
+The loop: `patcher plugin new <name>` scaffolds `./patcher-plugin-<name>` (add --app
+for a frontend entry); `patcher plugin install .` registers it; `patcher plugin dev`
 watches and reloads on every save. The manifest is package.json: required
 `patcher.name` and `patcher.description` human identity, required `patcher.branding` with at
 least `icon` or `logo.light`, `patcher.server`
@@ -372,13 +372,13 @@ use `hello`.
 
 Plugins can contribute palettes with `patcher.themes`: an array of
 `{ id, name, description?, css }`, where `css` is a plugin-relative `.css`
-file. Loaded plugin palettes appear in Settings → Appearance and `bb theme
+file. Loaded plugin palettes appear in Settings → Appearance and `patcher theme
 list`; their selectable id is `plugin:<plugin-id>:<theme-id>`. Disabling or
 removing the owning plugin makes Patcher fall back to the default palette.
 
 Branding is explicit. Declare `patcher.branding.icon` as either the plugin's
-canonical BB icon name or a plugin-relative compact SVG such as
-`./assets/icon.svg`. BB validates and hash-serves path-shaped SVGs, then
+canonical Patcher icon name or a plugin-relative compact SVG such as
+`./assets/icon.svg`. Patcher validates and hash-serves path-shaped SVGs, then
 renders them as masks that inherit the surrounding text color. Compact chrome
 prefers the manifest icon, then a contribution's local icon hint, and finally
 Zap. Roomy surfaces reuse the same icon when no logo override is declared.
@@ -388,7 +388,7 @@ identity artwork; optional `patcher.branding.logo.dark` is preferred in dark mod
 Logo paths must be plugin-relative `.svg`, `.png`, or `.webp` files. Root logo
 files are not auto-detected, and a dark logo requires a light logo. Logo-only
 manifests remain supported for compatibility, so at least an icon or light logo
-is required. Do not duplicate the same artwork across fields. BB rejects nulls,
+is required. Do not duplicate the same artwork across fields. Patcher rejects nulls,
 empty strings, missing or escaping assets, and unsupported extensions. Reload
 the plugin to pick up branding changes.
 
@@ -402,13 +402,13 @@ as bundled .d.ts in types/ (tsconfig maps @patcher/plugin-sdk to them), so
 `npm install && npx tsc --noEmit` typechecks anywhere — no Patcher checkout
 needed. Those files are ordinary readable declarations, not a minified
 bundle: read them for an exact signature. The SDK surface grows every
-release, so `bb plugin types` rewrites them from the running Patcher — run it in a
-cloned or older plugin, and `bb plugin types --check` in CI. `bb plugin
-build` and `bb plugin dev` refresh them for you. Need a symbol the types
-don't explain? Clone the repo: https://github.com/get-bb/bb. The API in
-one line each — patcher.log (plugin-scoped logger behind `bb plugin logs`);
+release, so `patcher plugin types` rewrites them from the running Patcher — run it in a
+cloned or older plugin, and `patcher plugin types --check` in CI. `patcher plugin
+build` and `patcher plugin dev` refresh them for you. Need a symbol the types
+don't explain? Clone the repo: https://github.com/laruss/patcher-browser. The API in
+one line each — patcher.log (plugin-scoped logger behind `patcher plugin logs`);
 patcher.settings.define (declarative settings incl. secrets, editable via
-`bb plugin config`); patcher.storage.kv (JSON rows ≤256KB) and
+`patcher plugin config`); patcher.storage.kv (JSON rows ≤256KB) and
 patcher.storage.database()+migrate (the plugin's own database); patcher.sdk (the full
 Patcher SDK — handlers/services only, not the factory; spawned threads are
 attributed to the plugin; `visibility: "hidden"` creates directly addressable
@@ -423,7 +423,7 @@ type-only frontend method/input/result inference);
 patcher.realtime.publish (ephemeral signals to open app pages);
 patcher.background.service (long-lived, AbortSignal, restart w/ backoff) and
 patcher.background.schedule (durable cron rows); patcher.cli.register (a top-level
-`bb <name>` command agents run through bash, with a shared 1 MiB combined
+`patcher <name>` command agents run through bash, with a shared 1 MiB combined
 stdout/stderr ceiling and atomic structured over-limit errors); patcher.agents.registerTool
 (static native tools with zod or JSON-schema parameters) and
 patcher.agents.configure (one synchronous per-resolution callback selecting this
@@ -458,7 +458,7 @@ in a checkout). The builtin `inline-vis` plugin renders
 path-shaped, sandboxed worktree HTML iframe preview; `height` is optional.
 Its card header includes an open-in-sidebar action for the source HTML file.
 The `plugins/` directory contains every bundled plugin: the auto-installed
-builtins and the store-only BB Official GitHub, Docs, Memory, and Tasks
+builtins and the store-only Patcher Official GitHub, Docs, Memory, and Tasks
 plugins. The `examples/plugins/` reference plugins cover slack-bot (webhook
 bot), agent-enrichment (agent surfaces), composer-customization (all composer
 regions), and t3sidebar (a replacement sidebar thread list).

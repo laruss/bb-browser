@@ -46,13 +46,13 @@ case "$(uname -s)" in
   Darwin) platform=darwin ;;
   Linux) platform=linux ;;
   *)
-    echo "bb machine installation supports macOS and Linux only." >&2
+    echo "patcher machine installation supports macOS and Linux only." >&2
     exit 1
     ;;
 esac
 
 if ! command -v node >/dev/null 2>&1; then
-  echo "bb-app requires Node.js 22.19 or newer (22.19, 24, and 26 are tested), but node is not on PATH." >&2
+  echo "patcher-app requires Node.js 22.19 or newer (22.19, 24, and 26 are tested), but node is not on PATH." >&2
   exit 1
 fi
 node_version=$(node -p 'process.versions.node')
@@ -65,14 +65,14 @@ node_supported=$(node -e '
   process.exit(supported ? 0 : 1);
 ' && echo yes || echo no)
 if [ "$node_supported" != yes ]; then
-  echo "Node.js $node_version is too old; bb-app requires Node.js 22.19 or newer (22.19, 24, and 26 are tested)." >&2
+  echo "Node.js $node_version is too old; patcher-app requires Node.js 22.19 or newer (22.19, 24, and 26 are tested)." >&2
   exit 1
 fi
 node_bin=$(command -v node)
 
 require_npm() {
   if ! command -v npm >/dev/null 2>&1; then
-    echo "bb-app installation requires npm." >&2
+    echo "patcher-app installation requires npm." >&2
     exit 1
   fi
 }
@@ -266,51 +266,51 @@ fi
 echo "Using local host-daemon port $host_daemon_port."
 
 # The server's own build is always installed when it offers one: version
-# strings cannot distinguish unpublished builds, so an existing bb-app is
+# strings cannot distinguish unpublished builds, so an existing patcher-app is
 # trusted only when the server provides no package (404) or is unreachable.
-package_url="${server_url%/}/install/bb-app.tgz"
-package_dir=$(mktemp -d "${TMPDIR:-/tmp}/bb-app.XXXXXX")
-package_file="$package_dir/bb-app.tgz"
+package_url="${server_url%/}/install/patcher-app.tgz"
+package_dir=$(mktemp -d "${TMPDIR:-/tmp}/patcher-app.XXXXXX")
+package_file="$package_dir/patcher-app.tgz"
 package_status=$(curl -sS -L -o "$package_file" -w '%{http_code}' "$package_url" 2>/dev/null) || package_status=000
 
-bb_app=
+patcher_app=
 if [ "$package_status" -ge 200 ] && [ "$package_status" -lt 300 ]; then
   require_npm
-  echo "Installing the server's bb-app build..."
+  echo "Installing the server's patcher-app build..."
   if ! npm install -g "$package_file"; then
     rm -rf "$package_dir"
-    echo "Could not install bb-app globally. Fix npm global-install permissions, then rerun this command." >&2
+    echo "Could not install patcher-app globally. Fix npm global-install permissions, then rerun this command." >&2
     exit 1
   fi
-elif command -v bb-app >/dev/null 2>&1; then
-  bb_app=$(command -v bb-app)
+elif command -v patcher-app >/dev/null 2>&1; then
+  patcher_app=$(command -v patcher-app)
   if [ "$package_status" = 404 ]; then
-    echo "The server does not provide its bb-app package; using bb-app at $bb_app"
+    echo "The server does not provide its patcher-app package; using patcher-app at $patcher_app"
   else
-    echo "Warning: could not download the server's bb-app package (HTTP $package_status); using bb-app at $bb_app" >&2
+    echo "Warning: could not download the server's patcher-app package (HTTP $package_status); using patcher-app at $patcher_app" >&2
   fi
 elif [ "$package_status" = 404 ]; then
   require_npm
-  echo "The server does not provide its bb-app package; installing bb-app from the npm registry..."
-  if ! npm install -g bb-app; then
+  echo "The server does not provide its patcher-app package; installing patcher-app from the npm registry..."
+  if ! npm install -g patcher-app; then
     rm -rf "$package_dir"
-    echo "Could not install bb-app globally. Fix npm global-install permissions, then rerun this command." >&2
+    echo "Could not install patcher-app globally. Fix npm global-install permissions, then rerun this command." >&2
     exit 1
   fi
 else
   rm -rf "$package_dir"
-  echo "Could not download the server's bb-app package from $package_url (HTTP $package_status)." >&2
+  echo "Could not download the server's patcher-app package from $package_url (HTTP $package_status)." >&2
   exit 1
 fi
 rm -rf "$package_dir"
 
-if [ -z "$bb_app" ]; then
-  if ! command -v bb-app >/dev/null 2>&1; then
-    echo "npm installed bb-app, but its global bin directory is not on PATH." >&2
+if [ -z "$patcher_app" ]; then
+  if ! command -v patcher-app >/dev/null 2>&1; then
+    echo "npm installed patcher-app, but its global bin directory is not on PATH." >&2
     echo "Add npm's global bin directory to PATH, then rerun this command." >&2
     exit 1
   fi
-  bb_app=$(command -v bb-app)
+  patcher_app=$(command -v patcher-app)
 fi
 
 auth_matches_host() {
@@ -345,7 +345,7 @@ join_pid=
 if [ "$already_joined" = no ]; then
   join_log="$data_dir/install-join.log"
   echo "Joining $server_url as $host_id..."
-  PATCHER_DATA_DIR="$data_dir" nohup "$bb_app" host-daemon join \
+  PATCHER_DATA_DIR="$data_dir" nohup "$patcher_app" host-daemon join \
     --auto-update \
     --host-daemon-port "$host_daemon_port" \
     --join-code "$join_code" \
@@ -415,7 +415,7 @@ if [ "$platform" = darwin ]; then
   service_file="$service_dir/$service_label.plist"
   mkdir -p "$service_dir"
   escaped_node_bin=$(xml_escape "$node_bin")
-  escaped_bb_app=$(xml_escape "$bb_app")
+  escaped_patcher_app=$(xml_escape "$patcher_app")
   escaped_server=$(xml_escape "$server_url")
   escaped_data_dir=$(xml_escape "$data_dir")
   cat >"$service_file" <<EOF
@@ -427,7 +427,7 @@ if [ "$platform" = darwin ]; then
   <key>ProgramArguments</key>
   <array>
     <string>$escaped_node_bin</string>
-    <string>$escaped_bb_app</string>
+    <string>$escaped_patcher_app</string>
     <string>host-daemon</string>
     <string>--auto-update</string>
     <string>--host-daemon-port</string>
@@ -470,7 +470,7 @@ else
   service_file="$service_dir/$service_name.service"
   mkdir -p "$service_dir"
   escaped_node_bin=$(systemd_escape "$node_bin")
-  escaped_bb_app=$(systemd_escape "$bb_app")
+  escaped_patcher_app=$(systemd_escape "$patcher_app")
   escaped_server=$(systemd_escape "$server_url")
   escaped_data_dir=$(systemd_escape "$data_dir")
   cat >"$service_file" <<EOF
@@ -480,7 +480,7 @@ After=network-online.target
 Wants=network-online.target
 
 [Service]
-ExecStart="$escaped_node_bin" "$escaped_bb_app" host-daemon --auto-update --host-daemon-port "$host_daemon_port" --server-url "$escaped_server"
+ExecStart="$escaped_node_bin" "$escaped_patcher_app" host-daemon --auto-update --host-daemon-port "$host_daemon_port" --server-url "$escaped_server"
 Environment="PATCHER_DATA_DIR=$escaped_data_dir"
 Restart=always
 RestartSec=2

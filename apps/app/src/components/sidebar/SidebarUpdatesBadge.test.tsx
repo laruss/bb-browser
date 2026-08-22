@@ -139,14 +139,14 @@ describe("SidebarUpdatesBadge", () => {
   it("shows only the Patcher chip for a Patcher-only update", () => {
     renderBadge({ appUpdateAvailable: true });
 
-    expect(screen.getByTestId("sidebar-updates-badge-bb")).toBeTruthy();
+    expect(screen.getByTestId("sidebar-updates-badge-patcher")).toBeTruthy();
     expect(screen.queryByTestId("sidebar-updates-badge-providers")).toBeNull();
   });
 
   it("counts a daemon stuck on an old protocol as a Patcher update, not a provider one", () => {
     renderBadge({ machines: [machine({ canRetryDaemonUpdate: true })] });
 
-    expect(screen.getByTestId("sidebar-updates-badge-bb")).toBeTruthy();
+    expect(screen.getByTestId("sidebar-updates-badge-patcher")).toBeTruthy();
     expect(screen.queryByTestId("sidebar-updates-badge-providers")).toBeNull();
   });
 
@@ -157,7 +157,7 @@ describe("SidebarUpdatesBadge", () => {
       ],
     });
 
-    expect(screen.queryByTestId("sidebar-updates-badge-bb")).toBeNull();
+    expect(screen.queryByTestId("sidebar-updates-badge-patcher")).toBeNull();
     expect(
       screen
         .getByTestId("sidebar-updates-badge-providers")
@@ -175,7 +175,7 @@ describe("SidebarUpdatesBadge", () => {
     });
 
     expect(screen.queryByTestId("sidebar-updates-badge-providers")).toBeNull();
-    expect(screen.queryByTestId("sidebar-updates-badge-bb")).toBeNull();
+    expect(screen.queryByTestId("sidebar-updates-badge-patcher")).toBeNull();
   });
 
   it("still shows the Patcher chip when the only provider issue is a missing CLI", () => {
@@ -188,7 +188,7 @@ describe("SidebarUpdatesBadge", () => {
       ],
     });
 
-    expect(screen.getByTestId("sidebar-updates-badge-bb")).toBeTruthy();
+    expect(screen.getByTestId("sidebar-updates-badge-patcher")).toBeTruthy();
     expect(screen.queryByTestId("sidebar-updates-badge-providers")).toBeNull();
   });
 
@@ -216,6 +216,6 @@ describe("SidebarUpdatesBadge", () => {
       "Codex and Claude Code updates available",
     );
     expect(providerChip.querySelectorAll("svg[viewBox]").length).toBe(3);
-    expect(screen.getByTestId("sidebar-updates-badge-bb")).toBeTruthy();
+    expect(screen.getByTestId("sidebar-updates-badge-patcher")).toBeTruthy();
   });
 });

@@ -51,8 +51,8 @@ export function makeTimelineBase(args: TimelineBaseArgs): TimelineRowBase {
 }
 
 /**
- * Mock for the `GET /threads/:id/timeline` endpoint used by `bb thread show`
- * and `bb status` to read `pendingTodos`. Tests should add this alongside
+ * Mock for the `GET /threads/:id/timeline` endpoint used by `patcher thread show`
+ * and `patcher status` to read `pendingTodos`. Tests should add this alongside
  * their `:id.$get` mock so contract drift on the timeline lane fails loudly
  * instead of silently degrading to `pendingTodos: null`.
  */

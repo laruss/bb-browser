@@ -505,12 +505,12 @@ export function createHarness(
       overrides: { dataDir?: string; threadStorageRootPath?: string } = {},
     ): CommandDispatchOptions {
       return {
-        dataDir: overrides.dataDir ?? "/tmp/bb-test-data",
+        dataDir: overrides.dataDir ?? "/tmp/patcher-test-data",
         eventSink: noopEventSink,
         fetchProjectAttachment: unexpectedProjectAttachmentFetch,
         runtimeManager: manager,
         threadStorageRootPath:
-          overrides.threadStorageRootPath ?? "/tmp/bb-test-thread-storage",
+          overrides.threadStorageRootPath ?? "/tmp/patcher-test-thread-storage",
       };
     },
   };
@@ -522,10 +522,10 @@ export function makeDispatchOptions(
     Pick<CommandDispatchOptions, "runtimeManager">,
 ): CommandDispatchOptions {
   return {
-    dataDir: "/tmp/bb-test-data",
+    dataDir: "/tmp/patcher-test-data",
     eventSink: noopEventSink,
     fetchProjectAttachment: unexpectedProjectAttachmentFetch,
-    threadStorageRootPath: "/tmp/bb-test-thread-storage",
+    threadStorageRootPath: "/tmp/patcher-test-thread-storage",
     ...overrides,
   };
 }

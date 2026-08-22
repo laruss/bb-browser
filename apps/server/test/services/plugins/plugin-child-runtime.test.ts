@@ -26,8 +26,8 @@ import {
 /**
  * A plugin running in a plugin process, asked to do the things a plugin does.
  *
- * The "host" here is a test double for the *server*, not a second `bb` — the
- * `bb` under test is the real `createPluginApi`, which is the whole point of
+ * The "host" here is a test double for the *server*, not a second `patcher` — the
+ * `patcher` under test is the real `createPluginApi`, which is the whole point of
  * the design: there is one implementation of it and this exercises that one.
  */
 

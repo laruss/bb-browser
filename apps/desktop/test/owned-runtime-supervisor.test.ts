@@ -69,11 +69,11 @@ afterEach(async () => {
 });
 
 describe("owned runtime supervisor", () => {
-  it("reaps a stale Electron-owned bb-app bridge process", async () => {
+  it("reaps a stale Electron-owned patcher-app bridge process", async () => {
     const tempDir = await createTempDir();
-    const bridgePath = "/Applications/Patcher.app/bb-app-bridge.mjs";
+    const bridgePath = "/Applications/Patcher.app/patcher-app-bridge.mjs";
     const fakeProcessOps = createFakeProcessOps({
-      command: `/Applications/Patcher.app/Contents/MacOS/bb ${bridgePath}`,
+      command: `/Applications/Patcher.app/Contents/MacOS/patcher ${bridgePath}`,
       running: true,
     });
 
@@ -103,7 +103,7 @@ describe("owned runtime supervisor", () => {
 
   it("does not kill a PID that no longer matches the owned bridge command", async () => {
     const tempDir = await createTempDir();
-    const bridgePath = "/Applications/Patcher.app/bb-app-bridge.mjs";
+    const bridgePath = "/Applications/Patcher.app/patcher-app-bridge.mjs";
     const fakeProcessOps = createFakeProcessOps({
       command: "/usr/bin/vim",
       running: true,
@@ -129,7 +129,7 @@ describe("owned runtime supervisor", () => {
 
   it("clears a stale pid file when the process is already gone", async () => {
     const tempDir = await createTempDir();
-    const bridgePath = "/Applications/Patcher.app/bb-app-bridge.mjs";
+    const bridgePath = "/Applications/Patcher.app/patcher-app-bridge.mjs";
     const fakeProcessOps = createFakeProcessOps({
       command: null,
       running: false,

@@ -64,7 +64,7 @@ export function resolveNewPluginTarget(name: string): NewPluginTarget | null {
 }
 
 /**
- * Where `bb plugin build`/`dev` cache the pinned esbuild/Tailwind set.
+ * Where `patcher plugin build`/`dev` cache the pinned esbuild/Tailwind set.
  *
  * The CLI ships no build toolchain, so the first build on a machine fetches
  * one. Honors PATCHER_DATA_DIR (dev instances and tests set it) and otherwise uses
@@ -175,7 +175,7 @@ async function readPluginManifest(
  * Refresh `types/*.d.ts` against this CLI's bundled SDK declarations and
  * report each file that actually changed.
  *
- * `bb plugin build` and `bb plugin dev` call this so an author never
+ * `patcher plugin build` and `patcher plugin dev` call this so an author never
  * typechecks against declarations older than the Patcher they run. A failure here
  * is reported and swallowed: a read-only or otherwise unwritable `types/`
  * must not fail a build.
@@ -270,12 +270,12 @@ async function isPackageInstalled(
 /**
  * Install a fresh scaffold's npm tree, reporting whether it is usable.
  *
- * Generated source imports packages `bb plugin build` inlines into dist/ (zod;
+ * Generated source imports packages `patcher plugin build` inlines into dist/ (zod;
  * with --app, the vendored components' deps), and path: installs run server.ts
  * from source, so the tree must exist before the plugin can build or load.
  *
  * `--include=dev` rather than a bare `npm install`: the packaged CLI runs with
- * NODE_ENV=production — bb-app's launcher sets it for every `bb` invocation —
+ * NODE_ENV=production — patcher-app's launcher sets it for every `patcher` invocation —
  * which npm reads as `omit=dev`. A command-line flag outranks both that and an
  * inherited `npm_config_omit`, so the install no longer depends on how Patcher was
  * started. Best-effort overall: authors need npm anyway (design §5.5), so a
@@ -294,14 +294,14 @@ async function installScaffoldDependencies(
     );
   } catch {
     console.warn(
-      "Could not run npm install — run it in the plugin directory before `bb plugin build`.",
+      "Could not run npm install — run it in the plugin directory before `patcher plugin build`.",
     );
     return false;
   }
   const problem = await unresolvedScaffoldPackages(targetDir);
   if (problem !== null) {
     console.warn(
-      `npm install reported success but ${problem} — run \`npm install --include=dev\` in the plugin directory before \`bb plugin build\`.`,
+      `npm install reported success but ${problem} — run \`npm install --include=dev\` in the plugin directory before \`patcher plugin build\`.`,
     );
     return false;
   }
@@ -515,7 +515,7 @@ function printPlugin(plugin: PluginEntry): void {
   }
   if (plugin.cliCommand) {
     console.log(
-      `  command: bb ${plugin.cliCommand.name} — ${plugin.cliCommand.summary}`,
+      `  command: patcher ${plugin.cliCommand.name} — ${plugin.cliCommand.summary}`,
     );
   }
 }
@@ -592,14 +592,14 @@ export function registerPluginCommands(
 ): void {
   const plugin = program
     .command("plugin")
-    .description("Manage BB plugins")
+    .description("Manage Patcher plugins")
     // Required (with the program's enablePositionalOptions) for `run` to
     // pass flags after <id> through to the plugin command untouched.
     .enablePositionalOptions();
 
   plugin
     .command("search <query>")
-    .description("Search BB's official plugins (bundled with the app)")
+    .description("Search Patcher's official plugins (bundled with the app)")
     .option("--json", "Output JSON")
     .action(
       action(async (query: string, opts: JsonOutputOptions) => {
@@ -707,7 +707,7 @@ export function registerPluginCommands(
           let summary =
             intent.kind === "source"
               ? intent.summary
-              : `Installing ${intent.entry.displayName}, bundled with BB (${intent.entry.source})`;
+              : `Installing ${intent.entry.displayName}, bundled with Patcher (${intent.entry.source})`;
           // Only a path source has its manifest on this machine before the
           // install runs, so only a path source can be described before it is
           // confirmed. That is also the agent-generated case, which is the one
@@ -755,8 +755,8 @@ export function registerPluginCommands(
               }
             }
             console.log(
-              "Plugins are full-trust code running inside the BB server. " +
-                "They can read all local BB data, including other plugins' secrets. " +
+              "Plugins are full-trust code running inside the Patcher server. " +
+                "They can read all local Patcher data, including other plugins' secrets. " +
                 "Declared permissions gate the Patcher API, not the process.",
             );
           }
@@ -931,7 +931,7 @@ export function registerPluginCommands(
     )
     .option(
       "--app",
-      "Also scaffold a frontend entry (app.tsx, built by `bb plugin build`)",
+      "Also scaffold a frontend entry (app.tsx, built by `patcher plugin build`)",
     )
     .action(
       action(async (name: string, opts: { app?: boolean }) => {
@@ -957,7 +957,7 @@ export function registerPluginCommands(
         if (!installed) {
           console.log("  npm install --include=dev");
         }
-        console.log("  bb plugin install .");
+        console.log("  patcher plugin install .");
       }),
     );
 
@@ -995,7 +995,7 @@ export function registerPluginCommands(
         if (opts.check) {
           if (files.some((file) => file.outcome === "stale")) {
             console.error(
-              "Declarations are out of date — run `bb plugin types` to refresh them.",
+              "Declarations are out of date — run `patcher plugin types` to refresh them.",
             );
             process.exit(1);
           }
@@ -1081,7 +1081,7 @@ export function registerPluginCommands(
         );
         if (!entry) {
           console.error(
-            `This directory is not installed as a plugin — run \`bb plugin install ${path ?? "."}\` first, then re-run \`bb plugin dev\`.`,
+            `This directory is not installed as a plugin — run \`patcher plugin install ${path ?? "."}\` first, then re-run \`patcher plugin dev\`.`,
           );
           process.exit(1);
         }
@@ -1234,15 +1234,17 @@ export function registerPluginCommands(
           ) {
             console.error(
               actionName === "set"
-                ? "Usage: bb plugin config <id> set <key> <value>"
-                : "Usage: bb plugin config <id> unset <key>",
+                ? "Usage: patcher plugin config <id> set <key> <value>"
+                : "Usage: patcher plugin config <id> unset <key>",
             );
             process.exit(1);
           }
           let parsedValue: string | boolean | null = null;
           if (actionName === "set") {
             if (value === undefined) {
-              console.error("Usage: bb plugin config <id> set <key> <value>");
+              console.error(
+                "Usage: patcher plugin config <id> set <key> <value>",
+              );
               process.exit(1);
             }
             // Fetch the schema first so booleans/selects are parsed and
@@ -1309,7 +1311,7 @@ export function registerPluginCommands(
   plugin
     .command("run <id> [args...]")
     .description(
-      "Run a plugin's CLI command (explicit form of `bb <command> ...`)",
+      "Run a plugin's CLI command (explicit form of `patcher <command> ...`)",
     )
     // Flags after <id> belong to the plugin command; parsing is plugin-owned.
     .passThroughOptions()

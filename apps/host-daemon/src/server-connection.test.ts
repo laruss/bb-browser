@@ -161,7 +161,7 @@ function createConnectionFixture(args: ConnectionFixtureArgs = {}) {
   });
   const setSession = vi.fn();
   const connection = new ServerConnection({
-    dataDir: "/tmp/bb-server-connection-test",
+    dataDir: "/tmp/patcher-server-connection-test",
     hostId: "host-server-connection-test",
     hostKey: "host-key-server-connection-test",
     hostName: "Server Connection Test Host",

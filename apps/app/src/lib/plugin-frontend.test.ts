@@ -147,7 +147,7 @@ describe("installPluginRuntime", () => {
     installPluginRuntime();
     const runtime = (globalThis as RuntimeHost)
       .__patcherPluginRuntime as Record<string, unknown>;
-    // The shim slot names `bb plugin build` emits (react ×5 + SDK + the
+    // The shim slot names `patcher plugin build` emits (react ×5 + SDK + the
     // shared-singleton packages: portal radix families, sonner, vaul,
     // @pierre/diffs).
     expect(Object.keys(runtime).sort()).toEqual([

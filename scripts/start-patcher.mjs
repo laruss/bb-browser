@@ -82,5 +82,5 @@ await buildRuntimeArtifacts();
 await buildBundledPlugins();
 ensureNativeModules({ repoRoot });
 
-const { runPatcherApp } = await import("../packages/bb-app/src/index.ts");
+const { runPatcherApp } = await import("../packages/patcher-app/src/index.ts");
 await runPatcherApp();

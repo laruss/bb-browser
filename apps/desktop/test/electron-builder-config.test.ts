@@ -264,15 +264,15 @@ describe("electron-builder signing config", () => {
     );
   });
 
-  it("unpacks the ESM bb-app bridge with an explicit module extension", async () => {
+  it("unpacks the ESM patcher-app bridge with an explicit module extension", async () => {
     const configText = await readFile(
       resolve(desktopPackageRoot, "electron-builder.config.json"),
       "utf8",
     );
     const config = electronBuilderConfigSchema.parse(JSON.parse(configText));
 
-    expect(config.asarUnpack).toContain("dist/bb-app-bridge.mjs");
-    expect(config.asarUnpack).not.toContain("dist/bb-app-bridge.js");
+    expect(config.asarUnpack).toContain("dist/patcher-app-bridge.mjs");
+    expect(config.asarUnpack).not.toContain("dist/patcher-app-bridge.js");
   });
 
   it("runs a native module preparation hook after packaging", async () => {
@@ -344,8 +344,8 @@ describe("electron-builder signing config", () => {
     // separately without relaxing dependency pruning for the rest of node_modules.
     expect(config.files).toContainEqual({
       filter: ["**/*"],
-      from: "node_modules/bb-app/server/dist/app-scaffold-template",
-      to: "node_modules/bb-app/server/dist/app-scaffold-template",
+      from: "node_modules/patcher-app/server/dist/app-scaffold-template",
+      to: "node_modules/patcher-app/server/dist/app-scaffold-template",
     });
   });
 
@@ -484,7 +484,7 @@ describe("electron-builder signing config", () => {
 
     expect(config.publish[0]).toMatchObject(DESKTOP_AUTO_UPDATE_FEED_CONFIG);
     expect(DESKTOP_AUTO_UPDATE_FEED_CONFIG.url).toBe(
-      "https://github.com/get-bb/bb/releases/download/desktop-latest/",
+      "https://github.com/laruss/patcher-browser/releases/download/desktop-latest/",
     );
   });
 

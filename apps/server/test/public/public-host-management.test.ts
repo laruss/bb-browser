@@ -89,7 +89,7 @@ describe("public host management", () => {
           },
           body: JSON.stringify({
             activeThreads: [],
-            dataDir: "/tmp/remote-bb",
+            dataDir: "/tmp/remote-patcher",
             hostId: issued.hostId,
             hostName: "Build Machine",
             hostType: "persistent",

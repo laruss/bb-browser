@@ -17,21 +17,21 @@ const codexModelIdentitySchema = z
   })
   .passthrough();
 
-/** Map a Codex-native reasoning effort string into a BB ReasoningLevel. */
+/** Map a Codex-native reasoning effort string into a Patcher ReasoningLevel. */
 export function mapCodexReasoningLevelToPatcher(
   value: unknown,
 ): ReasoningLevel | null {
   if (typeof value !== "string") {
     return null;
   }
-  // Codex levels that BB knows about (including Codex-only "ultra") pass
+  // Codex levels that Patcher knows about (including Codex-only "ultra") pass
   // through via the shared schema. Unknown future names soft-fail to null.
   const parsed = reasoningLevelSchema.safeParse(value);
   return parsed.success ? parsed.data : null;
 }
 
 /**
- * Map a BB ReasoningLevel to the string Codex app-server expects for
+ * Map a Patcher ReasoningLevel to the string Codex app-server expects for
  * `model_reasoning_effort`. Returns null for levels Codex never accepts
  * (currently only "none").
  *
@@ -60,9 +60,7 @@ function cloneDefaultReasoningEfforts(): ModelReasoningEffort[] {
   return DEFAULT_REASONING_EFFORTS.map((effort) => ({ ...effort }));
 }
 
-function parseReasoningEffortOption(
-  raw: unknown,
-): ModelReasoningEffort | null {
+function parseReasoningEffortOption(raw: unknown): ModelReasoningEffort | null {
   if (raw == null || typeof raw !== "object") {
     return null;
   }
@@ -81,9 +79,7 @@ function parseReasoningEffortOption(
   };
 }
 
-function parseSupportedReasoningEfforts(
-  raw: unknown,
-): ModelReasoningEffort[] {
+function parseSupportedReasoningEfforts(raw: unknown): ModelReasoningEffort[] {
   if (!Array.isArray(raw) || raw.length === 0) {
     return cloneDefaultReasoningEfforts();
   }
@@ -106,10 +102,10 @@ function parseSupportedReasoningEfforts(
 function toAvailableModel(
   raw: z.infer<typeof codexModelIdentitySchema>,
 ): AvailableModel {
-  const efforts = parseSupportedReasoningEfforts(
-    raw.supportedReasoningEfforts,
+  const efforts = parseSupportedReasoningEfforts(raw.supportedReasoningEfforts);
+  const mappedDefault = mapCodexReasoningLevelToPatcher(
+    raw.defaultReasoningEffort,
   );
-  const mappedDefault = mapCodexReasoningLevelToPatcher(raw.defaultReasoningEffort);
   const defaultReasoningEffort =
     mappedDefault &&
     efforts.some((effort) => effort.reasoningEffort === mappedDefault)

@@ -77,17 +77,17 @@ export default async function plugin(patcher: PatcherPluginApi) {
       {
         name: "get",
         summary: "Print the current custom instructions",
-        usage: "bb instructions get [--json]",
+        usage: "patcher instructions get [--json]",
       },
       {
         name: "set",
         summary: "Replace the custom instructions",
-        usage: "bb instructions set <text...> [--json]",
+        usage: "patcher instructions set <text...> [--json]",
       },
       {
         name: "clear",
         summary: "Clear the custom instructions",
-        usage: "bb instructions clear [--json]",
+        usage: "patcher instructions clear [--json]",
       },
     ],
     async run(argv) {
@@ -127,7 +127,7 @@ export default async function plugin(patcher: PatcherPluginApi) {
       }
       return {
         exitCode: 1,
-        stderr: "Usage: bb instructions get|set <text...>|clear [--json]",
+        stderr: "Usage: patcher instructions get|set <text...>|clear [--json]",
       };
     },
   });

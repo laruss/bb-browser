@@ -352,7 +352,7 @@ describe("workflows plugin", () => {
           {
             type: "text",
             text: expect.stringContaining(
-              `[BB workflow finished · ${started.runId}]`,
+              `[Patcher workflow finished · ${started.runId}]`,
             ),
             visibility: "agent-only",
           },

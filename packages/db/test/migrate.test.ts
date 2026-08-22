@@ -4326,7 +4326,7 @@ describe("migrate", () => {
           updated_at integer NOT NULL
         );
         INSERT INTO marketplaces VALUES
-          ('patcher-official', 'git', 'https://github.com/ymichael/bb.git', 'main', '{"schemaVersion":1,"name":"patcher-official","displayName":"BB Official","plugins":[]}', 10, 20, NULL, 1, 20),
+          ('patcher-official', 'git', 'https://github.com/ymichael/patcher.git', 'main', '{"schemaVersion":1,"name":"patcher-official","displayName":"Patcher Official","plugins":[]}', 10, 20, NULL, 1, 20),
           ('other', 'git', 'https://example.test/catalog.git', 'main', '{"schemaVersion":1}', 30, 40, NULL, 2, 40);
         INSERT INTO plugins VALUES
           ('official', 'marketplace', 'patcher-official', 'notes', 'npm:notes@^1'),

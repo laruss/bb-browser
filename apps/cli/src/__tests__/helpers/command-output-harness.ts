@@ -179,7 +179,7 @@ export async function runCommand(
 ): Promise<void> {
   const program = new Command();
   register(program);
-  await program.parseAsync(["node", "bb", ...args]);
+  await program.parseAsync(["node", "patcher", ...args]);
 }
 
 export async function getHelpOutput(
@@ -196,7 +196,7 @@ export async function getHelpOutput(
   register(program);
 
   await expect(
-    program.parseAsync(["node", "bb", ...args, "--help"]),
+    program.parseAsync(["node", "patcher", ...args, "--help"]),
   ).rejects.toMatchObject({
     code: "commander.helpDisplayed",
   });

@@ -1,7 +1,7 @@
 import type {
   CustomAcpAgent,
   CustomProviderModel,
-} from "@patcher/config/bb-app-managed-config";
+} from "@patcher/config/patcher-app-managed-config";
 import type { AppSurface } from "@patcher/config/app-surface";
 import type { DbConnection } from "@patcher/db";
 import type { FeatureFlags, ProviderNativeSkillRoots } from "@patcher/domain";
@@ -9,7 +9,7 @@ import type { Logger } from "@patcher/logger";
 import type { PendingInteractionLifecycle } from "./services/interactions/pending-interactions.js";
 import type { MachineAuthService } from "./services/machine-auth.js";
 import type { AppVersionService } from "./services/system/app-version.js";
-import type { PatcherAppManagedConfigReloader } from "./services/system/bb-app-managed-config.js";
+import type { PatcherAppManagedConfigReloader } from "./services/system/patcher-app-managed-config.js";
 import type { TelemetryService } from "./services/system/telemetry.js";
 import type { TerminalSessionLifecycle } from "./services/terminals/terminal-session-lifecycle.js";
 import type { LifecycleDedupers } from "./lifecycle-dedupers.js";

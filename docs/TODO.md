@@ -216,7 +216,7 @@ either a screen Patcher has not drawn (below) or a decision nobody has needed ye
 
 - **The app shows no plugin permissions.** Nothing in the SPA renders
   `patcher.permissions`, and nothing renders `patcher.sites` either. The CLI prints both
-  before an install and `bb plugin info` lists them, so the agent-authored path
+  before an install and `patcher plugin info` lists them, so the agent-authored path
   discloses them — but a plugin installed through the app's own dialog does not,
   and `sites` is the one whose scope only the reader can judge. It now scopes two
   permissions, one of which runs the plugin's code in those pages, which raises what

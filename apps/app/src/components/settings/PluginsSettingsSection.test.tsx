@@ -65,7 +65,7 @@ function systemConfig(): SystemConfigResponse {
     primaryHostId: null,
     primaryHostPlatform: null,
     voiceTranscriptionEnabled: false,
-    dataDir: "/tmp/bb-test",
+    dataDir: "/tmp/patcher-test",
   };
 }
 
@@ -546,7 +546,9 @@ describe("PluginSettingsDetail settings gating", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Remove" }));
     expect(
-      screen.getByText(/BB remembers the removal so the plugin stays hidden/),
+      screen.getByText(
+        /Patcher remembers the removal so the plugin stays hidden/,
+      ),
     ).toBeDefined();
     fireEvent.click(screen.getByRole("button", { name: "Remove plugin" }));
 

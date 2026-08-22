@@ -281,7 +281,7 @@ function buildClientUserMessage({
       ? acceptedClientRequest.meta
       : meta;
   // Recover the structured source for legacy cross-thread requests that were
-  // persisted as ordinary user turns. The reserved envelope is written by BB,
+  // persisted as ordinary user turns. The reserved envelope is written by Patcher,
   // so an exact match is authoritative even when old event metadata is absent.
   const agentEnvelope = parseAgentMessageEnvelope(parsedInput.text);
   const initiator =

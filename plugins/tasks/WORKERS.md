@@ -31,8 +31,8 @@ A dev Patcher instance for THIS worktree is already running with the plugin inst
 
 - App: http://localhost:15943 — Server API: http://localhost:23943
 - Plugin panel: http://localhost:15943/plugins/tasks/tasks
-- CLI against the dev instance: `eval "$(scripts/patcher-dev-app env)"` then `bun run bb:dev tasks <subcommand>`.
-- After changing plugin code: `bunx turbo run build --filter=patcher-plugin-tasks` then reload. NOTE: the `bb plugin reload` CLI hits the same pre-existing `displayName` validation bug as `plugin list` — reload via the API instead: `curl -s -X POST http://localhost:23943/api/v1/plugins/reload -H 'Content-Type: application/json' -d '{"id":"tasks"}'` (check the exact payload against `packages/server-contract` if it 400s; T3.2 used this route successfully).
+- CLI against the dev instance: `eval "$(scripts/patcher-dev-app env)"` then `bun run patcher:dev tasks <subcommand>`.
+- After changing plugin code: `bunx turbo run build --filter=patcher-plugin-tasks` then reload. NOTE: the `patcher plugin reload` CLI hits the same pre-existing `displayName` validation bug as `plugin list` — reload via the API instead: `curl -s -X POST http://localhost:23943/api/v1/plugins/reload -H 'Content-Type: application/json' -d '{"id":"tasks"}'` (check the exact payload against `packages/server-contract` if it 400s; T3.2 used this route successfully).
 - If the dev server itself died: `scripts/patcher-dev-app status` / `scripts/patcher-dev-app current`.
 
 ## Visual verification (UI tasks)
@@ -53,8 +53,8 @@ Check light AND dark (toggle the app theme in Settings → Appearance, or `docum
 
 ## Known gotchas
 
-- `bun run bb:dev plugin list` currently fails CLI response validation (pre-existing repo bug, missing `displayName`). Use `curl -s http://localhost:23943/api/v1/plugins` instead.
-- Backend factory reloads must stay clean: never keep `bb` in module state; register everything inside the factory; `onDispose` for cleanup.
+- `bun run patcher:dev plugin list` currently fails CLI response validation (pre-existing repo bug, missing `displayName`). Use `curl -s http://localhost:23943/api/v1/plugins` instead.
+- Backend factory reloads must stay clean: never keep `patcher` in module state; register everything inside the factory; `onDispose` for cleanup.
 - RPC methods are the only bridge frontend→backend; the frontend cannot use `patcher.sdk` (validate inputs server-side).
 
 ## Report format (end your thread with this)

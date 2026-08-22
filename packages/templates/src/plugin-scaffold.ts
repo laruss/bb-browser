@@ -20,7 +20,7 @@ import {
 } from "./generated/plugin-starter-files.generated.js";
 
 /**
- * `bb plugin new` scaffold. Lives in @patcher/templates because both the CLI
+ * `patcher plugin new` scaffold. Lives in @patcher/templates because both the CLI
  * (which writes it) and the server test suite (which verifies the scaffold
  * actually loads through the plugin service) consume it.
  */
@@ -29,11 +29,11 @@ export interface ScaffoldPluginArgs {
   targetDir: string;
   /** Full package name, e.g. "patcher-plugin-hello". */
   packageName: string;
-  /** BB app version; engines.patcher is pinned to ">=<major.minor>". */
+  /** Patcher app version; engines.patcher is pinned to ">=<major.minor>". */
   patcherVersion: string;
   /**
    * Also scaffold a frontend entry (`app.tsx`, wired as `patcher.app` and built
-   * by `bb plugin build`). Off by default so headless plugins stay lean.
+   * by `patcher plugin build`). Off by default so headless plugins stay lean.
    */
   app?: boolean;
 }
@@ -49,7 +49,7 @@ export interface SyncPluginTypesArgs {
    */
   app: boolean;
   /**
-   * Report what a write would do and touch nothing (`bb plugin types
+   * Report what a write would do and touch nothing (`patcher plugin types
    * --check`, CI). Stale or missing files come back as `stale`.
    */
   check?: boolean;
@@ -70,9 +70,9 @@ export interface SyncedPluginTypeFile {
  * Write this build's bundled `@patcher/plugin-sdk` declarations into a plugin's
  * `types/` directory, creating it when absent.
  *
- * `bb plugin new` seeds these once, but the SDK surface grows with every BB
+ * `patcher plugin new` seeds these once, but the SDK surface grows with every Patcher
  * release, so a copy scaffolded months ago silently under-reports the API.
- * `bb plugin types`, `bb plugin build`, and `bb plugin dev` all call this so
+ * `patcher plugin types`, `patcher plugin build`, and `patcher plugin dev` all call this so
  * the local declarations track the Patcher that is actually running the plugin.
  * Files are compared before writing, so an already-current plugin reports
  * `unchanged` and keeps its mtime.
@@ -126,7 +126,7 @@ export async function syncPluginTypes(
  * `lstat` that never follows the final path component. Returns null when the
  * path does not exist, and refuses a symbolic link.
  *
- * `bb plugin build` and `bb plugin dev` refresh declarations automatically, so
+ * `patcher plugin build` and `patcher plugin dev` refresh declarations automatically, so
  * a plugin that ships `types/` — or a declaration inside it — as a link would
  * otherwise redirect that write onto a file outside the plugin. Building a
  * plugin does not run its code, so cloning an untrusted plugin and building it
@@ -208,7 +208,7 @@ function enginesRange(patcherVersion: string): string {
 
 /**
  * Git ref the scaffold's component registry URL pins to: the release tag
- * matching the running BB, so `npx shadcn add @patcher/<name>` vendors component
+ * matching the running Patcher, so `npx shadcn add @patcher/<name>` vendors component
  * source version-matched to this install by construction. Dev builds
  * (0.0.0) track main.
  */
@@ -218,9 +218,9 @@ function registryRef(patcherVersion: string): string {
 
 /**
  * shadcn `components.json`: lets stock `npx shadcn add @patcher/<name>` pull more
- * components from the BB registry (checked-in items served raw from GitHub;
+ * components from the Patcher registry (checked-in items served raw from GitHub;
  * see packages/plugin-registry). Registry components install into
- * components/ui/ + lib/ + hooks/ via the aliases below; `bb plugin build`
+ * components/ui/ + lib/ + hooks/ via the aliases below; `patcher plugin build`
  * resolves the `@/*` alias through tsconfig paths.
  */
 function componentsJsonSource(patcherVersion: string): string {
@@ -243,7 +243,7 @@ function componentsJsonSource(patcherVersion: string): string {
         hooks: "@/hooks",
       },
       registries: {
-        "@patcher": `https://raw.githubusercontent.com/get-bb/bb/${registryRef(patcherVersion)}/packages/plugin-registry/r/{name}.json`,
+        "@patcher": `https://raw.githubusercontent.com/laruss/patcher-browser/${registryRef(patcherVersion)}/packages/plugin-registry/r/{name}.json`,
       },
     },
     null,
@@ -253,9 +253,9 @@ function componentsJsonSource(patcherVersion: string): string {
 
 function serverEntrySource(packageName: string): string {
   const id = derivePluginId(packageName);
-  return `// ${packageName} — a BB plugin backend entry.
+  return `// ${packageName} — a Patcher plugin backend entry.
 //
-// The default export is a factory that receives the plugin API. BB supplies
+// The default export is a factory that receives the plugin API. Patcher supplies
 // the tiny defineRpcContract runtime helper; the API type remains type-only.
 import { defineRpcContract, type PatcherPluginApi } from "@patcher/plugin-sdk";
 import { z } from "zod";
@@ -270,8 +270,8 @@ export const rpcContract = defineRpcContract({
 export default async function plugin(patcher: PatcherPluginApi) {
   patcher.log.info("loaded");
 
-  // Declarative settings — rendered in BB's settings UI and editable with
-  // \`bb plugin config ${id}\`. Add \`secret: true\` for values like API keys.
+  // Declarative settings — rendered in Patcher's settings UI and editable with
+  // \`patcher plugin config ${id}\`. Add \`secret: true\` for values like API keys.
   const settings = patcher.settings.define({
     greeting: { type: "string", label: "Greeting", default: "hello" },
   });
@@ -319,17 +319,17 @@ export default async function plugin(patcher: PatcherPluginApi) {
 
 function appEntrySource(packageName: string): string {
   const id = derivePluginId(packageName);
-  return `// ${packageName} — a BB plugin frontend entry.
+  return `// ${packageName} — a Patcher plugin frontend entry.
 //
-// Compiled by \`bb plugin build\` into dist/app.js + dist/app.css. React and
-// @patcher/plugin-sdk/app are provided by the BB app at load time (never bundled),
-// so this file must be loaded by BB, not imported directly.
+// Compiled by \`patcher plugin build\` into dist/app.js + dist/app.css. React and
+// @patcher/plugin-sdk/app are provided by the Patcher app at load time (never bundled),
+// so this file must be loaded by Patcher, not imported directly.
 //
 // The components under components/ui/ are YOURS: vendored source (shadcn
-// model), edit freely. Add more from the BB registry with
+// model), edit freely. Add more from the Patcher registry with
 // \`npx shadcn add @patcher/<name>\` (see components.json) — dialogs, dropdowns,
-// tables, the full shadcn set, version-matched to this BB install. Run
-// \`npm install\` once before \`bb plugin build\`.
+// tables, the full shadcn set, version-matched to this Patcher install. Run
+// \`npm install\` once before \`patcher plugin build\`.
 import { useState } from "react";
 import { definePluginApp, usePatcherContext, useRpc } from "@patcher/plugin-sdk/app";
 import type { rpcContract } from "./server";
@@ -374,7 +374,7 @@ function HelloCard() {
   );
 }
 
-// The default export must be definePluginApp(...); BB interprets it after
+// The default export must be definePluginApp(...); Patcher interprets it after
 // loading the bundle. Register general UI under app.slots and composer actions,
 // plus-menu rows, banners, or rich-text rules with app.composer.customize(...)
 // (see the Patcher guide's plugins chapter).
@@ -412,7 +412,7 @@ function tsconfigSource(app: boolean): string {
           "@patcher/plugin-sdk": ["./types/patcher-plugin-sdk.d.ts"],
           "@patcher/plugin-sdk/app": ["./types/patcher-plugin-sdk-app.d.ts"],
           // Vendored components import via "@/..." (shadcn convention);
-          // esbuild reads this mapping too during `bb plugin build`.
+          // esbuild reads this mapping too during `patcher plugin build`.
           ...(app ? { "@/*": ["./*"] } : {}),
         },
         noEmit: true,
@@ -430,10 +430,10 @@ function tsconfigSource(app: boolean): string {
 function skillSource(): string {
   return `---
 name: example-skill
-description: Example skill scaffolded by \`bb plugin new\` — replace with a real capability description that tells agents when to use it.
+description: Example skill scaffolded by \`patcher plugin new\` — replace with a real capability description that tells agents when to use it.
 ---
 
-<!-- Plugin skills/ directories auto-import in a later BB phase; until then
+<!-- Plugin skills/ directories auto-import in a later Patcher phase; until then
      this file documents the expected layout. -->
 
 # Example skill
@@ -449,25 +449,25 @@ function readmeSource(packageName: string, app: boolean): string {
 ## UI components
 
 \`components/ui/\` is vendored source you own (the shadcn model): edit the
-files freely — they never update out from under you. Add more from the BB
-component registry (the full shadcn set, version-matched to your BB install
+files freely — they never update out from under you. Add more from the Patcher
+component registry (the full shadcn set, version-matched to your Patcher install
 via the pinned ref in \`components.json\`):
 
 \`\`\`
 npx shadcn add @patcher/dialog @patcher/select
 \`\`\`
 
-Run \`npm install\` once before \`bb plugin build\` — the vendored components'
+Run \`npm install\` once before \`patcher plugin build\` — the vendored components'
 npm deps bundle into your dist. React, and BB-shimmed packages like the
 radix portal primitives and \`sonner\` (\`import { toast } from "sonner"\`
-reaches BB's own toaster), are provided by the BB app at runtime and never
+reaches Patcher's own toaster), are provided by the Patcher app at runtime and never
 bundled. Ship \`dist/\` (npm tarball or committed for git installs) so
 people installing your plugin never need npm.
 `
     : "";
   return `# ${packageName}
 
-A BB plugin.
+A Patcher plugin.
 ${componentsSection}
 ## Manifest
 
@@ -475,17 +475,17 @@ ${componentsSection}
 
 - \`patcher.server\` — backend entry (required); optional \`patcher.app\` for a frontend.
 - \`patcher.name\` and \`patcher.description\` — required human-facing identity.
-- \`patcher.branding\` — required; declare \`icon\` as a BB icon name or a
+- \`patcher.branding\` — required; declare \`icon\` as a Patcher icon name or a
   plugin-relative compact SVG, or declare \`logo.light\` (with optional
   \`logo.dark\`). Logo assets must be relative \`.svg\`, \`.png\`, or
   \`.webp\` files.
 - \`engines.patcher\` — supported Patcher app version range.
 - \`engines.patcherPluginSdk\` — supported plugin SDK range (scaffold: \`^${PLUGIN_SDK_VERSION}\`).
-- \`dependencies\` — every package your source imports that BB does not provide.
-  \`bb plugin build\` inlines them into \`dist/\`, and git installs resolve this
+- \`dependencies\` — every package your source imports that Patcher does not provide.
+  \`patcher plugin build\` inlines them into \`dist/\`, and git installs resolve this
   list alone, so a build-required package here rather than in
   \`devDependencies\` is what keeps your plugin installable. \`devDependencies\`
-  is for types and tooling only (BB shims React, the portal primitives, and
+  is for types and tooling only (Patcher shims React, the portal primitives, and
   \`@patcher/plugin-sdk\` at runtime — never bundle them).
 
 ## Permissions
@@ -493,13 +493,13 @@ ${componentsSection}
 \`patcher.permissions\` in \`package.json\` lists what this plugin may reach through
 \`patcher.browser\` and \`patcher.sdk\`. It starts empty, and **undeclared means denied** —
 the first call to something missing throws with the permission named, so add
-entries as you need them and \`bb plugin reload ${id}\` after.
+entries as you need them and \`patcher plugin reload ${id}\` after.
 
 They gate the Patcher API, not the process: a plugin is full-trust code and can
 still reach the machine directly. They exist so what a plugin uses is written
 down, shown to whoever installs it, and refused when it was not asked for.
 
-Run \`bb plugin build\` before publishing git/npm installs. It writes
+Run \`patcher plugin build\` before publishing git/npm installs. It writes
 \`dist/server.js\` + \`server.meta.json\` (and, with \`patcher.app\`, \`app.js\` /
 \`app.css\` / \`app.meta.json\`). Each \`*.meta.json\` stamps SDK major/version,
 \`artifactFormatVersion\`, \`pluginId\`, \`pluginVersion\`, and
@@ -507,48 +507,48 @@ Run \`bb plugin build\` before publishing git/npm installs. It writes
 
 ## Install
 
-From this directory (\`bb plugin new\` already ran the install; a fresh clone
+From this directory (\`patcher plugin new\` already ran the install; a fresh clone
 needs it):
 
 \`\`\`
 npm install
-bb plugin install .
+patcher plugin install .
 \`\`\`
 
 After editing sources, reload:
 
 \`\`\`
-bb plugin reload ${id}
+patcher plugin reload ${id}
 \`\`\`
 
 ## Configure
 
 \`\`\`
-bb plugin config ${id}
-bb plugin config ${id} set greeting hi
+patcher plugin config ${id}
+patcher plugin config ${id} set greeting hi
 \`\`\`
 
 ## Types & API reference
 
 \`types/patcher-plugin-sdk.d.ts\` (and \`types/patcher-plugin-sdk-app.d.ts\` for the
-frontend) are the full, bundled BB plugin API — \`tsconfig.json\` maps
+frontend) are the full, bundled Patcher plugin API — \`tsconfig.json\` maps
 \`@patcher/plugin-sdk\` to them, so your editor and \`tsc\` see real types with no extra
 install. They are readable declarations: open them for an exact signature.
 
-The SDK surface grows with every BB release, and these are a copy. Refresh
-them from the BB you are running:
+The SDK surface grows with every Patcher release, and these are a copy. Refresh
+them from the Patcher you are running:
 
 \`\`\`
-bb plugin types          # rewrite types/ from this BB
-bb plugin types --check  # CI: fail when they are out of date
+patcher plugin types          # rewrite types/ from this Patcher
+patcher plugin types --check  # CI: fail when they are out of date
 \`\`\`
 
-\`bb plugin build\` and \`bb plugin dev\` refresh them for you. Ask BB to write
+\`patcher plugin build\` and \`patcher plugin dev\` refresh them for you. Ask Patcher to write
 plugins for you: the \`patcher-plugin-authoring\` skill documents the whole surface
 with examples.
 
-Confused by the API, or need something the types don't explain? Clone the BB
-repo and read the source: <https://github.com/get-bb/bb>.
+Confused by the API, or need something the types don't explain? Clone the Patcher
+repo and read the source: <https://github.com/laruss/patcher-browser>.
 `;
 }
 
@@ -579,7 +579,7 @@ export async function scaffoldPlugin(args: ScaffoldPluginArgs): Promise<void> {
         },
         patcher: {
           name: pluginNameOf(packageName),
-          description: "A BB plugin.",
+          description: "A Patcher plugin.",
           branding: { icon: "Zap" },
           server: "./server.ts",
           ...(app ? { app: "./app.tsx" } : {}),
@@ -607,7 +607,7 @@ export async function scaffoldPlugin(args: ScaffoldPluginArgs): Promise<void> {
         // package is not needed for normal plugin source. These supply the real
         // npm types those declarations reference (hono/better-sqlite3 and the
         // root contract's React types) for packages generated source does not
-        // import: BB provides them at runtime and the bundle never inlines
+        // import: Patcher provides them at runtime and the bundle never inlines
         // them. An author who imports one directly must promote it above.
         devDependencies: {
           "@types/better-sqlite3": "^7.6.12",
@@ -619,7 +619,7 @@ export async function scaffoldPlugin(args: ScaffoldPluginArgs): Promise<void> {
           "better-sqlite3": "^12.0.0",
           hono: "^4.11.9",
           typescript: "^5.7.0",
-          // Runtime-shimmed by BB (never bundled) — types only.
+          // Runtime-shimmed by Patcher (never bundled) — types only.
           ...(app ? PLUGIN_STARTER_TYPE_DEPENDENCIES : {}),
         },
       },
@@ -632,14 +632,14 @@ export async function scaffoldPlugin(args: ScaffoldPluginArgs): Promise<void> {
   // Bundled root/app declarations keep normal plugin source self-contained.
   // Tests that use @patcher/plugin-sdk/testing install the published package; the
   // exact root/app paths syncPluginTypes writes intentionally keep resolving
-  // here. Seeding through the same function `bb plugin types` uses is what
+  // here. Seeding through the same function `patcher plugin types` uses is what
   // stops a scaffolded plugin and a refreshed one from ever diverging.
   await syncPluginTypes({ rootDir: targetDir, app });
   if (app) {
     await writeFile(join(targetDir, "app.tsx"), appEntrySource(packageName));
     // Vendored starter components (shadcn model — the author owns and edits
     // them) + components.json so `npx shadcn add @patcher/<name>` pulls more from
-    // the BB registry at the version tag matching this install.
+    // the Patcher registry at the version tag matching this install.
     for (const file of PLUGIN_STARTER_FILES) {
       const filePath = join(targetDir, file.target);
       await mkdir(dirname(filePath), { recursive: true });

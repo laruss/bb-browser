@@ -31,7 +31,7 @@ import {
 } from "../../../apps/server/src/services/skills/builtin-skills-copy.js";
 import { SkillTreeRegistry } from "../../../apps/server/src/services/skills/injected-skills.js";
 import { createAppVersionService } from "../../../apps/server/src/services/system/app-version.js";
-import { createPatcherAppManagedConfigReloader } from "../../../apps/server/src/services/system/bb-app-managed-config.js";
+import { createPatcherAppManagedConfigReloader } from "../../../apps/server/src/services/system/patcher-app-managed-config.js";
 import { createNoopTelemetryService } from "../../../apps/server/src/services/system/telemetry.js";
 import { TerminalSessionLifecycle } from "../../../apps/server/src/services/terminals/terminal-session-lifecycle.js";
 import type {

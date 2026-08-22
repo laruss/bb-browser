@@ -63,7 +63,7 @@ describe("createServerClient", () => {
       hostId: "host-1",
       hostName: "Host",
       hostType: "persistent",
-      dataDir: "/tmp/bb",
+      dataDir: "/tmp/patcher",
       instanceId: "instance-1",
       activeThreads: [],
       loadedEnvironments: [],
@@ -162,7 +162,9 @@ describe("createServerClient", () => {
       expect(new Headers(init?.headers).get("authorization")).toBe(
         "Bearer host-key",
       );
-      expect(new Headers(init?.headers).get("x-bb-connect-machine")).toBeNull();
+      expect(
+        new Headers(init?.headers).get("x-patcher-connect-machine"),
+      ).toBeNull();
       return new Response(
         JSON.stringify({
           treeHash,

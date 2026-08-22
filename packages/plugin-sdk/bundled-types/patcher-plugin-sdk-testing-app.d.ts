@@ -1,9 +1,9 @@
-// Portable type declarations for `@patcher/plugin-sdk`. Unpublished BB
+// Portable type declarations for `@patcher/plugin-sdk`. Unpublished Patcher
 // workspace contracts are flattened; public subpaths may reuse the
 // package root without requiring any other @patcher/* package.
 //
-// Confused by the API, or need a symbol that isn't here? Clone the BB repo
-// and read the real source: https://github.com/get-bb/bb
+// Confused by the API, or need a symbol that isn't here? Clone the Patcher repo
+// and read the real source: https://github.com/laruss/patcher-browser
 
 import { ReactNode, ComponentType } from 'react';
 import { RenderResult } from '@testing-library/react';
@@ -16,13 +16,13 @@ import { PluginHomepageSectionRegistration, PluginSettingsSectionRegistration, P
  *
  * - {@link installTestPluginRuntime} fills `globalThis.__patcherPluginRuntime.
  *   pluginSdkApp` with a test implementation of the `@patcher/plugin-sdk/app`
- *   surface (the same seam `bb plugin build` shims to the real app). It must
+ *   surface (the same seam `patcher plugin build` shims to the real app). It must
  *   run BEFORE the plugin's `app.tsx` module evaluates, because that module
  *   binds the runtime at import time — so import `app.tsx` through
  *   {@link loadPluginApp}'s thunk form, or call the installer from a vitest
  *   setup file when you prefer static imports.
  * - {@link loadPluginApp} runs the definition's setup against a validating
- *   collector (ported from the BB app's interpreter, same error messages)
+ *   collector (ported from the Patcher app's interpreter, same error messages)
  *   and returns the typed slot registrations.
  * - {@link renderSlot} mounts one registration's component with mock hook
  *   backends: rpc as a method→handler map with a call log, realtime as a

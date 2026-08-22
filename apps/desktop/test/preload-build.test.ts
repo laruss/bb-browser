@@ -329,8 +329,8 @@ async function readDesktopPackageVersion(): Promise<string> {
 // rely on but the typechecker can't see: main must be CJS (electron-universal
 // builds the entry asar around it), the preload must have the desktop version
 // baked in at build time (not read from `process.env` at runtime, which is
-// empty in packaged builds), the bb-app bridge must be ESM (it imports
-// `bb-app/dist/bb-app.js`), every entry needs its source map alongside it
+// empty in packaged builds), the patcher-app bridge must be ESM (it imports
+// `patcher-app/dist/patcher-app.js`), every entry needs its source map alongside it
 // for crash-symbolication in shipped builds, and the compiled Electron entry
 // must launch far enough for the preload bridge to answer from a real window.
 // One smoke test asserts all of those artifact-level contracts.
@@ -351,7 +351,7 @@ describe("desktop build", () => {
       "utf8",
     );
     const bridgeSource = await readFile(
-      resolve(desktopPackageRoot, "dist", "bb-app-bridge.mjs"),
+      resolve(desktopPackageRoot, "dist", "patcher-app-bridge.mjs"),
       "utf8",
     );
 
@@ -367,8 +367,8 @@ describe("desktop build", () => {
     expect(preloadSource).not.toContain("PATCHER_DESKTOP_VERSION");
     expect(preloadSource).not.toContain("getDesktopVersion(process.env");
 
-    // The bridge must stay ESM — it pulls bb-app via the package's ESM entry.
-    expect(bridgeSource).toContain('import "bb-app/dist/bb-app.js"');
+    // The bridge must stay ESM — it pulls patcher-app via the package's ESM entry.
+    expect(bridgeSource).toContain('import "patcher-app/dist/patcher-app.js"');
 
     // Source maps must ship for every entry so crash reports symbolicate.
     for (const mapPath of [
@@ -376,7 +376,7 @@ describe("desktop build", () => {
       "preload.cjs.map",
       "log-viewer-preload.cjs.map",
       "page-script-preload.cjs.map",
-      "bb-app-bridge.mjs.map",
+      "patcher-app-bridge.mjs.map",
     ]) {
       await expect(
         access(resolve(desktopPackageRoot, "dist", mapPath)),

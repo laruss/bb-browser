@@ -64,7 +64,7 @@ export interface PluginCallbackShape {
    * How this call reads in a log line and in the plugin's status detail.
    *
    * Separate from the kind on purpose: the kind is the transport's vocabulary
-   * and the label is the user's. `bb plugin list` shows the status detail, and
+   * and the label is the user's. `patcher plugin list` shows the status detail, and
    * "threadEvent thread.deleted failed" is this file's word leaking into text
    * somebody reads about their own plugin.
    */

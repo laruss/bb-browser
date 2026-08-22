@@ -8,13 +8,13 @@ import {
 import type { CommandRegistrar } from "../helpers/command-output-harness.js";
 import { registerThreadCommands } from "../../commands/thread/index.js";
 
-describe("bb thread output command output", () => {
+describe("patcher thread output command output", () => {
   setupCommandOutputTestEnvironment();
 
   const register: CommandRegistrar = (program) =>
     registerThreadCommands(program, () => "http://server");
 
-  it("bb thread output requires a thread id or --self", async () => {
+  it("patcher thread output requires a thread id or --self", async () => {
     vi.stubEnv("PATCHER_THREAD_ID", "thread-output-context");
     const getOutput = vi.fn(async () => ({ output: "FINAL" }));
     stubServerApi({ "v1.threads.:id.output.$get": getOutput });
@@ -29,7 +29,7 @@ describe("bb thread output command output", () => {
     );
   });
 
-  it("bb thread output --self resolves from PATCHER_THREAD_ID", async () => {
+  it("patcher thread output --self resolves from PATCHER_THREAD_ID", async () => {
     vi.stubEnv("PATCHER_THREAD_ID", "thread-output-context");
     const getOutput = vi.fn(async () => ({ output: "FINAL" }));
     stubServerApi({ "v1.threads.:id.output.$get": getOutput });
@@ -45,7 +45,7 @@ describe("bb thread output command output", () => {
     expect(collectLogLines(vi.mocked(console.log))).toContain("FINAL");
   });
 
-  it("bb thread output --json prints the raw output payload", async () => {
+  it("patcher thread output --json prints the raw output payload", async () => {
     const getOutput = vi.fn(async () => ({ output: "FINAL" }));
     stubServerApi({ "v1.threads.:id.output.$get": getOutput });
 

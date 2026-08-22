@@ -5,7 +5,7 @@ import {
 import { cliFetch } from "./client.js";
 
 /**
- * Plugin-contributed `bb` subcommands (server design §4.4). The CLI fetches
+ * Plugin-contributed `patcher` subcommands (server design §4.4). The CLI fetches
  * metadata from GET /api/v1/plugins/contributions and proxies invocations to
  * POST /api/v1/plugins/:id/cli — plugin code only ever runs server-side.
  */
@@ -153,7 +153,7 @@ export async function fetchPluginCliContributions(
 
 /**
  * Look up an installed-but-disabled plugin whose id matches the unknown
- * command name (the `bb <id>` convention builtins follow), so `bb <id>` with
+ * command name (the `patcher <id>` convention builtins follow), so `patcher <id>` with
  * that plugin disabled explains itself instead of erroring with
  * "unknown command". Best effort: any failure returns null.
  */

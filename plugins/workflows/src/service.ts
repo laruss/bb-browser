@@ -148,8 +148,8 @@ export function formatWorkflowNotification(
   run: WorkflowRunRow,
   maximumBytes: number,
 ): string {
-  const prefix = `[BB workflow finished · ${run.id}]\n\nRun ${run.id} (${run.name}) ${run.status}.\n`;
-  const suffix = `\nRun \`bb workflows status ${run.id}\` for authoritative details.`;
+  const prefix = `[Patcher workflow finished · ${run.id}]\n\nRun ${run.id} (${run.name}) ${run.status}.\n`;
+  const suffix = `\nRun \`patcher workflows status ${run.id}\` for authoritative details.`;
   const detail =
     run.status === "succeeded"
       ? `Result: ${run.resultJson ?? "null"}`
@@ -166,7 +166,7 @@ export function formatWorkflowNotification(
     return `${prefix}${utf8Prefix(detail, available)}${marker}${suffix}`;
   }
   return utf8Prefix(
-    `[BB workflow ${run.id}] ${run.status} — run bb workflows status ${run.id}`,
+    `[Patcher workflow ${run.id}] ${run.status} — run patcher workflows status ${run.id}`,
     maximumBytes,
   );
 }
@@ -672,7 +672,7 @@ export function createWorkflowService(
     prompt: string,
     options: WorkflowAgentOptions,
   ) {
-    const header = `[BB workflow ${run.name} · run ${run.id}]`;
+    const header = `[Patcher workflow ${run.name} · run ${run.id}]`;
     if (options.outputSchema === null) {
       return `${header}\n\n${prompt}\n\nYour final text IS the return value (not a human-facing message), so return raw data.`;
     }
@@ -1141,7 +1141,7 @@ export function createWorkflowService(
           ? "This workflow worker is already terminal. Do not perform more work."
           : options.outputSchema === null
             ? null
-            : `You are a BB workflow worker. Submit your final value with patcher_workflow_result. Required schema: ${JSON.stringify(options.outputSchema)}`,
+            : `You are a Patcher workflow worker. Submit your final value with patcher_workflow_result. Required schema: ${JSON.stringify(options.outputSchema)}`,
     };
   }
 

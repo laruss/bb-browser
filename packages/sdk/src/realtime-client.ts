@@ -92,9 +92,7 @@ interface ConnectionListenerRecord {
   event: "realtime:connection";
 }
 
-type RealtimeListenerRecord =
-  | ChangedListenerRecord
-  | ConnectionListenerRecord;
+type RealtimeListenerRecord = ChangedListenerRecord | ConnectionListenerRecord;
 
 function targetKey(target: RealtimeSubscriptionTarget): string {
   return realtimeSubscriptionTargetKey(target);
@@ -127,9 +125,7 @@ function environmentRealtimeTarget(
 function hostRealtimeTarget(
   hostId: string | undefined,
 ): RealtimeSubscriptionTarget {
-  return hostId
-    ? { kind: "host-detail", hostId }
-    : { kind: "host-list" };
+  return hostId ? { kind: "host-detail", hostId } : { kind: "host-list" };
 }
 
 function optionalTargetIdMatches(args: OptionalTargetIdMatchesArgs): boolean {
@@ -140,7 +136,9 @@ function optionalTargetIdMatches(args: OptionalTargetIdMatchesArgs): boolean {
  * Adapts a standard (browser/Node-global) WebSocket to the runtime-agnostic
  * socket shape the realtime client consumes.
  */
-export function wrapStandardWebsocket(socket: WebSocket): PatcherRealtimeSocket {
+export function wrapStandardWebsocket(
+  socket: WebSocket,
+): PatcherRealtimeSocket {
   const adapter: PatcherRealtimeSocket = {
     close: () => socket.close(),
     onclose: null,
@@ -376,7 +374,7 @@ export class PatcherRealtimeClient implements PatcherRealtime {
       this.transport.websocket ?? resolveDefaultWebsocketFactory();
     if (!websocketFactory) {
       throw new Error(
-        "BB SDK realtime requires a WebSocket implementation. Pass websocket when creating the transport.",
+        "Patcher SDK realtime requires a WebSocket implementation. Pass websocket when creating the transport.",
       );
     }
     const socket = websocketFactory(
@@ -551,7 +549,10 @@ export class PatcherRealtimeClient implements PatcherRealtime {
     try {
       parsedMessage = JSON.parse(event.data);
     } catch (error) {
-      console.error("Patcher realtime ignored malformed websocket message", error);
+      console.error(
+        "Patcher realtime ignored malformed websocket message",
+        error,
+      );
       return;
     }
 
@@ -644,7 +645,9 @@ export class PatcherRealtimeClient implements PatcherRealtime {
       this.resetSocketReadyPromise();
     }
     if (!this.socketReadyPromise) {
-      throw new Error("BB SDK realtime socket readiness was not initialized.");
+      throw new Error(
+        "Patcher SDK realtime socket readiness was not initialized.",
+      );
     }
     return this.socketReadyPromise;
   }

@@ -196,7 +196,7 @@ export function createPluginRegistration(context: PluginRegistrationContext) {
       identity.sourceIntent.kind === "git"
     ) {
       throw new Error(
-        `plugin "${pluginId}" is already installed; use \`bb plugin update ${pluginId}\` or remove it before reinstalling`,
+        `plugin "${pluginId}" is already installed; use \`patcher plugin update ${pluginId}\` or remove it before reinstalling`,
       );
     }
   }

@@ -32,7 +32,7 @@ export class PluginPermissionError extends Error {
     super(
       `${what} needs the "${permission}" permission, which plugin "${pluginId}" ` +
         `does not declare. Add it to "patcher.permissions" in the plugin's ` +
-        `package.json, then run \`bb plugin reload ${pluginId}\`.`,
+        `package.json, then run \`patcher plugin reload ${pluginId}\`.`,
     );
     this.name = "PluginPermissionError";
     this.permission = permission;

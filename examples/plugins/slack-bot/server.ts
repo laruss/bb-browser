@@ -1,12 +1,12 @@
 // patcher-plugin-slack-bot — the headless "Slack bot" hero plugin (no frontend).
 //
-// Mention the bot in Slack → it spawns a BB thread in the configured project
+// Mention the bot in Slack → it spawns a Patcher thread in the configured project
 // (server-resolved project-default environment) and posts the agent's answer
-// back into the Slack thread when the BB thread goes idle.
+// back into the Slack thread when the Patcher thread goes idle.
 //
 // Surfaces demonstrated: secret + project settings, patcher.http webhook with
 // Slack signature verification, patcher.sdk.threads.spawn/send with plugin
-// attribution, patcher.storage.kv mapping Slack threads to BB threads,
+// attribution, patcher.storage.kv mapping Slack threads to Patcher threads,
 // patcher.events.on("thread.idle"), and patcher.status.needsConfiguration.
 //
 // The type-only import is erased at load time; this file runs as-is.
@@ -18,8 +18,8 @@ const SIGNATURE_VERSION = "v0";
 const SIGNATURE_MAX_AGE_SECONDS = 5 * 60;
 
 const CONFIGURE_HINT =
-  "Set botToken, signingSecret, and project with `bb plugin config slack-bot`, " +
-  "then `bb plugin reload slack-bot`.";
+  "Set botToken, signingSecret, and project with `patcher plugin config slack-bot`, " +
+  "then `patcher plugin reload slack-bot`.";
 
 /**
  * Verify Slack's request signature (x-slack-signature): HMAC-SHA256 of
@@ -83,8 +83,8 @@ export default async function plugin(patcher: PatcherPluginApi) {
     },
     project: {
       type: "project",
-      label: "BB project for mention threads",
-      description: "Mentions spawn BB threads in this project.",
+      label: "Patcher project for mention threads",
+      description: "Mentions spawn Patcher threads in this project.",
     },
   });
 
@@ -108,7 +108,10 @@ export default async function plugin(patcher: PatcherPluginApi) {
       const current = await settings.get();
       if (!current.signingSecret) {
         return context.json(
-          { ok: false, error: `slack-bot is not configured. ${CONFIGURE_HINT}` },
+          {
+            ok: false,
+            error: `slack-bot is not configured. ${CONFIGURE_HINT}`,
+          },
           503,
         );
       }
@@ -120,7 +123,10 @@ export default async function plugin(patcher: PatcherPluginApi) {
         rawBody,
       });
       if (!verified) {
-        return context.json({ ok: false, error: "invalid Slack signature" }, 401);
+        return context.json(
+          { ok: false, error: "invalid Slack signature" },
+          401,
+        );
       }
 
       let body: any;
@@ -135,7 +141,10 @@ export default async function plugin(patcher: PatcherPluginApi) {
         return context.json({ challenge: body.challenge });
       }
 
-      if (body?.type === "event_callback" && body.event?.type === "app_mention") {
+      if (
+        body?.type === "event_callback" &&
+        body.event?.type === "app_mention"
+      ) {
         const event = body.event as {
           channel: string;
           text: string;
@@ -143,14 +152,18 @@ export default async function plugin(patcher: PatcherPluginApi) {
           thread_ts?: string;
         };
         if (!current.project) {
-          patcher.log.warn(`mention ignored — no project configured. ${CONFIGURE_HINT}`);
+          patcher.log.warn(
+            `mention ignored — no project configured. ${CONFIGURE_HINT}`,
+          );
           return context.json({ ok: true });
         }
         const prompt = stripMentions(event.text);
         const threadTs = event.thread_ts ?? event.ts;
 
         // Second mention in a Slack thread we already track → follow-up.
-        const existing = await patcher.storage.kv.get<string>(`slack:${threadTs}`);
+        const existing = await patcher.storage.kv.get<string>(
+          `slack:${threadTs}`,
+        );
         if (existing !== undefined) {
           await patcher.sdk.threads.send({
             threadId: existing,
@@ -160,7 +173,7 @@ export default async function plugin(patcher: PatcherPluginApi) {
           return context.json({ ok: true });
         }
 
-        // First mention → spawn a BB thread. The server resolves the
+        // First mention → spawn a Patcher thread. The server resolves the
         // project-default environment; patcher.sdk fills in origin "plugin" +
         // originPluginId automatically.
         const thread = await patcher.sdk.threads.spawn({
@@ -170,7 +183,7 @@ export default async function plugin(patcher: PatcherPluginApi) {
           title: `Slack: ${prompt.slice(0, 60) || "mention"}`,
         });
         await patcher.storage.kv.set(`slack:${threadTs}`, thread.id);
-        await patcher.storage.kv.set(`bb:${thread.id}`, {
+        await patcher.storage.kv.set(`patcher:${thread.id}`, {
           channel: event.channel,
           threadTs,
         } satisfies SlackTarget);
@@ -184,10 +197,12 @@ export default async function plugin(patcher: PatcherPluginApi) {
     { auth: "none" },
   );
 
-  // When a BB thread this plugin spawned goes idle, post the agent's last
+  // When a Patcher thread this plugin spawned goes idle, post the agent's last
   // message back into the originating Slack thread.
   patcher.events.on("thread.idle", async ({ thread, lastAssistantText }) => {
-    const target = await patcher.storage.kv.get<SlackTarget>(`bb:${thread.id}`);
+    const target = await patcher.storage.kv.get<SlackTarget>(
+      `patcher:${thread.id}`,
+    );
     if (target === undefined || lastAssistantText === null) return;
     const { botToken } = await settings.get();
     if (!botToken) {
@@ -208,7 +223,9 @@ export default async function plugin(patcher: PatcherPluginApi) {
     });
     const result = (await response.json()) as { ok: boolean; error?: string };
     if (!result.ok) {
-      patcher.log.warn(`chat.postMessage failed: ${result.error ?? "unknown error"}`);
+      patcher.log.warn(
+        `chat.postMessage failed: ${result.error ?? "unknown error"}`,
+      );
     }
   });
 

@@ -73,10 +73,10 @@ const SUMMARIZED_ADAPTIVE_THINKING = {
 const CLAUDE_CODE_EXECUTABLE_ENV = "PATCHER_CLAUDE_CODE_EXECUTABLE";
 
 /**
- * BB's "ultracode" reasoning level is not an SDK effort: it decomposes into
+ * Patcher's "ultracode" reasoning level is not an SDK effort: it decomposes into
  * effort "xhigh" plus the session-scoped `ultracode` settings flag (standing
  * dynamic-workflow orchestration). The SDK Settings flag tier is otherwise
- * unused by BB, so it is owned entirely here.
+ * unused by Patcher, so it is owned entirely here.
  */
 export function toSdkEffort(
   reasoningLevel: ReasoningLevel,

@@ -181,7 +181,7 @@ export function registerStatusCommand(
 
         if (!context.projectId && !context.threadId) {
           console.log("");
-          console.log("Tip: run bb guide for help getting started.");
+          console.log("Tip: run patcher guide for help getting started.");
         }
       }),
     );

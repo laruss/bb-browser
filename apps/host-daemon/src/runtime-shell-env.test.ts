@@ -74,14 +74,14 @@ async function createFakeCliPackage(
   options: FakeCliPackageOptions = {},
 ): Promise<FakeCliPackage> {
   const cliPackageRoot = await makeTempDir("patcher-cli-package-");
-  const executablePath = options.executablePath ?? "./dist/bin/bb";
+  const executablePath = options.executablePath ?? "./dist/bin/patcher";
   const cliEntryPath = path.resolve(cliPackageRoot, executablePath);
 
   if (options.writeEntry ?? true) {
     await fs.mkdir(path.dirname(cliEntryPath), { recursive: true });
     await fs.writeFile(
       cliEntryPath,
-      "#!/usr/bin/env node\nprocess.stdout.write('bb')\n",
+      "#!/usr/bin/env node\nprocess.stdout.write('patcher')\n",
       { mode: options.executable ? 0o755 : 0o644 },
     );
     await fs.chmod(cliEntryPath, options.executable ? 0o755 : 0o644);
@@ -359,7 +359,7 @@ describe("prepareRuntimeShellEnv", () => {
     );
 
     const env = prepareRuntimeShellEnv({
-      patcherExecutableDirectory: "/tmp/bb-bin",
+      patcherExecutableDirectory: "/tmp/patcher-bin",
       inheritedPath: "/usr/bin",
       serverUrl: "http://127.0.0.1:43123",
     });
@@ -371,14 +371,14 @@ describe("prepareRuntimeShellEnv", () => {
   it("prepends the configured Patcher executable directory to PATH and sets PATCHER_CLI", () => {
     expect(
       prepareRuntimeShellEnv({
-        patcherExecutableDirectory: "/tmp/bb-bin",
+        patcherExecutableDirectory: "/tmp/patcher-bin",
         hostDaemonPort: 3002,
         inheritedPath: "/usr/bin",
         serverUrl: "http://127.0.0.1:3334",
       }),
     ).toEqual({
-      PATH: `/tmp/bb-bin${delimiter}/usr/bin`,
-      PATCHER_CLI: path.resolve("/tmp/bb-bin", "bb"),
+      PATH: `/tmp/patcher-bin${delimiter}/usr/bin`,
+      PATCHER_CLI: path.resolve("/tmp/patcher-bin", "patcher"),
       PATCHER_SERVER_URL: "http://127.0.0.1:3334",
       PATCHER_HOST_DAEMON_PORT: "3002",
     });
@@ -387,14 +387,14 @@ describe("prepareRuntimeShellEnv", () => {
   it("uses an explicit patcherExecutablePath for PATCHER_CLI", () => {
     expect(
       prepareRuntimeShellEnv({
-        patcherExecutableDirectory: "/tmp/bb-bin",
-        patcherExecutablePath: "/opt/custom/bb",
+        patcherExecutableDirectory: "/tmp/patcher-bin",
+        patcherExecutablePath: "/opt/custom/patcher",
         inheritedPath: "/usr/bin",
         serverUrl: "http://127.0.0.1:3334",
       }),
     ).toMatchObject({
-      PATCHER_CLI: "/opt/custom/bb",
-      PATH: `/tmp/bb-bin${delimiter}/usr/bin`,
+      PATCHER_CLI: "/opt/custom/patcher",
+      PATH: `/tmp/patcher-bin${delimiter}/usr/bin`,
     });
   });
 
@@ -403,13 +403,13 @@ describe("prepareRuntimeShellEnv", () => {
 
     expect(
       prepareRuntimeShellEnv({
-        patcherExecutableDirectory: "/tmp/bb-bin",
+        patcherExecutableDirectory: "/tmp/patcher-bin",
         hostDaemonPort: 3002,
         serverUrl: "http://127.0.0.1:3334",
       }),
     ).toEqual({
-      PATH: `/tmp/bb-bin${delimiter}/usr/local/bin:/usr/bin`,
-      PATCHER_CLI: path.resolve("/tmp/bb-bin", "bb"),
+      PATH: `/tmp/patcher-bin${delimiter}/usr/local/bin:/usr/bin`,
+      PATCHER_CLI: path.resolve("/tmp/patcher-bin", "patcher"),
       PATCHER_SERVER_URL: "http://127.0.0.1:3334",
       PATCHER_HOST_DAEMON_PORT: "3002",
     });
@@ -418,13 +418,13 @@ describe("prepareRuntimeShellEnv", () => {
   it("omits the host daemon port when the local API is disabled", () => {
     expect(
       prepareRuntimeShellEnv({
-        patcherExecutableDirectory: "/tmp/bb-bin",
+        patcherExecutableDirectory: "/tmp/patcher-bin",
         inheritedPath: "/usr/bin",
         serverUrl: "http://127.0.0.1:3334",
       }),
     ).toEqual({
-      PATH: `/tmp/bb-bin${delimiter}/usr/bin`,
-      PATCHER_CLI: path.resolve("/tmp/bb-bin", "bb"),
+      PATH: `/tmp/patcher-bin${delimiter}/usr/bin`,
+      PATCHER_CLI: path.resolve("/tmp/patcher-bin", "patcher"),
       PATCHER_SERVER_URL: "http://127.0.0.1:3334",
     });
   });

@@ -7,11 +7,11 @@ description: Write, build, and install Patcher plugins. Use whenever the task is
 
 A Patcher plugin is a TypeScript package running in-process inside the Patcher server.
 Its backend entry default-exports a factory that receives the full plugin API
-(`bb`); an optional frontend entry registers React UI inside the Patcher app.
+(`patcher`); an optional frontend entry registers React UI inside the Patcher app.
 Plugins are full-trust code: they can read all local Patcher data.
 
 Plugins are on by default. Builtin plugins ship with Patcher; a few sit behind
-their own product gates. `bb plugin list` shows each plugin's status.
+their own product gates. `patcher plugin list` shows each plugin's status.
 
 This file is the map. Each surface has a reference file next to it — read the
 one your task needs rather than all of them.
@@ -19,10 +19,10 @@ one your task needs rather than all of them.
 ## Quickstart
 
 ```
-bb plugin new hello            # scaffolds ./patcher-plugin-hello (add --app for a frontend entry)
+patcher plugin new hello            # scaffolds ./patcher-plugin-hello (add --app for a frontend entry)
 cd patcher-plugin-hello
-bb plugin install .            # registers the directory in place (--yes to skip the prompt)
-bb plugin dev                  # watch loop: rebuild frontend (if any) + reload on every save
+patcher plugin install .            # registers the directory in place (--yes to skip the prompt)
+patcher plugin dev                  # watch loop: rebuild frontend (if any) + reload on every save
 ```
 
 The manifest is `package.json`. The required shape:
@@ -56,7 +56,7 @@ The plugin id is the final package-name component minus the `patcher-plugin-`
 prefix (`hello`); it namespaces routes, storage, settings, and CLI commands.
 On-disk state per plugin: `<dataDir>/plugins/<id>/data.db` (its SQLite),
 `secrets/` (secret settings + HTTP token), `logs/plugin.log` (JSONL, rotated
-at 5MB). Settings edits never auto-reload — `bb plugin reload <id>` after
+at 5MB). Settings edits never auto-reload — `patcher plugin reload <id>` after
 configuring.
 
 Every other manifest field — branding and logos, `skills`, `themes`, engine
@@ -69,15 +69,15 @@ adding a dependency, or debugging an install.
 This skill is a guide, not the contract. For an exact signature or a symbol it
 does not cover:
 
-1. **`bb plugin types`**, run in the plugin directory (or given its path),
+1. **`patcher plugin types`**, run in the plugin directory (or given its path),
    rewrites that plugin's `types/*.d.ts` from the running Patcher — no server
    needed. The scaffold seeds them once, so a cloned or older plugin can be
    thousands of lines behind. `--check` reports staleness without writing;
-   `bb plugin build` and `bb plugin dev` refresh them too.
+   `patcher plugin build` and `patcher plugin dev` refresh them too.
 2. **Read `types/patcher-plugin-sdk.d.ts`** (`-app.d.ts` for frontend symbols) —
    the authoritative surface, ~13,000 lines of readable declarations with doc
    comments, and what the scaffold `tsconfig.json` maps `@patcher/plugin-sdk` to.
-3. **`git clone --depth 1 https://github.com/get-bb/bb`** for host behavior or
+3. **`git clone --depth 1 https://github.com/laruss/patcher-browser`** for host behavior or
    a reference implementation: `packages/plugin-sdk/src/`,
    `apps/server/src/services/plugins/`, `plugins/`.
 
@@ -110,24 +110,24 @@ Listeners are different: `patcher.events.on`, settings `onChange`, and `onDispos
 are additive, so registering multiple listeners is supported.
 
 Backend API imports normally stay type-only; the root runtime exports are
-`defineRpcContract`, supplied by BB for shared schema contracts, and the
+`defineRpcContract`, supplied by Patcher for shared schema contracts, and the
 numeric `PLUGIN_CLI_OUTPUT_MAX_BYTES` ceiling:
 `import { defineRpcContract, type PatcherPluginApi } from "@patcher/plugin-sdk"`.
 Validator imports such as Zod are normal plugin runtime dependencies (and are
-bundled by `bb plugin build`).
+bundled by `patcher plugin build`).
 
 ## Which reference to read
 
 | Read                                                             | When the task involves                                                                                                                                                                                                                          |
 | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [references/manifest.md](references/manifest.md)                 | `package.json`, `patcher.permissions`, branding/logos, engines, dependencies, `bb plugin build` artifacts, install/update/distribution                                                                                                          |
+| [references/manifest.md](references/manifest.md)                 | `package.json`, `patcher.permissions`, branding/logos, engines, dependencies, `patcher plugin build` artifacts, install/update/distribution                                                                                                     |
 | [references/backend-core.md](references/backend-core.md)         | `patcher.log`, `patcher.settings`, `patcher.storage` (kv + SQLite + migrations), `patcher.server`, `patcher.events.on` thread lifecycle, `patcher.status`, `patcher.onDispose` and the reload lifecycle                                         |
 | [references/backend-sdk.md](references/backend-sdk.md)           | `patcher.sdk` — reading or changing Patcher's own threads, projects, environments, hosts, files, terminals, providers, skills                                                                                                                   |
 | [references/backend-surfaces.md](references/backend-surfaces.md) | `patcher.http`, `patcher.rpc`, `patcher.realtime`, `patcher.background` services/schedules, `patcher.cli` commands, `patcher.ui.requestInput`, `patcher.agents` tools and session configuration, `patcher.ui` mention providers and keybindings |
 | [references/browser.md](references/browser.md)                   | `patcher.browser` — omnibox, context menu, find bar, HTTP auth, PDF text, downloads, and driving tabs/pages                                                                                                                                     |
 | [references/frontend-slots.md](references/frontend-slots.md)     | the `patcher.app` entry, every `app.slots.*` registration and its props, content scripts, crash isolation                                                                                                                                       |
 | [references/frontend-runtime.md](references/frontend-runtime.md) | `ThreadChat` and other host components, hooks (`useRpc`, `useComposer`, …), composer customizations, the vendored shadcn UI kit, styling                                                                                                        |
-| [references/testing.md](references/testing.md)                   | `@patcher/plugin-sdk/testing` unit tests, the live `bb plugin dev` loop, and which shipped plugin to copy                                                                                                                                       |
+| [references/testing.md](references/testing.md)                   | `@patcher/plugin-sdk/testing` unit tests, the live `patcher plugin dev` loop, and which shipped plugin to copy                                                                                                                                  |
 
 ## Gotchas
 
@@ -144,7 +144,7 @@ bundled by `bb plugin build`).
 - `storage.migrate` is append-only by statement index.
 - Settings saves do not reload healthy or degraded plugins; live `onChange`
   listeners receive those updates. A save automatically retries load when the
-  plugin is `needs-configuration`; `bb plugin reload <id>` remains available
+  plugin is `needs-configuration`; `patcher plugin reload <id>` remains available
   for other recovery cases.
 - Descriptors without `default` produce `| undefined` values.
 - Thread events are observe-only; there are exactly six
@@ -169,7 +169,7 @@ bundled by `bb plugin build`).
   mid-session; cross-plugin tool-name collisions drop the later registration.
 - RPC results must be strict JSON values and pass their output schema;
   realtime payloads must survive JSON.stringify.
-- Handler stats shown by `bb plugin list` persist across reloads (reset on
+- Handler stats shown by `patcher plugin list` persist across reloads (reset on
   remove).
 - Browser page text is untrusted content, and `patcher.browser.storage` is
   credential access rather than settings — never log or persist it.
@@ -182,5 +182,5 @@ bundled by `bb plugin build`).
   plugin dependencies. The
   scaffold tsconfig typechecks both `server.ts` and `app.tsx`.
 - `types/*.d.ts` is a per-plugin copy, not a live view of the SDK: run
-  `bb plugin types` before trusting it, and never fall back to a minified
+  `patcher plugin types` before trusting it, and never fall back to a minified
   `dist/` bundle — see "Looking up the exact API".

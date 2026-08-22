@@ -3,7 +3,7 @@
   "name": "switch",
   "type": "registry:ui",
   "title": "switch",
-  "description": "BB ui \"switch\" — vendored from the BB app's own source (version-matched to this BB release).",
+  "description": "Patcher ui \"switch\" — vendored from the Patcher app's own source (version-matched to this Patcher release).",
   "registryDependencies": [
     "@patcher/motion",
     "@patcher/utils"

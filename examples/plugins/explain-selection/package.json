@@ -9,7 +9,7 @@
   },
   "patcher": {
     "name": "Explain selection",
-    "description": "Explain the text selected on a page with a BB agent.",
+    "description": "Explain the text selected on a page with a Patcher agent.",
     "branding": {
       "icon": "Puzzle"
     },

@@ -145,7 +145,7 @@ export function createRemotePluginApiHandle(args: {
   };
 
   return {
-    // `bb` lives in the plugin's process. Nothing on the server should reach
+    // `patcher` lives in the plugin's process. Nothing on the server should reach
     // for it, and a thrown explanation beats a plausible-looking empty object.
     get api(): PatcherPluginApi {
       return notLocal("patcher.api");

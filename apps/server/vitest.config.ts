@@ -9,7 +9,7 @@ export default defineWorkspaceTestConfig({
   test: {
     silent: "passed-only",
     env: {
-      PATCHER_DATA_DIR: "/tmp/bb-server-test",
+      PATCHER_DATA_DIR: "/tmp/patcher-server-test",
       PATCHER_SERVER_PORT: "49161",
       PATCHER_HOST_DAEMON_PORT: "49162",
     },

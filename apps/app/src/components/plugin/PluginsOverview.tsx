@@ -46,7 +46,7 @@ const PLUGIN_TYPE_FILTERS: readonly PluginTypeFilter[] = [
 
 const PLUGIN_TYPE_FILTER_OPTIONS = PLUGIN_TYPE_FILTERS.map((type) => ({
   id: type,
-  label: type === "patcher-official" ? "BB Official" : "User",
+  label: type === "patcher-official" ? "Patcher Official" : "User",
 }));
 
 function pluginTypeFilterId(provenance: PluginProvenance): PluginTypeFilter {
@@ -66,7 +66,7 @@ function modeFromSearchParams(value: string | null): PluginsCollectionMode {
 
 /**
  * The canonical Plugins collection: installed resources, discoverable
- * resources from BB's official catalog.
+ * resources from Patcher's official catalog.
  * Modes are URL-backed projections of one collection, not separate settings
  * pages; plugin configuration and lifecycle depth remain on the detail route.
  */

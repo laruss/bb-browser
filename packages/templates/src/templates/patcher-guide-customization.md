@@ -3,30 +3,30 @@ kind: instruction
 title: Patcher Guide — Customization
 summary: Command reference for customizing the Patcher app color palette and keyboard shortcuts.
 intent: Explain the CLI theme surface and server-backed app customization.
-editingNotes: Keep flags accurate against the CLI implementation. Theme details live in the bb-cli skill's references/theming.md.
+editingNotes: Keep flags accurate against the CLI implementation. Theme details live in the patcher-cli skill's references/theming.md.
 ---
 Customization commands
 
 Theming — the app-wide color palette
 
-`bb theme` controls a set of CSS-variable overrides, persisted server-side and
+`patcher theme` controls a set of CSS-variable overrides, persisted server-side and
 applied live to every open window. This is the palette only; light/dark mode is a
 separate per-client setting the palette layers on top of. Custom themes live on
 disk, one folder per theme, at <patcher-data-dir>/theme/<name>/theme.css (the packaged
 app uses ~/.patcher/theme/…). The folder name is the theme id.
 
-  bb theme list                  Built-in and custom themes; shows the active one
-  bb theme dir                   Print the custom-theme directory (where to author)
-  bb theme set <id> [--favicon-color <color>]
+  patcher theme list                  Built-in and custom themes; shows the active one
+  patcher theme dir                   Print the custom-theme directory (where to author)
+  patcher theme set <id> [--favicon-color <color>]
                                  Activate a theme, preserving the favicon color
                                  unless the flag supplies the complete selection
-  bb theme show [--css]          Print the active palette; --css dumps the CSS
-  bb theme reset                 Back to the default theme; preserve favicon color
-  bb theme favicon set <color>   Set favicon color; preserve the active theme
-  bb theme favicon reset         Reset favicon color; preserve the active theme
+  patcher theme show [--css]          Print the active palette; --css dumps the CSS
+  patcher theme reset                 Back to the default theme; preserve favicon color
+  patcher theme favicon set <color>   Set favicon color; preserve the active theme
+  patcher theme favicon reset         Reset favicon color; preserve the active theme
 
-To author a custom theme, run `bb theme dir`, write <that-dir>/<name>/theme.css,
-then `bb theme set <name>`. The full design-token reference is in the bb-cli
+To author a custom theme, run `patcher theme dir`, write <that-dir>/<name>/theme.css,
+then `patcher theme set <name>`. The full design-token reference is in the patcher-cli
 skill (references/theming.md).
 
 Favicon colors are `default`, `red`, `orange`, `yellow`, `green`, `teal`,
@@ -37,13 +37,13 @@ Add --json to any theme command for machine-readable output.
 
 Packaged launcher settings
 
-`bb-app config` and `bb-app env` reload runtime settings in a running server,
+`patcher-app config` and `patcher-app env` reload runtime settings in a running server,
 but the CLI identifies server and launcher settings that are startup-only,
 including binding/ports, data and the dev-app port, telemetry, inherited skill
 roots, and `PATCHER_FF_*` flags. `PATCHER_LOG_LEVEL` is also startup-only. Use
-`bb-app config`, not `bb-app env`, to change `PATCHER_APP_URL`, `PATCHER_INFERENCE`,
+`patcher-app config`, not `patcher-app env`, to change `PATCHER_APP_URL`, `PATCHER_INFERENCE`,
 `PATCHER_INFERENCE_FALLBACK`, or `PATCHER_TRANSCRIPTION` live. After a startup-only
-change, run `bb-app stop && bb-app start` or restart the desktop app. Until
+change, run `patcher-app stop && patcher-app start` or restart the desktop app. Until
 then, changing or unsetting `PATCHER_SERVER_BIND_HOST` does not close a previous
 `0.0.0.0` listener.
 
@@ -52,8 +52,8 @@ Server helper completions use `PATCHER_INFERENCE` first, then
 service-unavailable failure. Their defaults are `codex/gpt-5.6-luna` and
 `codex/gpt-5.4-mini`, respectively.
 
-  bb-app config set PATCHER_INFERENCE <provider/model>
-  bb-app config set PATCHER_INFERENCE_FALLBACK <provider/model>
+  patcher-app config set PATCHER_INFERENCE <provider/model>
+  patcher-app config set PATCHER_INFERENCE_FALLBACK <provider/model>
 
 Server-backed General settings
 
@@ -82,15 +82,15 @@ in zen mode. On coarse-pointer touch devices, the software-keyboard Return path
 inserts a newline. iPadOS WebKit preserves these Enter shortcuts for a connected
 Magic Keyboard.
 
-  bb settings show
-  bb settings general <key> <true|false>
-  bb settings replay-onboarding
-  bb settings experiment <key> <value>
-  bb settings usage [--machine <id-or-name>]
-  bb settings version [--force]
-  bb settings reload
+  patcher settings show
+  patcher settings general <key> <true|false>
+  patcher settings replay-onboarding
+  patcher settings experiment <key> <value>
+  patcher settings usage [--machine <id-or-name>]
+  patcher settings version [--force]
+  patcher settings reload
 
-`bb settings replay-onboarding` enables the `newOnboarding` experiment and
+`patcher settings replay-onboarding` enables the `newOnboarding` experiment and
 clears `onboardingCompletedAt`. The first-run setup guide then shows again on
 the next app load. The same button lives in Settings → General → Setup guide
 while the experiment is on.
@@ -125,21 +125,21 @@ contexts and native-only availability remain server-owned, and desktop menu
 accelerators for New Thread, New Window, New Tab, Close, and Settings use the
 same resolved bindings. The complete default table is in docs/configuration.md.
 
-  bb settings keyboard list
-  bb settings keyboard hints <true|false>
-  bb settings keyboard set <command> <shortcut|disabled>
-  bb settings keyboard reset [command]
+  patcher settings keyboard list
+  patcher settings keyboard hints <true|false>
+  patcher settings keyboard set <command> <shortcut|disabled>
+  patcher settings keyboard reset [command]
 
 Host files and voice transcription
 
-  bb file read|write|list|paths|mkdir|move|remove ...
-  bb voice transcribe <audio-file> [--prompt <context>]
+  patcher file read|write|list|paths|mkdir|move|remove ...
+  patcher voice transcribe <audio-file> [--prompt <context>]
 
 Voice transcription uses the `PATCHER_TRANSCRIPTION` model, which defaults to
 `codex/gpt-transcribe`. Override it with
-`bb-app config set PATCHER_TRANSCRIPTION <provider/model>`.
+`patcher-app config set PATCHER_TRANSCRIPTION <provider/model>`.
 
-`bb file` supports `--host` for remote machines and `--root` on mutating
+`patcher file` supports `--host` for remote machines and `--root` on mutating
 commands to confine access beneath an absolute directory. Use `--json` for
 metadata and machine-readable results.
 
@@ -147,5 +147,5 @@ Client-local UI preferences
 
 Some Settings values live only in the current browser/client. The Voice Input
 microphone picker stores the selected browser MediaDevices device id in
-localStorage as `patcher.voiceInput.audioInputDeviceId`; it does not have a `bb`
+localStorage as `patcher.voiceInput.audioInputDeviceId`; it does not have a `patcher`
 command and does not change the server-side transcription model.

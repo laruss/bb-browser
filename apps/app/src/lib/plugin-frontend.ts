@@ -5,7 +5,7 @@ import * as jsxRuntime from "react/jsx-runtime";
 import * as jsxDevRuntime from "react/jsx-dev-runtime";
 // Shared-singleton packages (plugin design §5.5): the portaling radix
 // families + sonner + vaul. Vendored plugin components import these
-// specifiers; `bb plugin build` shims them to the slots installed below, so
+// specifiers; `patcher plugin build` shims them to the slots installed below, so
 // plugin overlays live in the host's dismissable-layer/focus/scroll-lock
 // world and plugin toast() reaches the host toaster. Importing them here
 // (menubar/hover-card/etc. included) is what puts them in the host bundle.
@@ -355,7 +355,9 @@ export function applyPluginCss(pluginId: string, url: string | null): void {
   };
   link.onerror = () => {
     link.remove();
-    console.warn(`bb plugin "${pluginId}": failed to load stylesheet ${url}`);
+    console.warn(
+      `patcher plugin "${pluginId}": failed to load stylesheet ${url}`,
+    );
   };
   document.head.appendChild(link);
 }
@@ -527,20 +529,20 @@ async function mountWithTimeout(
         if (controller.signal.aborted) return;
         if (typeof threadId !== "string") {
           deps.warn(
-            `bb plugin "${pluginId}": contentScript.experimental_setThreadRowStatus: "threadId" must be a non-empty string`,
+            `patcher plugin "${pluginId}": contentScript.experimental_setThreadRowStatus: "threadId" must be a non-empty string`,
           );
           return;
         }
         const normalizedThreadId = threadId.trim();
         if (normalizedThreadId.length === 0) {
           deps.warn(
-            `bb plugin "${pluginId}": contentScript.experimental_setThreadRowStatus: "threadId" must be a non-empty string`,
+            `patcher plugin "${pluginId}": contentScript.experimental_setThreadRowStatus: "threadId" must be a non-empty string`,
           );
           return;
         }
         const normalizedStatus = normalizePluginThreadRowStatus(
           status,
-          (reason) => deps.warn(`bb plugin "${pluginId}": ${reason}`),
+          (reason) => deps.warn(`patcher plugin "${pluginId}": ${reason}`),
         );
         if (normalizedStatus === undefined) return;
         setPluginThreadRowStatus(
@@ -555,13 +557,13 @@ async function mountWithTimeout(
         const normalizedTabId = typeof tabId === "string" ? tabId.trim() : "";
         if (normalizedTabId.length === 0) {
           deps.warn(
-            `bb plugin "${pluginId}": contentScript.experimental_setBrowserTabStatus: "tabId" must be a non-empty string`,
+            `patcher plugin "${pluginId}": contentScript.experimental_setBrowserTabStatus: "tabId" must be a non-empty string`,
           );
           return;
         }
         const normalizedStatus = normalizePluginBrowserTabStatus(
           status,
-          (reason) => deps.warn(`bb plugin "${pluginId}": ${reason}`),
+          (reason) => deps.warn(`patcher plugin "${pluginId}": ${reason}`),
         );
         if (normalizedStatus === undefined) return;
         setPluginBrowserTabStatus(
@@ -891,7 +893,7 @@ export async function disposePluginFrontends(
 
 /**
  * Debounce + serialize reconcile runs: a burst of `plugins-changed`
- * broadcasts (e.g. `bb plugin reload` with several plugins) coalesces into
+ * broadcasts (e.g. `patcher plugin reload` with several plugins) coalesces into
  * one run, and a broadcast landing mid-run queues exactly one follow-up
  * instead of overlapping it.
  */

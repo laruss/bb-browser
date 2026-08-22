@@ -390,10 +390,7 @@ const AUTH_REQUIRED_MODEL_LIST_ERROR_MESSAGE =
 function reasoningSupportFromCli(
   reasoningCli: AcpBridgeReasoningCli | undefined,
 ):
-  | Pick<
-      AvailableModel,
-      "supportedReasoningEfforts" | "defaultReasoningEffort"
-    >
+  | Pick<AvailableModel, "supportedReasoningEfforts" | "defaultReasoningEffort">
   | undefined {
   if (reasoningCli === undefined) {
     return undefined;
@@ -415,10 +412,7 @@ function reasoningSupportFromCli(
 function reasoningSupportFromNativeHint(
   nativeReasoning: AcpBridgeNativeReasoning | undefined,
 ):
-  | Pick<
-      AvailableModel,
-      "supportedReasoningEfforts" | "defaultReasoningEffort"
-    >
+  | Pick<AvailableModel, "supportedReasoningEfforts" | "defaultReasoningEffort">
   | undefined {
   if (nativeReasoning === undefined) {
     return undefined;
@@ -511,8 +505,7 @@ function nativeReasoningLevelToValue(args: {
   nativeReasoning: AcpBridgeNativeReasoning;
   reasoningLevel: ReasoningLevel;
 }): string | undefined {
-  const override =
-    args.nativeReasoning.levelValues?.[args.reasoningLevel];
+  const override = args.nativeReasoning.levelValues?.[args.reasoningLevel];
   if (override !== undefined) {
     return override;
   }
@@ -577,7 +570,10 @@ function applyPermissionCliArgs(
   permissionCli: AcpBridgePermissionCli | undefined,
   permissionMode: AcpSessionPolicy["permissionMode"],
 ): string[] {
-  const permissionArgs = permissionCliArgsForMode(permissionCli, permissionMode);
+  const permissionArgs = permissionCliArgsForMode(
+    permissionCli,
+    permissionMode,
+  );
   if (permissionArgs.length === 0) {
     return [...agentArgs];
   }
@@ -1390,7 +1386,7 @@ async function handleFsWriteTextFile(
   ) {
     responder.error(
       -32000,
-      `File writes outside the workspace are denied by BB's accept-edits permission mode: ${parsed.data.path}`,
+      `File writes outside the workspace are denied by Patcher's accept-edits permission mode: ${parsed.data.path}`,
     );
     return;
   }
@@ -1440,8 +1436,11 @@ function removeSession(session: AcpThreadSession): void {
 function getSessionByProviderThreadId(
   providerThreadId: string,
 ): AcpThreadSession | undefined {
-  const patcherThreadId = patcherThreadIdByProviderThreadId.get(providerThreadId);
-  return patcherThreadId ? sessionsByPatcherThreadId.get(patcherThreadId) : undefined;
+  const patcherThreadId =
+    patcherThreadIdByProviderThreadId.get(providerThreadId);
+  return patcherThreadId
+    ? sessionsByPatcherThreadId.get(patcherThreadId)
+    : undefined;
 }
 
 type AcpSessionStartParams =
@@ -1484,7 +1483,8 @@ async function startAgentSession(
     onRequest: (method, requestParams, responder) =>
       handleAgentRequest(session, method, requestParams, responder),
     onExit: (info) => {
-      const wasCurrent = sessionsByPatcherThreadId.get(patcherThreadId) === session;
+      const wasCurrent =
+        sessionsByPatcherThreadId.get(patcherThreadId) === session;
       cancelPendingPermissions(session);
       removeSession(session);
       if (!wasCurrent || session.stopping) {
@@ -1667,7 +1667,9 @@ async function stopSession(session: AcpThreadSession): Promise<void> {
 
 function runTurn(session: AcpThreadSession, firstInput: PromptInput[]): void {
   session.activePromptKind = "turn";
-  sendNotification(ACP_TURN_STARTED_METHOD, { threadId: session.patcherThreadId });
+  sendNotification(ACP_TURN_STARTED_METHOD, {
+    threadId: session.patcherThreadId,
+  });
 
   session.turnSettled = (async () => {
     let input = firstInput;

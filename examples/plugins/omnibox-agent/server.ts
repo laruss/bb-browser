@@ -4,7 +4,7 @@
 // to the same ranked list the browser fills with address, search, open-tab and
 // history rows:
 //
-//   - "Ask an agent: <query>"     → a `run` action: spawns a BB thread with the
+//   - "Ask an agent: <query>"     → a `run` action: spawns a Patcher thread with the
 //                                   query as its prompt and opens that thread in
 //                                   the tab the omnibox was used from.
 //   - "Search GitHub for <query>" → a `navigate` action, resolved by the browser
@@ -20,14 +20,14 @@
 // patcher.browser.registerSearchEngine (including an engine that is not a search
 // engine), patcher.http.route, a `project` setting with patcher.status.needsConfiguration,
 // patcher.sdk.threads.spawn with plugin attribution, and patcher.server.loopbackBaseUrl to
-// point the browser at the BB app the plugin itself runs inside.
+// point the browser at the Patcher app the plugin itself runs inside.
 //
 // The type-only import is erased at load time; this file runs as-is.
 import type { PatcherPluginApi } from "@patcher/plugin-sdk";
 
 const CONFIGURE_HINT =
-  "Set project with `bb plugin config omnibox-agent`, " +
-  "then `bb plugin reload omnibox-agent`.";
+  "Set project with `patcher plugin config omnibox-agent`, " +
+  "then `patcher plugin reload omnibox-agent`.";
 
 /** The one item id this provider's `run` action answers to. */
 const ASK_ITEM_ID = "ask";
@@ -40,7 +40,7 @@ export default async function plugin(patcher: PatcherPluginApi) {
   const settings = patcher.settings.define({
     project: {
       type: "project",
-      label: "BB project for omnibox asks",
+      label: "Patcher project for omnibox asks",
       description: '"Ask an agent" spawns threads in this project.',
     },
   });
@@ -122,7 +122,7 @@ export default async function plugin(patcher: PatcherPluginApi) {
               {
                 id: ASK_ITEM_ID,
                 title: `Ask an agent: ${query}`,
-                subtitle: "spawns a BB thread",
+                subtitle: "spawns a Patcher thread",
                 score: 0.8,
                 action: { type: "run" } as const,
               },
@@ -145,7 +145,7 @@ export default async function plugin(patcher: PatcherPluginApi) {
       if (!current.project) {
         throw new Error(`omnibox-agent is not configured. ${CONFIGURE_HINT}`);
       }
-      // BB fills in origin "plugin" and originPluginId automatically, so the
+      // Patcher fills in origin "plugin" and originPluginId automatically, so the
       // thread is attributed to this plugin in the thread list.
       const thread = await patcher.sdk.threads.spawn({
         projectId: current.project,
@@ -155,7 +155,7 @@ export default async function plugin(patcher: PatcherPluginApi) {
       });
       patcher.log.info(`omnibox ask → thread ${thread.id}`);
       // Open the new thread in the tab the omnibox was used from: the browser
-      // navigates to the BB app served by the server this plugin runs in.
+      // navigates to the Patcher app served by the server this plugin runs in.
       return {
         navigate: `${patcher.server.loopbackBaseUrl}/threads/${thread.id}`,
       };

@@ -153,7 +153,9 @@ function artifactMeta(args: {
 
 describe("plugin install sources", () => {
   it("parses git URLs, tracks HEAD by default, and rejects traversal", () => {
-    expect(parsePluginSource("git:github.com/acme/patcher-plugin-foo@v1")).toEqual({
+    expect(
+      parsePluginSource("git:github.com/acme/patcher-plugin-foo@v1"),
+    ).toEqual({
       kind: "git",
       url: "https://github.com/acme/patcher-plugin-foo",
       ref: "v1",
@@ -168,7 +170,9 @@ describe("plugin install sources", () => {
       kind: "git",
       url: "https://github.com/acme/patcher-plugin-foo.git",
     });
-    expect(parsePluginSource("https://github.com/acme/patcher-plugin-foo")).toEqual({
+    expect(
+      parsePluginSource("https://github.com/acme/patcher-plugin-foo"),
+    ).toEqual({
       kind: "git",
       url: "https://github.com/acme/patcher-plugin-foo",
       ref: "HEAD",
@@ -315,7 +319,9 @@ describe("plugin install flows", () => {
   describe.skipIf(!hasGit)("git sources", { timeout: 30_000 }, () => {
     it("installs and tracks the default branch when the ref is omitted", async () => {
       const repoDir = join(workDir, "repo-default-branch");
-      await writePluginFixture(repoDir, { name: "patcher-plugin-default-branch" });
+      await writePluginFixture(repoDir, {
+        name: "patcher-plugin-default-branch",
+      });
       await initGitRepo(repoDir);
       const commit = await commitAll(repoDir, "init");
 
@@ -446,7 +452,9 @@ describe("plugin install flows", () => {
           expect.objectContaining({
             status: "rejected",
             reason: expect.objectContaining({
-              message: expect.stringContaining("bb plugin update concurrent"),
+              message: expect.stringContaining(
+                "patcher plugin update concurrent",
+              ),
             }),
           }),
         ]),
@@ -470,7 +478,7 @@ describe("plugin install flows", () => {
       });
       await commitAll(repoDir, "v0.2.0");
       await expect(service.install(source)).rejects.toThrow(
-        "bb plugin update fresh",
+        "patcher plugin update fresh",
       );
       expect(
         service.list().find((plugin) => plugin.id === "fresh"),
@@ -508,7 +516,7 @@ describe("plugin install flows", () => {
       await commitAll(repoDir, "broken frontend");
 
       await expect(service.install(source)).rejects.toThrow(
-        "bb plugin update managed-frontend",
+        "patcher plugin update managed-frontend",
       );
       expect(getInstalledPluginRegistration(db, "managed-frontend")).toEqual(
         registrationBefore,
@@ -565,10 +573,7 @@ describe("plugin install flows", () => {
       const entry = await service.install(`git:${identityRepo}@main`);
       expect(entry.status).toBe("running");
       const meta: unknown = JSON.parse(
-        await readFile(
-          join(entry.rootDir, "dist", "server.meta.json"),
-          "utf8",
-        ),
+        await readFile(join(entry.rootDir, "dist", "server.meta.json"), "utf8"),
       );
       expect(meta).toMatchObject({
         pluginId: "artifact-identity",
@@ -612,7 +617,7 @@ describe("plugin install flows", () => {
 
       await expect(service.install(`git:${repoDir}@main`)).rejects.toThrowError(
         new RegExp(
-          `install refused.*requires bb plugin SDK >=99\\.0\\.0, running SDK is ${PLUGIN_SDK_VERSION.replaceAll(".", "\\.")}`,
+          `install refused.*requires patcher plugin SDK >=99\\.0\\.0, running SDK is ${PLUGIN_SDK_VERSION.replaceAll(".", "\\.")}`,
         ),
       );
     });
@@ -643,7 +648,9 @@ describe("plugin install flows", () => {
 
     it("builds both bundles for a git plugin", async () => {
       const repoDir = join(workDir, "repo-selfcontained");
-      await writePluginFixture(repoDir, { name: "patcher-plugin-selfcontained" });
+      await writePluginFixture(repoDir, {
+        name: "patcher-plugin-selfcontained",
+      });
       await initGitRepo(repoDir);
       await commitAll(repoDir, "init");
 
@@ -779,7 +786,7 @@ describe("plugin install flows", () => {
     const entry = await service.installPath(rootDir);
     expect(entry.status).toBe("incompatible");
     expect(entry.statusDetail).toContain(
-      `requires bb plugin SDK >=99.0.0, running SDK is ${PLUGIN_SDK_VERSION}`,
+      `requires patcher plugin SDK >=99.0.0, running SDK is ${PLUGIN_SDK_VERSION}`,
     );
   });
 

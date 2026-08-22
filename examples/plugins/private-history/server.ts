@@ -9,7 +9,7 @@
 //     everything else.
 //   * `patcher.sdk.browserHistory` reads and edits what is already stored, which is
 //     how a plugin cleans up after a rule that did not exist yet. Here: a
-//     `bb private-history forget` command.
+//     `patcher private-history forget` command.
 //
 // Worth reading next to examples/plugins/explain-selection: that one adds a
 // surface the browser did not have, this one *changes* a decision the browser
@@ -43,12 +43,12 @@ const TRACKING_PARAMETERS = [
 const TRACKING_PREFIX = "utm_";
 
 const HOSTS_HINT =
-  "Set hosts with `bb plugin config private-history`, " +
-  "then `bb plugin reload private-history`.";
+  "Set hosts with `patcher plugin config private-history`, " +
+  "then `patcher plugin reload private-history`.";
 
 const USAGE = [
-  "bb private-history forget <text>   Delete stored entries matching <text>",
-  "bb private-history list [<text>]   Show what is stored",
+  "patcher private-history forget <text>   Delete stored entries matching <text>",
+  "patcher private-history list [<text>]   Show what is stored",
 ].join("\n");
 
 function parseHosts(value: string | undefined): readonly string[] {
@@ -151,12 +151,12 @@ export default async function plugin(patcher: PatcherPluginApi) {
       {
         name: "forget",
         summary: "Delete stored entries whose URL or title matches",
-        usage: "bb private-history forget <text>",
+        usage: "patcher private-history forget <text>",
       },
       {
         name: "list",
         summary: "Show stored entries, optionally matching text",
-        usage: "bb private-history list [<text>]",
+        usage: "patcher private-history list [<text>]",
       },
     ],
     async run(argv) {

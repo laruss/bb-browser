@@ -15,7 +15,7 @@ UI kit those components are built from.
 ## The app entry
 
 `app.tsx` default-exports `definePluginApp` from `@patcher/plugin-sdk/app`.
-React and the SDK are **never bundled** — `bb plugin build` shims them to
+React and the SDK are **never bundled** — `patcher plugin build` shims them to
 the host's shared runtime, so the bundle only works inside Patcher.
 
 ```tsx
@@ -361,7 +361,7 @@ Versioned and additive-only:
   claims it, and what the host draws around it follows from how many plugins
   did: one gets the panel whole with no host chrome, and a second is what makes
   the host add a rail of icons to switch between them. `title` names the rail
-  button; `icon` is a BB icon name. The user can resize the panel; the plugin
+  button; `icon` is a Patcher icon name. The user can resize the panel; the plugin
   does not choose its width.
   `matches` scopes the panel to pages: URL globs (`["https://github.com/**"]`,
   `**` crossing `/`), and the host draws the column only while the **active
@@ -449,7 +449,7 @@ Versioned and additive-only:
   detail page in Tools, or do anything else (rpc, toast). Errors from `run`
   (sync or async) are contained and logged,
   never breaking the sidebar. `title` is the tooltip + accessible label;
-  `icon` is a BB icon-name hint (unknown names fall back to a generic bolt).
+  `icon` is a Patcher icon-name hint (unknown names fall back to a generic bolt).
 - `fileOpener` → `{ path: string, source }` — register as a viewer/editor
   for file extensions: `{ id, title, extensions: ["md"], component }`.
   Users set the per-extension default under Settings → "File openers", and
@@ -457,7 +457,7 @@ Versioned and additive-only:
   "Open with …" choice; matching files opened in the right panel then
   render your component in a plugin tab instead of the built-in preview —
   this includes links clicked in rendered markdown, the file picker, and
-  `bb thread open`. `source` is
+  `patcher thread open`. `source` is
   `{ kind: "workspace" | "host" | "thread-storage", threadId, environmentId,
 projectId }` (nullable fields) and `path` follows the source (workspace:
   worktree-relative; host: absolute; thread-storage: storage-relative).

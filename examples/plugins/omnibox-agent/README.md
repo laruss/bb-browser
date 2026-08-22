@@ -13,13 +13,13 @@ What it demonstrates:
     without calling back into the plugin.
   - `{ type: "run" }` — "Ask an agent: …", which calls the plugin's `run(itemId,
 { query })` when picked.
-- **`patcher.sdk.threads.spawn`** — the `run` handler spawns a BB thread with the
-  omnibox query as its prompt. BB fills in `origin: "plugin"` and
+- **`patcher.sdk.threads.spawn`** — the `run` handler spawns a Patcher thread with the
+  omnibox query as its prompt. Patcher fills in `origin: "plugin"` and
   `originPluginId: "omnibox-agent"`, so the thread is attributed in the thread
   list.
 - **`patcher.server.loopbackBaseUrl`** — `run` returns
   `{ navigate: "<server>/threads/<id>" }`, so the browser opens the new thread in
-  the tab the omnibox was used from: the plugin points the browser at the BB app
+  the tab the omnibox was used from: the plugin points the browser at the Patcher app
   it is itself running inside.
 - **`patcher.browser.registerSearchEngine`** — two engines, and the pair is the point.
   `kagi` is an ordinary template. `ask-agent` points at the plugin's **own
@@ -39,13 +39,13 @@ Pick the engine in **Settings → General → Search engine** to make Enter go t
 agent; the omnibox row works without changing anything.
 
 ```bash
-bb plugin install ./examples/plugins/omnibox-agent
-bb plugin config omnibox-agent set project <project-id>
-bb plugin reload omnibox-agent
+patcher plugin install ./examples/plugins/omnibox-agent
+patcher plugin config omnibox-agent set project <project-id>
+patcher plugin reload omnibox-agent
 ```
 
 Then open the browser surface (`/browser`, or the Browser button in the sidebar
-footer) and type. Change `suggest` or `run`, run `bb plugin reload
+footer) and type. Change `suggest` or `run`, run `patcher plugin reload
 omnibox-agent`, and the omnibox changes — no browser-core edit involved. That
 round trip is the point of the example.
 

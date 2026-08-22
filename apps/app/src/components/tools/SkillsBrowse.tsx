@@ -38,7 +38,7 @@ function RegistrySkillActions({
 }) {
   return (
     <ResourceInstallControl
-      accessibleLabel={`Fork ${skillName} into a new bb skill`}
+      accessibleLabel={`Fork ${skillName} into a new Patcher skill`}
       label="Fork"
       icon="Fork"
       presentation={presentation}

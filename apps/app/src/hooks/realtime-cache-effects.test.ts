@@ -201,7 +201,7 @@ describe("createRealtimeCacheEffects", () => {
     });
 
     // System changes flush immediately (no thread-style debounce), so
-    // `bb plugin reload/enable/disable` reaches open composers right away.
+    // `patcher plugin reload/enable/disable` reaches open composers right away.
     expect(queryClient.getQueryState(contributionsKey)?.isInvalidated).toBe(
       true,
     );

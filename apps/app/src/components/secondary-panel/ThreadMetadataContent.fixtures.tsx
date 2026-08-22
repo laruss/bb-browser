@@ -53,7 +53,7 @@ export function makePullRequest(
     number: 128,
     title: "Show the branch's GitHub pull request in the Info tab",
     state: "open",
-    url: "https://github.com/acme/bb/pull/128",
+    url: "https://github.com/acme/patcher/pull/128",
     baseRefName: "main",
     headRefName: "patcher/pr-info-panel",
     updatedAt: "2026-06-16T12:30:00Z",

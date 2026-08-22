@@ -74,7 +74,7 @@ export const bundleTargets = [
     entryPoint: resolve(workspaceRoot, "apps", "cli", "src", "index.ts"),
     executable: true,
     label: "Patcher cli",
-    outfile: resolve(packageRoot, "dist", "bb"),
+    outfile: resolve(packageRoot, "dist", "patcher"),
   },
   {
     // Forked child that runs @parcel/watcher in isolation (PATCHER_WATCHER_SUBPROCESS=1).

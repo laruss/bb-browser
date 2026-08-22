@@ -38,9 +38,9 @@ export function registerOpenCommand(
 ): void {
   parent
     .command("open")
-    .description("Open a BB thread, optionally with a file in its panel")
+    .description("Open a Patcher thread, optionally with a file in its panel")
     .usage("[id] [path] [options]")
-    .argument("[id]", "Thread ID. Omit inside a BB thread.")
+    .argument("[id]", "Thread ID. Omit inside a Patcher thread.")
     .argument("[path]", "Thread-relative or absolute file path to open")
     .option("--line <number>", "Line number to focus")
     .option(
@@ -145,7 +145,7 @@ function resolveThreadOpenTarget(
       }
       if (explicitThreadId !== contextThreadId && !allowsExplicitThreadTarget) {
         throw new Error(
-          "PATCHER_THREAD_ID is set, so bb thread open targets the current thread. Omit the thread ID.",
+          "PATCHER_THREAD_ID is set, so patcher thread open targets the current thread. Omit the thread ID.",
         );
       }
       return {
@@ -183,7 +183,7 @@ function resolveThreadOpenTarget(
 
   if (first === undefined) {
     throw new Error(
-      "Missing thread ID. Pass <threadId> [path], or run inside a BB thread.",
+      "Missing thread ID. Pass <threadId> [path], or run inside a Patcher thread.",
     );
   }
 

@@ -70,7 +70,7 @@ function systemConfig(): SystemConfigResponse {
     primaryHostId: "host_primary",
     primaryHostPlatform: "darwin",
     voiceTranscriptionEnabled: false,
-    dataDir: "/tmp/bb-test",
+    dataDir: "/tmp/patcher-test",
   };
 }
 

@@ -31,7 +31,7 @@ const patcherAppPackageJsonPath = path.resolve(
   "..",
   "..",
   "packages",
-  "bb-app",
+  "patcher-app",
   "package.json",
 );
 
@@ -55,11 +55,11 @@ async function readAuthoritativePatcherVersion(): Promise<string> {
     if (parsed.success) return parsed.data.version;
   } catch (error) {
     throw new Error(
-      `cannot read authoritative bb version from ${patcherAppPackageJsonPath}: ${error instanceof Error ? error.message : String(error)}`,
+      `cannot read authoritative patcher version from ${patcherAppPackageJsonPath}: ${error instanceof Error ? error.message : String(error)}`,
     );
   }
   throw new Error(
-    `cannot read authoritative bb version from ${patcherAppPackageJsonPath}`,
+    `cannot read authoritative patcher version from ${patcherAppPackageJsonPath}`,
   );
 }
 

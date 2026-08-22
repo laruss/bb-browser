@@ -111,7 +111,7 @@ export interface AgentRuntimeOptions {
   onEvent: (event: ThreadEvent) => void;
 
   /** Called when a provider needs to execute a tool.
-   *  `threadId` is always the BB thread id and `providerThreadId` is always present. */
+   *  `threadId` is always the Patcher thread id and `providerThreadId` is always present. */
   onToolCall: (request: ToolCallRequest) => Promise<ToolCallResponse>;
 
   /** Called when a provider pauses for user permission or approval.
@@ -135,7 +135,7 @@ export interface EnsureProviderArgs {
   acpLaunchSpec?: HostDaemonAcpLaunchSpec;
   /**
    * Providers with thread-scoped processes use this to start the process for a
-   * specific bb thread. Omit it for provider-scoped maintenance work such as
+   * specific patcher thread. Omit it for provider-scoped maintenance work such as
    * model listing.
    */
   forThreadId?: string;
@@ -358,7 +358,7 @@ export interface AgentRuntime {
   getProviderSession(threadId: string): AgentRuntimeProviderSession | null;
 
   /**
-   * Stops idle live provider sessions without deleting bb thread state or
+   * Stops idle live provider sessions without deleting patcher thread state or
    * provider history. The next turn must resume from the persisted provider
    * thread id.
    */

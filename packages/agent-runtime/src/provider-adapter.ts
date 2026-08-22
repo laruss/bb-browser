@@ -80,7 +80,7 @@ export interface DecodedToolCallRequest {
   requestId: string | number;
   providerThreadId: string;
   /**
-   * Non-empty BB turn id when known. Use null as the canonical unresolved
+   * Non-empty Patcher turn id when known. Use null as the canonical unresolved
    * value so the runtime can resolve from the active turn; empty strings are
    * malformed adapter output.
    */
@@ -96,7 +96,7 @@ export interface DecodedInteractiveRequest {
   method: string;
   providerThreadId: string;
   /**
-   * Non-empty BB turn id when known. Use null as the canonical unresolved
+   * Non-empty Patcher turn id when known. Use null as the canonical unresolved
    * value so the runtime can resolve from the active turn; empty strings are
    * malformed adapter output.
    */

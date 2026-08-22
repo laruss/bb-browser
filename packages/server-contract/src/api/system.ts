@@ -240,7 +240,7 @@ export type SystemAttentionResponse = z.infer<
 
 /**
  * Theme catalog: the on-disk custom-theme directory plus the discovered custom
- * themes and the active palette. Drives `bb theme list` / `bb theme dir`.
+ * themes and the active palette. Drives `patcher theme list` / `patcher theme dir`.
  */
 export const themeCatalogResponseSchema = z.object({
   /** Absolute path of the custom-theme root: `<data-dir>/theme`. */
@@ -255,7 +255,7 @@ export const themeCatalogResponseSchema = z.object({
 export type ThemeCatalogResponse = z.infer<typeof themeCatalogResponseSchema>;
 
 export const systemVersionResponseSchema = z.object({
-  /** Version of the running bb-app package, read from package.json. */
+  /** Version of the running patcher-app package, read from package.json. */
   currentVersion: z.string(),
   /** Latest version published to npm, or null when the lookup is unavailable. */
   latestVersion: z.string().nullable(),

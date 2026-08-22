@@ -631,7 +631,7 @@ describe("public terminal routes", () => {
       kind: "host_path",
       cwd: null,
     });
-    acknowledgeTerminalOpen(fixture, openMessage, "/home/bb");
+    acknowledgeTerminalOpen(fixture, openMessage, "/home/patcher");
 
     const response = await responsePromise;
     expect(response.status).toBe(201);
@@ -639,7 +639,7 @@ describe("public terminal routes", () => {
       {
         environmentId: null,
         hostId: fixture.host.id,
-        initialCwd: "/home/bb",
+        initialCwd: "/home/patcher",
         threadId: null,
         status: "running",
       },

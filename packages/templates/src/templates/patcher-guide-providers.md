@@ -9,16 +9,16 @@ Provider commands
 
 Providers are agent backends (e.g., codex, claude-code). Each supports different models.
 
-  bb provider list [--machine <id-or-name> | --environment <id>]
+  patcher provider list [--machine <id-or-name> | --environment <id>]
                                           List available providers
-  bb provider models [providerId] [--machine <id-or-name> | --environment <id>]
+  patcher provider models [providerId] [--machine <id-or-name> | --environment <id>]
                                           List models for a provider
 
 Use these before spawning threads if you are unsure which provider or model to use.
 `--host` is an alias for `--machine`. Machine and environment selectors are
 mutually exclusive because an environment already selects its machine. When no
 selector is supplied, both commands intentionally inspect the primary machine.
-When provider and model are omitted from bb thread spawn, the project's
+When provider and model are omitted from patcher thread spawn, the project's
 remembered defaults apply. If the project has no remembered choice, Patcher uses
 the explicitly requested provider or Codex, then resolves the model marked
 default by that provider on the target machine (falling back to the first
@@ -44,7 +44,7 @@ Subscription limit recovery
 
 The opt-in builtin Provider retry plugin recognizes structured Codex and Claude
 Code subscription windows. Enable it under Extensions → Plugins or run
-`bb plugin enable provider-retry`. If a provider terminally rejects an accepted
+`patcher plugin enable provider-retry`. If a provider terminally rejects an accepted
 turn whose execution settings remain available, the plugin waits in memory
 until the reported reset plus a short buffer, then starts one agent-only
 `Please continue.` turn on the existing provider conversation. Prior output or
@@ -56,15 +56,15 @@ Automatic waits default to a maximum of six hours. Longer reset windows are not
 scheduled. Set `maximumWait` to `24 hours` or `No limit` under the plugin
 settings, or run:
 
-  bb plugin config provider-retry set maximumWait "24 hours"
+  patcher plugin config provider-retry set maximumWait "24 hours"
 
-  bb provider-retry status [thread-id] [--json]    Inspect in-memory waits
-  bb provider-retry cancel <thread-id> [--json]    Cancel an automatic retry
-  bb thread retry [id] [--request-id <id>]         Core continuation
+  patcher provider-retry status [thread-id] [--json]    Inspect in-memory waits
+  patcher provider-retry cancel <thread-id> [--json]    Cancel an automatic retry
+  patcher thread retry [id] [--request-id <id>]         Core continuation
 
 Timed waits exist only while the current Patcher server/plugin process remains
 running. Disabling/reloading the plugin or restarting the server clears them;
-the original failed thread remains available for `bb thread retry`. Credit and
+the original failed thread remains available for `patcher thread retry`. Credit and
 spend-control exhaustion without a reset time is ignored by the plugin.
 
 Claude Code's native Workflow tool can be disabled separately on its provider
@@ -82,15 +82,15 @@ roots such as .agents/skills and .claude/skills when the provider supports them.
 It also includes project ancestor roots for providers that search to the Git
 repository root. Configured Pi, omp, Grok, and Hermes directories are included.
 Enabled provider plugins also contribute skills to the selected provider's `/`
-command menu. `bb skill list` shows native skills for Claude Code, Codex, and
+command menu. `patcher skill list` shows native skills for Claude Code, Codex, and
 Cursor.
 
 ACP providers discover models from the agent itself. For acp-opencode, the
 list mirrors the OpenCode catalog, so a custom model from the OpenCode config
 appears automatically. Discover and select one with:
 
-  bb provider models acp-opencode --environment "$PATCHER_ENVIRONMENT_ID"
-  bb thread spawn --provider acp-opencode --model <provider/model>
+  patcher provider models acp-opencode --environment "$PATCHER_ENVIRONMENT_ID"
+  patcher thread spawn --provider acp-opencode --model <provider/model>
 
 Patcher applies the selected model to the ACP session before the first prompt.
 
@@ -102,16 +102,16 @@ default agent in the OpenCode config and the ACP session uses it.
 Top-level customModels in the app data-dir config.json adds extra picker
 entries. Each entry has a providerId (a built-in provider id or any acp-*
 provider id), a model id, and an optional displayName. Patcher skips an invalid
-entry with a warning. The entry then appears in bb provider models output and
+entry with a warning. The entry then appears in patcher provider models output and
 in the model picker, but the provider must still accept the id: claude-code
 and codex accept unlisted ids, while an ACP agent can reject an id it does
 not know at session start. OpenCode rejects unlisted ids, so add an OpenCode
 model to the OpenCode config instead. Like customAcpAgents, edit the JSON and
-run bb-app config refresh; there is no set/unset CLI surface.
+run patcher-app config refresh; there is no set/unset CLI surface.
 
 Custom ACP agents are configured in the app data-dir config.json under
 customAcpAgents. Patcher derives provider id acp-<id> from each slug id. Edit the JSON
-and run bb-app config refresh; there is no set/unset CLI surface for this list.
+and run patcher-app config refresh; there is no set/unset CLI surface for this list.
 Custom config wins if it uses the same provider id as a known ACP agent; for
 example, override acp-opencode with id opencode. Use modelCli for CLI model
 listing/selection, reasoningCli for launch-time reasoning flags, and

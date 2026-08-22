@@ -2055,7 +2055,7 @@ export async function resolveProviderCommandScanRoots(
  * Build the ordered set of roots to scan for a provider. Project (cwd-dependent)
  * roots are skipped when `cwd` is null; user-home roots are always included.
  * The daemon owns provider-native discovery only. The server adds its canonical
- * bb skill catalog to the final composer response.
+ * patcher skill catalog to the final composer response.
  * Unknown provider ids yield an empty root set.
  */
 export function resolveCommandScanRoots(

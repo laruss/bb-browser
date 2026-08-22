@@ -41,7 +41,7 @@ export interface PluginInstallArgs {
   source: string;
 }
 
-/** Install an entry from BB's official catalog. */
+/** Install an entry from Patcher's official catalog. */
 export interface PluginCatalogInstallArgs {
   entryId: string;
 }

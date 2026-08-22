@@ -314,7 +314,7 @@ export function PluginIncludes({ plugin }: { plugin: PluginListItem }) {
         ? [
             {
               key: plugin.cliCommand.name,
-              label: `bb ${plugin.cliCommand.name}`,
+              label: `patcher ${plugin.cliCommand.name}`,
               detail: plugin.cliCommand.summary || undefined,
               mono: true,
             },

@@ -863,7 +863,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       return pluginPanel.title;
     }
     if (routeBreadcrumbs) {
-      const sectionLabel = routeBreadcrumbs[0]?.label ?? "BB";
+      const sectionLabel = routeBreadcrumbs[0]?.label ?? "Patcher";
       const pageLabel = routeBreadcrumbs.at(-1)?.label ?? sectionLabel;
       return pageLabel === sectionLabel
         ? sectionLabel
@@ -884,7 +884,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       return projectLabel ?? projectId;
     }
     const routeTitle = resolveRouteTitle(location.pathname)?.title;
-    return routeTitle && routeTitle.length > 0 ? routeTitle : "BB";
+    return routeTitle && routeTitle.length > 0 ? routeTitle : "Patcher";
   })();
   // The sidebar list omits archived threads and side chats, so it can't answer
   // whether the currently-viewed thread is blocked on input. Read the current

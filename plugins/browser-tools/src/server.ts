@@ -1,13 +1,16 @@
-// patcher-plugin-browser-tools — browser tools for BB agents (PROJECT_PLAN §18 Phase 5).
+// patcher-plugin-browser-tools — browser tools for Patcher agents (PROJECT_PLAN §18 Phase 5).
 //
 // Exposes the browser surface to agents through `patcher.browser`, the same API a
 // plugin uses, rather than through a private agent-only path: plan §20 asks for
 // exactly that, and it means anything an agent can do here a plugin can do too.
 //
 // Ships disabled. An agent driving this browser acts inside the user's real
-// logged-in session, and BB has no plugin permission model yet, so turning it on
-// is the user's decision (`bb plugin enable browser-tools`).
-import type { PatcherPluginApi, PluginAgentToolResult } from "@patcher/plugin-sdk";
+// logged-in session, and Patcher has no plugin permission model yet, so turning it on
+// is the user's decision (`patcher plugin enable browser-tools`).
+import type {
+  PatcherPluginApi,
+  PluginAgentToolResult,
+} from "@patcher/plugin-sdk";
 import { registerBrowserToolsCli } from "./cli.js";
 import {
   BROWSER_TOOLS_INSTRUCTIONS,
@@ -41,7 +44,7 @@ async function run(
 }
 
 export default function plugin(patcher: PatcherPluginApi) {
-  // `bb browser …` drives the same API the tools below do, without an agent.
+  // `patcher browser …` drives the same API the tools below do, without an agent.
   // It is the fast way to tell a broken bridge from a broken tool.
   registerBrowserToolsCli(patcher);
 
@@ -156,7 +159,7 @@ export default function plugin(patcher: PatcherPluginApi) {
             : "Whole page"
           : "Viewport";
         // The image itself, not a path to it: a model that asked to see the page
-        // should see it in the same turn. `bb browser screenshot` is the path
+        // should see it in the same turn. `patcher browser screenshot` is the path
         // that writes a file, for when the picture is for a human.
         return {
           content: [
@@ -195,7 +198,9 @@ export default function plugin(patcher: PatcherPluginApi) {
     description: toolDescriptions.browser_tabs_list,
     parameters: toolParameters.browser_tabs_list,
     execute: (_input, ctx) =>
-      run(async () => formatTabs(await patcher.browser.tabs.list({ signal: ctx.signal }))),
+      run(async () =>
+        formatTabs(await patcher.browser.tabs.list({ signal: ctx.signal })),
+      ),
   });
 
   patcher.agents.registerTool({

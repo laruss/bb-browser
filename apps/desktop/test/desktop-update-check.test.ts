@@ -68,11 +68,11 @@ describe("desktop update feed parsing", () => {
         {
           sha512: "BASE64_SHA512_FROM_ELECTRON_BUILDER",
           size: 123456789,
-          url: "bb-0.0.2-universal.zip",
+          url: "Patcher-0.0.2-universal.zip",
         },
       ],
       minimumSystemVersion: null,
-      path: "bb-0.0.2-universal.zip",
+      path: "Patcher-0.0.2-universal.zip",
       platform: "macos",
       releaseDate: checkedAt,
       releaseName: "Patcher desktop 0.0.2",

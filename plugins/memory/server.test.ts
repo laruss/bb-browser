@@ -126,7 +126,7 @@ describe("patcher-plugin-memory", () => {
     });
     expect(instructions?.length).toBeLessThanOrEqual(3_900);
     expect(instructions).toContain("Showing");
-    expect(instructions).toContain("bb memory catalog --scope all --json");
+    expect(instructions).toContain("patcher memory catalog --scope all --json");
     expect(instructions).not.toContain("Private details");
   });
 
@@ -204,7 +204,9 @@ describe("patcher-plugin-memory", () => {
       "reason",
     ]);
     expect(missingProject.exitCode).toBe(1);
-    expect(missingProject.stderr).toContain("requires a BB project context");
+    expect(missingProject.stderr).toContain(
+      "requires a Patcher project context",
+    );
   });
 
   it("uses optimistic versions for updates and forgetting", async () => {

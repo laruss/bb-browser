@@ -46,7 +46,7 @@ function stubThreadOpenApi(args: {
   return { getEnvironment, getThread, openThread };
 }
 
-describe("bb thread open command output", () => {
+describe("patcher thread open command output", () => {
   setupCommandOutputTestEnvironment();
 
   const register: CommandRegistrar = (program) =>
@@ -169,7 +169,7 @@ describe("bb thread open command output", () => {
     vi.stubEnv("PATCHER_THREAD_ID", "thread-storage");
     vi.stubEnv(
       "PATCHER_THREAD_STORAGE",
-      "/tmp/bb-thread-storage/thread-storage",
+      "/tmp/patcher-thread-storage/thread-storage",
     );
     const { getEnvironment, getThread, openThread } = stubThreadOpenApi({
       open: async () => ({ delivered: 1 }),
@@ -179,7 +179,7 @@ describe("bb thread open command output", () => {
       [
         "thread",
         "open",
-        "/tmp/bb-thread-storage/thread-storage/reports/preview.html",
+        "/tmp/patcher-thread-storage/thread-storage/reports/preview.html",
       ],
       register,
     );
@@ -205,7 +205,7 @@ describe("bb thread open command output", () => {
     ]);
   });
 
-  it("requires an explicit thread id outside a BB thread", async () => {
+  it("requires an explicit thread id outside a Patcher thread", async () => {
     stubThreadOpenApi({});
 
     await expect(runCommand(["thread", "open"], register)).rejects.toThrow(
@@ -259,7 +259,7 @@ describe("bb thread open command output", () => {
     expect(help).toContain("Usage:");
     expect(help).toContain("[id] [path]");
     expect(help).toContain(
-      "Open a BB thread, optionally with a file in its panel",
+      "Open a Patcher thread, optionally with a file in its panel",
     );
     expect(help).toContain("--line");
     expect(help).toContain("--split <placement>");
@@ -292,7 +292,7 @@ describe("bb thread open command output", () => {
     ]);
   });
 
-  it("treats an explicit --split target as a thread id inside a BB thread", async () => {
+  it("treats an explicit --split target as a thread id inside a Patcher thread", async () => {
     vi.stubEnv("PATCHER_THREAD_ID", "thread-current");
     const { openThread } = stubThreadOpenApi({});
 
@@ -307,7 +307,7 @@ describe("bb thread open command output", () => {
     });
   });
 
-  it("opens a file for an explicit split target inside a BB thread", async () => {
+  it("opens a file for an explicit split target inside a Patcher thread", async () => {
     vi.stubEnv("PATCHER_THREAD_ID", "thread-current");
     const { openThread } = stubThreadOpenApi({});
 

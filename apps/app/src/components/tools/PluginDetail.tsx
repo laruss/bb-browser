@@ -56,7 +56,7 @@ import {
 
 function pluginSourceLabel(plugin: PluginListItem): string | null {
   return plugin.provenance === "builtin" || plugin.provenance === "catalog"
-    ? "BB Official"
+    ? "Patcher Official"
     : null;
 }
 
@@ -114,7 +114,7 @@ function PluginPath({ path }: { path: string }) {
 }
 
 /**
- * Read-only detail for an uninstalled BB Official catalog entry.
+ * Read-only detail for an uninstalled Patcher Official catalog entry.
  *
  * The catalog exposes identity, category, description, and compatibility. It
  * cannot enumerate runtime capabilities until the plugin is installed and
@@ -138,7 +138,7 @@ export function CatalogPluginDetail({
         />
       }
       title={entry.displayName}
-      titleMeta={<ProvenancePill label="BB Official" />}
+      titleMeta={<ProvenancePill label="Patcher Official" />}
       metadata={<span>{entry.category}</span>}
       actions={
         <ResourceInstallControl
@@ -351,7 +351,7 @@ export function PluginDetail({
       disabled: pending || plugin.provenance === "builtin",
       disabledReason:
         plugin.provenance === "builtin"
-          ? "Included with BB; disable this plugin instead."
+          ? "Included with Patcher; disable this plugin instead."
           : undefined,
       onSelect: () => onDelete(plugin),
     },
@@ -364,7 +364,7 @@ export function PluginDetail({
       // Provenance is a label, not a control: it sits flush to the name as a
       // passive badge. Default owned sources need no label; only BB-published
       // plugins carry provenance here. It used to render as a green
-      // "Installed"/"BB Official"
+      // "Installed"/"Patcher Official"
       // button that swapped to a red Uninstall on hover — a status that
       // deleted on click, at the same weight as the enable toggle.
       titleMeta={<PluginProvenancePill plugin={plugin} />}
@@ -407,10 +407,7 @@ export function PluginDetail({
             >
               {installedValue}
             </PluginDetailFieldRow>
-            <PluginDetailFieldRow
-              label="Version"
-              labelClassName="font-medium"
-            >
+            <PluginDetailFieldRow label="Version" labelClassName="font-medium">
               <span className="font-mono text-xs">{plugin.version}</span>
             </PluginDetailFieldRow>
             {hasReleaseUpdate ? (

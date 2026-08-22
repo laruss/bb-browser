@@ -83,7 +83,7 @@ import type {
  * Per-root reload generation for mutable (path:/source-builtin) plugin trees.
  * `jiti.import` hands a `"type": "module"` entry to native `import()`, and
  * Node's ESM registry keys modules by resolved URL forever — so a re-import
- * after an edit returns the first-evaluated module and `bb plugin reload`
+ * after an edit returns the first-evaluated module and `patcher plugin reload`
  * silently keeps the old code. A resolve hook stamps the current generation
  * onto every URL inside a mutable plugin root, which makes each reload a
  * distinct URL for the entry AND every file it imports.
@@ -847,7 +847,7 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
   function checkPluginSdkRange(manifest: PluginManifest): string | undefined {
     if (!manifest.patcherPluginSdkRange) return undefined;
     if (!semver.satisfies(PLUGIN_SDK_VERSION, manifest.patcherPluginSdkRange)) {
-      return `requires bb plugin SDK ${manifest.patcherPluginSdkRange}, running SDK is ${PLUGIN_SDK_VERSION}`;
+      return `requires patcher plugin SDK ${manifest.patcherPluginSdkRange}, running SDK is ${PLUGIN_SDK_VERSION}`;
     }
     return undefined;
   }
@@ -976,7 +976,7 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
    * prefer a fresh, SDK-compatible prebuilt `dist/server.js` (design
    * §3 loader amendment, §6 prebuilt distribution) so consumers never need
    * npm or node_modules. Path installs and source-layout builtins ALWAYS load
-   * from source, so author iteration via `bb plugin reload` and the builtin
+   * from source, so author iteration via `patcher plugin reload` and the builtin
    * dev watcher sees edited files; packaged builtins declare dist/server.js
    * as their manifest entry and still load that artifact. A present-but-stale
    * or meta-less managed dist falls back to source with one warning. Now that
@@ -1155,13 +1155,13 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
     // Build candidate assets without publishing them; a failed reload keeps
     // the previous backend and frontend registration sets together.
     const appBundleCandidate = await loadAppBundleCandidate(row, manifest);
-    // Branding refresh rides every load too, so `bb plugin reload` picks up a
+    // Branding refresh rides every load too, so `patcher plugin reload` picks up a
     // changed compact icon or logo file.
     const brandingAssetCandidate = await loadPluginBrandingAssets(
       row.id,
       manifest,
     );
-    // One capability object, two consumers: `createPluginApi` builds `bb` from
+    // One capability object, two consumers: `createPluginApi` builds `patcher` from
     // it in-process, and `createPluginHostCallServer` performs the same calls
     // for a plugin that lives elsewhere. Constructing it once is what stops
     // the two placements drifting.
@@ -1170,7 +1170,7 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
       permissions: manifest.permissions,
       sites: manifest.sites,
       logger: deps.logger,
-      // The server's own implementation of the two stores `bb` reads through.
+      // The server's own implementation of the two stores `patcher` reads through.
       // A plugin process supplies the same shape backed by its channel; both
       // sit under one copy of the semantics in plugin-api.ts.
       kvStore: {
@@ -1306,7 +1306,8 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
         // --ignore-scripts already prevents gyp builds at install; a .node
         // addon that slipped through dies here under Electron's ABI.
         if (/ERR_DLOPEN_FAILED|\.node/.test(message)) {
-          message += " (native dependencies are not supported in BB plugins)";
+          message +=
+            " (native dependencies are not supported in Patcher plugins)";
         }
         if (previous !== undefined) {
           setStatus(row.id, "running", `reload failed: ${message}`);
@@ -1506,7 +1507,7 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
    *
    * What a restart does *not* refresh is the registration snapshot: the
    * reinstated process runs the same entry file and registers the same things,
-   * and picking up an edited plugin is what `bb plugin reload` is for.
+   * and picking up an edited plugin is what `patcher plugin reload` is for.
    */
   function liveRemoteChannel(
     pluginId: string,
@@ -1609,7 +1610,7 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
   }
 
   /**
-   * Let a plugin be moved out again. An explicit `bb plugin reload` is an
+   * Let a plugin be moved out again. An explicit `patcher plugin reload` is an
    * operator saying they fixed whatever kept killing the process; without this
    * the only way back out is a server restart.
    */
@@ -1681,7 +1682,7 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
    * below is a loop: the plugin comes back, `runPluginOutOfProcess` still says
    * yes, and it walks into the same crashloop. Held in memory only — a
    * restarted server is a fresh chance — and cleared by an explicit
-   * `bb plugin reload`, which is an operator saying they fixed something.
+   * `patcher plugin reload`, which is an operator saying they fixed something.
    */
   const placementQuarantine = new Map<string, string>();
 
@@ -1746,7 +1747,7 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
    *
    * The cost is that the factory may run twice — once out there and once here.
    * That is survivable only because a factory has always had to be
-   * re-runnable: `bb plugin reload` re-runs it on every reload.
+   * re-runnable: `patcher plugin reload` re-runs it on every reload.
    */
   async function loadOutOfProcess(
     row: InstalledPluginRow,

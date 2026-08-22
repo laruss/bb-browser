@@ -344,7 +344,7 @@ describe("cli", () => {
     expect(await harness.runCli(["crash"])).toEqual({
       exitCode: 1,
       stdout: "",
-      stderr: "bb docs failed: bad flag",
+      stderr: "patcher docs failed: bad flag",
     });
   });
 

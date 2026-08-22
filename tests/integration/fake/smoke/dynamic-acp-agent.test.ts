@@ -1,7 +1,7 @@
 import path from "node:path";
 import { chmodSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import type { CustomAcpAgent } from "@patcher/config/bb-app-managed-config";
+import type { CustomAcpAgent } from "@patcher/config/patcher-app-managed-config";
 import { systemExecutionOptionsResponseSchema } from "@patcher/server-contract";
 import { describe, expect, it } from "vitest";
 import { getThreadOutput, sendTextMessage } from "../../helpers/api.js";

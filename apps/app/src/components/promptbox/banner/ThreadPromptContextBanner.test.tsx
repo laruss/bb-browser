@@ -20,7 +20,7 @@ const pullRequestFixture: ThreadPullRequest = {
   number: 128,
   title: "Show pull request status in the prompt context banner",
   state: "open",
-  url: "https://github.com/acme/bb/pull/128",
+  url: "https://github.com/acme/patcher/pull/128",
   baseRefName: "main",
   headRefName: "patcher/pr-context-banner",
   updatedAt: "2026-06-16T12:30:00Z",

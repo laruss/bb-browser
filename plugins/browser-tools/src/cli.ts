@@ -28,7 +28,7 @@ import {
 } from "./ffmpeg.js";
 
 /**
- * `bb browser …` — the same `patcher.browser` API the agent tools use, from a
+ * `patcher browser …` — the same `patcher.browser` API the agent tools use, from a
  * terminal.
  *
  * It exists because the agent path is only observable by running an agent: the
@@ -102,7 +102,12 @@ function parseArgs(argv: string[]): ParsedArgs | { error: string } {
       index += 1;
       const raw = argv[index];
       const value = Number(raw);
-      if (raw === undefined || !Number.isInteger(value) || value < 1 || value > 30) {
+      if (
+        raw === undefined ||
+        !Number.isInteger(value) ||
+        value < 1 ||
+        value > 30
+      ) {
         return { error: "--fps needs 1 to 30" };
       }
       fps = value;
@@ -123,7 +128,12 @@ function parseArgs(argv: string[]): ParsedArgs | { error: string } {
       index += 1;
       const raw = argv[index];
       const value = Number(raw);
-      if (raw === undefined || !Number.isInteger(value) || value < 100 || value > 599) {
+      if (
+        raw === undefined ||
+        !Number.isInteger(value) ||
+        value < 100 ||
+        value > 599
+      ) {
         return { error: "--status needs an HTTP status code" };
       }
       status = value;
@@ -236,10 +246,7 @@ function renderTab(tab: PluginBrowserTab, json: boolean): string {
   return json ? `${JSON.stringify(tab, null, 2)}\n` : `${tabLine(tab)}\n`;
 }
 
-function renderPageState(
-  state: PluginBrowserPageState,
-  json: boolean,
-): string {
+function renderPageState(state: PluginBrowserPageState, json: boolean): string {
   if (json) {
     return `${JSON.stringify(state, null, 2)}\n`;
   }
@@ -254,7 +261,8 @@ function consoleLine(entry: PluginBrowserConsoleEntry): string {
 function networkLine(entry: PluginBrowserNetworkEntry): string {
   // The status column carries the error when there is no status, because
   // "which requests went wrong" is the question this listing exists for.
-  const outcome = entry.error ?? (entry.status === null ? "-" : String(entry.status));
+  const outcome =
+    entry.error ?? (entry.status === null ? "-" : String(entry.status));
   return `${outcome}\t${entry.method}\t${entry.resourceType}${
     entry.fromCache ? " (cache)" : ""
   }\t${entry.url}`;
@@ -378,7 +386,10 @@ async function writeTrace(
     if (step.image !== null) {
       images += 1;
       image = `step-${numbered(step.seq, 3)}.jpg`;
-      await writeFile(join(directory, image), Buffer.from(step.image, "base64"));
+      await writeFile(
+        join(directory, image),
+        Buffer.from(step.image, "base64"),
+      );
     }
     steps.push({ ...step, image });
   }
@@ -433,7 +444,11 @@ async function writeVideo(
   if (last !== undefined) {
     playlist.push(`file ${last.file}`);
   }
-  await writeFile(join(directory, "frames.txt"), `${playlist.join("\n")}\n`, "utf8");
+  await writeFile(
+    join(directory, "frames.txt"),
+    `${playlist.join("\n")}\n`,
+    "utf8",
+  );
   await writeFile(
     join(directory, "video.json"),
     `${JSON.stringify(
@@ -505,7 +520,7 @@ function parseStorageStateFile(raw: string): BrowserStorageStateFile | null {
   };
 }
 
-const USAGE = `Usage: bb browser <command> [options]
+const USAGE = `Usage: patcher browser <command> [options]
 
 Reading
   status                     Whether an app window can serve browser commands
@@ -597,316 +612,327 @@ Options:
 export function registerBrowserToolsCli(patcher: PatcherPluginApi): void {
   patcher.cli.register({
     name: "browser",
-    summary: "Drive the BB desktop app's browser surface",
+    summary: "Drive the Patcher desktop app's browser surface",
     commands: [
       {
         name: "status",
         summary: "Show whether a browser window is connected",
-        usage: "bb browser status [--json]",
+        usage: "patcher browser status [--json]",
       },
       {
         name: "snapshot",
-        summary: "Accessibility tree of a page, with refs on interactive elements",
+        summary:
+          "Accessibility tree of a page, with refs on interactive elements",
         usage:
-          "bb browser snapshot [--tab <tab-id>] [--max <depth>] [--selector <css>] [--json]",
+          "patcher browser snapshot [--tab <tab-id>] [--max <depth>] [--selector <css>] [--json]",
       },
       {
         name: "click",
         summary: "Click an element named by a snapshot ref",
         usage:
-          "bb browser click <ref> [--button left|middle|right] [--double] [--modifier <M>] [--tab <tab-id>] [--generation <n>]",
+          "patcher browser click <ref> [--button left|middle|right] [--double] [--modifier <M>] [--tab <tab-id>] [--generation <n>]",
       },
       {
         name: "hover",
         summary: "Move the pointer over an element",
-        usage: "bb browser hover <ref> [--tab <tab-id>] [--generation <n>]",
+        usage:
+          "patcher browser hover <ref> [--tab <tab-id>] [--generation <n>]",
       },
       {
         name: "drag",
         summary: "Drag one element onto another",
-        usage: "bb browser drag <ref> <target-ref> [--tab <tab-id>]",
+        usage: "patcher browser drag <ref> <target-ref> [--tab <tab-id>]",
       },
       {
         name: "fill",
         summary: "Replace the value of a text field",
-        usage: "bb browser fill <ref> <text> [--tab <tab-id>]",
+        usage: "patcher browser fill <ref> <text> [--tab <tab-id>]",
       },
       {
         name: "type",
         summary: "Type into a field one keystroke at a time",
-        usage: "bb browser type <ref> <text> [--tab <tab-id>]",
+        usage: "patcher browser type <ref> <text> [--tab <tab-id>]",
       },
       {
         name: "press",
         summary: "Press a key, optionally on a specific element",
-        usage: "bb browser press <key> [<ref>] [--tab <tab-id>]",
+        usage: "patcher browser press <key> [<ref>] [--tab <tab-id>]",
       },
       {
         name: "select",
         summary: "Choose one or more options in a dropdown",
-        usage: "bb browser select <ref> <value>... [--tab <tab-id>]",
+        usage: "patcher browser select <ref> <value>... [--tab <tab-id>]",
       },
       {
         name: "check",
         summary: "Make sure a checkbox or radio is checked",
-        usage: "bb browser check <ref> [--tab <tab-id>]",
+        usage: "patcher browser check <ref> [--tab <tab-id>]",
       },
       {
         name: "uncheck",
         summary: "Make sure a checkbox is unchecked",
-        usage: "bb browser uncheck <ref> [--tab <tab-id>]",
+        usage: "patcher browser uncheck <ref> [--tab <tab-id>]",
       },
       {
         name: "upload",
         summary: "Hand a file input one or more local files",
-        usage: "bb browser upload <ref> <path>... [--tab <tab-id>]",
+        usage: "patcher browser upload <ref> <path>... [--tab <tab-id>]",
       },
       {
         name: "resize",
         summary: "Emulate a viewport size, or reset it",
-        usage: "bb browser resize <width> <height> | reset [--tab <tab-id>]",
+        usage:
+          "patcher browser resize <width> <height> | reset [--tab <tab-id>]",
       },
       {
         name: "dialog",
         summary: "Answer a JavaScript dialog blocking a page",
-        usage: "bb browser dialog <accept|dismiss> [text] [--tab <tab-id>]",
+        usage:
+          "patcher browser dialog <accept|dismiss> [text] [--tab <tab-id>]",
       },
       {
         name: "tabs",
         summary: "List the browser's open tabs",
-        usage: "bb browser tabs [--json]",
+        usage: "patcher browser tabs [--json]",
       },
       {
         name: "open",
         summary: "Open a URL in the browser",
-        usage: "bb browser open <url> [--tab <tab-id>] [--new-tab] [--json]",
+        usage:
+          "patcher browser open <url> [--tab <tab-id>] [--new-tab] [--json]",
       },
       {
         name: "close",
         summary: "Close a browser tab",
-        usage: "bb browser close <tab-id> [--json]",
+        usage: "patcher browser close <tab-id> [--json]",
       },
       {
         name: "activate",
         summary: "Bring a browser tab to the front",
-        usage: "bb browser activate <tab-id> [--json]",
+        usage: "patcher browser activate <tab-id> [--json]",
       },
       {
         name: "url",
         summary: "Show the URL a browser tab is on",
-        usage: "bb browser url [--tab <tab-id>]",
+        usage: "patcher browser url [--tab <tab-id>]",
       },
       {
         name: "title",
         summary: "Show the title of a browser tab's page",
-        usage: "bb browser title [--tab <tab-id>]",
+        usage: "patcher browser title [--tab <tab-id>]",
       },
       {
         name: "text",
         summary: "Read the visible text of a browser tab's page",
-        usage: "bb browser text [--tab <tab-id>] [--max <n>]",
+        usage: "patcher browser text [--tab <tab-id>] [--max <n>]",
       },
       {
         name: "selection",
         summary: "Read the text selected in a browser tab",
-        usage: "bb browser selection [--tab <tab-id>]",
+        usage: "patcher browser selection [--tab <tab-id>]",
       },
       {
         name: "screenshot",
         summary: "Write a picture of a tab's page to a file",
-        usage: "bb browser screenshot <file> [--full-page] [--tab <tab-id>]",
+        usage:
+          "patcher browser screenshot <file> [--full-page] [--tab <tab-id>]",
       },
       {
         name: "pdf",
         summary: "Print a tab's page to a PDF file",
-        usage: "bb browser pdf <file> [--tab <tab-id>]",
+        usage: "patcher browser pdf <file> [--tab <tab-id>]",
       },
       {
         name: "console",
         summary: "Show what the page has logged to its console",
-        usage: "bb browser console [--tab <tab-id>] [--max <n>] [--json]",
+        usage: "patcher browser console [--tab <tab-id>] [--max <n>] [--json]",
       },
       {
         name: "network",
         summary: "Show what the tab has requested",
-        usage: "bb browser network [--tab <tab-id>] [--max <n>] [--json]",
+        usage: "patcher browser network [--tab <tab-id>] [--max <n>] [--json]",
       },
       {
         name: "cookie-list",
         summary: "List the cookies a tab's URL carries, with their values",
-        usage: "bb browser cookie-list [--tab <tab-id>] [--json]",
+        usage: "patcher browser cookie-list [--tab <tab-id>] [--json]",
       },
       {
         name: "cookie-get",
         summary: "Show one cookie of a tab's URL",
-        usage: "bb browser cookie-get <name> [--tab <tab-id>] [--json]",
+        usage: "patcher browser cookie-get <name> [--tab <tab-id>] [--json]",
       },
       {
         name: "cookie-set",
         summary: "Set a cookie on a tab's URL",
-        usage: "bb browser cookie-set <name> <value> [--tab <tab-id>]",
+        usage: "patcher browser cookie-set <name> <value> [--tab <tab-id>]",
       },
       {
         name: "cookie-delete",
         summary: "Remove one cookie from a tab's URL",
-        usage: "bb browser cookie-delete <name> [--tab <tab-id>]",
+        usage: "patcher browser cookie-delete <name> [--tab <tab-id>]",
       },
       {
         name: "cookie-clear",
         summary: "Remove every cookie a tab's URL carries",
-        usage: "bb browser cookie-clear [--tab <tab-id>]",
+        usage: "patcher browser cookie-clear [--tab <tab-id>]",
       },
       {
         name: "localstorage-list",
         summary: "List a page's localStorage",
-        usage: "bb browser localstorage-list [--tab <tab-id>] [--json]",
+        usage: "patcher browser localstorage-list [--tab <tab-id>] [--json]",
       },
       {
         name: "localstorage-get",
         summary: "Read one localStorage key",
-        usage: "bb browser localstorage-get <key> [--tab <tab-id>]",
+        usage: "patcher browser localstorage-get <key> [--tab <tab-id>]",
       },
       {
         name: "localstorage-set",
         summary: "Write one localStorage key",
-        usage: "bb browser localstorage-set <key> <value> [--tab <tab-id>]",
+        usage:
+          "patcher browser localstorage-set <key> <value> [--tab <tab-id>]",
       },
       {
         name: "localstorage-delete",
         summary: "Remove one localStorage key",
-        usage: "bb browser localstorage-delete <key> [--tab <tab-id>]",
+        usage: "patcher browser localstorage-delete <key> [--tab <tab-id>]",
       },
       {
         name: "localstorage-clear",
         summary: "Empty a page's localStorage",
-        usage: "bb browser localstorage-clear [--tab <tab-id>]",
+        usage: "patcher browser localstorage-clear [--tab <tab-id>]",
       },
       {
         name: "sessionstorage-list",
         summary: "List a page's sessionStorage",
-        usage: "bb browser sessionstorage-list [--tab <tab-id>] [--json]",
+        usage: "patcher browser sessionstorage-list [--tab <tab-id>] [--json]",
       },
       {
         name: "sessionstorage-get",
         summary: "Read one sessionStorage key",
-        usage: "bb browser sessionstorage-get <key> [--tab <tab-id>]",
+        usage: "patcher browser sessionstorage-get <key> [--tab <tab-id>]",
       },
       {
         name: "sessionstorage-set",
         summary: "Write one sessionStorage key",
-        usage: "bb browser sessionstorage-set <key> <value> [--tab <tab-id>]",
+        usage:
+          "patcher browser sessionstorage-set <key> <value> [--tab <tab-id>]",
       },
       {
         name: "sessionstorage-delete",
         summary: "Remove one sessionStorage key",
-        usage: "bb browser sessionstorage-delete <key> [--tab <tab-id>]",
+        usage: "patcher browser sessionstorage-delete <key> [--tab <tab-id>]",
       },
       {
         name: "sessionstorage-clear",
         summary: "Empty a page's sessionStorage",
-        usage: "bb browser sessionstorage-clear [--tab <tab-id>]",
+        usage: "patcher browser sessionstorage-clear [--tab <tab-id>]",
       },
       {
         name: "state-save",
         summary: "Save a tab's cookies and localStorage as a signed-in session",
-        usage: "bb browser state-save [file] [--tab <tab-id>]",
+        usage: "patcher browser state-save [file] [--tab <tab-id>]",
       },
       {
         name: "state-load",
         summary: "Write a saved session back into a tab",
-        usage: "bb browser state-load <file> [--tab <tab-id>]",
+        usage: "patcher browser state-load <file> [--tab <tab-id>]",
       },
       {
         name: "eval",
-        summary: "Run a JavaScript function in the page and print what it returned",
+        summary:
+          "Run a JavaScript function in the page and print what it returned",
         usage:
-          'bb browser eval "<function>" [<ref>] [--tab <tab-id>] [--generation <n>]',
+          'patcher browser eval "<function>" [<ref>] [--tab <tab-id>] [--generation <n>]',
       },
       {
         name: "mousemove",
         summary: "Move the pointer to viewport coordinates",
-        usage: "bb browser mousemove <x> <y> [--tab <tab-id>]",
+        usage: "patcher browser mousemove <x> <y> [--tab <tab-id>]",
       },
       {
         name: "mousedown",
         summary: "Press a mouse button where the pointer is",
-        usage: "bb browser mousedown [left|middle|right] [--tab <tab-id>]",
+        usage: "patcher browser mousedown [left|middle|right] [--tab <tab-id>]",
       },
       {
         name: "mouseup",
         summary: "Release a mouse button where the pointer is",
-        usage: "bb browser mouseup [left|middle|right] [--tab <tab-id>]",
+        usage: "patcher browser mouseup [left|middle|right] [--tab <tab-id>]",
       },
       {
         name: "mousewheel",
         summary: "Scroll by a delta where the pointer is",
-        usage: "bb browser mousewheel <dx> <dy> [--tab <tab-id>]",
+        usage: "patcher browser mousewheel <dx> <dy> [--tab <tab-id>]",
       },
       {
         name: "route",
-        summary: "Answer requests matching a URL pattern instead of fetching them",
+        summary:
+          "Answer requests matching a URL pattern instead of fetching them",
         usage:
-          'bb browser route <pattern> [--status <n>] [--body <text>] [--content-type <t>] [--header "N: v"] [--tab <tab-id>]',
+          'patcher browser route <pattern> [--status <n>] [--body <text>] [--content-type <t>] [--header "N: v"] [--tab <tab-id>]',
       },
       {
         name: "route-list",
         summary: "Show what a tab is mocking and how often each route fired",
-        usage: "bb browser route-list [--tab <tab-id>] [--json]",
+        usage: "patcher browser route-list [--tab <tab-id>] [--json]",
       },
       {
         name: "unroute",
         summary: "Remove one route, or every route on a tab",
-        usage: "bb browser unroute [<pattern>] [--tab <tab-id>]",
+        usage: "patcher browser unroute [<pattern>] [--tab <tab-id>]",
       },
       {
         name: "network-state-set",
         summary: "Take a tab offline, or put it back online",
-        usage: "bb browser network-state-set <offline|online> [--tab <tab-id>]",
+        usage:
+          "patcher browser network-state-set <offline|online> [--tab <tab-id>]",
       },
       {
         name: "tracing-start",
         summary: "Start logging the browser commands Patcher runs",
-        usage: "bb browser tracing-start [--screenshots]",
+        usage: "patcher browser tracing-start [--screenshots]",
       },
       {
         name: "tracing-stop",
         summary: "Stop the log and write it out",
-        usage: "bb browser tracing-stop [<dir>]",
+        usage: "patcher browser tracing-stop [<dir>]",
       },
       {
         name: "video-start",
         summary: "Start filming a tab",
-        usage: "bb browser video-start [--fps <n>] [--tab <tab-id>]",
+        usage: "patcher browser video-start [--fps <n>] [--tab <tab-id>]",
       },
       {
         name: "video-chapter",
         summary: "Mark a moment in the film",
-        usage: "bb browser video-chapter <title> [--tab <tab-id>]",
+        usage: "patcher browser video-chapter <title> [--tab <tab-id>]",
       },
       {
         name: "video-stop",
         summary: "Stop filming and write the frames to a directory",
-        usage: "bb browser video-stop <dir> [--encode] [--tab <tab-id>]",
+        usage: "patcher browser video-stop <dir> [--encode] [--tab <tab-id>]",
       },
       {
         name: "install-ffmpeg",
         summary: "Install the video encoder with Homebrew (Patcher ships none)",
-        usage: "bb browser install-ffmpeg",
+        usage: "patcher browser install-ffmpeg",
       },
       {
         name: "back",
         summary: "Go back in a browser tab's history",
-        usage: "bb browser back [--tab <tab-id>] [--json]",
+        usage: "patcher browser back [--tab <tab-id>] [--json]",
       },
       {
         name: "forward",
         summary: "Go forward in a browser tab's history",
-        usage: "bb browser forward [--tab <tab-id>] [--json]",
+        usage: "patcher browser forward [--tab <tab-id>] [--json]",
       },
       {
         name: "reload",
         summary: "Reload a browser tab",
-        usage: "bb browser reload [--tab <tab-id>] [--json]",
+        usage: "patcher browser reload [--tab <tab-id>] [--json]",
       },
     ],
     async run(argv, context): Promise<PluginCliResult> {
@@ -947,7 +973,7 @@ export function registerBrowserToolsCli(patcher: PatcherPluginApi): void {
               exitCode: status.connected ? 0 : 1,
               stdout: status.connected
                 ? `Connected (${status.windowCount} window${status.windowCount === 1 ? "" : "s"}).\n`
-                : "No browser window is connected. Open the BB desktop app.\n",
+                : "No browser window is connected. Open the Patcher desktop app.\n",
             };
           }
 
@@ -961,7 +987,10 @@ export function registerBrowserToolsCli(patcher: PatcherPluginApi): void {
               options,
             );
             if (parsed.json) {
-              return { exitCode: 0, stdout: `${JSON.stringify(result, null, 2)}\n` };
+              return {
+                exitCode: 0,
+                stdout: `${JSON.stringify(result, null, 2)}\n`,
+              };
             }
             // The generation goes to stderr so stdout stays the tree alone and
             // can be piped, while a human still sees the number the interaction
@@ -1087,7 +1116,8 @@ export function registerBrowserToolsCli(patcher: PatcherPluginApi): void {
             if (action !== "accept" && action !== "dismiss") {
               return {
                 exitCode: 2,
-                stderr: "Usage: bb browser dialog <accept|dismiss> [text]\n",
+                stderr:
+                  "Usage: patcher browser dialog <accept|dismiss> [text]\n",
               };
             }
             const answered = await patcher.browser.page.handleDialog(
@@ -1199,7 +1229,7 @@ export function registerBrowserToolsCli(patcher: PatcherPluginApi): void {
             if (target === undefined || target.length === 0) {
               return { exitCode: 2, stderr: "A file path is required.\n" };
             }
-            // Relative to the shell that ran `bb`, not to the server process
+            // Relative to the shell that ran `patcher`, not to the server process
             // this handler happens to live in.
             const path = isAbsolute(target)
               ? target
@@ -1367,7 +1397,10 @@ export function registerBrowserToolsCli(patcher: PatcherPluginApi): void {
               : "session";
             const key = rest[0];
             if (key === undefined || key.length === 0) {
-              return { exitCode: 2, stderr: "A key and a value are required.\n" };
+              return {
+                exitCode: 2,
+                stderr: "A key and a value are required.\n",
+              };
             }
             const written = await patcher.browser.storage.setItems(
               {
@@ -1424,9 +1457,7 @@ export function registerBrowserToolsCli(patcher: PatcherPluginApi): void {
             const state: BrowserStorageStateFile = {
               cookies: cookies.cookies,
               origins:
-                origin === null
-                  ? []
-                  : [{ origin, localStorage: stored.items }],
+                origin === null ? [] : [{ origin, localStorage: stored.items }],
             };
             const json = `${JSON.stringify(state, null, 2)}\n`;
             // A state file is the session it came from. Saying so on stderr
@@ -1459,9 +1490,7 @@ export function registerBrowserToolsCli(patcher: PatcherPluginApi): void {
             const path = isAbsolute(target)
               ? target
               : resolve(context.cwd ?? process.cwd(), target);
-            const state = parseStorageStateFile(
-              await readFile(path, "utf8"),
-            );
+            const state = parseStorageStateFile(await readFile(path, "utf8"));
             if (state === null) {
               return {
                 exitCode: 2,
@@ -1513,7 +1542,7 @@ export function registerBrowserToolsCli(patcher: PatcherPluginApi): void {
               return {
                 exitCode: 2,
                 stderr:
-                  'A function is required, e.g. bb browser eval "() => document.title"\n',
+                  'A function is required, e.g. patcher browser eval "() => document.title"\n',
               };
             }
             const result = await patcher.browser.control.evaluate(
@@ -1526,7 +1555,10 @@ export function registerBrowserToolsCli(patcher: PatcherPluginApi): void {
               options,
             );
             if (parsed.json) {
-              return { exitCode: 0, stdout: `${JSON.stringify(result, null, 2)}\n` };
+              return {
+                exitCode: 0,
+                stdout: `${JSON.stringify(result, null, 2)}\n`,
+              };
             }
             return {
               exitCode: 0,
@@ -1598,7 +1630,7 @@ export function registerBrowserToolsCli(patcher: PatcherPluginApi): void {
               return {
                 exitCode: 2,
                 stderr:
-                  'A URL pattern is required, e.g. bb browser route "**/api/me" --body "{}"\n',
+                  'A URL pattern is required, e.g. patcher browser route "**/api/me" --body "{}"\n',
               };
             }
             return renderRoutes(
@@ -1642,7 +1674,8 @@ export function registerBrowserToolsCli(patcher: PatcherPluginApi): void {
             if (state !== "offline" && state !== "online") {
               return {
                 exitCode: 2,
-                stderr: "Usage: bb browser network-state-set <offline|online>\n",
+                stderr:
+                  "Usage: patcher browser network-state-set <offline|online>\n",
               };
             }
             const page = await patcher.browser.control.setOffline(
@@ -1725,7 +1758,7 @@ export function registerBrowserToolsCli(patcher: PatcherPluginApi): void {
             if (title.length === 0) {
               return {
                 exitCode: 2,
-                stderr: "Usage: bb browser video-chapter <title>\n",
+                stderr: "Usage: patcher browser video-chapter <title>\n",
               };
             }
             await patcher.browser.recording.videoChapter(
@@ -1740,7 +1773,8 @@ export function registerBrowserToolsCli(patcher: PatcherPluginApi): void {
             if (target === undefined || target.length === 0) {
               return {
                 exitCode: 2,
-                stderr: "A directory is required: bb browser video-stop <dir>\n",
+                stderr:
+                  "A directory is required: patcher browser video-stop <dir>\n",
               };
             }
             const video = await patcher.browser.recording.videoStop(

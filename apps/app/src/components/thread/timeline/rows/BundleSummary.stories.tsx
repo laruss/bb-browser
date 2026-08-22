@@ -24,11 +24,7 @@ export default {
   title: "thread/timeline/rows/Bundle Summary",
 };
 
-function TimelineStage({
-  children,
-}: {
-  children: ReactNode;
-}) {
+function TimelineStage({ children }: { children: ReactNode }) {
   return <div className="w-full max-w-[760px]">{children}</div>;
 }
 
@@ -107,7 +103,7 @@ const buildDomainCoreUiCommand: TimelineRow = commandRow({
   status: "completed",
   callId: "call_buildDomainCoreUi",
   command:
-    "pnpm exec turbo run build --filter=@patcher/domain --filter=@patcher/core-ui --filter=@patcher/server-contract --concurrency=1 > /tmp/bb-projection-refactor-build.log 2>&1",
+    "pnpm exec turbo run build --filter=@patcher/domain --filter=@patcher/core-ui --filter=@patcher/server-contract --concurrency=1 > /tmp/patcher-projection-refactor-build.log 2>&1",
   cwd: "/Users/michael/.patcher-dev/worktrees/env_33i22gvcqe/patcher",
   source: null,
   output: "",
@@ -128,7 +124,7 @@ const testServerCommand: TimelineRow = commandRow({
   status: "completed",
   callId: "call_testServer",
   command:
-    "pnpm exec turbo run test --filter=@patcher/server --only --concurrency=1 -- --run test/threads/timeline-service.test.ts > /tmp/bb-projection-refactor-server.log 2>&1",
+    "pnpm exec turbo run test --filter=@patcher/server --only --concurrency=1 -- --run test/threads/timeline-service.test.ts > /tmp/patcher-projection-refactor-server.log 2>&1",
   cwd: "/Users/michael/.patcher-dev/worktrees/env_33i22gvcqe/patcher",
   source: null,
   output: "",
@@ -149,7 +145,7 @@ const testCoreUiCommand: TimelineRow = commandRow({
   status: "completed",
   callId: "call_testCoreUi",
   command:
-    "pnpm exec turbo run test --filter=@patcher/core-ui --concurrency=1 -- --run test/to-view-messages.assistant-streams.test.ts test/to-view-messages.turn-lifecycle.test.ts test/to-view-messages.client-input.test.ts > /tmp/bb-projection-refactor-coreui.log 2>&1",
+    "pnpm exec turbo run test --filter=@patcher/core-ui --concurrency=1 -- --run test/to-view-messages.assistant-streams.test.ts test/to-view-messages.turn-lifecycle.test.ts test/to-view-messages.client-input.test.ts > /tmp/patcher-projection-refactor-coreui.log 2>&1",
   cwd: "/Users/michael/.patcher-dev/worktrees/env_33i22gvcqe/patcher",
   source: null,
   output: "",
@@ -170,7 +166,7 @@ const buildForceCommand: TimelineRow = commandRow({
   status: "completed",
   callId: "call_buildForce",
   command:
-    "pnpm exec turbo run build --filter=@patcher/domain --filter=@patcher/core-ui --force --concurrency=1 > /tmp/bb-projection-refactor-force-build.log 2>&1",
+    "pnpm exec turbo run build --filter=@patcher/domain --filter=@patcher/core-ui --force --concurrency=1 > /tmp/patcher-projection-refactor-force-build.log 2>&1",
   cwd: "/Users/michael/.patcher-dev/worktrees/env_33i22gvcqe/patcher",
   source: null,
   output: "",
@@ -191,7 +187,7 @@ const testCoreUiForceCommand: TimelineRow = commandRow({
   status: "completed",
   callId: "call_testCoreUiForce",
   command:
-    "pnpm exec turbo run test --filter=@patcher/core-ui --force --concurrency=1 -- --run test/to-view-messages.assistant-streams.test.ts test/to-view-messages.turn-lifecycle.test.ts test/to-view-messages.client-input.test.ts > /tmp/bb-projection-refactor-force-coreui.log 2>&1",
+    "pnpm exec turbo run test --filter=@patcher/core-ui --force --concurrency=1 -- --run test/to-view-messages.assistant-streams.test.ts test/to-view-messages.turn-lifecycle.test.ts test/to-view-messages.client-input.test.ts > /tmp/patcher-projection-refactor-force-coreui.log 2>&1",
   cwd: "/Users/michael/.patcher-dev/worktrees/env_33i22gvcqe/patcher",
   source: null,
   output: "",
@@ -214,7 +210,7 @@ const testServerErrorCommand: TimelineRow = commandRow({
   status: "error",
   callId: "call_testServerError",
   command:
-    "pnpm exec turbo run test --filter=@patcher/server --only --force --concurrency=1 -- --run test/threads/timeline-service.test.ts > /tmp/bb-projection-refactor-server.log 2>&1",
+    "pnpm exec turbo run test --filter=@patcher/server --only --force --concurrency=1 -- --run test/threads/timeline-service.test.ts > /tmp/patcher-projection-refactor-server.log 2>&1",
   cwd: "/Users/michael/.patcher-dev/worktrees/env_33i22gvcqe/patcher",
   source: null,
   output: "",

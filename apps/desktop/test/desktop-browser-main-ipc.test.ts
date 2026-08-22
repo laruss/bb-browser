@@ -1199,7 +1199,7 @@ describe("registerDesktopBrowserIpc", () => {
       {
         pluginId: "site-tweaks",
         method: "notes",
-        input: '{"repo":"patcher/bb"}',
+        input: '{"repo":"patcher/browser"}',
       },
     );
 
@@ -1210,7 +1210,7 @@ describe("registerDesktopBrowserIpc", () => {
         request: {
           pluginId: "site-tweaks",
           method: "notes",
-          input: '{"repo":"patcher/bb"}',
+          input: '{"repo":"patcher/browser"}',
         },
       },
     ]);

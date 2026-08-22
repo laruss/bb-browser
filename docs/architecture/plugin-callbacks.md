@@ -165,7 +165,7 @@ a plugin reads exactly that name back.
 The first version made the log label the protocol kind, so a plugin's status
 detail started reading `threadEvent thread.deleted failed` where it had said
 `thread.deleted handler failed`. That is this file's vocabulary leaking into
-text a user reads in `bb plugin list`. The kind and the label are now separate
+text a user reads in `patcher plugin list`. The kind and the label are now separate
 fields, every prior string is restored, and `plugin-callbacks.test.ts` pins
 them so the next rename cannot leak either.
 

@@ -2715,7 +2715,7 @@ export function createDesktopBrowserViewManager(
    *
    * One world per plugin, not one per script and not one shared: two scripts of
    * the same plugin are one program and may share globals, while two plugins are
-   * two programs and — measured — cannot see each other's `bb` or anything else.
+   * two programs and — measured — cannot see each other's `patcher` or anything else.
    */
   const pageScriptWorldIds = new Map<string, number>();
   let pageScriptCallSequence = 0;

@@ -301,7 +301,7 @@ const PROJECT_AUTOMATION: AutomationResponse = {
       hostId: "host_local",
       workspace: {
         type: "unmanaged",
-        path: "/Users/you/Code/bb",
+        path: "/Users/you/Code/patcher",
         branch: { kind: "existing", name: "agent/tools-hub-schedules" },
       },
     },
@@ -409,7 +409,7 @@ echo "Reports written to $output_dir"`,
     interpreter: "bash",
     timeoutMs: 60_000,
     env: {
-      REPORT_OUTPUT: "/tmp/bb-reports",
+      REPORT_OUTPUT: "/tmp/patcher-reports",
       GH_HOST: "github.com",
     },
   },

@@ -278,9 +278,9 @@ describe("claude-code provider adapter", () => {
         type: "skills/configure",
         skillRoots: [
           {
-            id: "bb-cli",
+            id: "patcher-cli",
             providerId: "claude-code",
-            localPluginPath: "/tmp/bb-skills",
+            localPluginPath: "/tmp/patcher-skills",
           },
         ],
       }),
@@ -365,9 +365,9 @@ describe("claude-code provider adapter", () => {
         ...fullProviderExecutionContext,
         skillRoots: [
           {
-            id: "bb-cli",
+            id: "patcher-cli",
             providerId: "claude-code",
-            localPluginPath: "/tmp/bb-skills",
+            localPluginPath: "/tmp/patcher-skills",
           },
           {
             id: "repo-tools",
@@ -380,7 +380,7 @@ describe("claude-code provider adapter", () => {
 
     expect(cmd?.params).toMatchObject({
       plugins: [
-        { type: "local", path: "/tmp/bb-skills" },
+        { type: "local", path: "/tmp/patcher-skills" },
         { type: "local", path: "/tmp/repo-skills" },
       ],
     });
@@ -391,7 +391,7 @@ describe("claude-code provider adapter", () => {
   it("buildCommand thread/start includes construction-level workspace-write roots", () => {
     const adapter = createClaudeCodeProviderAdapter({
       additionalWorkspaceWriteRoots: [
-        "/repo/.git/worktrees/bb13",
+        "/repo/.git/worktrees/patcher13",
         "/repo/.git/objects",
       ],
     });
@@ -406,7 +406,7 @@ describe("claude-code provider adapter", () => {
 
     expect(cmd?.params).toMatchObject({
       additionalWorkspaceWriteRoots: [
-        "/repo/.git/worktrees/bb13",
+        "/repo/.git/worktrees/patcher13",
         "/repo/.git/objects",
       ],
     });
@@ -431,7 +431,7 @@ describe("claude-code provider adapter", () => {
   it("buildCommand thread/start shares workspace roots with auto but omits them for full", () => {
     const adapter = createClaudeCodeProviderAdapter({
       additionalWorkspaceWriteRoots: [
-        "/repo/.git/worktrees/bb13",
+        "/repo/.git/worktrees/patcher13",
         "/repo/.git/objects",
       ],
     });
@@ -462,7 +462,7 @@ describe("claude-code provider adapter", () => {
     expect(readonlyCmd?.params).toMatchObject({
       permissionMode: "auto",
       additionalWorkspaceWriteRoots: [
-        "/repo/.git/worktrees/bb13",
+        "/repo/.git/worktrees/patcher13",
         "/repo/.git/objects",
       ],
     });
@@ -665,7 +665,7 @@ describe("claude-code provider adapter", () => {
   it("buildCommand thread/resume includes construction-level workspace-write roots", () => {
     const adapter = createClaudeCodeProviderAdapter({
       additionalWorkspaceWriteRoots: [
-        "/repo/.git/worktrees/bb13",
+        "/repo/.git/worktrees/patcher13",
         "/repo/.git/objects",
       ],
     });
@@ -680,7 +680,7 @@ describe("claude-code provider adapter", () => {
 
     expect(cmd?.params).toMatchObject({
       additionalWorkspaceWriteRoots: [
-        "/repo/.git/worktrees/bb13",
+        "/repo/.git/worktrees/patcher13",
         "/repo/.git/objects",
       ],
     });
@@ -705,7 +705,7 @@ describe("claude-code provider adapter", () => {
   it("buildCommand thread/resume shares workspace roots with auto but omits them for full", () => {
     const adapter = createClaudeCodeProviderAdapter({
       additionalWorkspaceWriteRoots: [
-        "/repo/.git/worktrees/bb13",
+        "/repo/.git/worktrees/patcher13",
         "/repo/.git/objects",
       ],
     });
@@ -736,7 +736,7 @@ describe("claude-code provider adapter", () => {
     expect(readonlyCmd?.params).toMatchObject({
       permissionMode: "auto",
       additionalWorkspaceWriteRoots: [
-        "/repo/.git/worktrees/bb13",
+        "/repo/.git/worktrees/patcher13",
         "/repo/.git/objects",
       ],
     });

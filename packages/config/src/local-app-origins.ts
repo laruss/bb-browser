@@ -1,8 +1,8 @@
 /**
- * Builds the CORS allowlist of origins the BB app frontend may be served
+ * Builds the CORS allowlist of origins the Patcher app frontend may be served
  * from. The same allowlist is enforced by:
  *
- *   - the BB server's API CORS middleware
+ *   - the Patcher server's API CORS middleware
  *   - the host daemon's local API CORS middleware
  *
  * so that cross-origin webpages can't drive either API from the user's
@@ -15,7 +15,7 @@
  * treat them as distinct origins for CORS purposes.
  */
 export interface BuildLocalAppOriginsArgs {
-  /** Port the BB server binds on (also the prod-style frontend origin when the
+  /** Port the Patcher server binds on (also the prod-style frontend origin when the
    * server serves the bundle directly). */
   serverPort: number;
   /** Vite dev-server port for `apps/app`. Omitted in production launchers. */
@@ -32,9 +32,7 @@ function isValidPort(port: number): boolean {
   return Number.isInteger(port) && port > 0 && port < 65536;
 }
 
-export function buildLocalAppOrigins(
-  args: BuildLocalAppOriginsArgs,
-): string[] {
+export function buildLocalAppOrigins(args: BuildLocalAppOriginsArgs): string[] {
   const origins: string[] = [];
   const ports = [args.serverPort];
   if (args.devAppPort !== undefined && isValidPort(args.devAppPort)) {

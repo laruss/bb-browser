@@ -432,7 +432,7 @@ describe("card metadata", () => {
     render([
       thread({
         id: "thr_new",
-        indicator: "something-bb-ships-later" as never,
+        indicator: "something-patcher-ships-later" as never,
         updatedAt: Date.now() - (3 * 3_600_000 + 60_000),
       }),
     ]);

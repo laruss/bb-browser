@@ -3,7 +3,7 @@
   "name": "card",
   "type": "registry:ui",
   "title": "card",
-  "description": "BB ui \"card\" — vendored from the BB app's own source (version-matched to this BB release).",
+  "description": "Patcher ui \"card\" — vendored from the Patcher app's own source (version-matched to this Patcher release).",
   "registryDependencies": [
     "@patcher/utils"
   ],

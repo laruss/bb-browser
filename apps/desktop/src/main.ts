@@ -508,7 +508,7 @@ function createDesktopPathContext(): DesktopPathContext {
 }
 
 function shouldEnableServerDaemonLogsMenu(): boolean {
-  // Attached runtimes are owned by an external bb-app, so the desktop has no
+  // Attached runtimes are owned by an external patcher-app, so the desktop has no
   // reliable server/daemon log lifecycle to tail.
   return (
     process.platform === "darwin" && currentRuntime?.ownership === "spawned"
@@ -1562,7 +1562,7 @@ async function startOwnedRuntime(
     }
     setCurrentRuntime(null);
     void loadStartupError({
-      details: `The Electron-owned bb-app process stopped with ${formatExitResult(
+      details: `The Electron-owned patcher-app process stopped with ${formatExitResult(
         exit,
       )}.`,
       logs: patcherProcess.logs.text(),
@@ -1587,7 +1587,7 @@ async function startOwnedRuntime(
 
   if (raceResult.kind === "process-exited") {
     await loadStartupError({
-      details: `bb-app exited before the server was ready with ${formatExitResult(
+      details: `patcher-app exited before the server was ready with ${formatExitResult(
         raceResult.exit,
       )}.`,
       logs: patcherProcess.logs.text(),
@@ -1930,7 +1930,7 @@ async function runDesktopApp(): Promise<void> {
   const userDataPath = app.getPath("userData");
   desktopUserDataPath = userDataPath;
 
-  assertPathExists({ label: "bb-app bridge", path: bridgePath });
+  assertPathExists({ label: "patcher-app bridge", path: bridgePath });
   assertPathExists({
     label: "existing server dialog preload script",
     path: resolvedExistingServerDialogPreloadPath,

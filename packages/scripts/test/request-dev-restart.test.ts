@@ -59,7 +59,7 @@ describe("request-dev-restart", () => {
   });
 
   it("resolves restart supervisor files from the current checkout data dir", () => {
-    vi.stubEnv("PATCHER_DATA_DIR", "/tmp/wrong-bb-data");
+    vi.stubEnv("PATCHER_DATA_DIR", "/tmp/wrong-patcher-data");
     vi.stubEnv("PATCHER_HOST_DAEMON_PORT", "1234");
     const expectedDataDir = expectedDevDataDir({
       homeDir: os.homedir(),

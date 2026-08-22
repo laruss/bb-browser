@@ -200,7 +200,7 @@ export function HealthyFleet() {
               source: "npm",
               updateAvailable: false,
               isDevelopment: false,
-              upgradeCommand: "npx bb-app@latest",
+              upgradeCommand: "npx patcher-app@latest",
             }}
             desktopInfo={null}
             isDesktop={false}
@@ -278,7 +278,7 @@ export function MixedFleet() {
               source: "npm",
               updateAvailable: true,
               isDevelopment: false,
-              upgradeCommand: "npx bb-app@latest",
+              upgradeCommand: "npx patcher-app@latest",
             }}
             desktopInfo={null}
             isDesktop={false}
@@ -351,7 +351,7 @@ export function WebAppUpdateAvailable() {
               source: "npm",
               updateAvailable: true,
               isDevelopment: false,
-              upgradeCommand: "npx bb-app@latest",
+              upgradeCommand: "npx patcher-app@latest",
             }}
             desktopInfo={null}
             isDesktop={false}

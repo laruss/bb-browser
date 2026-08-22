@@ -735,7 +735,7 @@ describe("thread runtime config", () => {
         rootPath: path.join(harness.config.dataDir, "skills"),
       });
       const builtinSourceRootPath = await writeRuntimeSkill({
-        name: "bb-cli",
+        name: "patcher-cli",
         rootPath: harness.config.builtinSkillsRootPath,
       });
       const workspacePath = path.join(
@@ -787,8 +787,8 @@ describe("thread runtime config", () => {
         {
           kind: "tree",
           sourceType: "builtin",
-          name: "bb-cli",
-          description: "Use bb-cli when server runtime tests run.",
+          name: "patcher-cli",
+          description: "Use patcher-cli when server runtime tests run.",
           treeHash: readSkillTreeManifest(builtinSourceRootPath).treeHash,
           entryPath: "SKILL.md",
         },
@@ -1187,7 +1187,7 @@ describe("thread runtime config", () => {
 
       expect(runtimeConfig.workspacePath).toBe("/tmp/runtime-project-root");
       expect(runtimeConfig.threadStoragePath).toBe(
-        `/tmp/bb-host-data/${hostId}/thread-storage/${thread.id}`,
+        `/tmp/patcher-host-data/${hostId}/thread-storage/${thread.id}`,
       );
       expect(runtimeConfig.workspaceProvisionType).toBe("unmanaged");
       expect(runtimeConfig.dynamicTools).toEqual([
@@ -1201,8 +1201,8 @@ describe("thread runtime config", () => {
       expect(runtimeConfig.instructions).toContain(
         "You are working inside Patcher, an agentic IDE",
       );
-      expect(runtimeConfig.instructions).toContain("bb status");
-      expect(runtimeConfig.instructions).toContain("bb guide");
+      expect(runtimeConfig.instructions).toContain("patcher status");
+      expect(runtimeConfig.instructions).toContain("patcher guide");
       expect(runtimeConfig.instructions).toContain("Markdown links");
       expect(runtimeConfig.instructions).toContain(
         "update_environment_directory",
@@ -1691,9 +1691,9 @@ describe("thread runtime config", () => {
         );
 
         const toolHeader =
-          'The following instructions come from the BB plugin "tooldemo" for its tool "demo_lookup":';
+          'The following instructions come from the Patcher plugin "tooldemo" for its tool "demo_lookup":';
         const pluginHeader =
-          'The following instructions come from the BB plugin "connect":';
+          'The following instructions come from the Patcher plugin "connect":';
         const dataDirHeader =
           "The following user instructions come from <dataDir>/AGENTS.md:";
         const instructions = runtimeConfig.instructions;
@@ -1776,19 +1776,19 @@ describe("thread runtime config", () => {
 
         const instructions = runtimeConfig.instructions;
         expect(instructions).not.toContain(
-          'The following instructions come from the BB plugin "nuller":',
+          'The following instructions come from the Patcher plugin "nuller":',
         );
         expect(instructions).not.toContain(
-          'The following instructions come from the BB plugin "blank":',
+          'The following instructions come from the Patcher plugin "blank":',
         );
         expect(instructions).not.toContain(
-          'The following instructions come from the BB plugin "boom":',
+          'The following instructions come from the Patcher plugin "boom":',
         );
         expect(instructions).toContain(
-          'The following instructions come from the BB plugin "verbose":',
+          'The following instructions come from the Patcher plugin "verbose":',
         );
         expect(instructions).toContain(
-          'The following instructions come from the BB plugin "ok":',
+          'The following instructions come from the Patcher plugin "ok":',
         );
         expect(instructions).toContain("still contributes");
         // Truncated to 4096 chars — the full 5000-x body must not appear.

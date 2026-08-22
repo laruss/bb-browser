@@ -719,7 +719,7 @@ export type DiscoveredSkill = z.infer<typeof discoveredSkillSchema>;
 /**
  * List discoverable skills (not legacy commands) for a provider, classified by
  * originating root. Same root-resolution rules as `host.list_commands`:
- * `cwd: null` skips the project roots and returns only user-home/bb scopes.
+ * `cwd: null` skips the project roots and returns only user-home/patcher scopes.
  */
 const hostListSkillsCommandSchema = z
   .object({
@@ -785,7 +785,7 @@ const hostDeleteSkillCommandSchema = z
   });
 
 /**
- * Overwrite an existing bb skill's SKILL.md. Same confinement as delete: the
+ * Overwrite an existing patcher skill's SKILL.md. Same confinement as delete: the
  * path is built host-side from `(scope, name, cwd)` (never a client path), the
  * name must be a single safe segment, and the resolved target must be exactly
  * `<patcher-root>/<name>/SKILL.md` of an already-existing skill. Edits only — it
@@ -1849,7 +1849,7 @@ export const hostDaemonCommandRegistry = {
     flushEventsBeforeResult: false,
     envLane: null,
   }),
-  // Host-local FS write (edit an existing bb skill's SKILL.md). Not env-scoped;
+  // Host-local FS write (edit an existing patcher skill's SKILL.md). Not env-scoped;
   // non-retryable so a transient failure never silently re-issues the write.
   "host.write_skill": defineHostDaemonCommandDescriptor({
     type: "host.write_skill",

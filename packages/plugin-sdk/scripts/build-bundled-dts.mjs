@@ -1,4 +1,4 @@
-// Generates the self-contained `.d.ts` bundles that `bb plugin new` ships into
+// Generates the self-contained `.d.ts` bundles that `patcher plugin new` ships into
 // a scaffolded plugin's `types/` directory, so authors get real PatcherPluginApi /
 // @patcher/plugin-sdk/app types WITHOUT the (unpublished) @patcher/* workspace packages
 // on disk.
@@ -71,7 +71,7 @@ function resolvePatcherSource(id) {
 }
 
 const inlineWorkspace = {
-  name: "inline-bb-workspace",
+  name: "inline-patcher-workspace",
   resolveId(id, importer) {
     // Redirect server-contract's non-portable route table to the loose stub,
     // whether imported by bare specifier or by its own barrel's relative path.
@@ -105,12 +105,12 @@ async function bundle(input) {
 }
 
 const HEADER = [
-  "// Portable type declarations for `@patcher/plugin-sdk`. Unpublished BB",
+  "// Portable type declarations for `@patcher/plugin-sdk`. Unpublished Patcher",
   "// workspace contracts are flattened; public subpaths may reuse the",
   "// package root without requiring any other @patcher/* package.",
   "//",
-  "// Confused by the API, or need a symbol that isn't here? Clone the BB repo",
-  "// and read the real source: https://github.com/get-bb/bb",
+  "// Confused by the API, or need a symbol that isn't here? Clone the Patcher repo",
+  "// and read the real source: https://github.com/laruss/patcher-browser",
 ].join("\n");
 
 const generated = {};

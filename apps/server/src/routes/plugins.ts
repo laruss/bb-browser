@@ -276,10 +276,10 @@ function parsePluginMentionTrigger(
 }
 
 /**
- * "local" auth (design §4.6): the request must come from the BB app itself.
+ * "local" auth (design §4.6): the request must come from the Patcher app itself.
  * The load-bearing CSRF defense is the JSON-only rule below — a cross-origin
  * JSON POST always triggers a CORS preflight, which the server's allowlist
- * denies. The shared Origin check also tolerates BB being served over
+ * denies. The shared Origin check also tolerates Patcher being served over
  * LAN/Tailscale addresses the server cannot enumerate, but only when the
  * origin hostname is bound to the request hostname.
  */
@@ -322,7 +322,7 @@ async function tokenAuthProblem(
       status: 401,
       error:
         'missing or invalid plugin token — send it as the "x-patcher-plugin-token" header ' +
-        "or ?token=; print it with `bb plugin token " +
+        "or ?token=; print it with `patcher plugin token " +
         `${id}\``,
     };
   }
@@ -785,7 +785,7 @@ export function registerPluginRoutes(
     return context.json({ ok: true, handlerCount });
   });
 
-  // Proxied `bb <plugin-command>` / `bb plugin run` invocation (design §4.4).
+  // Proxied `patcher <plugin-command>` / `patcher plugin run` invocation (design §4.4).
   // Dispatch problems come back as { exitCode: 1, stderr } rather than HTTP
   // errors so the CLI can uniformly print stderr and exit with exitCode.
   app.post("/plugins/:id/cli", async (context) => {

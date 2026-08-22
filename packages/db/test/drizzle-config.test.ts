@@ -14,7 +14,7 @@ afterEach(() => {
 
 describe("drizzle config", () => {
   it("uses the current checkout data dir in development", () => {
-    vi.stubEnv("PATCHER_DATA_DIR", "~/custom-bb");
+    vi.stubEnv("PATCHER_DATA_DIR", "~/custom-patcher");
 
     expect(resolveDrizzleDataDir("dev")).toBe(
       resolveDevInstanceConfig({
@@ -25,10 +25,10 @@ describe("drizzle config", () => {
   });
 
   it("respects PATCHER_DATA_DIR in production", () => {
-    vi.stubEnv("PATCHER_DATA_DIR", "~/custom-bb");
+    vi.stubEnv("PATCHER_DATA_DIR", "~/custom-patcher");
 
     expect(resolveDrizzleDataDir("prod")).toBe(
-      join(os.homedir(), "custom-bb"),
+      join(os.homedir(), "custom-patcher"),
     );
   });
 });

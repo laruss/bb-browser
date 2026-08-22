@@ -210,8 +210,11 @@ async function fetchCodexUsage(): Promise<ProviderUsage> {
   const headers = new Headers();
   headers.set("Authorization", `Bearer ${credentials.accessToken}`);
   headers.set("chatgpt-account-id", credentials.accountId);
+  // Frozen: see docs/architecture/rename-to-patcher.md. `originator` is
+  // OpenAI's field, not ours, and an unrecognized value would fail every
+  // request with nothing to read.
   headers.set("originator", "bb");
-  headers.set("User-Agent", "bb-host-daemon");
+  headers.set("User-Agent", "patcher-host-daemon");
   headers.set("Accept", "application/json");
   if (credentials.isFedrampAccount) {
     headers.set("X-OpenAI-Fedramp", "true");
@@ -783,7 +786,7 @@ function fetchCursorDashboard(
       "Content-Type": "application/json",
       "Connect-Protocol-Version": "1",
       "x-cursor-client-type": "cli",
-      "x-cursor-client-version": "cli-bb-host-daemon",
+      "x-cursor-client-version": "cli-patcher-host-daemon",
     },
     body: "{}",
     signal: AbortSignal.timeout(USAGE_FETCH_TIMEOUT_MS),

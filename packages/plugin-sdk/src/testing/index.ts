@@ -1,5 +1,5 @@
 /**
- * `@patcher/plugin-sdk/testing` — the backend plugin test harness: a fake BB
+ * `@patcher/plugin-sdk/testing` — the backend plugin test harness: a fake Patcher
  * plugin host (`createFakePluginHost`) whose `patcher` satisfies `PatcherPluginApi`,
  * plus fixtures. The package ships executable JavaScript and portable
  * declarations for use from external plugin repositories.

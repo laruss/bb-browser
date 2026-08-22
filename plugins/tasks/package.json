@@ -1,16 +1,16 @@
 {
   "name": "patcher-plugin-tasks",
   "version": "0.1.1",
-  "description": "Plan and track work in BB, delegate tasks to agents, and keep task context connected to worker threads.",
+  "description": "Plan and track work in Patcher, delegate tasks to agents, and keep task context connected to worker threads.",
   "private": true,
   "license": "MIT",
-  "homepage": "https://github.com/get-bb/bb#readme",
+  "homepage": "https://github.com/laruss/patcher-browser#readme",
   "bugs": {
-    "url": "https://github.com/get-bb/bb/issues"
+    "url": "https://github.com/laruss/patcher-browser/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/get-bb/bb.git",
+    "url": "git+https://github.com/laruss/patcher-browser.git",
     "directory": "plugins/tasks"
   },
   "type": "module",
@@ -27,7 +27,7 @@
   },
   "patcher": {
     "name": "Tasks",
-    "description": "Plan and track work in BB, delegate tasks to agents, and keep task context connected to worker threads.",
+    "description": "Plan and track work in Patcher, delegate tasks to agents, and keep task context connected to worker threads.",
     "branding": {
       "icon": "ListTodo"
     },

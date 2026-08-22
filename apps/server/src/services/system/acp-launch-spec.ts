@@ -1,7 +1,7 @@
 import {
   formatCustomAcpAgentProviderId,
   type CustomAcpAgent,
-} from "@patcher/config/bb-app-managed-config";
+} from "@patcher/config/patcher-app-managed-config";
 import {
   normalizeHostDaemonAcpLaunchSpec,
   type HostDaemonAcpLaunchSpec,

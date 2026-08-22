@@ -81,7 +81,7 @@ describe("explain-selection", () => {
 
     expect(host.harness.registrations.contextMenuItems).toEqual([]);
     expect(host.harness.needsConfigurationMessages).toEqual([
-      expect.stringContaining("bb plugin reload explain-selection"),
+      expect.stringContaining("patcher plugin reload explain-selection"),
     ]);
   });
 

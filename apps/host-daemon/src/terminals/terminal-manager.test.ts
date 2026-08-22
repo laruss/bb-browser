@@ -909,7 +909,7 @@ describe("TerminalManager", () => {
   });
 
   it("scrubs inherited Patcher runtime env vars before spawning a terminal", async () => {
-    vi.stubEnv("PATCHER_DATA_DIR", "/tmp/leaked-bb-data");
+    vi.stubEnv("PATCHER_DATA_DIR", "/tmp/leaked-patcher-data");
     vi.stubEnv("PATCHER_HOST_DAEMON_PORT", "38987");
     vi.stubEnv("NODE_ENV", "development");
     vi.stubEnv("OPENAI_API_KEY", "external-secret");

@@ -326,7 +326,7 @@ export async function createTestGitRepo(repoDir: string): Promise<string> {
   await fs.mkdir(repoDir, { recursive: true });
   await runGit(repoDir, ["init", "--initial-branch", "main"]);
   await runGit(repoDir, ["config", "user.email", "standalone-qa@example.com"]);
-  await runGit(repoDir, ["config", "user.name", "BB Standalone QA"]);
+  await runGit(repoDir, ["config", "user.name", "Patcher Standalone QA"]);
   await fs.writeFile(path.join(repoDir, "alpha.txt"), "alpha\n", "utf8");
   await fs.writeFile(
     path.join(repoDir, "beta.md"),

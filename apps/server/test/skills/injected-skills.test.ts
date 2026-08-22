@@ -281,7 +281,7 @@ describe("injected skill source discovery", () => {
     const builtinSkillsRootPath = path.join(dataDir, "builtin-skills");
     const builtinSkillRoot = await writeSkill({
       rootPath: builtinSkillsRootPath,
-      name: "bb-cli",
+      name: "patcher-cli",
     });
     const dataDirSkillRoot = await writeSkill({
       rootPath: path.join(dataDir, "skills"),
@@ -297,8 +297,8 @@ describe("injected skill source discovery", () => {
     expect(sources).toEqual([
       expectedTreeSource({
         sourceType: "builtin",
-        name: "bb-cli",
-        description: "Use bb-cli when tests need it.",
+        name: "patcher-cli",
+        description: "Use patcher-cli when tests need it.",
         rootPath: builtinSkillRoot,
       }),
       expectedTreeSource({
@@ -413,12 +413,12 @@ describe("injected skill source discovery", () => {
     const builtinSkillsRootPath = path.join(dataDir, "builtin-skills");
     await writeSkill({
       rootPath: builtinSkillsRootPath,
-      name: "bb-cli",
+      name: "patcher-cli",
       description: "Built-in copy.",
     });
     const overrideSkillRoot = await writeSkill({
       rootPath: path.join(dataDir, "skills"),
-      name: "bb-cli",
+      name: "patcher-cli",
       description: "User override copy.",
     });
     const { logger, debugs, warnings } = createCapturingLogger();
@@ -431,7 +431,7 @@ describe("injected skill source discovery", () => {
     expect(sources).toEqual([
       expectedTreeSource({
         sourceType: "data-dir",
-        name: "bb-cli",
+        name: "patcher-cli",
         description: "User override copy.",
         rootPath: overrideSkillRoot,
       }),
@@ -529,17 +529,17 @@ describe("injected skill source discovery", () => {
     const builtinSkillsRootPath = path.join(dataDir, "builtin-skills");
     await writeSkill({
       rootPath: builtinSkillsRootPath,
-      name: "bb-cli",
+      name: "patcher-cli",
       description: "Built-in copy.",
     });
     await writeSkill({
       rootPath: path.join(dataDir, "skills"),
-      name: "bb-cli",
+      name: "patcher-cli",
       description: "User copy.",
     });
     const projectSkillRoot = await writeSkill({
       rootPath: path.join(workspacePath, ".patcher", "skills"),
-      name: "bb-cli",
+      name: "patcher-cli",
       description: "Project copy.",
     });
     const { logger, warnings } = createCapturingLogger();
@@ -554,7 +554,7 @@ describe("injected skill source discovery", () => {
       {
         kind: "workspace-path",
         sourceType: "project",
-        name: "bb-cli",
+        name: "patcher-cli",
         description: "Project copy.",
         sourceRootPath: projectSkillRoot,
         skillFilePath: path.join(projectSkillRoot, "SKILL.md"),
@@ -574,7 +574,7 @@ describe("injected skill source discovery", () => {
     });
 
     const builtinNames = sources.map((source) => source.name);
-    expect(builtinNames).toContain("bb-cli");
+    expect(builtinNames).toContain("patcher-cli");
     for (const source of sources) {
       expect(source.sourceType).toBe("builtin");
       expect(source.description.trim().length).toBeGreaterThan(0);

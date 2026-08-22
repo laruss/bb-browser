@@ -666,7 +666,7 @@ describe("plugin tools reach thread runtime config", () => {
     // and nothing for the description-only tool.
     expect(command.instructions).toContain("update_environment_directory");
     expect(command.instructions).toContain(
-      'The following instructions come from the BB plugin "tooldemo" for its tool "demo_lookup":',
+      'The following instructions come from the Patcher plugin "tooldemo" for its tool "demo_lookup":',
     );
     expect(command.instructions).toContain(
       "Call demo_lookup before guessing demo data.",
@@ -917,7 +917,7 @@ describe("plugin tools reach thread runtime config", () => {
       sideCommand.injectedSkillSources.map((skill) => skill.name),
     ).not.toContain("beta-skill");
     expect(sideCommand.instructions).toContain(
-      'The following dynamic instructions come from the BB plugin "conditional":',
+      'The following dynamic instructions come from the Patcher plugin "conditional":',
     );
     expect(
       harness.pluginService.list().find((plugin) => plugin.id === "conditional")

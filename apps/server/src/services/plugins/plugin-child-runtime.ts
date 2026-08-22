@@ -1,7 +1,7 @@
 /**
  * A plugin, running in its own process.
  *
- * The thing this file does **not** do is build a second `bb`. `createPluginApi`
+ * The thing this file does **not** do is build a second `patcher`. `createPluginApi`
  * already takes every host-facing capability as an injected function — that was
  * always the seam, it just pointed at the server — so the plugin's process
  * builds the *same* object with those functions pointed at the channel. One
@@ -10,7 +10,7 @@
  *
  * This is deliberate and it is the lesson the repo already paid for twice: the
  * fake plugin host drifted from the real one, and the JS permission gate
- * drifted from the HTTP one. A hand-written plugin-side `bb` would be the third.
+ * drifted from the HTTP one. A hand-written plugin-side `patcher` would be the third.
  *
  * Not wired into the loader yet: nothing spawns this. It is exercised over a
  * linked port pair and, in one test, as a real forked process.

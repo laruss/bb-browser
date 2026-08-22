@@ -45,7 +45,7 @@ const provisioningPending: TimelineRow = systemRow({
     "HEAD is now at 37eeec85 Refactor timeline row titles\n" +
     "Preparing worktree (new branch 'patcher/investigate-thread-timeline-load-thr_sjgc9pafri')\n" +
     "Created worktree (305ms)\n" +
-    "Using workspace: /Users/michael/.patcher-dev/worktrees/env_etyr7f84cg/bb\n" +
+    "Using workspace: /Users/michael/.patcher-dev/worktrees/env_etyr7f84cg/patcher\n" +
     "Running .patcher-env-setup.sh\n" +
     "[patcher-env-setup] Running: pnpm install\n" +
     "Scope: all 35 workspace projects\n" +
@@ -70,7 +70,7 @@ const provisioningCompleted: TimelineRow = systemRow({
   title: "Provisioned thread",
   detail:
     "Created worktree (305ms)\n" +
-    "Using workspace: /Users/michael/.patcher-dev/worktrees/env_etyr7f84cg/bb\n" +
+    "Using workspace: /Users/michael/.patcher-dev/worktrees/env_etyr7f84cg/patcher\n" +
     ".patcher-env-setup.sh finished (8.2s)\n" +
     "Using branch: patcher/investigate-thread-timeline-load-thr_sjgc9pafri (37eeec8)\n" +
     "Provisioned thread (8.7s)",

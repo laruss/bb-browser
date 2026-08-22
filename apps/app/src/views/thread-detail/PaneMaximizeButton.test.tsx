@@ -86,7 +86,7 @@ describe("PaneMaximizeButton", () => {
     expect(onToggle).toHaveBeenCalledOnce();
   });
 
-  it("shows only BB's supported split arrangement actions on hover", async () => {
+  it("shows only Patcher's supported split arrangement actions on hover", async () => {
     const onMoveToSide = vi.fn();
     renderButton(false, noop, onMoveToSide);
     const button = screen.getByRole("button", { name: "Full Screen (⌘⇧E)" });

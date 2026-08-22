@@ -24,7 +24,7 @@ async function initReadGitBlobRepo() {
   );
   tempDirs.push(repoPath);
   await runGit(["init", "-b", "main"], { cwd: repoPath });
-  await runGit(["config", "user.name", "BB Tests"], { cwd: repoPath });
+  await runGit(["config", "user.name", "Patcher Tests"], { cwd: repoPath });
   await runGit(["config", "user.email", "patcher@example.com"], {
     cwd: repoPath,
   });
@@ -52,7 +52,7 @@ async function initConflictRepo() {
   );
   tempDirs.push(repoPath);
   await runGit(["init", "-b", "main"], { cwd: repoPath });
-  await runGit(["config", "user.name", "BB Tests"], { cwd: repoPath });
+  await runGit(["config", "user.name", "Patcher Tests"], { cwd: repoPath });
   await runGit(["config", "user.email", "patcher@example.com"], {
     cwd: repoPath,
   });
@@ -90,7 +90,7 @@ async function pushRemoteMainCommit(remotePath: string) {
   await runGit(["clone", "--branch", "main", remotePath, clonePath], {
     cwd: cloneParent,
   });
-  await runGit(["config", "user.name", "BB Tests"], { cwd: clonePath });
+  await runGit(["config", "user.name", "Patcher Tests"], { cwd: clonePath });
   await runGit(["config", "user.email", "patcher@example.com"], {
     cwd: clonePath,
   });
@@ -112,7 +112,7 @@ afterEach(async () => {
 describe("runShellPipeline", () => {
   it("scrubs inherited Patcher runtime env vars and node mode", async () => {
     const repoPath = await initEmptyRepo();
-    vi.stubEnv("PATCHER_DATA_DIR", "/tmp/leaked-bb-data");
+    vi.stubEnv("PATCHER_DATA_DIR", "/tmp/leaked-patcher-data");
     vi.stubEnv("NODE_ENV", "development");
     vi.stubEnv("OPENAI_API_KEY", "external-secret");
 

@@ -105,8 +105,8 @@ jobs:
           bun-version: ${{ env.BUN_VERSION }}
           cache-prefix: package-smoke
 
-      - name: Smoke bb-app tarball
-        run: bunx turbo run smoke:tarball --filter=bb-app --cache-dir=.turbo/cache --output-logs=new-only
+      - name: Smoke patcher-app tarball
+        run: bunx turbo run smoke:tarball --filter=patcher-app --cache-dir=.turbo/cache --output-logs=new-only
 
   node-compat-smoke:
     name: Node Compatibility Smoke (${{ matrix.os }}, Node ${{ matrix.node-version }})
@@ -137,5 +137,5 @@ jobs:
           bun-version: ${{ env.BUN_VERSION }}
           cache-prefix: compat-smoke
 
-      - name: Smoke bb-app tarball
-        run: bunx turbo run smoke:tarball --filter=bb-app --cache-dir=.turbo/cache --output-logs=new-only
+      - name: Smoke patcher-app tarball
+        run: bunx turbo run smoke:tarball --filter=patcher-app --cache-dir=.turbo/cache --output-logs=new-only

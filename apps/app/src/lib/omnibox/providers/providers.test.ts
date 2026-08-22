@@ -244,11 +244,17 @@ describe("built-in provider ordering", () => {
     createOmniboxSearchProvider({ searchUrlTemplate: GOOGLE_TEMPLATE }),
     createOmniboxOpenTabsProvider({
       activeTabId: null,
-      tabs: [tab("tab-gh", "https://github.com/get-bb/bb", "get-bb/bb")],
+      tabs: [
+        tab(
+          "tab-gh",
+          "https://github.com/laruss/patcher-browser",
+          "laruss/patcher-browser",
+        ),
+      ],
     }),
     createOmniboxHistoryProvider({
       search: historyStore([
-        visit("https://github.com/get-bb/bb/issues", "Issues"),
+        visit("https://github.com/laruss/patcher-browser/issues", "Issues"),
       ]),
     }),
   ];
@@ -271,7 +277,7 @@ describe("built-in provider ordering", () => {
 
   // What the plan's vertical slice asks for: sources mixed in one list.
   it("mixes an open tab and a history entry under the default row", async () => {
-    const ranked = await rankAcross(builtIns, "get-bb");
+    const ranked = await rankAcross(builtIns, "laruss");
 
     expect(ranked.map((row) => row.providerId)).toEqual([
       "search",

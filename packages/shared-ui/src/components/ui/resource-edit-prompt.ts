@@ -21,7 +21,7 @@ export function buildSkillEditThreadPrompt({
   name: string;
   path: string;
 }): string {
-  return `Edit the Patcher skill ${quoteResourceName(name)} (ID ${id}) at ${path}. Inspect it with bb skill show ${id} --json and pass that revision to bb skill update when saving. I want to `;
+  return `Edit the Patcher skill ${quoteResourceName(name)} (ID ${id}) at ${path}. Inspect it with patcher skill show ${id} --json and pass that revision to patcher skill update when saving. I want to `;
 }
 
 export function buildAutomationEditThreadPrompt({

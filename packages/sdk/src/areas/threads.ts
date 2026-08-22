@@ -366,7 +366,7 @@ export class ThreadWaitUnreachableError extends Error {
   }) {
     super(
       `Thread ${args.threadId} is in status ${args.currentStatus} and will not reach idle by waiting alone. ` +
-        `Inspect it with 'bb thread show ${args.threadId}' and recover by sending a follow-up.`,
+        `Inspect it with 'patcher thread show ${args.threadId}' and recover by sending a follow-up.`,
     );
     this.name = "ThreadWaitUnreachableError";
     this.currentStatus = args.currentStatus;

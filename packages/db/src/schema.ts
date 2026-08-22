@@ -204,7 +204,7 @@ export const appSettings = sqliteTable("app_settings", {
   updatedAt: integer("updated_at").notNull(),
 });
 
-// Installed plugins registered by `bb plugin install`. Rows hold durable
+// Installed plugins registered by `patcher plugin install`. Rows hold durable
 // registration facts only; live status (running/error/…) is plugin-loader
 // memory served via GET /api/v1/plugins.
 export const installedPlugins = sqliteTable("plugins", {

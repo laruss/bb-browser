@@ -597,7 +597,7 @@ const correctnessChild18: TimelineRow = {
       "/Users/michael/.patcher-dev/worktrees/env_stt3jzymfp/patcher/packages/agent-runtime/src/shared/provider-tool-call-contract.test.ts",
   },
   output:
-    '1\timport { describe, expect, it } from "vitest";\n2\timport {\n3\t  decodeNativeProviderToolCallRequest,\n4\t  decodeNormalizedProviderToolCallRequest,\n5\t} from "./provider-tool-call-contract.js";\n6\t\n7\tdescribe("provider-tool-call-contract", () => {\n8\t  it("preserves optional BB thread hints on normalized... [truncated]',
+    '1\timport { describe, expect, it } from "vitest";\n2\timport {\n3\t  decodeNativeProviderToolCallRequest,\n4\t  decodeNormalizedProviderToolCallRequest,\n5\t} from "./provider-tool-call-contract.js";\n6\t\n7\tdescribe("provider-tool-call-contract", () => {\n8\t  it("preserves optional Patcher thread hints on normalized... [truncated]',
   completedAt: 1778174326400,
   approvalStatus: null,
   activityIntents: [
@@ -1131,7 +1131,7 @@ const maintainabilityChild17: TimelineRow = {
     limit: 150,
   },
   output:
-    "File does not exist. Note: your current working directory is /Users/michael/.patcher-dev/worktrees/env_stt3jzymfp/bb.",
+    "File does not exist. Note: your current working directory is /Users/michael/.patcher-dev/worktrees/env_stt3jzymfp/patcher.",
   completedAt: 1778174337304,
   approvalStatus: null,
   activityIntents: [
@@ -1219,7 +1219,8 @@ const maintainabilityChild20: TimelineRow = {
   callId: "toolu_01LdKey3EgtP3UvJSKba7xZD",
   toolName: "Read",
   toolArgs: {
-    file_path: "/Users/michael/.patcher-dev/worktrees/env_stt3jzymfp/patcher/AGENTS.md",
+    file_path:
+      "/Users/michael/.patcher-dev/worktrees/env_stt3jzymfp/patcher/AGENTS.md",
     limit: 250,
   },
   output:
@@ -1387,7 +1388,7 @@ const testQualityChild02: TimelineRow = {
   cwd: null,
   source: null,
   output:
-    "<persisted-output>\nOutput too large (35.1KB). Full output saved to: /Users/michael/.claude/projects/-Users-michael--patcher-dev-worktrees-env-stt3jzymfp-bb/84f9bb6d-8a5e-4eba-af26-c530415265b1/tool-results/brm54bnvm.txt\n\nPreview (first 2KB):\ndiff --git a/apps/host-daemon/src/app.ts b/apps/host-daemon/src... [truncated]",
+    "<persisted-output>\nOutput too large (35.1KB). Full output saved to: /Users/michael/.claude/projects/-Users-michael--patcher-dev-worktrees-env-stt3jzymfp-patcher/84f9bb6d-8a5e-4eba-af26-c530415265b1/tool-results/brm54bnvm.txt\n\nPreview (first 2KB):\ndiff --git a/apps/host-daemon/src/app.ts b/apps/host-daemon/src... [truncated]",
   exitCode: 0,
   completedAt: 1778174320120,
   approvalStatus: null,
@@ -1409,7 +1410,7 @@ const testQualityChild03: TimelineRow = {
   toolName: "Read",
   toolArgs: {
     file_path:
-      "/Users/michael/.claude/projects/-Users-michael--patcher-dev-worktrees-env-stt3jzymfp-bb/84f9bb6d-8a5e-4eba-af26-c530415265b1/tool-results/brm54bnvm.txt",
+      "/Users/michael/.claude/projects/-Users-michael--patcher-dev-worktrees-env-stt3jzymfp-patcher/84f9bb6d-8a5e-4eba-af26-c530415265b1/tool-results/brm54bnvm.txt",
   },
   output:
     "1\tdiff --git a/apps/host-daemon/src/app.ts b/apps/host-daemon/src/app.ts\n2\tindex ce9f52897..76bae1dd6 100644\n3\t--- a/apps/host-daemon/src/app.ts\n4\t+++ b/apps/host-daemon/src/app.ts\n5\t@@ -325,6 +325,12 @@ export async function createHostDaemonApp(\n6\t     await eventBuffer.flushRequired();\n7\t   }\n8\t \n... [truncated]",
@@ -1420,7 +1421,7 @@ const testQualityChild03: TimelineRow = {
       type: "read",
       command: "Read",
       name: "brm54bnvm.txt",
-      path: "/Users/michael/.claude/projects/-Users-michael--patcher-dev-worktrees-env-stt3jzymfp-bb/84f9bb6d-8a5e-4eba-af26-c530415265b1/tool-results/brm54bnvm.txt",
+      path: "/Users/michael/.claude/projects/-Users-michael--patcher-dev-worktrees-env-stt3jzymfp-patcher/84f9bb6d-8a5e-4eba-af26-c530415265b1/tool-results/brm54bnvm.txt",
     },
   ],
 };
@@ -1445,7 +1446,7 @@ const testQualityChild04: TimelineRow = {
     limit: 50,
   },
   output:
-    '356\t  void args\n357\t    .onInteractiveRequest(scopedInteractiveReq)\n358\t    .then((resolution) => {\n359\t      const result = buildInteractiveResponse({\n360\t        request: resolvedInteractiveReq,\n361\t        resolution,\n362\t      });\n363\t      sendJsonRpcResult({\n364\t        child: args.pro... [truncated]',
+    "356\t  void args\n357\t    .onInteractiveRequest(scopedInteractiveReq)\n358\t    .then((resolution) => {\n359\t      const result = buildInteractiveResponse({\n360\t        request: resolvedInteractiveReq,\n361\t        resolution,\n362\t      });\n363\t      sendJsonRpcResult({\n364\t        child: args.pro... [truncated]",
   completedAt: 1778174320120,
   approvalStatus: null,
   activityIntents: [
@@ -1478,7 +1479,7 @@ const testQualityChild05: TimelineRow = {
     limit: 30,
   },
   output:
-    '356\t  void args\n357\t    .onInteractiveRequest(scopedInteractiveReq)\n358\t    .then((resolution) => {\n359\t      const result = buildInteractiveResponse({\n360\t        request: resolvedInteractiveReq,\n361\t        resolution,\n362\t      });\n363\t      sendJsonRpcResult({\n364\t        child: args.pro... [truncated]',
+    "356\t  void args\n357\t    .onInteractiveRequest(scopedInteractiveReq)\n358\t    .then((resolution) => {\n359\t      const result = buildInteractiveResponse({\n360\t        request: resolvedInteractiveReq,\n361\t        resolution,\n362\t      });\n363\t      sendJsonRpcResult({\n364\t        child: args.pro... [truncated]",
   completedAt: 1778174320120,
   approvalStatus: null,
   activityIntents: [
@@ -1671,7 +1672,7 @@ const testQualityChild11: TimelineRow = {
       "/Users/michael/.patcher-dev/worktrees/env_stt3jzymfp/patcher/packages/agent-runtime/src/shared/provider-tool-call-contract.test.ts",
   },
   output:
-    '1\timport { describe, expect, it } from "vitest";\n2\timport {\n3\t  decodeNativeProviderToolCallRequest,\n4\t  decodeNormalizedProviderToolCallRequest,\n5\t} from "./provider-tool-call-contract.js";\n6\t\n7\tdescribe("provider-tool-call-contract", () => {\n8\t  it("preserves optional BB thread hints on normalized... [truncated]',
+    '1\timport { describe, expect, it } from "vitest";\n2\timport {\n3\t  decodeNativeProviderToolCallRequest,\n4\t  decodeNormalizedProviderToolCallRequest,\n5\t} from "./provider-tool-call-contract.js";\n6\t\n7\tdescribe("provider-tool-call-contract", () => {\n8\t  it("preserves optional Patcher thread hints on normalized... [truncated]',
   completedAt: 1778174330819,
   approvalStatus: null,
   activityIntents: [

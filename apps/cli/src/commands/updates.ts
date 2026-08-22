@@ -194,7 +194,7 @@ export function registerUpdatesCommands(
             ? `${version.currentVersion} -> ${version.latestVersion}`
             : version.currentVersion;
         printUpdatesTable({
-          appRow: ["bb-app", appVersionLabel, appState],
+          appRow: ["patcher-app", appVersionLabel, appState],
           entries,
         });
       }),
@@ -234,7 +234,7 @@ export function registerUpdatesCommands(
           );
           console.log(
             hasManualUpdates
-              ? "No updates Patcher can apply. Run bb updates status for manual updates."
+              ? "No updates Patcher can apply. Run patcher updates status for manual updates."
               : "Everything is up to date.",
           );
           return;
@@ -271,8 +271,7 @@ export function registerUpdatesCommands(
               hostName: target.host.name,
               provider: target.provider,
               success,
-              message:
-                errorEvent?.type === "error" ? errorEvent.message : null,
+              message: errorEvent?.type === "error" ? errorEvent.message : null,
             });
             if (!opts.json) {
               console.log(

@@ -15,14 +15,14 @@
     "dev": "bun run prepare-runtime && bun run build && node --conditions=source --import tsx scripts/run-electron-dev.mjs",
     "dist": "bun run prepare-runtime && bun run desktop:build",
     "package": "bun run prepare-runtime && bun run build && node scripts/run-electron-builder.mjs --mac --dir --arm64",
-    "prepare-runtime": "turbo run build --filter=bb-app --output-logs=new-only",
+    "prepare-runtime": "turbo run build --filter=patcher-app --output-logs=new-only",
     "smoke:packaged": "node scripts/smoke-packaged-app.mjs",
     "start": "bun run package && node scripts/run-packaged-app.mjs",
     "test": "vitest run --config vitest.config.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "bb-app": "workspace:*",
+    "patcher-app": "workspace:*",
     "electron-updater": "^6.8.3",
     "semver": "^7.7.0",
     "zod": "^4.3.6"

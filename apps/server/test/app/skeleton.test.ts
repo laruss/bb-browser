@@ -78,7 +78,7 @@ describe("server skeleton", () => {
     }
   });
 
-  it("serves the cached server bb-app tarball without auth", async () => {
+  it("serves the cached server patcher-app tarball without auth", async () => {
     const harness = await createTestAppHarness();
     const tarballPath = join(harness.config.dataDir, "fixture.tgz");
     writeFileSync(tarballPath, "tarball-bytes");
@@ -90,7 +90,7 @@ describe("server skeleton", () => {
       },
     });
     try {
-      const response = await app.request("/install/bb-app.tgz");
+      const response = await app.request("/install/patcher-app.tgz");
       expect(response.status).toBe(200);
       expect(response.headers.get("content-type")).toBe("application/gzip");
       expect(await response.text()).toBe("tarball-bytes");

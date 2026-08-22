@@ -49,7 +49,7 @@ function makeHost(overrides: Record<string, unknown> = {}) {
   };
 }
 
-describe("bb terminal command output", () => {
+describe("patcher terminal command output", () => {
   setupCommandOutputTestEnvironment();
 
   const register: CommandRegistrar = (program) =>

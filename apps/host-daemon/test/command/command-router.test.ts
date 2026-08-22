@@ -94,7 +94,7 @@ function createRouter(
   args: CreateRouterArgs = {},
 ): CommandRouter {
   return new CommandRouter({
-    dataDir: "/tmp/bb-router-test-data",
+    dataDir: "/tmp/patcher-router-test-data",
     eventSink: noopEventSink,
     fetchProjectAttachment: unexpectedProjectAttachmentFetch,
     logger: {
@@ -103,7 +103,7 @@ function createRouter(
       ...args.logger,
     },
     runtimeManager: args.runtimeManager ?? harness.manager,
-    threadStorageRootPath: "/tmp/bb-router-test-thread-storage",
+    threadStorageRootPath: "/tmp/patcher-router-test-thread-storage",
   });
 }
 

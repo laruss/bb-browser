@@ -52,7 +52,7 @@ Proactively ask about edge cases, input/output formats, example inputs, success 
 Create `~/.patcher/skills/<name>/SKILL.md`. Based on the interview, fill in:
 
 - **name** — the skill identifier. Must match the directory name and the naming rules above.
-- **description** — the primary triggering mechanism. Include both *what* the skill does and *when* to use it; all "when to use" information goes here, not in the body. Agents tend to *under*-trigger skills, so make the description a little pushy: name concrete contexts and phrasings. For example, instead of "Build a dashboard of internal metrics," write "Build a dashboard of internal metrics. Use this whenever the user mentions dashboards, data visualization, internal metrics, or wants to display company data — even if they don't say 'dashboard'."
+- **description** — the primary triggering mechanism. Include both _what_ the skill does and _when_ to use it; all "when to use" information goes here, not in the body. Agents tend to _under_-trigger skills, so make the description a little pushy: name concrete contexts and phrasings. For example, instead of "Build a dashboard of internal metrics," write "Build a dashboard of internal metrics. Use this whenever the user mentions dashboards, data visualization, internal metrics, or wants to display company data — even if they don't say 'dashboard'."
 - **the body** — the instructions themselves (see the guide below).
 
 ### Skill writing guide
@@ -105,10 +105,15 @@ Prefer the imperative form in instructions.
 
 ```markdown
 ## Report structure
+
 Always use this template:
+
 # [Title]
+
 ## Summary
+
 ## Findings
+
 ## Recommendations
 ```
 
@@ -116,13 +121,14 @@ Always use this template:
 
 ```markdown
 ## Commit message format
+
 Input: Added user authentication with JWT tokens
 Output: feat(auth): implement JWT-based authentication
 ```
 
 #### Writing style
 
-Explain *why* things matter instead of piling on heavy-handed `MUST`s. Today's models have good theory of mind; given the reasoning behind an instruction, they generalize well beyond rote rules. If you catch yourself writing `ALWAYS` or `NEVER` in all caps, or reaching for a rigid structure, treat it as a yellow flag — reframe and explain the reasoning instead. Keep the skill general rather than overfit to a couple of examples. Write a draft, then reread it with fresh eyes and tighten it.
+Explain _why_ things matter instead of piling on heavy-handed `MUST`s. Today's models have good theory of mind; given the reasoning behind an instruction, they generalize well beyond rote rules. If you catch yourself writing `ALWAYS` or `NEVER` in all caps, or reaching for a rigid structure, treat it as a yellow flag — reframe and explain the reasoning instead. Keep the skill general rather than overfit to a couple of examples. Write a draft, then reread it with fresh eyes and tighten it.
 
 ### Test cases
 
@@ -134,23 +140,27 @@ A simple way to keep them is a JSON file in a scratch workspace (e.g. `/tmp/<nam
 {
   "skill_name": "example-skill",
   "evals": [
-    { "id": 1, "prompt": "User's task prompt", "expected": "What good output looks like" }
+    {
+      "id": 1,
+      "prompt": "User's task prompt",
+      "expected": "What good output looks like"
+    }
   ]
 }
 ```
 
 ## Testing the skill in Patcher
 
-The cleanest way to test a skill in Patcher is to spawn a fresh thread on a realistic prompt and observe what it does — remember, only newly spawned threads pick up the skill. See the **bb-cli** skill for the full mechanics of spawning and inspecting threads; the essentials:
+The cleanest way to test a skill in Patcher is to spawn a fresh thread on a realistic prompt and observe what it does — remember, only newly spawned threads pick up the skill. See the **patcher-cli** skill for the full mechanics of spawning and inspecting threads; the essentials:
 
-- Spawn a run: `bb thread spawn --project "$PATCHER_PROJECT_ID" --prompt "<test prompt>"` (add `--json` to capture the thread id for follow-up).
-- Wait for it: `bb thread wait <thread-id>`.
-- Read the result: `bb thread output <thread-id>`, the full transcript with `bb thread log <thread-id>`, and any file changes with `bb thread show <thread-id> --git-diff`.
+- Spawn a run: `patcher thread spawn --project "$PATCHER_PROJECT_ID" --prompt "<test prompt>"` (add `--json` to capture the thread id for follow-up).
+- Wait for it: `patcher thread wait <thread-id>`.
+- Read the result: `patcher thread output <thread-id>`, the full transcript with `patcher thread log <thread-id>`, and any file changes with `patcher thread show <thread-id> --git-diff`.
 
 **With-skill vs. baseline.** To see whether the skill actually helps, compare two runs of the same prompt:
 
-- *With skill:* write the draft to `~/.patcher/skills/<name>/`, then spawn the thread — it will be available.
-- *Baseline:* temporarily move the skill aside so discovery skips it (e.g. `mv ~/.patcher/skills/<name> ~/.patcher/skills/<name>.off`), spawn the same prompt, then move it back. For a brand-new skill the baseline is "no skill"; for an existing skill, snapshot the old version and use that as the baseline.
+- _With skill:_ write the draft to `~/.patcher/skills/<name>/`, then spawn the thread — it will be available.
+- _Baseline:_ temporarily move the skill aside so discovery skips it (e.g. `mv ~/.patcher/skills/<name> ~/.patcher/skills/<name>.off`), spawn the same prompt, then move it back. For a brand-new skill the baseline is "no skill"; for an existing skill, snapshot the old version and use that as the baseline.
 
 Launch the runs you can in parallel so they finish around the same time. Read the **transcripts**, not just the final output — that's where you see whether the skill triggered, whether the agent followed it, and where it wasted effort.
 
@@ -164,7 +174,7 @@ How to think about improvements:
 
 1. **Generalize from the feedback.** The point of a skill is to work across thousands of future prompts, not just the handful you're iterating on. Resist fiddly, overfit tweaks and oppressive `MUST`s. If an issue is stubborn, try a different framing, metaphor, or pattern of working — it's cheap to try and you may land somewhere much better.
 2. **Keep it lean.** Remove instructions that aren't earning their place. If the transcripts show the skill pushing the agent into unproductive detours, cut the parts causing that and see what happens.
-3. **Explain the why.** Even when feedback is terse or frustrated, dig into what the user actually needs and encode that understanding — the reasoning, not just the rule. Models given the *why* go beyond rote instructions.
+3. **Explain the why.** Even when feedback is terse or frustrated, dig into what the user actually needs and encode that understanding — the reasoning, not just the rule. Models given the _why_ go beyond rote instructions.
 4. **Bundle repeated work.** If every test run independently writes a similar helper script or repeats the same multi-step setup, that's a strong signal to write it once, drop it in `scripts/`, and have the skill point at it. This saves every future invocation from reinventing the wheel.
 
 Take your time here — your thinking is not the bottleneck. Draft a revision, reread it fresh, and improve it.
@@ -189,7 +199,7 @@ The description is the main thing that determines whether a skill triggers. Afte
 ```json
 [
   { "query": "the user prompt", "should_trigger": true },
-  { "query": "another prompt",  "should_trigger": false }
+  { "query": "another prompt", "should_trigger": false }
 ]
 ```
 
@@ -207,5 +217,5 @@ Bad: `"Format this data"`. Good: `"my boss sent an xlsx in my downloads ('Q4 sal
 - `~/.patcher/skills/<name>/SKILL.md` exists; directory name matches frontmatter `name`.
 - Frontmatter starts with a plain `---`, has a valid lowercase-hyphen `name` and a pushy, specific `description` (≤1024 chars).
 - Body is focused; large detail lives in `references/`, repeated code in `scripts/`.
-- Tested in a freshly spawned bb thread (not the current one) on realistic prompts, ideally against a baseline.
+- Tested in a freshly spawned patcher thread (not the current one) on realistic prompts, ideally against a baseline.
 - Description triggers on the right prompts and stays quiet on the near-misses.

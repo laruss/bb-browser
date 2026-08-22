@@ -61,7 +61,7 @@ function formatRequestTimeoutDuration(timeoutMs: number): string {
 export class PatcherRequestTimeoutError extends Error {
   constructor(timeoutMs: number) {
     super(
-      `BB request timed out after ${formatRequestTimeoutDuration(timeoutMs)}.`,
+      `Patcher request timed out after ${formatRequestTimeoutDuration(timeoutMs)}.`,
     );
     this.name = "PatcherRequestTimeoutError";
   }
@@ -146,7 +146,7 @@ export async function resolveResponse<TResponse extends Response>(
   } catch (error) {
     if (isTypeErrorWithCauseCode(error, "ECONNREFUSED")) {
       throw new Error(
-        "Cannot connect to BB server. Ensure it is running and PATCHER_SERVER_URL is correct.",
+        "Cannot connect to Patcher server. Ensure it is running and PATCHER_SERVER_URL is correct.",
       );
     }
     throw error;
@@ -276,7 +276,7 @@ function validateRequestTimeoutMs(timeoutMs: number): void {
   // timeoutMs=0 is an effectively immediate abort knob for tests and callers.
   if (!Number.isFinite(timeoutMs) || timeoutMs < 0) {
     throw new RangeError(
-      "BB request timeout must be a non-negative finite number.",
+      "Patcher request timeout must be a non-negative finite number.",
     );
   }
 }

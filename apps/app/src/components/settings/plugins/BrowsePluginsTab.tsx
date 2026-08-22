@@ -16,7 +16,7 @@ import {
   UPDATE_TINT_STYLE,
 } from "./plugin-ui";
 
-/** Browse BB's official plugins, bundled with the app. */
+/** Browse Patcher's official plugins, bundled with the app. */
 export function BrowsePluginsTab({
   onInstall,
 }: {
@@ -65,7 +65,7 @@ export function BrowsePluginsTab({
         <EmptyState
           message={
             searchQuery.isError
-              ? "BB's official plugins are unavailable."
+              ? "Patcher's official plugins are unavailable."
               : "No plugins match this search."
           }
         />

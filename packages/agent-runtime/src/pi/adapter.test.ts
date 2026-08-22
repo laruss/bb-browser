@@ -365,9 +365,9 @@ describe("pi provider adapter", () => {
         ...fullProviderExecutionContext,
         skillRoots: [
           {
-            id: "bb-cli",
+            id: "patcher-cli",
             providerId: "pi",
-            skillDirectoryRootPath: "/tmp/bb-skills",
+            skillDirectoryRootPath: "/tmp/patcher-skills",
           },
           {
             id: "repo-tools",
@@ -381,7 +381,7 @@ describe("pi provider adapter", () => {
     expect(cmd).toMatchObject({
       method: "thread/start",
       params: {
-        additionalSkillPaths: ["/tmp/bb-skills", "/tmp/repo-skills"],
+        additionalSkillPaths: ["/tmp/patcher-skills", "/tmp/repo-skills"],
       },
     });
   });

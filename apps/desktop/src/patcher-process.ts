@@ -206,7 +206,7 @@ export function startPatcherAppProcess(
   });
   const pid = childProcess.pid;
   if (pid === undefined) {
-    throw new Error("bb-app child process did not expose a PID");
+    throw new Error("patcher-app child process did not expose a PID");
   }
 
   if (childProcess.stdout !== null) {

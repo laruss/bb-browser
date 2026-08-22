@@ -143,7 +143,7 @@ interface BuildThreadTimelineOptions {
    * fields (`activeThinking`, `activeWorkflows`, `pendingTodos`,
    * `contextWindowUsage`) are still populated. Saves the row-generation work +
    * serialization bytes for
-   * consumers that only need tail state (e.g. `bb status` / `bb thread show`).
+   * consumers that only need tail state (e.g. `patcher status` / `patcher thread show`).
    */
   summaryOnly?: boolean;
   providerDisplayName?: string;
@@ -1034,7 +1034,7 @@ function applyTimelineWindowByteBudget(
         kind: "system",
         systemKind: "error",
         title: "Timeline event is too large to display",
-        detail: `Event ${floor.sequenceStart} contains ${floor.eventDataBytes} bytes. BB omitted its content to keep this thread available.`,
+        detail: `Event ${floor.sequenceStart} contains ${floor.eventDataBytes} bytes. Patcher omitted its content to keep this thread available.`,
         status: "error",
       },
       sequenceStart: floor.sequenceStart + 1,

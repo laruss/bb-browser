@@ -59,7 +59,7 @@ describe("scaffoldPlugin bundled types", () => {
     });
     expect(pkg.patcher).toMatchObject({
       name: "Headless",
-      description: "A BB plugin.",
+      description: "A Patcher plugin.",
       branding: { icon: "Zap" },
       server: "./server.ts",
     });
@@ -77,7 +77,7 @@ describe("scaffoldPlugin bundled types", () => {
     ).rejects.toThrow();
 
     const readme = await readFile(join(targetDir, "README.md"), "utf8");
-    expect(readme).toContain("https://github.com/get-bb/bb");
+    expect(readme).toContain("https://github.com/laruss/patcher-browser");
   });
 
   it("also ships app types and maps the /app subpath for --app plugins", async () => {
@@ -107,7 +107,7 @@ describe("scaffoldPlugin bundled types", () => {
       await readFile(join(targetDir, "components.json"), "utf8"),
     );
     expect(components.registries["@patcher"]).toBe(
-      "https://raw.githubusercontent.com/get-bb/bb/desktop-v0.9.0/packages/plugin-registry/r/{name}.json",
+      "https://raw.githubusercontent.com/laruss/patcher-browser/desktop-v0.9.0/packages/plugin-registry/r/{name}.json",
     );
   });
 
@@ -126,11 +126,11 @@ describe("scaffoldPlugin bundled types", () => {
     expect(pkg.patcher.name).toBe("Scoped");
 
     const readme = await readFile(join(targetDir, "README.md"), "utf8");
-    expect(readme).toContain("bb plugin reload scoped");
-    expect(readme).toContain("bb plugin config scoped");
+    expect(readme).toContain("patcher plugin reload scoped");
+    expect(readme).toContain("patcher plugin config scoped");
 
     const server = await readFile(join(targetDir, "server.ts"), "utf8");
-    expect(server).toContain("bb plugin config scoped");
-    expect(server).not.toContain("bb plugin config @acme/");
+    expect(server).toContain("patcher plugin config scoped");
+    expect(server).not.toContain("patcher plugin config @acme/");
   });
 });

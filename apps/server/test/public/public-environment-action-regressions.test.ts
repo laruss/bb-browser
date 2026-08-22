@@ -20,7 +20,7 @@ function rawPullRequest(
     number: 42,
     title: "Add pull request actions",
     state: "OPEN",
-    url: "https://github.com/acme/bb/pull/42",
+    url: "https://github.com/acme/patcher/pull/42",
     isDraft: false,
     baseRefName: "main",
     headRefName: "patcher/pr-actions",
@@ -467,5 +467,4 @@ describe("public environment action regressions", () => {
       });
     });
   });
-
 });

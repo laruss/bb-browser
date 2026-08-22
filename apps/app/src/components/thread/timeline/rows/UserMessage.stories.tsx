@@ -145,7 +145,7 @@ function threadMentionResource(
 
 const agentInitiatedMessage = buildMessage(
   [
-    '[Patcher message from thread:thr_ux3h8sxg65; reply with `bb thread tell thr_ux3h8sxg65 "<your response>"`]',
+    '[Patcher message from thread:thr_ux3h8sxg65; reply with `patcher thread tell thr_ux3h8sxg65 "<your response>"`]',
     "",
     "Fixed both blockers on @apps/server/src/services/manager/manager-system-messages.ts. No merge or push.",
     "",
@@ -181,7 +181,7 @@ const agentInitiatedMessage = buildMessage(
 
 const agentSteerMessage = buildMessage(
   [
-    '[Patcher message from thread:thr_h4u3fgr6be; reply with `bb thread tell thr_h4u3fgr6be "<your response>"`]',
+    '[Patcher message from thread:thr_h4u3fgr6be; reply with `patcher thread tell thr_h4u3fgr6be "<your response>"`]',
     "",
     "Committed the two scoped fixes touching @apps/app/src/components/thread/timeline/ConversationMessageContent.tsx. Worktree is clean.",
   ].join("\n"),

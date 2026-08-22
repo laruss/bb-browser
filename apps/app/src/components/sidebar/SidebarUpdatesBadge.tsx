@@ -107,7 +107,7 @@ export function SidebarUpdatesBadge({ onNavigate }: SidebarUpdatesBadgeProps) {
   const patcherLabel =
     patcherUpdateCount === 1
       ? "Patcher update available"
-      : "bb updates available";
+      : "patcher updates available";
   const providerLabel = `${joinNames(
     staleProviders.map((stale) => stale.displayName),
   )} ${staleProviders.length === 1 ? "update" : "updates"} available`;
@@ -124,7 +124,7 @@ export function SidebarUpdatesBadge({ onNavigate }: SidebarUpdatesBadgeProps) {
               to={updatesRoutePath}
               onClick={onNavigate}
               aria-label={patcherLabel}
-              data-testid="sidebar-updates-badge-bb"
+              data-testid="sidebar-updates-badge-patcher"
               className={CHIP_CLASS}
             >
               <Icon name="Download" className="size-3 text-muted-foreground" />

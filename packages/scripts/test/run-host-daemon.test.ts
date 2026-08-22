@@ -57,7 +57,7 @@ async function makeTempDir(prefix: string): Promise<string> {
 
 beforeEach(async () => {
   vi.resetModules();
-  vi.stubEnv("PATCHER_DATA_DIR", "/tmp/bb-run-host-daemon-test");
+  vi.stubEnv("PATCHER_DATA_DIR", "/tmp/patcher-run-host-daemon-test");
   vi.stubEnv("PATCHER_SERVER_URL", "http://127.0.0.1:3334");
   vi.stubEnv("PATCHER_HOST_DAEMON_PORT", "3002");
   runHostDaemon = await import("../src/commands/run-host-daemon.js");

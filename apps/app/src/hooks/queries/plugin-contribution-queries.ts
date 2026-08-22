@@ -537,7 +537,7 @@ export function pluginContributionsQueryKey(): QueryKey {
 
 /**
  * Prefix covering every contributions cache entry. The realtime
- * `plugins-changed` broadcast invalidates it so `bb plugin
+ * `plugins-changed` broadcast invalidates it so `patcher plugin
  * reload/enable/disable` reaches open pages without waiting out the stale
  * time.
  */

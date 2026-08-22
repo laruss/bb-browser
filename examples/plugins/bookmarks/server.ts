@@ -46,7 +46,7 @@ const OMNIBOX_ROWS = 5;
 /**
  * A page worth saving is one the browser can go back to.
  *
- * Patcher's own screens (`bb:`), a `file:` path and a `data:` blob are all things the
+ * Patcher's own screens (`patcher:`), a `file:` path and a `data:` blob are all things the
  * chord can fire on, and none of them is a bookmark: the new-tab row would be
  * refused by the host anyway (rows are `http`/`https` links), so refusing here
  * keeps the store from holding what the list could never show.

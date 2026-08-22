@@ -88,7 +88,7 @@ describe("slack-bot webhook", () => {
     expect(response.status).toBe(401);
   });
 
-  it("spawns an attributed BB thread on first mention and stores the kv mapping", async () => {
+  it("spawns an attributed Patcher thread on first mention and stores the kv mapping", async () => {
     const { patcher, harness } = await loadConfigured();
     const rawBody = mentionEvent({
       text: "<@U1> run the tests please",
@@ -113,7 +113,7 @@ describe("slack-bot webhook", () => {
       ],
     ]);
     expect(await patcher.storage.kv.get("slack:111.222")).toBe("th_1");
-    expect(await patcher.storage.kv.get("bb:th_1")).toEqual({
+    expect(await patcher.storage.kv.get("patcher:th_1")).toEqual({
       channel: "C42",
       threadTs: "111.222",
     });

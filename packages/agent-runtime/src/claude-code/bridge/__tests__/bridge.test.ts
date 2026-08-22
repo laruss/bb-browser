@@ -822,13 +822,13 @@ describe("bridge", () => {
         getPermissionEscalation: () => "ask",
         permissionMode: "default",
         permissionScope: "workspace",
-        plugins: [{ type: "local", path: "/tmp/bb-skills" }],
+        plugins: [{ type: "local", path: "/tmp/patcher-skills" }],
       },
       {},
     );
 
     expect(options.plugins).toEqual([
-      { type: "local", path: "/tmp/bb-skills" },
+      { type: "local", path: "/tmp/patcher-skills" },
     ]);
     expect(options).not.toHaveProperty("skills");
   });
@@ -1007,7 +1007,7 @@ describe("bridge", () => {
     const options = buildSessionOptions(
       {
         workflowsEnabled: false,
-        additionalWorkspaceWriteRoots: ["/repo/.git/worktrees/bb13"],
+        additionalWorkspaceWriteRoots: ["/repo/.git/worktrees/patcher13"],
         baseInstructions: "You are a coder.",
         cwd: "/tmp/worktree",
         instructionMode: "append",
@@ -1028,7 +1028,7 @@ describe("bridge", () => {
       {
         workflowsEnabled: false,
         additionalWorkspaceWriteRoots: [
-          "/repo/.git/worktrees/bb13",
+          "/repo/.git/worktrees/patcher13",
           "/repo/.git/objects",
         ],
         baseInstructions: "You are a coder.",
@@ -1042,7 +1042,7 @@ describe("bridge", () => {
     );
 
     expect(options.additionalDirectories).toEqual([
-      "/repo/.git/worktrees/bb13",
+      "/repo/.git/worktrees/patcher13",
       "/repo/.git/objects",
     ]);
     expect(options.sandbox).toEqual({
@@ -1052,7 +1052,7 @@ describe("bridge", () => {
       allowUnsandboxedCommands: true,
       network: { allowLocalBinding: true },
       filesystem: {
-        allowWrite: ["/repo/.git/worktrees/bb13", "/repo/.git/objects"],
+        allowWrite: ["/repo/.git/worktrees/patcher13", "/repo/.git/objects"],
       },
     });
   });
@@ -2445,7 +2445,7 @@ describe("bridge", () => {
         workflowsEnabled: false,
         claudeCodeMockCliTraffic: DEFAULT_CLAUDE_CODE_MOCK_CLI_TRAFFIC_CONFIG,
         additionalWorkspaceWriteRoots: [
-          "/repo/.git/worktrees/bb13",
+          "/repo/.git/worktrees/patcher13",
           "/repo/.git/objects",
         ],
         baseInstructions: "test",
@@ -2464,12 +2464,15 @@ describe("bridge", () => {
           options: expect.objectContaining({
             permissionMode: "acceptEdits",
             additionalDirectories: [
-              "/repo/.git/worktrees/bb13",
+              "/repo/.git/worktrees/patcher13",
               "/repo/.git/objects",
             ],
             sandbox: expect.objectContaining({
               filesystem: {
-                allowWrite: ["/repo/.git/worktrees/bb13", "/repo/.git/objects"],
+                allowWrite: [
+                  "/repo/.git/worktrees/patcher13",
+                  "/repo/.git/objects",
+                ],
               },
             }),
           }),
@@ -2501,7 +2504,7 @@ describe("bridge", () => {
         workflowsEnabled: false,
         claudeCodeMockCliTraffic: DEFAULT_CLAUDE_CODE_MOCK_CLI_TRAFFIC_CONFIG,
         additionalWorkspaceWriteRoots: [
-          "/repo/.git/worktrees/bb13",
+          "/repo/.git/worktrees/patcher13",
           "/repo/.git/objects",
         ],
         cwd: "/tmp/worktree",
@@ -2520,12 +2523,15 @@ describe("bridge", () => {
           options: expect.objectContaining({
             permissionMode: "auto",
             additionalDirectories: [
-              "/repo/.git/worktrees/bb13",
+              "/repo/.git/worktrees/patcher13",
               "/repo/.git/objects",
             ],
             sandbox: expect.objectContaining({
               filesystem: {
-                allowWrite: ["/repo/.git/worktrees/bb13", "/repo/.git/objects"],
+                allowWrite: [
+                  "/repo/.git/worktrees/patcher13",
+                  "/repo/.git/objects",
+                ],
               },
             }),
           }),

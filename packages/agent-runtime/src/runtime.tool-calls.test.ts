@@ -216,7 +216,9 @@ describe("createAgentRuntime tool calls", () => {
         resolveThreadId: () => "t1",
       });
 
-      const parsed = parseJsonRpcLine((await readChildStdoutLine(child)).trim());
+      const parsed = parseJsonRpcLine(
+        (await readChildStdoutLine(child)).trim(),
+      );
       if (parsed.kind !== "response") {
         throw new Error(`Expected JSON-RPC response, got ${parsed.kind}`);
       }
@@ -284,7 +286,9 @@ describe("createAgentRuntime tool calls", () => {
         resolveThreadId: () => "t1",
       });
 
-      const parsed = parseJsonRpcLine((await readChildStdoutLine(child)).trim());
+      const parsed = parseJsonRpcLine(
+        (await readChildStdoutLine(child)).trim(),
+      );
       if (parsed.kind !== "response") {
         throw new Error(`Expected JSON-RPC response, got ${parsed.kind}`);
       }
@@ -302,7 +306,7 @@ describe("createAgentRuntime tool calls", () => {
     }
   });
 
-  it("rejects tool calls whose BB thread hint disagrees with the provider-thread mapping", async () => {
+  it("rejects tool calls whose Patcher thread hint disagrees with the provider-thread mapping", async () => {
     const toolCalls: string[] = [];
     const events: ThreadEvent[] = [];
     const runtime = createAgentRuntimeWithAdapters({

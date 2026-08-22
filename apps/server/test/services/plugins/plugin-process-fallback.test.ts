@@ -133,7 +133,7 @@ describe("a plugin whose process does not work out", () => {
     expect(entry.statusDetail).toMatch(
       /plugin process failed: .*no plugin host on this platform/,
     );
-    // In the server, so it has a local `bb` — and it is serving.
+    // In the server, so it has a local `patcher` — and it is serving.
     expect(plugins.getApi("remote")).toBeDefined();
     expect(
       plugins.listContextMenuItemContributions().map((item) => item.itemId),
@@ -228,7 +228,7 @@ describe("a plugin whose process does not work out", () => {
     spawned[1]?.crash(1);
     await settle(() => backInTheServer(plugins));
 
-    // In the server now — with a local `bb`, serving, and saying why.
+    // In the server now — with a local `patcher`, serving, and saying why.
     const entry = plugins.list().find((plugin) => plugin.id === "remote");
     expect(entry?.status).toBe("running");
     expect(entry?.statusDetail).toMatch(

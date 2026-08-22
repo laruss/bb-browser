@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { extname, resolve } from "node:path";
-import { formatCustomAcpAgentProviderId } from "@patcher/config/bb-app-managed-config";
+import { formatCustomAcpAgentProviderId } from "@patcher/config/patcher-app-managed-config";
 import {
   getAppSettings,
   getAppKeybindingOverrides,

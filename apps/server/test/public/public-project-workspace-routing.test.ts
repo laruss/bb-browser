@@ -191,7 +191,7 @@ describe("public project workspace routing", () => {
       const content = await harness.app.request(
         `/api/v1/projects/${project.id}/files/content?hostId=${remoteHost.id}&path=remote.txt`,
       );
-      expect(content.headers.get("x-bb-content-encoding")).toBe("utf8");
+      expect(content.headers.get("x-patcher-content-encoding")).toBe("utf8");
       await expect(content.text()).resolves.toBe(
         "content from /remote/project",
       );
@@ -267,7 +267,7 @@ describe("public project workspace routing", () => {
       expect(response.headers.get("content-type")).toContain(
         "application/octet-stream",
       );
-      expect(response.headers.get("x-bb-content-encoding")).toBe("base64");
+      expect(response.headers.get("x-patcher-content-encoding")).toBe("base64");
       expect(new Uint8Array(await response.arrayBuffer())).toEqual(
         new Uint8Array([0, 1, 254, 255]),
       );

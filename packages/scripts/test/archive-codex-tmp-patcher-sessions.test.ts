@@ -38,7 +38,7 @@ describe("archive-codex-tmp-patcher-sessions", () => {
         "*/patcher-standalone-*",
         "*/patcher-integration-*",
         "*/patcher-integ-*",
-        "*/bb-qa-smoke-*",
+        "*/patcher-qa-smoke-*",
       ],
       yes: false,
     });
@@ -111,7 +111,7 @@ describe("archive-codex-tmp-patcher-sessions", () => {
     expect(help).toContain("*/patcher-standalone-*");
     expect(help).toContain("*/patcher-integration-*");
     expect(help).toContain("*/patcher-integ-*");
-    expect(help).toContain("*/bb-qa-smoke-*");
+    expect(help).toContain("*/patcher-qa-smoke-*");
     expect(help).toContain("repeatable");
     expect(help).toContain("state_<n>.sqlite");
   });
@@ -139,11 +139,13 @@ describe("archive-codex-tmp-patcher-sessions", () => {
   });
 
   it("escapes SQLite string values used in generated queries", () => {
-    expect(escapeSqlString("/tmp/bb-o'clock-*")).toBe("/tmp/bb-o''clock-*");
-    expect(buildMatchingThreadIdsSql(["/tmp/bb-o'clock-*"])).toContain(
-      "archived=0 AND (cwd GLOB '/tmp/bb-o''clock-*')",
+    expect(escapeSqlString("/tmp/patcher-o'clock-*")).toBe(
+      "/tmp/patcher-o''clock-*",
     );
-    expect(buildMatchingThreadPreviewSql(["/tmp/bb-*"])).toContain(
+    expect(buildMatchingThreadIdsSql(["/tmp/patcher-o'clock-*"])).toContain(
+      "archived=0 AND (cwd GLOB '/tmp/patcher-o''clock-*')",
+    );
+    expect(buildMatchingThreadPreviewSql(["/tmp/patcher-*"])).toContain(
       "ORDER BY updated_at DESC LIMIT 10",
     );
   });
@@ -163,8 +165,10 @@ describe("archive-codex-tmp-patcher-sessions", () => {
     const separator = "\u001f";
     const rows = parseThreadPreviewRows(
       [
-        ["thr_1", "2026-04-15 13:40:15", "/tmp/bb-integ-one"].join(separator),
-        ["thr_2", "2026-04-15 13:39:51", "/tmp/bb-integration-two"].join(
+        ["thr_1", "2026-04-15 13:40:15", "/tmp/patcher-integ-one"].join(
+          separator,
+        ),
+        ["thr_2", "2026-04-15 13:39:51", "/tmp/patcher-integration-two"].join(
           separator,
         ),
       ].join("\n"),
@@ -172,12 +176,12 @@ describe("archive-codex-tmp-patcher-sessions", () => {
 
     expect(rows).toEqual([
       {
-        cwd: "/tmp/bb-integ-one",
+        cwd: "/tmp/patcher-integ-one",
         id: "thr_1",
         updatedAt: "2026-04-15 13:40:15",
       },
       {
-        cwd: "/tmp/bb-integration-two",
+        cwd: "/tmp/patcher-integration-two",
         id: "thr_2",
         updatedAt: "2026-04-15 13:39:51",
       },

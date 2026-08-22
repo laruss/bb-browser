@@ -1,7 +1,7 @@
 /**
  * The server's half of the plugin→host direction.
  *
- * `plugin-child-runtime.ts` builds `bb` in the plugin's process with every
+ * `plugin-child-runtime.ts` builds `patcher` in the plugin's process with every
  * host-facing capability pointed at the channel. This is the other end of
  * those calls: it receives a `PluginHostCallPath` and performs it against the
  * server's real dependencies.

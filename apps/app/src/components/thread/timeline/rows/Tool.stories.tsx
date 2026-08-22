@@ -292,7 +292,7 @@ const projectClaudeSkillReadTool = createSkillReadTool({
   sequenceOffset: 0,
   skillName: "moss-hardening-review",
   skillPath:
-    "/Users/brsbl/Code/bb/.claude/skills/moss-hardening-review/SKILL.md",
+    "/Users/brsbl/Code/patcher/.claude/skills/moss-hardening-review/SKILL.md",
 });
 
 const userClaudeSymlinkSkillReadTool = createSkillReadTool({
@@ -306,7 +306,7 @@ const projectCodexSkillReadTool = createSkillReadTool({
   idSuffix: "project_codex",
   sequenceOffset: 4,
   skillName: "workspace-tools",
-  skillPath: "/Users/brsbl/Code/bb/.codex/skills/workspace-tools/SKILL.md",
+  skillPath: "/Users/brsbl/Code/patcher/.codex/skills/workspace-tools/SKILL.md",
 });
 
 const userCodexSkillReadTool = createSkillReadTool({

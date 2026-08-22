@@ -37,7 +37,7 @@ export interface UpdateInventory {
   isLoading: boolean;
   systemVersion: SystemVersionResponse | undefined;
   desktopInfo: PatcherDesktopInfo | null;
-  /** bb-app (web/npm) has a newer release on the registry. */
+  /** patcher-app (web/npm) has a newer release on the registry. */
   appUpdateAvailable: boolean;
   /** Desktop shell downloaded an update; a relaunch applies it. */
   desktopUpdateReady: boolean;

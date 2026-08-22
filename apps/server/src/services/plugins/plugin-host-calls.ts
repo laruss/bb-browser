@@ -3,7 +3,7 @@
  * ./plugin-callbacks.ts.
  *
  * That file names what the server calls in a plugin and found three shapes
- * that could not cross. This one names what the plugin calls on `bb`, for the
+ * that could not cross. This one names what the plugin calls on `patcher`, for the
  * same reason and with the same discipline: the boundary is easier to build
  * from a list than to discover one refusal at a time.
  *
@@ -22,7 +22,7 @@
  * obstacles — recorded as `argsCross: false` with a `note`, exactly as the
  * callback catalogue records its own.
  *
- * **Nothing here changes how a call runs today.** `bb` is still the in-process
+ * **Nothing here changes how a call runs today.** `patcher` is still the in-process
  * object; this is the description a transport will implement.
  */
 
@@ -86,7 +86,7 @@ export interface PluginHostCallShape {
  * The keys are exact paths rather than a nested shape because that is what a
  * message carries. `settings.<handle>.*` is the one exception: those members
  * exist only on the object `settings.define` returns, so they have no path on
- * `bb` and the placeholder segment says so.
+ * `patcher` and the placeholder segment says so.
  */
 export const PLUGIN_HOST_CALLS = {
   // -- Identity and facts ---------------------------------------------------

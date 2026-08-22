@@ -353,7 +353,7 @@ describe("public thread parenting routes", () => {
     });
   });
 
-  // The cascade is BB's own, not the plugin's: a hidden fork retires with its
+  // The cascade is Patcher's own, not the plugin's: a hidden fork retires with its
   // source whether or not the plugin that created it is enabled.
   it("archives hierarchy children and hidden source-derived forks", async () => {
     await withTestHarness(async (harness) => {

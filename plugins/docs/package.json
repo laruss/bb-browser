@@ -4,13 +4,13 @@
   "description": "Create and edit Markdown documents across local and connected-host vaults.",
   "private": true,
   "license": "MIT",
-  "homepage": "https://github.com/get-bb/bb#readme",
+  "homepage": "https://github.com/laruss/patcher-browser#readme",
   "bugs": {
-    "url": "https://github.com/get-bb/bb/issues"
+    "url": "https://github.com/laruss/patcher-browser/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/get-bb/bb.git",
+    "url": "git+https://github.com/laruss/patcher-browser.git",
     "directory": "plugins/docs"
   },
   "type": "module",

@@ -93,10 +93,10 @@
       "types": "./src/public-url.ts",
       "default": "./src/public-url.ts"
     },
-    "./bb-app-managed-config": {
-      "source": "./src/bb-app-managed-config.ts",
-      "types": "./src/bb-app-managed-config.ts",
-      "default": "./src/bb-app-managed-config.ts"
+    "./patcher-app-managed-config": {
+      "source": "./src/patcher-app-managed-config.ts",
+      "types": "./src/patcher-app-managed-config.ts",
+      "default": "./src/patcher-app-managed-config.ts"
     },
     "./client-config": {
       "source": "./src/client-config.ts",

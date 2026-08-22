@@ -306,8 +306,7 @@ function CollapsibleMessageText({
     enabled: !isExpanded,
     measurementKey: body.text,
   });
-  const showToggle =
-    isExpanded || exceedsCollapsedRenderCap || isOverflowing;
+  const showToggle = isExpanded || exceedsCollapsedRenderCap || isOverflowing;
 
   return (
     <>
@@ -445,7 +444,7 @@ function UserConversationMessage({
         resolveSegmentLinkHref={resolveSegmentLinkHref}
         onTitleAction={onTitleAction}
         sourceKind="system"
-        sourceName="BB"
+        sourceName="Patcher"
         sourceThreadId={null}
         sourceIsPluginSideChat={false}
         systemMessageKind={systemMessageKind}

@@ -611,7 +611,7 @@ function buildBinaryResolution(
     approvalInteraction.payload.subject.kind === "permission_grant"
   ) {
     throw new Error(
-      `Interaction ${interaction.id} is a permission grant; use bb thread interactions grant.`,
+      `Interaction ${interaction.id} is a permission grant; use patcher thread interactions grant.`,
     );
   }
   const decision = pickApprovalDecision(approvalInteraction, action);

@@ -38,7 +38,7 @@ async function makeTempDir(prefix: string): Promise<string> {
 async function initRepo(opts?: { setupScript?: string }): Promise<string> {
   const repoPath = await makeTempDir("patcher-provision-repo-");
   await runGit(["init", "-b", "main"], { cwd: repoPath });
-  await runGit(["config", "user.name", "BB Tests"], { cwd: repoPath });
+  await runGit(["config", "user.name", "Patcher Tests"], { cwd: repoPath });
   await runGit(["config", "user.email", "patcher@example.com"], {
     cwd: repoPath,
   });
@@ -325,7 +325,7 @@ describe("provisionWorkspace", () => {
       await expect(
         provisionWorkspace({
           workspaceProvisionType: "unmanaged",
-          path: "/tmp/does-not-exist-bb",
+          path: "/tmp/does-not-exist-patcher",
         }),
       ).rejects.toThrow(/does not exist/u);
     });

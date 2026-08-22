@@ -18,7 +18,7 @@ import type {
 
 /**
  * The `@patcher/plugin-sdk/app` contract (plugin design §5.2) — pure types with no
- * side effects. The BB app imports these to keep its real implementation in
+ * side effects. The Patcher app imports these to keep its real implementation in
  * sync (`satisfies PluginSdkApp`). Plugin authors import the same shapes through
  * `@patcher/plugin-sdk/app`.
  *
@@ -269,7 +269,7 @@ export interface PluginLeadingPanelRegistration {
   id: string;
   /** Named in the rail's tooltip, and its accessible name. */
   title: string;
-  /** Icon hint (BB icon name); unknown names fall back to a generic icon. */
+  /** Icon hint (Patcher icon name); unknown names fall back to a generic icon. */
   icon: string;
   /** Rendered as the whole panel body; it owns its own scrolling. */
   component: ComponentType<PluginLeadingPanelProps>;
@@ -293,7 +293,7 @@ export interface PluginNavPanelRegistration {
   /** Unique within the plugin; letters, digits, `-`, `_`. */
   id: string;
   title: string;
-  /** Icon hint (BB icon name); unknown names fall back to a generic icon. */
+  /** Icon hint (Patcher icon name); unknown names fall back to a generic icon. */
   icon: string;
   /** URL segment under `/plugins/<pluginId>/`; letters, digits, `-`, `_`. */
   path: string;
@@ -345,7 +345,7 @@ export interface PluginThreadPanelActionRegistration {
   /** Label of the action row in the panel's new-tab launcher. */
   title: string;
   /**
-   * Icon hint (BB icon name) used when the plugin ships no logo; the
+   * Icon hint (Patcher icon name) used when the plugin ships no logo; the
    * launcher row and opened tabs prefer the plugin's logo.
    */
   icon?: string;
@@ -387,7 +387,7 @@ export interface PluginNewThreadPanelActionRegistration {
   id: string;
   /** Label of the action row in the panel's new-tab launcher. */
   title: string;
-  /** Icon hint (BB icon name) used when the plugin ships no logo. */
+  /** Icon hint (Patcher icon name) used when the plugin ships no logo. */
   icon?: string;
   /** Rendered inside every panel tab this action opens. */
   component: ComponentType<PluginNewThreadPanelProps>;
@@ -425,7 +425,7 @@ export interface PluginSidebarFooterActionRegistration {
   id: string;
   /** Tooltip and accessible label for the icon button. */
   title: string;
-  /** Icon hint (BB icon name); unknown names fall back to a generic icon. */
+  /** Icon hint (Patcher icon name); unknown names fall back to a generic icon. */
   icon: string;
   /**
    * Runs when the user activates the action (e.g. call `openSettings()`,
@@ -795,7 +795,7 @@ export interface PluginMessageActionRegistration {
   id: string;
   /** Tooltip / menu label for the action. */
   title: string;
-  /** Icon hint (BB icon name); unknown names fall back to a generic icon. */
+  /** Icon hint (Patcher icon name); unknown names fall back to a generic icon. */
   icon?: string;
   /**
    * Runs when the user activates the action. Errors (sync or async) are
@@ -1024,7 +1024,7 @@ export interface ComposerCustomization {
 export interface ComposerPlusMenuItem {
   id: string;
   label: string;
-  /** BB icon name; unknown names fall back to the generic plugin icon. */
+  /** Patcher icon name; unknown names fall back to the generic plugin icon. */
   icon?: string;
   /** Accessible description for the host-rendered row. */
   description?: string;
@@ -1079,7 +1079,7 @@ export interface PluginComposerTextEffect {
  * be squeezed to its icon is one glyph with a label behind it.
  */
 export interface PluginBrowserTabStatus {
-  /** BB icon-name hint; unknown names fall back to the generic plugin icon. */
+  /** Patcher icon-name hint; unknown names fall back to the generic plugin icon. */
   icon: string;
   /** Accessible label for the mark, and its tooltip. */
   label: string;
@@ -1092,7 +1092,7 @@ export interface PluginBrowserTabStatus {
 
 /** Host-rendered status that temporarily replaces a thread's draft glyph. */
 export interface PluginComposerThreadRowStatus {
-  /** BB icon-name hint; unknown names fall back to the generic plugin icon. */
+  /** Patcher icon-name hint; unknown names fall back to the generic plugin icon. */
   icon: string;
   /** Accessible label for the status glyph. */
   label: string;
@@ -1183,7 +1183,7 @@ export interface ThreadChatMessageAction {
   id: string;
   /** Tooltip / menu label for the action. */
   title: string;
-  /** Icon hint (BB icon name); unknown names fall back to a generic icon. */
+  /** Icon hint (Patcher icon name); unknown names fall back to a generic icon. */
   icon?: string;
   /**
    * Message roles the action applies to. Omitted = both user and assistant
@@ -1200,7 +1200,7 @@ export interface ThreadChatMessageAction {
 /**
  * Props of the host-owned `ThreadChat` component — one thread's chat
  * (timeline, and for the composer variants the full send/queue/draft
- * engine), rendered by the BB app inside a plugin slot. This is the
+ * engine), rendered by the Patcher app inside a plugin slot. This is the
  * deliberate exception to the no-host-components rule (§5.5): a stable
  * product capability, not a UI kit. Versioned additive like slot props;
  * internal timeline rows, query hooks, and prompt-box configuration are
@@ -1280,7 +1280,7 @@ export interface NewThreadRequest {
  * full new-thread compose surface (prompt editor with @-mentions and expand,
  * attachments, provider/model/reasoning picker, voice, submit, and the row
  * beneath with project, environment, branch-from, and permission mode),
- * rendered by the BB app inside a plugin slot.
+ * rendered by the Patcher app inside a plugin slot.
  *
  * It is the create-side counterpart to `ThreadChat`: same deliberate
  * exception to the no-host-components rule (§5.5), same additive versioning.
@@ -1433,15 +1433,15 @@ export interface PatcherNavigate {
 //
 // Components are deliberately NOT part of this surface (removed 2026-07-03,
 // plugin design §5.5): plugins vendor shadcn-style component source from the
-// BB registry (`npx shadcn add @patcher/<name>`) and own it. `bb plugin build`
+// Patcher registry (`npx shadcn add @patcher/<name>`) and own it. `patcher plugin build`
 // shims react + the shared-singleton packages (portal radix families,
 // sonner, vaul); everything else bundles per plugin. Freezing 65 component
 // prop types here made every host component change a plugin-breaking change.
 // ---------------------------------------------------------------------------
 
 /**
- * Everything `@patcher/plugin-sdk/app` resolves to at runtime. The BB app builds
- * the real implementation and `satisfies` this interface; `bb plugin build`
+ * Everything `@patcher/plugin-sdk/app` resolves to at runtime. The Patcher app builds
+ * the real implementation and `satisfies` this interface; `patcher plugin build`
  * shims the specifier to that object on `globalThis.__patcherPluginRuntime`.
  */
 export interface PluginSdkApp {

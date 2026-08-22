@@ -98,10 +98,10 @@ await Promise.all([
   }),
   build({
     ...commonOptions,
-    entryPoints: [resolve(packageRoot, "src", "bb-app-bridge.ts")],
-    external: ["bb-app", "bb-app/*"],
+    entryPoints: [resolve(packageRoot, "src", "patcher-app-bridge.ts")],
+    external: ["patcher-app", "patcher-app/*"],
     format: "esm",
-    outfile: resolve(distDir, "bb-app-bridge.mjs"),
+    outfile: resolve(distDir, "patcher-app-bridge.mjs"),
   }),
 ]);
 

@@ -3,7 +3,7 @@
   "name": "coarse-pointer-sizing",
   "type": "registry:ui",
   "title": "coarse-pointer-sizing",
-  "description": "BB ui \"coarse-pointer-sizing\" — vendored from the BB app's own source (version-matched to this BB release).",
+  "description": "Patcher ui \"coarse-pointer-sizing\" — vendored from the Patcher app's own source (version-matched to this Patcher release).",
   "files": [
     {
       "path": "registry/components/ui/coarse-pointer-sizing.ts",

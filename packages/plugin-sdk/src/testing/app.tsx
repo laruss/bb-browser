@@ -75,13 +75,13 @@ import {
  *
  * - {@link installTestPluginRuntime} fills `globalThis.__patcherPluginRuntime.
  *   pluginSdkApp` with a test implementation of the `@patcher/plugin-sdk/app`
- *   surface (the same seam `bb plugin build` shims to the real app). It must
+ *   surface (the same seam `patcher plugin build` shims to the real app). It must
  *   run BEFORE the plugin's `app.tsx` module evaluates, because that module
  *   binds the runtime at import time — so import `app.tsx` through
  *   {@link loadPluginApp}'s thunk form, or call the installer from a vitest
  *   setup file when you prefer static imports.
  * - {@link loadPluginApp} runs the definition's setup against a validating
- *   collector (ported from the BB app's interpreter, same error messages)
+ *   collector (ported from the Patcher app's interpreter, same error messages)
  *   and returns the typed slot registrations.
  * - {@link renderSlot} mounts one registration's component with mock hook
  *   backends: rpc as a method→handler map with a call log, realtime as a
@@ -206,7 +206,7 @@ function useSlotEnv(hook: string): SlotEnv {
 // The fake @patcher/plugin-sdk/app runtime.
 // ---------------------------------------------------------------------------
 
-/** Same shape (and checks) as the BB app's real definePluginApp. */
+/** Same shape (and checks) as the Patcher app's real definePluginApp. */
 function definePluginApp(setup: PluginAppSetup): PluginAppDefinition {
   if (typeof setup !== "function") {
     throw new Error("definePluginApp expects a setup function");
@@ -541,7 +541,7 @@ export type PluginAppSource =
   | (() => Promise<PluginAppDefinition | PluginAppModule>);
 
 /**
- * Uses the same registration validation as the BB app collector so a
+ * Uses the same registration validation as the Patcher app collector so a
  * registration the host would reject fails here with the same message.
  */
 function collectRegistrations(
@@ -927,13 +927,13 @@ export async function mountPluginContentScripts(
     if (controller.signal.aborted) return;
     if (typeof threadId !== "string" || threadId.trim().length === 0) {
       console.warn(
-        `bb plugin "${options.pluginId}": contentScript.experimental_setThreadRowStatus: "threadId" must be a non-empty string`,
+        `patcher plugin "${options.pluginId}": contentScript.experimental_setThreadRowStatus: "threadId" must be a non-empty string`,
       );
       return;
     }
     const normalizedThreadId = threadId.trim();
     const normalizedStatus = normalizePluginThreadRowStatus(status, (reason) =>
-      console.warn(`bb plugin "${options.pluginId}": ${reason}`),
+      console.warn(`patcher plugin "${options.pluginId}": ${reason}`),
     );
     if (normalizedStatus === undefined) return;
     const recordedStatus =

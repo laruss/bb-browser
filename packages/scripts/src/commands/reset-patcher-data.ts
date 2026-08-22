@@ -80,7 +80,7 @@ export function ensureSafeTargets(targets: string[]): void {
 
 export function renderHelpText(): string {
   return `
-  ${bold("bb reset")}
+  ${bold("patcher reset")}
 
   ${dim("Usage")}
     bun run reset [--all] [--yes]
@@ -144,7 +144,7 @@ export async function main(
     return;
   }
 
-  process.stdout.write(`\n  ${bold("bb reset")}\n`);
+  process.stdout.write(`\n  ${bold("patcher reset")}\n`);
 
   const targets = resolveResetTargets(args);
   ensureSafeTargets(targets);

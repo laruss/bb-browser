@@ -1208,7 +1208,7 @@ The standing rule that a browsed page never receives a Patcher bridge survives, 
 the preload exposes nothing into the page's own world. It calls
 `contextBridge.exposeInIsolatedWorld` for a world **per plugin**, and
 `webFrame.executeJavaScriptInIsolatedWorld` runs the plugin's source there. Measured
-in the page's own world: `bb`, the script's globals, `process` and `require` are all
+in the page's own world: `patcher`, the script's globals, `process` and `require` are all
 undefined.
 
 ### What the browser can promise about running it, measured
@@ -1325,7 +1325,7 @@ from what was clicked; and entries append **below** the browser's own behind a
 separator — a plugin adds to this menu, it does not rearrange it.
 
 `examples/plugins/explain-selection/` is the worked example, and it is the
-plan's own Phase 6 one: "Explain with Agent" on a selection, spawning a BB
+plan's own Phase 6 one: "Explain with Agent" on a selection, spawning a Patcher
 thread that quotes it. Its README is where the first consequence above is
 argued from the plugin author's side — an item that needs configuration cannot
 decide per click, so it registers nothing until it has some. The end-to-end path

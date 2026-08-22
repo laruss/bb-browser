@@ -3,7 +3,7 @@
   "name": "use-compact-viewport",
   "type": "registry:hook",
   "title": "use-compact-viewport",
-  "description": "BB hook \"use-compact-viewport\" — vendored from the BB app's own source (version-matched to this BB release).",
+  "description": "Patcher hook \"use-compact-viewport\" — vendored from the Patcher app's own source (version-matched to this Patcher release).",
   "registryDependencies": [
     "@patcher/use-media-query"
   ],

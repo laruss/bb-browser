@@ -19,7 +19,7 @@ const remoteBranches = [
   "origin/main",
   "origin/develop",
   "origin/release/1.3",
-  "origin/bb/feat/review-flow",
+  "origin/patcher/feat/review-flow",
   "upstream/main",
 ] as const;
 

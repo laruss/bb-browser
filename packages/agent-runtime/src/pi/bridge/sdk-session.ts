@@ -174,7 +174,7 @@ async function waitForTransientAuthRetry(): Promise<void> {
 
 /**
  * Wraps the Pi programmatic SDK (`@earendil-works/pi-coding-agent`) in a
- * session object that bridges between the BB JSON-RPC protocol and
+ * session object that bridges between the Patcher JSON-RPC protocol and
  * the Pi agent's event-driven API.
  */
 export class PiSdkSession {
@@ -459,7 +459,7 @@ export class PiSdkSession {
 
     for (const queuedText of addedQueuedTexts) {
       // Pi queue_update exposes SDK-transformed text, so correlate by FIFO queue
-      // additions rather than by the raw BB steer text.
+      // additions rather than by the raw Patcher steer text.
       const pending = this.pendingSteerConsumptions.find(
         (entry) => entry.queuedText === null,
       );

@@ -113,11 +113,11 @@ describe("common config", () => {
     expect(
       loadCommonConfig({
         env: {
-          PATCHER_DATA_DIR: "~/custom-bb",
+          PATCHER_DATA_DIR: "~/custom-patcher",
           NODE_ENV: "production",
         },
       }).PATCHER_DATA_DIR,
-    ).toBe(path.join(os.homedir(), "custom-bb"));
+    ).toBe(path.join(os.homedir(), "custom-patcher"));
   });
 
   it("rejects whitespace-only PATCHER_DATA_DIR overrides", () => {
@@ -770,7 +770,7 @@ describe("consumer-specific config", () => {
     const hostDaemonEntrypointConfig = loadHostDaemonEntrypointConfig({
       env: {
         PATCHER_BRIDGE_DIR: " /tmp/bridges ",
-        PATCHER_CLI_DIR: " /tmp/bb-bin ",
+        PATCHER_CLI_DIR: " /tmp/patcher-bin ",
         PATCHER_HOST_ENROLL_KEY: " enroll-token ",
         PATCHER_HOST_DAEMON_AUTO_UPDATE: "true",
         PATCHER_HOST_ID: " host-123 ",
@@ -781,7 +781,7 @@ describe("consumer-specific config", () => {
 
     expect(hostDaemonEntrypointConfig).toEqual({
       PATCHER_BRIDGE_DIR: "/tmp/bridges",
-      PATCHER_CLI_DIR: "/tmp/bb-bin",
+      PATCHER_CLI_DIR: "/tmp/patcher-bin",
       PATCHER_HOST_ENROLL_KEY: "enroll-token",
       PATCHER_HOST_DAEMON_AUTO_UPDATE: true,
       PATCHER_HOST_ID: "host-123",

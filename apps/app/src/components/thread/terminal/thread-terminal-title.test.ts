@@ -32,7 +32,7 @@ describe("terminal title normalization", () => {
   it("ignores short shell path titles", () => {
     expect(
       normalizeTerminalTitle({
-        title: "michael@host:~/bb",
+        title: "michael@host:~/patcher",
       }),
     ).toBeNull();
   });

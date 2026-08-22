@@ -94,7 +94,7 @@ describe("run-dev", () => {
 
   it("uses the home-relative checkout path for non-managed checkout paths", () => {
     const homeDir = "/Users/tester";
-    const repoRoot = "/Users/tester/src/work/bb-feature-copy";
+    const repoRoot = "/Users/tester/src/work/patcher-feature-copy";
 
     const config = resolveDevInstanceConfig({ homeDir, repoRoot });
 

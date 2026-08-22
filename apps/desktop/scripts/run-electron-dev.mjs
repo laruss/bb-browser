@@ -35,7 +35,7 @@ function createElectronAppEnv(env, config) {
 
 // Detect whether `bun run dev` is already serving the Vite app on its port. When it
 // is, the desktop shell loads that URL (live source + HMR) instead of the built
-// UI; when it is not, the desktop falls back to starting its own bb-app runtime.
+// UI; when it is not, the desktop falls back to starting its own patcher-app runtime.
 async function isViteDevServerReachable(appUrl) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), VITE_PROBE_TIMEOUT_MS);
@@ -73,7 +73,7 @@ process.stdout.write(
 process.stdout.write(
   viteReachable
     ? `@patcher/desktop: app ${appUrl} (Vite dev server — live reload)\n`
-    : `@patcher/desktop: app (own bb-app runtime — no Vite dev server on ${appUrl})\n`,
+    : `@patcher/desktop: app (own patcher-app runtime — no Vite dev server on ${appUrl})\n`,
 );
 process.stdout.write(`@patcher/desktop: user-data ${desktopUserDataDir}\n`);
 

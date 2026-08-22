@@ -28,12 +28,12 @@ vi.mock("@/lib/sdk", () => ({
   },
 }));
 
-const DEFAULT_CLONE_PATH = "/Users/me/bb/checkouts/bb";
+const DEFAULT_CLONE_PATH = "/Users/me/patcher/checkouts/patcher";
 
 const gitTarget: ProjectMachineSetupDialogTarget = {
   projectId: "proj_test",
   projectName: "Patcher",
-  gitRemoteUrl: "git@github.com:sawyerhood/bb.git",
+  gitRemoteUrl: "git@github.com:sawyerhood/patcher.git",
   hostId: "host_studio",
   hostName: "Mac Studio",
 };
@@ -54,7 +54,9 @@ function renderDialog(target: ProjectMachineSetupDialogTarget) {
   const onOpenChange = vi.fn();
   render(
     <QueryClientProvider
-      client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+      client={
+        new QueryClient({ defaultOptions: { queries: { retry: false } } })
+      }
     >
       <ProjectMachineSetupDialog
         target={target}
@@ -114,21 +116,19 @@ describe("ProjectMachineSetupDialog", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "change" }));
     fireEvent.change(screen.getByLabelText("Clone destination"), {
-      target: { value: "/Users/me/elsewhere/bb" },
+      target: { value: "/Users/me/elsewhere/patcher" },
     });
     fireEvent.keyDown(screen.getByLabelText("Clone destination"), {
       key: "Enter",
     });
     fireEvent.click(screen.getByRole("button", { name: "Clone & continue" }));
 
-    await waitFor(() =>
-      expect(sdk.projects.sources.add).toHaveBeenCalled(),
-    );
+    await waitFor(() => expect(sdk.projects.sources.add).toHaveBeenCalled());
     expect(sdk.projects.sources.add).toHaveBeenCalledWith({
       projectId: "proj_test",
       type: "clone",
       hostId: "host_studio",
-      targetPath: "/Users/me/elsewhere/bb",
+      targetPath: "/Users/me/elsewhere/patcher",
     });
   });
 
@@ -179,9 +179,7 @@ describe("ProjectMachineSetupDialog", () => {
     expect(
       await screen.findByText("Target directory is not empty"),
     ).toBeTruthy();
-    expect(
-      screen.getByText(/use the existing-folder option/u),
-    ).toBeTruthy();
+    expect(screen.getByText(/use the existing-folder option/u)).toBeTruthy();
   });
 
   it("submits an existing browsed folder as a local_path source", async () => {
@@ -189,22 +187,20 @@ describe("ProjectMachineSetupDialog", () => {
       path: DEFAULT_CLONE_PATH,
     });
     vi.mocked(sdk.hosts.directory).mockResolvedValue({
-      directory: "/Users/me/code/bb",
+      directory: "/Users/me/code/patcher",
       parent: "/Users/me/code",
       entries: [],
     });
     vi.mocked(sdk.hosts.pathsExist).mockResolvedValue({
-      existence: { "/Users/me/code/bb": true },
+      existence: { "/Users/me/code/patcher": true },
     });
     vi.mocked(sdk.projects.sources.add).mockResolvedValue({
       ...createdSource,
-      path: "/Users/me/code/bb",
+      path: "/Users/me/code/patcher",
     });
     const { onComplete } = renderDialog(gitTarget);
 
-    fireEvent.click(
-      screen.getByText("Use an existing folder on Mac Studio"),
-    );
+    fireEvent.click(screen.getByText("Use an existing folder on Mac Studio"));
     // The browser resolves the initial (home) listing as the picked folder.
     await screen.findByText("This folder is empty.");
     const submit = await screen.findByRole("button", {
@@ -219,7 +215,7 @@ describe("ProjectMachineSetupDialog", () => {
       projectId: "proj_test",
       type: "local_path",
       hostId: "host_studio",
-      path: "/Users/me/code/bb",
+      path: "/Users/me/code/patcher",
     });
   });
 

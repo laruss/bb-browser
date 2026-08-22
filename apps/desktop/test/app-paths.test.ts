@@ -6,7 +6,7 @@ import {
 } from "../src/app-paths.js";
 
 describe("desktop app paths", () => {
-  it("resolves the packaged bb-app bridge beside the active asar", () => {
+  it("resolves the packaged patcher-app bridge beside the active asar", () => {
     const paths: DesktopPathContext = {
       appPath: "/Applications/Patcher.app/Contents/Resources/app.asar",
       isPackaged: true,
@@ -14,11 +14,11 @@ describe("desktop app paths", () => {
     };
 
     expect(resolveDesktopBridgePath({ paths })).toBe(
-      "/Applications/Patcher.app/Contents/Resources/app.asar.unpacked/dist/bb-app-bridge.mjs",
+      "/Applications/Patcher.app/Contents/Resources/app.asar.unpacked/dist/patcher-app-bridge.mjs",
     );
   });
 
-  it("resolves the universal packaged bb-app bridge beside the selected arch asar", () => {
+  it("resolves the universal packaged patcher-app bridge beside the selected arch asar", () => {
     const paths: DesktopPathContext = {
       appPath: "/Applications/Patcher.app/Contents/Resources/app-arm64.asar",
       isPackaged: true,
@@ -26,7 +26,7 @@ describe("desktop app paths", () => {
     };
 
     expect(resolveDesktopBridgePath({ paths })).toBe(
-      "/Applications/Patcher.app/Contents/Resources/app-arm64.asar.unpacked/dist/bb-app-bridge.mjs",
+      "/Applications/Patcher.app/Contents/Resources/app-arm64.asar.unpacked/dist/patcher-app-bridge.mjs",
     );
   });
 

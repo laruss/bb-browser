@@ -191,14 +191,14 @@ export const PATCHER_SERVER_URL_ENV = defineEnvVar<string>({
 
 export const PATCHER_APP_VERSION_ENV = defineEnvVar<string>({
   description:
-    "Version of the running bb-app package. The bb-app launcher sets this from packages/bb-app/package.json; defaults to a sentinel for dev/source runs.",
+    "Version of the running patcher-app package. The patcher-app launcher sets this from packages/patcher-app/package.json; defaults to a sentinel for dev/source runs.",
   name: "PATCHER_APP_VERSION",
   parse: parseNonEmptyStringEnvValue,
 });
 
 export const PATCHER_APP_SURFACE_ENV = defineEnvVar<AppSurface>({
   description:
-    "Internal launcher marker for telemetry attribution. Set by bb-app and desktop launchers.",
+    "Internal launcher marker for telemetry attribution. Set by patcher-app and desktop launchers.",
   name: APP_SURFACE_ENV_NAME,
   parse: parseAppSurfaceEnvValue,
 });
@@ -309,7 +309,7 @@ export const PATCHER_CLI_ENV = defineEnvVar<string | undefined>({
 
 export const PATCHER_INHERITED_SKILLS_ROOTS_ENV = defineEnvVar<string[]>({
   description:
-    "Development-only path list of lower-priority inherited bb skill roots",
+    "Development-only path list of lower-priority inherited patcher skill roots",
   name: "PATCHER_INHERITED_SKILLS_ROOTS",
   parse: parsePathListEnvValue,
 });
@@ -330,7 +330,7 @@ export const PATCHER_HOST_ENROLL_KEY_ENV = defineEnvVar<string | undefined>({
 
 export const PATCHER_HOST_DAEMON_AUTO_UPDATE_ENV = defineEnvVar<boolean>({
   description:
-    "Allow a remote host daemon to install the exact bb-app package served by its server on a newer protocol mismatch",
+    "Allow a remote host daemon to install the exact patcher-app package served by its server on a newer protocol mismatch",
   name: "PATCHER_HOST_DAEMON_AUTO_UPDATE",
   parse: parseBooleanEnvValue,
 });
@@ -362,11 +362,12 @@ export const DEFAULT_PATCHER_SERVER_BIND_HOST: ServerBindHost =
   PATCHER_LOOPBACK_HOST;
 export const DEFAULT_PATCHER_EXTERNAL_URL = "";
 export const DEFAULT_OPENAI_API_KEY = "";
-// Public write-only PostHog ingestion key (these are safe to ship; they can
-// only create events). Telemetry still only activates in production server
-// runs and can always be disabled with PATCHER_TELEMETRY=false.
-export const DEFAULT_PATCHER_POSTHOG_API_KEY =
-  "phc_tejoYoNLV6vG8QAd5eYXXvcsENFYnP4brpZDGqG7zvpy";
+// Empty until Patcher has a PostHog project of its own. The key that shipped
+// here belonged to bb, and sending this fork's events to it would both pollute
+// upstream's data and hand them ours. An empty key disables telemetry outright
+// (see telemetry.ts), so production runs send nothing until a Patcher-owned
+// write-only key is set here or via PATCHER_POSTHOG_API_KEY.
+export const DEFAULT_PATCHER_POSTHOG_API_KEY = "";
 export const DEFAULT_PATCHER_TELEMETRY = true;
 export const DEFAULT_PATCHER_PLUGIN_PROCESS = true;
 export const DEFAULT_PATCHER_DEV_APP_HOST = "";

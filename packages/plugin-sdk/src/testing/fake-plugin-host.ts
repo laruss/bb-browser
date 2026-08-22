@@ -98,7 +98,7 @@ import {
 } from "./fake-sdk.js";
 
 /**
- * `createFakePluginHost` — an in-process stand-in for the BB server's plugin
+ * `createFakePluginHost` — an in-process stand-in for the Patcher server's plugin
  * runtime (apps/server/src/services/plugins/plugin-api.ts), for unit-testing
  * a plugin's `server.ts` without a server. `patcher` satisfies {@link PatcherPluginApi};
  * `harness` drives and inspects it.
@@ -517,7 +517,7 @@ export interface FakePluginInspectionState {
   readonly browserCalls: readonly FakeBrowserCall[];
 }
 
-/** Deterministic inputs that stand in for behavior normally driven by BB. */
+/** Deterministic inputs that stand in for behavior normally driven by Patcher. */
 export interface FakePluginBehaviorDrivers {
   /** Drive the stand-in browser surface behind `patcher.browser.*`. */
   browser: FakeBrowserDrivers;
@@ -539,7 +539,7 @@ export interface FakePluginBehaviorDrivers {
   /**
    * Invoke the plugin's CLI command with host semantics: the result's
    * exitCode must be a number, stdout/stderr default to "", and a throwing
-   * run() becomes `{ exitCode: 1, stderr: "bb <name> failed: …" }`.
+   * run() becomes `{ exitCode: 1, stderr: "patcher <name> failed: …" }`.
    */
   runCli(
     argv: string[],
@@ -3364,7 +3364,7 @@ function createFakePluginHostInternal(
           {
             exitCode: 1,
             stdout: "",
-            stderr: `bb ${registration.name} failed: ${errorMessage(error)}`,
+            stderr: `patcher ${registration.name} failed: ${errorMessage(error)}`,
           },
           argv.includes("--json"),
         );

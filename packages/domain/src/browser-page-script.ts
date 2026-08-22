@@ -19,7 +19,7 @@
  *   is for.
  * - **A world of its own, per plugin.** Each plugin's scripts share one isolated
  *   world; the page's own world and every other plugin's are separate objects
- *   graphs. The page cannot see `bb`, cannot see anything the script defines, and
+ *   graphs. The page cannot see `patcher`, cannot see anything the script defines, and
  *   the script cannot be shadowed by globals the page redefines. Patcher's own
  *   automation world (the CDP one behind the agent tools) is a third world again
  *   and shares nothing with either.

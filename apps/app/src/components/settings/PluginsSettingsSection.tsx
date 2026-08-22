@@ -85,7 +85,7 @@ const DROPDOWN_CONTENT_CLASS =
  * scaffolds a new plugin. The user reviews and sends.
  */
 const CREATE_PLUGIN_PROMPT =
-  "I want to build a new bb plugin. Use the patcher-plugin-authoring skill to scaffold a starter plugin and walk me through customizing it.";
+  "I want to build a new Patcher plugin. Use the patcher-plugin-authoring skill to scaffold a starter plugin and walk me through customizing it.";
 
 function statusPillVariant(status: string): PillVariant {
   if (status === "running") return "secondary";
@@ -488,7 +488,7 @@ function RemovePluginSection({ plugin }: { plugin: PluginListItem }) {
         <p className="text-sm font-medium text-foreground">Remove plugin</p>
         <p className="mt-0.5 text-xs text-muted-foreground">
           {isBuiltin
-            ? "Removes the plugin from BB. Its bundled files are left in place."
+            ? "Removes the plugin from Patcher. Its bundled files are left in place."
             : isPathSource
               ? "Uninstalls the plugin. Its local source files are left in place."
               : "Uninstalls the plugin and deletes its downloaded files."}
@@ -509,7 +509,7 @@ function RemovePluginSection({ plugin }: { plugin: PluginListItem }) {
             <DialogTitle>Remove {name}?</DialogTitle>
             <DialogDescription>
               {isBuiltin
-                ? "This removes the plugin and its stored settings. BB remembers the removal so the plugin stays hidden after restart; its bundled files remain in place."
+                ? "This removes the plugin and its stored settings. Patcher remembers the removal so the plugin stays hidden after restart; its bundled files remain in place."
                 : isPathSource
                   ? "This uninstalls the plugin and removes its stored settings. Its local source files stay on disk, so you can reinstall it."
                   : "This uninstalls the plugin, deletes its downloaded files, and removes its stored settings."}

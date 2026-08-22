@@ -255,7 +255,7 @@ describe("a remote handle against the in-process one", () => {
     ]);
   });
 
-  // `bb` itself has no server-side counterpart, and saying so beats handing
+  // `patcher` itself has no server-side counterpart, and saying so beats handing
   // back something that looks usable and silently does nothing.
   it("refuses to pretend it has the plugin's Patcher object", async () => {
     const { handle: remote } = await outOfProcess();

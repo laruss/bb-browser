@@ -220,7 +220,7 @@ const piEventTypeSchema = z
 // renders as "Unhandled Pi event" in the transcript.
 //
 // `agent_settled` fires after every agent run completes (Pi's
-// AgentSession._emitAgentSettled). BB already derives turn completion from
+// AgentSession._emitAgentSettled). Patcher already derives turn completion from
 // `agent_end` plus its `willRetry` flag, so the settle signal carries nothing
 // extra for us.
 const PI_IGNORED_EVENT_TYPES = new Set(["agent_settled"]);
@@ -1456,7 +1456,7 @@ export function createPiProviderAdapter(
           };
         case "thread/fork": {
           // Pi's provider identity == the Patcher threadId, so the source pi session
-          // id is command.sourceProviderThreadId (the source bb thread id). The
+          // id is command.sourceProviderThreadId (the source patcher thread id). The
           // new thread keeps command.threadId as its identity; the bridge forks
           // the source session's full history into the new thread's
           // deterministic session file. Same session-config fields as

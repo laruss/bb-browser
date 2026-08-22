@@ -750,7 +750,7 @@ export const tasksRpcContract = defineRpcContract({
       })
       .strict(),
   },
-  // BB workspace projects (proj_…) for the linked-project picker; distinct
+  // Patcher workspace projects (proj_…) for the linked-project picker; distinct
   // from this plugin's own task projects.
   listPatcherProjects: {
     input: z.null(),

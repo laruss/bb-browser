@@ -23,7 +23,7 @@ function systemTitle({
   return generatedConversationTitle({
     childOrigin: null,
     sourceKind: "system",
-    sourceName: "BB",
+    sourceName: "Patcher",
     sourceThreadId: null,
     sourceIsPluginSideChat: false,
     systemMessageKind,

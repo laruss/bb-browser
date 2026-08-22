@@ -52,7 +52,7 @@ export function registerInternalSessionRoutes(app: Hono, deps: AppDeps): void {
             daemonProtocolVersion: payload.protocolVersion,
             serverProtocolVersion: HOST_DAEMON_PROTOCOL_VERSION,
           },
-          "Rejecting daemon session: protocol version mismatch. An older auto-update-enabled daemon will install this server's bb-app; a newer daemon requires the server to be updated.",
+          "Rejecting daemon session: protocol version mismatch. An older auto-update-enabled daemon will install this server's patcher-app; a newer daemon requires the server to be updated.",
         );
         throw new ApiError(
           400,

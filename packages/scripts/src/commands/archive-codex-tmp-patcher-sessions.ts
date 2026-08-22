@@ -13,7 +13,7 @@ const DEFAULT_TMP_PATCHER_PATTERNS: readonly string[] = [
   "*/patcher-standalone-*",
   "*/patcher-integration-*",
   "*/patcher-integ-*",
-  "*/bb-qa-smoke-*",
+  "*/patcher-qa-smoke-*",
 ];
 const DEFAULT_ARCHIVE_CONCURRENCY = 25;
 const DEFAULT_PROGRESS_INTERVAL = 100;

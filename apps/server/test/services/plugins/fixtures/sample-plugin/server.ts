@@ -1,6 +1,6 @@
 /**
  * A real plugin server entry, loaded by the plugin process the way a user's
- * plugin is: default-exported factory, `bb` as its only argument.
+ * plugin is: default-exported factory, `patcher` as its only argument.
  *
  * It touches one member of each kind the boundary has to carry — a
  * notification (`log`), a request with a result (`storage.kv`), a registration

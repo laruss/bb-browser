@@ -89,8 +89,18 @@ describe("EnvironmentPickerUI multi-machine menu", () => {
   };
 
   const machineSources: readonly ProjectSource[] = [
-    { ...sources[0]!, id: "src_local", hostId: thisMachine.id, path: "~/bb" },
-    { ...sources[0]!, id: "src_studio", hostId: studio.id, path: "~/code/bb" },
+    {
+      ...sources[0]!,
+      id: "src_local",
+      hostId: thisMachine.id,
+      path: "~/patcher",
+    },
+    {
+      ...sources[0]!,
+      id: "src_studio",
+      hostId: studio.id,
+      path: "~/code/patcher",
+    },
   ];
 
   function renderMachineMenu(overrides?: {

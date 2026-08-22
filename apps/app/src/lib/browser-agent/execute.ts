@@ -191,7 +191,7 @@ function resolveTab(
 }
 
 const NOT_LIVE_HINT =
-  "Open the Browser surface in the BB desktop app and select that tab, then try again.";
+  "Open the Browser surface in the Patcher desktop app and select that tab, then try again.";
 
 /** Maps the shell's typed refusals onto the codes the agent tools speak. */
 function pageReadFailure(
@@ -565,7 +565,7 @@ async function readPage(
       ok: false,
       outcome: failure(
         "unsupported_command",
-        "This version of the BB desktop app cannot read page content.",
+        "This version of the Patcher desktop app cannot read page content.",
       ),
     };
   }
@@ -640,7 +640,7 @@ async function runBrowserCommand(
   if (desktopBrowser === null) {
     return failure(
       "desktop_unavailable",
-      "Browser control needs the BB desktop app; this session is running in a web browser.",
+      "Browser control needs the Patcher desktop app; this session is running in a web browser.",
     );
   }
 
@@ -735,7 +735,7 @@ async function runBrowserCommand(
       if (setMuted === undefined) {
         return failure(
           "desktop_unavailable",
-          "This BB desktop build cannot mute a tab.",
+          "This Patcher desktop build cannot mute a tab.",
         );
       }
       setMuted({ muted: command.muted, tabId: tab.id });
@@ -838,7 +838,7 @@ async function runBrowserCommand(
       if (desktopBrowser.respondToDialog === undefined) {
         return failure(
           "unsupported_command",
-          "This version of the BB desktop app cannot answer page dialogs.",
+          "This version of the Patcher desktop app cannot answer page dialogs.",
         );
       }
       const answered = await desktopBrowser.respondToDialog({
@@ -865,7 +865,7 @@ async function runBrowserCommand(
       if (desktopBrowser.snapshot === undefined) {
         return failure(
           "unsupported_command",
-          "This version of the BB desktop app cannot snapshot pages.",
+          "This version of the Patcher desktop app cannot snapshot pages.",
         );
       }
       const depth =
@@ -877,7 +877,7 @@ async function runBrowserCommand(
         if (desktopBrowser.snapshotIn === undefined) {
           return failure(
             "unsupported_command",
-            "This version of the BB desktop app cannot snapshot part of a page. Snapshot the whole page instead.",
+            "This version of the Patcher desktop app cannot snapshot part of a page. Snapshot the whole page instead.",
           );
         }
         result = await desktopBrowser.snapshotIn({
@@ -910,7 +910,7 @@ async function runBrowserCommand(
       if (desktopBrowser.interact === undefined) {
         return failure(
           "unsupported_command",
-          "This version of the BB desktop app cannot act on pages.",
+          "This version of the Patcher desktop app cannot act on pages.",
         );
       }
       const result = await desktopBrowser.interact({
@@ -954,7 +954,7 @@ async function runBrowserCommand(
       if (desktopBrowser.observe === undefined) {
         return failure(
           "unsupported_command",
-          "This version of the BB desktop app cannot capture or inspect pages.",
+          "This version of the Patcher desktop app cannot capture or inspect pages.",
         );
       }
       // A full-page capture is a different channel and a different mechanism,
@@ -968,7 +968,7 @@ async function runBrowserCommand(
         if (desktopBrowser.captureFullPage === undefined) {
           return failure(
             "unsupported_command",
-            "This version of the BB desktop app cannot capture a whole page — ask for the visible viewport instead.",
+            "This version of the Patcher desktop app cannot capture a whole page — ask for the visible viewport instead.",
           );
         }
         const captured = await desktopBrowser.captureFullPage({
@@ -1061,7 +1061,7 @@ async function runBrowserCommand(
       if (desktopBrowser.storage === undefined) {
         return failure(
           "unsupported_command",
-          "This version of the BB desktop app cannot read or write browser storage.",
+          "This version of the Patcher desktop app cannot read or write browser storage.",
         );
       }
       const result = await desktopBrowser.storage({
@@ -1110,7 +1110,7 @@ async function runBrowserCommand(
       if (desktopBrowser.control === undefined) {
         return failure(
           "unsupported_command",
-          "This version of the BB desktop app cannot evaluate scripts, mock requests or act by coordinate.",
+          "This version of the Patcher desktop app cannot evaluate scripts, mock requests or act by coordinate.",
         );
       }
       const result = await desktopBrowser.control({
@@ -1163,7 +1163,7 @@ async function runBrowserCommand(
       if (desktopBrowser.record === undefined) {
         return failure(
           "unsupported_command",
-          "This version of the BB desktop app cannot film a tab.",
+          "This version of the Patcher desktop app cannot film a tab.",
         );
       }
       const result = await desktopBrowser.record({
@@ -1317,7 +1317,7 @@ async function runBrowserCommand(
       if (setZoom === undefined) {
         return failure(
           "desktop_unavailable",
-          "This BB desktop build cannot zoom a page.",
+          "This Patcher desktop build cannot zoom a page.",
         );
       }
       // No clamping here: the command schema already refuses a factor outside

@@ -9,7 +9,7 @@ import {
 import plugin from "./server.js";
 
 /**
- * `bb browser …` exists to make the bridge observable without running an agent,
+ * `patcher browser …` exists to make the bridge observable without running an agent,
  * so what matters here is that it reaches the same API and reports the same
  * refusals — a debugging tool that lies about the state of the bridge is worse
  * than none.
@@ -32,7 +32,7 @@ function createHost() {
   return host;
 }
 
-describe("bb browser CLI", () => {
+describe("patcher browser CLI", () => {
   it("registers under a name the Patcher CLI allows", () => {
     const host = createHost();
     const cli = host.harness.inspection.registrations.cli;
@@ -52,7 +52,7 @@ describe("bb browser CLI", () => {
     const result = await host.harness.runCli([]);
 
     expect(result.exitCode).toBe(2);
-    expect(result.stdout).toContain("Usage: bb browser");
+    expect(result.stdout).toContain("Usage: patcher browser");
   });
 
   it("lists tabs, marking the active one and the cold ones", async () => {
@@ -163,7 +163,7 @@ describe("bb browser CLI", () => {
     host.harness.behavior.browser.setConnected(false);
     const offline = await host.harness.runCli(["tabs"]);
     expect(offline.exitCode).toBe(1);
-    expect(offline.stderr).toContain("open the BB desktop app");
+    expect(offline.stderr).toContain("open the Patcher desktop app");
   });
 
   it("rejects unknown commands and options rather than doing something else", async () => {
@@ -187,7 +187,7 @@ describe("bb browser CLI", () => {
   });
 });
 
-describe("bb browser CLI interaction", () => {
+describe("patcher browser CLI interaction", () => {
   function interactionHost() {
     const host = createHost();
     host.harness.behavior.browser.setPageContent("tab-1", {
@@ -412,7 +412,7 @@ describe("bb browser CLI interaction", () => {
   });
 });
 
-describe("bb browser observation commands", () => {
+describe("patcher browser observation commands", () => {
   function observationHost() {
     const host = createHost();
     host.harness.behavior.browser.setPageContent("tab-1", {
@@ -460,7 +460,7 @@ describe("bb browser observation commands", () => {
     );
 
     expect(result.exitCode).toBe(0);
-    // Resolved against the shell that ran `bb`, not the server process this
+    // Resolved against the shell that ran `patcher`, not the server process this
     // handler happens to execute in.
     const written = await readFile(join(directory, "shot.png"));
     expect(written.subarray(0, 4).toString("hex")).toBe("89504e47");
@@ -564,7 +564,7 @@ describe("bb browser observation commands", () => {
   });
 });
 
-describe("bb browser storage commands", () => {
+describe("patcher browser storage commands", () => {
   const COOKIE = {
     name: "session",
     value: "abc123",
@@ -802,7 +802,7 @@ describe("bb browser storage commands", () => {
   });
 });
 
-describe("bb browser direct control commands", () => {
+describe("patcher browser direct control commands", () => {
   it("sends the function as given and prints what came back", async () => {
     const host = createHost();
     host.harness.behavior.browser.setPageContent("tab-1", {

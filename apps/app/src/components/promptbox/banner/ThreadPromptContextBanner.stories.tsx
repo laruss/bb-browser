@@ -40,9 +40,7 @@ function PromptStage({
   return (
     <div
       data-promptbox-shell=""
-      className={
-        size === "desktop" ? "min-w-0 flex-1" : "w-[20rem] shrink-0"
-      }
+      className={size === "desktop" ? "min-w-0 flex-1" : "w-[20rem] shrink-0"}
     >
       {children}
     </div>
@@ -251,7 +249,7 @@ const untrackedOnlyStatus: WorkspaceStatus = {
         deletions: 0,
       },
       {
-        path: "apps/app/scripts/dev-bb-worktree.sh",
+        path: "apps/app/scripts/dev-patcher-worktree.sh",
         status: "??",
         insertions: 42,
         deletions: 0,
@@ -377,7 +375,7 @@ function buildPullRequestFixture(
     number: 128,
     title: "Show pull request status in the prompt context banner",
     state: "open",
-    url: "https://github.com/acme/bb/pull/128",
+    url: "https://github.com/acme/patcher/pull/128",
     baseRefName: "main",
     headRefName: "patcher/pr-context-banner",
     updatedAt: "2026-06-16T12:30:00Z",

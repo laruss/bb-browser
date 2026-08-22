@@ -27,7 +27,7 @@ function testToolchain() {
 
 /**
  * The registry's CI gate (plugin design §5.5 exit criteria): vendor EVERY
- * registry item into one fixture plugin and run the real `bb plugin build`
+ * registry item into one fixture plugin and run the real `patcher plugin build`
  * over it. Catches items whose source no longer compiles outside the app
  * (missing registryDependency links, an app-internal import that escaped the
  * closure walker, a dep missing from the item), and asserts the compiled CSS
@@ -65,7 +65,7 @@ afterAll(async () => {
 });
 
 describe("plugin component registry", () => {
-  it("every item vendors into a plugin that bb plugin build compiles", async () => {
+  it("every item vendors into a plugin that patcher plugin build compiles", async () => {
     const itemNames: string[] = [];
     for (const fileName of (await readdir(registryDir)).sort()) {
       if (fileName === "index.json") continue;
@@ -124,7 +124,7 @@ describe("plugin component registry", () => {
       "export default function plugin() {}\n",
     );
     // esbuild reads tsconfig paths for the "@/*" alias the vendored source
-    // uses — the same file `bb plugin new` scaffolds.
+    // uses — the same file `patcher plugin new` scaffolds.
     await writeFile(
       path.join(fixtureDir, "tsconfig.json"),
       JSON.stringify(

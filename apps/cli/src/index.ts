@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { Command } from "commander";
-import { maybeReexecViaPatcherCli } from "./bb-cli-reexec.js";
+import { maybeReexecViaPatcherCli } from "./patcher-cli-reexec.js";
 import { registerEnvironmentCommands } from "./commands/environment.js";
 import { registerFileCommands } from "./commands/file.js";
 import { registerGuideCommand } from "./commands/guide.js";
@@ -46,10 +46,10 @@ function getCliRuntimeContext(): CliRuntimeContext {
 }
 
 program
-  .name("bb")
-  .description("BB CLI - manage your AI coding agents")
+  .name("patcher")
+  .description("Patcher CLI - manage your AI coding agents")
   // Program flags (--version/--help) must precede the subcommand; required
-  // so `bb plugin run <id> --flag` passes flags through to the plugin.
+  // so `patcher plugin run <id> --flag` passes flags through to the plugin.
   .enablePositionalOptions()
   .version(resolvePatcherCliVersion());
 
@@ -66,10 +66,10 @@ Current context:
   PATCHER_SERVER_URL: ${context.serverUrl}
 
 Quick start:
-  bb status
-  bb project list
-  bb thread show <id>
-  bb thread spawn --project <id> --provider codex --prompt "..."
+  patcher status
+  patcher project list
+  patcher thread show <id>
+  patcher thread spawn --project <id> --provider codex --prompt "..."
 `;
 });
 
@@ -101,7 +101,7 @@ registerGuideCommand(program);
 registerVoiceCommands(program, getUrl);
 
 /**
- * Unknown top-level commands may be plugin-contributed `bb` subcommands
+ * Unknown top-level commands may be plugin-contributed `patcher` subcommands
  * (design §4.4): before letting commander error, ask the server for plugin
  * CLI contributions (short timeout, silent fallback) and proxy on a match.
  * Core commands always win — this only runs for names commander doesn't own.
@@ -133,8 +133,8 @@ async function tryPluginCommandProxy(): Promise<void> {
     const disabled = await findDisabledPluginForCommand(getUrl(), candidate);
     if (disabled !== null) {
       console.error(
-        `bb ${candidate} is provided by the "${disabled.id}" plugin, which is disabled — ` +
-          `run \`bb plugin enable ${disabled.id}\` or enable it in Plugins.`,
+        `patcher ${candidate} is provided by the "${disabled.id}" plugin, which is disabled — ` +
+          `run \`patcher plugin enable ${disabled.id}\` or enable it in Plugins.`,
       );
       process.exit(1);
     }

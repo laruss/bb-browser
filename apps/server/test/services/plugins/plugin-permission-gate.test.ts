@@ -29,7 +29,7 @@ describe("createPluginPermissionGate", () => {
     expect(() =>
       gate.assert("page.credentials", 'patcher.browser command "page.storage"'),
     ).toThrow(
-      /page\.storage.*"page\.credentials".*"noisy".*patcher\.permissions.*bb plugin reload noisy/s,
+      /page\.storage.*"page\.credentials".*"noisy".*patcher\.permissions.*patcher plugin reload noisy/s,
     );
   });
 

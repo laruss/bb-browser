@@ -47,7 +47,7 @@ function jsonResponse(value: object, status = 200): Response {
   });
 }
 
-describe("bb plugin update commands", () => {
+describe("patcher plugin update commands", () => {
   setupCommandOutputTestEnvironment();
 
   const register: CommandRegistrar = (program) =>

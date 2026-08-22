@@ -50,7 +50,7 @@ first:
 ## Try it
 
 ```bash
-bb plugin install ./examples/plugins/bookmarks
+patcher plugin install ./examples/plugins/bookmarks
 ```
 
 No settings. Open a page, press the star or `Cmd+D`, then `Cmd+T`: the page is

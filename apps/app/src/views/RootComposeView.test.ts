@@ -308,9 +308,9 @@ describe("readInitialPromptFromLocationState", () => {
     expect(
       readInitialPromptFromLocationState({
         focusPrompt: true,
-        initialPrompt: "Create a new bb automation to ",
+        initialPrompt: "Create a new Patcher automation to ",
       }),
-    ).toBe("Create a new bb automation to ");
+    ).toBe("Create a new Patcher automation to ");
   });
 
   it("returns null when no usable initialPrompt is present", () => {
@@ -329,13 +329,13 @@ describe("shouldReplaceInitialPromptFromLocationState", () => {
   it("returns true only for explicit replacement seed intents", () => {
     expect(
       shouldReplaceInitialPromptFromLocationState({
-        initialPrompt: "Create a new bb skill to review PRs.",
+        initialPrompt: "Create a new Patcher skill to review PRs.",
         replaceInitialPrompt: true,
       }),
     ).toBe(true);
     expect(
       shouldReplaceInitialPromptFromLocationState({
-        initialPrompt: "Create a new bb skill to review PRs.",
+        initialPrompt: "Create a new Patcher skill to review PRs.",
       }),
     ).toBe(false);
     expect(shouldReplaceInitialPromptFromLocationState(null)).toBe(false);

@@ -8,7 +8,7 @@ import { stopVerifiedProcess } from "@patcher/config/verified-process-stop";
 import type { VerifiedProcessOps } from "@patcher/config/verified-process-stop";
 
 /**
- * A "foreign runtime" is a Patcher this desktop app did not start: a `bb-app start`
+ * A "foreign runtime" is a Patcher this desktop app did not start: a `patcher-app start`
  * from a terminal, a launchd service, or a second desktop build. The desktop
  * finds it by probing the port, then describes it from the runtime file that
  * the launcher writes into the data directory.

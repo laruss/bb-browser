@@ -106,11 +106,11 @@ const permissionGrant: PendingInteraction = {
         network: null,
         fileSystem: {
           read: [
-            "/Users/michael/Projects/bb/apps/app",
-            "/Users/michael/Projects/bb/packages",
+            "/Users/michael/Projects/patcher/apps/app",
+            "/Users/michael/Projects/patcher/packages",
           ],
           write: [
-            "/Users/michael/Projects/bb/apps/app/src/components/promptbox",
+            "/Users/michael/Projects/patcher/apps/app/src/components/promptbox",
           ],
         },
       },

@@ -2,7 +2,7 @@
 // Tailwind theme entry (apps/app/src/components/ui/theme.css) and the
 // repo-installed tw-animate-css.
 //
-// The plugin CSS pass (`bb plugin build`) compiles utilities against the same
+// The plugin CSS pass (`patcher plugin build`) compiles utilities against the same
 // semantic tokens the host uses (`bg-background`, `text-sm`, `animate-in`, …).
 // Both inputs are embedded as strings so the packaged CLI needs no runtime
 // resolution of app source or style-only npm exports (tw-animate-css exports
@@ -78,7 +78,10 @@ function extractThemeBlocks(css) {
 }
 
 function escapeTemplateLiteral(value) {
-  return value.replace(/\\/g, "\\\\").replace(/`/g, "\\`").replace(/\$\{/g, "\\${");
+  return value
+    .replace(/\\/g, "\\\\")
+    .replace(/`/g, "\\`")
+    .replace(/\$\{/g, "\\${");
 }
 
 const [themeCss, twAnimateCss, twAnimatePackageJson] = await Promise.all([

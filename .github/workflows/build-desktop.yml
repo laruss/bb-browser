@@ -56,13 +56,13 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Typecheck desktop and launcher
-        run: bunx turbo run typecheck --filter=@patcher/desktop --filter=bb-app --output-logs=new-only
+        run: bunx turbo run typecheck --filter=@patcher/desktop --filter=patcher-app --output-logs=new-only
 
       - name: Build desktop
         run: bunx turbo run build --filter=@patcher/desktop --output-logs=new-only
 
       - name: Test desktop and launcher
-        run: bunx turbo run test --filter=@patcher/desktop --filter=bb-app --force --output-logs=new-only
+        run: bunx turbo run test --filter=@patcher/desktop --filter=patcher-app --force --output-logs=new-only
 
       - name: Validate macOS signing secrets
         env:
@@ -253,5 +253,5 @@ jobs:
             echo "- prerelease version: ${IS_PRERELEASE}"
             echo "- stable release publication requested and allowed: ${SHOULD_PUBLISH}"
             echo "- release binary upload enabled: ${PUBLISH_BINARIES}"
-            echo "- desktop feed URL: https://github.com/get-bb/bb/releases/download/desktop-latest/desktop-version.json"
+            echo "- desktop feed URL: https://github.com/laruss/patcher-browser/releases/download/desktop-latest/desktop-version.json"
           } >> "$GITHUB_STEP_SUMMARY"

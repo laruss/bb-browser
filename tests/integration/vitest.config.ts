@@ -27,7 +27,7 @@ export default defineWorkspaceTestConfig({
     include: ["fake/**/*.test.ts"],
     name: "@patcher/integration-tests",
     env: {
-      PATCHER_DATA_DIR: "/tmp/bb-integration-test",
+      PATCHER_DATA_DIR: "/tmp/patcher-integration-test",
       PATCHER_SERVER_PORT: "49161",
       PATCHER_SERVER_URL: "http://127.0.0.1:49161",
       PATCHER_HOST_DAEMON_PORT: "49162",

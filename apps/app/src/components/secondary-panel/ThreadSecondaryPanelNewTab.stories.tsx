@@ -515,7 +515,7 @@ function NewTabPanelStory({
       </div>
     ) : outcome.kind === "terminal" ? (
       <div className="flex min-h-full flex-col justify-center bg-neutral-950 px-4 font-mono text-xs text-emerald-100">
-        <p>$ bb terminal start</p>
+        <p>$ patcher terminal start</p>
         <p className="pt-1 text-emerald-300">
           Terminal tab opened from the New tab page.
         </p>

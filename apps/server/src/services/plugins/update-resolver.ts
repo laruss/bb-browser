@@ -204,7 +204,9 @@ export function evaluateCompatibility(args: {
 } {
   const appVersion = semver.coerce(args.appVersion);
   if (!appVersion) {
-    throw new Error(`cannot parse running bb version "${args.appVersion}"`);
+    throw new Error(
+      `cannot parse running Patcher version "${args.appVersion}"`,
+    );
   }
   const devMode = appVersion.version === "0.0.0";
   const patcherProblems: CompatibilityProblem[] = [];
@@ -239,7 +241,7 @@ export function evaluateCompatibility(args: {
         engine: "patcherPluginSdk",
         required: args.sdkRange,
         actual: PLUGIN_SDK_VERSION,
-        message: `requires bb plugin SDK ${args.sdkRange}, running SDK is ${PLUGIN_SDK_VERSION}`,
+        message: `requires patcher plugin SDK ${args.sdkRange}, running SDK is ${PLUGIN_SDK_VERSION}`,
       });
     }
   }

@@ -48,7 +48,10 @@ export interface NewProjectDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function NewProjectDialog({ open, onOpenChange }: NewProjectDialogProps) {
+export function NewProjectDialog({
+  open,
+  onOpenChange,
+}: NewProjectDialogProps) {
   const rpc = useTasksRpc();
   const navigation = useTasksNavigation();
   const projects = useProjects();
@@ -67,7 +70,7 @@ export function NewProjectDialog({ open, onOpenChange }: NewProjectDialogProps) 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // BB workspace projects, including Personal, for the linked-project picker.
+  // Patcher workspace projects, including Personal, for the linked-project picker.
   const patcherProjects = useTasksQuery(
     async (rpc) => (await rpc.call("listPatcherProjects")).patcherProjects,
     [],

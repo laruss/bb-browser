@@ -1,16 +1,16 @@
 {
   "name": "patcher-plugin-github",
   "version": "0.2.1",
-  "description": "Browse GitHub issues and pull requests in BB, then send them to agents.",
+  "description": "Browse GitHub issues and pull requests in Patcher, then send them to agents.",
   "private": true,
   "license": "MIT",
-  "homepage": "https://github.com/get-bb/bb#readme",
+  "homepage": "https://github.com/laruss/patcher-browser#readme",
   "bugs": {
-    "url": "https://github.com/get-bb/bb/issues"
+    "url": "https://github.com/laruss/patcher-browser/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/get-bb/bb.git",
+    "url": "git+https://github.com/laruss/patcher-browser.git",
     "directory": "plugins/github"
   },
   "type": "module",
@@ -27,7 +27,7 @@
   },
   "patcher": {
     "name": "GitHub",
-    "description": "Browse GitHub issues and pull requests in BB, then send them to agents.",
+    "description": "Browse GitHub issues and pull requests in Patcher, then send them to agents.",
     "branding": {
       "icon": "Github"
     },

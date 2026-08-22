@@ -10,7 +10,7 @@ import {
 
 export type CreateViaPromptKind = "skill" | "plugin" | "automation";
 
-export const CREATE_PLUGIN_PROMPT = "Create a new bb plugin that ";
+export const CREATE_PLUGIN_PROMPT = "Create a new Patcher plugin that ";
 
 interface Example {
   label: string;
@@ -190,7 +190,7 @@ export function CreateViaPromptExamples({
 
 export interface CreateWithTemplatesButtonProps {
   kind: CreateViaPromptKind;
-  /** Main-button text, e.g. "New automation" or "New bb skill". */
+  /** Main-button text, e.g. "New automation" or "New patcher skill". */
   label: string;
   menuActions?: readonly ResourceCreateMenuAction[];
   /** Blank when called with no argument; seeded when given an example prompt. */

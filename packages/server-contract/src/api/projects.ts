@@ -299,7 +299,7 @@ export const providerCommandSchema = z.object({
   description: z.string().nullable(),
   /** `null` = no argument hint. */
   argumentHint: z.string().nullable(),
-  /** Present when this skill is contributed by a running bb plugin. */
+  /** Present when this skill is contributed by a running Patcher plugin. */
   pluginId: z.string().min(1).optional(),
 });
 export type ProviderCommand = z.infer<typeof providerCommandSchema>;

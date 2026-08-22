@@ -3,7 +3,7 @@
   "name": "dialog",
   "type": "registry:ui",
   "title": "dialog",
-  "description": "BB ui \"dialog\" — vendored from the BB app's own source (version-matched to this BB release).",
+  "description": "Patcher ui \"dialog\" — vendored from the Patcher app's own source (version-matched to this Patcher release).",
   "dependencies": [
     "@radix-ui/react-dialog",
     "@radix-ui/react-slot"

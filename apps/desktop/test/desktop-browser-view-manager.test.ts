@@ -43,7 +43,7 @@ import {
   type DesktopBrowserHostWindow,
 } from "../src/desktop-browser-view.js";
 
-const TEST_DOWNLOAD_DIRECTORY = "/tmp/bb-test-downloads";
+const TEST_DOWNLOAD_DIRECTORY = "/tmp/patcher-test-downloads";
 const TEST_PAGE_SCRIPT_PRELOAD_PATH = "/app/dist/page-script-preload.cjs";
 
 function createDesktopBrowserViewManager(

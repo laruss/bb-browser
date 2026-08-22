@@ -9,7 +9,7 @@ import {
 } from "../helpers/command-output-harness.js";
 import { registerSkillCommands } from "../../commands/skill.js";
 
-describe("bb skill commands", () => {
+describe("patcher skill commands", () => {
   setupCommandOutputTestEnvironment();
 
   const register: CommandRegistrar = (program) =>

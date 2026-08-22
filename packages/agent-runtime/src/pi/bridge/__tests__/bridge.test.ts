@@ -302,7 +302,7 @@ describe("pi bridge", () => {
       bridge.sendRequest(1, "thread/start", {
         cwd: "/tmp/worktree",
         threadId: "thread-append",
-        appendSystemPrompt: "BB append instructions",
+        appendSystemPrompt: "Patcher append instructions",
       });
       await bridge.waitForResponse(1);
 
@@ -316,7 +316,7 @@ describe("pi bridge", () => {
         mockResourceLoaders[0]?.options.appendSystemPromptOverride?.([
           "Project append instructions",
         ]),
-      ).toEqual(["Project append instructions", "BB append instructions"]);
+      ).toEqual(["Project append instructions", "Patcher append instructions"]);
     } finally {
       bridge.restore();
     }
@@ -332,14 +332,14 @@ describe("pi bridge", () => {
       bridge.sendRequest(5, "thread/start", {
         cwd: "/tmp/worktree",
         threadId: "thread-skills",
-        additionalSkillPaths: ["/tmp/bb-skills", "/tmp/repo-skills"],
+        additionalSkillPaths: ["/tmp/patcher-skills", "/tmp/repo-skills"],
       });
       await bridge.waitForResponse(5);
 
       expect(mockResourceLoaders).toHaveLength(1);
       expect(mockResourceLoaders[0]?.options).toMatchObject({
         cwd: "/tmp/worktree",
-        additionalSkillPaths: ["/tmp/bb-skills", "/tmp/repo-skills"],
+        additionalSkillPaths: ["/tmp/patcher-skills", "/tmp/repo-skills"],
       });
       expect(mockResourceLoaders[0]?.options.noSkills).toBeUndefined();
     } finally {

@@ -16,7 +16,7 @@ Demonstrates the SDK's host-owned `ThreadChat` component and the
 ## Install
 
 ```
-bb plugin install ./examples/plugins/thread-chat-demo
+patcher plugin install ./examples/plugins/thread-chat-demo
 ```
 
 ## Try it

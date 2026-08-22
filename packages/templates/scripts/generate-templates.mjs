@@ -197,7 +197,7 @@ export type TemplateId = keyof TemplateVariables;
 `;
 
 // Embed @patcher/plugin-sdk's bundled .d.ts (committed by that package's build) as
-// strings so `bb plugin new` can ship them into a scaffold's types/ dir. Read
+// strings so `patcher plugin new` can ship them into a scaffold's types/ dir. Read
 // by file path — NOT a package import — to avoid a @patcher/templates → @patcher/plugin-sdk
 // dependency cycle (@patcher/sdk already depends on @patcher/templates).
 const pluginSdkDtsDir = path.join(
@@ -229,7 +229,7 @@ export const PLUGIN_SDK_DTS = ${JSON.stringify(pluginSdkDts)};
 export const PLUGIN_SDK_APP_DTS = ${JSON.stringify(pluginSdkAppDts)};
 `;
 
-// Embed the `bb plugin new --app` starter component set from the plugin
+// Embed the `patcher plugin new --app` starter component set from the plugin
 // component registry (plugin design §5.5): the transitive closure of the
 // starter items, as {target, content} pairs, plus the npm deps a scaffold
 // needs to build (dependencies) and typecheck (devDependencies) them —
@@ -329,7 +329,7 @@ export interface PluginStarterFile {
 
 export const PLUGIN_STARTER_FILES: readonly PluginStarterFile[] = ${JSON.stringify(starterFiles, null, 2)};
 
-/** npm deps \`bb plugin build\` bundles — must be installed to build. */
+/** npm deps \`patcher plugin build\` bundles — must be installed to build. */
 export const PLUGIN_STARTER_DEPENDENCIES: Readonly<Record<string, string>> = ${JSON.stringify(versionedDeps(starterBundledDeps), null, 2)};
 
 /** Runtime-shimmed packages — installed for editor/tsc types only. */

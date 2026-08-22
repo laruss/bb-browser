@@ -46,7 +46,7 @@ async function createFixture(
           args.protocolVersion ?? HOST_DAEMON_PROTOCOL_VERSION + 1,
       });
     }
-    if (url.endsWith("/install/bb-app.tgz")) {
+    if (url.endsWith("/install/patcher-app.tgz")) {
       return new Response("tarball");
     }
     throw new Error(`Unexpected URL: ${url}`);
@@ -92,7 +92,7 @@ describe("protocol self-update", () => {
     expect(test.runProcess).toHaveBeenCalledOnce();
     expect(test.runProcess).toHaveBeenCalledWith(
       "npm",
-      ["install", "-g", expect.stringContaining("bb-app-update-")],
+      ["install", "-g", expect.stringContaining("patcher-app-update-")],
       {
         env: expect.objectContaining({
           PATH: `${dirname(process.execPath)}${delimiter}/usr/bin:/bin`,

@@ -229,7 +229,7 @@ export interface PluginSlotMountProps {
  * plugin id to the SDK hooks and contains crashes to this instance.
  *
  * The `data-patcher-plugin={pluginId}` element is the scoping root for the
- * plugin's compiled stylesheet — `bb plugin build` wraps every utility rule
+ * plugin's compiled stylesheet — `patcher plugin build` wraps every utility rule
  * in `@scope ([data-patcher-plugin="<id>"], …)`, so plugin CSS can never leak
  * onto host elements or another plugin's pane (`data-patcher-plugin-root` stays
  * for stylesheets built before the per-plugin scope). `display: contents`

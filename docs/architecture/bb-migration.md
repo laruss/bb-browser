@@ -1,8 +1,8 @@
-# bb → Patcher: Migration Map
+# patcher → Patcher: Migration Map
 
 Phase 0 deliverable of [`docs/PROJECT_PLAN.md`](../PROJECT_PLAN.md) §18.
 
-Purpose: record what this fork inherits from `get-bb/bb`, what each inherited
+Purpose: record what this fork inherits from `laruss/patcher-browser`, what each inherited
 system is worth to a browser-first product, and which invariants must survive
 the transformation. Written before implementation so later phases can argue with
 a written baseline instead of rediscovering the codebase.
@@ -31,7 +31,7 @@ Four processes, from the recovered `system-overview.md`:
 | **Server** (`apps/server`)           | Central hub. All state in SQLite, HTTP API, WebSocket change notifications. Stateless itself; the DB is the source of truth. Owns product policy. |
 | **Host daemon** (`apps/host-daemon`) | Runs on each enrolled execution machine. Provisions workspaces, runs agent provider processes, posts events back. Owns host-local primitives.     |
 | **App** (`apps/app`)                 | React SPA served by the server.                                                                                                                   |
-| **CLI** (`apps/cli`)                 | Scriptable `bb`, same capabilities as the app.                                                                                                    |
+| **CLI** (`apps/cli`)                 | Scriptable `patcher`, same capabilities as the app.                                                                                               |
 
 Two contract packages define the boundaries: `@patcher/server-contract`
 (clients ↔ server) and `@patcher/host-daemon-contract` (server ↔ daemons).
@@ -90,7 +90,7 @@ Two structural gaps:
 
 ### Plugin platform — adapt, and it is stronger than the plan assumes
 
-Plugin manifest is the `bb` field of a plugin's own `package.json` (name,
+Plugin manifest is the `patcher` field of a plugin's own `package.json` (name,
 description, `branding.icon`, `server` entry, `app` entry). 13 bundled plugins
 under `plugins/` serve as live examples.
 
@@ -105,7 +105,7 @@ under `plugins/` serve as live examples.
 - **Backend API**: scoped settings with change subscriptions, KV storage, a
   plugin-owned SQLite database with migrations, thread event hooks, HTTP routes
   (auth modes `local` / `token` / `none`), typed RPC, realtime publish,
-  background services and cron schedules, `bb` CLI subcommands, **agent tools**,
+  background services and cron schedules, `patcher` CLI subcommands, **agent tools**,
   agent configuration and instruction contribution, mention providers, and
   `ui.requestInput` for user interaction.
 
@@ -294,7 +294,7 @@ the _project's_ `typescript` alias to it and linked `@typescript/old` →
 Two consequences, the second far worse than the first:
 
 - `rollup-plugin-dts` does a bare `import ts from "typescript"` and crashed, so
-  `@patcher/plugin-sdk` and `packages/bb-app` could not build.
+  `@patcher/plugin-sdk` and `packages/patcher-app` could not build.
 - The wrapper's `lib/tsc.js` is `require("@typescript/old/lib/tsc.js")`, so the
   wrapper's `tsc` **exited 0 having done nothing**. Typechecks only stayed real
   because `typescript-7` won the `tsc` bin-name collision in `node_modules/.bin`.
@@ -414,7 +414,7 @@ working:
 The general lesson for the sweep: grep the whole tree, not just the extensions
 you expect. `pnpm` also survived in the `packageManager`-refusal path — pnpm now
 declines to run at all ("This project is configured to use bun"), which is what
-surfaced a test that spawned `pnpm run --silent bb` directly.
+surfaced a test that spawned `pnpm run --silent patcher` directly.
 
 ### Translation table
 
@@ -436,7 +436,7 @@ by default, which would swallow a dev server's logs.
 Two things stayed on other tools deliberately. `packages/plugin-build/src/toolchain.ts`
 still installs Patcher's pinned plugin-build packages with **npm** into a private
 staging directory — that is product behaviour for building plugins, not
-repository tooling. And `bb-app-artifact.ts` still packs with `npm pack`, whose
+repository tooling. And `patcher-app-artifact.ts` still packs with `npm pack`, whose
 stdout contract the caller parses.
 
 ### Result against the baseline
@@ -762,7 +762,7 @@ on Node and 3/8 on Bun. Bun issue 4290 is the one to watch.
   without a contract change.
 - **Toolchain**: Bun replaces pnpm as package manager and script runner. The
   runtime stays Node — plan §6 Stage 1 and §20 both warn against migrating a
-  runtime for consistency alone. Upstream `get-bb/bb` will not be merged, so
+  runtime for consistency alone. Upstream `laruss/patcher-browser` will not be merged, so
   replacing the lockfile costs nothing.
 - **Plugin host (plan Phase 7)**: every plugin runs outside the server process,
   builtin and third-party alike, on **Node**. One runtime for all of them, with

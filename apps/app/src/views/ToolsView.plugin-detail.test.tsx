@@ -42,7 +42,7 @@ const GITHUB_PLUGIN = {
   enabled: true,
   status: "running",
   statusDetail: null,
-  description: "Browse GitHub issues and pull requests in BB.",
+  description: "Browse GitHub issues and pull requests in Patcher.",
   name: "GitHub",
   icon: "Github",
   compactIconUrl: null,
@@ -58,7 +58,7 @@ const GITHUB_PLUGIN = {
   provenance: "catalog" as const,
   isOrphanedBuiltin: false,
   catalogEntryId: "github",
-  sourceDisplay: "BB Official · GitHub",
+  sourceDisplay: "Patcher Official · GitHub",
   updateState: EMPTY_PLUGIN_UPDATE_STATE,
 } satisfies PluginListItem;
 
@@ -66,7 +66,7 @@ const GITHUB_CATALOG_ENTRY = {
   entryId: "github",
   pluginId: "github",
   displayName: "GitHub",
-  description: "Browse GitHub issues and pull requests in BB.",
+  description: "Browse GitHub issues and pull requests in Patcher.",
   icon: "Github",
   category: "Developer tools",
   source: "builtin:github",
@@ -112,7 +112,7 @@ describe("ToolsScrollPage layout", () => {
 });
 
 describe("PluginDetail official catalog lifecycle", () => {
-  it("offers Install from an unowned BB Official plugin detail page", () => {
+  it("offers Install from an unowned Patcher Official plugin detail page", () => {
     const onInstall = vi.fn();
     const { container } = render(
       <CatalogPluginDetail
@@ -122,10 +122,10 @@ describe("PluginDetail official catalog lifecycle", () => {
     );
 
     expect(screen.getByRole("heading", { name: "GitHub" })).toBeTruthy();
-    expect(screen.getByText("BB Official")).toBeTruthy();
+    expect(screen.getByText("Patcher Official")).toBeTruthy();
     expect(screen.getByText("Developer tools")).toBeTruthy();
     const description = screen.getByText(
-      "Browse GitHub issues and pull requests in BB.",
+      "Browse GitHub issues and pull requests in Patcher.",
     );
     expect(description.className).not.toContain("max-w-prose");
     expect(description.className).toContain("max-w-none");
@@ -227,7 +227,7 @@ describe("PluginDetail official catalog lifecycle", () => {
     // Provenance is a passive label beside the name, not a control. It used to
     // be a button that swapped to a red Uninstall on hover — a status that
     // deleted on click.
-    expect(screen.getByText("BB Official")).toBeTruthy();
+    expect(screen.getByText("Patcher Official")).toBeTruthy();
     expect(
       screen.queryByRole("button", { name: "Uninstall GitHub" }),
     ).toBeNull();
@@ -237,7 +237,7 @@ describe("PluginDetail official catalog lifecycle", () => {
     expect(screen.getByText("About")).toBeTruthy();
     expect(screen.getByText("Release")).toBeTruthy();
     expect(
-      screen.getByText("Browse GitHub issues and pull requests in BB."),
+      screen.getByText("Browse GitHub issues and pull requests in Patcher."),
     ).toBeTruthy();
     const meta = screen.getByText("0.1.0");
     expect(meta.className).toContain("font-mono");
@@ -518,7 +518,7 @@ describe("PluginDetail official catalog lifecycle", () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText("BB Official")).toBeTruthy();
+    expect(screen.getByText("Patcher Official")).toBeTruthy();
     expect(
       screen.getByRole("switch", { name: "Disable Automations" }),
     ).toBeTruthy();
@@ -535,13 +535,13 @@ describe("PluginDetail official catalog lifecycle", () => {
     fireEvent.pointerMove(uninstall);
     expect(
       await screen.findAllByText(
-        "Included with BB; disable this plugin instead.",
+        "Included with Patcher; disable this plugin instead.",
       ),
     ).not.toHaveLength(0);
   });
 });
 
-describe("BB Official plugin detail routing", () => {
+describe("Patcher Official plugin detail routing", () => {
   it("resolves an uninstalled catalog plugin and opens its install confirmation", async () => {
     vi.stubGlobal(
       "fetch",
@@ -1132,7 +1132,7 @@ describe("PluginDetail capability inventory", () => {
       "Adds a page to the app sidebar.",
       "enhance-prompt",
       "Adds an action beside the thread composer.",
-      "bb capability",
+      "patcher capability",
       "Inspect contributed capabilities.",
       "review",
       "Review repository changes.",

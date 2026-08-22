@@ -30,7 +30,7 @@ async function initRepoWithOptionalSetup(
 ): Promise<string> {
   const repoPath = await makeTempDir("patcher-provisioning-repo-");
   await runGit(["init", "-b", "main"], { cwd: repoPath });
-  await runGit(["config", "user.name", "BB Tests"], { cwd: repoPath });
+  await runGit(["config", "user.name", "Patcher Tests"], { cwd: repoPath });
   await runGit(["config", "user.email", "patcher@example.com"], {
     cwd: repoPath,
   });
@@ -66,7 +66,7 @@ async function pushRemoteMainCommit(remotePath: string): Promise<string> {
   await runGit(["clone", "--branch", "main", remotePath, clonePath], {
     cwd: cloneParent,
   });
-  await runGit(["config", "user.name", "BB Tests"], { cwd: clonePath });
+  await runGit(["config", "user.name", "Patcher Tests"], { cwd: clonePath });
   await runGit(["config", "user.email", "patcher@example.com"], {
     cwd: clonePath,
   });
@@ -463,7 +463,7 @@ describe("workspace provisioning", () => {
   });
 
   it("scrubs inherited Patcher runtime env vars before running setup scripts", async () => {
-    vi.stubEnv("PATCHER_DATA_DIR", "/tmp/leaked-bb-data");
+    vi.stubEnv("PATCHER_DATA_DIR", "/tmp/leaked-patcher-data");
     vi.stubEnv("PATCHER_SERVER_PORT", "38986");
     vi.stubEnv("NODE_ENV", "development");
     vi.stubEnv("EXTERNAL_SETUP_ENV", "external-value");

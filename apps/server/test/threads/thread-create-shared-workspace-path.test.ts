@@ -126,7 +126,7 @@ describe("thread creation on a path another project already uses", () => {
       const { host } = seedHostSession(harness.deps, {
         id: "host-managed-alias",
       });
-      const worktreePath = "/tmp/bb-worktrees/env_owner/repo";
+      const worktreePath = "/tmp/patcher-worktrees/env_owner/repo";
       const { project: owner } = seedProjectWithSource(harness.deps, {
         hostId: host.id,
         name: "Owning Project",

@@ -24,7 +24,7 @@ async function writeFile(filePath: string, contents: string): Promise<void> {
 async function initRepo(gitignore: string): Promise<string> {
   const repoPath = await makeTempDir("patcher-worktree-include-repo-");
   await runGit(["init", "-b", "main"], { cwd: repoPath });
-  await runGit(["config", "user.name", "BB Tests"], { cwd: repoPath });
+  await runGit(["config", "user.name", "Patcher Tests"], { cwd: repoPath });
   await runGit(["config", "user.email", "patcher@example.com"], {
     cwd: repoPath,
   });

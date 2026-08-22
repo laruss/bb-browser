@@ -1,6 +1,6 @@
 # Plugin manifest, packaging, and distribution
 
-Everything `package.json` declares, what `bb plugin build` emits, how engine
+Everything `package.json` declares, what `patcher plugin build` emits, how engine
 ranges and updates are enforced, and how users install a plugin.
 
 The complete manifest, with the optional fields SKILL.md leaves out:
@@ -25,11 +25,11 @@ The complete manifest, with the optional fields SKILL.md leaves out:
 ```
 
 - `patcher.server` (required) — backend entry. Path installs load it as
-  TypeScript directly (no build step); `bb plugin build` also emits a
+  TypeScript directly (no build step); `patcher plugin build` also emits a
   self-contained `dist/server.js` + `server.meta.json` that git/npm installs
   prefer when its SDK major matches, so consumers never need npm or
   node_modules. `patcher.app` (optional) — frontend entry compiled by
-  `bb plugin build` into `dist/app.js` + `app.css` + `app.meta.json`; path
+  `patcher plugin build` into `dist/app.js` + `app.css` + `app.meta.json`; path
   and git installs build it automatically at install time. Git installs also
   run `npm install --omit=dev` first (so a git plugin may use third-party
   packages) and keep node_modules, since bundling cannot inline data files read
@@ -43,8 +43,8 @@ The complete manifest, with the optional fields SKILL.md leaves out:
   updates does not, because a check reads the manifest and never builds. Path
   installs build from dependencies you have already installed.
 - Building yourself (CI, or verifying a build without a running Patcher): add
-  `bb-app` to `devDependencies` and set `"build": "bb plugin build"`.
-  `bb plugin build` needs no server, and depending on `bb-app@X` builds
+  `patcher-app` to `devDependencies` and set `"build": "patcher plugin build"`.
+  `patcher plugin build` needs no server, and depending on `patcher-app@X` builds
   against exactly that release's shim configuration. Patcher downloads its build
   toolchain on first use, so cache `<dataDir>/plugins/toolchain-*` in CI.
 - `patcher.permissions` (optional, but **undeclared means denied**) — what this
@@ -52,7 +52,7 @@ The complete manifest, with the optional fields SKILL.md leaves out:
   nothing gated; the first call to a surface you did not declare throws with
   the permission named, and registering a browser contribution you did not
   declare fails the factory, so the plugin loads in `error`. Add entries as
-  you need them, then `bb plugin reload <id>`. An unknown string is rejected
+  you need them, then `patcher plugin reload <id>`. An unknown string is rejected
   at install, so a typo cannot silently grant nothing.
 
   | Permission              | Opens                                                                                                                                     |
@@ -79,7 +79,7 @@ The complete manifest, with the optional fields SKILL.md leaves out:
   | `downloads.handle`      | `browser.registerDownloadHandler`                                                                                                         |
   | `auth.provide`          | `browser.registerAuthProvider`                                                                                                            |
   | `pdf.provide`           | `browser.registerPdfTextProvider`                                                                                                         |
-  | `externalLink.handle`   | `browser.registerExternalLinkHandler` (every address the user opens from outside BB, while BB is the default browser)                     |
+  | `externalLink.handle`   | `browser.registerExternalLinkHandler` (every address the user opens from outside Patcher, while Patcher is the default browser)           |
   | `history`               | `browser.registerHistoryFilter` and `sdk.browserHistory` — the browsing history, read and write                                           |
   | `threads`               | `sdk.threads`, `sdk.threadSections`, `sdk.subscribe({event:"thread:changed"})`                                                            |
   | `filesystem`            | `sdk.files`                                                                                                                               |
@@ -145,17 +145,17 @@ The complete manifest, with the optional fields SKILL.md leaves out:
   (default `skills/`; `[]` opts out). Every `skills/<name>/SKILL.md` is
   injected into agent threads as the plugin skills tier.
 - `patcher.themes` (optional) — contributes palettes to Settings → Appearance and
-  `bb theme list`. Each entry is
+  `patcher theme list`. Each entry is
   `{ id, name, description?, css: "./themes/name.css" }`; Patcher namespaces its
   selectable id as `plugin:<plugin-id>:<id>`. Only loaded plugins contribute.
 - `patcher.name` and `patcher.description` (required) — non-empty human-facing plugin
   identity. The top-level package `name` remains the package identity and
   source of the plugin id.
 - `patcher.branding` (required) — declare `patcher.branding.icon` as either the plugin's
-  canonical BB icon name, such as `Zap`, or a plugin-relative compact SVG path
-  such as `./assets/icon.svg`. BB validates and hash-serves path-shaped SVGs,
+  canonical Patcher icon name, such as `Zap`, or a plugin-relative compact SVG path
+  such as `./assets/icon.svg`. Patcher validates and hash-serves path-shaped SVGs,
   then renders them as CSS masks so their shape inherits the surrounding text
-  color; SVG colors are ignored. BB reuses this icon on roomy surfaces when no
+  color; SVG colors are ignored. Patcher reuses this icon on roomy surfaces when no
   logo override is declared. Add `logo.light` only for
   intentionally different rich/full-size identity artwork; optional
   `logo.dark` is preferred in dark mode. Logo paths are explicit
@@ -163,12 +163,12 @@ The complete manifest, with the optional fields SKILL.md leaves out:
   missing/escaping files, unsupported extensions, and a dark logo without a
   light logo fail the manifest. There is no root logo auto-detection. Logo-only
   manifests remain supported for compatibility, so at least an icon or light
-  logo is required. BB uses a declared logo where space permits, such as roomy
+  logo is required. Patcher uses a declared logo where space permits, such as roomy
   Settings rows and cards.
   Compact sidebar, menu, action, mention, and panel-title surfaces prefer the
   plugin-owned icon asset, then a named manifest icon, then a contribution's
   local `icon` hint, then Zap. Branding changes are picked up on
-  `bb plugin reload`. Named inline icons use `currentColor`; compact SVG assets
+  `patcher plugin reload`. Named inline icons use `currentColor`; compact SVG assets
   should contain only the intended transparent glyph shape. Do not duplicate
   the same artwork across `icon` and `logo`; reserve logos for intentionally
   different branded artwork and provide a dark variant when needed.
@@ -177,17 +177,17 @@ The complete manifest, with the optional fields SKILL.md leaves out:
   (currently `1.0.0`; the scaffold writes `"^1.0.0"`). Absent means a legacy
   manifest. Managed (`git:`/`npm:`) installs **refuse** a mismatch against
   the running SDK; path installs surface it as `incompatible` at load.
-  Compatible updates (`bb plugin outdated` / `bb plugin update`) only select
+  Compatible updates (`patcher plugin outdated` / `patcher plugin update`) only select
   candidates that satisfy these ranges; newer incompatible releases are
   reported as blocked rather than applied. Dev builds (Patcher `0.0.0`) skip
   enforcing `engines.patcher` and annotate that on check results.
-- **Manual updates:** `bb plugin outdated` checks tracking sources and
-  `bb plugin update` applies compatible candidates (reinstall of an already
+- **Manual updates:** `patcher plugin outdated` checks tracking sources and
+  `patcher plugin update` applies compatible candidates (reinstall of an already
   installed managed plugin is refused). A failed activation **rolls back** to
   the previous state snapshot and records the failure for the user. Keep
   `engines.*` honest and ship load-safe factories so an update never strands
   users.
-- `bb plugin build` stamps authoritative metadata into both
+- `patcher plugin build` stamps authoritative metadata into both
   `dist/server.meta.json` and `dist/app.meta.json`: `sdkMajor`, `sdkVersion`,
   `artifactFormatVersion` (currently `1`), `pluginId`, `pluginVersion`, and
   `builtWith: { patcherVersion, pluginSdkVersion }`. Managed installs reject
@@ -207,17 +207,17 @@ Users can install third-party plugins directly from a local path, npm package,
 or Git repository:
 
 ```sh
-bb plugin install ./patcher-plugin-notes
-bb plugin install npm:patcher-plugin-notes@^1.0.0
-bb plugin install https://github.com/acme/patcher-plugin-notes
-bb plugin install git:https://github.com/acme/patcher-plugin-notes.git@main
+patcher plugin install ./patcher-plugin-notes
+patcher plugin install npm:patcher-plugin-notes@^1.0.0
+patcher plugin install https://github.com/acme/patcher-plugin-notes
+patcher plugin install git:https://github.com/acme/patcher-plugin-notes.git@main
 ```
 
 A bare HTTP(S) repository URL tracks its default branch. Use the `git:` form
 with an explicit branch, tag, or commit when that tracking intent matters.
 
-BB has one maintained set of official plugins; users cannot add third-party
-catalogs. Official-plugin inclusion is a BB release decision, not part of the
+Patcher has one maintained set of official plugins; users cannot add third-party
+catalogs. Official-plugin inclusion is a Patcher release decision, not part of the
 plugin authoring workflow: official plugins ship bundled inside the app itself
 and install from that local copy — no network fetch, no separate publish
 pipeline.

@@ -6,7 +6,7 @@ export interface AgentMessageEnvelope {
   senderThreadId: string;
 }
 
-/** Parses BB's reserved cross-thread message envelope from persisted text. */
+/** Parses Patcher's reserved cross-thread message envelope from persisted text. */
 export function parseAgentMessageEnvelope(
   text: string,
 ): AgentMessageEnvelope | null {

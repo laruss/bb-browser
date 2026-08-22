@@ -3,7 +3,7 @@ import {
   getBuiltInAgentProviderInfo,
   isAgentProviderId,
 } from "@patcher/agent-providers";
-import { formatCustomAcpAgentProviderId } from "@patcher/config/bb-app-managed-config";
+import { formatCustomAcpAgentProviderId } from "@patcher/config/patcher-app-managed-config";
 import {
   getAppSettings,
   getLatestThreadSequence,

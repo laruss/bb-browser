@@ -237,7 +237,7 @@ picks it — a mistake in a plugin should surface in its log, not as a dead row.
   contributed provider — so two plugins get a budget each rather than sharing one.
 - **Break the omnibox.** A throwing, hanging (2s box) or malformed provider
   contributes nothing; the browser's own rows are unaffected. Errors land in the
-  plugin's handler stats and log, visible in `bb plugin list`.
+  plugin's handler stats and log, visible in `patcher plugin list`.
 - **Impersonate another source.** The host stamps provider attribution, and the
   row's visible label is the plugin's own — a plugin row is identifiable as one.
 
@@ -259,7 +259,7 @@ abort signal, so the shared request is cancelled exactly when the run is.
   the cross-origin guard on both routes.
 - `heroes.test.ts` > `hero plugin: omnibox-agent` — the real example plugin
   installed as shipped: unconfigured it still contributes its navigate row, then
-  configure + `reload` adds the agent row, and picking it spawns a BB thread
+  configure + `reload` adds the agent row, and picking it spawns a Patcher thread
   attributed to the plugin whose URL the browser is told to open.
 - `plugin.test.ts` — adapter mapping, query stamping, per-provider group
   filtering, one request per query, rows from different plugins staying distinct.

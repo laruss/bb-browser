@@ -49,7 +49,7 @@ const PLUGIN_GROUP: PluginOmniboxSuggestGroup = {
       action: { type: "run" },
       itemId: "agent:ask",
       score: 0.8,
-      subtitle: "spawns a BB thread",
+      subtitle: "spawns a Patcher thread",
       title: "Ask an agent",
     },
   ],

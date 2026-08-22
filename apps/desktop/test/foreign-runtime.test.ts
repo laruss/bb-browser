@@ -28,7 +28,7 @@ function createProcessOps(
   return {
     isRunning: vi.fn(() => true),
     kill: vi.fn(),
-    readCommand: vi.fn(async () => "node /opt/bb/bb-app.js start"),
+    readCommand: vi.fn(async () => "node /opt/patcher/patcher-app.js start"),
     // Matches STARTED_AT, so the identity check passes by default.
     readElapsedSeconds: vi.fn(async () => 30 * 60),
     waitForExit: vi.fn(async () => true),
@@ -45,7 +45,7 @@ async function writeRuntimeFile(args: {
 }): Promise<void> {
   await writePatcherAppRuntimeFile({
     dataDir: args.dataDir,
-    entryPath: args.entryPath ?? "/opt/bb/bb-app.js",
+    entryPath: args.entryPath ?? "/opt/patcher/patcher-app.js",
     pid: args.pid ?? 4_242,
     serverUrl: args.serverUrl ?? "http://127.0.0.1:38986",
     startedAt: args.startedAt ?? STARTED_AT,
@@ -57,7 +57,7 @@ async function writeRuntimeFile(args: {
 function detailsFor(dataDir: string): ForeignRuntimeDetails {
   return {
     dataDir,
-    entryPath: "/opt/bb/bb-app.js",
+    entryPath: "/opt/patcher/patcher-app.js",
     pid: 4_242,
     startedAt: STARTED_AT,
     surface: "web",
@@ -135,7 +135,7 @@ describe("stopForeignRuntime", () => {
     await writeRuntimeFile({ dataDir });
     const processOps = createProcessOps({
       readCommand: vi.fn(
-        async () => "node packages/bb-app/dist/bb-app.js start",
+        async () => "node packages/patcher-app/dist/patcher-app.js start",
       ),
     });
 

@@ -2,7 +2,7 @@
 
 The `browser.contextMenu.items` and `browser.tab.actions` example — no frontend
 entry, no dependencies. Select text on a browsed page, right-click, **Explain
-with Agent**: a BB thread opens with an agent explaining what you selected.
+with Agent**: a Patcher thread opens with an agent explaining what you selected.
 Right-click the _tab_ instead and **Explain this page** does the same for the
 whole page.
 
@@ -22,8 +22,8 @@ What it demonstrates:
   Patcher screen and `""` for a tab with no page yet, and neither is a page to explain.
   It also carries `pinned`, `muted` and `active`, which is where a plugin is told
   the tab state that `patcher.browser.tabs.list()` does not report.
-- **`patcher.sdk.threads.spawn`** — the handler spawns a BB thread whose prompt quotes
-  the selection. BB fills in `origin: "plugin"` and
+- **`patcher.sdk.threads.spawn`** — the handler spawns a Patcher thread whose prompt quotes
+  the selection. Patcher fills in `origin: "plugin"` and
   `originPluginId: "explain-selection"`, so the thread is attributed in the
   thread list.
 - **`patcher.browser.tabs.open`** — the plugin then drives the browser the click came
@@ -36,13 +36,13 @@ What it demonstrates:
 ## Try it
 
 ```bash
-bb plugin install ./examples/plugins/explain-selection
-bb plugin config explain-selection set project <project-id>
-bb plugin reload explain-selection
+patcher plugin install ./examples/plugins/explain-selection
+patcher plugin config explain-selection set project <project-id>
+patcher plugin reload explain-selection
 ```
 
 Then open the browser surface (`/browser`, or the Browser button in the sidebar
-footer), select some text on a page and right-click — or right-click the tab. Change `run`, run `bb plugin
+footer), select some text on a page and right-click — or right-click the tab. Change `run`, run `patcher plugin
 reload explain-selection`, and the menu entry behaves differently — no
 browser-core edit involved. That round trip is the point of the example.
 
@@ -57,7 +57,7 @@ shell holds the list so a right-click opens without a round trip to the server,
 which means `title` and `when` are fixed at registration and whether the entry
 exists at all is decided once, at load. So this plugin registers nothing until a
 project is set — an entry that cannot work would sit in the menu doing nothing —
-and configuring it takes a `bb plugin reload` to show up.
+and configuring it takes a `patcher plugin reload` to show up.
 
 ## The selection is untrusted
 

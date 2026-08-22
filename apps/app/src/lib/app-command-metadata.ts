@@ -72,7 +72,7 @@ export const APP_COMMAND_GROUPS: readonly AppCommandGroup[] = [
         "New window",
         "Open another Patcher desktop window.",
       ),
-      command("settings.open", "Open settings", "Open bb settings."),
+      command("settings.open", "Open settings", "Open patcher settings."),
       command(
         "settings.openServers",
         "Open server settings",

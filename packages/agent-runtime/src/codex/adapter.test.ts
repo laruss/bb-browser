@@ -146,7 +146,7 @@ const unsafeHeadRefCases: readonly UnsafeHeadRefCase[] = [
   },
   {
     label: "absolute path",
-    headContent: "ref: /tmp/bb-main\n",
+    headContent: "ref: /tmp/patcher-main\n",
   },
   {
     label: "empty path segment",
@@ -560,9 +560,9 @@ describe("codex provider adapter", () => {
       type: "skills/configure",
       skillRoots: [
         {
-          id: "bb-cli",
+          id: "patcher-cli",
           providerId: "codex",
-          skillDirectoryRootPath: "/tmp/bb-skills",
+          skillDirectoryRootPath: "/tmp/patcher-skills",
         },
         {
           id: "repo-tools",
@@ -576,7 +576,7 @@ describe("codex provider adapter", () => {
       kind: "request",
       method: "skills/extraRoots/set",
       params: {
-        extraRoots: ["/tmp/bb-skills", "/tmp/repo-skills"],
+        extraRoots: ["/tmp/patcher-skills", "/tmp/repo-skills"],
       },
     });
   });
@@ -2124,7 +2124,7 @@ describe("codex provider adapter", () => {
   it("buildCommand turn/start includes additional workspace-write roots", () => {
     const adapter = createCodexProviderAdapter({
       additionalWorkspaceWriteRoots: [
-        "/repo/.git/worktrees/bb13",
+        "/repo/.git/worktrees/patcher13",
         "/repo/.git/objects",
         "/repo/.git/refs",
         "/repo/.git/logs",
@@ -2144,7 +2144,7 @@ describe("codex provider adapter", () => {
         sandboxPolicy: {
           type: "workspaceWrite",
           writableRoots: [
-            "/repo/.git/worktrees/bb13",
+            "/repo/.git/worktrees/patcher13",
             "/repo/.git/objects",
             "/repo/.git/refs",
             "/repo/.git/logs",

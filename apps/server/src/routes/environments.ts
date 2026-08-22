@@ -51,8 +51,8 @@ import {
 } from "./diff-tiering.js";
 
 const COMMIT_FALLBACK_MESSAGE = "Patcher: automated commit";
-const SQUASH_MERGE_FALLBACK_MESSAGE = "bb: squash merge";
-const PRE_MERGE_COMMIT_MESSAGE = "bb: pre-merge commit";
+const SQUASH_MERGE_FALLBACK_MESSAGE = "patcher: squash merge";
+const PRE_MERGE_COMMIT_MESSAGE = "patcher: pre-merge commit";
 
 /** Caps for diffs sent to the inference model for commit message generation. */
 const AI_MAX_DIFF_BYTES = 32_000;
@@ -181,14 +181,14 @@ function assertCanMarkPullRequestReady(
   pullRequest: ThreadPullRequest | null,
 ): void {
   if (!pullRequest) {
-    throw new ApiError(409, "pull_request_unavailable", "No pull request found");
-  }
-  if (pullRequest.state !== "draft") {
     throw new ApiError(
       409,
-      "invalid_request",
-      "Pull request is not a draft",
+      "pull_request_unavailable",
+      "No pull request found",
     );
+  }
+  if (pullRequest.state !== "draft") {
+    throw new ApiError(409, "invalid_request", "Pull request is not a draft");
   }
 }
 
@@ -196,14 +196,14 @@ function assertCanConvertPullRequestToDraft(
   pullRequest: ThreadPullRequest | null,
 ): void {
   if (!pullRequest) {
-    throw new ApiError(409, "pull_request_unavailable", "No pull request found");
-  }
-  if (pullRequest.state !== "open") {
     throw new ApiError(
       409,
-      "invalid_request",
-      "Pull request is not open",
+      "pull_request_unavailable",
+      "No pull request found",
     );
+  }
+  if (pullRequest.state !== "open") {
+    throw new ApiError(409, "invalid_request", "Pull request is not open");
   }
 }
 
@@ -211,7 +211,11 @@ function assertCanMergePullRequest(
   pullRequest: ThreadPullRequest | null,
 ): void {
   if (!pullRequest) {
-    throw new ApiError(409, "pull_request_unavailable", "No pull request found");
+    throw new ApiError(
+      409,
+      "pull_request_unavailable",
+      "No pull request found",
+    );
   }
   if (
     pullRequest.state !== "open" ||
@@ -420,10 +424,7 @@ export function registerEnvironmentRoutes(app: Hono, deps: AppDeps): void {
   });
 
   get(routes.diffFiles, async (context, query) => {
-    const target = resolveGitDiffWorkspaceTarget(
-      deps,
-      context.req.param("id"),
-    );
+    const target = resolveGitDiffWorkspaceTarget(deps, context.req.param("id"));
     if (target === null) {
       return context.json(NON_GIT_DIFF_NOT_APPLICABLE);
     }
@@ -484,10 +485,7 @@ export function registerEnvironmentRoutes(app: Hono, deps: AppDeps): void {
   });
 
   post(routes.diffPatch, async (context, payload) => {
-    const target = resolveGitDiffWorkspaceTarget(
-      deps,
-      context.req.param("id"),
-    );
+    const target = resolveGitDiffWorkspaceTarget(deps, context.req.param("id"));
     if (target === null) {
       return context.json(NON_GIT_DIFF_NOT_APPLICABLE);
     }

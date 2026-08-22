@@ -13,7 +13,7 @@ import {
 } from ".";
 
 interface TrackedThreadFixture {
-  patcher: ReturnType<typeof createFakePluginHost>["bb"];
+  patcher: ReturnType<typeof createFakePluginHost>["patcher"];
   harness: ReturnType<typeof createFakePluginHost>["harness"];
   store: ReturnType<typeof createStore>;
   taskId: string;

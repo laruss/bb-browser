@@ -1,6 +1,6 @@
 # patcher-plugin-memory
 
-BB's official plugin for durable, progressively disclosed agent memory. It
+Patcher's official plugin for durable, progressively disclosed agent memory. It
 provides:
 
 Because this memory store works across providers, we recommend turning off
@@ -11,7 +11,7 @@ duplicated or conflicting memories split between Codex, Claude Code, and Patcher
 - global and current-project memory scopes;
 - an automatically injected, 3,900-character summary catalog through
   `patcher.agents.contributeInstructions`;
-- CLI-only agent access through `bb memory` (no native agent tools);
+- CLI-only agent access through `patcher memory` (no native agent tools);
 - FTS5 search followed by full-record reads;
 - explicit provenance, tags, kinds, importance, pinning, and version history;
 - optimistic update/forget operations and soft deletion;
@@ -22,17 +22,17 @@ duplicated or conflicting memories split between Codex, Claude Code, and Patcher
 
 ## Install
 
-Install Memory from the BB Official catalog:
+Install Memory from the Patcher Official catalog:
 
 ```bash
-bb plugin install memory
-bb plugin list
+patcher plugin install memory
+patcher plugin list
 ```
 
 ## Try it
 
 ```bash
-bb memory add \
+patcher memory add \
   --scope project \
   --name turbo-validation \
   --summary "Use Turbo for builds and typechecks" \
@@ -44,11 +44,11 @@ bb memory add \
   --reason "Durable repository validation convention" \
   --json
 
-bb memory search "Turbo typecheck" --scope all --json
-bb memory get <id> --scope all --json
+patcher memory search "Turbo typecheck" --scope all --json
+patcher memory get <id> --scope all --json
 ```
 
-Project writes take the invoking CLI's BB project context. Global writes must
+Project writes take the invoking CLI's Patcher project context. Global writes must
 explicitly pass `--scope global`. The injected catalog refreshes at every
 thread start / turn submission, so a successful CLI write is visible on the
 next turn.
@@ -67,5 +67,5 @@ next turn.
 
 ```bash
 bunx turbo run test typecheck --filter=patcher-plugin-memory
-bb plugin dev ./plugins/memory
+patcher plugin dev ./plugins/memory
 ```

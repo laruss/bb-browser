@@ -515,7 +515,7 @@ describe("delegation seed prompt", () => {
       ## Attachments
 
       - delegation-notes.md · 01J00000000000000000000006
-        Fetch with: bb tasks attachment get 01J00000000000000000000006 --out <path>
+        Fetch with: patcher tasks attachment get 01J00000000000000000000006 --out <path>
 
       ## Recent comments
 
@@ -529,7 +529,7 @@ describe("delegation seed prompt", () => {
 
       ## Report-back contract
 
-      You are working on task TASK-1. Use the Patcher tasks CLI: comment substantive updates (bb tasks comment TASK-1 --body ...), attach result artifacts, set status when done (bb tasks update TASK-1 --status in_review) or explain blockage in a comment. Your thread is already attached to the task.
+      You are working on task TASK-1. Use the Patcher tasks CLI: comment substantive updates (patcher tasks comment TASK-1 --body ...), attach result artifacts, set status when done (patcher tasks update TASK-1 --status in_review) or explain blockage in a comment. Your thread is already attached to the task.
 
       ## Preset instructions
 

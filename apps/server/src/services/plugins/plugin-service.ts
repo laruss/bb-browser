@@ -195,7 +195,7 @@ export interface PluginService {
   /** Thread lifecycle event emitter, called from the lifecycle seams. */
   events: PluginThreadEventEmitter;
   /**
-   * Bind the in-process BB SDK to the running server. Call once the HTTP
+   * Bind the in-process Patcher SDK to the running server. Call once the HTTP
    * listener is up, before start(): patcher.sdk throws until this runs.
    */
   bindSdk(args: { baseUrl: string }): void;
@@ -2232,7 +2232,7 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
         notifyPluginsChanged();
         // A plugin stuck on needs-configuration is waiting for exactly this
         // save — reload it so the new values take effect without a manual
-        // `bb plugin reload` (the NeedsConfigurationError contract documents
+        // `patcher plugin reload` (the NeedsConfigurationError contract documents
         // this). Healthy plugins are NOT reloaded: they read settings lazily
         // via settings.get(), and restarting live services on every toggle
         // would be disruptive.
@@ -2401,7 +2401,7 @@ export function createPluginService(deps: PluginServiceDeps): PluginService {
         { source: ctx.signal },
       );
       if (outcome.ok) return outcome.value;
-      return fail(`bb ${registration.name} failed: ${outcome.error}`);
+      return fail(`patcher ${registration.name} failed: ${outcome.error}`);
     },
 
     listSkillRootContributions() {

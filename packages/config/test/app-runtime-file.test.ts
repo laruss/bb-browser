@@ -24,7 +24,7 @@ async function createDataDir(): Promise<string> {
 function recordFor(dataDir: string, pid: number) {
   return {
     dataDir,
-    entryPath: "/opt/bb/bb-app.js",
+    entryPath: "/opt/patcher/patcher-app.js",
     pid,
     serverUrl: "http://127.0.0.1:38986",
     startedAt: "2026-08-03T10:00:00.000Z",
@@ -56,7 +56,7 @@ describe("claimPatcherAppRuntimeFile", () => {
         isRunning: () => true,
       }),
     ).resolves.toBe(false);
-    // The live launcher keeps the record, so `bb-app stop` can still find it.
+    // The live launcher keeps the record, so `patcher-app stop` can still find it.
     await expect(readPatcherAppRuntimeFile(dataDir)).resolves.toMatchObject({
       pid: 1_111,
     });
@@ -128,7 +128,7 @@ describe("stopVerifiedProcess", () => {
     return {
       isRunning: () => true,
       kill: () => undefined,
-      readCommand: async () => "node /opt/bb/bb-app.js start",
+      readCommand: async () => "node /opt/patcher/patcher-app.js start",
       readElapsedSeconds: async () => 60,
       waitForExit: async () => true,
       ...overrides,
@@ -146,7 +146,7 @@ describe("stopVerifiedProcess", () => {
         signal: "SIGTERM",
         startedAt,
         timeoutMs: 10,
-        verifyTokens: ["bb-app.js"],
+        verifyTokens: ["patcher-app.js"],
       }),
     ).resolves.toEqual({ kind: "still-running" });
   });
@@ -160,7 +160,7 @@ describe("stopVerifiedProcess", () => {
       signal: "SIGTERM",
       startedAt,
       timeoutMs: 10,
-      verifyTokens: ["bb-app.js"],
+      verifyTokens: ["patcher-app.js"],
     });
 
     expect(result).toMatchObject({ kind: "unverified", reason: "start-time" });
@@ -174,7 +174,7 @@ describe("stopVerifiedProcess", () => {
       signal: "SIGTERM",
       startedAt,
       timeoutMs: 10,
-      verifyTokens: ["bb-app.js"],
+      verifyTokens: ["patcher-app.js"],
     });
 
     expect(result).toMatchObject({ kind: "unverified", reason: "start-time" });

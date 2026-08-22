@@ -169,7 +169,7 @@ describe("local API server", () => {
       path.join(dataDir, "client.json"),
       JSON.stringify({
         servers: {
-          "https://remote-bb.example.test": {
+          "https://remote-patcher.example.test": {
             hosts: {
               host_remote: {
                 sshAuthority: "devbox",
@@ -201,19 +201,19 @@ describe("local API server", () => {
         `http://localhost:${server.port}/workspace-open-targets?path=/tmp/file.ts`,
         {
           headers: {
-            Origin: "https://remote-bb.example.test",
+            Origin: "https://remote-patcher.example.test",
           },
         },
       );
       expect(corsResponse.headers.get("access-control-allow-origin")).toBe(
-        "https://remote-bb.example.test",
+        "https://remote-patcher.example.test",
       );
 
       const response = await client["open-in-target"].$post({
         json: {
           context: {
             kind: "remote-ssh",
-            serverOrigin: "https://remote-bb.example.test/projects/proj_1",
+            serverOrigin: "https://remote-patcher.example.test/projects/proj_1",
             hostId: "host_remote",
           },
           columnNumber: 4,
@@ -227,7 +227,7 @@ describe("local API server", () => {
       expect(openInTarget).toHaveBeenCalledWith({
         context: {
           kind: "remote-ssh",
-          serverOrigin: "https://remote-bb.example.test",
+          serverOrigin: "https://remote-patcher.example.test",
           hostId: "host_remote",
           sshAuthority: "devbox",
         },
@@ -249,7 +249,7 @@ describe("local API server", () => {
       path.join(dataDir, "client.json"),
       JSON.stringify({
         servers: {
-          "https://remote-bb.example.test": {
+          "https://remote-patcher.example.test": {
             hosts: {},
           },
         },
@@ -275,7 +275,7 @@ describe("local API server", () => {
         json: {
           context: {
             kind: "remote-ssh",
-            serverOrigin: "https://remote-bb.example.test",
+            serverOrigin: "https://remote-patcher.example.test",
             hostId: "host_missing",
           },
           columnNumber: null,
@@ -287,7 +287,7 @@ describe("local API server", () => {
 
       expect(response.status).toBe(400);
       expect(await response.text()).toContain(
-        "bb-app client ssh-target set https://remote-bb.example.test <ssh-target>",
+        "patcher-app client ssh-target set https://remote-patcher.example.test <ssh-target>",
       );
     } finally {
       await rm(dataDir, { recursive: true, force: true });
@@ -340,7 +340,7 @@ describe("local API server", () => {
       localApiConfig: createLocalApiConfig({
         bindHost: "127.0.0.1",
         healthPath: "/ready",
-        healthValue: "bb-host-daemon",
+        healthValue: "patcher-host-daemon",
         mode: "health-only",
       }),
       serverUrl: "http://server.test",
@@ -351,7 +351,7 @@ describe("local API server", () => {
 
     const healthResponse = await fetch(`http://127.0.0.1:${server.port}/ready`);
     expect(healthResponse.status).toBe(200);
-    expect(await healthResponse.text()).toBe("bb-host-daemon");
+    expect(await healthResponse.text()).toBe("patcher-host-daemon");
 
     const client = createHostDaemonLocalClient(
       `http://127.0.0.1:${server.port}`,

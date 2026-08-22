@@ -105,7 +105,7 @@ describe("task detail pull request pills", () => {
           listTaskPullRequests: () => ({
             pullRequests: [
               {
-                url: "https://github.com/acme/bb/pull/12",
+                url: "https://github.com/acme/patcher/pull/12",
                 number: 12,
                 title: "Ship the PR pill",
                 state: "merged",
@@ -122,7 +122,7 @@ describe("task detail pull request pills", () => {
     const link = (await slot.findByRole("link", {
       name: "Pull request #12: Ship the PR pill (Merged)",
     })) as HTMLAnchorElement;
-    expect(link.href).toBe("https://github.com/acme/bb/pull/12");
+    expect(link.href).toBe("https://github.com/acme/patcher/pull/12");
     // New-tab links must not leak the opener to GitHub.
     expect(link.target).toBe("_blank");
     expect(link.rel).toContain("noopener");
@@ -157,7 +157,7 @@ describe("task detail pull request pills", () => {
 
   it("revalidates PR state on window focus without a task-thread mutation", async () => {
     const basePullRequest = {
-      url: "https://github.com/acme/bb/pull/12",
+      url: "https://github.com/acme/patcher/pull/12",
       number: 12,
       title: "Ship the PR pill",
       updatedAt: "2026-07-16T10:00:00.000Z",

@@ -88,17 +88,22 @@ describe("resolveSkillScanRoots + discoverSkills (claude-code)", () => {
   it("classifies host-owned project and provider roots only", async () => {
     const fixture = await makeWorkspaceFixture();
     const files = {
-      "proj-bb": path.join(
+      "proj-patcher": path.join(
         fixture.cwd,
         ".patcher",
         "skills",
-        "proj-bb",
+        "proj-patcher",
         "SKILL.md",
       ),
-      "data-bb": path.join(fixture.dataDir, "skills", "data-bb", "SKILL.md"),
-      "builtin-bb": path.join(
+      "data-patcher": path.join(
+        fixture.dataDir,
+        "skills",
+        "data-patcher",
+        "SKILL.md",
+      ),
+      "builtin-patcher": path.join(
         fixture.builtinSkillsRootPath,
-        "builtin-bb",
+        "builtin-patcher",
         "SKILL.md",
       ),
       "proj-claude": path.join(
@@ -122,16 +127,16 @@ describe("resolveSkillScanRoots + discoverSkills (claude-code)", () => {
 
     const skills = await listSkills(fixture, "claude-code", fixture.cwd);
 
-    expect(byName(skills, "proj-bb")).toEqual({
+    expect(byName(skills, "proj-patcher")).toEqual({
       id: expect.stringMatching(/^skill_[a-f0-9]{64}$/u),
-      name: "proj-bb",
-      description: "proj-bb skill",
-      filePath: files["proj-bb"],
+      name: "proj-patcher",
+      description: "proj-patcher skill",
+      filePath: files["proj-patcher"],
       rootKind: "patcher-project",
       linked: false,
     });
-    expect(byName(skills, "data-bb")).toBeUndefined();
-    expect(byName(skills, "builtin-bb")).toBeUndefined();
+    expect(byName(skills, "data-patcher")).toBeUndefined();
+    expect(byName(skills, "builtin-patcher")).toBeUndefined();
     expect(byName(skills, "proj-claude")?.rootKind).toBe("provider-project");
     expect(byName(skills, "user-claude")?.rootKind).toBe("provider-user");
     // Every record carries its absolute SKILL.md path.
@@ -177,18 +182,18 @@ describe("resolveSkillScanRoots + discoverSkills (claude-code)", () => {
   it("drops project roots when cwd is null", async () => {
     const fixture = await makeWorkspaceFixture();
     await writeSkill(
-      path.join(fixture.cwd, ".patcher", "skills", "proj-bb", "SKILL.md"),
-      "proj-bb",
+      path.join(fixture.cwd, ".patcher", "skills", "proj-patcher", "SKILL.md"),
+      "proj-patcher",
     );
     await writeSkill(
-      path.join(fixture.dataDir, "skills", "data-bb", "SKILL.md"),
-      "data-bb",
+      path.join(fixture.dataDir, "skills", "data-patcher", "SKILL.md"),
+      "data-patcher",
     );
 
     const skills = await listSkills(fixture, "claude-code", null);
 
-    expect(byName(skills, "proj-bb")).toBeUndefined();
-    expect(byName(skills, "data-bb")).toBeUndefined();
+    expect(byName(skills, "proj-patcher")).toBeUndefined();
+    expect(byName(skills, "data-patcher")).toBeUndefined();
   });
 });
 
@@ -204,8 +209,8 @@ describe("resolveSkillScanRoots + discoverSkills (codex)", () => {
       "user-codex",
     );
     await writeSkill(
-      path.join(fixture.cwd, ".patcher", "skills", "proj-bb", "SKILL.md"),
-      "proj-bb",
+      path.join(fixture.cwd, ".patcher", "skills", "proj-patcher", "SKILL.md"),
+      "proj-patcher",
     );
 
     const skills = await listSkills(fixture, "codex", fixture.cwd);
@@ -213,7 +218,7 @@ describe("resolveSkillScanRoots + discoverSkills (codex)", () => {
     expect(byName(skills, "proj-codex")?.rootKind).toBe("provider-project");
     expect(byName(skills, "user-codex")?.rootKind).toBe("provider-user");
     // Patcher roots are shared across providers.
-    expect(byName(skills, "proj-bb")?.rootKind).toBe("patcher-project");
+    expect(byName(skills, "proj-patcher")?.rootKind).toBe("patcher-project");
   });
 
   it("classifies repository and nested .agents roots as codex project skills", async () => {

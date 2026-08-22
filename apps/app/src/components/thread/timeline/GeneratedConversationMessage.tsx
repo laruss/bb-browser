@@ -281,7 +281,7 @@ function generatedConversationEmptyText(
     case "agent":
       return "Sent an agent message";
     case "system":
-      return "Sent a BB system message";
+      return "Sent a Patcher system message";
   }
 }
 

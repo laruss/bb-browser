@@ -16,7 +16,7 @@ import { workflowUiRpcContract } from "./ui-contract.js";
 import { buildWorkflowRunView } from "./ui-view.js";
 
 // The named export lets the packaged-artifact smoke test execute the exact
-// runtime BB loads, including its embedded QuickJS WASM.
+// runtime Patcher loads, including its embedded QuickJS WASM.
 export { executeWorkflowScript };
 
 const sourceInputFields = {
@@ -61,7 +61,7 @@ const runInputSchema = z
       .min(1)
       .nullable()
       .describe(
-        "Run ID of a prior BB workflow to resume from. Calls in the causally safe, longest unchanged prefix return cached results; the first edited, new, or concurrent call and everything after it run live. The prior run must be terminal and from the same project and environment.",
+        "Run ID of a prior Patcher workflow to resume from. Calls in the causally safe, longest unchanged prefix return cached results; the first edited, new, or concurrent call and everything after it run live. The prior run must be terminal and from the same project and environment.",
       )
       .default(null),
   })
@@ -141,7 +141,7 @@ export default async function plugin(patcher: PatcherPluginApi) {
   patcher.agents.registerTool({
     name: "patcher_workflow_run",
     description:
-      "Execute a workflow script that orchestrates multiple subagents deterministically. Workflows run in the background — this tool returns immediately with a run ID and a `previewDirective`. After a successful call, emit that directive exactly once on its own line (not in a code fence) so BB renders live progress in chat. A completion notification is sent to the origin thread. Use `bb workflows status <run-id>` for a compact summary. For detailed history, redirect a bounded JSONL page from `bb workflows history <run-id> --cursor <call-index> --limit <1-100>` into `$PATCHER_THREAD_STORAGE`, then inspect the file with normal filesystem tools.",
+      "Execute a workflow script that orchestrates multiple subagents deterministically. Workflows run in the background — this tool returns immediately with a run ID and a `previewDirective`. After a successful call, emit that directive exactly once on its own line (not in a code fence) so Patcher renders live progress in chat. A completion notification is sent to the origin thread. Use `patcher workflows status <run-id>` for a compact summary. For detailed history, redirect a bounded JSONL page from `patcher workflows history <run-id> --cursor <call-index> --limit <1-100>` into `$PATCHER_THREAD_STORAGE`, then inspect the file with normal filesystem tools.",
     parameters: runInputSchema,
     async execute(input, ctx) {
       try {
@@ -204,14 +204,14 @@ export default async function plugin(patcher: PatcherPluginApi) {
         tools: ["patcher_workflow_result"],
         skills: [],
         instructions:
-          "You are starting as a BB workflow worker. Follow the workflow prompt. Your final text IS the return value, not a human-facing message. If the prompt requests structured output, call patcher_workflow_result exactly once at the end of your response.",
+          "You are starting as a Patcher workflow worker. Follow the workflow prompt. Your final text IS the return value, not a human-facing message. If the prompt requests structured output, call patcher_workflow_result exactly once at the end of your response.",
       };
     }
     return {
       tools: ["patcher_workflow_run"],
       skills: ["workflows"],
       instructions:
-        "When patcher_workflow_run succeeds, copy its previewDirective into your response exactly once as a standalone line. Do not wrap it in backticks or a code fence, and do not invent or edit the run ID. The directive renders live workflow progress in BB chat. `bb workflows status <run-id>` returns a compact summary. For detailed history, redirect `bb workflows history <run-id> --cursor <call-index> --limit <1-100>` into a file under `$PATCHER_THREAD_STORAGE`, then inspect that JSONL file with normal filesystem tools. Use each page record's `nextCursor` to continue.",
+        "When patcher_workflow_run succeeds, copy its previewDirective into your response exactly once as a standalone line. Do not wrap it in backticks or a code fence, and do not invent or edit the run ID. The directive renders live workflow progress in Patcher chat. `patcher workflows status <run-id>` returns a compact summary. For detailed history, redirect `patcher workflows history <run-id> --cursor <call-index> --limit <1-100>` into a file under `$PATCHER_THREAD_STORAGE`, then inspect that JSONL file with normal filesystem tools. Use each page record's `nextCursor` to continue.",
     };
   });
 
