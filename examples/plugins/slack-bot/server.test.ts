@@ -1,5 +1,5 @@
 // Backend tests for the slack-bot hero plugin, written against the official
-// harness (`@patcher/plugin-sdk/testing`) — no bb server, no Slack.
+// harness (`@patcher/plugin-sdk/testing`) — no Patcher server, no Slack.
 import { createHmac } from "node:crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {

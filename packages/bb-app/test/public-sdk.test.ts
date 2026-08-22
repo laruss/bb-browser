@@ -4,7 +4,7 @@ import { BBSdk } from "../src/public-sdk.js";
 describe("bb-app public SDK", () => {
   it("exposes every canonical SDK area instead of a narrowed duplicate", () => {
     const sdk = new BBSdk({
-      baseUrl: "http://bb.test",
+      baseUrl: "http://patcher.test",
       fetch: async () => new Response("{}"),
     });
 

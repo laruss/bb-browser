@@ -214,7 +214,7 @@ describe("bb updates command output", () => {
     vi.mocked(console.log).mockClear();
     await runCommand(["updates", "apply"], register);
     expect(collectLogPayloads(vi.mocked(console.log))).toEqual([
-      "No updates bb can apply. Run bb updates status for manual updates.",
+      "No updates Patcher can apply. Run bb updates status for manual updates.",
     ]);
   });
 });

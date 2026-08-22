@@ -22,7 +22,7 @@ describe("telemetry service", () => {
   let fetchMock: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
-    dataDir = await mkdtemp(join(tmpdir(), "bb-telemetry-test-"));
+    dataDir = await mkdtemp(join(tmpdir(), "patcher-telemetry-test-"));
     fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
   });

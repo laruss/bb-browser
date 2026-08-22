@@ -182,7 +182,7 @@ describe("@task mention provider", () => {
       expect(context).toContain("Sawyer · User");
       expect(context).toContain("thr_worker · Mention worker · Working");
       expect(context).toContain(
-        "You can act on this task with the bb tasks CLI.",
+        "You can act on this task with the Patcher tasks CLI.",
       );
       expect(context).toContain(
         "first run: bb tasks attach MEN-1 (attaches THIS thread so the task shows you as working)",

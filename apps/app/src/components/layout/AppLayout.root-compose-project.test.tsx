@@ -68,7 +68,7 @@ vi.mock("@/lib/iframe-drag-guard", () => ({
   IframeDragGuardOverlay: () => null,
 }));
 
-vi.mock("@/lib/bb-desktop", () => ({
+vi.mock("@/lib/patcher-desktop", () => ({
   CHROME_ROW_CLASS: "",
   DEFAULT_DESKTOP_WINDOW_STATE: { isFullScreen: false },
   MACOS_CHROME_CONTROL_AXIS_CLASS: "",

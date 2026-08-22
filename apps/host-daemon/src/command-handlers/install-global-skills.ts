@@ -15,7 +15,7 @@ import {
 import type { FetchSkillTree } from "../skill-trees.js";
 
 /**
- * Global skill roots read by agents running outside bb. `~/.agents/skills` is
+ * Global skill roots read by agents running outside Patcher. `~/.agents/skills` is
  * the cross-agent convention; `~/.claude/skills` is Claude Code's user root.
  */
 const GLOBAL_SKILL_ROOT_SEGMENTS: readonly (readonly string[])[] = [

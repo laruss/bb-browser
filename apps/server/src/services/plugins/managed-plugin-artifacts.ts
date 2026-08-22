@@ -188,7 +188,7 @@ export function createManagedPluginArtifacts(
    * This is what an update *check* runs. Checks are read-only by contract, so
    * they must not resolve a dependency tree: a `file:` or `git:` dependency an
    * author declared would otherwise reach local paths or new hosts every time
-   * bb polled for updates.
+   * Patcher polled for updates.
    */
   async function validateManifestOnly(args: {
     rootDir: string;
@@ -223,7 +223,7 @@ export function createManagedPluginArtifacts(
     const kind = sourceKind(args.source);
     const managed = kind === "git" || kind === "npm";
     // Dependency + bundle policy (design §5.1):
-    // - git: bb installs declared runtime deps (scripts disabled — nothing
+    // - git: Patcher installs declared runtime deps (scripts disabled — nothing
     //   executes) and builds BOTH bundles so those deps are inlined.
     //   node_modules is kept: esbuild only bundles statically reachable code,
     //   so a dependency that reads a data file or .wasm at runtime still needs

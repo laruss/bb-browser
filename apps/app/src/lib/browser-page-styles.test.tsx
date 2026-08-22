@@ -10,7 +10,7 @@ import {
 import {
   createPatcherDesktopApi,
   createNoopDesktopBrowserApi,
-} from "@/test/bb-desktop-test-utils";
+} from "@/test/patcher-desktop-test-utils";
 import type { PluginBrowserPageStyleContribution } from "@/hooks/queries/plugin-contribution-queries";
 import { useBrowserPageStyles } from "./browser-page-styles";
 

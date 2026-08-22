@@ -93,7 +93,7 @@ describe("probePatcherServer", () => {
     expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 
-  it("accepts a server with bb health and system config endpoints", async () => {
+  it("accepts a server with Patcher health and system config endpoints", async () => {
     const testServer = await startTestServer({
       handler(request, response) {
         if (request.url === "/health") {

@@ -1,6 +1,6 @@
 ---
 kind: instruction
-title: bb Terminal Guide
+title: Patcher Terminal Guide
 summary: Creating and managing persistent terminals across thread, environment, and machine scopes.
 intent: Help agents route terminal sessions explicitly and manage them by terminal ID.
 editingNotes: Keep scope selectors and ID-only commands aligned with bb terminal --help.
@@ -9,7 +9,7 @@ Terminal commands
 
 Use terminals for long-running commands that should stay alive for the user,
 such as dev servers, watch tasks, REPLs, and database consoles. A terminal is a
-real persistent PTY and appears in the bb UI.
+real persistent PTY and appears in the Patcher UI.
 
 List and create require exactly one explicit scope:
 

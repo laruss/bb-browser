@@ -3,10 +3,10 @@
 /**
  * Generic ACP bridge.
  *
- * Speaks bb's runtime JSON-RPC on stdio and acts as the ACP *client* for the
+ * Speaks Patcher's runtime JSON-RPC on stdio and acts as the ACP *client* for the
  * configured agent (Cursor): one agent subprocess and
- * one ACP session per bb thread. The bridge owns the cooperative permission
- * policy — it answers `session/request_permission` per bb's permission mode
+ * one ACP session per Patcher thread. The bridge owns the cooperative permission
+ * policy — it answers `session/request_permission` per Patcher's permission mode
  * (forwarding to the runtime when escalation is "ask") and enforces the
  * workspace write policy on client `fs/write_text_file` requests.
  */
@@ -763,7 +763,7 @@ async function loadSessionDiscoveredModels(
           method: "initialize",
           params: {
             protocolVersion: ACP_PROTOCOL_VERSION,
-            clientInfo: { name: "bb", version: "1.0.0" },
+            clientInfo: { name: "Patcher", version: "1.0.0" },
             clientCapabilities: {
               fs: { readTextFile: false, writeTextFile: false },
               terminal: false,
@@ -1527,7 +1527,7 @@ async function startAgentSession(
       method: "initialize",
       params: {
         protocolVersion: ACP_PROTOCOL_VERSION,
-        clientInfo: { name: "bb", version: "1.0.0" },
+        clientInfo: { name: "Patcher", version: "1.0.0" },
         clientCapabilities: {
           fs: { readTextFile: true, writeTextFile: true },
           terminal: false,
@@ -1698,7 +1698,7 @@ function runTurn(session: AcpThreadSession, firstInput: PromptInput[]): void {
       }
 
       if (stopReason !== "cancelled" && !session.stopping) {
-        // Steer inputs queued during the prompt continue the same bb turn.
+        // Steer inputs queued during the prompt continue the same Patcher turn.
         const next = session.queuedInputs.shift();
         if (next) {
           input = next;

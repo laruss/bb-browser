@@ -12,7 +12,7 @@ import { Suggestion, type SuggestionProps } from "@tiptap/suggestion";
 import type { IconSvgElement } from "@hugeicons/react";
 import { BubbleChatIcon } from "@hugeicons/core-free-icons";
 
-/** One entry in the @-mention popover: a task or a bb thread. */
+/** One entry in the @-mention popover: a task or a Patcher thread. */
 export type MentionItem =
   | { type: "task"; id: string; key: string; title: string }
   | { type: "thread"; id: string; title: string };

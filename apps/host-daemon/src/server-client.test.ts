@@ -56,7 +56,7 @@ describe("createServerClient", () => {
       getSessionId: () => "session-1",
       hostKey: "host-key",
       logger: createLogger(),
-      serverUrl: "https://bb.example.test",
+      serverUrl: "https://patcher.example.test",
     });
 
     const result = client.openSession({
@@ -82,7 +82,7 @@ describe("createServerClient", () => {
       getSessionId: () => "session-1",
       hostKey: "host-key",
       logger: createLogger(),
-      serverUrl: "http://bb.example.test",
+      serverUrl: "http://patcher.example.test",
     });
 
     await expect(
@@ -137,7 +137,7 @@ describe("createServerClient", () => {
       getSessionId: () => "session-1",
       hostKey: "host-key",
       logger: createLogger(),
-      serverUrl: "https://bb.example.test",
+      serverUrl: "https://patcher.example.test",
     });
 
     const attachment = await client.fetchProjectAttachment({
@@ -201,7 +201,7 @@ describe("createServerClient", () => {
       getSessionId: () => "session-1",
       hostKey: "host-key",
       logger: createLogger(),
-      serverUrl: "https://bb.example.test",
+      serverUrl: "https://patcher.example.test",
     });
 
     await client.fetchSkillTree(treeHash);
@@ -220,7 +220,7 @@ describe("createServerClient", () => {
       getSessionId: () => "session-1",
       hostKey: "host-key",
       logger: createLogger(),
-      serverUrl: "https://bb.example.test",
+      serverUrl: "https://patcher.example.test",
     });
 
     await expect(
@@ -306,7 +306,7 @@ describe("createServerClient", () => {
       getSessionId: () => "session-1",
       hostKey: "host-key",
       logger: createLogger(),
-      serverUrl: "https://bb.example.test",
+      serverUrl: "https://patcher.example.test",
     });
 
     await expect(
@@ -377,7 +377,7 @@ describe("createServerClient", () => {
       getSessionId: () => "session-1",
       hostKey: "host-key",
       logger,
-      serverUrl: "https://bb.example.test",
+      serverUrl: "https://patcher.example.test",
     });
 
     await expect(
@@ -421,7 +421,7 @@ describe("createServerClient", () => {
       getSessionId: () => "session-1",
       hostKey: "host-key",
       logger,
-      serverUrl: "https://bb.example.test",
+      serverUrl: "https://patcher.example.test",
     });
 
     const result = client.registerInteractiveRequest(

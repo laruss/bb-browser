@@ -79,7 +79,7 @@ const PARTS = [
     `import {createPluginChannel} from "${PACKAGE_ROOT}src/services/plugins/plugin-channel.ts"; console.error(typeof createPluginChannel);`,
   ],
   [
-    "plugin-api.ts (the whole bb builder)",
+    "plugin-api.ts (the whole Patcher builder)",
     `import {createPluginApi} from "${PACKAGE_ROOT}src/services/plugins/plugin-api.ts"; console.error(typeof createPluginApi);`,
   ],
   [

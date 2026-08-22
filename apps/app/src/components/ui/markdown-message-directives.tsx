@@ -31,7 +31,7 @@ import type { PluginMessageDirectiveSlot } from "@/lib/plugin-slots.js";
 /** Max plugin directive components mounted per message body. */
 export const MESSAGE_DIRECTIVE_MOUNT_LIMIT = 32;
 
-const MESSAGE_DIRECTIVE_HAST_NAME = "bb-message-directive";
+const MESSAGE_DIRECTIVE_HAST_NAME = "patcher-message-directive";
 // hast property key — `mdast-util-to-hast` lowercases it into
 // `data-directive-index` for the component to read back.
 const MESSAGE_DIRECTIVE_INDEX_PROPERTY = "dataDirectiveIndex";
@@ -118,7 +118,7 @@ interface MessageDirectiveElementProps {
 declare module "react" {
   namespace JSX {
     interface IntrinsicElements {
-      "bb-message-directive": MessageDirectiveElementProps;
+      "patcher-message-directive": MessageDirectiveElementProps;
     }
   }
 }

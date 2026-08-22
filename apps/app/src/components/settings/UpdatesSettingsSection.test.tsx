@@ -336,7 +336,7 @@ describe("UpdatesSettingsSection", () => {
 
     expect(screen.getByText("1 machine can't connect")).toBeDefined();
     expect(
-      screen.getByText("Can't connect — its bb agent is out of date"),
+      screen.getByText("Can't connect — its Patcher agent is out of date"),
     ).toBeDefined();
     expect(
       screen.getByText(

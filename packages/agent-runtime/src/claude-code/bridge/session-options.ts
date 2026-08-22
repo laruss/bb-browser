@@ -65,7 +65,7 @@ const READONLY_ALLOWED_TOOLS = new Set([
 ]);
 const READONLY_BASH_TOOL_NAME = "Bash";
 const READONLY_ASK_REASON =
-  "bb readonly mode requires approval before using tools that can modify state, run commands, access network, or perform non-read actions.";
+  "Patcher readonly mode requires approval before using tools that can modify state, run commands, access network, or perform non-read actions.";
 const SUMMARIZED_ADAPTIVE_THINKING = {
   type: "adaptive",
   display: "summarized",
@@ -114,11 +114,11 @@ export function buildMutableFlagSettings(args: {
 }
 
 export function buildReadonlyDenialMessage(): string {
-  return "bb readonly mode allows reading and analysis only. Continue with a read-only answer; do not modify files, run mutating shell commands, use network, or use mutating tools.";
+  return "Patcher readonly mode allows reading and analysis only. Continue with a read-only answer; do not modify files, run mutating shell commands, use network, or use mutating tools.";
 }
 
 export function buildWorkspaceWriteDenialMessage(): string {
-  return "bb's workspace sandbox allows work inside the current workspace only. Stay inside the workspace or explain why extra access is needed.";
+  return "Patcher's workspace sandbox allows work inside the current workspace only. Stay inside the workspace or explain why extra access is needed.";
 }
 
 function buildReadonlyHooks(
@@ -190,7 +190,7 @@ function buildReadonlyHooks(
   };
 }
 
-// The bb workspace sandbox applies only to the accept-edits/auto session
+// The Patcher workspace sandbox applies only to the accept-edits/auto session
 // modes. Plan (and the legacy default/dontAsk modes) keep the Claude SDK's
 // native tool gating without a sandbox, matching pre-preset behavior.
 function usesWorkspaceSandbox(params: BuildSessionOptionsArgs): boolean {
@@ -216,14 +216,14 @@ function buildWorkspaceWriteSandbox(
     // routinely lack them, and a missing sandbox should cost the session its
     // auto-allow, not its ability to run: `autoAllowBashIfSandboxed` only
     // auto-approves while the sandbox is actually active, so degrading falls
-    // back to bb's own `canUseTool` gating instead of running wide open.
+    // back to Patcher's own `canUseTool` gating instead of running wide open.
     failIfUnavailable: false,
     autoAllowBashIfSandboxed: true,
     // Sandbox settings are session-fixed while escalation changes per turn;
     // the unsandboxed retry stays enabled and `canUseTool` auto-denies it on
     // escalation-denied turns.
     allowUnsandboxedCommands: true,
-    // The bb CLI needs loopback to reach the local server, and
+    // The Patcher CLI needs loopback to reach the local server, and
     // escalation-denied turns have no unsandboxed-retry path around a block.
     // macOS-only and coarse (all localhost ports, binding on all interfaces);
     // the Linux sandbox ignores the flag.
@@ -268,7 +268,7 @@ function resolveExecutableOnPath(
 // The login-shell PATH probe can miss user-level install directories (slow
 // shell startup, PATH exports the probe does not source), so common Claude
 // install locations are checked before falling back to the SDK's bundled
-// binary, which packaged bb builds do not ship.
+// binary, which packaged Patcher builds do not ship.
 function wellKnownClaudeExecutablePaths(env: NodeJS.ProcessEnv): string[] {
   // Under elevated privileges a user-writable binary must never be picked up
   // implicitly; root operators can still set PATCHER_CLAUDE_CODE_EXECUTABLE.

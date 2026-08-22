@@ -59,10 +59,10 @@ interface UseUpdateInventoryOptions {
 }
 
 /**
- * One consolidated view of every update bb knows about: the bb app itself
+ * One consolidated view of every update Patcher knows about: the Patcher app itself
  * (npm registry / desktop feed) plus provider CLIs on every connected
  * machine. Remote daemons follow the server version automatically via
- * protocol self-update, so per-machine bb rows only surface when a daemon is
+ * protocol self-update, so per-machine Patcher rows only surface when a daemon is
  * stuck and needs a manual retry.
  */
 export function useUpdateInventory(

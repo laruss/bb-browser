@@ -9,7 +9,7 @@ const LOGGER_IMPORT_SPECIFIER = "@patcher/logger";
 const tempDirs: string[] = [];
 
 function createTempDir(): string {
-  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "bb-logger-"));
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "patcher-logger-"));
   tempDirs.push(tempDir);
   return tempDir;
 }

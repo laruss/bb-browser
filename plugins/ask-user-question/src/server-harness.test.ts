@@ -31,7 +31,7 @@ function configurationContext(
     project: {
       id: "proj-test",
       kind: "standard",
-      name: "bb",
+      name: "Patcher",
       gitRemoteUrl: null,
     },
     environment: {

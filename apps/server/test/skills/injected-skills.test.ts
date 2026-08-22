@@ -53,7 +53,7 @@ function resolveInjectedSkillSources(
 const tempDirs: string[] = [];
 
 async function makeTempDir(): Promise<string> {
-  const root = await mkdtemp(path.join(tmpdir(), "bb-injected-skills-"));
+  const root = await mkdtemp(path.join(tmpdir(), "patcher-injected-skills-"));
   tempDirs.push(root);
   return root;
 }
@@ -174,7 +174,7 @@ describe("injected skill source discovery", () => {
     }));
 
     const expected = createHash("sha256");
-    expected.update("bb-skill-tree-v1");
+    expected.update("patcher-skill-tree-v1");
     for (const entry of [...entries].sort((left, right) =>
       left.path < right.path ? -1 : left.path > right.path ? 1 : 0,
     )) {
@@ -350,18 +350,18 @@ describe("injected skill source discovery", () => {
     expect(warnings).toEqual([]);
   });
 
-  it("applies bb precedence around shared user and project roots", async () => {
+  it("applies Patcher precedence around shared user and project roots", async () => {
     const dataDir = await makeTempDir();
     const builtinSkillsRootPath = path.join(dataDir, "builtin-skills");
     const userSkillRoot = await writeSkill({
       rootPath: path.join(dataDir, "skills"),
       name: "review",
-      description: "bb user review skill.",
+      description: "Patcher user review skill.",
     });
     await writeSkill({
       rootPath: path.join(dataDir, "skills"),
       name: "deploy",
-      description: "bb user deploy skill.",
+      description: "Patcher user deploy skill.",
     });
     const sharedUserRoot = path.join(dataDir, "external", "review");
     const sharedProjectRoot = path.join(dataDir, "workspace", "deploy");
@@ -402,7 +402,7 @@ describe("injected skill source discovery", () => {
       expectedTreeSource({
         sourceType: "data-dir",
         name: "review",
-        description: "bb user review skill.",
+        description: "Patcher user review skill.",
         rootPath: userSkillRoot,
       }),
     ]);

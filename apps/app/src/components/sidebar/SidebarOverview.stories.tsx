@@ -76,7 +76,7 @@ const SIDEBAR_NAVIGATION_STORY_QUERY_KEY = sidebarNavigationQueryKey();
 
 const patcherProject = makeProject({
   id: "proj_story_bb",
-  name: "bb",
+  name: "Patcher",
 });
 const docsProject = makeProject({
   id: "proj_story_docs",

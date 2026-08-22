@@ -35,7 +35,7 @@ export default {
   title: "right-panel/New tab",
 };
 
-const PROJECT_ID = "proj_bb";
+const PROJECT_ID = "proj_patcher";
 const ENVIRONMENT_ID = "env_open_file_story";
 const STORY_SOURCE_LIMIT = 40;
 const BLANK_THREAD_ID = "thr_new_tab_blank_story";

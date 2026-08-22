@@ -186,7 +186,7 @@ describe("plugin commands (patcher.ui.registerCommand)", () => {
     ).toBe(403);
   });
 
-  // bb has no command palette, so a command with no chord could never be run —
+  // Patcher has no command palette, so a command with no chord could never be run —
   // saying so at load beats a registration that quietly does nothing.
   it("refuses to load a plugin whose command has no chord", async () => {
     const entry = await harness.pluginService.installPath(

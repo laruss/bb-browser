@@ -50,10 +50,10 @@ async function makeTempDir(prefix: string): Promise<string> {
 }
 
 async function initRepo(): Promise<string> {
-  const repoPath = await makeTempDir("bb-workspace-repo-");
+  const repoPath = await makeTempDir("patcher-workspace-repo-");
   await runGit(["init", "-b", "main"], { cwd: repoPath });
   await runGit(["config", "user.name", "BB Tests"], { cwd: repoPath });
-  await runGit(["config", "user.email", "bb@example.com"], { cwd: repoPath });
+  await runGit(["config", "user.email", "patcher@example.com"], { cwd: repoPath });
   await fs.writeFile(path.join(repoPath, "README.md"), "hello\n", "utf8");
   await runGit(["add", "README.md"], { cwd: repoPath });
   await runGit(["commit", "-m", "Initial commit"], { cwd: repoPath });
@@ -61,7 +61,7 @@ async function initRepo(): Promise<string> {
 }
 
 async function initBareRemoteFrom(repoPath: string): Promise<string> {
-  const remotePath = await makeTempDir("bb-workspace-remote-");
+  const remotePath = await makeTempDir("patcher-workspace-remote-");
   const barePath = `${remotePath}.git`;
   await runGit(["clone", "--bare", repoPath, barePath], {
     cwd: path.dirname(repoPath),
@@ -103,7 +103,7 @@ type PrimaryAndFeatureWorktree = {
 async function createPrimaryAndFeatureWorktree(): Promise<PrimaryAndFeatureWorktree> {
   const primaryRepo = await initRepo();
   const worktreeParent = await makeTempDir(
-    "bb-workspace-squash-worktree-parent-",
+    "patcher-workspace-squash-worktree-parent-",
   );
   const worktreePath = path.join(worktreeParent, "feature");
   await runGit(["worktree", "add", "-b", "feature", worktreePath, "main"], {
@@ -501,7 +501,7 @@ describe("Workspace", () => {
   });
 
   it("reports status for git repositories with no commits yet", async () => {
-    const repoPath = await makeTempDir("bb-workspace-unborn-repo-");
+    const repoPath = await makeTempDir("patcher-workspace-unborn-repo-");
     await runGit(["init", "-b", "main"], { cwd: repoPath });
     await fs.writeFile(
       path.join(repoPath, "staged.txt"),
@@ -883,7 +883,7 @@ describe("Workspace", () => {
 
   it("does not serialize different linked worktree checkout mutations", async () => {
     const repoPath = await initRepo();
-    const worktreeParent = await makeTempDir("bb-workspace-lock-worktrees-");
+    const worktreeParent = await makeTempDir("patcher-workspace-lock-worktrees-");
     const worktreePath = path.join(worktreeParent, "feature");
     await runGit(["worktree", "add", "-b", "feature", worktreePath, "main"], {
       cwd: repoPath,
@@ -910,7 +910,7 @@ describe("Workspace", () => {
 
   it("acquires multi-checkout mutation locks in stable order", async () => {
     const repoPath = await initRepo();
-    const worktreeParent = await makeTempDir("bb-workspace-multi-lock-");
+    const worktreeParent = await makeTempDir("patcher-workspace-multi-lock-");
     const worktreePath = path.join(worktreeParent, "feature");
     await runGit(["worktree", "add", "-b", "feature", worktreePath, "main"], {
       cwd: repoPath,
@@ -1108,7 +1108,7 @@ describe("Workspace", () => {
   });
 
   it("rejects git mutations for non-git directories", async () => {
-    const folder = await makeTempDir("bb-workspace-nongit-");
+    const folder = await makeTempDir("patcher-workspace-nongit-");
     const workspace = new Workspace(folder);
 
     expect(await workspace.isGitRepo).toBe(false);
@@ -1130,7 +1130,7 @@ describe("Workspace", () => {
   });
 
   it("lists files recursively for non-git directories", async () => {
-    const folder = await makeTempDir("bb-workspace-files-");
+    const folder = await makeTempDir("patcher-workspace-files-");
     await fs.mkdir(path.join(folder, "nested"), { recursive: true });
     await fs.writeFile(
       path.join(folder, "nested", "notes.txt"),
@@ -1152,10 +1152,10 @@ describe("Workspace", () => {
   });
 
   it("returns null when HEAD is unavailable in an empty repository", async () => {
-    const repoPath = await makeTempDir("bb-workspace-empty-repo-");
+    const repoPath = await makeTempDir("patcher-workspace-empty-repo-");
     await runGit(["init", "-b", "main"], { cwd: repoPath });
     await runGit(["config", "user.name", "BB Tests"], { cwd: repoPath });
-    await runGit(["config", "user.email", "bb@example.com"], { cwd: repoPath });
+    await runGit(["config", "user.email", "patcher@example.com"], { cwd: repoPath });
 
     const workspace = new Workspace(repoPath);
 
@@ -1167,7 +1167,7 @@ describe("getPullRequest", () => {
   it("reports a vanished workspace path as unavailable, not absent", async () => {
     const missingPath = path.join(
       os.tmpdir(),
-      `bb-missing-workspace-${process.pid}-${Date.now()}`,
+      `patcher-missing-workspace-${process.pid}-${Date.now()}`,
     );
     const workspace = new Workspace(missingPath);
     await expect(workspace.getPullRequest()).resolves.toEqual({

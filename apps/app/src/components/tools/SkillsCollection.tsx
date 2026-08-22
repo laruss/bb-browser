@@ -34,7 +34,7 @@ import {
   getProviderIconInfo,
 } from "@/lib/provider-icon";
 
-type ResourceProviderFilter = "bb" | SkillProvider;
+type ResourceProviderFilter = "patcher" | SkillProvider;
 type ResourceSkillSourceFilter = "included" | "patcher-official" | "user";
 type ResourceSortMode = "provider" | "alpha";
 type ResourceSortDirection = "asc" | "desc";
@@ -46,7 +46,7 @@ type ResourceSortDirection = "asc" | "desc";
 // while still compiling. The Type side gets the same guarantee from
 // `skillSourceFilterLabel`'s exhaustive switch.
 const RESOURCE_PROVIDER_FILTER_ORDER: Record<ResourceProviderFilter, number> = {
-  bb: 0,
+  patcher: 0,
   "claude-code": 1,
   codex: 2,
   "acp-cursor": 3,
@@ -67,16 +67,16 @@ const RESOURCE_SKILL_SOURCE_FILTERS: readonly ResourceSkillSourceFilter[] = [
 
 function providerLabel(provider: SkillProvider | null): string {
   return provider === null
-    ? "bb"
+    ? "Patcher"
     : (getProviderIconInfo(provider)?.ariaLabel ?? provider);
 }
 
 function skillProviderFilterId(skill: SkillSummary): ResourceProviderFilter {
-  return skill.provider ?? "bb";
+  return skill.provider ?? "patcher";
 }
 
 function providerFilterLabel(provider: ResourceProviderFilter): string {
-  return provider === "bb" ? "bb" : providerLabel(provider);
+  return provider === "patcher" ? "Patcher" : providerLabel(provider);
 }
 
 function skillSourceFilterId(skill: SkillSummary): ResourceSkillSourceFilter {
@@ -157,7 +157,7 @@ export function SkillProvenanceTooltip({
   return (
     <span className="inline-flex items-center gap-1.5">
       <span>{prefix}</span>
-      <span data-provider-icon={providerId ?? "bb"} aria-hidden="true">
+      <span data-provider-icon={providerId ?? "patcher"} aria-hidden="true">
         {providerId === null ? (
           <PatcherLogo className="size-3.5 brightness-0 invert" />
         ) : (
@@ -277,7 +277,7 @@ export function SkillsOverview({
 }: SkillsOverviewProps) {
   const [providerFilters, setProviderFilters] = useState<
     ResourceProviderFilter[]
-  >(["bb"]);
+  >(["patcher"]);
   // Empty means unfiltered: the menu has no explicit "All" row.
   const [sourceFilters, setSourceFilters] = useState<
     ResourceSkillSourceFilter[]
@@ -304,7 +304,7 @@ export function SkillsOverview({
       id: provider,
       label: providerFilterLabel(provider),
       leading:
-        provider === "bb" ? (
+        provider === "patcher" ? (
           <PatcherLogo className="size-4" />
         ) : (
           <ProviderLogo providerId={provider} className="size-4" />
@@ -353,7 +353,7 @@ export function SkillsOverview({
       );
     });
     return [...filtered].sort((left, right) => {
-      if (providerFilters.length === 1 && providerFilters[0] === "bb") {
+      if (providerFilters.length === 1 && providerFilters[0] === "patcher") {
         const officialResult =
           Number(left.scope !== "patcher-builtin") -
           Number(right.scope !== "patcher-builtin");
@@ -431,7 +431,7 @@ export function SkillsOverview({
     <ResourceListPanel>
       {libraryPagination.items.map((skill) => (
         <SkillRow
-          key={`${skill.scope}-${skill.provider ?? "bb"}-${skill.name}-${skill.filePath}`}
+          key={`${skill.scope}-${skill.provider ?? "patcher"}-${skill.name}-${skill.filePath}`}
           skill={skill}
           onSelect={() => onSelectSkill(skill)}
         />
@@ -442,7 +442,7 @@ export function SkillsOverview({
   return (
     <ResourceCollectionPage
       id="skills-collection"
-      description="Create and manage agent skills. bb skills work across every agent you use in bb."
+      description="Create and manage agent skills. Patcher skills work across every agent you use in Patcher."
       modes={[
         { id: "browse", label: "Browse" },
         {
@@ -637,7 +637,7 @@ export function SkillDetailDialogView({
         skill.scope === "patcher-builtin"
           ? {
               label: "BB Official",
-              tooltip: "Ships with bb",
+              tooltip: "Ships with Patcher",
               accessibleLabel: `${skill.name} is BB Official`,
             }
           : bundledPluginName !== null

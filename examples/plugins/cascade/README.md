@@ -14,7 +14,7 @@ to the host.
 ## What it demonstrates
 
 **`experimental_NewThreadComposer` — and the composer/plugin split.** The draft
-column at the end of each row renders bb's whole compose surface (prompt editor
+column at the end of each row renders Patcher's whole compose surface (prompt editor
 with @-mentions, attachments, model/reasoning picker, voice, project,
 environment, "Branch from:", permission mode). The composer resolves the user's
 selections; **the plugin creates the thread**:

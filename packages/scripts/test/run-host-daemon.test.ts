@@ -133,20 +133,20 @@ describe("run-host-daemon auto join", () => {
   });
 
   it("uses paired explicit dev overrides", () => {
-    vi.stubEnv("PATCHER_DATA_DIR", "~/bb-host-daemon-test");
+    vi.stubEnv("PATCHER_DATA_DIR", "~/patcher-host-daemon-test");
     vi.stubEnv("PATCHER_SERVER_URL", "http://127.0.0.1:19333");
 
     const env = runHostDaemon.resolveHostDaemonRuntimeEnvironment("dev");
 
     expect(env.PATCHER_DATA_DIR).toBe(
-      path.join(os.homedir(), "bb-host-daemon-test"),
+      path.join(os.homedir(), "patcher-host-daemon-test"),
     );
     expect(env.PATCHER_SERVER_URL).toBe("http://127.0.0.1:19333");
     expect(env.NODE_ENV).toBe("development");
   });
 
   it("rejects a dev data-dir override without a server URL override", () => {
-    vi.stubEnv("PATCHER_DATA_DIR", "~/bb-host-daemon-test");
+    vi.stubEnv("PATCHER_DATA_DIR", "~/patcher-host-daemon-test");
     vi.stubEnv("PATCHER_SERVER_URL", undefined);
 
     expect(() =>
@@ -168,12 +168,12 @@ describe("run-host-daemon auto join", () => {
   });
 
   it("skips auto join when auth state already exists", async () => {
-    const dataDir = await makeTempDir("bb-run-host-daemon-");
+    const dataDir = await makeTempDir("patcher-run-host-daemon-");
     await fs.writeFile(
       path.join(dataDir, HOST_AUTH_FILE_NAME),
       JSON.stringify({
         hostId: "host_existing",
-        hostKey: "bbdh_existing",
+        hostKey: "patcherdh_existing",
         hostType: "persistent",
         serverUrl: "http://127.0.0.1:3334",
       }),
@@ -191,7 +191,7 @@ describe("run-host-daemon auto join", () => {
   });
 
   it("reuses a persisted host ID when requesting an enroll key", async () => {
-    const dataDir = await makeTempDir("bb-run-host-daemon-");
+    const dataDir = await makeTempDir("patcher-run-host-daemon-");
     const persistedHostId = "host_persisted";
     await fs.writeFile(
       path.join(dataDir, HOST_ID_FILE_NAME),
@@ -219,7 +219,7 @@ describe("run-host-daemon auto join", () => {
 
         return new Response(
           JSON.stringify({
-            enrollKey: "bbde_test_enroll_key",
+            enrollKey: "patcherde_test_enroll_key",
             expiresAt: Date.now() + 60_000,
             hostId: persistedHostId,
           }),
@@ -239,7 +239,7 @@ describe("run-host-daemon auto join", () => {
     );
 
     expect(env.PATCHER_HOST_ID).toBe(persistedHostId);
-    expect(env.PATCHER_HOST_ENROLL_KEY).toBe("bbde_test_enroll_key");
+    expect(env.PATCHER_HOST_ENROLL_KEY).toBe("patcherde_test_enroll_key");
     expect(env.PATCHER_HOST_TYPE).toBeUndefined();
     expect(requests).toHaveLength(2);
     expect(requests[1]?.url).toBe(
@@ -253,7 +253,7 @@ describe("run-host-daemon auto join", () => {
   });
 
   it("requests a fresh enroll key when no host ID is persisted", async () => {
-    const dataDir = await makeTempDir("bb-run-host-daemon-");
+    const dataDir = await makeTempDir("patcher-run-host-daemon-");
 
     const requests: RecordedFetchRequest[] = [];
     vi.stubGlobal(
@@ -276,7 +276,7 @@ describe("run-host-daemon auto join", () => {
 
         return new Response(
           JSON.stringify({
-            enrollKey: "bbde_generated_enroll_key",
+            enrollKey: "patcherde_generated_enroll_key",
             expiresAt: Date.now() + 60_000,
             hostId: "host_generated",
           }),
@@ -296,13 +296,13 @@ describe("run-host-daemon auto join", () => {
     );
 
     expect(env.PATCHER_HOST_ID).toBe("host_generated");
-    expect(env.PATCHER_HOST_ENROLL_KEY).toBe("bbde_generated_enroll_key");
+    expect(env.PATCHER_HOST_ENROLL_KEY).toBe("patcherde_generated_enroll_key");
     expect(env.PATCHER_HOST_TYPE).toBeUndefined();
     expect(requests[1]?.body).toBe(JSON.stringify({}));
   });
 
   it("surfaces enroll-key request failures", async () => {
-    const dataDir = await makeTempDir("bb-run-host-daemon-");
+    const dataDir = await makeTempDir("patcher-run-host-daemon-");
 
     vi.stubGlobal("fetch", async (input: TestFetchInput): Promise<Response> => {
       const url =

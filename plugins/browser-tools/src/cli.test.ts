@@ -33,7 +33,7 @@ function createHost() {
 }
 
 describe("bb browser CLI", () => {
-  it("registers under a name the bb CLI allows", () => {
+  it("registers under a name the Patcher CLI allows", () => {
     const host = createHost();
     const cli = host.harness.inspection.registrations.cli;
 
@@ -452,7 +452,7 @@ describe("bb browser observation commands", () => {
 
   it("writes a screenshot to the path it was given, relative to the caller's cwd", async () => {
     const host = observationHost();
-    const directory = await mkdtemp(join(tmpdir(), "bb-browser-cli-"));
+    const directory = await mkdtemp(join(tmpdir(), "patcher-browser-cli-"));
 
     const result = await host.harness.runCli(
       ["screenshot", "shot.png", "--tab", "tab-1"],
@@ -470,7 +470,7 @@ describe("bb browser observation commands", () => {
 
   it("asks for PNG when the file name says so, and JPEG otherwise", async () => {
     const host = observationHost();
-    const directory = await mkdtemp(join(tmpdir(), "bb-browser-cli-"));
+    const directory = await mkdtemp(join(tmpdir(), "patcher-browser-cli-"));
 
     await host.harness.runCli(["screenshot", "a.png"], { cwd: directory });
     await host.harness.runCli(["screenshot", "b.jpg"], { cwd: directory });
@@ -485,7 +485,7 @@ describe("bb browser observation commands", () => {
 
   it("captures the whole document when asked for it", async () => {
     const host = observationHost();
-    const directory = await mkdtemp(join(tmpdir(), "bb-browser-cli-"));
+    const directory = await mkdtemp(join(tmpdir(), "patcher-browser-cli-"));
 
     await host.harness.runCli(["screenshot", "long.jpg", "--full-page"], {
       cwd: directory,
@@ -501,7 +501,7 @@ describe("bb browser observation commands", () => {
 
   it("writes a PDF and refuses to guess a path", async () => {
     const host = observationHost();
-    const directory = await mkdtemp(join(tmpdir(), "bb-browser-cli-"));
+    const directory = await mkdtemp(join(tmpdir(), "patcher-browser-cli-"));
 
     const missing = await host.harness.runCli(["pdf"], { cwd: directory });
     expect(missing.exitCode).toBe(2);
@@ -712,7 +712,7 @@ describe("bb browser storage commands", () => {
 
   it("saves a session in Playwright's format, to a file or to stdout", async () => {
     const host = storageHost();
-    const directory = await mkdtemp(join(tmpdir(), "bb-browser-cli-"));
+    const directory = await mkdtemp(join(tmpdir(), "patcher-browser-cli-"));
 
     const printed = await host.harness.runCli(
       ["state-save", "--tab", "tab-1"],
@@ -746,7 +746,7 @@ describe("bb browser storage commands", () => {
 
   it("loads a saved session and says what it could not place", async () => {
     const host = storageHost();
-    const directory = await mkdtemp(join(tmpdir(), "bb-browser-cli-"));
+    const directory = await mkdtemp(join(tmpdir(), "patcher-browser-cli-"));
     await writeFile(
       join(directory, "state.json"),
       JSON.stringify({
@@ -788,7 +788,7 @@ describe("bb browser storage commands", () => {
 
   it("refuses a file that is not a saved session", async () => {
     const host = storageHost();
-    const directory = await mkdtemp(join(tmpdir(), "bb-browser-cli-"));
+    const directory = await mkdtemp(join(tmpdir(), "patcher-browser-cli-"));
     await writeFile(join(directory, "notes.json"), "not json at all", "utf8");
 
     const result = await host.harness.runCli(
@@ -981,7 +981,7 @@ describe("bb browser direct control commands", () => {
   });
   it("writes a trace as a directory a person can open", async () => {
     const host = createHost();
-    const directory = await mkdtemp(join(tmpdir(), "bb-browser-cli-"));
+    const directory = await mkdtemp(join(tmpdir(), "patcher-browser-cli-"));
 
     await host.harness.runCli(["tracing-start", "--screenshots"]);
     await host.harness.runCli(["tabs"]);
@@ -1027,7 +1027,7 @@ describe("bb browser direct control commands", () => {
         { at: 400, base64: Buffer.from("second").toString("base64") },
       ],
     });
-    const directory = await mkdtemp(join(tmpdir(), "bb-browser-cli-"));
+    const directory = await mkdtemp(join(tmpdir(), "patcher-browser-cli-"));
 
     await host.harness.runCli(["video-start", "--fps", "5", "--tab", "tab-1"]);
     await host.harness.runCli(["video-chapter", "signed in", "--tab", "tab-1"]);
@@ -1068,9 +1068,9 @@ describe("bb browser direct control commands", () => {
         { at: 400, base64: Buffer.from("second").toString("base64") },
       ],
     });
-    const directory = await mkdtemp(join(tmpdir(), "bb-browser-cli-"));
+    const directory = await mkdtemp(join(tmpdir(), "patcher-browser-cli-"));
     // A stand-in for ffmpeg rather than the real one: what is worth pinning is
-    // the arguments bb passes and that it checks a file appeared, neither of
+    // the arguments Patcher passes and that it checks a file appeared, neither of
     // which needs an encoder — and a test that encodes video is a test that
     // fails on a machine without one.
     const fake = join(directory, "fake-ffmpeg");
@@ -1124,7 +1124,7 @@ describe("bb browser direct control commands", () => {
     host.harness.behavior.browser.setPageContent("tab-1", {
       frames: [{ at: 0, base64: Buffer.from("first").toString("base64") }],
     });
-    const directory = await mkdtemp(join(tmpdir(), "bb-browser-cli-"));
+    const directory = await mkdtemp(join(tmpdir(), "patcher-browser-cli-"));
     const fake = join(directory, "fake-ffmpeg");
     await writeFile(
       fake,

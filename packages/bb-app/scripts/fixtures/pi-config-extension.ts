@@ -8,11 +8,11 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { writeFileSync } from "node:fs";
 
 const provider = createFauxCore({
-  api: "bb-config-e2e-api",
-  provider: "bb-config-e2e",
+  api: "patcher-config-e2e-api",
+  provider: "patcher-config-e2e",
   models: [
     {
-      id: "bb-config-e2e-model",
+      id: "patcher-config-e2e-model",
       name: "BB Pi configuration test model",
       reasoning: true,
     },
@@ -30,7 +30,7 @@ provider.setResponses([
       fauxToolCall(
         "patcher_dynamic_tool",
         { value: "BB tool input" },
-        { id: "bb-tool-call" },
+        { id: "patcher-tool-call" },
       ),
     ],
     { stopReason: "toolUse" },
@@ -39,9 +39,9 @@ provider.setResponses([
 ]);
 
 export default function configurePi(pi: ExtensionAPI): void {
-  pi.registerProvider("bb-config-e2e", {
+  pi.registerProvider("patcher-config-e2e", {
     api: provider.api,
-    apiKey: "bb-config-e2e-key",
+    apiKey: "patcher-config-e2e-key",
     baseUrl: "http://127.0.0.1:1",
     models: provider.models.map((model) => ({
       id: model.id,

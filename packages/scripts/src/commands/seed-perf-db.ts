@@ -28,7 +28,7 @@ interface SeedCommandArgs {
 
 function renderHelpText(): string {
   return `
-  ${bold("bb seed-perf-db")}
+  ${bold("Patcher seed-perf-db")}
 
   Seed a large, realistic BB database for performance testing.
 
@@ -145,7 +145,7 @@ export async function main(
     );
   }
 
-  process.stdout.write(`\n  ${bold("bb seed-perf-db")}\n\n`);
+  process.stdout.write(`\n  ${bold("Patcher seed-perf-db")}\n\n`);
   log(dim("●"), `data dir ${cyan(dataDir)}`);
 
   mkdirSync(dataDir, { recursive: true });

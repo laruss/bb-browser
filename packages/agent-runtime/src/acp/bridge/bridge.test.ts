@@ -288,7 +288,7 @@ function callDynamicToolBridge(args: {
 }
 
 beforeEach(() => {
-  workspaceDir = mkdtempSync(join(tmpdir(), "bb-acp-bridge-test-"));
+  workspaceDir = mkdtempSync(join(tmpdir(), "patcher-acp-bridge-test-"));
   output = captureBridgeJsonRpcOutput();
 });
 
@@ -304,7 +304,7 @@ afterEach(async () => {
 describe("acp bridge", () => {
   it("answers initialize and lists grouped models without spawning an agent", async () => {
     const initializeId = sendRequest("initialize", {
-      clientInfo: { name: "bb", version: "1.0.0" },
+      clientInfo: { name: "Patcher", version: "1.0.0" },
     });
     expect((await waitForResponse(initializeId)).result).toEqual({ ok: true });
 
@@ -1568,7 +1568,7 @@ describe("acp bridge", () => {
   });
 
   it("denies client fs writes outside the workspace in accept-edits mode", async () => {
-    const outsideDir = mkdtempSync(join(tmpdir(), "bb-acp-outside-"));
+    const outsideDir = mkdtempSync(join(tmpdir(), "patcher-acp-outside-"));
     const targetPath = join(outsideDir, "outside.txt");
     try {
       const { providerThreadId } = await startThread({
@@ -1612,7 +1612,7 @@ describe("acp bridge", () => {
 
     await waitForTurnCompleted();
     expect(agentMessageTexts()).toContain("echo:steered");
-    // One bb turn spans both prompts.
+    // One Patcher turn spans both prompts.
     expect(notifications("acp/turn/started")).toHaveLength(1);
     expect(notifications("acp/turn/completed")).toHaveLength(1);
   });

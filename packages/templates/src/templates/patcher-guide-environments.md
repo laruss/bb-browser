@@ -1,6 +1,6 @@
 ---
 kind: instruction
-title: bb Guide — Environments
+title: Patcher Guide — Environments
 summary: Command reference for environment setup, inspection, commits, and merges.
 intent: Provide complete environment command documentation for agents.
 editingNotes: Keep flags accurate against the CLI implementation.
@@ -12,8 +12,8 @@ Environments determine where threads run. Multiple threads can share an environm
 
 Making your repo work with bb:
 
-  Commit a .patcher-env-setup.sh script at the repo root when new bb worktrees need
-  repo-specific setup. After bb creates a new managed worktree environment, it
+  Commit a .patcher-env-setup.sh script at the repo root when new Patcher worktrees need
+  repo-specific setup. After Patcher creates a new managed worktree environment, it
   looks for .patcher-env-setup.sh inside that new workspace. If the file is absent,
   provisioning continues with no error.
 
@@ -24,14 +24,14 @@ Making your repo work with bb:
   BB runs the hook as `env bash .patcher-env-setup.sh` with cwd set to the new
   workspace. POSIX shell setup scripts are not supported on Windows. The hook
   inherits the host daemon's sanitized environment: NODE_ENV and every PATCHER_*
-  variable are removed, and bb does not inject PATCHER_PROJECT_ID, PATCHER_ENVIRONMENT_ID,
+  variable are removed, and Patcher does not inject PATCHER_PROJECT_ID, PATCHER_ENVIRONMENT_ID,
   or PATCHER_SOURCE_PATH.
 
   The hook runs only for newly-created managed worktree environments. It does
   not run for direct/project-checkout environments, personal scratch workspaces,
   or reconnecting an existing managed worktree.
 
-  A non-zero exit, timeout, signal, or cancellation fails provisioning and bb
+  A non-zero exit, timeout, signal, or cancellation fails provisioning and Patcher
   removes the new worktree. Keep optional setup steps non-fatal inside the
   script if the environment should still open. Provisioning progress reports
   "Running .patcher-env-setup.sh" and then ".patcher-env-setup.sh finished",
@@ -40,7 +40,7 @@ Making your repo work with bb:
   New worktrees do not contain untracked files such as .env.local. To copy
   them from the source checkout, commit a .worktreeinclude file at the repo
   root. It uses gitignore syntax: one pattern per line, # for comments, ! to
-  negate an earlier pattern. bb copies each untracked file in the source
+  negate an earlier pattern. Patcher copies each untracked file in the source
   checkout that matches a pattern:
 
     .env
@@ -48,10 +48,10 @@ Making your repo work with bb:
     !.env.example
     certs/
 
-  bb copies files only. It follows no symlinks, and it replaces nothing that
+  Patcher copies files only. It follows no symlinks, and it replaces nothing that
   the worktree already has. The copy runs after `git worktree add` and before
   .patcher-env-setup.sh, so the setup script can read the copied files. A pattern
-  that matches nothing, or a file bb cannot read, is reported in the
+  that matches nothing, or a file Patcher cannot read, is reported in the
   provisioning transcript and does not fail provisioning.
 
   Large directories such as node_modules are copied file by file. Install

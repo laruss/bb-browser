@@ -90,7 +90,7 @@ export function renderHelpText(): string {
     --yes   Skip the interactive confirmation prompt
 
   ${dim("Notes")}
-    Removes bb-managed state directories (${dim("~/.patcher")}, ${dim("~/.patcher-dev/<checkout-instance>")}).
+    Removes Patcher-managed state directories (${dim("~/.patcher")}, ${dim("~/.patcher-dev/<checkout-instance>")}).
     Does not touch external provider config managed by other tools.
     Production resets respect PATCHER_DATA_DIR. Development resets always target this checkout's dev data directory.
 \n`;
@@ -110,14 +110,19 @@ async function confirmReset(targets: string[]): Promise<boolean> {
 
   try {
     process.stdout.write("\n");
-    log(yellow("!"), "This will permanently delete bb-managed local data at:");
+    log(
+      yellow("!"),
+      "This will permanently delete Patcher-managed local data at:",
+    );
     for (const target of targets) {
       log(" ", dim(target));
     }
     process.stdout.write("\n");
     log(
       " ",
-      dim("Provider auth/config managed outside bb will be left untouched."),
+      dim(
+        "Provider auth/config managed outside Patcher will be left untouched.",
+      ),
     );
     process.stdout.write("\n");
     const answer = await rl.question(
@@ -173,7 +178,7 @@ export async function main(
   process.stdout.write("\n");
 
   if (removedCount === 0) {
-    log(dim("●"), "No bb-managed data directories were present");
+    log(dim("●"), "No Patcher-managed data directories were present");
   } else {
     log(green("●"), bold("Reset complete"));
   }

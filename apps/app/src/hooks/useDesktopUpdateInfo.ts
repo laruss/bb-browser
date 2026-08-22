@@ -3,7 +3,7 @@ import type {
   PatcherDesktopApi,
   PatcherDesktopInfo,
 } from "@patcher/desktop-contract";
-import { getPatcherDesktopInfo } from "@/lib/bb-desktop";
+import { getPatcherDesktopInfo } from "@/lib/patcher-desktop";
 
 export interface DesktopUpdateInfo {
   desktopApi: PatcherDesktopApi | null;

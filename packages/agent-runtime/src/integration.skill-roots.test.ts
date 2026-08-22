@@ -20,7 +20,7 @@ type SkillRootProviderId = "claude-code" | "codex" | "pi";
 type DirectorySkillRootProviderId = "codex" | "pi";
 
 const providers: readonly SkillRootProviderId[] = ["codex", "claude-code", "pi"];
-const skillName = "bb-runtime-skill-integration";
+const skillName = "patcher-runtime-skill-integration";
 
 interface CreateSkillMarkdownArgs {
   token: string;
@@ -83,7 +83,7 @@ function createClaudeSkillPlugin(
         description: "BB runtime dynamic skill integration test plugin.",
         author: {
           name: "BB Integration Tests",
-          email: "bb@example.com",
+          email: "patcher@example.com",
         },
         skills: ["./"],
       },
@@ -137,7 +137,7 @@ for (const providerId of providers) {
   describe.concurrent(`${providerId} provider skill roots`, () => {
     it("uses a runtime-injected skill root", async () => {
       const workspacePath = mkdtempSync(
-        join(tmpdir(), `bb-integ-skill-${providerId}-`),
+        join(tmpdir(), `patcher-integ-skill-${providerId}-`),
       );
       const token = `PATCHER_SKILL_TOKEN_${randomUUID()
         .replaceAll("-", "")

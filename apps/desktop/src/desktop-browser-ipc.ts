@@ -107,7 +107,7 @@ export const PATCHER_DESKTOP_BROWSER_SET_PAGE_SCRIPTS_CHANNEL =
  *
  * Two channels rather than an invoke, because the request starts in a *third*
  * process: a browsed page asks the shell, the shell asks this window's renderer
- * (the only one that can authenticate to the bb server), and the answer walks
+ * (the only one that can authenticate to the Patcher server), and the answer walks
  * the same path back. A promise handed to `ipcMain.handle` could not be settled
  * by a message from somewhere else.
  */
@@ -213,10 +213,10 @@ export const PATCHER_DESKTOP_BROWSER_CAPTURE_FULL_PAGE_CHANNEL =
 export const PATCHER_DESKTOP_BROWSER_RECORD_CHANNEL =
   "bb-desktop:browser:record";
 
-// --- Links the OS hands us, because bb is the user's browser ---
+// --- Links the OS hands us, because Patcher is the user's browser ---
 //
 // A pull rather than a push, which is the whole shape: `open-url` fires before
-// `whenReady` when the click is what launched bb, so there is no renderer to
+// `whenReady` when the click is what launched Patcher, so there is no renderer to
 // push to. Main queues, the surface drains the queue when it mounts, and the
 // pending channel is a nudge for the case where a window was already open.
 // Draining once is what keeps a cold start from opening the same link twice.
@@ -228,7 +228,7 @@ export const PATCHER_DESKTOP_BROWSER_EXTERNAL_URLS_PENDING_CHANNEL =
 // --- Channels a browsed page's own preload uses ---
 //
 // These two are the only ones reachable from the preload the shell installs in
-// the browsing session, and neither is on `PatcherDesktopBrowserApi`: the bb app has
+// the browsing session, and neither is on `PatcherDesktopBrowserApi`: the Patcher app has
 // no use for them, and a browsed renderer must not be able to reach anything
 // else. Both are answered from the sender frame's URL as the shell resolved it,
 // never from anything the payload claims about where it is.

@@ -231,7 +231,7 @@ interface CollapsibleMessageTextProps {
   text: string;
   /**
    * When set, the first `mutePrefixLength` characters of `text` are rendered
-   * inside a muted, max-width-truncated pill — used for `[bb …]` prefixes on
+   * inside a muted, max-width-truncated pill — used for `[Patcher …]` prefixes on
    * system-initiated messages and non-user messages without sender metadata.
    */
   mutePrefixLength?: number;

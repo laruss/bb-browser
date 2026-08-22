@@ -106,7 +106,7 @@ export function useSidebarThreadEntry(
  *
  * Destructive and dialog-bearing actions route through `useThreadActions()` —
  * the host's own flow, with its confirmation dialogs, pane closing, and route
- * repair. A plugin cannot render bb's dialogs, so calling the raw mutations
+ * repair. A plugin cannot render Patcher's dialogs, so calling the raw mutations
  * here would delete a subtree with no confirmation and leave panes pointing at
  * dead threads.
  */
@@ -187,7 +187,7 @@ export function useSidebarThreadActions(): PluginSidebarThreadActions {
         hostActions.archiveThreadAndChildren(requireEntry(threadId));
       },
       requestDelete(threadId) {
-        // Opens bb's delete dialog, which counts child threads and asks. The
+        // Opens Patcher's delete dialog, which counts child threads and asks. The
         // plugin requests; the user confirms.
         hostActions.requestDelete(requireEntry(threadId));
       },

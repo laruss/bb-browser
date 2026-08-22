@@ -107,7 +107,7 @@ describe("@patcher/sdk", () => {
     const queue = createFetchQueue([{ body: { delivered: 3 } }]);
     const sdk = createPatcherSdk({
       transport: createHttpTransport({
-        baseUrl: "http://bb.test",
+        baseUrl: "http://patcher.test",
         fetch: queue.fetch,
         runtime: "node",
       }),
@@ -123,7 +123,7 @@ describe("@patcher/sdk", () => {
       {
         bodyText: JSON.stringify({ action: "restore" }),
         method: "POST",
-        url: "http://bb.test/api/v1/threads/thr_test/pane-action",
+        url: "http://patcher.test/api/v1/threads/thr_test/pane-action",
       },
     ]);
   });
@@ -132,7 +132,7 @@ describe("@patcher/sdk", () => {
     const queue = createFetchQueue([]);
     const sdk = createPatcherSdk({
       transport: createHttpTransport({
-        baseUrl: "http://bb.test",
+        baseUrl: "http://patcher.test",
         fetch: queue.fetch,
         runtime: "node",
       }),
@@ -151,7 +151,7 @@ describe("@patcher/sdk", () => {
     };
     const sdk = createPatcherSdk({
       transport: createHttpTransport({
-        baseUrl: "http://bb.test",
+        baseUrl: "http://patcher.test",
         fetch,
         runtime: "node",
       }),
@@ -169,7 +169,7 @@ describe("@patcher/sdk", () => {
     const queue = createFetchQueue([{ body: [] }]);
     const sdk = createPatcherSdk({
       transport: createHttpTransport({
-        baseUrl: "http://bb.test",
+        baseUrl: "http://patcher.test",
         fetch: async (input, init) => {
           receivedSignal = init?.signal;
           return queue.fetch(input, init);
@@ -183,7 +183,7 @@ describe("@patcher/sdk", () => {
     ).resolves.toEqual([]);
     expect(receivedSignal).toBe(controller.signal);
     expect(queue.requests[0]?.url).toBe(
-      "http://bb.test/api/v1/projects?includePersonal=true",
+      "http://patcher.test/api/v1/projects?includePersonal=true",
     );
   });
 
@@ -196,7 +196,7 @@ describe("@patcher/sdk", () => {
     const queue = createFetchQueue([{ body: appearance }]);
     const sdk = createPatcherSdk({
       transport: createHttpTransport({
-        baseUrl: "http://bb.test",
+        baseUrl: "http://patcher.test",
         fetch: queue.fetch,
         runtime: "node",
       }),
@@ -209,7 +209,7 @@ describe("@patcher/sdk", () => {
       {
         bodyText: JSON.stringify({ themeId: "nord", faviconColor: "teal" }),
         method: "PUT",
-        url: "http://bb.test/api/v1/settings/appearance",
+        url: "http://patcher.test/api/v1/settings/appearance",
       },
     ]);
   });
@@ -230,7 +230,7 @@ describe("@patcher/sdk", () => {
     const queue = createFetchQueue([{ body: current }, { body: updated }]);
     const sdk = createPatcherSdk({
       transport: createHttpTransport({
-        baseUrl: "http://bb.test",
+        baseUrl: "http://patcher.test",
         fetch: queue.fetch,
         runtime: "node",
       }),
@@ -241,12 +241,12 @@ describe("@patcher/sdk", () => {
       {
         bodyText: undefined,
         method: "GET",
-        url: "http://bb.test/api/v1/system/config",
+        url: "http://patcher.test/api/v1/system/config",
       },
       {
         bodyText: JSON.stringify({ themeId: "nord", faviconColor: "purple" }),
         method: "PUT",
-        url: "http://bb.test/api/v1/settings/appearance",
+        url: "http://patcher.test/api/v1/settings/appearance",
       },
     ]);
   });
@@ -338,7 +338,7 @@ describe("@patcher/sdk", () => {
     };
     const sdk = createPatcherSdk({
       transport: createHttpTransport({
-        baseUrl: "http://bb.test",
+        baseUrl: "http://patcher.test",
         fetch,
         runtime: "browser",
       }),
@@ -361,15 +361,15 @@ describe("@patcher/sdk", () => {
       sizeBytes: 4,
     });
     expect(requests).toEqual([
-      "http://bb.test/api/v1/projects/proj_image/attachments",
-      "http://bb.test/api/v1/projects/proj_image/attachments/content?path=pixel-uploaded.png",
+      "http://patcher.test/api/v1/projects/proj_image/attachments",
+      "http://patcher.test/api/v1/projects/proj_image/attachments/content?path=pixel-uploaded.png",
     ]);
   });
 
   it("preserves project attachment error envelopes", async () => {
     const sdk = createPatcherSdk({
       transport: createHttpTransport({
-        baseUrl: "http://bb.test",
+        baseUrl: "http://patcher.test",
         fetch: async () =>
           jsonResponse({
             body: {
@@ -402,7 +402,7 @@ describe("@patcher/sdk", () => {
     };
     const sdk = createPatcherSdk({
       transport: createHttpTransport({
-        baseUrl: "http://bb.test",
+        baseUrl: "http://patcher.test",
         fetch,
         runtime: "node",
       }),
@@ -447,7 +447,7 @@ describe("@patcher/sdk", () => {
     };
     const sdk = createPatcherSdk({
       transport: createHttpTransport({
-        baseUrl: "http://bb.test",
+        baseUrl: "http://patcher.test",
         fetch,
         runtime: "browser",
       }),
@@ -485,9 +485,9 @@ describe("@patcher/sdk", () => {
     });
 
     expect(requests.map((request) => request.url)).toEqual([
-      "http://bb.test/api/v1/projects/proj_remote/files?hostId=host_remote",
-      "http://bb.test/api/v1/projects/proj_remote/files/content?environmentId=env_remote&path=remote.txt",
-      "http://bb.test/api/v1/projects/proj_remote/files/content?hostId=host_remote&path=image.bin",
+      "http://patcher.test/api/v1/projects/proj_remote/files?hostId=host_remote",
+      "http://patcher.test/api/v1/projects/proj_remote/files/content?environmentId=env_remote&path=remote.txt",
+      "http://patcher.test/api/v1/projects/proj_remote/files/content?hostId=host_remote&path=image.bin",
     ]);
   });
 
@@ -505,7 +505,7 @@ describe("@patcher/sdk", () => {
     ]);
     const sdk = createPatcherSdk({
       transport: createHttpTransport({
-        baseUrl: "http://bb.test",
+        baseUrl: "http://patcher.test",
         fetch: queue.fetch,
         runtime: "node",
       }),
@@ -525,12 +525,12 @@ describe("@patcher/sdk", () => {
       {
         bodyText: undefined,
         method: "GET",
-        url: "http://bb.test/api/v1/system/providers?hostId=host_remote",
+        url: "http://patcher.test/api/v1/system/providers?hostId=host_remote",
       },
       {
         bodyText: undefined,
         method: "GET",
-        url: "http://bb.test/api/v1/system/execution-options?environmentId=env_remote&providerId=acp-remote",
+        url: "http://patcher.test/api/v1/system/execution-options?environmentId=env_remote&providerId=acp-remote",
       },
     ]);
   });
@@ -544,7 +544,7 @@ describe("@patcher/sdk", () => {
     const queue = createFetchQueue([{ body: usage }]);
     const sdk = createPatcherSdk({
       transport: createHttpTransport({
-        baseUrl: "http://bb.test",
+        baseUrl: "http://patcher.test",
         fetch: queue.fetch,
         runtime: "node",
       }),
@@ -557,7 +557,7 @@ describe("@patcher/sdk", () => {
       {
         bodyText: undefined,
         method: "GET",
-        url: "http://bb.test/api/v1/system/usage-limits?hostId=host_remote",
+        url: "http://patcher.test/api/v1/system/usage-limits?hostId=host_remote",
       },
     ]);
   });
@@ -567,7 +567,7 @@ describe("@patcher/sdk", () => {
     const queue = createFetchQueue([{ body: overview }]);
     const sdk = createPatcherSdk({
       transport: createHttpTransport({
-        baseUrl: "http://bb.test",
+        baseUrl: "http://patcher.test",
         fetch: queue.fetch,
         runtime: "node",
       }),
@@ -580,7 +580,7 @@ describe("@patcher/sdk", () => {
       {
         bodyText: undefined,
         method: "GET",
-        url: "http://bb.test/api/v1/system/onboarding/agents?environmentId=env_remote",
+        url: "http://patcher.test/api/v1/system/onboarding/agents?environmentId=env_remote",
       },
     ]);
   });
@@ -589,7 +589,7 @@ describe("@patcher/sdk", () => {
     const queue = createFetchQueue([{ body: [] }]);
     const sdk = createPatcherSdk({
       transport: createHttpTransport({
-        baseUrl: "http://bb.test",
+        baseUrl: "http://patcher.test",
         fetch: queue.fetch,
         runtime: "node",
       }),
@@ -603,7 +603,7 @@ describe("@patcher/sdk", () => {
       {
         bodyText: undefined,
         method: "GET",
-        url: "http://bb.test/api/v1/threads?projectId=proj_123&archived=true",
+        url: "http://patcher.test/api/v1/threads?projectId=proj_123&archived=true",
       },
     ]);
   });
@@ -626,7 +626,7 @@ describe("@patcher/sdk", () => {
     ]);
     const sdk = createPatcherSdk({
       transport: createHttpTransport({
-        baseUrl: "http://bb.test",
+        baseUrl: "http://patcher.test",
         fetch: queue.fetch,
         runtime: "node",
       }),
@@ -689,17 +689,17 @@ describe("@patcher/sdk", () => {
       {
         bodyText: undefined,
         method: "GET",
-        url: "http://bb.test/api/v1/terminals?threadId=thr_remote",
+        url: "http://patcher.test/api/v1/terminals?threadId=thr_remote",
       },
       {
         bodyText: undefined,
         method: "GET",
-        url: "http://bb.test/api/v1/terminals?environmentId=env_remote",
+        url: "http://patcher.test/api/v1/terminals?environmentId=env_remote",
       },
       {
         bodyText: undefined,
         method: "GET",
-        url: "http://bb.test/api/v1/terminals?hostId=host_remote&cwd=%2Fsrv%2Fapp",
+        url: "http://patcher.test/api/v1/terminals?hostId=host_remote&cwd=%2Fsrv%2Fapp",
       },
       {
         bodyText: JSON.stringify({
@@ -708,7 +708,7 @@ describe("@patcher/sdk", () => {
           target: { kind: "thread", threadId: "thr_remote" },
         }),
         method: "POST",
-        url: "http://bb.test/api/v1/terminals",
+        url: "http://patcher.test/api/v1/terminals",
       },
       {
         bodyText: JSON.stringify({
@@ -717,7 +717,7 @@ describe("@patcher/sdk", () => {
           target: { kind: "environment", environmentId: "env_remote" },
         }),
         method: "POST",
-        url: "http://bb.test/api/v1/terminals",
+        url: "http://patcher.test/api/v1/terminals",
       },
       {
         bodyText: JSON.stringify({
@@ -726,37 +726,37 @@ describe("@patcher/sdk", () => {
           target: { kind: "host_path", hostId: "host_remote", cwd: null },
         }),
         method: "POST",
-        url: "http://bb.test/api/v1/terminals",
+        url: "http://patcher.test/api/v1/terminals",
       },
       {
         bodyText: undefined,
         method: "GET",
-        url: "http://bb.test/api/v1/terminals/term_remote",
+        url: "http://patcher.test/api/v1/terminals/term_remote",
       },
       {
         bodyText: JSON.stringify({ title: "Dev server" }),
         method: "PATCH",
-        url: "http://bb.test/api/v1/terminals/term_remote",
+        url: "http://patcher.test/api/v1/terminals/term_remote",
       },
       {
         bodyText: JSON.stringify({ dataBase64: "aGk=" }),
         method: "POST",
-        url: "http://bb.test/api/v1/terminals/term_remote/input",
+        url: "http://patcher.test/api/v1/terminals/term_remote/input",
       },
       {
         bodyText: JSON.stringify({ cols: 120, rows: 40 }),
         method: "POST",
-        url: "http://bb.test/api/v1/terminals/term_remote/resize",
+        url: "http://patcher.test/api/v1/terminals/term_remote/resize",
       },
       {
         bodyText: undefined,
         method: "GET",
-        url: "http://bb.test/api/v1/terminals/term_remote/output?sinceSeq=2&tailBytes=1024&limitChunks=10",
+        url: "http://patcher.test/api/v1/terminals/term_remote/output?sinceSeq=2&tailBytes=1024&limitChunks=10",
       },
       {
         bodyText: JSON.stringify({ mode: "force", reason: "user" }),
         method: "POST",
-        url: "http://bb.test/api/v1/terminals/term_remote/close",
+        url: "http://patcher.test/api/v1/terminals/term_remote/close",
       },
     ]);
   });
@@ -766,7 +766,7 @@ describe("@patcher/sdk", () => {
     const queue = createFetchQueue([{ body: replacement, status: 201 }]);
     const sdk = createPatcherSdk({
       transport: createHttpTransport({
-        baseUrl: "http://bb.test",
+        baseUrl: "http://patcher.test",
         fetch: queue.fetch,
         runtime: "node",
       }),
@@ -779,7 +779,7 @@ describe("@patcher/sdk", () => {
       {
         bodyText: JSON.stringify({}),
         method: "POST",
-        url: "http://bb.test/api/v1/terminals/term_old/restart",
+        url: "http://patcher.test/api/v1/terminals/term_old/restart",
       },
     ]);
   });
@@ -788,7 +788,7 @@ describe("@patcher/sdk", () => {
     const queue = createFetchQueue([]);
     const sdk = createPatcherSdk({
       transport: createHttpTransport({
-        baseUrl: "http://bb.test",
+        baseUrl: "http://patcher.test",
         fetch: queue.fetch,
         runtime: "node",
       }),
@@ -816,7 +816,7 @@ describe("@patcher/sdk", () => {
     ]);
     const sdk = createPatcherSdk({
       transport: createHttpTransport({
-        baseUrl: "http://bb.test",
+        baseUrl: "http://patcher.test",
         fetch: queue.fetch,
         runtime: "node",
       }),
@@ -832,7 +832,7 @@ describe("@patcher/sdk", () => {
     const queue = createFetchQueue([{ body: response }]);
     const sdk = createPatcherSdk({
       transport: createHttpTransport({
-        baseUrl: "http://bb.test",
+        baseUrl: "http://patcher.test",
         fetch: queue.fetch,
         runtime: "node",
       }),
@@ -846,7 +846,7 @@ describe("@patcher/sdk", () => {
       {
         bodyText: undefined,
         method: "GET",
-        url: "http://bb.test/api/v1/environments/env_pr/pull-request",
+        url: "http://patcher.test/api/v1/environments/env_pr/pull-request",
       },
     ]);
   });
@@ -860,7 +860,7 @@ describe("@patcher/sdk", () => {
     const queue = createFetchQueue([{ body: environment }]);
     const sdk = createPatcherSdk({
       transport: createHttpTransport({
-        baseUrl: "http://bb.test",
+        baseUrl: "http://patcher.test",
         fetch: queue.fetch,
         runtime: "node",
       }),
@@ -881,7 +881,7 @@ describe("@patcher/sdk", () => {
           name: "Review workspace",
         }),
         method: "PATCH",
-        url: "http://bb.test/api/v1/environments/env_update",
+        url: "http://patcher.test/api/v1/environments/env_update",
       },
     ]);
   });
@@ -890,7 +890,7 @@ describe("@patcher/sdk", () => {
     const queue = createFetchQueue([]);
     const sdk = createPatcherSdk({
       transport: createHttpTransport({
-        baseUrl: "http://bb.test",
+        baseUrl: "http://patcher.test",
         fetch: queue.fetch,
         runtime: "node",
       }),
@@ -907,7 +907,7 @@ describe("@patcher/sdk", () => {
     const queue = createFetchQueue([{ body: { id: "thr_1" }, status: 201 }]);
     const sdk = createPatcherSdk({
       transport: createHttpTransport({
-        baseUrl: "http://bb.test",
+        baseUrl: "http://patcher.test",
         fetch: queue.fetch,
         runtime: "node",
       }),
@@ -944,7 +944,7 @@ describe("@patcher/sdk", () => {
     const queue = createFetchQueue([{ body: { id: "thr_fork" }, status: 201 }]);
     const sdk = createPatcherSdk({
       transport: createHttpTransport({
-        baseUrl: "http://bb.test",
+        baseUrl: "http://patcher.test",
         fetch: queue.fetch,
         runtime: "node",
       }),
@@ -964,7 +964,7 @@ describe("@patcher/sdk", () => {
 
     expect(queue.requests[0]).toMatchObject({
       method: "POST",
-      url: "http://bb.test/api/v1/threads/fork",
+      url: "http://patcher.test/api/v1/threads/fork",
     });
     expect(JSON.parse(queue.requests[0]?.bodyText ?? "{}")).toEqual({
       sourceThreadId: "thr_source",
@@ -989,7 +989,7 @@ describe("@patcher/sdk", () => {
     ]);
     const sdk = createPatcherSdk({
       transport: createHttpTransport({
-        baseUrl: "http://bb.test",
+        baseUrl: "http://patcher.test",
         fetch: queue.fetch,
         runtime: "node",
       }),
@@ -1002,7 +1002,7 @@ describe("@patcher/sdk", () => {
     });
 
     expect(queue.requests[0]?.url).toBe(
-      "http://bb.test/api/v1/threads?includeHidden=true",
+      "http://patcher.test/api/v1/threads?includeHidden=true",
     );
     expect(JSON.parse(queue.requests[1]?.bodyText ?? "{}")).toEqual({
       visibility: "hidden",
@@ -1017,7 +1017,7 @@ describe("@patcher/sdk", () => {
     ]);
     const sdk = createPatcherSdk({
       transport: createHttpTransport({
-        baseUrl: "http://bb.test",
+        baseUrl: "http://patcher.test",
         fetch: queue.fetch,
         runtime: "node",
       }),
@@ -1066,7 +1066,7 @@ describe("@patcher/sdk", () => {
     ]);
     const sdk = createPatcherSdk({
       transport: createHttpTransport({
-        baseUrl: "http://bb.test",
+        baseUrl: "http://patcher.test",
         fetch: queue.fetch,
         runtime: "node",
       }),
@@ -1089,7 +1089,7 @@ describe("@patcher/sdk", () => {
           input: [{ type: "text", text: "Replacement", mentions: [] }],
         }),
         method: "POST",
-        url: "http://bb.test/api/v1/threads/thr_edit/edit-message",
+        url: "http://patcher.test/api/v1/threads/thr_edit/edit-message",
       },
     ]);
   });
@@ -1098,7 +1098,7 @@ describe("@patcher/sdk", () => {
     const queue = createFetchQueue([{ body: { id: "thr_1" }, status: 201 }]);
     const sdk = createPatcherSdk({
       transport: createHttpTransport({
-        baseUrl: "http://bb.test",
+        baseUrl: "http://patcher.test",
         fetch: queue.fetch,
         runtime: "node",
       }),
@@ -1135,7 +1135,7 @@ describe("@patcher/sdk", () => {
     ]);
     const sdk = createPatcherSdk({
       transport: createHttpTransport({
-        baseUrl: "http://bb.test",
+        baseUrl: "http://patcher.test",
         fetch: queue.fetch,
         runtime: "node",
       }),
@@ -1149,7 +1149,7 @@ describe("@patcher/sdk", () => {
     expect(queue.requests[0]).toEqual({
       bodyText: JSON.stringify({ sectionId: "sec_123" }),
       method: "PATCH",
-      url: "http://bb.test/api/v1/threads/thr_section",
+      url: "http://patcher.test/api/v1/threads/thr_section",
     });
   });
 
@@ -1157,7 +1157,7 @@ describe("@patcher/sdk", () => {
     const queue = createFetchQueue([{ body: { id: "qmsg_123" } }]);
     const sdk = createPatcherSdk({
       transport: createHttpTransport({
-        baseUrl: "http://bb.test",
+        baseUrl: "http://patcher.test",
         fetch: queue.fetch,
         runtime: "node",
       }),
@@ -1176,7 +1176,7 @@ describe("@patcher/sdk", () => {
         input: [{ type: "text", text: "Edited", mentions: [] }],
       }),
       method: "PATCH",
-      url: "http://bb.test/api/v1/threads/thr_123/queued-messages/qmsg_123",
+      url: "http://patcher.test/api/v1/threads/thr_123/queued-messages/qmsg_123",
     });
   });
 
@@ -1194,7 +1194,7 @@ describe("@patcher/sdk", () => {
     ]);
     const sdk = createPatcherSdk({
       transport: createHttpTransport({
-        baseUrl: "http://bb.test",
+        baseUrl: "http://patcher.test",
         fetch: queue.fetch,
         runtime: "node",
       }),
@@ -1206,7 +1206,7 @@ describe("@patcher/sdk", () => {
     expect(queue.requests[0]).toEqual({
       bodyText: JSON.stringify({ name: "Review" }),
       method: "POST",
-      url: "http://bb.test/api/v1/thread-sections",
+      url: "http://patcher.test/api/v1/thread-sections",
     });
   });
 
@@ -1221,7 +1221,7 @@ describe("@patcher/sdk", () => {
     ]);
     const sdk = createPatcherSdk({
       transport: createHttpTransport({
-        baseUrl: "http://bb.test/",
+        baseUrl: "http://patcher.test/",
         fetch: queue.fetch,
         runtime: "node",
       }),
@@ -1238,7 +1238,7 @@ describe("@patcher/sdk", () => {
     expect(queue.requests[0]).toEqual({
       bodyText: "null",
       method: "POST",
-      url: "http://bb.test/api/v1/plugins/custom-instructions/rpc/getInstructions",
+      url: "http://patcher.test/api/v1/plugins/custom-instructions/rpc/getInstructions",
     });
   });
 
@@ -1330,7 +1330,7 @@ describe("@patcher/sdk", () => {
     ]);
     const sdk = createPatcherSdk({
       transport: createHttpTransport({
-        baseUrl: "http://bb.test/",
+        baseUrl: "http://patcher.test/",
         fetch: queue.fetch,
         runtime: "node",
       }),
@@ -1366,49 +1366,49 @@ describe("@patcher/sdk", () => {
       {
         bodyText: undefined,
         method: "GET",
-        url: "http://bb.test/api/v1/plugins",
+        url: "http://patcher.test/api/v1/plugins",
       },
       {
         bodyText: JSON.stringify({ source: "npm:@patcher/notes@^1" }),
         method: "POST",
-        url: "http://bb.test/api/v1/plugins/install",
+        url: "http://patcher.test/api/v1/plugins/install",
       },
       {
         bodyText: JSON.stringify({
           entryId: "notes",
         }),
         method: "POST",
-        url: "http://bb.test/api/v1/plugin-catalog/install",
+        url: "http://patcher.test/api/v1/plugin-catalog/install",
       },
       {
         bodyText: undefined,
         method: "GET",
-        url: "http://bb.test/api/v1/plugins/notes/source",
+        url: "http://patcher.test/api/v1/plugins/notes/source",
       },
       {
         bodyText: JSON.stringify({ id: "notes" }),
         method: "POST",
-        url: "http://bb.test/api/v1/plugins/updates/check",
+        url: "http://patcher.test/api/v1/plugins/updates/check",
       },
       {
         bodyText: undefined,
         method: "GET",
-        url: "http://bb.test/api/v1/plugins/updates",
+        url: "http://patcher.test/api/v1/plugins/updates",
       },
       {
         bodyText: "{}",
         method: "POST",
-        url: "http://bb.test/api/v1/plugins/notes/update",
+        url: "http://patcher.test/api/v1/plugins/notes/update",
       },
       {
         bodyText: undefined,
         method: "GET",
-        url: "http://bb.test/api/v1/plugin-catalog",
+        url: "http://patcher.test/api/v1/plugin-catalog",
       },
       {
         bodyText: undefined,
         method: "GET",
-        url: "http://bb.test/api/v1/plugin-catalog/search?q=notes",
+        url: "http://patcher.test/api/v1/plugin-catalog/search?q=notes",
       },
     ]);
   });
@@ -1419,7 +1419,7 @@ describe("@patcher/sdk", () => {
     ]);
     const sdk = createPatcherSdk({
       transport: createHttpTransport({
-        baseUrl: "http://bb.test",
+        baseUrl: "http://patcher.test",
         fetch: queue.fetch,
         runtime: "node",
       }),
@@ -1434,7 +1434,7 @@ describe("@patcher/sdk", () => {
     const queue = createFetchQueue([]);
     const sdk = createPatcherSdk({
       transport: createHttpTransport({
-        baseUrl: "http://bb.test",
+        baseUrl: "http://patcher.test",
         fetch: queue.fetch,
         runtime: "node",
       }),
@@ -1463,7 +1463,7 @@ describe("@patcher/sdk", () => {
     ]);
     const sdk = createPatcherSdk({
       transport: createHttpTransport({
-        baseUrl: "http://bb.test",
+        baseUrl: "http://patcher.test",
         fetch: queue.fetch,
         runtime: "node",
       }),
@@ -1483,8 +1483,8 @@ describe("@patcher/sdk", () => {
     });
 
     expect(queue.requests.map((request) => request.url)).toEqual([
-      "http://bb.test/api/v1/threads/thr_wait",
-      "http://bb.test/api/v1/threads/thr_wait",
+      "http://patcher.test/api/v1/threads/thr_wait",
+      "http://patcher.test/api/v1/threads/thr_wait",
     ]);
   });
 
@@ -1494,7 +1494,7 @@ describe("@patcher/sdk", () => {
     ]);
     const sdk = createPatcherSdk({
       transport: createHttpTransport({
-        baseUrl: "http://bb.test",
+        baseUrl: "http://patcher.test",
         fetch: queue.fetch,
         runtime: "node",
       }),
@@ -1532,7 +1532,7 @@ describe("@patcher/sdk", () => {
               name: "local-skill",
               description: null,
               provider: null,
-              scope: "bb-user",
+              scope: "patcher-user",
               pluginId: null,
               filePath: "/skills/local-skill/SKILL.md",
               manageable: true,
@@ -1552,7 +1552,7 @@ describe("@patcher/sdk", () => {
     ]);
     const sdk = createPatcherSdk({
       transport: createHttpTransport({
-        baseUrl: "http://bb.test",
+        baseUrl: "http://patcher.test",
         fetch: queue.fetch,
         runtime: "node",
       }),
@@ -1579,22 +1579,22 @@ describe("@patcher/sdk", () => {
     expect(queue.requests).toEqual([
       {
         method: "GET",
-        url: "http://bb.test/api/v1/projects/proj_123/skills?environmentId=",
+        url: "http://patcher.test/api/v1/projects/proj_123/skills?environmentId=",
         bodyText: undefined,
       },
       {
         method: "GET",
-        url: "http://bb.test/api/v1/skills-registry?page=0&perPage=24",
+        url: "http://patcher.test/api/v1/skills-registry?page=0&perPage=24",
         bodyText: undefined,
       },
       {
         method: "GET",
-        url: "http://bb.test/api/v1/skills-registry/repository-stars?source=owner%2Frepo",
+        url: "http://patcher.test/api/v1/skills-registry/repository-stars?source=owner%2Frepo",
         bodyText: undefined,
       },
       {
         method: "POST",
-        url: "http://bb.test/api/v1/skills-registry/install",
+        url: "http://patcher.test/api/v1/skills-registry/install",
         bodyText: JSON.stringify({
           registrySkillId: registrySkill.id,
         }),
@@ -1618,7 +1618,7 @@ describe("@patcher/sdk", () => {
     ]);
     const sdk = createPatcherSdk({
       transport: createHttpTransport({
-        baseUrl: "http://bb.test",
+        baseUrl: "http://patcher.test",
         fetch: queue.fetch,
         runtime: "node",
       }),
@@ -1651,17 +1651,17 @@ describe("@patcher/sdk", () => {
     expect(queue.requests).toEqual([
       {
         method: "GET",
-        url: `http://bb.test/api/v1/projects/proj_123/skills/content?skillId=${skillId}&path=SKILL.md&environmentId=`,
+        url: `http://patcher.test/api/v1/projects/proj_123/skills/content?skillId=${skillId}&path=SKILL.md&environmentId=`,
         bodyText: undefined,
       },
       {
         method: "GET",
-        url: `http://bb.test/api/v1/projects/proj_123/skills/files?skillId=${skillId}&environmentId=`,
+        url: `http://patcher.test/api/v1/projects/proj_123/skills/files?skillId=${skillId}&environmentId=`,
         bodyText: undefined,
       },
       {
         method: "PATCH",
-        url: "http://bb.test/api/v1/projects/proj_123/skills/content",
+        url: "http://patcher.test/api/v1/projects/proj_123/skills/content",
         bodyText: JSON.stringify({
           skillId,
           environmentId: null,
@@ -1671,7 +1671,7 @@ describe("@patcher/sdk", () => {
       },
       {
         method: "DELETE",
-        url: "http://bb.test/api/v1/projects/proj_123/skills",
+        url: "http://patcher.test/api/v1/projects/proj_123/skills",
         bodyText: JSON.stringify({ skillId, environmentId: null }),
       },
     ]);

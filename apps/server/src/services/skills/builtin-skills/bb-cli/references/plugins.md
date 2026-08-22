@@ -1,12 +1,12 @@
 # Managing plugins from the CLI
 
-Installing, updating, inspecting, and scaffolding bb plugins. To WRITE one,
+Installing, updating, inspecting, and scaffolding Patcher plugins. To WRITE one,
 use the `patcher-plugin-authoring` skill instead.
 
-- A bb plugin is a TypeScript package running inside the bb server, extending
+- A Patcher plugin is a TypeScript package running inside the Patcher server, extending
   it with services, schedules, HTTP/RPC endpoints, settings — and `bb` CLI
   subcommands that agents run through bash like any other command.
-- Plugins are on by default. Auto-installed builtin plugins ship with bb
+- Plugins are on by default. Auto-installed builtin plugins ship with Patcher
   (except `side-chat`, which is gated by the **"Side chat plugin"**
   experiment); official plugins install from the bundled store on demand.
 - **BB Official plugins** (store under `/api/v1/plugin-catalog`):
@@ -15,7 +15,7 @@ use the `patcher-plugin-authoring` skill instead.
     plugins are pinned to the bundled copy and update with BB app releases.
   - `bb plugin search <query> [--json]` — search the official plugins by id,
     name, description, or category; status shows installed / compatible /
-    requires newer bb.
+    requires newer Patcher.
 - Commands:
   - `bb plugin install <src>` — official plugin name (github, docs, memory,
     tasks), HTTP(S) Git repository URL, local path, `builtin:<name>`,
@@ -37,7 +37,7 @@ use the `patcher-plugin-authoring` skill instead.
     and ids reserved by bundled plugins.
   - `bb plugin outdated` — check installed plugins for compatible updates
     (table; `--json` for raw results). Shows latest compatible candidate and
-    any blocked incompatible newer release. Dev builds (bb `0.0.0`) annotate
+    any blocked incompatible newer release. Dev builds (Patcher `0.0.0`) annotate
     that `engines.patcher` is not enforced.
   - `bb plugin update <id>` / `bb plugin update --all` — apply compatible
     updates for tracking sources. Same full-trust confirmation as install
@@ -66,7 +66,7 @@ use the `patcher-plugin-authoring` skill instead.
     git/npm installs over source) and, when `patcher.app` is declared, `app.js` +
     `app.css` + `app.meta.json`. Neither needs the server.
   - `bb plugin types [path]` — rewrite the plugin's `types/*.d.ts` from the
-    running bb's `@patcher/plugin-sdk` declarations, creating `types/` when absent.
+    running Patcher's `@patcher/plugin-sdk` declarations, creating `types/` when absent.
     Run it in a cloned or older plugin: the scaffold seeds those files once and
     the SDK surface grows every release. `--check` reports staleness and exits
     non-zero without writing (for CI). `bb plugin build` and `bb plugin dev`

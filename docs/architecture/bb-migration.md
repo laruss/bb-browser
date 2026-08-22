@@ -1,4 +1,4 @@
-# bb → Agent Browser: Migration Map
+# bb → Patcher: Migration Map
 
 Phase 0 deliverable of [`docs/PROJECT_PLAN.md`](../PROJECT_PLAN.md) §18.
 
@@ -17,7 +17,7 @@ git show aefe3ea49:docs/system-overview.md
 git show aefe3ea49:docs/repository-overview.md
 ```
 
-Those two are the authoritative description of bb's runtime shape and are quoted
+Those two are the authoritative description of Patcher's runtime shape and are quoted
 below rather than paraphrased from memory. Several other deleted documents remain
 useful reference (`docs/configuration.md`, 812 lines; `docs/platform-support.md`,
 159 lines) and are recoverable the same way.
@@ -38,14 +38,14 @@ Two contract packages define the boundaries: `@patcher/server-contract`
 Implementation packages never import across these boundaries.
 
 The Electron shell (`apps/desktop`) supervises the packaged runtime and loads the
-SPA the server serves. It attaches to any already-running bb server that passes
+SPA the server serves. It attaches to any already-running Patcher server that passes
 its health probe, with **no version handshake** (`apps/desktop/src/server-probe.ts`),
 so renderer and shell routinely come from different builds. This is why the
 browser IPC schemas are wire-frozen — see Invariants.
 
 ## What the browser project actually inherits
 
-The headline finding of Phase 0: **bb already contains a working embedded
+The headline finding of Phase 0: **Patcher already contains a working embedded
 browser.** Plan §18 Phase 1 is largely satisfied by existing code.
 
 ### Electron browser layer — keep as-is
@@ -54,7 +54,7 @@ browser.** Plan §18 Phase 1 is largely satisfied by existing code.
 `WebContentsView` per browser tab:
 
 - dedicated persistent partition (`PATCHER_BROWSER_PARTITION`), so page cookies and
-  storage never touch the bb app session or the user's real browser;
+  storage never touch the Patcher app session or the user's real browser;
 - `sandbox: true`, `contextIsolation: true`, `nodeIntegration: false`;
 - `setWindowOpenHandler` denies every native popup and routes
   `window.open` / `target=_blank` to a new in-panel tab instead;
@@ -113,18 +113,18 @@ What is missing for this project:
 
 - **No browser contribution points** — nothing for omnibox, tabs, toolbar or
   browser context menus.
-- **No isolation.** Plugin `server.ts` modules execute in-process inside the bb
+- **No isolation.** Plugin `server.ts` modules execute in-process inside the Patcher
   server (`apps/server/src/services/plugins/`). Plan §9 requires the opposite
   for agent-generated plugins, so plan Phase 7 (Bun plugin host) is genuinely new
   work, not a refactor.
 
   A permission model has since landed on top of this — `patcher.permissions`,
   declared per plugin and denied by default, described in
-  [plugin-permissions.md](plugin-permissions.md). It gates the bb API rather
+  [plugin-permissions.md](plugin-permissions.md). It gates the Patcher API rather
   than the process, so it does not change the sentence above: it specifies the
   boundary Phase 7 has to build, and is not a substitute for it.
 
-Note that `packages/plugin-build/src/toolchain.ts` installs bb's own pinned build
+Note that `packages/plugin-build/src/toolchain.ts` installs Patcher's own pinned build
 packages (esbuild 0.28.1 and friends) with **npm**, into a private staging
 directory promoted by atomic rename, cross-process safe against a server/CLI
 race. This is product behaviour for building plugins and is independent of
@@ -154,7 +154,7 @@ top-level browser surface, browser tab model independent of threads,
 points, plugin permissions, plugin host process, browser tools for agents.
 
 **Out of product scope, retained untouched**: `apps/web` — per the recovered
-overview, the getbb.app marketing site plus bb connect auth/dashboard on
+overview, the getbb.app marketing site plus Patcher connect auth/dashboard on
 Cloudflare Workers — and `apps/connect`. Plan §17 forbids removing inherited
 systems before their dependencies are understood; neither has been audited.
 
@@ -255,7 +255,7 @@ to masquerade as migration regressions:
    `apps/host-daemon/test/command/host-branches-dispatch.test.ts` builds a real
    git repository per test — `init`, `config` ×2, `add`, `commit`, `branch` ×2 as
    separate processes — against the hard `testTimeout: 15_000` in
-   `apps/host-daemon/vitest.config.ts`. `apps/desktop/test/bb-process.test.ts`
+   `apps/host-daemon/vitest.config.ts`. `apps/desktop/test/patcher-process.test.ts`
    waits on a spawned bridge to log `ready`. Under a full parallel
    `turbo run test` (observed at 630% CPU) those spawns starve and time out;
    run alone they pass in well under a second. This reproduced on pnpm before
@@ -264,7 +264,7 @@ to masquerade as migration regressions:
 
    `apps/desktop` failed even when it was the only package running, because the
    contention is _inside_ it: vitest ran its files concurrently while
-   `bb-process.test.ts` allows the node process it spawns just `timeoutMs: 1_000`
+   `patcher-process.test.ts` allows the node process it spawns just `timeoutMs: 1_000`
    to print `ready`, and a Node cold start alone can exceed that. The test
    writes a temp script and spawns `process.execPath`, so no package manager or
    `node_modules` layout is involved. That workaround used to be a
@@ -325,7 +325,7 @@ no downgrades, but enough to break two things and silently change a third:
 - `@tailwindcss/node`, `@tailwindcss/oxide` and `tailwindcss` 4.3.0 → 4.3.3,
   which no longer equalled `PLUGIN_TOOLCHAIN_PINS` in
   `packages/plugin-build/src/toolchain.ts`. That comparison is exact on purpose,
-  so bb decided the local toolchain was unusable and tried to _download_ one —
+  so Patcher decided the local toolchain was unusable and tried to _download_ one —
   caught by the test asserting a resolvable toolchain is never fetched.
 
 Note the pattern in the last two: **an exact version pin held in one place only
@@ -406,7 +406,7 @@ working:
   served from a cache that ignored the lockfile. Replaced with `bun.lock`, and
   root `package.json` was added to the inputs of the blocks that previously
   relied on `pnpm-workspace.yaml`, since the workspace definition moved there.
-- **`scripts/bb-dev-app`** (a shell script, so it escaped the first sweep over
+- **`scripts/patcher-dev-app`** (a shell script, so it escaped the first sweep over
   `*.ts`/`*.mjs`/`*.json`) probed `node_modules/.pnpm` to decide whether Electron
   needed installing, and launched dev sessions under `screen` with `pnpm run dev`.
   The store path is now `node_modules/.bun`.
@@ -434,7 +434,7 @@ surfaced a test that spawned `pnpm run --silent bb` directly.
 by default, which would swallow a dev server's logs.
 
 Two things stayed on other tools deliberately. `packages/plugin-build/src/toolchain.ts`
-still installs bb's pinned plugin-build packages with **npm** into a private
+still installs Patcher's pinned plugin-build packages with **npm** into a private
 staging directory — that is product behaviour for building plugins, not
 repository tooling. And `bb-app-artifact.ts` still packs with `npm pack`, whose
 stdout contract the caller parses.
@@ -602,7 +602,7 @@ Observed on macOS 26.5.1 (arm64): after the fix above had run,
 `bun dev:desktop` died with
 
 ```
-scripts/bb-dev-app: line 318: 70660 Killed: 9   node .../ensure-native-modules.mjs
+scripts/patcher-dev-app: line 318: 70660 Killed: 9   node .../ensure-native-modules.mjs
 error: script "dev:desktop" exited with code 137
 ```
 
@@ -631,7 +631,7 @@ rather than the machine:
 
 - **It is not catchable.** The kill lands on whichever process loads the module,
   which was `ensure-native-modules.mjs` itself — the repair tool died to the
-  thing it exists to repair, taking `bb-dev-app` with it.
+  thing it exists to repair, taking `patcher-dev-app` with it.
 - **It survives reinstalls.** Re-running the install writes in place again.
 
 `scripts/ensure-native-modules.mjs` now does its **first** verification in a
@@ -658,7 +658,7 @@ cp $F $F.new && mv $F.new $F
   "bounds provider stderr while data arrives without a newline" fails
   deterministically on macOS. Its fixture writes 100 KB to stderr and calls
   `process.exit(42)` on the next line; the test then asserts the captured stderr
-  still ends with `stderr-tail`. Reproduced with plain `node` — no bb code, no
+  still ends with `stderr-tail`. Reproduced with plain `node` — no Patcher code, no
   vitest, no package manager — the parent receives exactly 65536 bytes (the pipe
   buffer) and the tail is gone, 3/3. `process.exit` does not flush a pending
   async pipe write. The bounding assertion the test exists for still passes; only

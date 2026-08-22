@@ -46,7 +46,7 @@ vi.mock("partysocket/ws", () => ({
 }));
 
 vi.mock("./dev-websocket-url", () => ({
-  buildDevWebSocketUrl: () => "ws://bb.test/ws",
+  buildDevWebSocketUrl: () => "ws://patcher.test/ws",
 }));
 
 import { WebSocketManager } from "./ws";

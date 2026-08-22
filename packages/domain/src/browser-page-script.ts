@@ -20,7 +20,7 @@
  * - **A world of its own, per plugin.** Each plugin's scripts share one isolated
  *   world; the page's own world and every other plugin's are separate objects
  *   graphs. The page cannot see `bb`, cannot see anything the script defines, and
- *   the script cannot be shadowed by globals the page redefines. bb's own
+ *   the script cannot be shadowed by globals the page redefines. Patcher's own
  *   automation world (the CDP one behind the agent tools) is a third world again
  *   and shares nothing with either.
  * - **Main frame only.** A session preload does not run in subframes unless the
@@ -31,7 +31,7 @@
  *   is created, so a plugin installed while a matching page is open takes effect
  *   when that page is reloaded. Chrome's content scripts behave the same way.
  * - **A throwing script is contained.** The error lands in the page's console —
- *   where bb's observation log already collects it, so an agent can read it — and
+ *   where Patcher's observation log already collects it, so an agent can read it — and
  *   the next script still runs.
  *
  * Zod-free for the same reason as its neighbours: the plugin API validates

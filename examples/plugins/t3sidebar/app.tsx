@@ -1,4 +1,4 @@
-// patcher-plugin-t3sidebar — an inbox-style replacement for bb's sidebar thread
+// patcher-plugin-t3sidebar — an inbox-style replacement for Patcher's sidebar thread
 // list, and the reference example for `app.slots.experimental_threadList`.
 //
 // The idea it is built around: the list NEVER re-orders itself. Threads sort

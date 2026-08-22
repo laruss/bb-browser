@@ -19,9 +19,9 @@ const SCRIPT_OUTPUT_MAX_BYTES = 1024 * 1024;
 
 let resolvedPatcherPath: string | null = null;
 
-/** Warning prepended to a script's output when bb could not be injected. */
+/** Warning prepended to a script's output when Patcher could not be injected. */
 export const PATCHER_NOT_INJECTED_WARNING =
-  "[bb] warning: could not locate the bb CLI, so `bb` is not on PATH for this script.";
+  "[Patcher] warning: could not locate the Patcher CLI, so `bb` is not on PATH for this script.";
 
 async function commandWorks(command: string, args: string[]): Promise<boolean> {
   try {
@@ -33,7 +33,7 @@ async function commandWorks(command: string, args: string[]): Promise<boolean> {
 }
 
 /**
- * Ordered places to look for the bb CLI, most authoritative first.
+ * Ordered places to look for the Patcher CLI, most authoritative first.
  *
  * Every candidate is an absolute path. The resolved value is handed to scripts
  * as `PATCHER_CLI`, which is documented as an absolute path, and a script is free to
@@ -42,14 +42,14 @@ async function commandWorks(command: string, args: string[]): Promise<boolean> {
  * shell do it also keeps the probe and the script on the same executable.
  *
  * The env vars come before `PATH` because the server process does not reliably
- * inherit a `PATH` containing patcher: on a packaged install bb lives in the daemon
+ * inherit a `PATH` containing patcher: on a packaged install Patcher lives in the daemon
  * bundle directory, which is on no shell `PATH`. `PATCHER_CLI` (the binary) and
  * `PATCHER_CLI_DIR` (its directory) are the two documented pointers; see
  * packages/config/src/env-vars.ts. Relative values are skipped rather than
  * resolved against the process cwd, which has nothing to do with either.
  *
  * The trailing paths are macOS-only install locations, kept as a last resort.
- * Relying on them alone is what left Linux hosts unable to resolve bb at all.
+ * Relying on them alone is what left Linux hosts unable to resolve Patcher at all.
  */
 export function patcherBinaryCandidates(env: NodeJS.ProcessEnv): string[] {
   const candidates: string[] = [];
@@ -91,14 +91,14 @@ async function isExecutableFile(candidate: string): Promise<boolean> {
 }
 
 /**
- * Locate the bb CLI so it can be put on a script's PATH. Returns null rather
+ * Locate the Patcher CLI so it can be put on a script's PATH. Returns null rather
  * than throwing: injection is a convenience for scripts that call `bb`, not a
  * precondition for running one. Failing the whole automation here meant a
- * script that never mentions bb still died before its first line.
+ * script that never mentions Patcher still died before its first line.
  *
  * Candidates are stat-ed before being executed. Expanding `PATH` makes the list
  * long, and spawning a process per entry — each with its own timeout — would
- * make a host without bb pay seconds on every run.
+ * make a host without Patcher pay seconds on every run.
  */
 export async function resolvePatcherBinary(
   env: NodeJS.ProcessEnv = process.env,
@@ -115,7 +115,7 @@ export async function resolvePatcherBinary(
 }
 
 /**
- * PATH for a script run, with bb's directory prepended when it is known.
+ * PATH for a script run, with Patcher's directory prepended when it is known.
  *
  * The absolute-path guard is belt and braces: patcherBinaryCandidates only yields
  * absolute paths, so a relative one would mean dirname() could return ".",
@@ -255,7 +255,7 @@ export async function executeStoredScript(args: {
   const interpreter = args.interpreter ?? resolveDefaultInterpreter(args.scriptFile);
   const command = resolveInterpreterCommand(interpreter);
   const patcherPath = await resolvePatcherBinary();
-  // A script that never calls bb must still run, so an unresolved CLI only
+  // A script that never calls Patcher must still run, so an unresolved CLI only
   // costs the PATH injection and leaves a note in the captured output.
   const warning = patcherPath === null ? `${PATCHER_NOT_INJECTED_WARNING}\n` : "";
   const scriptEnv: NodeJS.ProcessEnv = {
@@ -267,7 +267,7 @@ export async function executeStoredScript(args: {
     PATCHER_AUTOMATION_ID: args.automationId,
     PATCHER_AUTOMATION_RUN_ID: args.runId,
   };
-  // Scripts are told where bb is the same way agent shells are, so `"$PATCHER_CLI"`
+  // Scripts are told where Patcher is the same way agent shells are, so `"$PATCHER_CLI"`
   // works even when the directory is already on PATH.
   if (patcherPath !== null) {
     scriptEnv.PATCHER_CLI = patcherPath;

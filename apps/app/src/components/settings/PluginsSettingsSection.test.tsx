@@ -754,7 +754,7 @@ describe("InstalledPluginRow", () => {
             updateState: {
               ...EMPTY_PLUGIN_UPDATE_STATE,
               blockedVersion: "1.9.0",
-              blockedReasons: ["requires bb >= 0.15"],
+              blockedReasons: ["requires Patcher >= 0.15"],
             },
           }}
           onUpdateClick={() => {}}

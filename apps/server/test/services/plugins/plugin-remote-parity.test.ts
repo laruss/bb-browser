@@ -78,7 +78,7 @@ describe("a remote handle against the in-process one", () => {
   const dirs: string[] = [];
 
   async function dataDir(): Promise<string> {
-    const dir = await mkdtemp(join(tmpdir(), "bb-parity-"));
+    const dir = await mkdtemp(join(tmpdir(), "patcher-parity-"));
     dirs.push(dir);
     return dir;
   }
@@ -257,7 +257,7 @@ describe("a remote handle against the in-process one", () => {
 
   // `bb` itself has no server-side counterpart, and saying so beats handing
   // back something that looks usable and silently does nothing.
-  it("refuses to pretend it has the plugin's bb object", async () => {
+  it("refuses to pretend it has the plugin's Patcher object", async () => {
     const { handle: remote } = await outOfProcess();
 
     expect(() => remote.api).toThrow(/runs in its own process/);

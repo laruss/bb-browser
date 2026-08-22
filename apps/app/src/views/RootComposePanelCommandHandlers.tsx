@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useAppCommandHandler } from "@/components/commands/AppCommandProvider";
-import { getPatcherDesktopInfo } from "@/lib/bb-desktop";
+import { getPatcherDesktopInfo } from "@/lib/patcher-desktop";
 
 interface RootComposePanelCommandHandlersProps {
   isFocused: boolean;

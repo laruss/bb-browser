@@ -16,7 +16,7 @@ import {
   shouldReserveMacosTrafficLights,
   shouldUseMacosDesktopChrome,
   SIDEBAR_TRIGGER_TRAILING_RESERVE_CLASS,
-} from "@/lib/bb-desktop";
+} from "@/lib/patcher-desktop";
 import { useDesktopWindowState } from "@/hooks/useDesktopWindowState";
 import { useIsLeadingPanelShowing } from "./PluginLeadingPanel";
 import { cn } from "@patcher/shared-ui/lib/utils";
@@ -115,7 +115,7 @@ export function AppPageHeader({
         HEADER_SEAM_CLASS,
         // The fill and the seam stay full-bleed; the inset lives on the content
         // row below, because that is the element the chrome reserves replace a
-        // side of. See `lib/bb-desktop.ts` — an inset on this element instead
+        // side of. See `lib/patcher-desktop.ts` — an inset on this element instead
         // would make every reserve 16px too wide.
         "relative shrink-0 bg-surface-scrim backdrop-blur-sm",
         usesDesktopChrome && isWindowDragRegion && MACOS_WINDOW_DRAG_CLASS,

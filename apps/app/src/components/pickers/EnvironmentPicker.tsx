@@ -66,7 +66,7 @@ export interface EnvironmentPickerUIProps {
   value: string;
   onChange: (value: string) => void;
   sources: readonly ProjectSource[];
-  /** The host bb runs work on, or null while it loads / before one connects. */
+  /** The host Patcher runs work on, or null while it loads / before one connects. */
   host: Host | null;
   /** Whether `host` is the machine this browser runs on. When false (e.g. a
    * phone on the tailnet), the picker surfaces the host name so it's clear work

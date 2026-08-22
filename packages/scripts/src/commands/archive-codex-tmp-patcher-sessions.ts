@@ -10,9 +10,9 @@ import { resolveCodexHome } from "@patcher/config/codex-home";
 import { bold, cyan, dim, green, yellow, log } from "../lib/script-helpers.js";
 
 const DEFAULT_TMP_PATCHER_PATTERNS: readonly string[] = [
-  "*/bb-standalone-*",
-  "*/bb-integration-*",
-  "*/bb-integ-*",
+  "*/patcher-standalone-*",
+  "*/patcher-integration-*",
+  "*/patcher-integ-*",
   "*/bb-qa-smoke-*",
 ];
 const DEFAULT_ARCHIVE_CONCURRENCY = 25;
@@ -305,7 +305,7 @@ export function parseArchiveTmpPatcherSessionsArgs(
 export function renderHelpText(): string {
   const defaultPatterns = DEFAULT_TMP_PATCHER_PATTERNS.join(", ");
   return `
-  ${bold("codex archive tmp bb sessions")}
+  ${bold("codex archive tmp Patcher sessions")}
 
   ${dim("Usage")}
     bun run codex:archive-tmp-patcher-sessions [--dry-run] [--yes]
@@ -321,7 +321,7 @@ export function renderHelpText(): string {
   ${dim("Notes")}
     Archives Codex threads whose recorded cwd matches any of the patterns.
     Passing --pattern one or more times replaces the default list.
-    Defaults cover the bb test temp dirs (QA standalone, integration, agent-runtime providers).
+    Defaults cover the Patcher test temp dirs (QA standalone, integration, agent-runtime providers).
     Creates a backup of the active state_<n>.sqlite DB before modifying anything.
     Uses Codex app-server's thread/archive API so rollout files move to archived_sessions.
 \n`;
@@ -658,7 +658,7 @@ export function archiveThreadsViaAppServer(
         capabilities: { experimentalApi: true },
         clientInfo: {
           name: "archive-tmp-patcher-sessions",
-          title: "archive tmp bb sessions",
+          title: "archive tmp Patcher sessions",
           version: "0",
         },
       },
@@ -729,7 +729,7 @@ export async function main(
   const dbPath = resolveCodexStateDbPath(options.codexHome);
   ensureCodexStateDbExists(dbPath);
 
-  process.stdout.write(`\n  ${bold("codex archive tmp bb sessions")}\n\n`);
+  process.stdout.write(`\n  ${bold("codex archive tmp Patcher sessions")}\n\n`);
 
   const threadIds = await readMatchingThreadIds(dbPath, options.patterns);
   const previews = await readMatchingThreadPreviews(dbPath, options.patterns);

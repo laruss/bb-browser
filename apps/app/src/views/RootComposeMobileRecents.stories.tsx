@@ -39,7 +39,7 @@ function makeRecentThread({
   overrides = {},
 }: MakeRecentThreadArgs = {}): ThreadListEntry {
   return makeThreadListEntry({
-    projectId: PROJECT_IDS.bb,
+    projectId: PROJECT_IDS.patcher,
     ...overrides,
   });
 }
@@ -133,7 +133,7 @@ const statusThreads: ThreadListEntry[] = [
 ];
 
 const projectNamesById = new Map<string, string>([
-  [PROJECT_IDS.bb, PROJECT_NAMES.bb],
+  [PROJECT_IDS.patcher, PROJECT_NAMES.patcher],
   [PROJECT_IDS.pierre, PROJECT_NAMES.pierre],
 ]);
 

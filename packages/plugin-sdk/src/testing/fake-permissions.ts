@@ -63,7 +63,7 @@ export function pluginSitesFromManifest(from: string): readonly string[] {
 const pluginSitesSchema = z.array(z.string().min(1));
 
 /**
- * The `bb` block of the nearest `package.json` above `from` that declares
+ * The `patcher` block of the nearest `package.json` above `from` that declares
  * `patcher.server`, so tests in subdirectories work without naming a path.
  */
 function readPluginManifestPatcher(from: string): object {

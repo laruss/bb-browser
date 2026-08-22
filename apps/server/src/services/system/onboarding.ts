@@ -158,7 +158,7 @@ export async function getOnboardingAgentOverview(
       displayName: entry.displayName,
       status,
       // `error` still carries plan/account when they were readable from local
-      // credentials — a rate-limited usage API must not blank the plan bb
+      // credentials — a rate-limited usage API must not blank the plan Patcher
       // already knows pays for inference.
       planLabel:
         providerUsage?.status === "ok" || providerUsage?.status === "error"
@@ -184,13 +184,13 @@ export async function getOnboardingAgentOverview(
     agents.push({
       providerId: agent.id,
       displayName: agent.displayName,
-      // Presence is all we know. bb launches these over ACP, which handles auth
+      // Presence is all we know. Patcher launches these over ACP, which handles auth
       // itself, so an installed ACP agent is usable.
       status: "connected",
       planLabel: null,
       accountEmail: null,
       canInstall: false,
-      // ACP agents authenticate through the bridge, not a bb-visible command.
+      // ACP agents authenticate through the bridge, not a Patcher-visible command.
       loginCommand: null,
     });
   }

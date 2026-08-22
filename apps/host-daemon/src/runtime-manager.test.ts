@@ -87,10 +87,12 @@ async function runGit(
 }
 
 async function initRepo(): Promise<string> {
-  const repoPath = await makeTempDir("bb-runtime-manager-repo-");
+  const repoPath = await makeTempDir("patcher-runtime-manager-repo-");
   await runGit(["init", "-b", "main"], { cwd: repoPath });
   await runGit(["config", "user.name", "BB Tests"], { cwd: repoPath });
-  await runGit(["config", "user.email", "bb@example.com"], { cwd: repoPath });
+  await runGit(["config", "user.email", "patcher@example.com"], {
+    cwd: repoPath,
+  });
   await fs.writeFile(path.join(repoPath, "README.md"), "hello\n", "utf8");
   await runGit(["add", "."], { cwd: repoPath });
   await runGit(["commit", "-m", "Initial commit"], { cwd: repoPath });
@@ -448,7 +450,7 @@ describe("RuntimeManager", () => {
   });
 
   it("passes staged injected skill roots to created runtimes", async () => {
-    const dataDir = await makeTempDir("bb-runtime-manager-skills-");
+    const dataDir = await makeTempDir("patcher-runtime-manager-skills-");
     const source = await writeInjectedSkillSource({
       dataDir,
       name: "release-notes",
@@ -526,7 +528,9 @@ describe("RuntimeManager", () => {
   });
 
   it("loads a thread command's skill catalog while that command retains an idle runtime", async () => {
-    const dataDir = await makeTempDir("bb-runtime-manager-command-skills-");
+    const dataDir = await makeTempDir(
+      "patcher-runtime-manager-command-skills-",
+    );
     const source = await writeInjectedSkillSource({
       dataDir,
       name: "release-notes",
@@ -571,7 +575,7 @@ describe("RuntimeManager", () => {
   });
 
   it("does not reuse an idle runtime with a stale skill catalog hash", async () => {
-    const dataDir = await makeTempDir("bb-runtime-manager-skills-stale-");
+    const dataDir = await makeTempDir("patcher-runtime-manager-skills-stale-");
     const source = await writeInjectedSkillSource({
       dataDir,
       name: "release-notes",
@@ -623,7 +627,7 @@ describe("RuntimeManager", () => {
   });
 
   it("reuses a busy runtime with a stale skill catalog and refreshes it once idle", async () => {
-    const dataDir = await makeTempDir("bb-runtime-manager-skills-defer-");
+    const dataDir = await makeTempDir("patcher-runtime-manager-skills-defer-");
     const source = await writeInjectedSkillSource({
       dataDir,
       name: "release-notes",
@@ -683,7 +687,9 @@ describe("RuntimeManager", () => {
   });
 
   it("replaces an idle runtime that hosts the target thread and keeps the new staged catalog", async () => {
-    const dataDir = await makeTempDir("bb-runtime-manager-skills-idle-host-");
+    const dataDir = await makeTempDir(
+      "patcher-runtime-manager-skills-idle-host-",
+    );
     const source = await writeInjectedSkillSource({
       dataDir,
       name: "release-notes",
@@ -737,7 +743,9 @@ describe("RuntimeManager", () => {
   });
 
   it("reuses a busy runtime for a target thread it does not host yet", async () => {
-    const dataDir = await makeTempDir("bb-runtime-manager-skills-unhosted-");
+    const dataDir = await makeTempDir(
+      "patcher-runtime-manager-skills-unhosted-",
+    );
     const source = await writeInjectedSkillSource({
       dataDir,
       name: "release-notes",
@@ -777,7 +785,9 @@ describe("RuntimeManager", () => {
   });
 
   it("reuses a runtime pinned busy by a terminal when a thread brings skill sources", async () => {
-    const dataDir = await makeTempDir("bb-runtime-manager-skills-terminal-");
+    const dataDir = await makeTempDir(
+      "patcher-runtime-manager-skills-terminal-",
+    );
     const source = await writeInjectedSkillSource({
       dataDir,
       name: "release-notes",
@@ -813,7 +823,9 @@ describe("RuntimeManager", () => {
   });
 
   it("rejects a stale skill catalog on a busy runtime when no thread targets it", async () => {
-    const dataDir = await makeTempDir("bb-runtime-manager-skills-conflict-");
+    const dataDir = await makeTempDir(
+      "patcher-runtime-manager-skills-conflict-",
+    );
     const source = await writeInjectedSkillSource({
       dataDir,
       name: "release-notes",
@@ -1006,7 +1018,7 @@ describe("RuntimeManager", () => {
 
   it("passes managed worktree git metadata roots to created runtimes", async () => {
     const repoPath = await initRepo();
-    const parentDir = await makeTempDir("bb-runtime-manager-worktree-");
+    const parentDir = await makeTempDir("patcher-runtime-manager-worktree-");
     const targetPath = path.join(parentDir, "env");
     const runtimeOptions: RuntimeOptionsRef = { current: null };
     const manager = new RuntimeManager({
@@ -1023,7 +1035,7 @@ describe("RuntimeManager", () => {
         workspaceProvisionType: "managed-worktree",
         sourcePath: repoPath,
         targetPath,
-        branchName: "bb/env-roots",
+        branchName: "patcher/env-roots",
         baseBranch: "main",
         timeoutMs: 900000,
       },
@@ -1048,9 +1060,11 @@ describe("RuntimeManager", () => {
 
   it("passes unmanaged linked worktree git metadata roots to created runtimes", async () => {
     const repoPath = await initRepo();
-    const parentDir = await makeTempDir("bb-runtime-manager-unmanaged-wt-");
+    const parentDir = await makeTempDir(
+      "patcher-runtime-manager-unmanaged-wt-",
+    );
     const worktreePath = path.join(parentDir, "env");
-    await runGit(["worktree", "add", "-B", "bb/unmanaged", worktreePath], {
+    await runGit(["worktree", "add", "-B", "patcher/unmanaged", worktreePath], {
       cwd: repoPath,
     });
     const runtimeOptions: RuntimeOptionsRef = { current: null };
@@ -1151,7 +1165,7 @@ describe("RuntimeManager", () => {
         workspaceProvisionType: "managed-worktree",
         sourcePath: "/tmp/source",
         targetPath: "/tmp/env-1",
-        branchName: "bb/env-1",
+        branchName: "patcher/env-1",
         baseBranch: "main",
         timeoutMs: 900000,
       },
@@ -1234,7 +1248,7 @@ describe("RuntimeManager", () => {
   });
 
   it("recreates the provider maintenance runtime after base shell env changes", async () => {
-    const dataDir = await makeTempDir("bb-provider-maintenance-");
+    const dataDir = await makeTempDir("patcher-provider-maintenance-");
     const firstRuntime = createFakeRuntime();
     const secondRuntime = createFakeRuntime();
     const createRuntime = vi
@@ -1275,7 +1289,7 @@ describe("RuntimeManager", () => {
   });
 
   it("does not let stale provider maintenance creation replace a newer runtime", async () => {
-    const dataDir = await makeTempDir("bb-provider-maintenance-race-");
+    const dataDir = await makeTempDir("patcher-provider-maintenance-race-");
     const staleRuntime = createFakeRuntime();
     const currentRuntime = createFakeRuntime();
     const staleCreation = createDeferred<AgentRuntime>();

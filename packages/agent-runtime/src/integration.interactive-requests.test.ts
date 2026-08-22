@@ -122,7 +122,7 @@ describe("interactive request scenarios", () => {
   it.concurrent(
     "routes Claude Read prompts as semantic permission-grant approvals",
     async () => {
-      const outsideDir = mkdtempSync(join(tmpdir(), "bb-claude-read-"));
+      const outsideDir = mkdtempSync(join(tmpdir(), "patcher-claude-read-"));
       const filePath = join(
         outsideDir,
         createTempFileName("claude-read-approval"),
@@ -326,7 +326,7 @@ describe("interactive request scenarios", () => {
     "blocks Claude workspace-write outside-workspace Bash without interactive requests when escalation is deny",
     async () => {
       const ctx = createTestRuntime("claude-code");
-      const outsideDir = mkdtempSync(join(tmpdir(), "bb-claude-outside-"));
+      const outsideDir = mkdtempSync(join(tmpdir(), "patcher-claude-outside-"));
       const filePath = join(
         outsideDir,
         createTempFileName("claude-outside-bash-denied"),

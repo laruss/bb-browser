@@ -266,7 +266,7 @@ describe("internal event append ownership", () => {
     }
   });
 
-  it("accepts a batch carrying a provider/unhandled event for a turn bb never started", async () => {
+  it("accepts a batch carrying a provider/unhandled event for a turn Patcher never started", async () => {
     // The production wedge, at the route that produced it. Codex labels its
     // automatic-compaction traffic with a turn id of its own making, so the
     // daemon posted a provider/unhandled event scoped to `auto-compact-1`. The

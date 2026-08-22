@@ -41,7 +41,7 @@ export interface ThreadEnvironmentLookupResult {
 
 /**
  * The host's data directory, or null when no daemon session is open. Callers
- * that only want to recognize bb-owned paths use this instead of
+ * that only want to recognize Patcher-owned paths use this instead of
  * {@link requireConnectedHostSession}, so an offline host degrades the check
  * rather than failing the request.
  */

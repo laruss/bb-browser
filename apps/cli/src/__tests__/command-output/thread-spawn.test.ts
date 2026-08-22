@@ -714,7 +714,7 @@ describe("bb thread spawn command output", () => {
 
   it("bb thread spawn forwards an absolute --environment path as an unmanaged workspace", async () => {
     vi.stubEnv("PATCHER_PROJECT_ID", "proj-1");
-    const workspacePath = "/Users/michael/Projects/bb";
+    const workspacePath = "/Users/michael/Projects/patcher";
     const thread: domain.Thread = fixtures.makeThread({
       id: "thread-env-path-1",
       projectId: "proj-1",

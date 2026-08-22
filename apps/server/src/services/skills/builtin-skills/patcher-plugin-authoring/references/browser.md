@@ -76,7 +76,7 @@ instructions.
 
 ## patcher.browser — adding an entry to a tab's menu
 
-Right-clicking a tab in the browser surface's strip shows bb's own entries
+Right-clicking a tab in the browser surface's strip shows Patcher's own entries
 (Duplicate, Pin, Mute, Close) and then whatever plugins added, in plugin id
 order. This is where "do something with _this_ tab" belongs.
 
@@ -89,7 +89,7 @@ patcher.browser.registerTabAction({
   title: "File this tab",
   async run(context) {
     // context: { tabId, url, title, pinned, muted, active }
-    // url is "" for a tab with no page yet, and null for a bb screen
+    // url is "" for a tab with no page yet, and null for a Patcher screen
     // (Settings, a plugin panel) — a tab with no page at all.
     if (context.url === null || context.url.length === 0) return;
     await patcher.storage.kv.set(`filed:${context.tabId}`, context.url);
@@ -131,7 +131,7 @@ browser comes back audible.
 
 ## patcher.browser — offering a search engine
 
-What the address bar does with text that is not an address. bb ships a few
+What the address bar does with text that is not an address. Patcher ships a few
 engines; a plugin can offer more, and the user picks one in Settings.
 
 Needs `searchEngine.register`.
@@ -360,7 +360,7 @@ The page's author wrote their stylesheet first, so a rule that has to win says
 For the browser-UI half of "when I'm on GitHub, show me my open PRs", scope a
 frontend panel to the same pages with `app.slots.experimental_leadingPanel({
 matches })` — see references/frontend-slots.md. That one costs no permission: it is
-bb's own chrome reacting to the address bar, not code reaching into a page.
+Patcher's own chrome reacting to the address bar, not code reaching into a page.
 
 ## patcher.browser — running your own code in a page
 
@@ -426,7 +426,7 @@ What the browser can promise, measured rather than assumed:
   most common reason a generated page script "stops working".
 - **A new registration runs on the next load** of a matching page, as Chrome's
   content scripts do. Reload the tab.
-- **An error is contained.** It lands in the page's console — which bb's
+- **An error is contained.** It lands in the page's console — which Patcher's
   observation log collects, so `patcher.browser.tabs.observe` can read it — and the next
   script still runs.
 
@@ -435,7 +435,7 @@ page. A syntax error is reported by the page's console, in the world it would ha
 run in.
 
 See examples/plugins/site-tweaks for the whole loop — a button in GitHub's page, a
-row in the plugin's SQLite, and the note appearing in bb's own panel.
+row in the plugin's SQLite, and the note appearing in Patcher's own panel.
 
 ## patcher.browser — adding a button to the find bar
 
@@ -755,11 +755,11 @@ Two more rules worth building around:
   tab's debugger session, so do not treat them as configuration.
 - **`patcher.browser.recording` produces artifacts, and it is two different things.**
   `traceStart`/`traceStop` log the browser commands _bb_ runs while the trace is
-  open — one at a time, and stopping it is the only way to read it. It is bb's
+  open — one at a time, and stopping it is the only way to read it. It is Patcher's
   own JSON, not a Playwright trace, and no Playwright viewer opens it.
   `videoStart`/`videoStop` film one tab through the browser's screencast, which
   only paints while that tab is visible, and hand back JPEG frames with their
-  timings rather than a playable file: bb bundles no video encoder, so making a
+  timings rather than a playable file: Patcher bundles no video encoder, so making a
   video out of them is `ffmpeg`'s job — `bb browser video-stop <dir> --encode`
   runs the system's, and `bb browser install-ffmpeg` installs one. Both are capped and both report what they
   dropped — read `droppedSteps`/`droppedFrames` before telling anyone a session

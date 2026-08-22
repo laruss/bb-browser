@@ -58,7 +58,7 @@ const MACHINES_SECTION_DESCRIPTION =
   "Computers that can run your tasks. Pair a machine to run projects and threads on it.";
 
 const PRIMARY_REMOVE_DISABLED_REASON =
-  "This machine runs bb and can't be removed.";
+  "This machine runs Patcher and can't be removed.";
 
 const PLATFORM_LABELS: Record<HostPlatform, string | null> = {
   darwin: "macOS",

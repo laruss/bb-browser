@@ -1,6 +1,6 @@
 ---
 name: memory
-description: Use durable BB memory when prior project knowledge or cross-project user preferences can improve the current task, and save durable new learning through the bb memory CLI.
+description: Use durable BB memory when prior project knowledge or cross-project user preferences can improve the current task, and save durable new learning through the Patcher memory CLI.
 ---
 
 # BB memory

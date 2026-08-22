@@ -1,6 +1,6 @@
 // patcher-plugin-t3sidebar backend — the settled / snoozed store.
 //
-// This state lives in the plugin's own SQLite database, never on bb's thread.
+// This state lives in the plugin's own SQLite database, never on Patcher's thread.
 // Putting it on the thread would mean a schema change, a wire change, and a
 // HOST_DAEMON_PROTOCOL_VERSION bump for something only this sidebar
 // understands. Here, uninstalling the plugin removes its state with it.

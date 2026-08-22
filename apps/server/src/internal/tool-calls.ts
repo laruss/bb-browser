@@ -22,7 +22,7 @@ const textEncoder = new TextEncoder();
 
 /**
  * Return the response head before a plugin tool finishes. Interactive plugin
- * tools can wait for user input for minutes, while bb Connect requires an
+ * tools can wait for user input for minutes, while Patcher Connect requires an
  * origin response head within 30 seconds. The response body can stay open.
  */
 function streamToolCallResponse(result: Promise<ToolCallResponse>): Response {

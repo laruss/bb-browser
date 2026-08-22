@@ -15,7 +15,7 @@ describe("scaffoldPlugin bundled types", () => {
   let workDir: string;
 
   beforeEach(async () => {
-    workDir = await mkdtemp(join(tmpdir(), "bb-scaffold-"));
+    workDir = await mkdtemp(join(tmpdir(), "patcher-scaffold-"));
   });
 
   afterEach(async () => {

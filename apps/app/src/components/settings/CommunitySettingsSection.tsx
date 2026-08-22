@@ -55,7 +55,7 @@ export function CommunitySettingsSection() {
   return (
     <SettingsSection
       title="Community"
-      description="Chat with other bb users and follow development on GitHub."
+      description="Chat with other Patcher users and follow development on GitHub."
     >
       <div className="space-y-5">
         <CommunityLinkRow
@@ -67,7 +67,7 @@ export function CommunitySettingsSection() {
         />
         <CommunityLinkRow
           label="GitHub"
-          description="Source code, issues, and releases for the bb project."
+          description="Source code, issues, and releases for the Patcher project."
           href={GITHUB_REPO_URL}
           icon="Github"
           openLabel="View on GitHub"

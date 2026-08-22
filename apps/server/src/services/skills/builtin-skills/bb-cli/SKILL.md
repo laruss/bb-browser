@@ -1,11 +1,11 @@
 ---
 name: bb-cli
-description: Control bb itself from the command line. Use whenever the task is to inspect or orchestrate bb — spawn, steer, wait on, or read threads and subagents; delegate work to another agent; inspect projects, environments, machines, providers, or terminals; or manage skills, plugins, automations, themes, and app settings. Trigger on bb status, bb thread, bb project, bb environment, bb terminal, bb plugin, bb skill, bb automation, or any request to hand work to another bb thread.
+description: Control Patcher itself from the command line. Use whenever the task is to inspect or orchestrate Patcher — spawn, steer, wait on, or read threads and subagents; delegate work to another agent; inspect projects, environments, machines, providers, or terminals; or manage skills, plugins, automations, themes, and app settings. Trigger on bb status, bb thread, bb project, bb environment, bb terminal, bb plugin, bb skill, bb automation, or any request to hand work to another Patcher thread.
 ---
 
-# bb CLI
+# Patcher CLI
 
-Use `bb` when controlling bb itself: inspect current context, coordinate threads,
+Use `bb` when controlling Patcher itself: inspect current context, coordinate threads,
 message agents, or inspect projects, providers, and environments.
 
 This file covers the everyday loop — get context, spawn, coordinate, inspect.
@@ -24,7 +24,7 @@ all of them.
   targets. The Add machine installer injects its enrolled daemon's selected
   local API port automatically and atomically reserves it across default and
   custom machine data directories.
-- The main server and source Vite app bind to loopback by default. Use bb
+- The main server and source Vite app bind to loopback by default. Use Patcher
   connect or a private Tailscale Serve URL for remote browsers and execution
   machines. `--server-bind-host 0.0.0.0` is a compatibility escape hatch only:
   the public API is unauthenticated and permits command execution and file

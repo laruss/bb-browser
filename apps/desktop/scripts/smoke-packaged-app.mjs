@@ -55,7 +55,7 @@ function createDesktopVersionFeed(version) {
     platform: "macos",
     version,
     releaseDate: new Date(0).toISOString(),
-    releaseName: `bb desktop ${version}`,
+    releaseName: `Patcher desktop ${version}`,
     releaseNotes: null,
     minimumSystemVersion: null,
     files: [
@@ -74,7 +74,7 @@ function createDesktopVersionFeed(version) {
 function renderSmokePage(expectedDesktopVersion) {
   return `<!doctype html>
 <meta charset="utf-8">
-<title>bb packaged desktop smoke</title>
+<title>Patcher packaged desktop smoke</title>
 <main>packaged desktop smoke</main>
 <script>
 (async () => {
@@ -360,7 +360,9 @@ async function smokePackagedApp() {
 
   const desktopVersion = await readDesktopPackageVersion();
   const appBinary = await resolvePackagedAppBinary();
-  const smokeRoot = await mkdtemp(join(tmpdir(), "bb-desktop-packaged-smoke-"));
+  const smokeRoot = await mkdtemp(
+    join(tmpdir(), "patcher-desktop-packaged-smoke-"),
+  );
   const dataDir = join(smokeRoot, "data");
   const userDataDir = join(smokeRoot, "user-data");
   const smokeServer = await startSmokeServer({
@@ -373,8 +375,8 @@ async function smokePackagedApp() {
   const childEnv = {
     ...process.env,
     PATCHER_DATA_DIR: dataDir,
-    // The smoke server answers the bb probe, so a packaged build treats it as a
-    // foreign bb and asks before attaching. No one is here to click, so opt out
+    // The smoke server answers the Patcher probe, so a packaged build treats it as a
+    // foreign Patcher and asks before attaching. No one is here to click, so opt out
     // and keep exercising the real attach path.
     PATCHER_DESKTOP_ATTACH_WITHOUT_PROMPT: "1",
     PATCHER_DESKTOP_OPEN_DEVTOOLS: "0",

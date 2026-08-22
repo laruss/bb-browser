@@ -24,7 +24,7 @@ function isRepoMode(mode: Mode): boolean {
 }
 
 async function fixture(mode: Mode) {
-  const root = await mkdtemp(join(tmpdir(), `bb-artifact-${mode}-`));
+  const root = await mkdtemp(join(tmpdir(), `patcher-artifact-${mode}-`));
   roots.push(root);
   const packageRoot = isRepoMode(mode) ? join(root, "packages/bb-app") : root;
   const serverEntry =

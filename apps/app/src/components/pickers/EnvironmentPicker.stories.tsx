@@ -37,7 +37,7 @@ function makeSource(id: string, hostId: string, path: string): ProjectSource {
 }
 
 const localProjectSources: readonly ProjectSource[] = [
-  makeSource("src_local", HOST_IDS.local, "/Users/michael/Projects/bb"),
+  makeSource("src_local", HOST_IDS.local, "/Users/michael/Projects/patcher"),
 ];
 
 const noop = () => {};
@@ -162,7 +162,7 @@ const machineHosts = [
 ];
 
 const machineSources: readonly ProjectSource[] = [
-  makeSource("src_local", HOST_IDS.local, "/Users/michael/Projects/bb"),
+  makeSource("src_local", HOST_IDS.local, "/Users/michael/Projects/patcher"),
   makeSource("src_remote", HOST_IDS.remote, "/home/michael/bb"),
 ];
 

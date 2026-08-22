@@ -1,47 +1,47 @@
 ---
 kind: instruction
-title: bb Guide — Agent Configuration
+title: Patcher Guide — Agent Configuration
 summary: User and workspace files that customize agent instructions and skills.
 intent: Document the user and workspace files that shape agent behavior for threads.
 editingNotes: Keep accurate against the server's agent-instructions reader and skill loader.
 ---
 Agent configuration
 
-bb reads agent configuration from the app data dir and from a project's .patcher/
+Patcher reads agent configuration from the app data dir and from a project's .patcher/
 directory. These files shape how agents behave in provider-backed threads.
 
 User instructions (<dataDir>/AGENTS.md):
 
-  Add an AGENTS.md file to the bb data dir (usually ~/.patcher/AGENTS.md) to give
+  Add an AGENTS.md file to the Patcher data dir (usually ~/.patcher/AGENTS.md) to give
   every provider-backed thread across all projects default user-level
-  instructions. bb reads <dataDir>/AGENTS.md and appends its contents to the
+  instructions. Patcher reads <dataDir>/AGENTS.md and appends its contents to the
   thread system prompt for all providers when a provider session starts.
 
 Workspace instructions (.patcher/AGENTS.md):
 
   Add a .patcher/AGENTS.md file to a workspace to give every thread that runs there
-  repo-specific instructions. bb reads <workspace>/.patcher/AGENTS.md and appends its
+  repo-specific instructions. Patcher reads <workspace>/.patcher/AGENTS.md and appends its
   contents to the thread system prompt for all providers, after any
   <dataDir>/AGENTS.md instructions, when a provider session starts. Track it with
   git so fresh managed worktrees include it.
 
   Only the plural AGENTS.md is read, only from the exact data-dir and
-  workspace-root .patcher/ locations above (bb does not walk parent directories), and
-  an empty file is ignored. This is bb's own provider-agnostic instruction
+  workspace-root .patcher/ locations above (Patcher does not walk parent directories), and
+  an empty file is ignored. This is Patcher's own provider-agnostic instruction
   injection, separate from provider-native files such as CLAUDE.md or a
   repo-root AGENTS.md.
 
 Skills (.patcher/skills/):
 
-  A skill is a reusable instruction file that bb injects into a thread and
+  A skill is a reusable instruction file that Patcher injects into a thread and
   exposes to the agent as a slash command. Place project skills under
   .patcher/skills/<name>/SKILL.md in a workspace. Each SKILL.md has YAML frontmatter
   with `name` (lowercase, hyphenated, matching the directory) and `description`,
   followed by the instruction body.
 
-  bb resolves skills from three sources, in increasing precedence:
+  Patcher resolves skills from three sources, in increasing precedence:
 
-    builtin    Skills bundled with bb.
+    builtin    Skills bundled with Patcher.
     user       <dataDir>/skills (e.g. ~/.patcher/skills).
     project    <workspace>/.patcher/skills.
 
@@ -59,12 +59,12 @@ Skills (.patcher/skills/):
   Use `bb skill search` to browse skills.sh, `bb skill registry detail
   <registry-skill-id>` to inspect metadata and the bounded file preview, and
   `bb skill install <registry-skill-id>` to install that canonical registry
-  identity into bb user skills. Registry commands are server-wide and do not
+  identity into Patcher user skills. Registry commands are server-wide and do not
   accept workspace selectors.
 
-  Use `bb skill install-cli-skills` to copy bb's built-in CLI skills into a
+  Use `bb skill install-cli-skills` to copy Patcher's built-in CLI skills into a
   machine's global agent skill roots (`~/.agents/skills` and
-  `~/.claude/skills`) so agents running outside bb can drive it. It installs on
+  `~/.claude/skills`) so agents running outside Patcher can drive it. It installs on
   every connected machine unless you pass `--machine <id-or-name>`, which is
   repeatable. Settings → Skills exposes the same action; it asks which machines
   only when more than one is enrolled. Machines install independently, so the

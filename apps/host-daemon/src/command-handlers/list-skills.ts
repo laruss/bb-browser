@@ -29,21 +29,21 @@ type SkillRootResolution = CommandRootResolution;
 
 function createPatcherSkillScanRoot(
   rootPath: string,
-  rootKind: Extract<SkillRootKind, `bb-${string}`>,
+  rootKind: Extract<SkillRootKind, `patcher-${string}`>,
 ): SkillScanRoot {
   return {
     rootPath,
     shape: "skill",
     namePrefix: "",
     source: "skill",
-    origin: rootKind === "bb-project" ? "project" : "user",
+    origin: rootKind === "patcher-project" ? "project" : "user",
     identitySeed: rootKind,
     rootKind,
   };
 }
 
 /**
- * Resolve the project-local bb root owned by this host. Global bb-user and
+ * Resolve the project-local Patcher root owned by this host. Global patcher-user and
  * patcher-builtin skills remain server-owned so remote hosts never interpret server
  * filesystem paths or create a second, divergent user catalog.
  */
@@ -55,7 +55,7 @@ function resolvePatcherSkillScanRoots(
     roots.push(
       createPatcherSkillScanRoot(
         path.join(resolution.cwd, ".patcher", "skills"),
-        "bb-project",
+        "patcher-project",
       ),
     );
   }
@@ -66,7 +66,7 @@ function resolvePatcherSkillScanRoots(
  * Classify a scan root by its originating identity so the server can map it to a
  * product scope. Plugin roots are tagged structurally (they always carry a
  * `namePrefix`); provider base roots are matched by exact path against the same
- * resolution that produced them. bb roots arrive already tagged from
+ * resolution that produced them. Patcher roots arrive already tagged from
  * `resolvePatcherSkillScanRoots`. Returns `null` for legacy command roots or an
  * unrecognized root.
  */
@@ -89,7 +89,7 @@ function classifySkillRoot(
     };
   }
   if (root.skillIdentitySeed !== undefined) {
-    const shared = resolution.providerId === "bb-shared";
+    const shared = resolution.providerId === "patcher-shared";
     return {
       identitySeed: root.skillIdentitySeed,
       rootKind: shared
@@ -189,7 +189,7 @@ function isSafeSkillName(name: string): boolean {
 }
 
 /**
- * Resolve the root that owns a deletable skill. bb roots are derived locally;
+ * Resolve the root that owns a deletable skill. Patcher roots are derived locally;
  * provider roots are supplied by the server after authoritative discovery.
  */
 function resolveDeletableSkillRoot(
@@ -200,15 +200,15 @@ function resolveDeletableSkillRoot(
   },
   dataDir: string,
 ): string {
-  if (args.scope === "bb-user") {
+  if (args.scope === "patcher-user") {
     return resolveDataDirSkillsRootPath(dataDir);
   }
-  if (args.scope === "bb-project") {
+  if (args.scope === "patcher-project") {
     const cwd = args.cwd;
     if (cwd === null) {
       throw new CommandDispatchError(
         "invalid_path",
-        "cwd is required for a bb-project skill",
+        "cwd is required for a patcher-project skill",
       );
     }
     if (!path.isAbsolute(cwd)) {
@@ -299,7 +299,7 @@ export async function deleteHostSkill(
 /**
  * Overwrite an existing bb skill's SKILL.md. Same confinement as delete: path
  * built host-side from `(scope, name, cwd)`, name a single safe segment, and the
- * resolved target must be exactly `<bb-root>/<name>` of an existing skill (one
+ * resolved target must be exactly `<patcher-root>/<name>` of an existing skill (one
  * whose SKILL.md already exists). Edits only — never creates a new skill.
  */
 export async function writeHostSkill(
@@ -327,7 +327,7 @@ export async function writeHostSkill(
   if (realTarget !== path.join(realRoot, command.name)) {
     throw new CommandDispatchError(
       "skill_outside_root",
-      "Refusing to edit a skill that resolves outside its bb root",
+      "Refusing to edit a skill that resolves outside its Patcher root",
     );
   }
   const skillFilePath = path.join(realTarget, SKILL_FILE_NAME);

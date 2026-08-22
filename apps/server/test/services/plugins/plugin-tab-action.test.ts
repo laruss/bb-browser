@@ -136,8 +136,8 @@ describe("plugin tab actions (patcher.browser.registerTabAction)", () => {
     expect(await observed()).toEqual([INVOKE_CONTEXT]);
   });
 
-  // A bb screen is a tab with no page, and that is what a null url says.
-  it("carries a bb screen through as a tab with no url", async () => {
+  // A Patcher screen is a tab with no page, and that is what a null url says.
+  it("carries a Patcher screen through as a tab with no url", async () => {
     const result = await invoke({
       pluginId: "tab",
       itemId: "file-tab",

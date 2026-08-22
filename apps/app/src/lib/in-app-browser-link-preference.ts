@@ -5,7 +5,7 @@ export const OPEN_LINKS_IN_APP_BROWSER_STORAGE_KEY =
   "patcher.openLinksInAppBrowser";
 
 /**
- * Default ON: the feature routes bb links into the desktop in-app browser
+ * Default ON: the feature routes Patcher links into the desktop in-app browser
  * instead of the external OS browser. Users can turn it OFF to fall back to the
  * external-open behavior. The preference only has an effect on desktop builds
  * (see {@link resolveUrlOpenTarget}); on web there is no in-app browser.

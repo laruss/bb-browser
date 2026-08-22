@@ -80,8 +80,8 @@ if [[ -z "${LAUNCHER_NAME}" ]]; then
   LAUNCHER_NAME="bb"
 fi
 
-DEV_SESSION="bb-dev-app-${LAUNCHER_NAME}-dev"
-DESKTOP_SESSION="bb-dev-app-${LAUNCHER_NAME}-desktop"
+DEV_SESSION="patcher-dev-app-${LAUNCHER_NAME}-dev"
+DESKTOP_SESSION="patcher-dev-app-${LAUNCHER_NAME}-desktop"
 LOG_ROOT="${HOME}/.patcher-dev/launchers/${LAUNCHER_NAME}"
 DEV_LOG="${LOG_ROOT}/dev.log"
 DESKTOP_LOG="${LOG_ROOT}/desktop.log"
@@ -94,28 +94,28 @@ Usage:
   daemon) and print the URL without opening a browser. Pass --open to open the
   browser after startup. Pass --desktop to also launch the Electron desktop shell.
 
-  scripts/bb-dev-app main [--open] [--desktop]
+  scripts/patcher-dev-app main [--open] [--desktop]
       Fetch origin/main, switch this checkout to main, fast-forward, then start
       the source dev server (and the desktop shell with --desktop).
 
-  scripts/bb-dev-app branch <branch> [--open] [--desktop]
+  scripts/patcher-dev-app branch <branch> [--open] [--desktop]
       Switch this checkout to a local branch, or create it from origin/<branch>,
       then start the source dev server (and the desktop shell with --desktop).
 
-  scripts/bb-dev-app current [--open] [--desktop]
+  scripts/patcher-dev-app current [--open] [--desktop]
       Start the source dev server for the current branch (and the desktop shell
       with --desktop).
 
-  scripts/bb-dev-app stop
+  scripts/patcher-dev-app stop
       Stop the launcher-managed dev server and desktop shell.
 
-  scripts/bb-dev-app status
+  scripts/patcher-dev-app status
       Print branch, ports, process status, and useful URLs.
 
-  scripts/bb-dev-app env
+  scripts/patcher-dev-app env
       Print shell exports for using bun run bb:dev against this dev instance.
 
-  scripts/bb-dev-app logs [dev|desktop|launcher]
+  scripts/patcher-dev-app logs [dev|desktop|launcher]
       Follow launcher logs. Defaults to the dev server log.
 EOF
 }
@@ -274,7 +274,7 @@ handle_dirty_work_before_branch_switch() {
     return
   fi
 
-  local stash_msg="bb-dev-app-auto-stash-$(date '+%Y%m%d-%H%M%S')"
+  local stash_msg="patcher-dev-app-auto-stash-$(date '+%Y%m%d-%H%M%S')"
   log "Stashing dirty checkout before branch switch: ${stash_msg}"
   git -C "${REPO_ROOT}" stash push -u -m "${stash_msg}" >/dev/null
 }

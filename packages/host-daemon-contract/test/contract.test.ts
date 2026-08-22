@@ -237,7 +237,7 @@ const ONLINE_RPC_RESPONSE_RESULT_FIXTURES: OnlineRpcResponseResultFixtures = {
         name: "review",
         description: "Review the current diff",
         filePath: "/home/user/.patcher/skills/review/SKILL.md",
-        rootKind: "bb-data-dir",
+        rootKind: "patcher-data-dir",
         linked: false,
       },
     ],
@@ -439,7 +439,7 @@ const ONLINE_RPC_RESPONSE_RESULT_FIXTURES: OnlineRpcResponseResultFixtures = {
     repos: [
       {
         path: "/home/user/projects/bb",
-        name: "bb",
+        name: "Patcher",
         lastActivityAt: "2026-08-05T00:00:00.000Z",
         originUrl: "https://github.com/example/bb",
         agentSeen: true,
@@ -510,7 +510,7 @@ const SETTLED_RESPONSE_RESULT_FIXTURES: SettledResponseResultFixtures = {
     path: "/tmp/env",
     isGitRepo: true,
     isWorktree: true,
-    branchName: "bb/env-123",
+    branchName: "patcher/env-123",
     defaultBranch: "main",
     transcript: [
       {
@@ -691,13 +691,13 @@ const INTENTIONAL_OPTIONAL_HOST_DAEMON_FIELDS: Record<string, string> = {
   "hostDaemonCommandSchema.acpLaunchSpec.reasoningCli.defaultLevel":
     "ACP reasoning CLI config may omit defaultLevel so the bridge uses medium when supported or the first supported level.",
   "hostDaemonCommandSchema.acpLaunchSpec.reasoningCli.levelValues":
-    "ACP reasoning CLI config only needs levelValues when bb reasoning levels differ from the agent's CLI vocabulary.",
+    "ACP reasoning CLI config only needs levelValues when Patcher reasoning levels differ from the agent's CLI vocabulary.",
   "hostDaemonCommandSchema.acpLaunchSpec.nativeReasoning":
-    "dynamic ACP agents may omit nativeReasoning when they advertise thought_level themselves or do not support bb-managed ACP reasoning.",
+    "dynamic ACP agents may omit nativeReasoning when they advertise thought_level themselves or do not support Patcher-managed ACP reasoning.",
   "hostDaemonCommandSchema.acpLaunchSpec.nativeReasoning.defaultLevel":
     "ACP native reasoning config may omit defaultLevel so the bridge uses medium when supported or the first supported level.",
   "hostDaemonCommandSchema.acpLaunchSpec.nativeReasoning.levelValues":
-    "ACP native reasoning config only needs levelValues when bb reasoning levels differ from the agent's ACP config vocabulary.",
+    "ACP native reasoning config only needs levelValues when Patcher reasoning levels differ from the agent's ACP config vocabulary.",
   "hostDaemonCommandSchema.acpLaunchSpec.nativeSkillRoots":
     "dynamic ACP agents may omit nativeSkillRoots when they do not expose provider-native skills.",
   "hostDaemonCommandSchema.acpLaunchSpec.permissionCli":
@@ -735,13 +735,13 @@ const INTENTIONAL_OPTIONAL_HOST_DAEMON_FIELDS: Record<string, string> = {
   "hostDaemonOnlineRpcCommandSchema.acpLaunchSpec.reasoningCli.defaultLevel":
     "ACP reasoning CLI config may omit defaultLevel so the bridge uses medium when supported or the first supported level.",
   "hostDaemonOnlineRpcCommandSchema.acpLaunchSpec.reasoningCli.levelValues":
-    "ACP reasoning CLI config only needs levelValues when bb reasoning levels differ from the agent's CLI vocabulary.",
+    "ACP reasoning CLI config only needs levelValues when Patcher reasoning levels differ from the agent's CLI vocabulary.",
   "hostDaemonOnlineRpcCommandSchema.acpLaunchSpec.nativeReasoning":
-    "dynamic ACP agents may omit nativeReasoning when they advertise thought_level themselves or do not support bb-managed ACP reasoning.",
+    "dynamic ACP agents may omit nativeReasoning when they advertise thought_level themselves or do not support Patcher-managed ACP reasoning.",
   "hostDaemonOnlineRpcCommandSchema.acpLaunchSpec.nativeReasoning.defaultLevel":
     "ACP native reasoning config may omit defaultLevel so the bridge uses medium when supported or the first supported level.",
   "hostDaemonOnlineRpcCommandSchema.acpLaunchSpec.nativeReasoning.levelValues":
-    "ACP native reasoning config only needs levelValues when bb reasoning levels differ from the agent's ACP config vocabulary.",
+    "ACP native reasoning config only needs levelValues when Patcher reasoning levels differ from the agent's ACP config vocabulary.",
   "hostDaemonOnlineRpcCommandSchema.acpLaunchSpec.nativeSkillRoots":
     "dynamic ACP agents may omit nativeSkillRoots when they do not expose provider-native skills.",
   "hostDaemonOnlineRpcCommandSchema.acpLaunchSpec.permissionCli":
@@ -797,13 +797,13 @@ const INTENTIONAL_OPTIONAL_HOST_DAEMON_FIELDS: Record<string, string> = {
   "hostDaemonCommandSchema.resumeContext.acpLaunchSpec.reasoningCli.defaultLevel":
     "resume-context ACP reasoning CLI config may omit defaultLevel so the bridge uses medium when supported or the first supported level.",
   "hostDaemonCommandSchema.resumeContext.acpLaunchSpec.reasoningCli.levelValues":
-    "resume-context ACP reasoning CLI config only needs levelValues when bb reasoning levels differ from the agent's CLI vocabulary.",
+    "resume-context ACP reasoning CLI config only needs levelValues when Patcher reasoning levels differ from the agent's CLI vocabulary.",
   "hostDaemonCommandSchema.resumeContext.acpLaunchSpec.nativeReasoning":
-    "resume-context ACP launch specs may omit nativeReasoning when the agent advertises thought_level itself or does not support bb-managed ACP reasoning.",
+    "resume-context ACP launch specs may omit nativeReasoning when the agent advertises thought_level itself or does not support Patcher-managed ACP reasoning.",
   "hostDaemonCommandSchema.resumeContext.acpLaunchSpec.nativeReasoning.defaultLevel":
     "resume-context ACP native reasoning config may omit defaultLevel so the bridge uses medium when supported or the first supported level.",
   "hostDaemonCommandSchema.resumeContext.acpLaunchSpec.nativeReasoning.levelValues":
-    "resume-context ACP native reasoning config only needs levelValues when bb reasoning levels differ from the agent's ACP config vocabulary.",
+    "resume-context ACP native reasoning config only needs levelValues when Patcher reasoning levels differ from the agent's ACP config vocabulary.",
   "hostDaemonCommandSchema.resumeContext.acpLaunchSpec.nativeSkillRoots":
     "resume-context ACP launch specs may omit nativeSkillRoots when the agent does not expose provider-native skills.",
   "hostDaemonCommandSchema.resumeContext.acpLaunchSpec.permissionCli":
@@ -946,7 +946,7 @@ describe("host-daemon local schemas", () => {
       contract.openInTargetRequestSchema.parse({
         context: {
           kind: "remote-ssh",
-          serverOrigin: "https://bb.example.test",
+          serverOrigin: "https://patcher.example.test",
           hostId: "host_remote",
         },
         lineNumber: 12,
@@ -956,7 +956,7 @@ describe("host-daemon local schemas", () => {
     ).toEqual({
       context: {
         kind: "remote-ssh",
-        serverOrigin: "https://bb.example.test",
+        serverOrigin: "https://patcher.example.test",
         hostId: "host_remote",
       },
       columnNumber: null,
@@ -1157,7 +1157,7 @@ describe("host-daemon command schemas", () => {
     expect(
       hostDaemonEnrollResponseSchema.parse({
         hostId: "host_123",
-        hostKey: "bbdh_example",
+        hostKey: "patcherdh_example",
       }),
     ).toMatchObject({
       hostId: "host_123",
@@ -1189,7 +1189,7 @@ describe("host-daemon command schemas", () => {
         workspaceProvisionType: "managed-worktree",
         sourcePath: "/tmp/project",
         targetPath: "/tmp/project/.patcher/env",
-        branchName: "bb/env-123",
+        branchName: "patcher/env-123",
         baseBranch: null,
         setupTimeoutMs: 900000,
       }),
@@ -1241,7 +1241,7 @@ describe("host-daemon command schemas", () => {
         path: "/tmp/project",
         checkout: {
           kind: "new",
-          name: "bb/env-123",
+          name: "patcher/env-123",
           baseBranch: "release",
         },
       }),
@@ -1379,7 +1379,7 @@ describe("host-daemon command schemas", () => {
     expect(
       hostDaemonOnlineRpcCommandSchema.parse({
         type: "host.list_skills",
-        providerId: "bb-shared",
+        providerId: "patcher-shared",
         cwd: "/tmp/workspace",
         nativeSkillRoots: {
           user: [".agents/skills"],
@@ -1388,7 +1388,7 @@ describe("host-daemon command schemas", () => {
       }),
     ).toMatchObject({
       type: "host.list_skills",
-      providerId: "bb-shared",
+      providerId: "patcher-shared",
       nativeSkillRoots: {
         user: [".agents/skills"],
         project: [".agents/skills"],
@@ -1414,61 +1414,61 @@ describe("host-daemon command schemas", () => {
     expect(
       hostDaemonOnlineRpcCommandSchema.parse({
         type: "host.file_metadata",
-        path: "/tmp/bb-data/thread-storage/thread-123/notes.md",
-        rootPath: "/tmp/bb-data/thread-storage/thread-123",
+        path: "/tmp/patcher-data/thread-storage/thread-123/notes.md",
+        rootPath: "/tmp/patcher-data/thread-storage/thread-123",
       }),
     ).toMatchObject({
       type: "host.file_metadata",
-      path: "/tmp/bb-data/thread-storage/thread-123/notes.md",
-      rootPath: "/tmp/bb-data/thread-storage/thread-123",
+      path: "/tmp/patcher-data/thread-storage/thread-123/notes.md",
+      rootPath: "/tmp/patcher-data/thread-storage/thread-123",
     });
 
     expect(
       hostDaemonOnlineRpcCommandSchema.parse({
         type: "host.read_file",
-        path: "/tmp/bb-data/thread-storage/thread-123/notes.md",
-        rootPath: "/tmp/bb-data/thread-storage/thread-123",
+        path: "/tmp/patcher-data/thread-storage/thread-123/notes.md",
+        rootPath: "/tmp/patcher-data/thread-storage/thread-123",
       }),
     ).toMatchObject({
       type: "host.read_file",
-      path: "/tmp/bb-data/thread-storage/thread-123/notes.md",
-      rootPath: "/tmp/bb-data/thread-storage/thread-123",
+      path: "/tmp/patcher-data/thread-storage/thread-123/notes.md",
+      rootPath: "/tmp/patcher-data/thread-storage/thread-123",
     });
 
     expect(
       hostDaemonOnlineRpcCommandSchema.parse({
         type: "host.read_file",
-        path: "/tmp/bb-data/thread-storage/thread-123/notes.md",
+        path: "/tmp/patcher-data/thread-storage/thread-123/notes.md",
       }),
     ).toMatchObject({
       type: "host.read_file",
-      path: "/tmp/bb-data/thread-storage/thread-123/notes.md",
+      path: "/tmp/patcher-data/thread-storage/thread-123/notes.md",
     });
 
     expect(
       hostDaemonOnlineRpcCommandSchema.parse({
         type: "host.read_file",
-        path: "/tmp/bb-data/thread-storage/thread-123/notes.md",
-        rootPath: "/tmp/bb-data/thread-storage/thread-123",
+        path: "/tmp/patcher-data/thread-storage/thread-123/notes.md",
+        rootPath: "/tmp/patcher-data/thread-storage/thread-123",
         ref: "HEAD",
       }),
     ).toMatchObject({
       type: "host.read_file",
-      path: "/tmp/bb-data/thread-storage/thread-123/notes.md",
-      rootPath: "/tmp/bb-data/thread-storage/thread-123",
+      path: "/tmp/patcher-data/thread-storage/thread-123/notes.md",
+      rootPath: "/tmp/patcher-data/thread-storage/thread-123",
       ref: "HEAD",
     });
 
     expect(
       hostDaemonOnlineRpcCommandSchema.parse({
         type: "host.read_file_relative",
-        rootPath: "/tmp/bb-data/apps/demo/assets",
+        rootPath: "/tmp/patcher-data/apps/demo/assets",
         path: "logo.png",
         dotfiles: "deny",
       }),
     ).toMatchObject({
       type: "host.read_file_relative",
-      rootPath: "/tmp/bb-data/apps/demo/assets",
+      rootPath: "/tmp/patcher-data/apps/demo/assets",
       path: "logo.png",
       dotfiles: "deny",
     });
@@ -1486,12 +1486,12 @@ describe("host-daemon command schemas", () => {
     expect(
       hostDaemonOnlineRpcCommandSchema.parse({
         type: "host.list_files",
-        path: "/tmp/bb-data/thread-storage/thread-123",
+        path: "/tmp/patcher-data/thread-storage/thread-123",
         limit: 100,
       }),
     ).toMatchObject({
       type: "host.list_files",
-      path: "/tmp/bb-data/thread-storage/thread-123",
+      path: "/tmp/patcher-data/thread-storage/thread-123",
       limit: 100,
     });
 
@@ -1718,7 +1718,7 @@ describe("host-daemon command schemas", () => {
         initiator: null,
         workspaceProvisionType: "unmanaged",
         path: "/tmp/project",
-        checkout: { kind: "new", name: "bb/env-123" },
+        checkout: { kind: "new", name: "patcher/env-123" },
       }),
     ).toThrow();
 
@@ -1736,7 +1736,7 @@ describe("host-daemon command schemas", () => {
     expect(() =>
       hostDaemonOnlineRpcCommandSchema.parse({
         type: "host.read_file",
-        path: "/tmp/bb-data/thread-storage/thread-123/notes.md",
+        path: "/tmp/patcher-data/thread-storage/thread-123/notes.md",
         ref: "HEAD",
       }),
     ).toThrow();
@@ -1744,7 +1744,7 @@ describe("host-daemon command schemas", () => {
     expect(() =>
       hostDaemonOnlineRpcCommandSchema.parse({
         type: "host.read_file_relative",
-        rootPath: "/tmp/bb-data/apps/demo/assets",
+        rootPath: "/tmp/patcher-data/apps/demo/assets",
         path: "logo.png",
       }),
     ).toThrow();
@@ -2486,7 +2486,7 @@ describe("host-daemon command schemas", () => {
         workspaceProvisionType: "managed-worktree",
         sourcePath: "/tmp/project",
         targetPath: "/tmp/project/.patcher/env",
-        branchName: "bb/env-123",
+        branchName: "patcher/env-123",
         setupTimeoutMs: 900000,
       }),
     ).toThrow();
@@ -2522,7 +2522,7 @@ describe("host-daemon command schemas", () => {
         path: "/tmp/project",
         checkout: {
           kind: "new",
-          name: "bb/env-123",
+          name: "patcher/env-123",
           baseBranch: "release lock",
         },
       }).success,
@@ -2536,7 +2536,7 @@ describe("host-daemon command schemas", () => {
         workspaceProvisionType: "managed-worktree",
         sourcePath: "/tmp/project",
         targetPath: "/tmp/project/.patcher/env",
-        branchName: "bb/env lock",
+        branchName: "patcher/env lock",
         baseBranch: null,
         setupTimeoutMs: 900000,
       }).success,
@@ -2550,7 +2550,7 @@ describe("host-daemon command schemas", () => {
         workspaceProvisionType: "managed-worktree",
         sourcePath: "/tmp/project",
         targetPath: "/tmp/project/.patcher/env",
-        branchName: "bb/env-123",
+        branchName: "patcher/env-123",
         baseBranch: "release lock",
         setupTimeoutMs: 900000,
       }).success,
@@ -2584,7 +2584,7 @@ describe("host-daemon command schemas", () => {
     ).toBe(false);
   });
 
-  it("limits host.write_skill to daemon-derived bb roots", () => {
+  it("limits host.write_skill to daemon-derived Patcher roots", () => {
     const base = {
       type: "host.write_skill",
       name: "review",
@@ -2595,7 +2595,7 @@ describe("host-daemon command schemas", () => {
     expect(
       hostDaemonOnlineRpcCommandSchema.safeParse({
         ...base,
-        scope: "bb-user",
+        scope: "patcher-user",
       }).success,
     ).toBe(true);
     expect(
@@ -2612,7 +2612,7 @@ describe("host-daemon command schemas", () => {
     expect(() =>
       hostDaemonOnlineRpcCommandSchema.parse({
         type: "host.list_files",
-        path: "/tmp/bb-data/thread-storage/thread-123",
+        path: "/tmp/patcher-data/thread-storage/thread-123",
         query: longQuery,
         limit: 100,
       }),
@@ -2621,7 +2621,7 @@ describe("host-daemon command schemas", () => {
     expect(() =>
       hostDaemonOnlineRpcCommandSchema.parse({
         type: "host.list_files",
-        path: "/tmp/bb-data/thread-storage/thread-123",
+        path: "/tmp/patcher-data/thread-storage/thread-123",
         limit: contract.FILE_LIST_LIMIT_MAX + 1,
       }),
     ).toThrow();
@@ -2743,7 +2743,7 @@ describe("host-daemon command schemas", () => {
 
     expect(
       hostDaemonOnlineRpcResultSchemaByType["host.read_file"].parse({
-        path: "/tmp/bb-data/thread-storage/thread-123/notes.md",
+        path: "/tmp/patcher-data/thread-storage/thread-123/notes.md",
         content: "# Notes",
         contentEncoding: "utf8",
         mimeType: "text/markdown",
@@ -2751,7 +2751,7 @@ describe("host-daemon command schemas", () => {
         sha256: "d".repeat(64),
       }),
     ).toMatchObject({
-      path: "/tmp/bb-data/thread-storage/thread-123/notes.md",
+      path: "/tmp/patcher-data/thread-storage/thread-123/notes.md",
       content: "# Notes",
       contentEncoding: "utf8",
     });
@@ -2773,12 +2773,12 @@ describe("host-daemon command schemas", () => {
 
     expect(
       hostDaemonOnlineRpcResultSchemaByType["host.file_metadata"].parse({
-        path: "/tmp/bb-data/thread-storage/thread-123/notes.md",
+        path: "/tmp/patcher-data/thread-storage/thread-123/notes.md",
         modifiedAtMs: 1234.5,
         sizeBytes: 26_214_401,
       }),
     ).toMatchObject({
-      path: "/tmp/bb-data/thread-storage/thread-123/notes.md",
+      path: "/tmp/patcher-data/thread-storage/thread-123/notes.md",
       modifiedAtMs: 1234.5,
       sizeBytes: 26_214_401,
     });
@@ -2795,12 +2795,12 @@ describe("host-daemon command schemas", () => {
             state: "clean",
           },
           branch: {
-            currentBranch: "bb/env-123",
+            currentBranch: "patcher/env-123",
             defaultBranch: "main",
           },
           checkout: {
             kind: "branch",
-            branchName: "bb/env-123",
+            branchName: "patcher/env-123",
             headSha: null,
           },
           mergeBase: null,
@@ -2844,7 +2844,7 @@ describe("host-daemon command schemas", () => {
         path: "/tmp/env",
         isGitRepo: true,
         isWorktree: true,
-        branchName: "bb/env-123",
+        branchName: "patcher/env-123",
         defaultBranch: "main",
         transcript: [
           {
@@ -2858,7 +2858,7 @@ describe("host-daemon command schemas", () => {
     ).toMatchObject({
       isGitRepo: true,
       isWorktree: true,
-      branchName: "bb/env-123",
+      branchName: "patcher/env-123",
     });
   });
 });
@@ -2872,7 +2872,7 @@ describe("host-daemon session schemas", () => {
         hostName: "Michael's MacBook",
         hostType: "persistent",
         platform: "darwin",
-        dataDir: "/tmp/bb-data",
+        dataDir: "/tmp/patcher-data",
         protocolVersion: HOST_DAEMON_PROTOCOL_VERSION,
         activeThreads: [
           {
@@ -2893,7 +2893,7 @@ describe("host-daemon session schemas", () => {
         hostName: "Michael's MacBook",
         hostType: "persistent",
         platform: "darwin",
-        dataDir: "/tmp/bb-data",
+        dataDir: "/tmp/patcher-data",
         protocolVersion: HOST_DAEMON_PROTOCOL_VERSION,
         activeThreads: [],
         loadedEnvironments: [
@@ -2917,7 +2917,7 @@ describe("host-daemon session schemas", () => {
         hostName: "Michael's MacBook",
         hostType: "persistent",
         platform: "darwin",
-        dataDir: "/tmp/bb-data",
+        dataDir: "/tmp/patcher-data",
         protocolVersion: HOST_DAEMON_PROTOCOL_VERSION,
         activeThreads: [
           {
@@ -2934,7 +2934,7 @@ describe("host-daemon session schemas", () => {
         hostName: "Michael's MacBook",
         hostType: "persistent",
         platform: "darwin",
-        dataDir: "/tmp/bb-data",
+        dataDir: "/tmp/patcher-data",
         protocolVersion: HOST_DAEMON_PROTOCOL_VERSION - 1,
         activeThreads: [],
       }),
@@ -2949,7 +2949,7 @@ describe("host-daemon session schemas", () => {
         hostName: "Michael's MacBook",
         hostType: "persistent",
         platform: "darwin",
-        dataDir: "/tmp/bb-data",
+        dataDir: "/tmp/patcher-data",
         protocolVersion: 0,
         activeThreads: [],
       }),
@@ -3396,7 +3396,7 @@ describe("host-daemon session schemas", () => {
         commandType: "host.read_file",
         ok: true,
         result: {
-          path: "/tmp/bb-data/thread-storage/thread-123/notes.md",
+          path: "/tmp/patcher-data/thread-storage/thread-123/notes.md",
           content: "# Notes",
           contentEncoding: "utf8",
           mimeType: "text/markdown",
@@ -3411,7 +3411,7 @@ describe("host-daemon session schemas", () => {
       commandType: "host.read_file",
       ok: true,
       result: {
-        path: "/tmp/bb-data/thread-storage/thread-123/notes.md",
+        path: "/tmp/patcher-data/thread-storage/thread-123/notes.md",
         content: "# Notes",
         contentEncoding: "utf8",
         mimeType: "text/markdown",

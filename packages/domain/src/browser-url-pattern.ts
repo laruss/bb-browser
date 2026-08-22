@@ -88,7 +88,7 @@ export function matchesBrowserUrlPattern(
  * it may not declare it at all.
  *
  * `https` only, with one exception: loopback over plain `http`, which is how a
- * developer's own service and bb's own pages are reached. Everything else is
+ * developer's own service and Patcher's own pages are reached. Everything else is
  * refused for the reason a registered search engine's template is, except that
  * here the stake is higher: what a site pattern buys is standing access to a site
  * the user is signed in to, and plain http to another machine is a site anyone on

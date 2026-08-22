@@ -23,7 +23,7 @@ import {
 
 // Mirror of RESERVED_PATCHER_CLI_COMMANDS in
 // apps/server/src/services/plugins/plugin-api.ts — the server rejects plugin
-// CLI commands shadowing core bb commands. Update both together.
+// CLI commands shadowing core Patcher commands. Update both together.
 const RESERVED_PATCHER_CLI_COMMANDS = [
   "environment",
   "guide",
@@ -61,7 +61,7 @@ function topLevelCommandNames(program: Command): string[] {
   ]);
 }
 
-describe("reserved bb CLI command names", () => {
+describe("reserved Patcher CLI command names", () => {
   it("every core top-level command is on the server's reserved list", () => {
     const names = topLevelCommandNames(buildProgram());
     const reserved = new Set(RESERVED_PATCHER_CLI_COMMANDS);
@@ -205,9 +205,9 @@ describe("describeUnreachableServer", () => {
     });
   }
 
-  it("says bb is not running only on ECONNREFUSED", () => {
+  it("says Patcher is not running only on ECONNREFUSED", () => {
     expect(describeUnreachableServer(url, fetchFailed("ECONNREFUSED"))).toBe(
-      `bb is not running at ${url} — open the bb app, then re-run this command.`,
+      `Patcher is not running at ${url} — open the Patcher app, then re-run this command.`,
     );
   });
 
@@ -218,23 +218,23 @@ describe("describeUnreachableServer", () => {
         aggregateFetchFailed(["ECONNREFUSED", "ECONNREFUSED"]),
       ),
     ).toBe(
-      `bb is not running at ${url} — open the bb app, then re-run this command.`,
+      `Patcher is not running at ${url} — open the Patcher app, then re-run this command.`,
     );
 
     const mixedMessage = describeUnreachableServer(
       url,
       aggregateFetchFailed(["ECONNREFUSED", "EPERM"]),
     );
-    expect(mixedMessage).toContain(`Cannot reach bb at ${url}: EPERM`);
-    expect(mixedMessage).toContain("bb may still be running");
+    expect(mixedMessage).toContain(`Cannot reach Patcher at ${url}: EPERM`);
+    expect(mixedMessage).toContain("Patcher may still be running");
     expect(mixedMessage).not.toContain("not running at");
   });
 
-  it("reports a blocked connection without declaring bb down", () => {
+  it("reports a blocked connection without declaring Patcher down", () => {
     for (const code of ["EPERM", "EACCES"]) {
       const message = describeUnreachableServer(url, fetchFailed(code));
-      expect(message).toContain(`Cannot reach bb at ${url}: ${code}`);
-      expect(message).toContain("bb may still be running");
+      expect(message).toContain(`Cannot reach Patcher at ${url}: ${code}`);
+      expect(message).toContain("Patcher may still be running");
       expect(message).not.toContain("not running at");
     }
   });
@@ -244,7 +244,7 @@ describe("describeUnreachableServer", () => {
       name: "TimeoutError",
     });
     expect(describeUnreachableServer(url, timeout, 2000)).toBe(
-      `bb did not respond at ${url} within 2000ms — it may be busy or unreachable.`,
+      `Patcher did not respond at ${url} within 2000ms — it may be busy or unreachable.`,
     );
   });
 
@@ -253,7 +253,7 @@ describe("describeUnreachableServer", () => {
       cause: new Error("getaddrinfo ENOTFOUND example.invalid"),
     });
     expect(describeUnreachableServer(url, err)).toBe(
-      `Cannot reach bb at ${url}: fetch failed: getaddrinfo ENOTFOUND example.invalid`,
+      `Cannot reach Patcher at ${url}: fetch failed: getaddrinfo ENOTFOUND example.invalid`,
     );
   });
 });

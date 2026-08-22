@@ -25,7 +25,9 @@ afterEach(async () => {
 });
 
 async function makeTempDir(): Promise<string> {
-  const dir = await mkdtemp(path.join(tmpdir(), "bb-install-global-skills-"));
+  const dir = await mkdtemp(
+    path.join(tmpdir(), "patcher-install-global-skills-"),
+  );
   tempDirs.push(dir);
   return dir;
 }
@@ -48,7 +50,7 @@ function createTreePayload(name: string, body: string): HostDaemonSkillTree {
     left.path < right.path ? -1 : left.path > right.path ? 1 : 0,
   );
   const hash = createHash("sha256");
-  hash.update("bb-skill-tree-v1");
+  hash.update("patcher-skill-tree-v1");
   for (const entry of entries) {
     const bytes = Buffer.from(entry.contentBase64, "base64");
     hash.update("\0file\0");

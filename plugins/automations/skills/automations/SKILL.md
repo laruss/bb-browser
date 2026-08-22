@@ -1,6 +1,6 @@
 ---
 name: automations
-description: Create and manage bb automations from the first-party automations plugin. Use when scheduling recurring or one-shot agent/script work with bb automation commands.
+description: Create and manage Patcher automations from the first-party automations plugin. Use when scheduling recurring or one-shot agent/script work with bb automation commands.
 ---
 
 # Automations
@@ -16,7 +16,7 @@ Pass `--project` explicitly for every automation command. Inside a thread, autom
 
 Choosing a mode:
 
-Use `script` when the output is fully determined by code: watchdogs, threshold alerts, health checks, heartbeats, and API pollers with a fixed output shape. Scripts run on the bb server, with cwd inside the plugin data directory's `scripts/` area. Script automations do not have an environment field and do not accept environment flags.
+Use `script` when the output is fully determined by code: watchdogs, threshold alerts, health checks, heartbeats, and API pollers with a fixed output shape. Scripts run on the Patcher server, with cwd inside the plugin data directory's `scripts/` area. Script automations do not have an environment field and do not accept environment flags.
 
 Design the script to print nothing when there is nothing to report: an exit-0 run with empty stdout/stderr, or a last non-empty line of `{"wakeAgent": false}`, is recorded as a skipped silent tick. Any other output is captured; non-zero exit or timeout is recorded as a failed run.
 
@@ -67,16 +67,16 @@ Script mode flags:
 Script environment variables:
 
 ```text
-PATCHER_SERVER_URL          The bb server API base URL
+PATCHER_SERVER_URL          The Patcher server API base URL
 PATCHER_PROJECT_ID          The automation's project
 PATCHER_AUTOMATION_ID       The automation id
 PATCHER_AUTOMATION_RUN_ID   This run id
-PATCHER_CLI                 Absolute path to the bb CLI, when it could be resolved
+PATCHER_CLI                 Absolute path to the Patcher CLI, when it could be resolved
 ```
 
 `PATCHER_ENVIRONMENT_ID` and `PATCHER_HOST_DAEMON_PORT` are intentionally not injected by the plugin. The plugin resolves `bb` and prepends its directory to `PATH` so scripts can call the CLI. It looks at `PATCHER_CLI`, then `PATCHER_CLI_DIR`, then `PATH`, then the common macOS install paths.
 
-If `bb` cannot be found, the script still runs. The run output starts with a `[bb] warning:` line, and a script that calls `bb` fails on that line rather than before its first line.
+If `bb` cannot be found, the script still runs. The run output starts with a `[Patcher] warning:` line, and a script that calls `bb` fails on that line rather than before its first line.
 
 Managing:
 

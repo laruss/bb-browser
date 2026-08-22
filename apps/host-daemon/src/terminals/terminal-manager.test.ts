@@ -474,7 +474,7 @@ describe("TerminalManager", () => {
   });
 
   it("opens a PTY in a host path without an environment", async () => {
-    const cwd = await makeTempDir("bb-terminal-host-path-");
+    const cwd = await makeTempDir("patcher-terminal-host-path-");
     const harness = createHarness();
 
     await harness.manager.handleMessage({
@@ -908,7 +908,7 @@ describe("TerminalManager", () => {
     ]);
   });
 
-  it("scrubs inherited bb runtime env vars before spawning a terminal", async () => {
+  it("scrubs inherited Patcher runtime env vars before spawning a terminal", async () => {
     vi.stubEnv("PATCHER_DATA_DIR", "/tmp/leaked-bb-data");
     vi.stubEnv("PATCHER_HOST_DAEMON_PORT", "38987");
     vi.stubEnv("NODE_ENV", "development");
@@ -930,7 +930,7 @@ describe("TerminalManager", () => {
 
   it("makes every available node-pty spawn-helper executable", async () => {
     const logger = createFakeLogger();
-    const packageDirectory = await makeTempDir("bb-node-pty-package-");
+    const packageDirectory = await makeTempDir("patcher-node-pty-package-");
     const buildNativePath = path.join(
       packageDirectory,
       "build",
@@ -982,7 +982,7 @@ describe("TerminalManager", () => {
 
   it("makes an available prebuild-only node-pty spawn-helper executable", async () => {
     const logger = createFakeLogger();
-    const packageDirectory = await makeTempDir("bb-node-pty-package-");
+    const packageDirectory = await makeTempDir("patcher-node-pty-package-");
     const prebuildHelperPath = path.join(
       packageDirectory,
       "prebuilds",
@@ -1016,7 +1016,7 @@ describe("TerminalManager", () => {
 
   it("logs and skips when no node-pty spawn-helper is present", async () => {
     const logger = createFakeLogger();
-    const packageDirectory = await makeTempDir("bb-node-pty-package-");
+    const packageDirectory = await makeTempDir("patcher-node-pty-package-");
     const buildHelperPath = path.join(
       packageDirectory,
       "build",
@@ -1368,8 +1368,8 @@ describe("TerminalManager", () => {
       return;
     }
 
-    const workspacePath = await makeTempDir("bb-terminal-manager-real-");
-    const targetPath = await makeTempDir("bb-terminal-manager-target-");
+    const workspacePath = await makeTempDir("patcher-terminal-manager-real-");
+    const targetPath = await makeTempDir("patcher-terminal-manager-target-");
     const expectedWorkspacePath = await fs.realpath(workspacePath);
     const expectedTargetPath = await fs.realpath(targetPath);
     const messages: HostDaemonDaemonWsMessage[] = [];

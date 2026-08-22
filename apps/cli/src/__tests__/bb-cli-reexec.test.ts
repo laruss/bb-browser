@@ -12,7 +12,7 @@ describe("maybeReexecViaPatcherCli", () => {
   let tempRoot: string;
 
   beforeEach(async () => {
-    tempRoot = await mkdtemp(join(tmpdir(), "bb-cli-reexec-"));
+    tempRoot = await mkdtemp(join(tmpdir(), "patcher-cli-reexec-"));
   });
 
   afterEach(async () => {

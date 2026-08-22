@@ -56,7 +56,7 @@ interface StaleProvider {
 /**
  * The quiet update affordance (BB-48): small outlined chips in the sidebar
  * footer's lower-right corner, rendered only while an update needs attention.
- * Updates split into the two buckets a user acts on separately — bb itself
+ * Updates split into the two buckets a user acts on separately — Patcher itself
  * (app release, downloaded desktop update, or a daemon stuck on an old
  * protocol) and the agent CLIs, which carry their own brand marks so it is
  * clear which agent is stale without hovering. Both chips open the
@@ -105,7 +105,9 @@ export function SidebarUpdatesBadge({ onNavigate }: SidebarUpdatesBadgeProps) {
 
   const updatesRoutePath = getSettingsRoutePath("updates");
   const patcherLabel =
-    patcherUpdateCount === 1 ? "bb update available" : "bb updates available";
+    patcherUpdateCount === 1
+      ? "Patcher update available"
+      : "bb updates available";
   const providerLabel = `${joinNames(
     staleProviders.map((stale) => stale.displayName),
   )} ${staleProviders.length === 1 ? "update" : "updates"} available`;
@@ -126,7 +128,7 @@ export function SidebarUpdatesBadge({ onNavigate }: SidebarUpdatesBadgeProps) {
               className={CHIP_CLASS}
             >
               <Icon name="Download" className="size-3 text-muted-foreground" />
-              bb
+              Patcher
             </Link>
           </TooltipTrigger>
           <TooltipContent side="top">{patcherLabel}</TooltipContent>

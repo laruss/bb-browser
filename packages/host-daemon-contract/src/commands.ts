@@ -668,7 +668,7 @@ export type HostProviderCommand = z.infer<typeof hostProviderCommandSchema>;
  * List the provider's discoverable skills / legacy slash commands. The daemon
  * resolves provider-native user-home roots itself and scans provider-native
  * project roots under `cwd` when provided; `cwd: null` skips project roots.
- * bb-managed skills are resolved by the server's canonical skill catalog and
+ * Patcher-managed skills are resolved by the server's canonical skill catalog and
  * never cross this discovery boundary.
  */
 const hostListCommandsCommandSchema = z
@@ -688,8 +688,8 @@ const hostListCommandsCommandSchema = z
  * daemon, because only the server knows which provider it queried.
  */
 export const skillRootKindSchema = z.enum([
-  "bb-project",
-  "bb-data-dir",
+  "patcher-project",
+  "patcher-data-dir",
   "patcher-builtin",
   "provider-project",
   "provider-user",
@@ -732,8 +732,8 @@ const hostListSkillsCommandSchema = z
 
 /** User-owned local skill scopes that can be deleted after path confinement. */
 export const deletableSkillScopeSchema = z.enum([
-  "bb-user",
-  "bb-project",
+  "patcher-user",
+  "patcher-project",
   "claude-user",
   "claude-project",
   "codex-user",
@@ -744,7 +744,7 @@ export const deletableSkillScopeSchema = z.enum([
 export type DeletableSkillScope = z.infer<typeof deletableSkillScopeSchema>;
 
 /**
- * Delete a local user-owned skill directory. bb roots are derived from scope;
+ * Delete a local user-owned skill directory. Patcher roots are derived from scope;
  * provider roots are resolved from authoritative discovery by the server and
  * supplied explicitly. The daemon realpath-confines the target to the named
  * direct child of that root and refuses symlink escapes.
@@ -759,20 +759,20 @@ const hostDeleteSkillCommandSchema = z
   })
   .strict()
   .superRefine((command, context) => {
-    if (command.scope === "bb-project" && command.cwd === null) {
+    if (command.scope === "patcher-project" && command.cwd === null) {
       context.addIssue({
         code: "custom",
         path: ["cwd"],
-        message: "cwd is required to delete a bb-project skill",
+        message: "cwd is required to delete a patcher-project skill",
       });
     }
     const isPatcherScope =
-      command.scope === "bb-user" || command.scope === "bb-project";
+      command.scope === "patcher-user" || command.scope === "patcher-project";
     if (isPatcherScope && command.rootPath !== null) {
       context.addIssue({
         code: "custom",
         path: ["rootPath"],
-        message: "rootPath must be null for a bb skill",
+        message: "rootPath must be null for a Patcher skill",
       });
     }
     if (!isPatcherScope && command.rootPath === null) {
@@ -788,10 +788,13 @@ const hostDeleteSkillCommandSchema = z
  * Overwrite an existing bb skill's SKILL.md. Same confinement as delete: the
  * path is built host-side from `(scope, name, cwd)` (never a client path), the
  * name must be a single safe segment, and the resolved target must be exactly
- * `<bb-root>/<name>/SKILL.md` of an already-existing skill. Edits only — it
+ * `<patcher-root>/<name>/SKILL.md` of an already-existing skill. Edits only — it
  * never creates new skills (creation is via prompt).
  */
-const writablePatcherSkillScopeSchema = z.enum(["bb-user", "bb-project"]);
+const writablePatcherSkillScopeSchema = z.enum([
+  "patcher-user",
+  "patcher-project",
+]);
 
 const hostWriteSkillCommandSchema = z
   .object({
@@ -804,18 +807,18 @@ const hostWriteSkillCommandSchema = z
   })
   .strict()
   .superRefine((command, context) => {
-    if (command.scope === "bb-project" && command.cwd === null) {
+    if (command.scope === "patcher-project" && command.cwd === null) {
       context.addIssue({
         code: "custom",
         path: ["cwd"],
-        message: "cwd is required to edit a bb-project skill",
+        message: "cwd is required to edit a patcher-project skill",
       });
     }
   });
 
 /**
  * Copy server-owned skill trees into the host's global agent skill roots
- * (`~/.agents/skills` and `~/.claude/skills`) so agents running outside bb can
+ * (`~/.agents/skills` and `~/.claude/skills`) so agents running outside Patcher can
  * load them. The server picks which skills to publish and supplies their tree
  * hashes; the daemon pulls each tree and owns the home-relative destinations.
  */

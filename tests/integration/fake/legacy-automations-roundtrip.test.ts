@@ -117,7 +117,7 @@ function insertLegacyAutomation(
 
 describe("legacy automation export/import round trip", () => {
   it("exports kernel rows that the automations plugin schema can parse and ingest", async () => {
-    const dataDir = await mkdtemp(join(tmpdir(), "bb-legacy-roundtrip-"));
+    const dataDir = await mkdtemp(join(tmpdir(), "patcher-legacy-roundtrip-"));
     const legacyDb = createConnection(":memory:");
     const pluginDb = createConnection(":memory:");
     try {

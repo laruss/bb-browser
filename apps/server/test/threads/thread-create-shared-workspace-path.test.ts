@@ -159,7 +159,7 @@ describe("thread creation on a path another project already uses", () => {
           providerId: "codex",
           startedOnBehalfOf: null,
         }),
-      ).rejects.toThrow("bb-managed workspace owned by another project");
+      ).rejects.toThrow("Patcher-managed workspace owned by another project");
 
       expect(listEnvironments(harness.deps.db, project.id)).toEqual([]);
     });
@@ -209,7 +209,7 @@ describe("thread creation on a path another project already uses", () => {
           providerId: "codex",
           startedOnBehalfOf: null,
         }),
-      ).rejects.toThrow("bb-managed workspace owned by another project");
+      ).rejects.toThrow("Patcher-managed workspace owned by another project");
 
       expect(listEnvironments(harness.deps.db, project.id)).toEqual([]);
     });

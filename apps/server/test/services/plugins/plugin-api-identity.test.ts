@@ -14,7 +14,7 @@ import {
 } from "../../helpers/test-app.js";
 
 /**
- * `patcher.sdk` is an HTTP client for bb's own API, and every plugin is handed the
+ * `patcher.sdk` is an HTTP client for Patcher's own API, and every plugin is handed the
  * loopback URL, so a gate on the SDK object alone is a gate on the polite way
  * in. These are about the other way: a request that says which plugin it is,
  * and the API applying that plugin's permissions to it.

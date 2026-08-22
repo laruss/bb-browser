@@ -1,12 +1,12 @@
-# patcher.sdk — driving bb itself from a plugin
+# patcher.sdk — driving Patcher itself from a plugin
 
 Threads, projects, environments, hosts, files, terminals, providers, skills.
-Read this when the plugin has to read or change bb's own state. The area map
+Read this when the plugin has to read or change Patcher's own state. The area map
 lists method names only — `types/patcher-plugin-sdk.d.ts` has the exact signatures.
 
 ## patcher.sdk
 
-The full bb SDK bound to this server over loopback — threads, projects,
+The full Patcher SDK bound to this server over loopback — threads, projects,
 providers, etc. **Bind-gated**: reading `patcher.sdk` before the host binds it
 throws. The real server binds it before loading plugins, so it is available
 from the moment factories run there — but isolated harnesses may not, so

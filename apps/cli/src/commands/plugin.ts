@@ -176,7 +176,7 @@ async function readPluginManifest(
  * report each file that actually changed.
  *
  * `bb plugin build` and `bb plugin dev` call this so an author never
- * typechecks against declarations older than the bb they run. A failure here
+ * typechecks against declarations older than the Patcher they run. A failure here
  * is reported and swallowed: a read-only or otherwise unwritable `types/`
  * must not fail a build.
  */
@@ -277,7 +277,7 @@ async function isPackageInstalled(
  * `--include=dev` rather than a bare `npm install`: the packaged CLI runs with
  * NODE_ENV=production — bb-app's launcher sets it for every `bb` invocation —
  * which npm reads as `omit=dev`. A command-line flag outranks both that and an
- * inherited `npm_config_omit`, so the install no longer depends on how bb was
+ * inherited `npm_config_omit`, so the install no longer depends on how Patcher was
  * started. Best-effort overall: authors need npm anyway (design §5.5), so a
  * failure surfaces the manual step rather than failing the scaffold.
  */
@@ -615,7 +615,7 @@ export function registerPluginCommands(
             ? "✓ installed"
             : result.compatible
               ? "compatible"
-              : `requires newer bb${result.incompatibleReason ? `: ${result.incompatibleReason}` : ""}`,
+              : `requires newer Patcher${result.incompatibleReason ? `: ${result.incompatibleReason}` : ""}`,
         ]);
         console.log(
           renderBorderlessTable(
@@ -757,7 +757,7 @@ export function registerPluginCommands(
             console.log(
               "Plugins are full-trust code running inside the BB server. " +
                 "They can read all local BB data, including other plugins' secrets. " +
-                "Declared permissions gate the bb API, not the process.",
+                "Declared permissions gate the Patcher API, not the process.",
             );
           }
           if (!opts.yes) {
@@ -964,7 +964,7 @@ export function registerPluginCommands(
   plugin
     .command("types [path]")
     .description(
-      "Write this bb's @patcher/plugin-sdk declarations into the plugin's types/ directory (default: cwd); the authoritative, readable API surface for editors, tsc, and agents",
+      "Write this Patcher's @patcher/plugin-sdk declarations into the plugin's types/ directory (default: cwd); the authoritative, readable API surface for editors, tsc, and agents",
     )
     .option("--check", "Report whether types/ is current; write nothing")
     .action(
@@ -979,7 +979,7 @@ export function registerPluginCommands(
         }
         if (typeof manifest.patcher?.server !== "string") {
           console.error(
-            `${rootDir} is not a bb plugin — package.json has no "patcher.server" entry.`,
+            `${rootDir} is not a Patcher plugin — package.json has no "patcher.server" entry.`,
           );
           process.exit(1);
         }
@@ -1021,9 +1021,9 @@ export function registerPluginCommands(
         // unreachable case where that read also fails.
         const manifest = await readPluginManifest(rootDir);
         const hasApp = typeof manifest?.patcher?.app === "string";
-        // Keep the local declarations tracking the bb doing the build, so a
+        // Keep the local declarations tracking the Patcher doing the build, so a
         // plugin scaffolded against an older SDK never typechecks green
-        // against an API this bb no longer has. Gate on patcher.server so a
+        // against an API this Patcher no longer has. Gate on patcher.server so a
         // directory this command is about to reject is never written to first.
         if (typeof manifest?.patcher?.server === "string") {
           await refreshPluginTypes(rootDir, hasApp);
@@ -1062,7 +1062,7 @@ export function registerPluginCommands(
         }
         if (typeof manifest.patcher?.server !== "string") {
           console.error(
-            `${rootDir} is not a bb plugin — package.json has no "patcher.server" entry.`,
+            `${rootDir} is not a Patcher plugin — package.json has no "patcher.server" entry.`,
           );
           process.exit(1);
         }

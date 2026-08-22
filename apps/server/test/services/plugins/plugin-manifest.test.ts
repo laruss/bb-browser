@@ -188,7 +188,7 @@ describe("plugin manifest", () => {
     ["logo", "./logo.svg"],
     ["logoDark", "./logo-dark.svg"],
   ])(
-    "rejects the legacy bb.%s field instead of ignoring it",
+    "rejects the legacy patcher.%s field instead of ignoring it",
     async (field, value) => {
       await writeManifest(undefined, { ...validPatcher, [field]: value });
       await expect(readPluginManifest(rootDir)).rejects.toThrow(

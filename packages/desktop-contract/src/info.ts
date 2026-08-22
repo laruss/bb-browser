@@ -32,7 +32,7 @@ export const patcherDesktopInfoSchema = z.object({
 export type PatcherDesktopInfo = z.infer<typeof patcherDesktopInfoSchema>;
 
 /**
- * Whether macOS routes web links to bb, and whether this build may ask to
+ * Whether macOS routes web links to Patcher, and whether this build may ask to
  * change that.
  *
  * `canRequest` is false for a development run: `Info.plist` cannot be written at
@@ -115,12 +115,12 @@ export interface PatcherDesktopApi extends PatcherDesktopInfo {
    */
   getWindowState?(): Promise<PatcherDesktopWindowState>;
   /**
-   * Whether macOS currently hands web links to bb. Optional for version skew
+   * Whether macOS currently hands web links to Patcher. Optional for version skew
    * with shells that predate the declaration that makes it possible.
    */
   getDefaultBrowserStatus?(): Promise<PatcherDesktopDefaultBrowserStatus>;
   /**
-   * Ask macOS to make bb the default browser.
+   * Ask macOS to make Patcher the default browser.
    *
    * The answer is the status *before* the user has answered: macOS shows the
    * confirmation itself and Launch Services returns without waiting for it, so
@@ -132,7 +132,7 @@ export interface PatcherDesktopApi extends PatcherDesktopInfo {
   /**
    * Subscribe to default-browser changes. They happen outside this app — the
    * system dialog above, or System Settings — so the status is re-read whenever
-   * bb is activated and pushed when it differs.
+   * Patcher is activated and pushed when it differs.
    */
   onDefaultBrowserStatusChange?(
     listener: PatcherDesktopDefaultBrowserStatusChangeHandler,
@@ -174,7 +174,7 @@ export interface PatcherDesktopApi extends PatcherDesktopInfo {
    * The browser surface calls it when its last tab goes: a window whose strip
    * is empty has nothing left to show, which is what closing the last tab means
    * in every other browser. Optional for version skew — a shell that predates
-   * it leaves the window open on an empty new-tab screen, which is what bb did
+   * it leaves the window open on an empty new-tab screen, which is what Patcher did
    * before.
    */
   closeWindow?(): void;
@@ -188,7 +188,7 @@ export interface PatcherDesktopApi extends PatcherDesktopInfo {
   /**
    * Push the renderer's theme preference to the Electron main process so the
    * NSWindow appearance — traffic lights and inactive title-bar chrome —
-   * follows bb's explicit theme or the OS when set to system. No-op on the web
+   * follows Patcher's explicit theme or the OS when set to system. No-op on the web
    * build where `window.bbDesktop` is undefined.
    */
   setTheme(theme: PatcherDesktopTheme): void;

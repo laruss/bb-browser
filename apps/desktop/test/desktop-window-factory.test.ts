@@ -32,7 +32,7 @@ interface FakeDesktopWindowArgs {
 const tempDirs: TempDir[] = [];
 
 async function createTempDir(): Promise<TempDir> {
-  const path = await mkdtemp(join(tmpdir(), "bb-desktop-window-factory-"));
+  const path = await mkdtemp(join(tmpdir(), "patcher-desktop-window-factory-"));
   const tempDir = { path };
   tempDirs.push(tempDir);
   return tempDir;
@@ -568,7 +568,7 @@ describe("desktop window factory", () => {
     });
 
     expect(
-      factory.sendToFirstWindow("bb:test", { path: "/threads/thr_a" }),
+      factory.sendToFirstWindow("patcher:test", { path: "/threads/thr_a" }),
     ).toBe(false);
 
     await factory.createWindow({
@@ -581,10 +581,10 @@ describe("desktop window factory", () => {
     }
 
     expect(
-      factory.sendToFirstWindow("bb:test", { path: "/threads/thr_a" }),
+      factory.sendToFirstWindow("patcher:test", { path: "/threads/thr_a" }),
     ).toBe(true);
     expect(browserWindow.webContents.sentMessages).toEqual([
-      { channel: "bb:test", payload: { path: "/threads/thr_a" } },
+      { channel: "patcher:test", payload: { path: "/threads/thr_a" } },
     ]);
     expect(browserWindow.loadedUrls).toEqual(["http://127.0.0.1:38986"]);
     expect(browserWindow.focused).toBe(true);
@@ -641,13 +641,13 @@ describe("desktop window factory", () => {
     }
     secondWindow.focused = true;
 
-    expect(factory.sendToFocusedWindow("bb:test", { action: "new-tab" })).toBe(
-      true,
-    );
+    expect(
+      factory.sendToFocusedWindow("patcher:test", { action: "new-tab" }),
+    ).toBe(true);
 
     expect(firstWindow.webContents.sentMessages).toEqual([]);
     expect(secondWindow.webContents.sentMessages).toEqual([
-      { channel: "bb:test", payload: { action: "new-tab" } },
+      { channel: "patcher:test", payload: { action: "new-tab" } },
     ]);
   });
 });

@@ -16,7 +16,7 @@ import {
  * devDependencies, so tests never download one.
  */
 function testToolchain() {
-  return resolvePluginBuildToolchain(join(tmpdir(), "bb-toolchain-unused"));
+  return resolvePluginBuildToolchain(join(tmpdir(), "patcher-toolchain-unused"));
 }
 
 

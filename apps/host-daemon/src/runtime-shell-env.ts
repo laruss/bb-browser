@@ -81,7 +81,9 @@ async function resolveCliEntryPath(cliExecutablePath: string): Promise<string> {
   try {
     const stats = await fs.stat(cliEntryPath);
     if (!stats.isFile()) {
-      throw new Error(`Resolved bb CLI entry is not a file: ${cliEntryPath}`);
+      throw new Error(
+        `Resolved Patcher CLI entry is not a file: ${cliEntryPath}`,
+      );
     }
     if (process.platform !== "win32") {
       try {
@@ -89,7 +91,7 @@ async function resolveCliEntryPath(cliExecutablePath: string): Promise<string> {
       } catch (error) {
         if (getErrorCode(error) === "EACCES") {
           throw new Error(
-            `Resolved bb CLI entry is not executable: ${cliEntryPath}. Build @patcher/cli before starting the host daemon.`,
+            `Resolved Patcher CLI entry is not executable: ${cliEntryPath}. Build @patcher/cli before starting the host daemon.`,
           );
         }
         throw error;
@@ -98,7 +100,7 @@ async function resolveCliEntryPath(cliExecutablePath: string): Promise<string> {
   } catch (error) {
     if (getErrorCode(error) === "ENOENT") {
       throw new Error(
-        `Missing built bb CLI entry at ${cliEntryPath}. Build @patcher/cli before starting the host daemon.`,
+        `Missing built Patcher CLI entry at ${cliEntryPath}. Build @patcher/cli before starting the host daemon.`,
       );
     }
     throw error;
@@ -344,7 +346,7 @@ export async function resolveLocalPatcherExecutableDirectory(
 }
 
 /**
- * Absolute path to the local bb CLI entry used for agent shell injection.
+ * Absolute path to the local Patcher CLI entry used for agent shell injection.
  * Prefer this over directory-only resolution when setting `PATCHER_CLI`.
  */
 export async function resolveLocalPatcherExecutablePath(
@@ -355,7 +357,7 @@ export async function resolveLocalPatcherExecutablePath(
   return resolveCliEntryPath(resolvedCliExecutablePath);
 }
 
-/** Platform-stable name of the bb CLI file inside `PATCHER_CLI_DIR` / daemon dist. */
+/** Platform-stable name of the Patcher CLI file inside `PATCHER_CLI_DIR` / daemon dist. */
 export function patcherExecutableFileName(): string {
   return "bb";
 }

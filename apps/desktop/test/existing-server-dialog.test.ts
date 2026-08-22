@@ -18,7 +18,7 @@ const DETAILS = {
 };
 
 describe("formatStartedAt", () => {
-  it("describes how long ago bb started", () => {
+  it("describes how long ago Patcher started", () => {
     expect(formatStartedAt("2026-08-03T11:59:30.000Z", NOW)).toBe("just now");
     expect(formatStartedAt("2026-08-03T11:30:00.000Z", NOW)).toBe("30 min ago");
     expect(formatStartedAt("2026-08-03T04:00:00.000Z", NOW)).toBe("8 h ago");
@@ -31,8 +31,8 @@ describe("formatStartedAt", () => {
 });
 
 describe("formatSurface", () => {
-  it("names how bb was started", () => {
-    expect(formatSurface("desktop")).toBe("the bb desktop app");
+  it("names how Patcher was started", () => {
+    expect(formatSurface("desktop")).toBe("the Patcher desktop app");
     expect(formatSurface("web")).toBe("a terminal");
   });
 });
@@ -48,12 +48,12 @@ describe("renderExistingServerDialogHtml", () => {
     for (const choice of EXISTING_SERVER_DIALOG_CHOICES) {
       expect(html).toContain(`data-choice="${choice}"`);
     }
-    expect(html).toContain(">Quit this bb<");
-    expect(html).toContain(">Quit other bb<");
+    expect(html).toContain(">Quit this Patcher<");
+    expect(html).toContain(">Quit other Patcher<");
     expect(html).toContain(">Connect<");
   });
 
-  it("describes the running bb", () => {
+  it("describes the running Patcher", () => {
     const html = renderExistingServerDialogHtml({
       details: DETAILS,
       now: NOW,
@@ -66,7 +66,7 @@ describe("renderExistingServerDialogHtml", () => {
     expect(html).toContain("30 min ago by a terminal (pid 4242)");
   });
 
-  it("hides the stop option for a bb that cannot be identified", () => {
+  it("hides the stop option for a Patcher that cannot be identified", () => {
     const html = renderExistingServerDialogHtml({
       details: null,
       now: NOW,
@@ -80,7 +80,7 @@ describe("renderExistingServerDialogHtml", () => {
     expect(html).not.toContain("agent threads stop too");
   });
 
-  it("escapes values that come from the running bb", () => {
+  it("escapes values that come from the running Patcher", () => {
     const html = renderExistingServerDialogHtml({
       details: { ...DETAILS, dataDir: '/tmp/<img src=x onerror="boom">' },
       now: NOW,

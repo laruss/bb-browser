@@ -480,7 +480,7 @@ describe("patcher.agents.registerTool", () => {
     });
     const entry = await service.installPath(rootDir);
     expect(entry.status).toBe("error");
-    expect(entry.statusDetail).toContain("built-in bb tool");
+    expect(entry.statusDetail).toContain("built-in Patcher tool");
     expect(service.listAgentTools()).toEqual([]);
   });
 });

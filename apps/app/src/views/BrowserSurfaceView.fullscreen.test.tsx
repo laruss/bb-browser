@@ -11,7 +11,7 @@ import type {
   PatcherDesktopWindowStateChangeHandler,
 } from "@patcher/desktop-contract";
 import { AppCommandProvider } from "@/components/commands/AppCommandProvider";
-import { createNoopDesktopBrowserApi } from "@/test/bb-desktop-test-utils";
+import { createNoopDesktopBrowserApi } from "@/test/patcher-desktop-test-utils";
 import { createQueryClientTestHarness } from "@/test/queryClientTestHarness";
 import { getBrowserSurfaceTabsStorageKey } from "@/lib/browser-surface-tabs";
 import { BrowserSurfaceView } from "./BrowserSurfaceView";

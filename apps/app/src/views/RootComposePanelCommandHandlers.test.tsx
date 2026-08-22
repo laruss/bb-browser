@@ -4,7 +4,7 @@ import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { PatcherDesktopCloseWindowRequestHandler } from "@patcher/desktop-contract";
 import { AppCommandProvider } from "@/components/commands/AppCommandProvider";
-import { createPatcherDesktopApi } from "@/test/bb-desktop-test-utils";
+import { createPatcherDesktopApi } from "@/test/patcher-desktop-test-utils";
 import { RootComposePanelCommandHandlers } from "./RootComposePanelCommandHandlers";
 
 // The command provider reads plugin commands (`app.commands`); nothing here

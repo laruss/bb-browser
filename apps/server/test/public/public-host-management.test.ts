@@ -48,7 +48,7 @@ describe("public host management", () => {
   it("mints a join code that enrolls through the existing internal route", async () => {
     await withTestHarness(async (harness) => {
       const issued = await createJoinCode(harness.app);
-      expect(issued.joinCode).toMatch(/^bbde_/u);
+      expect(issued.joinCode).toMatch(/^patcherde_/u);
       expect(issued.expiresAt).toBeGreaterThan(Date.now());
       expect(issued.expiresAt).toBeLessThanOrEqual(Date.now() + 15 * 60 * 1000);
       // Minting must not create a host row — an unredeemed code would leave a

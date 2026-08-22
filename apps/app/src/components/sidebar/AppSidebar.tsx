@@ -31,7 +31,7 @@ import {
   MACOS_WINDOW_DRAG_CLASS,
   shouldUseMacosDesktopChrome,
   SIDEBAR_TRIGGER_TRAILING_RESERVE_CLASS,
-} from "@/lib/bb-desktop";
+} from "@/lib/patcher-desktop";
 import { getRootComposeRoutePath, getThreadRoutePath } from "@/lib/route-paths";
 import { useThreadSplitsEnabled } from "@/hooks/useThreadSplitsEnabled";
 import { usePaneContentSplitDrag } from "./usePaneContentSplitDrag";

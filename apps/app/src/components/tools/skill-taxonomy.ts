@@ -6,8 +6,8 @@ import type {
 
 export const SKILL_SCOPE_LABELS: Record<SkillScope, string> = {
   "patcher-builtin": "Built-in",
-  "bb-user": "bb · user",
-  "bb-project": "bb · project",
+  "patcher-user": "Patcher · user",
+  "patcher-project": "Patcher · project",
   "claude-user": "Claude · user",
   "claude-project": "Claude · project",
   "codex-user": "Codex · user",
@@ -29,8 +29,8 @@ export function isSkillEditable(
   skill: SkillSummary,
 ): skill is SkillSummary & { scope: EditableSkillScope } {
   switch (skill.scope) {
-    case "bb-user":
-    case "bb-project":
+    case "patcher-user":
+    case "patcher-project":
       return true;
     case "claude-user":
     case "claude-project":

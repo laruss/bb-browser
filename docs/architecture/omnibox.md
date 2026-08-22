@@ -23,7 +23,7 @@ ranking, or the chrome.
 | Chrome (nav controls + input + list)         | `components/browser-surface/BrowserSurfaceChrome.tsx`      |
 | Suggestion list                              | `components/browser-surface/BrowserOmniboxSuggestions.tsx` |
 
-Everything above `useOmnibox` is free of React and of any bb service, so the
+Everything above `useOmnibox` is free of React and of any Patcher service, so the
 timing rules are tested with fake timers rather than through a rendered
 component.
 
@@ -51,11 +51,11 @@ setting. A plugin **cannot** own Enter by being asked for it — every provider 
 asynchronous, and the whole point above is that Enter does not wait. So an engine
 is a _declared URL template_ (`patcher.browser.registerSearchEngine`, permission
 `searchEngine.register`) that the app holds and formats itself, the same way the
-shell holds declared context-menu items: bb ships a few, plugins declare more, and
+shell holds declared context-menu items: Patcher ships a few, plugins declare more, and
 the setting picks among them by id.
 
 Two consequences worth stating. An id whose plugin has been removed resolves back
-to bb's default rather than failing on Enter. And an engine need not search — any
+to Patcher's default rather than failing on Enter. And an engine need not search — any
 `https` or **loopback** template qualifies, so a plugin route that spawns an agent
 thread is a legal engine, which is the thing an agent-first browser wants from its
 address bar (`examples/plugins/omnibox-agent` ships one). Plain http to another
@@ -97,16 +97,16 @@ list would reshuffle under the user's cursor as answers trickle in.
 
 ## Providers
 
-| Provider     | Offers                                       | Action       |
-| ------------ | -------------------------------------------- | ------------ |
-| `navigation` | the typed text as an address, when it is one | navigate     |
-| `search`     | a search for the typed text (always)         | navigate     |
-| `open-tabs`  | open tabs matching by title or host          | activate-tab |
-| `history`    | previously visited pages                     | navigate     |
-| `app-routes` | bb's own screens, and every plugin panel     | open-app-tab |
+| Provider     | Offers                                        | Action       |
+| ------------ | --------------------------------------------- | ------------ |
+| `navigation` | the typed text as an address, when it is one  | navigate     |
+| `search`     | a search for the typed text (always)          | navigate     |
+| `open-tabs`  | open tabs matching by title or host           | activate-tab |
+| `history`    | previously visited pages                      | navigate     |
+| `app-routes` | Patcher's own screens, and every plugin panel | open-app-tab |
 
 `app-routes` is what makes Settings reachable by typing "settings" rather than by
-knowing bb spells Extensions `/tools/plugins`. Its action is `open-app-tab`, not
+knowing Patcher spells Extensions `/tools/plugins`. Its action is `open-app-tab`, not
 `navigate`, because the destination belongs to the window's router: the surface
 opens or focuses the destination's tab instead of pointing a `WebContentsView` at
 a path (see [browser-surface.md](browser-surface.md), "App tabs"). Its list is
@@ -185,7 +185,7 @@ declines when it has no address input of its own to focus.
 Milestone C: `patcher.browser.registerOmniboxProvider` — plugin rows in the same
 ranked list, which is the plan's §12 vertical slice and its central hypothesis.
 
-The contribution point is modelled on the mention providers bb already had
+The contribution point is modelled on the mention providers Patcher already had
 (`patcher.ui.registerMentionProvider`), deliberately: same shape, same guarantees,
 same failure discipline. A plugin registers a provider with an `id` and a `label`
 in its server module; `suggest({ query })` runs server-side; the host namespaces

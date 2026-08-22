@@ -90,7 +90,7 @@ const EMPTY_AND_ERROR_USAGE: Usage = {
     status: "error",
     message: "Claude usage is temporarily unavailable.",
     // Read from local credentials before the usage call, so an outage does not
-    // erase the plan bb already knows about.
+    // erase the plan Patcher already knows about.
     planLabel: "Max (5x)",
     accountEmail: null,
   },

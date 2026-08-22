@@ -10,7 +10,7 @@ import { promisify } from "node:util";
 const run = promisify(execFile);
 
 /**
- * Exact versions bb builds plugin bundles with. Pinned rather than ranged so
+ * Exact versions Patcher builds plugin bundles with. Pinned rather than ranged so
  * a fetched toolchain is reproducible and its directory name is stable.
  * Bump deliberately; {@link toolchainCacheDir} keys off these, so a bump
  * installs alongside the old set instead of mutating it.
@@ -29,7 +29,7 @@ export const PLUGIN_TOOLCHAIN_PINS = {
  * is a directory rather than a module because Tailwind's CSS entry points
  * (`index.css`, `theme.css`, …) are resolved by name at compile time, and the
  * package holding them lives wherever the toolchain does — which, for a
- * shipped server, is neither the plugin nor bb's own bundle.
+ * shipped server, is neither the plugin nor Patcher's own bundle.
  */
 export interface PluginBuildToolchain {
   esbuild: string;
@@ -47,7 +47,7 @@ function pinKey(): string {
 
 /**
  * Directory holding one pinned toolchain set. Keyed by the pins themselves so
- * upgrading bb installs a fresh set beside the old one rather than mutating a
+ * upgrading Patcher installs a fresh set beside the old one rather than mutating a
  * directory a concurrent build may be importing from.
  */
 export function toolchainCacheDir(baseDir: string): string {
@@ -113,7 +113,7 @@ function readVersion(require: NodeRequire, name: string): string | null {
  * Build a toolchain from `require`, or null if any package is missing or is
  * not the pinned version.
  *
- * Version equality matters: the build emits artifacts whose compatibility bb
+ * Version equality matters: the build emits artifacts whose compatibility Patcher
  * later validates, and an unpinned local Tailwind or esbuild would silently
  * produce bundles the pinned set would not.
  */
@@ -169,7 +169,7 @@ async function isInstalled(dir: string): Promise<boolean> {
  * Ensure the pinned toolchain exists under `baseDir` and return specifiers the
  * build functions can import.
  *
- * bb installs its own pinned packages here — never plugin code — so this runs
+ * Patcher installs its own pinned packages here — never plugin code — so this runs
  * with `--ignore-scripts` and touches no plugin-authored script.
  *
  * Cross-process safe: a server and a CLI can race here. Each installs into a

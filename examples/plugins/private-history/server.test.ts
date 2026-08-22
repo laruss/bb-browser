@@ -1,5 +1,5 @@
 // Backend tests for the private-history example, written against the official
-// harness (`@patcher/plugin-sdk/testing`) — no bb server, no browser.
+// harness (`@patcher/plugin-sdk/testing`) — no Patcher server, no browser.
 import { describe, expect, it } from "vitest";
 import {
   createFakePluginHost,

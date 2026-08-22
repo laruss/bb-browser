@@ -101,7 +101,7 @@ export interface FindForeignManagedEnvironmentAtHostPathArgs {
 }
 
 /**
- * A live bb-managed workspace at this directory owned by another project.
+ * A live Patcher-managed workspace at this directory owned by another project.
  * The environment claim is project-scoped, but the directory is physical:
  * destroying a managed environment deletes it, so no other project may attach
  * to it in place.

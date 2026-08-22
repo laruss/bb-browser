@@ -14,7 +14,7 @@ import type { PatcherDesktopBrowserStateHandler } from "@patcher/desktop-contrac
 import {
   createPatcherDesktopApi,
   createNoopDesktopBrowserApi,
-} from "@/test/bb-desktop-test-utils";
+} from "@/test/patcher-desktop-test-utils";
 import { createQueryClientTestHarness } from "@/test/queryClientTestHarness";
 import { getBrowserSurfaceTabsStorageKey } from "@/lib/browser-surface-tabs";
 import { getBrowserFaviconsStorageKey } from "@/lib/browser-favicons";
@@ -48,7 +48,7 @@ function renderSurface(
   // the previous test's tabs leak into the next) plus a query client, which the
   // surface needs to read its plugin omnibox contributions.
   const { wrapper: Wrapper } = createQueryClientTestHarness();
-  // A router because tab selection navigates: picking bb's own screen sends the
+  // A router because tab selection navigates: picking Patcher's own screen sends the
   // window to it, and picking a page sends it back to the browser.
   const result = render(
     <Wrapper>
@@ -509,8 +509,8 @@ describe("BrowserSurfaceView", () => {
     expect(tabButtons()).toHaveLength(1);
   });
 
-  // Links macOS handed the shell because bb is the user's default browser. The
-  // surface pulls them: the click that launched bb reached main before this
+  // Links macOS handed the shell because Patcher is the user's default browser. The
+  // surface pulls them: the click that launched Patcher reached main before this
   // renderer existed, so there was nobody to push to.
   it("opens the links waiting in the shell when it mounts", async () => {
     const takeExternalUrls = vi

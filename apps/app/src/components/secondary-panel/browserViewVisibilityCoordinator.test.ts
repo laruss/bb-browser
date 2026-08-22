@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import type { PatcherDesktopBrowserApi } from "@patcher/desktop-contract";
-import { createNoopDesktopBrowserApi } from "@/test/bb-desktop-test-utils";
+import { createNoopDesktopBrowserApi } from "@/test/patcher-desktop-test-utils";
 import {
   createBrowserViewVisibilityCoordinator,
   destroyPersistedBrowserViewsForEnvironment,

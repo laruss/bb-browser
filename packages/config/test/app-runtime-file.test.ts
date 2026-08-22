@@ -16,7 +16,7 @@ import {
 const tempDirs: string[] = [];
 
 async function createDataDir(): Promise<string> {
-  const dataDir = await mkdtemp(join(tmpdir(), "bb-runtime-file-"));
+  const dataDir = await mkdtemp(join(tmpdir(), "patcher-runtime-file-"));
   tempDirs.push(dataDir);
   return dataDir;
 }

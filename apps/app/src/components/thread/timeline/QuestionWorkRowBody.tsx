@@ -48,7 +48,7 @@ function AnsweredQuestionRow({ question, answer }: AnsweredQuestionRowProps) {
 
   return (
     <div>
-      {/* Differentiate by bb's foreground tiers (color), not weight: the prompt
+      {/* Differentiate by Patcher's foreground tiers (color), not weight: the prompt
           recedes to subtle-foreground while the answer is full foreground. The
           two-tier gap (vs muted) is what keeps them distinguishable in dark
           mode, where foreground and muted-foreground nearly coincide. */}

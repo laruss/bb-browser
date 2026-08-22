@@ -1,8 +1,8 @@
 export type DesktopReleaseChannel = "latest" | "nightly";
 
 export interface DesktopReleaseConfig {
-  appId: "dev.bb.desktop" | "dev.bb.desktop.nightly";
-  applicationName: "bb" | "bb Nightly";
+  appId: "app.patcher.desktop" | "app.patcher.desktop.nightly";
+  applicationName: "Patcher" | "Patcher Nightly";
   artifactName: string;
   iconFileName: "icon.png" | "icon-nightly.png";
   macIconPath: "assets/icon.icns" | "assets/icon-nightly.icns";

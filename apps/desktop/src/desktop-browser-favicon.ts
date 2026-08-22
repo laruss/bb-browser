@@ -1,14 +1,14 @@
 import { PATCHER_DESKTOP_BROWSER_MAX_FAVICON_DATA_URL_LENGTH } from "@patcher/desktop-contract";
 
 /**
- * Turning a page's declared favicon into something the trusted bb app may show.
+ * Turning a page's declared favicon into something the trusted Patcher app may show.
  *
  * The rule this module exists to keep: **the app never touches the page's URL.**
  * The shell fetches the icon itself, inside the browsing session — so the request
  * carries that session's cookies and passes the session's own network firewall
  * (`shouldBlockBrowserRequest`, which already refuses LAN hosts outright and
  * loopback without frame attribution) — and hands the renderer a `data:` URI it
- * built. A page therefore cannot use its tab icon to make the bb origin issue a
+ * built. A page therefore cannot use its tab icon to make the Patcher origin issue a
  * request: no beacon, no credentialed loopback probe, no scheme of its choosing
  * in an `<img src>`.
  *

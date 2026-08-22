@@ -1,7 +1,7 @@
 // patcher-plugin-bookmarks — the Phase 8 chrome surfaces, in the shape they were built
 // for.
 //
-// bb has no bookmarks, deliberately: a plugin can own the whole feature, and
+// Patcher has no bookmarks, deliberately: a plugin can own the whole feature, and
 // building it in the core would have spent the demonstration this repo exists to
 // make. What the core *did* have to provide was somewhere to put a control, since
 // nothing else could — and that is the three surfaces this file uses:
@@ -10,7 +10,7 @@
 //     know whether *this* page is saved before anyone touches it;
 //   * `patcher.browser.registerNewTabWidget` — the list, where a browser has nothing
 //     else to show;
-//   * `patcher.ui.registerCommand` — Cmd+D, a chord bb had never heard of.
+//   * `patcher.ui.registerCommand` — Cmd+D, a chord Patcher had never heard of.
 //
 // Plus two the browser already had: an omnibox provider, so a saved page is
 // findable by typing, and the plugin's own SQLite, so the list survives a restart.
@@ -46,7 +46,7 @@ const OMNIBOX_ROWS = 5;
 /**
  * A page worth saving is one the browser can go back to.
  *
- * bb's own screens (`bb:`), a `file:` path and a `data:` blob are all things the
+ * Patcher's own screens (`bb:`), a `file:` path and a `data:` blob are all things the
  * chord can fire on, and none of them is a bookmark: the new-tab row would be
  * refused by the host anyway (rows are `http`/`https` links), so refusing here
  * keeps the store from holding what the list could never show.
@@ -148,7 +148,7 @@ export default function plugin(patcher: PatcherPluginApi) {
   });
 
   // Cmd+D, the chord every browser uses for this. It is matched after every one of
-  // bb's own bindings, so if bb ever takes Cmd+D this stops firing rather than
+  // Patcher's own bindings, so if Patcher ever takes Cmd+D this stops firing rather than
   // shadowing the browser — Settings → Keyboard says so outright.
   patcher.ui.registerCommand({
     id: "toggle",

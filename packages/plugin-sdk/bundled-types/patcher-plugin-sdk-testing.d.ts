@@ -11,10 +11,10 @@ import { PatcherPluginApi, PluginSettingValue, PluginAgentToolExperimentalStatus
  * What a plugin declares it will use, and what the host lets it reach.
  *
  * Read this before adding one: **in-process, these are not a security boundary
- * and cannot be.** A plugin's `server.ts` is a Node module loaded into the bb
+ * and cannot be.** A plugin's `server.ts` is a Node module loaded into the Patcher
  * server, so it can `import("node:child_process")`, read another plugin's
  * secrets off disk, or skip `patcher.sdk` entirely and call the loopback API it is
- * handed in `patcher.server.loopbackBaseUrl`. A gate on the `bb` object stops none
+ * handed in `patcher.server.loopbackBaseUrl`. A gate on the `patcher` object stops none
  * of that. Plan §9 asks for isolation and plan Phase 7 is where it comes from.
  *
  * What these are for until then, in the order the value actually arrives:
@@ -127,7 +127,7 @@ declare function createFakeSdk(options: {
 /**
  * `createFakePluginHost` — an in-process stand-in for the BB server's plugin
  * runtime (apps/server/src/services/plugins/plugin-api.ts), for unit-testing
- * a plugin's `server.ts` without a server. `bb` satisfies {@link PatcherPluginApi};
+ * a plugin's `server.ts` without a server. `patcher` satisfies {@link PatcherPluginApi};
  * `harness` drives and inspects it.
  *
  * Faithful where a plugin can observe it: registration name validation and
@@ -433,7 +433,7 @@ interface FakePluginLifecycleControls {
     /**
      * Dispose like a host reload/disable: abort services started via
      * runService, run onDispose hooks LIFO (isolated), close database handles,
-     * then poison the `bb` handle (further use throws
+     * then poison the `patcher` handle (further use throws
      * PluginContextStaleError). Idempotent.
      */
     dispose(): Promise<void>;

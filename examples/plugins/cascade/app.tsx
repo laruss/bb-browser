@@ -38,7 +38,7 @@ import { cn } from "@/lib/utils";
 // niri's `preset-column-widths`, as a fraction of the viewport.
 const WIDTH_PRESETS = [0.333, 0.5, 0.667] as const;
 const DRAFT_WIDTH = 0.28;
-// The open draft renders bb's full compose surface; its control row (project,
+// The open draft renders Patcher's full compose surface; its control row (project,
 // environment, branch, permission mode) does not fit in the closed placeholder
 // width, so an open draft takes the 1/2 preset.
 const DRAFT_OPEN_WIDTH = WIDTH_PRESETS[1];

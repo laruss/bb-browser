@@ -261,7 +261,7 @@ describe("builtin plugin reconciliation", () => {
   });
 
   // The other half of the shipped placement policy: what the app releases
-  // stays where the server can hand back its `bb` object, and a plugin that
+  // stays where the server can hand back its `patcher` object, and a plugin that
   // left would fail this by throwing "runs in its own process".
   it("keeps a builtin in the server under the shipped placement policy", async () => {
     service = createService({
@@ -788,7 +788,7 @@ describe("builtin plugin reconciliation", () => {
         version: "0.1.0",
         enabled: true,
         status: "incompatible",
-        statusDetail: `server artifact for plugin "automations" was built for SDK major ${incompatibleMajor}, running SDK major is ${PLUGIN_SDK_MAJOR}; rebuild the server artifact with this bb version`,
+        statusDetail: `server artifact for plugin "automations" was built for SDK major ${incompatibleMajor}, running SDK major is ${PLUGIN_SDK_MAJOR}; rebuild the server artifact with this Patcher version`,
       },
     ]);
     expect(packagedLoadCount()).toBe(before);

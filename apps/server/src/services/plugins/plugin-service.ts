@@ -308,7 +308,7 @@ export interface PluginService {
    * Which plugin an `/api/v1` request belongs to, for the permission gate on
    * that traffic. Separate from {@link httpToken}, which is the credential
    * *inbound* callers present to reach a plugin's own routes — one identifies
-   * bb to the plugin's callers, this identifies the plugin to bb.
+   * Patcher to the plugin's callers, this identifies the plugin to Patcher.
    */
   readonly apiIdentities: PluginApiIdentities;
   /**
@@ -332,7 +332,7 @@ export interface PluginService {
    * discipline. Never throws for dispatch problems: an unknown / not-running
    * plugin, closed experiment gate, missing registration, throwing handler, or
    * malformed handler result all map to exitCode 1 with a helpful stderr —
-   * the bb CLI prints stderr and exits with exitCode.
+   * the Patcher CLI prints stderr and exits with exitCode.
    */
   runCliCommand(
     id: string,
@@ -477,7 +477,7 @@ export interface PluginService {
   }): Promise<PluginSiteInfoSection[]>;
   /**
    * Search engines plugins offered (`browser.searchEngines`), for the app to list
-   * beside bb's own. Ordered by plugin id, then registration order. No plugin
+   * beside Patcher's own. Ordered by plugin id, then registration order. No plugin
    * code runs — the rows were declared at load.
    */
   listSearchEngineContributions(): PluginSearchEngineContribution[];
@@ -515,7 +515,7 @@ export interface PluginService {
   }): Promise<{ ok: true } | { ok: false; error: string }>;
   /**
    * Toolbar controls plugins contributed (`browser.toolbar.items`), for the
-   * address row to render between the address bar and bb's own buttons. Ordered
+   * address row to render between the address bar and Patcher's own buttons. Ordered
    * by plugin id. No plugin code runs — this is the declaration.
    */
   listToolbarItemContributions(): PluginToolbarItemContribution[];
@@ -560,7 +560,7 @@ export interface PluginService {
   listNewTabWidgetContributions(): PluginNewTabWidgetContribution[];
   /**
    * Commands plugins added, with their chords (`app.commands`), for the app to
-   * match after every one of bb's own. Ordered by plugin id, then registration
+   * match after every one of Patcher's own. Ordered by plugin id, then registration
    * order — which is also the order that resolves a chord two plugins both want.
    * No plugin code runs.
    */
@@ -602,7 +602,7 @@ export interface PluginService {
   }): Promise<string | null>;
   /**
    * Ask every registered external-link handler
-   * (`browser.externalLink.handlers`) where a link the system handed bb should
+   * (`browser.externalLink.handlers`) where a link the system handed Patcher should
    * go, in plugin id order, stopping at the first that decides.
    *
    * Sequential and first-wins like auth, and for the harder reason: two handlers
@@ -1023,7 +1023,7 @@ function normalizeToolbarItemState(args: {
  * the browser should follow, and a row that fails when clicked is worse than a row
  * that never appeared. Malformed results throw — the caller runs this inside
  * invokeWrapped, so a bad widget contributes nothing and the screen still renders
- * bb's own recents.
+ * Patcher's own recents.
  */
 function normalizeNewTabRows(args: {
   result: unknown;

@@ -222,7 +222,7 @@ describe("bb tasks CLI", () => {
 
     const commentResult = await harness.runCli(
       ["comment", "CLI-1", "--body", "Ready for review.", "--json"],
-      { threadId: "thr_cli_worker", projectId: "proj_bb" },
+      { threadId: "thr_cli_worker", projectId: "proj_patcher" },
     );
     expect(JSON.parse(stdout(commentResult))).toMatchObject({
       comment: {
@@ -1032,7 +1032,7 @@ describe("bb tasks CLI", () => {
             "--notify",
             "--json",
           ],
-          { threadId: "thr_cli_sender", projectId: "proj_bb" },
+          { threadId: "thr_cli_sender", projectId: "proj_patcher" },
         ),
       ),
     ).comment;
@@ -1294,7 +1294,7 @@ describe("bb tasks CLI", () => {
                     state: "draft",
                     url: "https://github.com/acme/bb/pull/12",
                     baseRefName: "main",
-                    headRefName: "bb/bb-15",
+                    headRefName: "patcher/bb-15",
                     updatedAt: "2026-07-16T10:00:00.000Z",
                     checks: {
                       state: "pending",
@@ -1850,7 +1850,7 @@ describe("bb tasks CLI", () => {
     expect(result).toEqual({
       exitCode: 1,
       stdout: "",
-      stderr: 'Task project "Unlinked CLI" is not linked to a bb project',
+      stderr: 'Task project "Unlinked CLI" is not linked to a Patcher project',
     });
     // "delegate" stays as a hidden compatibility alias for "dispatch".
     const aliased = await harness.runCli([
@@ -1860,7 +1860,7 @@ describe("bb tasks CLI", () => {
       "CLI worker",
     ]);
     expect(aliased.stderr).toBe(
-      'Task project "Unlinked CLI" is not linked to a bb project',
+      'Task project "Unlinked CLI" is not linked to a Patcher project',
     );
     expect(harness.sdk.callsTo("threads.spawn")).toEqual([]);
 

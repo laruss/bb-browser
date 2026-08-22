@@ -55,7 +55,7 @@ const CHILD_COMPLETED_BODY = [
   "",
   "All work **complete and committed**. Handed the follow-up to @thread:thr_child2.",
   "",
-  "- Branch: `bb/rebuild-threaded-comments`",
+  "- Branch: `patcher/rebuild-threaded-comments`",
   "- Ladle stories built and verified",
   "- PR ready to open on your go",
 ].join("\n");
@@ -289,7 +289,7 @@ const MARKDOWN_ROWS: readonly {
         "",
         "## PR #467 — threaded comments",
         "",
-        "**Branch:** `bb/rebuild-threaded-comments`",
+        "**Branch:** `patcher/rebuild-threaded-comments`",
         "",
         "- Ladle stories built and verified",
         "- `migrate(db)` passes on a fresh schema",

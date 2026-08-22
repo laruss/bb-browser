@@ -100,7 +100,7 @@ import {
 /**
  * `createFakePluginHost` — an in-process stand-in for the BB server's plugin
  * runtime (apps/server/src/services/plugins/plugin-api.ts), for unit-testing
- * a plugin's `server.ts` without a server. `bb` satisfies {@link PatcherPluginApi};
+ * a plugin's `server.ts` without a server. `patcher` satisfies {@link PatcherPluginApi};
  * `harness` drives and inspects it.
  *
  * Faithful where a plugin can observe it: registration name validation and
@@ -612,7 +612,7 @@ export interface FakePluginLifecycleControls {
   /**
    * Dispose like a host reload/disable: abort services started via
    * runService, run onDispose hooks LIFO (isolated), close database handles,
-   * then poison the `bb` handle (further use throws
+   * then poison the `patcher` handle (further use throws
    * PluginContextStaleError). Idempotent.
    */
   dispose(): Promise<void>;
@@ -1264,7 +1264,7 @@ function createFakePluginHostInternal(
     sharedState ??
     ({
       kvRows: new Map<string, string>(),
-      storageRoot: mkdtempSync(join(tmpdir(), "bb-fake-plugin-host-")),
+      storageRoot: mkdtempSync(join(tmpdir(), "patcher-fake-plugin-host-")),
       storedSettings: new Map<string, PluginSettingValue>(
         Object.entries(options.settings ?? {}),
       ),
@@ -1593,7 +1593,7 @@ function createFakePluginHostInternal(
       }
       if (RESERVED_PATCHER_CLI_COMMANDS.includes(name)) {
         throw new Error(
-          `cli command name "${name}" is reserved by the bb CLI — pick another name`,
+          `cli command name "${name}" is reserved by the Patcher CLI — pick another name`,
         );
       }
       if (
@@ -1690,7 +1690,7 @@ function createFakePluginHostInternal(
       }
       if (RESERVED_AGENT_TOOL_NAMES.includes(name)) {
         throw new Error(
-          `tool name "${name}" is a built-in bb tool — pick another name`,
+          `tool name "${name}" is a built-in Patcher tool — pick another name`,
         );
       }
       if (

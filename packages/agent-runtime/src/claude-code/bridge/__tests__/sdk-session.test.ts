@@ -255,7 +255,7 @@ describe("SdkSession", () => {
       }),
     );
     // The SDK `skills` option is an allowlist: setting it would hide every
-    // skill the user installed outside bb (~/.claude, plugins, built-ins).
+    // skill the user installed outside Patcher (~/.claude, plugins, built-ins).
     expect(queryMock.mock.calls[0]?.[0]?.options).not.toHaveProperty("skills");
   });
 

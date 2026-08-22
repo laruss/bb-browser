@@ -29,7 +29,7 @@ import {
   emptyPatcherProjectLinkState,
   resolvePatcherProjectLink,
   type PatcherProjectLinkState,
-} from "../manage/bb-project-link.js";
+} from "../manage/patcher-project-link.js";
 import type { PatcherProjectOption } from "../../shared/contract.js";
 import { Button } from "@patcher/shared-ui/button";
 import {
@@ -343,7 +343,7 @@ function LabelsMenu({
 }
 
 /**
- * Editable "Dispatch target" row: shows the linked bb project (or an invite
+ * Editable "Dispatch target" row: shows the linked Patcher project (or an invite
  * to link one) and opens a picker that saves via updateProject. The rail's
  * project data is subscribed to projects:changed, so the row refreshes as
  * soon as the save publishes.
@@ -410,7 +410,7 @@ function DispatchTargetMenu({
             </span>
           ) : (
             <span className="truncate text-muted-foreground">
-              Link a bb project…
+              Link a Patcher project…
             </span>
           )}
         </button>

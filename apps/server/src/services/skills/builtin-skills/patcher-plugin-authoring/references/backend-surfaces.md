@@ -1,6 +1,6 @@
 # Backend surfaces: http, rpc, realtime, background, cli, agents, host UI
 
-What a plugin registers in its factory to become reachable — from the bb
+What a plugin registers in its factory to become reachable — from the Patcher
 frontend, from an agent, from the CLI, from a timer, or from the outside world.
 
 - [patcher.http — HTTP routes](#patcherhttp--http-routes)
@@ -21,8 +21,8 @@ route (no params/wildcards) at `/api/v1/plugins/<id>/http/<path>`. The
 handler is a Hono handler: `(context) => Response | Promise<Response>`.
 Auth modes:
 
-- `"local"` (default) — request must come from a local bb app origin.
-  Right for anything the bb frontend calls.
+- `"local"` (default) — request must come from a local Patcher app origin.
+  Right for anything the Patcher frontend calls.
 - `"token"` — requires the per-plugin token (`bb plugin token <id>`;
   `--rotate` generates a new one, invalidating the old) via the
   `x-patcher-plugin-token` header or `?token=`. Right for external scripts
@@ -146,7 +146,7 @@ if (!initial.apiKey)
 
 One top-level command per plugin; a second `register` in one factory
 execution is rejected.
-Users and agents run `bb <name> …` like any core command; the bb CLI
+Users and agents run `bb <name> …` like any core command; the Patcher CLI
 proxies it to the server, where `run` executes.
 
 ```ts
@@ -209,7 +209,7 @@ the caller cancels the request.
 To give agents standing knowledge (conventions, workflows), ship a
 `skills/` directory. For schema'd capabilities, register a native tool.
 For a short, per-resolution instruction block (e.g. "the user is viewing
-bb remotely — share tunnel URLs"), use `contributeInstructions`:
+Patcher remotely — share tunnel URLs"), use `contributeInstructions`:
 
 ```ts
 import { z } from "zod"; // runtime import — declare zod as a plugin dependency
@@ -245,7 +245,7 @@ patcher.agents.configure((context) => ({
 // threads never receive plugin instructions.
 patcher.agents.contributeInstructions(({ threadId, projectId }) => {
   if (!shouldAdviseRemoteUrls()) return null;
-  return "The user is viewing bb remotely — share tunnel URLs, not localhost.";
+  return "The user is viewing Patcher remotely — share tunnel URLs, not localhost.";
 });
 ```
 

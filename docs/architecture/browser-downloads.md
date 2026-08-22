@@ -80,7 +80,7 @@ A page can start downloads without a click, so they go through the same
 sliding-window limiter the popup policy uses: five per ten seconds per tab. Past
 that the download is refused and **the refusal is pushed to the renderer** — the
 same cap catches a legitimate "download all" button, and a user whose files
-stopped arriving needs to know it was bb that stopped them.
+stopped arriving needs to know it was Patcher that stopped them.
 
 That is why `refused` is a state of its own rather than a failure: a caller must
 be able to tell "the network failed" from "we said no", and only one of those is
@@ -214,8 +214,8 @@ agent, upload it, delete it.
 
 **A handler cannot prevent the write, and that is a platform limit rather than a
 policy.** Chromium demands the save path synchronously, inside the
-`will-download` handler, while a plugin lives in the bb server process behind a
-WebSocket and an HTTP hop. No cross-process answer can arrive in time. So bb
+`will-download` handler, while a plugin lives in the Patcher server process behind a
+WebSocket and an HTTP hop. No cross-process answer can arrive in time. So Patcher
 writes first and hands the result over; a plugin that wants files elsewhere
 moves them, and one that wants them gone deletes them.
 
@@ -290,7 +290,7 @@ against our own shell.
   showing while the capture is in flight and hidden only once the bitmap is
   pushed, the reveal-then-clear ordering on close, and the page hidden anyway
   when the capture fails.
-- `desktop-browser-view-manager.test.ts` — the path allowlist: a file bb
+- `desktop-browser-view-manager.test.ts` — the path allowlist: a file Patcher
   downloaded opens and reveals, **a path it did not write is refused and
   nothing is touched** (including a plausible one inside the downloads folder),
   and the OS refusal passed through as a failure.

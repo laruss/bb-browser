@@ -1,6 +1,6 @@
 # Frontend: the `patcher.app` entry, slots, and content scripts
 
-Where plugin React mounts inside the bb app, what each slot receives, and how
+Where plugin React mounts inside the Patcher app, what each slot receives, and how
 the host loads and disposes a frontend generation. Read
 [frontend-runtime.md](frontend-runtime.md) for the hooks, host components, and
 UI kit those components are built from.
@@ -16,7 +16,7 @@ UI kit those components are built from.
 
 `app.tsx` default-exports `definePluginApp` from `@patcher/plugin-sdk/app`.
 React and the SDK are **never bundled** — `bb plugin build` shims them to
-the host's shared runtime, so the bundle only works inside bb.
+the host's shared runtime, so the bundle only works inside Patcher.
 
 ```tsx
 import {
@@ -173,7 +173,7 @@ the search field, the plugin nav rows, and the footer stay host-rendered —
 other plugins live in two of those, so a replaced list must not remove them.
 Put your own controls at the top of your scroll area instead.
 
-If the chosen plugin is disabled, uninstalled, or its component throws, bb
+If the chosen plugin is disabled, uninstalled, or its component throws, Patcher
 renders its own list again (plus a toast on a crash), so the sidebar is never
 empty.
 
@@ -203,26 +203,26 @@ const actions = experimental_useSidebarThreadActions();
 // providerId, activity counts, isUnread/isPinned, environment.branchName,
 // host ({ id, name } — the machine, useful when a thread has no branch),
 // timestamps, and
-// `indicator` (bb's resolved status kind) + `indicatorLabel` (its a11y string).
+// `indicator` (Patcher's resolved status kind) + `indicatorLabel` (its a11y string).
 // Draw your own glyph for `indicator`; the SDK ships no status component.
-// Treat an unknown indicator value as "none" — bb adds kinds over time.
+// Treat an unknown indicator value as "none" — Patcher adds kinds over time.
 
 // Pull requests are per row and opt-in — a lookup hits the git host, so it is
 // deliberately NOT on the thread payload every sidebar loads:
 const { pullRequest } = experimental_useSidebarThreadPullRequest(thread.id);
 // → { number, title, url, state, attention } | null
 
-actions.open(id, { split: true }); // bb's split placement rules
+actions.open(id, { split: true }); // Patcher's split placement rules
 actions.openNewThread({ projectId }); // also sets the composer's project
 actions.setPinned(id, true);
 actions.setRead(id, false);
 actions.rename(id, "New title"); // silent; for inline editing
 actions.archive(id); // archives children too, closes their panes
-actions.requestDelete(id); // opens bb's delete confirmation
+actions.requestDelete(id); // opens Patcher's delete confirmation
 ```
 
 Destructive actions deliberately route through the host's own flow, so there
-is no silent `delete`: deletion is recursive, and only bb can show the
+is no silent `delete`: deletion is recursive, and only Patcher can show the
 confirmation that counts the child threads.
 
 Unit-test a list with `renderSlot(...)` from `@patcher/plugin-sdk/testing/app`:
@@ -246,10 +246,10 @@ has its own drag-to-reorder: a split drag engages only once the pointer leaves
 the sidebar.
 
 **Your row, your menu.** This API ships no components. Build your own context
-menu from `experimental_useSidebarThreadActions` — it exposes everything bb's
-own menu does, including `requestDelete`, which opens bb's confirmation.
+menu from `experimental_useSidebarThreadActions` — it exposes everything Patcher's
+own menu does, including `requestDelete`, which opens Patcher's confirmation.
 
-**Keyboard support is a DOM contract.** bb's thread shortcuts find rows by
+**Keyboard support is a DOM contract.** Patcher's thread shortcuts find rows by
 query selector, not by React state. Put both attributes on each row's anchor or
 the surface-specific numbered shortcuts, `thread.next`, and `thread.previous`
 silently stop working:
@@ -261,10 +261,10 @@ silently stop working:
 ## Trusted frontend content scripts
 
 `app.contentScripts.register({ id, mount })` runs ordinary
-bundled JavaScript/TypeScript in the bb app shell without a React slot. It is
+bundled JavaScript/TypeScript in the Patcher app shell without a React slot. It is
 full-trust, same-origin page code — **not a security sandbox**. It can access
 the app DOM and any authenticated client state available to ordinary page
-code, so install only plugins you trust. bb does not use `eval`, `Function`,
+code, so install only plugins you trust. Patcher does not use `eval`, `Function`,
 or persisted source strings: the existing `patcher.app` build emits a normal CSP-
 compatible ESM bundle.
 
@@ -287,7 +287,7 @@ clear:
 Use `tone: "running"` for the host's animated running treatment. The host
 scopes statuses to the calling plugin and automatically clears them when that
 frontend generation deactivates; feature-detect the setters for compatibility
-with older bb clients.
+with older Patcher clients.
 
 ```ts
 app.contentScripts.register({
@@ -357,7 +357,7 @@ Versioned and additive-only:
   `{ id, title, icon, component, matches? }`. It is not a route: nothing links to
   it, it has no path, and it stays put while the user navigates — use it for
   something that accompanies the work rather than somewhere the user goes.
-  bb contributes nothing to this edge, so it does not exist until a plugin
+  Patcher contributes nothing to this edge, so it does not exist until a plugin
   claims it, and what the host draws around it follows from how many plugins
   did: one gets the panel whole with no host chrome, and a second is what makes
   the host add a rail of icons to switch between them. `title` names the rail
@@ -369,7 +369,7 @@ Versioned and additive-only:
   from the component for pages you do not want — an empty column still reserves
   the edge. `browserUrl` is that tab's address, or null when the window is not
   showing a page; with `matches` declared it is non-null whenever the panel
-  renders. Costs no permission: this is bb's own UI reacting to the address bar,
+  renders. Costs no permission: this is Patcher's own UI reacting to the address bar,
   unlike `patcher.sites`, which governs reaching into a page.
 - `navPanel` → `{ subPath: string }` — owns the whole route at
   `/plugins/<pluginId>/<path>/*` and gets its own sidebar entry. `subPath`

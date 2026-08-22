@@ -33,7 +33,7 @@ Reading order is the order in which they block each other.
 
 - **A password manager.** Reverses a Non-Goal, deliberately:
   [PROJECT_PLAN.md](PROJECT_PLAN.md) §19 rules out a _sophisticated_ one, and that
-  still stands — no sync, no sharing, no breach monitoring. What is missing is the plain thing. bb prompts for **HTTP
+  still stands — no sync, no sharing, no breach monitoring. What is missing is the plain thing. Patcher prompts for **HTTP
   authentication** today and lets a plugin answer one
   (`patcher.browser.registerAuthProvider`), which is the rare case; a **form login**,
   which is nearly every case, has nowhere to be saved from, nothing to fill it,
@@ -77,7 +77,7 @@ Reading order is the order in which they block each other.
     is how a biometric gate becomes theatre.
   - `app.setSecureKeyboardEntryEnabled` → present. Chrome turns this on while a
     password field has focus, which stops other processes on the machine from
-    logging the keystrokes. bb never turns it on. Cheap, and the shell already
+    logging the keystrokes. Patcher never turns it on. Cheap, and the shell already
     knows when a page's focused field is a password one.
 
 - **Passkeys, and the way the page hangs without them.** The measurement that
@@ -121,7 +121,7 @@ Reading order is the order in which they block each other.
 
 Each of these is a whole feature a plugin can store, act on and search
 (`patcher.storage.database`, tab and page menu entries, an omnibox provider, a
-site-info section, its own panel). What they used to be missing was a place in bb's
+site-info section, its own panel). What they used to be missing was a place in Patcher's
 chrome; as of 2026-08-19 they have all three:
 
 - a **star in the address bar** — `patcher.browser.registerToolbarItem`, with the
@@ -140,7 +140,7 @@ three.
   worked example makes the point and three would be three copies of it.
 
 **Nothing here is waiting on core work any more.** What is left in this file is
-either a screen bb has not drawn (below) or a decision nobody has needed yet.
+either a screen Patcher has not drawn (below) or a decision nobody has needed yet.
 
 ## Core-only, cheap
 
@@ -169,7 +169,7 @@ either a screen bb has not drawn (below) or a decision nobody has needed yet.
 - **Session restore fidelity.** A restart brings back URLs; scroll position and
   form state come back only for a tab reopened within the session (the shell holds
   Chromium's `pageState` in memory).
-- **Per-site permission toggles and a cookie count** in the site panel. bb's
+- **Per-site permission toggles and a cookie count** in the site panel. Patcher's
   permission policy is fixed in the shell, so there is nothing per-site to toggle
   yet.
 - **Incognito and profiles.** One fixed `persist:bb-browser` partition.
@@ -188,13 +188,13 @@ either a screen bb has not drawn (below) or a decision nobody has needed yet.
   taken back afterwards short of uninstalling. So "the agent asked for `threads`
   and `filesystem`" is a sentence the user has never actually answered, and a
   plugin that reads more of their data than they expected — by accident as easily
-  as by design — is inside what bb currently permits.
+  as by design — is inside what Patcher currently permits.
 
   Not higher up this list for a reason that has to be said before anyone builds
   the dialog: **a grant UI over today's mechanism would be theatre.**
   [architecture/plugin-permissions.md](architecture/plugin-permissions.md) states
   the case — a plugin is a Node module with `node:fs`, `child_process` and the
-  loopback base URL, so a gate on the `bb` object stops none of it. Running it out
+  loopback base URL, so a gate on the `patcher` object stops none of it. Running it out
   of process closed **none** of those three: the child is a Node process like any
   other and is handed `loopbackBaseUrl` as soon as the server binds
   (`plugin-child-runtime.ts`). What that move bought was crash and memory

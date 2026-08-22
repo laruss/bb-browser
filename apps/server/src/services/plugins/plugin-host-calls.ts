@@ -295,7 +295,7 @@ export const PLUGIN_HOST_CALLS = {
     argsCross: true,
     resultCrosses: true,
     callbacks: ["uiCommand"],
-    note: "A command of the plugin's own rather than a rebinding of one of bb's, so the chord and the title cross with the registration and the press comes back as a callback. Context-free by design — what the command reads, it reads through the gated browser calls.",
+    note: "A command of the plugin's own rather than a rebinding of one of Patcher's, so the chord and the title cross with the registration and the press comes back as a callback. Context-free by design — what the command reads, it reads through the gated browser calls.",
   },
   "browser.registerNewTabWidget": {
     category: "register",

@@ -50,7 +50,7 @@ import {
   selectInitialPatchPaths,
 } from "./diff-tiering.js";
 
-const COMMIT_FALLBACK_MESSAGE = "bb: automated commit";
+const COMMIT_FALLBACK_MESSAGE = "Patcher: automated commit";
 const SQUASH_MERGE_FALLBACK_MESSAGE = "bb: squash merge";
 const PRE_MERGE_COMMIT_MESSAGE = "bb: pre-merge commit";
 

@@ -87,7 +87,7 @@ export function hasOpenClaudeBackgroundTasks(tasks: ClaudeTaskMap): boolean {
 /**
  * Whether Claude still has bounded agent work that will reinvoke the parent
  * model when it settles. A successful SDK result while one of these tasks is
- * open ends only the current SDK loop segment, not the logical bb turn.
+ * open ends only the current SDK loop segment, not the logical Patcher turn.
  *
  * Backgrounded shell commands are deliberately excluded: they are detached
  * work and may be long-lived (for example, a dev server). Ambient tasks are
@@ -297,7 +297,7 @@ function buildClaudeTaskCompletedEvent(
 }
 
 /**
- * Task types bb materializes as background-task timeline rows: dynamic
+ * Task types Patcher materializes as background-task timeline rows: dynamic
  * workflows, backgrounded shell commands, and backgrounded agents. Other task
  * types such as monitors share the event family but stay on their own render
  * paths.

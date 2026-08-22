@@ -111,7 +111,7 @@ export interface PersonalWorkspaceOpts extends ProvisionBase {
   workspaceProvisionType: "personal";
   /** Environment ID that owns the personal scratch workspace. */
   environmentId: string;
-  /** Root directory containing bb-managed personal scratch workspaces. */
+  /** Root directory containing Patcher-managed personal scratch workspaces. */
   personalWorkspaceRoot: string;
   /** Target directory for the scratch workspace. Created if missing. */
   targetPath: string;

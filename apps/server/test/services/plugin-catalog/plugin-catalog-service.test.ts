@@ -152,7 +152,9 @@ describe("bundled plugin catalog service", () => {
   });
 
   it("drops entries whose bundled manifest is unreadable", async () => {
-    const missingRoot = await mkdtemp(join(tmpdir(), "bb-missing-plugin-"));
+    const missingRoot = await mkdtemp(
+      join(tmpdir(), "patcher-missing-plugin-"),
+    );
     await rm(missingRoot, { recursive: true, force: true });
     const warnings: string[] = [];
     const [github] = listBundledPluginRegistrations().filter(

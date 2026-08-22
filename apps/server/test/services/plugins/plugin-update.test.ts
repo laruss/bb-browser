@@ -244,7 +244,7 @@ describe("plugin update service and routes", () => {
         kind: "npm",
         packageName: "patcher-plugin-legacy-marketplace",
         registry:
-          "https://api.github.com/repos/ymichael/bb/releases?bb-source=github-release&tag-template=plugin-legacy-v%7Bversion%7D&asset-template=patcher-plugin-legacy-%7Bversion%7D.tgz",
+          "https://api.github.com/repos/ymichael/bb/releases?patcher-source=github-release&tag-template=plugin-legacy-v%7Bversion%7D&asset-template=patcher-plugin-legacy-%7Bversion%7D.tgz",
         requestedSpec: "^0.2.0",
         specKind: "range",
       },
@@ -382,7 +382,7 @@ describe("plugin update service and routes", () => {
           outcome: "incompatible",
           blocked: {
             version: incompatibleCommit,
-            reasons: [expect.stringContaining("requires bb >=99.0.0")],
+            reasons: [expect.stringContaining("requires Patcher >=99.0.0")],
           },
         },
       ],

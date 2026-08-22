@@ -487,7 +487,7 @@ async function fetchClaudeUsage(): Promise<ProviderUsage> {
     return { status: "expired" };
   }
   // Plan and account came from the local credential file, so a rate limit or
-  // outage should not blank them — bb still knows which plan pays for this.
+  // outage should not blank them — Patcher still knows which plan pays for this.
   const known = {
     planLabel: claudePlanLabel(credentials),
     accountEmail,

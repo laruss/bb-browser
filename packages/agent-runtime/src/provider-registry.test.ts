@@ -54,9 +54,9 @@ describe("provider registry", () => {
     });
 
     expect(claudeProvider.process.args[0]).toBe(
-      "/tmp/bb-claude-code-bridge.mjs",
+      "/tmp/patcher-claude-code-bridge.mjs",
     );
-    expect(piProvider.process.args[0]).toBe("/tmp/bb-pi-bridge.mjs");
+    expect(piProvider.process.args[0]).toBe("/tmp/patcher-pi-bridge.mjs");
   });
 
   it("passes the configured bridge node runtime to bundled providers", () => {
@@ -64,29 +64,29 @@ describe("provider registry", () => {
     const claudeProvider = createProviderForId("claude-code", {
       additionalWorkspaceWriteRoots: [],
       bridgeNodeEnv,
-      bridgeNodeExecutablePath: "/Applications/bb.app/Contents/MacOS/bb",
+      bridgeNodeExecutablePath: "/Applications/Patcher.app/Contents/MacOS/bb",
     });
     const piProvider = createProviderForId("pi", {
       additionalWorkspaceWriteRoots: [],
       bridgeNodeEnv,
-      bridgeNodeExecutablePath: "/Applications/bb.app/Contents/MacOS/bb",
+      bridgeNodeExecutablePath: "/Applications/Patcher.app/Contents/MacOS/bb",
     });
     const acpProvider = createProviderForId("acp-cursor", {
       additionalWorkspaceWriteRoots: [],
       bridgeNodeEnv,
-      bridgeNodeExecutablePath: "/Applications/bb.app/Contents/MacOS/bb",
+      bridgeNodeExecutablePath: "/Applications/Patcher.app/Contents/MacOS/bb",
     });
 
     expect(claudeProvider.process.command).toBe(
-      "/Applications/bb.app/Contents/MacOS/bb",
+      "/Applications/Patcher.app/Contents/MacOS/bb",
     );
     expect(claudeProvider.process.env).toEqual(bridgeNodeEnv);
     expect(piProvider.process.command).toBe(
-      "/Applications/bb.app/Contents/MacOS/bb",
+      "/Applications/Patcher.app/Contents/MacOS/bb",
     );
     expect(piProvider.process.env).toEqual(bridgeNodeEnv);
     expect(acpProvider.process.command).toBe(
-      "/Applications/bb.app/Contents/MacOS/bb",
+      "/Applications/Patcher.app/Contents/MacOS/bb",
     );
     expect(acpProvider.process.env).toEqual(bridgeNodeEnv);
   });
@@ -172,7 +172,7 @@ describe("provider registry", () => {
       additionalWorkspaceWriteRoots: [],
       bridgeBundleDir: "/tmp",
     });
-    expect(provider.process.args[0]).toBe("/tmp/bb-acp-bridge.mjs");
+    expect(provider.process.args[0]).toBe("/tmp/patcher-acp-bridge.mjs");
   });
 
   it("binds the acp cursor provider to its agent launch command", () => {

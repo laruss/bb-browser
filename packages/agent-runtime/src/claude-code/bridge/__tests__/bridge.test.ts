@@ -482,7 +482,7 @@ function createAssistantToolUseMessage(
 }
 
 function createTempClaudeExecutable(): TempClaudeExecutable {
-  const binDir = mkdtempSync(join(tmpdir(), "bb-claude-path-"));
+  const binDir = mkdtempSync(join(tmpdir(), "patcher-claude-path-"));
   tempDirs.push(binDir);
   const executablePath = join(binDir, "claude");
   writeFileSync(executablePath, "#!/bin/sh\nexit 0\n");
@@ -869,7 +869,7 @@ describe("bridge", () => {
   });
 
   it("falls back to well-known install locations when PATH discovery fails", () => {
-    const homeDir = mkdtempSync(join(tmpdir(), "bb-claude-home-"));
+    const homeDir = mkdtempSync(join(tmpdir(), "patcher-claude-home-"));
     tempDirs.push(homeDir);
     const localBinDir = join(homeDir, ".local", "bin");
     mkdirSync(localBinDir, { recursive: true });
@@ -936,7 +936,7 @@ describe("bridge", () => {
   });
 
   it("rejects explicit Claude executable overrides that are not executable", () => {
-    const binDir = mkdtempSync(join(tmpdir(), "bb-claude-path-"));
+    const binDir = mkdtempSync(join(tmpdir(), "patcher-claude-path-"));
     tempDirs.push(binDir);
     const executablePath = join(binDir, "claude");
 
@@ -1152,8 +1152,8 @@ describe("bridge", () => {
         expectedCommand: "git --no-optional-locks branch --show-current",
       },
       {
-        command: "git branch --list bb/probe",
-        expectedCommand: "git --no-optional-locks branch --list bb/probe",
+        command: "git branch --list patcher/probe",
+        expectedCommand: "git --no-optional-locks branch --list patcher/probe",
       },
       {
         command: "git branch --merged main",
@@ -1209,7 +1209,7 @@ describe("bridge", () => {
       { command: "git fetch origin" },
       { command: "git pull" },
       { command: "git push" },
-      { command: "git branch bb-probe" },
+      { command: "git branch patcher-probe" },
       { command: "git branch --merged main extra" },
       { command: "git -c core.pager=cat status --short" },
       { command: "git -C /tmp status" },
@@ -1347,7 +1347,8 @@ describe("bridge", () => {
         },
         expected: {
           behavior: "deny",
-          messageIncludes: "bb readonly mode allows reading and analysis only",
+          messageIncludes:
+            "Patcher readonly mode allows reading and analysis only",
         },
       },
       {
@@ -1360,7 +1361,8 @@ describe("bridge", () => {
         input: { file_path: "/tmp/project/package.json" },
         expected: {
           behavior: "deny",
-          messageIncludes: "bb readonly mode allows reading and analysis only",
+          messageIncludes:
+            "Patcher readonly mode allows reading and analysis only",
         },
       },
       {
@@ -1376,7 +1378,7 @@ describe("bridge", () => {
         },
         expected: {
           behavior: "deny",
-          messageIncludes: "bb's workspace sandbox allows work inside",
+          messageIncludes: "Patcher's workspace sandbox allows work inside",
         },
       },
       {
@@ -1393,7 +1395,7 @@ describe("bridge", () => {
         },
         expected: {
           behavior: "deny",
-          messageIncludes: "bb's workspace sandbox allows work inside",
+          messageIncludes: "Patcher's workspace sandbox allows work inside",
         },
       },
       {
@@ -1486,7 +1488,7 @@ describe("bridge", () => {
     });
   });
 
-  it("forwards unresolved high-risk auto-mode asks to bb", async () => {
+  it("forwards unresolved high-risk auto-mode asks to Patcher", async () => {
     const bridge = createBridgeJsonRpcTestHarness(handleLine);
     const queries: ControlledClaudeQuery[] = [];
     queryMock.mockImplementation(() => {
@@ -1562,7 +1564,7 @@ describe("bridge", () => {
 
   it("forwards a sandbox network ask with a grantable network permission", async () => {
     // Claude suggests a "localSettings" rule for this prompt, not a "session"
-    // one. bb used to drop that suggestion, so the prompt reached the user with
+    // one. Patcher used to drop that suggestion, so the prompt reached the user with
     // nothing to grant and the server rejected every allow. See issue #1041.
     const bridge = createBridgeJsonRpcTestHarness(handleLine);
     const queries: ControlledClaudeQuery[] = [];
@@ -1905,7 +1907,7 @@ describe("bridge", () => {
   // `method` field is what separates them; without that check the request was
   // settled as a bogus response and dropped, and the daemon only found out when
   // it timed out 30s later.
-  it("dispatches an inbound request whose id collides with a pending bb request", async () => {
+  it("dispatches an inbound request whose id collides with a pending Patcher request", async () => {
     const bridge = createBridgeJsonRpcTestHarness(handleLine);
     const queries: ControlledClaudeQuery[] = [];
     queryMock.mockImplementation(() => {
@@ -1989,7 +1991,7 @@ describe("bridge", () => {
     }
   });
 
-  it("denies invalid AskUserQuestion input before forwarding to bb", async () => {
+  it("denies invalid AskUserQuestion input before forwarding to Patcher", async () => {
     const bridge = createBridgeJsonRpcTestHarness(handleLine);
     const queries: ControlledClaudeQuery[] = [];
     queryMock.mockImplementation(() => {
@@ -2028,7 +2030,7 @@ describe("bridge", () => {
     }
   });
 
-  it("denies AskUserQuestion when bb returns an interactive request error", async () => {
+  it("denies AskUserQuestion when Patcher returns an interactive request error", async () => {
     const bridge = createBridgeJsonRpcTestHarness(handleLine);
     const queries: ControlledClaudeQuery[] = [];
     queryMock.mockImplementation(() => {
@@ -2069,7 +2071,7 @@ describe("bridge", () => {
     }
   });
 
-  it("denies AskUserQuestion when bb returns an invalid response payload", async () => {
+  it("denies AskUserQuestion when Patcher returns an invalid response payload", async () => {
     const bridge = createBridgeJsonRpcTestHarness(handleLine);
     const queries: ControlledClaudeQuery[] = [];
     queryMock.mockImplementation(() => {
@@ -2114,7 +2116,7 @@ describe("bridge", () => {
     }
   });
 
-  it("denies AskUserQuestion when bb returns a mismatched response kind", async () => {
+  it("denies AskUserQuestion when Patcher returns a mismatched response kind", async () => {
     const bridge = createBridgeJsonRpcTestHarness(handleLine);
     const queries: ControlledClaudeQuery[] = [];
     queryMock.mockImplementation(() => {

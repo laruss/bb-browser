@@ -817,7 +817,7 @@ function createAgentRuntimeInternal(
       ) {
         // Codex archive/unarchive is not idempotent at the protocol layer;
         // duplicate-state errors mean the requested final state is already
-        // reached from bb's perspective.
+        // reached from Patcher's perspective.
       } else {
         throw error;
       }

@@ -31,7 +31,7 @@ async function createFixture(
     useDefaultInstaller?: boolean;
   } = {},
 ) {
-  const dataDir = await mkdtemp(join(tmpdir(), "bb-self-update-test-"));
+  const dataDir = await mkdtemp(join(tmpdir(), "patcher-self-update-test-"));
   roots.push(dataDir);
   const installTarball = vi.fn(async () => {
     if (args.installFailure) throw args.installFailure;

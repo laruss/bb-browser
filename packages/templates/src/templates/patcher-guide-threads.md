@@ -1,6 +1,6 @@
 ---
 kind: instruction
-title: bb Guide — Threads
+title: Patcher Guide — Threads
 summary: Command reference for thread spawning, inspecting, messaging, and lifecycle.
 intent: Provide complete thread command documentation for agents.
 editingNotes: Keep flags accurate against the CLI implementation. Run the json-flag-enforcement and command-output tests after changes.
@@ -36,7 +36,7 @@ Spawning:
     --source-seq-end <seq>         Last included source event sequence
 
   Execution defaults resolve from explicit flags, live parent execution, and
-  remembered project defaults. With no remembered model, bb uses the explicitly
+  remembered project defaults. With no remembered model, Patcher uses the explicitly
   requested provider or Codex and resolves its provider-reported default model
   on the target machine. The product reasoning and permission defaults are
   medium and auto.

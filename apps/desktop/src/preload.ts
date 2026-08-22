@@ -722,7 +722,7 @@ const windowKey = process.argv
 
 /**
  * Parse here and swallow rejections, the way `invokeDesktopInfo` does: a shell
- * that predates these channels answers with a rejection, and "bb is not the
+ * that predates these channels answers with a rejection, and "Patcher is not the
  * default and cannot ask" is exactly what such a shell means.
  */
 async function invokeDefaultBrowserStatus(

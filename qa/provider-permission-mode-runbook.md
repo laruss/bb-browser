@@ -59,7 +59,7 @@ Start an isolated standalone server and daemon:
 ```bash
 bun run qa:standalone:cleanup
 eval "$(bun run --silent qa:standalone:start --format env)"
-alias bb="node apps/cli/dist/index.js"
+alias Patcher="node apps/cli/dist/index.js"
 
 bb status
 bb provider list
@@ -191,7 +191,7 @@ Before launching the readonly probe, create a non-product temp file:
 
 ```bash
 READONLY_SECRET_FILE=$(mktemp /tmp/bb-readonly-secret.XXXXXX)
-printf 'bb readonly secret probe\n' > "$READONLY_SECRET_FILE"
+printf 'Patcher readonly secret probe\n' > "$READONLY_SECRET_FILE"
 printf '%s\n' "$READONLY_SECRET_FILE"
 ```
 
@@ -233,7 +233,7 @@ branch ref and then restores it.
 For `workspace-write` and `full`, ask the provider to run:
 
 ```bash
-git commit --allow-empty -m "bb permission mode commit probe"
+git commit --allow-empty -m "Patcher permission mode commit probe"
 git rev-parse --short HEAD
 git reset --hard HEAD~1
 git status --short

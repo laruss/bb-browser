@@ -144,7 +144,7 @@ function UpdatePluginDialogContent({
               aria-hidden
             />
             <span>
-              bb couldn&rsquo;t activate {failure.version}. It restored{" "}
+              Patcher couldn&rsquo;t activate {failure.version}. It restored{" "}
               {plugin.version} and its data.
             </span>
           </div>
@@ -213,7 +213,7 @@ function UpdatePluginDialogContent({
             <span className="font-medium" style={SUCCESS_TEXT_STYLE}>
               ✓
             </span>
-            <span>Compatible with your bb and plugin SDK</span>
+            <span>Compatible with your Patcher and plugin SDK</span>
           </div>
           <DetailsDisclosure summary="Details — source, versions">
             <KeyValueGrid
@@ -268,7 +268,7 @@ function UpdatePluginDialogContent({
               className="size-4 shrink-0 text-warning"
               aria-hidden
             />
-            <span>{blocked} isn&rsquo;t compatible with this bb</span>
+            <span>{blocked} isn&rsquo;t compatible with this Patcher</span>
           </div>
           {/* Failure case: the details ARE the story, so they arrive open. */}
           <DetailsDisclosure summary="Details" defaultExpanded>

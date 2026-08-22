@@ -1,6 +1,6 @@
 # bb theme authoring reference
 
-How to write a good bb app theme: the design model, the full design-token
+How to write a good Patcher app theme: the design model, the full design-token
 reference (what every CSS variable drives), and how to set colors and fonts.
 Read this before authoring or editing a built-in theme or a custom stylesheet.
 
@@ -22,7 +22,7 @@ that handles both modes.
 ## Where themes live
 
 A custom theme is a folder under the app data dir:
-`<bb-data-dir>/theme/<name>/theme.css` (the packaged app uses `~/.patcher/theme/…`).
+`<patcher-data-dir>/theme/<name>/theme.css` (the packaged app uses `~/.patcher/theme/…`).
 The folder name is the theme id. Run `bb theme dir` to print the exact directory
 rather than guessing it. Always put custom app-theme CSS here — not in a stray
 `.css` file elsewhere in a repo. To edit a theme, change its `theme.css` in place

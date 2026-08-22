@@ -45,7 +45,7 @@ import {
   type PatcherAppProcess,
   type PatcherAppProcessExit,
   startPatcherAppProcess,
-} from "./bb-process.js";
+} from "./patcher-process.js";
 import { openExistingServerDialog } from "./existing-server-dialog.js";
 import {
   readForeignRuntimeDetails,
@@ -322,7 +322,7 @@ function resolveDesktopServerUrl(args: ResolveDesktopServerUrlArgs): string {
 }
 
 /**
- * The URL the main window loads. Defaults to the attached/owned bb server, which
+ * The URL the main window loads. Defaults to the attached/owned Patcher server, which
  * serves the built UI. In dev, `run-electron-dev.mjs` sets `PATCHER_DESKTOP_APP_URL`
  * to the running Vite dev server — but only when it has confirmed Vite is
  * actually listening — so the desktop shell loads live source with HMR while
@@ -534,9 +534,9 @@ const defaultBrowserEnvironment: DefaultBrowserEnvironment = {
 let lastDefaultBrowserStatus: PatcherDesktopDefaultBrowserStatus | null = null;
 
 /**
- * Links macOS handed us because bb is the user's default browser, waiting for a
+ * Links macOS handed us because Patcher is the user's default browser, waiting for a
  * surface to take them. Module state rather than a field on a window: the click
- * that launched bb arrives before any window exists.
+ * that launched Patcher arrives before any window exists.
  */
 const externalUrlQueue = createExternalUrlQueue();
 
@@ -565,7 +565,7 @@ function requestRendererWindowClose(browserWindow: BrowserWindow): void {
 }
 
 /**
- * A link the OS asked bb to open. Queued first and delivered second, because on
+ * A link the OS asked Patcher to open. Queued first and delivered second, because on
  * a cold start there is nothing to deliver to yet — `getFocusedApplicationWindow`
  * is null until the runtime has built a window, and the surface drains the queue
  * itself when it mounts.
@@ -998,7 +998,7 @@ function registerApplicationWindow(browserWindow: DesktopBrowserWindow): void {
 }
 
 /**
- * Attach to a compatible bb server on this Mac, or start one. The caller pins
+ * Attach to a compatible Patcher server on this Mac, or start one. The caller pins
  * the system config sync, because a remote target reads its config elsewhere.
  */
 async function ensureBuiltinRuntimeAttached(): Promise<boolean> {
@@ -1061,7 +1061,7 @@ async function applyServerTarget(): Promise<void> {
     if (!attached) {
       await loadStartupError({
         details:
-          "Could not connect to the local bb server on this Mac. Check that the port is free or that a compatible bb server is running.",
+          "Could not connect to the local Patcher server on this Mac. Check that the port is free or that a compatible Patcher server is running.",
         logs: "",
         title: "Could not connect",
       });
@@ -1204,7 +1204,7 @@ async function loadLogViewerWindow(
     minHeight: 520,
     minWidth: 840,
     show: false,
-    title: "bb - Server & Daemon Logs",
+    title: "Patcher - Server & Daemon Logs",
     titleBarStyle: "default",
     webPreferences: {
       contextIsolation: true,
@@ -1295,8 +1295,8 @@ async function loadLoadingView(): Promise<void> {
     url: createLocalViewUrl({
       viewModel: {
         kind: "loading",
-        message: "Starting local services and opening the bb workspace.",
-        title: "Opening bb",
+        message: "Starting local services and opening the Patcher workspace.",
+        title: "Opening Patcher",
       },
     }),
   });
@@ -1417,8 +1417,8 @@ function registerDesktopUpdateIpc(): void {
     await finishQuit();
     desktopAutoUpdateService.installUpdate();
   });
-  // Renderer pushes the bb theme preference so the NSWindow appearance —
-  // traffic lights and inactive title-bar chrome — follows an explicit bb
+  // Renderer pushes the Patcher theme preference so the NSWindow appearance —
+  // traffic lights and inactive title-bar chrome — follows an explicit Patcher
   // theme or the OS when set to system. `themeSource` is app-global so a
   // single assignment covers every BrowserWindow, including the log viewer.
   ipcMain.on(PATCHER_DESKTOP_SET_THEME_CHANNEL, (_event, payload: unknown) => {
@@ -1566,7 +1566,7 @@ async function startOwnedRuntime(
         exit,
       )}.`,
       logs: patcherProcess.logs.text(),
-      title: "bb stopped",
+      title: "Patcher stopped",
     });
   });
 
@@ -1591,7 +1591,7 @@ async function startOwnedRuntime(
         raceResult.exit,
       )}.`,
       logs: patcherProcess.logs.text(),
-      title: "Could not start bb",
+      title: "Could not start Patcher",
     });
     setCurrentRuntime(null);
     return null;
@@ -1605,9 +1605,9 @@ async function startOwnedRuntime(
     details:
       raceResult.result.kind === "incompatible"
         ? `Port ${args.serverUrl} is responding, but it does not look like patcher: ${raceResult.result.reason}.`
-        : `Timed out waiting for bb at ${args.serverUrl}: ${raceResult.result.reason}.`,
+        : `Timed out waiting for Patcher at ${args.serverUrl}: ${raceResult.result.reason}.`,
     logs: patcherProcess.logs.text(),
-    title: "Could not start bb",
+    title: "Could not start Patcher",
   });
   await stopOwnedRuntime();
   return null;
@@ -1620,7 +1620,7 @@ interface InitializeRuntimeArgs {
 }
 
 /**
- * Attaching to a bb this app did not start is invisible to the person using it,
+ * Attaching to a Patcher this app did not start is invisible to the person using it,
  * so ask first. Local development stays silent, because attaching to a
  * `bun run dev` server is the whole point there.
  *
@@ -1700,36 +1700,36 @@ async function decideOnExistingServer(
   if (stopResult.kind === "unverified") {
     await loadStartupError({
       details:
-        `The bb at ${probe.serverUrl} records process ${String(stopResult.pid)}, but that ` +
-        "process no longer matches the record. bb did not stop it. Stop it yourself, then open bb again.",
+        `The Patcher at ${probe.serverUrl} records process ${String(stopResult.pid)}, but that ` +
+        "process no longer matches the record. Patcher did not stop it. Stop it yourself, then open Patcher again.",
       logs: "",
-      title: "Could not stop the running bb",
+      title: "Could not stop the running Patcher",
     });
     return "quit";
   }
   if (stopResult.kind === "still-running") {
     await loadStartupError({
-      details: `bb could not stop process ${String(stopResult.pid)}, even after SIGKILL.`,
+      details: `Patcher could not stop process ${String(stopResult.pid)}, even after SIGKILL.`,
       logs: "",
-      title: "Could not stop the running bb",
+      title: "Could not stop the running Patcher",
     });
     return "quit";
   }
   if (stopResult.kind === "replaced") {
     await loadStartupError({
       details:
-        `Another bb started at ${probe.serverUrl} while the question was open, so bb stopped nothing. ` +
-        "Open bb again to see the copy that runs now.",
+        `Another Patcher started at ${probe.serverUrl} while the question was open, so Patcher stopped nothing. ` +
+        "Open Patcher again to see the copy that runs now.",
       logs: "",
-      title: "Could not stop the running bb",
+      title: "Could not stop the running Patcher",
     });
     return "quit";
   }
   if (!(await waitForServerToStop(probe.serverUrl))) {
     await loadStartupError({
-      details: `The bb at ${probe.serverUrl} stopped, but the address is still in use.`,
+      details: `The Patcher at ${probe.serverUrl} stopped, but the address is still in use.`,
       logs: "",
-      title: "Could not stop the running bb",
+      title: "Could not stop the running Patcher",
     });
     return "quit";
   }
@@ -1785,7 +1785,7 @@ async function initializeRuntime(args: InitializeRuntimeArgs): Promise<void> {
 
   if (existingProbe.kind === "incompatible") {
     await loadStartupError({
-      details: `Port ${args.serverUrl} is already in use, but it is not a compatible bb server: ${existingProbe.reason}.`,
+      details: `Port ${args.serverUrl} is already in use, but it is not a compatible Patcher server: ${existingProbe.reason}.`,
       logs: "",
       title: "Port conflict",
     });
@@ -1812,7 +1812,9 @@ async function runDesktopApp(): Promise<void> {
     platform: process.platform,
   });
 
-  app.setName(app.isPackaged ? DESKTOP_RELEASE_INFO.applicationName : "bb-dev");
+  app.setName(
+    app.isPackaged ? DESKTOP_RELEASE_INFO.applicationName : "patcher-dev",
+  );
 
   if (!app.requestSingleInstanceLock()) {
     app.quit();
@@ -1828,7 +1830,7 @@ async function runDesktopApp(): Promise<void> {
       stateKey: null,
     });
   });
-  // macOS delivers every link bb is asked to open here — and on a cold start it
+  // macOS delivers every link Patcher is asked to open here — and on a cold start it
   // fires before `whenReady`, which is why this listener is registered with the
   // other app events rather than after the runtime is up. `preventDefault` marks
   // the URL as ours; without it macOS treats the launch as unhandled.
@@ -1852,7 +1854,7 @@ async function runDesktopApp(): Promise<void> {
   });
   app.on("did-become-active", () => {
     // The user may have answered the system's "change your default browser?"
-    // dialog, or changed it in System Settings, while bb was in the background.
+    // dialog, or changed it in System Settings, while Patcher was in the background.
     refreshDefaultBrowserStatus();
     void desktopUpdateService?.checkAfterActive();
     void desktopAutoUpdateService?.checkAfterActive();
@@ -2025,7 +2027,7 @@ async function runDesktopApp(): Promise<void> {
       void shell.openExternal(url);
     },
     canOpenExternalUrl() {
-      // When bb is the default browser, `shell.openExternal` hands the link to
+      // When Patcher is the default browser, `shell.openExternal` hands the link to
       // Launch Services, which hands it straight back here as a new tab. That is
       // one round trip rather than a loop, but it makes the entry a lie.
       return !readDefaultBrowserStatus(defaultBrowserEnvironment).isDefault;
@@ -2093,7 +2095,7 @@ async function runDesktopApp(): Promise<void> {
   if (serverTargetStore.getTarget().kind === "builtin") {
     await initializeRuntime({ bridgePath, serverUrl, userDataPath });
   } else {
-    // A saved custom target is a plain web load: no bb server on this Mac. The
+    // A saved custom target is a plain web load: no Patcher server on this Mac. The
     // local server starts only when the user switches back to "This Mac".
     await applyServerTarget();
   }
@@ -2106,6 +2108,6 @@ void runDesktopApp().catch((error) => {
   void loadStartupError({
     details: message,
     logs: "",
-    title: "Could not open bb",
+    title: "Could not open Patcher",
   });
 });

@@ -11,7 +11,7 @@ import type {
 import {
   createPatcherDesktopApi,
   createNoopDesktopBrowserApi,
-} from "@/test/bb-desktop-test-utils";
+} from "@/test/patcher-desktop-test-utils";
 import { describeBrowserFindMatches, useBrowserFind } from "./browser-find";
 
 const desktopInfo = {

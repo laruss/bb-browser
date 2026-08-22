@@ -34,7 +34,7 @@ The initial implementation should be created as a fork of:
 
 `get-bb/bb`
 
-bb already provides several pieces of infrastructure that are useful for this project:
+Patcher already provides several pieces of infrastructure that are useful for this project:
 
 - coding-agent orchestration;
 - agent runtime;
@@ -50,21 +50,21 @@ bb already provides several pieces of infrastructure that are useful for this pr
 
 The project should **reuse these lower-level systems where practical**, rather than rewriting the agent platform from scratch.
 
-However, the existing bb application UI should not be treated as the final product.
+However, the existing Patcher application UI should not be treated as the final product.
 
 The desktop and application layers should gradually be transformed into a browser-first product.
 
 Conceptually:
 
 ```text
-bb
+Patcher
 
 Agent workspace
       ↓
 Agent Browser
 ```
 
-The fork will eventually diverge significantly from bb at the product/UI level.
+The fork will eventually diverge significantly from Patcher at the product/UI level.
 
 ---
 
@@ -147,7 +147,7 @@ The initial architecture should use:
 
 - **Electron** as the desktop and Chromium/browser layer;
 - **React/TypeScript** for browser UI;
-- **bb infrastructure** for agents, persistence and orchestration;
+- **Patcher infrastructure** for agents, persistence and orchestration;
 - **Bun gradually introduced as a separate runtime for plugins, agents and background services**;
 - RPC between privileged Electron code and untrusted/extensible runtime code.
 
@@ -197,7 +197,7 @@ Target architecture:
 │ Search Providers                                     │
 │ Plugin Permissions                                   │
 │                                                      │
-│ Initially Node where inherited from bb               │
+│ Initially Node where inherited from Patcher               │
 │ Gradually move suitable parts to Bun                 │
 └───────────────┬──────────────┬──────────────┬─────────┘
                 │              │              │
@@ -256,22 +256,22 @@ The React UI and actual webpage contents must be treated as separate layers.
 
 # 6. Bun Strategy
 
-Do not migrate the entire bb fork to Bun at the beginning.
+Do not migrate the entire Patcher fork to Bun at the beginning.
 
-The initial goal is to minimize unnecessary architectural changes while transforming bb into a browser.
+The initial goal is to minimize unnecessary architectural changes while transforming Patcher into a browser.
 
 Recommended migration order:
 
 ## Stage 1
 
-Keep the existing bb runtime stack.
+Keep the existing Patcher runtime stack.
 
 Focus entirely on getting the browser architecture working.
 
 ```text
 Electron
 Node
-existing bb infrastructure
+existing Patcher infrastructure
 existing package manager
 ```
 
@@ -310,7 +310,7 @@ Candidates:
 
 ## Stage 4
 
-Evaluate moving additional bb agent infrastructure to Bun.
+Evaluate moving additional Patcher agent infrastructure to Bun.
 
 Only migrate components when compatibility has been verified.
 
@@ -735,7 +735,7 @@ Everything else can follow later.
 
 # 14. Agent UI
 
-The existing bb application should gradually become an integrated browser agent workspace.
+The existing Patcher application should gradually become an integrated browser agent workspace.
 
 The browser should eventually allow something similar to:
 
@@ -771,7 +771,7 @@ The agent panel should eventually be capable of:
 
 Do not make a complex agent UX part of the earliest browser MVP.
 
-Reuse bb surfaces where convenient until replacement becomes necessary.
+Reuse Patcher surfaces where convenient until replacement becomes necessary.
 
 ---
 
@@ -822,7 +822,7 @@ This workflow is a core product experience, not merely a development convenience
 
 # 16. Suggested Repository Direction
 
-Do not immediately reorganize the entire bb repository.
+Do not immediately reorganize the entire Patcher repository.
 
 First understand the existing dependency graph.
 
@@ -869,11 +869,11 @@ Prefer incremental extraction over a large initial repository rewrite.
 
 ---
 
-# 17. Migration Strategy from bb
+# 17. Migration Strategy from Patcher
 
 The first development task should be **repository reconnaissance**, not deleting code.
 
-Determine which bb components belong to:
+Determine which Patcher components belong to:
 
 ### Keep
 
@@ -923,7 +923,7 @@ Required:
 - browser permissions;
 - browser-agent tools.
 
-Do not remove inherited bb systems until their dependencies and replacement paths are understood.
+Do not remove inherited Patcher systems until their dependencies and replacement paths are understood.
 
 ---
 
@@ -933,13 +933,13 @@ Do not remove inherited bb systems until their dependencies and replacement path
 
 Before major implementation:
 
-- map bb architecture;
+- map Patcher architecture;
 - identify desktop entry points;
 - identify server/runtime boundaries;
 - identify plugin system;
 - identify agent orchestration;
 - identify SQLite dependencies;
-- identify components strongly coupled to bb's existing workspace UI;
+- identify components strongly coupled to Patcher's existing workspace UI;
 - document which packages are retained, adapted or replaced.
 
 Deliverable:
@@ -1042,7 +1042,7 @@ This is the first major proof of the product concept.
 
 ## Phase 5 — Agent Browser Integration
 
-Expose browser tools to bb agents.
+Expose browser tools to Patcher agents.
 
 Example tools:
 
@@ -1069,7 +1069,7 @@ Agents should not directly manipulate Electron internals.
 
 Deliverable:
 
-Existing bb agents can understand and operate browser state.
+Existing Patcher agents can understand and operate browser state.
 
 ---
 
@@ -1138,7 +1138,7 @@ Prioritize based on real use cases rather than implementing every API upfront.
 
 ## Phase 9 — Extending the Pages Themselves
 
-Everything through Phase 8 extends bb's own chrome. This phase is about the
+Everything through Phase 8 extends Patcher's own chrome. This phase is about the
 browsed page: the work a user would otherwise reach for a Chrome extension or a
 userscript to do.
 
@@ -1147,7 +1147,7 @@ userscript to do.
 > result in a **browser-native** panel rather than injected DOM.
 
 **A note on Phase 8's "page scripts".** That line was read as satisfied by the
-frontend `app.contentScripts` surface, which is trusted code in *bb's own* page.
+frontend `app.contentScripts` surface, which is trusted code in *Patcher's own* page.
 Running a plugin's code in a *browsed* page is a different thing entirely and was
 never built. This phase is where it belongs.
 
@@ -1177,7 +1177,7 @@ declared**, not CDP. CDP would have done more (subframes, bindings), but it woul
 have required the browser debugger attached to every tab permanently, against a
 documented invariant, and DevTools taking the target would have silently stopped
 every page script. The preload exposes nothing into the page's own world, so the
-standing rule that a browsed page never receives a bb bridge survives.
+standing rule that a browsed page never receives a Patcher bridge survives.
 
 Both things Stage A's mechanism could not carry were settled by measurement rather
 than assumption:
@@ -1190,13 +1190,13 @@ than assumption:
   change every browsed page rather than the matching ones.
 
 The channel crosses three processes because no shorter path exists — the page can
-hold no credentials and the shell holds none for the bb server — and the plugin is
+hold no credentials and the shell holds none for the Patcher server — and the plugin is
 re-checked against the frame's real address on every call, in both the shell and the
 renderer.
 
 Deliverable: `examples/plugins/site-tweaks` gained the in-page half, closing the
 loop — a button in GitHub's page, a row in the plugin's own SQLite, and the note
-appearing in bb's own panel over `patcher.realtime`. Still no change to the browser core
+appearing in Patcher's own panel over `patcher.realtime`. Still no change to the browser core
 from the plugin's side.
 
 Explicitly **not** in scope, and still not: loading real CRX bundles or shimming
@@ -1225,7 +1225,7 @@ Do not initially attempt:
 - production-ready plugin marketplace;
 - fully autonomous core rewriting;
 - migrating all Node code to Bun;
-- rebuilding every bb component.
+- rebuilding every Patcher component.
 
 The MVP should prove one thing exceptionally well:
 
@@ -1306,9 +1306,9 @@ Avoid creating separate hidden browser-control systems for agents.
 
 When implementing this project:
 
-1. Inspect existing bb architecture before replacing systems.
+1. Inspect existing Patcher architecture before replacing systems.
 2. Prefer incremental changes over repository-wide rewrites.
-3. Preserve working bb agent infrastructure until a replacement is proven.
+3. Preserve working Patcher agent infrastructure until a replacement is proven.
 4. Add explicit APIs instead of cross-package imports.
 5. Keep Electron-specific code isolated.
 6. Do not expose Electron main APIs directly to plugins.
@@ -1372,7 +1372,7 @@ The project reaches its first meaningful milestone when all of the following wor
 - application launches as a real desktop browser;
 - multiple Chromium-backed tabs work;
 - navigation and omnibox work;
-- existing bb agent infrastructure still runs;
+- existing Patcher agent infrastructure still runs;
 - plugins can be loaded dynamically;
 - Plugin SDK exposes at least one browser-level contribution point;
 - an example plugin adds suggestions to the omnibox;

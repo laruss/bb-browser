@@ -181,7 +181,7 @@ export function HealthyFleet() {
   return (
     <Stage>
       <UpdatesSection
-        title="bb"
+        title="Patcher"
         footnote="Connected machines follow the server version automatically."
         action={
           <>
@@ -259,7 +259,7 @@ export function MixedFleet() {
   return (
     <Stage>
       <UpdatesSection
-        title="bb"
+        title="Patcher"
         footnote="Connected machines follow the server version automatically."
         action={
           <>
@@ -342,7 +342,7 @@ export function MixedFleet() {
 export function WebAppUpdateAvailable() {
   return (
     <Stage>
-      <UpdatesSection title="bb">
+      <UpdatesSection title="Patcher">
         <UpdatesRowList>
           <PatcherAppUpdateRows
             systemVersion={{
@@ -367,7 +367,7 @@ export function WebAppUpdateAvailable() {
 export function DesktopUpdateReady() {
   return (
     <Stage>
-      <UpdatesSection title="bb">
+      <UpdatesSection title="Patcher">
         <UpdatesRowList>
           <PatcherAppUpdateRows
             systemVersion={undefined}
@@ -394,7 +394,7 @@ export function DesktopUpdateReady() {
 export function DesktopDownloading() {
   return (
     <Stage>
-      <UpdatesSection title="bb">
+      <UpdatesSection title="Patcher">
         <UpdatesRowList>
           <PatcherAppUpdateRows
             systemVersion={undefined}

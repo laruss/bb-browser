@@ -20,7 +20,7 @@ import type { PatcherSdk } from "@patcher/sdk";
  *
  * What this is not is a security boundary. A plugin runs in the server's own
  * process; it can reach the loopback API directly with the base URL the host
- * gives it, or skip bb entirely and use `node:fs`. See
+ * gives it, or skip Patcher entirely and use `node:fs`. See
  * `@patcher/domain`'s plugin-permissions module for the full argument.
  */
 

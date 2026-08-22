@@ -105,14 +105,14 @@ export function buildSeedPrompt(input: SeedPromptInput): string {
     ),
     markdownSection(
       "Project context",
-      `- Name: ${input.project.name}\n- Linked bb project: ${input.project.linkedPatcherProjectId ?? "Not linked"}`,
+      `- Name: ${input.project.name}\n- Linked Patcher project: ${input.project.linkedPatcherProjectId ?? "Not linked"}`,
     ),
     markdownSection("Sub-tasks", formatSubtasks(input.subtasks)),
     markdownSection("Attachments", formatAttachments(input.attachments)),
     markdownSection("Recent comments", formatComments(input.recentComments)),
     markdownSection(
       "Report-back contract",
-      `You are working on task ${input.task.key}. Use the bb tasks CLI: comment substantive updates (bb tasks comment ${input.task.key} --body ...), attach result artifacts, set status when done (bb tasks update ${input.task.key} --status in_review) or explain blockage in a comment. Your thread is already attached to the task.`,
+      `You are working on task ${input.task.key}. Use the Patcher tasks CLI: comment substantive updates (bb tasks comment ${input.task.key} --body ...), attach result artifacts, set status when done (bb tasks update ${input.task.key} --status in_review) or explain blockage in a comment. Your thread is already attached to the task.`,
     ),
   ];
 
@@ -162,7 +162,7 @@ function requireLinkedPatcherProject(project: Project): string {
   if (project.linkedPatcherProjectId) return project.linkedPatcherProjectId;
   throw new DelegationError(
     "project_not_linked",
-    `Task project "${project.name}" is not linked to a bb project`,
+    `Task project "${project.name}" is not linked to a Patcher project`,
   );
 }
 

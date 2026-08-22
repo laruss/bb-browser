@@ -49,7 +49,7 @@ describe("createAgentRuntime process lifecycle", () => {
   let scriptPath: string;
 
   beforeEach(() => {
-    tmpDir = mkdtempSync(join(tmpdir(), "bb-runtime-test-"));
+    tmpDir = mkdtempSync(join(tmpdir(), "patcher-runtime-test-"));
     scriptPath = fakeProviderScriptPath;
   });
 
@@ -1063,7 +1063,7 @@ rl.on("line", (line) => {
     }
   });
 
-  it("scrubs inherited bb runtime env vars before spawning provider processes", async () => {
+  it("scrubs inherited Patcher runtime env vars before spawning provider processes", async () => {
     vi.stubEnv("PATCHER_DATA_DIR", "/tmp/leaked-bb-data");
     vi.stubEnv("PATCHER_SERVER_PORT", "38986");
     vi.stubEnv("NODE_ENV", "development");

@@ -13,7 +13,7 @@ import {
 } from "@/components/secondary-panel/browserViewVisibilityCoordinator";
 import { collapsedProjectIdsAtom } from "@/components/sidebar/sidebarCollapsedAtoms";
 import { getRootComposeRoutePath } from "@/lib/route-paths";
-import { getDesktopBrowserApi } from "@/lib/bb-desktop";
+import { getDesktopBrowserApi } from "@/lib/patcher-desktop";
 import { useRouteState } from "../useRouteState";
 
 export type DeletedResourceRouteChangeHandler = (

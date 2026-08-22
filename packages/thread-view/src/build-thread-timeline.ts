@@ -424,7 +424,7 @@ function convertActivityIntent(
 
 /**
  * File-edit tool calls persist the path the provider reported, which is
- * absolute (e.g. `/Users/.../worktrees/env_x/bb/src/app.ts`). The timeline
+ * absolute (e.g. `/Users/.../worktrees/env_x/patcher/src/app.ts`). The timeline
  * contract promises a workspace-relative path so it matches the repo-relative
  * names produced by `git diff` in the diff panel, lets `open-file-diff` focus
  * the right card, and keeps the inline diff header readable. Relativize once

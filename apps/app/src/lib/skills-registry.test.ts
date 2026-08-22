@@ -36,7 +36,7 @@ function installedSkill(overrides: Partial<SkillSummary> = {}): SkillSummary {
     name: "useful-skill",
     description: "A useful skill.",
     provider: null,
-    scope: "bb-user",
+    scope: "patcher-user",
     pluginId: null,
     filePath: "/home/u/.patcher/skills/useful-skill/SKILL.md",
     manageable: true,
@@ -144,7 +144,7 @@ describe("registry skill contracts", () => {
 });
 
 describe("registry skill matching", () => {
-  it("matches only manageable bb-user skills with exact registry provenance", () => {
+  it("matches only manageable patcher-user skills with exact registry provenance", () => {
     const exactMatch = installedSkill();
     const candidates = [
       installedSkill({

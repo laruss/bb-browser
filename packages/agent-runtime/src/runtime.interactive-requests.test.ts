@@ -43,7 +43,7 @@ describe("createAgentRuntime interactive requests", () => {
   let tmpDir: string;
 
   beforeEach(() => {
-    tmpDir = mkdtempSync(join(tmpdir(), "bb-runtime-test-"));
+    tmpDir = mkdtempSync(join(tmpdir(), "patcher-runtime-test-"));
   });
 
   afterEach(() => {

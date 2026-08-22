@@ -1,5 +1,5 @@
 // Backend tests for the explain-selection example, written against the official
-// harness (`@patcher/plugin-sdk/testing`) — no bb server, no browser.
+// harness (`@patcher/plugin-sdk/testing`) — no Patcher server, no browser.
 import { describe, expect, it } from "vitest";
 import {
   createFakePluginHost,
@@ -183,7 +183,7 @@ describe("explain-selection", () => {
   });
 
   // A tab action is offered on every tab, so the entry itself has to refuse the
-  // ones with nothing to explain: a bb screen (null url) and a tab with no page
+  // ones with nothing to explain: a Patcher screen (null url) and a tab with no page
   // yet (empty url).
   it("refuses a tab with no page", async () => {
     const host = await load({ project: PROJECT_ID });

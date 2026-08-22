@@ -191,7 +191,7 @@ function PluginDetailToolView({ pluginId }: { pluginId: string }) {
     onSuccess: (_data, deletedPlugin) => {
       appToast.success(
         pluginIsLocalSource(deletedPlugin)
-          ? "Plugin removed from bb"
+          ? "Plugin removed from Patcher"
           : "Plugin uninstalled",
       );
       setDeleteTarget(null);
@@ -348,12 +348,12 @@ function PluginDetailToolView({ pluginId }: { pluginId: string }) {
               <ConfirmDeleteDialogContent
                 title={
                   pluginIsLocalSource(deleteTarget)
-                    ? "Remove plugin from bb?"
+                    ? "Remove plugin from Patcher?"
                     : "Uninstall plugin?"
                 }
                 description={
                   pluginIsLocalSource(deleteTarget)
-                    ? `Remove "${deleteTarget.id}" from bb? Its source files will stay on disk.`
+                    ? `Remove "${deleteTarget.id}" from Patcher? Its source files will stay on disk.`
                     : `Uninstall "${deleteTarget.id}" and delete its managed files and settings?`
                 }
                 confirmLabel={pluginRemovalLabel(deleteTarget)}

@@ -243,7 +243,7 @@ describe("SkillsOverview", () => {
         makeSkill({
           name: "aa-user-skill",
           provider: null,
-          scope: "bb-user",
+          scope: "patcher-user",
         }),
         makeSkill({
           name: "zz-official-skill",
@@ -255,7 +255,7 @@ describe("SkillsOverview", () => {
     });
     expect(markup).not.toContain("claude-skill");
     expect(markup).toContain("Review the current diff.");
-    expect(markup).toContain('aria-label="Filters: Provider: bb"');
+    expect(markup).toContain('aria-label="Filters: Provider: Patcher"');
     expect(markup).not.toContain("Provider: 1 selected");
     expect(markup).toContain("Sort");
     expect(markup).toContain('role="tab"');
@@ -292,7 +292,7 @@ describe("SkillsOverview", () => {
           makeSkill({
             name: "user-skill",
             provider: null,
-            scope: "bb-user",
+            scope: "patcher-user",
           }),
         ]}
         isLoading={false}
@@ -309,7 +309,7 @@ describe("SkillsOverview", () => {
     const typeTrigger = screen.getByRole("button", { name: /^Filters/ });
     fireEvent.focus(typeTrigger);
     expect((await screen.findByRole("tooltip")).textContent).toBe(
-      "Provider: bb",
+      "Provider: Patcher",
     );
     fireEvent.blur(typeTrigger);
     fireEvent.pointerDown(typeTrigger);
@@ -330,7 +330,7 @@ describe("SkillsOverview", () => {
     expect(await screen.findByText("automations")).toBeTruthy();
     expect(
       screen.getByLabelText(
-        "automations is included with Automations (bb plugin)",
+        "automations is included with Automations (Patcher plugin)",
       ).textContent,
     ).toBe("Included");
     expect(screen.queryByText("official-skill")).toBeNull();
@@ -348,7 +348,7 @@ describe("SkillsOverview", () => {
   });
 
   // The "user" bucket is a fallthrough — every scope that is not patcher-builtin or
-  // plugin lands in it. Exercising only a bb-user fixture would leave that
+  // plugin lands in it. Exercising only a patcher-user fixture would leave that
   // claim untested for the claude-*/codex-* scopes, which is exactly where the
   // old code returned null and let skills bypass the Type filter entirely.
   // This also covers AND-across-groups, which no other test does.
@@ -384,7 +384,7 @@ describe("SkillsOverview", () => {
     fireEvent.pointerDown(trigger);
     // Provider defaults to `bb`, which would hide both fixtures before the
     // Type filter is reached — clear it so this test observes Type alone.
-    fireEvent.click(screen.getByRole("menuitemcheckbox", { name: "bb" }));
+    fireEvent.click(screen.getByRole("menuitemcheckbox", { name: "Patcher" }));
     fireEvent.click(screen.getByRole("menuitemcheckbox", { name: "User" }));
 
     // Both provider-scoped skills reach the User bucket; the builtin does not.
@@ -559,7 +559,7 @@ describe("SkillsOverview", () => {
     ).not.toBeNull();
     expect(
       screen
-        .getByRole("menuitemcheckbox", { name: "bb" })
+        .getByRole("menuitemcheckbox", { name: "Patcher" })
         .getAttribute("aria-disabled"),
     ).toBeNull();
   });
@@ -569,9 +569,9 @@ describe("SkillsOverview", () => {
       <SkillsOverview
         skills={[
           makeSkill({
-            name: "bb-skill",
+            name: "patcher-skill",
             provider: null,
-            scope: "bb-user",
+            scope: "patcher-user",
           }),
           makeSkill({ name: "claude-skill", provider: "claude-code" }),
         ]}
@@ -587,14 +587,16 @@ describe("SkillsOverview", () => {
     // Merging Provider into the grouped Filters menu replaced the trigger's
     // logo tooltip with the group summary; the logos moved onto the rows.
     expect((await screen.findByRole("tooltip")).textContent?.trim()).toBe(
-      "Provider: bb",
+      "Provider: Patcher",
     );
     fireEvent.blur(providerTrigger);
 
     fireEvent.pointerDown(providerTrigger);
     expect(screen.getByText("Provider")).toBeTruthy();
     expect(
-      screen.getByRole("menuitemcheckbox", { name: "bb" }).querySelector("img"),
+      screen
+        .getByRole("menuitemcheckbox", { name: "Patcher" })
+        .querySelector("img"),
     ).not.toBeNull();
   });
 
@@ -621,7 +623,9 @@ describe("SkillsOverview", () => {
     });
 
     fireEvent.pointerDown(screen.getByRole("button", { name: /^Filters/ }));
-    const patcherFilter = screen.getByRole("menuitemcheckbox", { name: "bb" });
+    const patcherFilter = screen.getByRole("menuitemcheckbox", {
+      name: "Patcher",
+    });
     expect(patcherFilter.getAttribute("aria-checked")).toBe("true");
     expect(patcherFilter.getAttribute("aria-disabled")).toBeNull();
 
@@ -634,9 +638,9 @@ describe("SkillsOverview", () => {
     const initialSkills = [
       makeSkill({
         id: `skill_${"b".repeat(64)}`,
-        name: "bb-skill",
+        name: "patcher-skill",
         provider: null,
-        scope: "bb-user",
+        scope: "patcher-user",
       }),
       makeSkill({ name: "claude-skill", provider: "claude-code" }),
     ];
@@ -651,7 +655,7 @@ describe("SkillsOverview", () => {
     );
 
     fireEvent.pointerDown(screen.getByRole("button", { name: /^Filters/ }));
-    fireEvent.click(screen.getByRole("menuitemcheckbox", { name: "bb" }));
+    fireEvent.click(screen.getByRole("menuitemcheckbox", { name: "Patcher" }));
     fireEvent.click(
       screen.getByRole("menuitemcheckbox", { name: "Claude Code" }),
     );
@@ -659,7 +663,7 @@ describe("SkillsOverview", () => {
 
     await waitFor(() => {
       expect(screen.getByText("claude-skill")).toBeTruthy();
-      expect(screen.queryByText("bb-skill")).toBeNull();
+      expect(screen.queryByText("patcher-skill")).toBeNull();
       expect(
         screen.getByRole("button", { name: /Provider: Claude Code/ }),
       ).toBeTruthy();
@@ -673,7 +677,7 @@ describe("SkillsOverview", () => {
             id: `skill_${"c".repeat(64)}`,
             name: "new-bb-skill",
             provider: null,
-            scope: "bb-user",
+            scope: "patcher-user",
           }),
         ]}
         isLoading={false}
@@ -691,16 +695,16 @@ describe("SkillsOverview", () => {
     const markup = render({
       skills: [
         makeSkill({
-          name: "bb-skill",
+          name: "patcher-skill",
           provider: null,
-          scope: "bb-user",
+          scope: "patcher-user",
           manageable: true,
         }),
         makeSkill({ name: "provider-skill" }),
       ],
     });
-    expect(markup).not.toContain('aria-label="Edit bb-skill"');
-    expect(markup).not.toContain('aria-label="Delete bb-skill"');
+    expect(markup).not.toContain('aria-label="Edit patcher-skill"');
+    expect(markup).not.toContain('aria-label="Delete patcher-skill"');
     expect(markup).not.toContain('aria-label="Edit provider-skill"');
     expect(markup).not.toContain('aria-label="Delete provider-skill"');
   });
@@ -1132,7 +1136,7 @@ describe("RegistrySkillDetailView reference creation", () => {
         localSkill={makeSkill({
           name: registrySkill.skillId,
           provider: null,
-          scope: "bb-user",
+          scope: "patcher-user",
           registrySkillId: registrySkill.id,
         })}
         localPath="/home/u/.patcher/skills/useful-skill/SKILL.md"
@@ -1162,7 +1166,7 @@ describe("SkillDetailDialogView", () => {
     expect(screen.queryByRole("button", { name: "bb-cli actions" })).toBeNull();
     fireEvent.pointerMove(official);
     expect((await screen.findByRole("tooltip")).textContent).toBe(
-      "Ships with bb",
+      "Ships with Patcher",
     );
   });
 
@@ -1188,9 +1192,9 @@ describe("SkillDetailDialogView", () => {
         manageable: false,
       }),
       accessibleLabel:
-        "plugin-notes is included with Skill catalog fixture (bb plugin)",
+        "plugin-notes is included with Skill catalog fixture (Patcher plugin)",
       tooltipName: "Skill catalog fixture plugin.",
-      providerIcon: "bb",
+      providerIcon: "patcher",
     },
   ])("presents $skill.name as plugin-provided", async (example) => {
     renderSkillDetailDialog(example.skill);
@@ -1233,11 +1237,11 @@ describe("SkillDetailDialogView", () => {
 
   it("uses a hoverable copy target and delegates editing to the thread flow", () => {
     const skill = makeSkill({
-      name: "bb-skill",
+      name: "patcher-skill",
       provider: null,
-      scope: "bb-user",
+      scope: "patcher-user",
       manageable: true,
-      filePath: "/home/u/.patcher/skills/bb-skill/SKILL.md",
+      filePath: "/home/u/.patcher/skills/patcher-skill/SKILL.md",
     });
     const onEdit = vi.fn();
     renderSkillDetailDialog(skill, {
@@ -1247,15 +1251,15 @@ describe("SkillDetailDialogView", () => {
     });
 
     screen.getByRole("button", {
-      name: "Copy skill path: /home/u/.patcher/skills/bb-skill",
+      name: "Copy skill path: /home/u/.patcher/skills/patcher-skill",
     });
-    expect(screen.getByText("~/.patcher/skills/bb-skill")).toBeTruthy();
+    expect(screen.getByText("~/.patcher/skills/patcher-skill")).toBeTruthy();
     expect(screen.queryByText("BB Official", { exact: true })).toBeNull();
     expect(screen.queryByText("Included", { exact: true })).toBeNull();
     expect(screen.queryByText("Imported", { exact: true })).toBeNull();
     expect(screen.queryByText("Editable", { exact: true })).toBeNull();
     fireEvent.pointerDown(
-      screen.getByRole("button", { name: "bb-skill actions" }),
+      screen.getByRole("button", { name: "patcher-skill actions" }),
     );
     fireEvent.click(screen.getByRole("menuitem", { name: "Edit" }));
     expect(onEdit).toHaveBeenCalledOnce();

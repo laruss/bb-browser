@@ -79,7 +79,7 @@ const baseWorktree: NewThreadWorktreeConfig = {
 
 const baseProject: NewThreadProjectConfig = {
   projects: STORY_PROJECTS,
-  value: PROJECT_IDS.bb,
+  value: PROJECT_IDS.patcher,
   onChange: noop,
 };
 
@@ -645,7 +645,7 @@ export function UnsupportedCodexCli() {
       <StoryCard>
         <StoryRow
           label="unsupported Codex CLI"
-          hint="Codex is installed but below bb's minimum supported version"
+          hint="Codex is installed but below Patcher's minimum supported version"
         >
           <UnsupportedCodexCliRow />
         </StoryRow>

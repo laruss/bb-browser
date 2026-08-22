@@ -10,14 +10,14 @@ and that it is worth having before it can be enforced against hostile code.
 
 ## This is not a security boundary, and cannot be one yet
 
-A plugin's `server.ts` is a Node module loaded into the bb server process
+A plugin's `server.ts` is a Node module loaded into the Patcher server process
 (`plugin-runtime.ts`, via `jiti.import`). Three exits are open to it today and
-no gate on the `bb` object closes any of them:
+no gate on the `patcher` object closes any of them:
 
 - `import("node:child_process")` and `node:fs` — the process's own capabilities;
 - `patcher.server.loopbackBaseUrl` plus `fetch` — the whole server API, around any
   wrapper on `patcher.sdk`;
-- monkey-patching bb's own modules, which it shares a realm with.
+- monkey-patching Patcher's own modules, which it shares a realm with.
 
 So a plugin that wants what it did not declare can still take it. Saying
 otherwise in a UI would be worse than saying nothing.
@@ -133,7 +133,7 @@ for every plugin that already had it.
 
 `newTab.register` is the same rule at the opposite end: a new tab has no page, so
 the section a plugin puts there is asked nothing about the user's browsing. It is
-still its own permission rather than none, because _placement in bb's chrome_ is
+still its own permission rather than none, because _placement in Patcher's chrome_ is
 what the user is agreeing to — but it is the cheapest of the browser's permissions
 to reason about, and the manifest should read that way.
 
@@ -246,7 +246,7 @@ turn, which `threads` does not cover.
 
 ## The API gates plugin traffic, not just the SDK object
 
-`patcher.sdk` is an HTTP client for bb's own API, and every plugin is handed the
+`patcher.sdk` is an HTTP client for Patcher's own API, and every plugin is handed the
 loopback base URL in `patcher.server.loopbackBaseUrl` — a supported thing to use, as
 the tunnel plugin does. So a gate on the JavaScript object gated the polite way
 in and nothing else: the same call, made with `fetch`, was never checked.

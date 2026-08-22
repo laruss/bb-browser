@@ -1,5 +1,5 @@
 // Backend tests for the bookmarks example, against the official harness
-// (`@patcher/plugin-sdk/testing`) — no bb server, no browser, but a real SQLite file in
+// (`@patcher/plugin-sdk/testing`) — no Patcher server, no browser, but a real SQLite file in
 // a temp directory, so the store is exercised rather than mocked.
 import { describe, expect, it } from "vitest";
 import {

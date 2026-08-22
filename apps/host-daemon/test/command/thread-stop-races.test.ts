@@ -153,7 +153,7 @@ function flushMicrotasks(): Promise<void> {
 async function createRaceHarness(
   args: RaceHarnessArgs = {},
 ): Promise<RaceHarness> {
-  const workspacePath = await makeTempDir("bb-stop-race-workspace-");
+  const workspacePath = await makeTempDir("patcher-stop-race-workspace-");
   const events: ThreadEvent[] = [];
   const exits: AgentRuntimeProcessExitInfo[] = [];
   const recordedCommands: RecordedAdapterCommand[] = [];
@@ -382,7 +382,7 @@ describe("thread.stop race semantics", () => {
   });
 
   it("clears the active turn when the provider crashes mid-turn so a later stop noops", async () => {
-    const crashDir = await makeTempDir("bb-stop-race-crash-");
+    const crashDir = await makeTempDir("patcher-stop-race-crash-");
     const crashScriptPath = path.join(crashDir, "crash-mid-turn-provider.cjs");
     await writeFile(crashScriptPath, CRASH_MID_TURN_PROVIDER_SCRIPT, "utf8");
     const harness = await createRaceHarness({

@@ -162,10 +162,10 @@ describe("plugin wire surfaces (http/rpc dispatcher + realtime)", () => {
     );
     expect(sameOrigin.status).toBe(200);
 
-    // config.appUrl (https://bb.example.test) is part of the allowlist.
+    // config.appUrl (https://patcher.example.test) is part of the allowlist.
     const appOrigin = await harness.app.request(
       `${BASE}/api/v1/plugins/wire/http/hello`,
-      { headers: { origin: "https://bb.example.test" } },
+      { headers: { origin: "https://patcher.example.test" } },
     );
     expect(appOrigin.status).toBe(200);
   });
@@ -197,8 +197,8 @@ describe("plugin wire surfaces (http/rpc dispatcher + realtime)", () => {
     expect(sameOriginLan.status).toBe(200);
 
     const sameOriginReverseProxy = await harness.app.request(
-      "https://bb.lan.test/api/v1/plugins/wire/http/hello",
-      { headers: { origin: "https://bb.lan.test" } },
+      "https://patcher.lan.test/api/v1/plugins/wire/http/hello",
+      { headers: { origin: "https://patcher.lan.test" } },
     );
     expect(sameOriginReverseProxy.status).toBe(200);
 

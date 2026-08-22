@@ -81,14 +81,14 @@ export function useUpdateKeyboardSettings() {
 }
 
 /**
- * Copy bb's built-in CLI skills into the chosen machines' global agent skill
- * roots so agents outside bb can drive it. Purely a filesystem action on those
+ * Copy Patcher's built-in CLI skills into the chosen machines' global agent skill
+ * roots so agents outside Patcher can drive it. Purely a filesystem action on those
  * machines — nothing in the system config changes, so nothing is invalidated.
  */
 export function useInstallCliSkills() {
   return useMutation({
     meta: {
-      errorMessage: "Failed to install the bb CLI skills.",
+      errorMessage: "Failed to install the Patcher CLI skills.",
     },
     mutationFn: (args: SystemInstallCliSkillsRequest) =>
       sdk.system.installCliSkills(args),

@@ -1,6 +1,6 @@
 # Real-Provider CLI/API E2E Manual Runbook
 
-This runbook covers the thorough non-app end-to-end validation pass for bb's
+This runbook covers the thorough non-app end-to-end validation pass for Patcher's
 server, host daemon, CLI, API, database state, and real provider paths. It is
 written against the current standalone persistent-host setup and intentionally
 does not claim generic "Full QA" or release readiness by itself.
@@ -98,7 +98,7 @@ SERVER_DB_PATH=$(jq -er '.server.dataDir + "/patcher.db"' "$STATE_PATH")
 SERVER_LOG_DIR=$(jq -er '(.paths.serverDataDir // .server.dataDir) + "/logs"' "$STATE_PATH")
 DAEMON_LOG_DIR=$(jq -er '(.paths.daemonDataDir // .daemon.dataDir) + "/logs"' "$STATE_PATH")
 
-bb() { node apps/cli/dist/index.js "$@"; }
+Patcher() { node apps/cli/dist/index.js "$@"; }
 ```
 
 The machine-facing contract is the exported env block. The state file at `$STATE_PATH`

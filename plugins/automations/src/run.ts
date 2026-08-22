@@ -62,7 +62,7 @@ function renderAutomationDueMessage(args: {
   automationId: string;
   prompt: string;
 }): string {
-  return `[bb automation due:${args.automationId}]\n\n${args.prompt}`;
+  return `[Patcher automation due:${args.automationId}]\n\n${args.prompt}`;
 }
 
 function isThreadReusable(thread: SdkThread): boolean {

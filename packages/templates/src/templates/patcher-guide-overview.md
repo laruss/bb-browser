@@ -1,11 +1,11 @@
 ---
 kind: instruction
-title: bb Guide Overview
-summary: System overview and chapter index for the bb CLI guide.
-intent: Orient agents to bb core concepts and help them find the right guide chapter.
+title: Patcher Guide Overview
+summary: System overview and chapter index for the Patcher CLI guide.
+intent: Orient agents to Patcher core concepts and help them find the right guide chapter.
 editingNotes: Keep this concise. Concepts only — command details belong in chapter files.
 ---
-bb is an agent orchestration tool for managing multiple agents.
+Patcher is an agent orchestration tool for managing multiple agents.
 
 Core concepts:
 
@@ -29,7 +29,7 @@ Run `bb status` to see your current context (resolved project and thread IDs).
 
 All commands support --json for machine-readable output.
 
-To make a repo work with bb worktrees, run `bb guide environments` for the
+To make a repo work with Patcher worktrees, run `bb guide environments` for the
 repo-level `.patcher-env-setup.sh` setup hook. Run `bb guide agent-configuration` for
 the data-dir and workspace files that customize agent behavior.
 
@@ -43,5 +43,5 @@ Run `bb guide <chapter>` for command details:
   machines             Listing and targeting execution machines
   terminals            Persistent PTY sessions across all supported scopes
   customization        Theming the app palette
-  plugins              Installing plugins and their contributed bb commands
+  plugins              Installing plugins and their contributed Patcher commands
   automations          Scheduling and editing recurring or one-shot work

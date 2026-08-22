@@ -53,7 +53,7 @@ vi.mock("@/hooks/queries/system-queries", () => ({
   }),
 }));
 
-vi.mock("@/lib/bb-desktop", () => ({
+vi.mock("@/lib/patcher-desktop", () => ({
   getPatcherDesktopInfo: () => null,
 }));
 

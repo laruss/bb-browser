@@ -13,7 +13,7 @@ import {
 import {
   createPatcherDesktopApi,
   createNoopDesktopBrowserApi,
-} from "@/test/bb-desktop-test-utils";
+} from "@/test/patcher-desktop-test-utils";
 import type { PluginBrowserPageScriptContribution } from "@/hooks/queries/plugin-contribution-queries";
 import { useBrowserPageScripts } from "./browser-page-scripts";
 
@@ -45,8 +45,8 @@ const CALL: PatcherDesktopBrowserPageScriptCall = {
   tabId: "browser:a",
   pluginId: "site-tweaks",
   method: "notes",
-  input: '{"repo":"bb/bb"}',
-  url: "https://github.com/bb/bb",
+  input: '{"repo":"patcher/bb"}',
+  url: "https://github.com/patcher/bb",
 };
 
 interface Shell {
@@ -191,7 +191,7 @@ describe("useBrowserPageScripts", () => {
     expect(calls).toEqual([
       {
         url: "/api/v1/plugins/site-tweaks/rpc/notes",
-        body: { repo: "bb/bb" },
+        body: { repo: "patcher/bb" },
       },
     ]);
   });

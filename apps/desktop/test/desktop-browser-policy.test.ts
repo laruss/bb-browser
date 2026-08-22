@@ -78,7 +78,7 @@ describe("resolveWindowOpenAction", () => {
 });
 
 describe("browser IPC payload schemas", () => {
-  // The desktop shell hosts whatever SPA the probed bb server serves (no
+  // The desktop shell hosts whatever SPA the probed Patcher server serves (no
   // version handshake), so these request shapes are wire-frozen: they must
   // keep accepting exactly the historical bounds-only payloads.
   it("accepts a well-formed attach request and rejects bad shapes", () => {

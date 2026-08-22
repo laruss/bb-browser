@@ -190,7 +190,7 @@ describe("system cache effects", () => {
     );
   });
 
-  // A bb self-update restarts the server, which is what the reconnect signals.
+  // A Patcher self-update restarts the server, which is what the reconnect signals.
   // Without this the app would keep advertising the update it just applied
   // until the tab reloads: the version answer is cached for an hour and never
   // refetched on focus.

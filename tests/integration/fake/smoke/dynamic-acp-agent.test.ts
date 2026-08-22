@@ -35,7 +35,7 @@ function buildDynamicAcpAgents(): CustomAcpAgent[] {
       modelCli: {
         listArgs: ["--list-models"],
         selectFlag: "--model",
-        primaryModels: ["bb-dynamic-smoke-medium"],
+        primaryModels: ["patcher-dynamic-smoke-medium"],
       },
     },
     {
@@ -88,7 +88,7 @@ describe.sequential("dynamic ACP integration smoke", () => {
         ]),
       );
       expect(listedOptions.models.map((model) => model.model)).toContain(
-        "bb-dynamic-smoke-medium",
+        "patcher-dynamic-smoke-medium",
       );
 
       const defaultModelsResponse = await harness.api.system[
@@ -102,8 +102,8 @@ describe.sequential("dynamic ACP integration smoke", () => {
       );
       expect(defaultOptions.modelLoadError).toBeNull();
       expect(defaultOptions.models.map((model) => model.model)).toEqual([
-        "bb-dynamic-acp-native-default",
-        "bb-dynamic-acp-native-strong",
+        "patcher-dynamic-acp-native-default",
+        "patcher-dynamic-acp-native-strong",
       ]);
       expect(defaultOptions.models.map((model) => model.model)).not.toEqual([
         "acp-default",
@@ -112,7 +112,7 @@ describe.sequential("dynamic ACP integration smoke", () => {
       const project = await createProjectFixture(harness, "Dynamic ACP Smoke");
       const { thread: nativeThread } = await createReadyThread(harness, {
         execution: {
-          model: "bb-dynamic-acp-native-strong",
+          model: "patcher-dynamic-acp-native-strong",
           reasoningLevel: "medium",
           permissionMode: "accept-edits",
         },
@@ -128,13 +128,13 @@ describe.sequential("dynamic ACP integration smoke", () => {
       await waitForThreadOutputContaining(
         harness.api,
         nativeThread.id,
-        "dynamic-acp:model=bb-dynamic-acp-native-strong:native selection",
+        "dynamic-acp:model=patcher-dynamic-acp-native-strong:native selection",
         TURN_TIMEOUT_MS,
       );
 
       const { thread } = await createReadyThread(harness, {
         execution: {
-          model: "bb-dynamic-smoke-medium",
+          model: "patcher-dynamic-smoke-medium",
           reasoningLevel: "medium",
           permissionMode: "accept-edits",
         },
@@ -150,13 +150,13 @@ describe.sequential("dynamic ACP integration smoke", () => {
       await waitForThreadOutputContaining(
         harness.api,
         thread.id,
-        "dynamic-acp:model=bb-dynamic-smoke-medium:start launch spec",
+        "dynamic-acp:model=patcher-dynamic-smoke-medium:start launch spec",
         TURN_TIMEOUT_MS,
       );
 
       await sendTextMessage(harness.api, thread.id, {
         execution: {
-          model: "bb-dynamic-smoke-medium",
+          model: "patcher-dynamic-smoke-medium",
           reasoningLevel: "medium",
           permissionMode: "accept-edits",
         },
@@ -165,7 +165,7 @@ describe.sequential("dynamic ACP integration smoke", () => {
       await waitForThreadOutputContaining(
         harness.api,
         thread.id,
-        "dynamic-acp:model=bb-dynamic-smoke-medium:submit launch spec",
+        "dynamic-acp:model=patcher-dynamic-smoke-medium:submit launch spec",
         TURN_TIMEOUT_MS,
       );
       await waitForThreadStatus(
@@ -180,7 +180,7 @@ describe.sequential("dynamic ACP integration smoke", () => {
 
       await sendTextMessage(harness.api, thread.id, {
         execution: {
-          model: "bb-dynamic-smoke-medium",
+          model: "patcher-dynamic-smoke-medium",
           reasoningLevel: "medium",
           permissionMode: "accept-edits",
         },
@@ -189,13 +189,13 @@ describe.sequential("dynamic ACP integration smoke", () => {
       await waitForThreadOutputContaining(
         harness.api,
         thread.id,
-        "dynamic-acp:model=bb-dynamic-smoke-medium:resume launch spec",
+        "dynamic-acp:model=patcher-dynamic-smoke-medium:resume launch spec",
         TURN_TIMEOUT_MS,
       );
 
       const output = await getThreadOutput(harness.api, thread.id);
       expect(output).toContain(
-        "dynamic-acp:model=bb-dynamic-smoke-medium:resume launch spec",
+        "dynamic-acp:model=patcher-dynamic-smoke-medium:resume launch spec",
       );
     }));
 });

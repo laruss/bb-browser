@@ -115,7 +115,7 @@ export function resolveAppTabIconName(path: string): IconName {
 }
 
 /**
- * bb's own destinations, as the omnibox offers them. Kept here beside the route
+ * Patcher's own destinations, as the omnibox offers them. Kept here beside the route
  * rules rather than in the provider, so "what counts as a destination" has one
  * answer: the same list the strip turns into tabs.
  *

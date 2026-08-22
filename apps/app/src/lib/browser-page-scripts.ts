@@ -6,7 +6,7 @@ import {
 import { matchesBrowserUrlPattern } from "@patcher/domain/browser-url-pattern";
 import { usePluginContributions } from "@/hooks/queries/plugin-contribution-queries";
 import { callPluginRpc } from "@/lib/plugin-sdk-hooks";
-import { getDesktopBrowserApi } from "./bb-desktop";
+import { getDesktopBrowserApi } from "./patcher-desktop";
 
 /** Longest refusal the shell will carry back to a page script. */
 const MAX_MESSAGE_LENGTH = 1024;
@@ -21,7 +21,7 @@ const MAX_MESSAGE_LENGTH = 1024;
  *
  * Why the app is in this path at all: the script runs in a browsed page, which
  * cannot be given credentials, and the shell holds none either. This window is
- * the only participant that can authenticate to the bb server — so it performs
+ * the only participant that can authenticate to the Patcher server — so it performs
  * the call, and re-checks on the way that the plugin really does claim the page
  * the shell says asked. Two checks of the same rule, in the two processes that
  * would have to be wrong together.

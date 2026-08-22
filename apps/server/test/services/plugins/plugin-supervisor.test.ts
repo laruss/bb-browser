@@ -49,7 +49,7 @@ describe("the plugin supervisor", () => {
   const supervisors: PluginSupervisor[] = [];
 
   async function dataDir(): Promise<string> {
-    const dir = await mkdtemp(join(tmpdir(), "bb-supervisor-"));
+    const dir = await mkdtemp(join(tmpdir(), "patcher-supervisor-"));
     dirs.push(dir);
     return dir;
   }

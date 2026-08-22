@@ -1313,7 +1313,7 @@ export function createPluginApi(options: {
       }
       if (RESERVED_AGENT_TOOL_NAMES.includes(name)) {
         throw new Error(
-          `tool name "${name}" is a built-in bb tool — pick another name`,
+          `tool name "${name}" is a built-in Patcher tool — pick another name`,
         );
       }
       if (
@@ -1550,7 +1550,7 @@ export function createPluginApi(options: {
       const key = command.shortcut?.key;
       if (typeof key !== "string" || key.length === 0) {
         throw new Error(
-          `command "${id}" needs a shortcut with a non-empty key — bb has no command palette, so a command without one could never run`,
+          `command "${id}" needs a shortcut with a non-empty key — Patcher has no command palette, so a command without one could never run`,
         );
       }
       const shortcut = {
@@ -3141,7 +3141,7 @@ export function createPluginApi(options: {
       }
       if (RESERVED_PATCHER_CLI_COMMANDS.includes(name)) {
         throw new Error(
-          `cli command name "${name}" is reserved by the bb CLI — pick another name`,
+          `cli command name "${name}" is reserved by the Patcher CLI — pick another name`,
         );
       }
       if (

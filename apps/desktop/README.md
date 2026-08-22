@@ -1,6 +1,6 @@
 # @patcher/desktop
 
-macOS Electron shell for bb. The desktop app loads the existing bb web UI and
+macOS Electron shell for Patcher. The desktop app loads the existing Patcher web UI and
 uses the packaged `bb-app` launcher for server and host-daemon lifecycle.
 
 ## Development
@@ -12,7 +12,7 @@ bun run dev:desktop
 ```
 
 That starts the source dev server and the Electron shell through
-`scripts/bb-dev-app`. To run only the desktop package task directly:
+`scripts/patcher-dev-app`. To run only the desktop package task directly:
 
 ```bash
 bunx turbo run dev --filter=@patcher/desktop
@@ -24,7 +24,7 @@ opens Electron directly. By default it uses the same checkout-scoped
 the main repo dev launcher; it prints the resolved data dir, server URL, and
 Electron user-data dir at startup. It intentionally overwrites inherited
 `PATCHER_DATA_DIR`, `PATCHER_SERVER_PORT`, `PATCHER_SERVER_URL`, and `PATCHER_HOST_DAEMON_PORT` so a
-desktop dev run launched from an existing bb session still targets the current
+desktop dev run launched from an existing Patcher session still targets the current
 checkout. Set `PATCHER_DESKTOP_USER_DATA_DIR` to override only Electron's user-data
 directory.
 
@@ -119,8 +119,8 @@ a dry run validates only the npm package path.
 
 The nightly desktop is a separate installation:
 
-- product name: `bb Nightly`
-- bundle identifier: `dev.bb.desktop.nightly`
+- product name: `Patcher Nightly`
+- bundle identifier: `app.patcher.desktop.nightly`
 - app/update release: `desktop-nightly`
 - update metadata: `nightly-mac.yml`
 - icon: `assets/icon-nightly.icns` and `assets/icon-nightly.png`
@@ -135,7 +135,7 @@ npx bb-app@nightly
 
 Stable and nightly desktop bundles can coexist. Electron-owned preferences,
 window state, and process supervision use separate application data
-directories; the embedded bb runtime still uses the normal `~/.patcher` data and
+directories; the embedded Patcher runtime still uses the normal `~/.patcher` data and
 default server port unless the corresponding environment variables are
 overridden.
 
@@ -180,7 +180,7 @@ while the Electron updater only flips the toast to "ready to install" after a
 signed update has actually downloaded. Local dev builds skip Electron auto-update
 unless `PATCHER_DESKTOP_AUTO_UPDATE=1` is set.
 
-`bb Nightly` follows the equivalent isolated `desktop-nightly` release and
+`Patcher Nightly` follows the equivalent isolated `desktop-nightly` release and
 `nightly-mac.yml`; it never reads or moves the stable feed. The scheduled
 workflow requires the complete signing/notarization secret set before
 publishing nightly desktop assets.
@@ -188,8 +188,8 @@ publishing nightly desktop assets.
 To verify a downloaded or unpacked build:
 
 ```bash
-spctl --assess --verbose /path/to/bb.app
-codesign --verify --deep --strict --verbose=2 /path/to/bb.app
+spctl --assess --verbose /path/to/Patcher.app
+codesign --verify --deep --strict --verbose=2 /path/to/Patcher.app
 ```
 
 ## Debugging
@@ -198,13 +198,13 @@ Use the View menu to toggle DevTools. To open them automatically on launch, set
 `PATCHER_DESKTOP_OPEN_DEVTOOLS=1`:
 
 ```bash
-PATCHER_DESKTOP_OPEN_DEVTOOLS=1 apps/desktop/release/mac-arm64/bb.app/Contents/MacOS/bb
+PATCHER_DESKTOP_OPEN_DEVTOOLS=1 apps/desktop/release/mac-arm64/Patcher.app/Contents/MacOS/bb
 ```
 
 When the desktop app spawns `bb-app`, server and daemon logs land under
 `~/.patcher/logs/` or `$PATCHER_DATA_DIR/logs/` when `PATCHER_DATA_DIR` is set.
 
-To verify attach-if-found manually, start a compatible bb first, then launch the
+To verify attach-if-found manually, start a compatible Patcher first, then launch the
 desktop app:
 
 ```bash

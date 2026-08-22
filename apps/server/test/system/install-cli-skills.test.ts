@@ -19,7 +19,7 @@ async function writeBuiltinCliSkill(harness: TestAppHarness): Promise<void> {
   await mkdir(skillDirectory, { recursive: true });
   await writeFile(
     join(skillDirectory, "SKILL.md"),
-    "---\nname: bb-cli\ndescription: Control bb from the CLI.\n---\n",
+    "---\nname: bb-cli\ndescription: Control Patcher from the CLI.\n---\n",
   );
 }
 

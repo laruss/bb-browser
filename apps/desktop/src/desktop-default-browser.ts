@@ -2,7 +2,7 @@ import type { PatcherDesktopDefaultBrowserStatus } from "@patcher/desktop-contra
 
 // Being the user's browser is a Launch Services registration, not a capability:
 // macOS builds its "Default web browser" list from the bundles that declare
-// `http` and `https` in `CFBundleURLTypes`, and bb declares both through
+// `http` and `https` in `CFBundleURLTypes`, and Patcher declares both through
 // `mac.extendInfo` in `electron-builder.config.json`. Everything here is the
 // runtime half — asking whether the registration is the active one, and asking
 // the OS to make it so.

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type { PatcherDesktopDefaultBrowserStatus } from "@patcher/desktop-contract";
-import { getPatcherDesktopInfo } from "@/lib/bb-desktop";
+import { getPatcherDesktopInfo } from "@/lib/patcher-desktop";
 
 /**
  * What a build with no shell to ask — the web app — knows about it, and what a
@@ -13,17 +13,17 @@ export const UNAVAILABLE_DEFAULT_BROWSER_STATUS: PatcherDesktopDefaultBrowserSta
   };
 
 export interface DefaultBrowserStatusResult {
-  /** Ask macOS to route web links to bb. The user answers a system dialog. */
+  /** Ask macOS to route web links to Patcher. The user answers a system dialog. */
   request: () => void;
   status: PatcherDesktopDefaultBrowserStatus;
 }
 
 /**
- * Whether macOS hands web links to bb.
+ * Whether macOS hands web links to Patcher.
  *
  * Subscribed as well as read because the answer changes outside this app: the
  * system's own confirmation returns before the user has answered it, and System
- * Settings can change it while bb is in the background. The shell re-reads on
+ * Settings can change it while Patcher is in the background. The shell re-reads on
  * activation and pushes the difference.
  */
 export function useDefaultBrowserStatus(): DefaultBrowserStatusResult {

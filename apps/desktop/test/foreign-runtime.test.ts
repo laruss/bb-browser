@@ -17,7 +17,7 @@ const tempDirs: string[] = [];
 const STARTED_AT = new Date(Date.now() - 30 * 60_000).toISOString();
 
 async function createDataDir(): Promise<string> {
-  const dataDir = await mkdtemp(join(tmpdir(), "bb-foreign-runtime-"));
+  const dataDir = await mkdtemp(join(tmpdir(), "patcher-foreign-runtime-"));
   tempDirs.push(dataDir);
   return dataDir;
 }
@@ -75,7 +75,7 @@ afterEach(async () => {
 });
 
 describe("readForeignRuntimeDetails", () => {
-  it("describes the running bb when the runtime file matches the probed server", async () => {
+  it("describes the running Patcher when the runtime file matches the probed server", async () => {
     const dataDir = await createDataDir();
     await writeRuntimeFile({ dataDir });
 
@@ -99,7 +99,7 @@ describe("readForeignRuntimeDetails", () => {
     ).resolves.toBeNull();
   });
 
-  it("returns null for a bb that writes no runtime file", async () => {
+  it("returns null for a Patcher that writes no runtime file", async () => {
     const dataDir = await createDataDir();
 
     await expect(
@@ -224,7 +224,7 @@ describe("stopForeignRuntime", () => {
     await expect(readPatcherAppRuntimeFile(dataDir)).resolves.not.toBeNull();
   });
 
-  it("refuses to signal a recycled pid that no longer looks like bb", async () => {
+  it("refuses to signal a recycled pid that no longer looks like Patcher", async () => {
     const dataDir = await createDataDir();
     await writeRuntimeFile({ dataDir });
     const processOps = createProcessOps({

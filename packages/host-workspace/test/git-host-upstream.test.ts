@@ -10,7 +10,7 @@ import { Workspace } from "../src/workspace.js";
 const execFileAsync = promisify(execFile);
 const tempDirs: string[] = [];
 
-const localBranch = "bb/review-github-issue-1235-thr_test";
+const localBranch = "patcher/review-github-issue-1235-thr_test";
 const forkRemote = "review-fork";
 const upstreamBranch = "per-turn-permission-escalation";
 const forkRemoteUrl = "git@github.com:fork-owner/bb.git";
@@ -43,10 +43,10 @@ async function makeTempDir(prefix: string): Promise<string> {
 async function createTrackedForkWorkspace(
   remoteUrl = forkRemoteUrl,
 ): Promise<string> {
-  const workspacePath = await makeTempDir("bb-pr-upstream-workspace-");
+  const workspacePath = await makeTempDir("patcher-pr-upstream-workspace-");
   await runGit(["init", "-b", localBranch], { cwd: workspacePath });
   await runGit(["config", "user.name", "BB Tests"], { cwd: workspacePath });
-  await runGit(["config", "user.email", "bb@example.com"], {
+  await runGit(["config", "user.email", "patcher@example.com"], {
     cwd: workspacePath,
   });
   await fs.writeFile(path.join(workspacePath, "README.md"), "test\n", "utf8");
@@ -75,10 +75,12 @@ async function createTrackedForkWorkspace(
 }
 
 async function createManagedBaseTrackedWorkspace(): Promise<string> {
-  const workspacePath = await makeTempDir("bb-pr-base-upstream-workspace-");
+  const workspacePath = await makeTempDir(
+    "patcher-pr-base-upstream-workspace-",
+  );
   await runGit(["init", "-b", localBranch], { cwd: workspacePath });
   await runGit(["config", "user.name", "BB Tests"], { cwd: workspacePath });
-  await runGit(["config", "user.email", "bb@example.com"], {
+  await runGit(["config", "user.email", "patcher@example.com"], {
     cwd: workspacePath,
   });
   await fs.writeFile(path.join(workspacePath, "README.md"), "test\n", "utf8");
@@ -99,7 +101,7 @@ async function createManagedBaseTrackedWorkspace(): Promise<string> {
 async function installFakeGh(mode: "found" | "none" | "auth"): Promise<{
   logPath: string;
 }> {
-  const binPath = await makeTempDir("bb-pr-upstream-bin-");
+  const binPath = await makeTempDir("patcher-pr-upstream-bin-");
   const logPath = path.join(binPath, "gh.log");
   const ghPath = path.join(binPath, "gh");
   await fs.writeFile(
@@ -306,7 +308,7 @@ describe("pull request lookup for differently named upstream branches", () => {
 
   it("returns unavailable when gh is not installed", async () => {
     const workspacePath = await createTrackedForkWorkspace();
-    const binPath = await makeTempDir("bb-pr-upstream-no-gh-");
+    const binPath = await makeTempDir("patcher-pr-upstream-no-gh-");
     const { stdout } = await execFileAsync("which", ["git"], {
       encoding: "utf8",
     });

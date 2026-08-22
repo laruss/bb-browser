@@ -80,7 +80,7 @@ describe("host enroll routes", () => {
       expect(response.status).toBe(201);
       const body = await parseHostEnrollKeyResponse(response);
       expect(body.hostId).toBe("host_local_enroll_key");
-      expect(body.enrollKey).toMatch(/^bbde_/u);
+      expect(body.enrollKey).toMatch(/^patcherde_/u);
       // Minting no longer creates the host row; enroll does (with the
       // daemon-reported name), so an unredeemed key leaves no phantom host.
       expect(getHost(harness.db, "host_local_enroll_key")).toBeNull();
@@ -147,7 +147,7 @@ describe("host enroll routes", () => {
       expect(enrollBody).toMatchObject({
         hostId: enrollKeyBody.hostId,
       });
-      expect(enrollBody.hostKey).toMatch(/^bbdh_/u);
+      expect(enrollBody.hostKey).toMatch(/^patcherdh_/u);
       expect(getHost(harness.db, enrollKeyBody.hostId)).toMatchObject({
         id: enrollKeyBody.hostId,
         name: "real-host-name",

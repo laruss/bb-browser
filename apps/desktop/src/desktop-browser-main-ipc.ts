@@ -480,7 +480,7 @@ export function registerDesktopBrowserIpc(
         return {
           ok: false,
           reason: "unknown-path",
-          message: "bb did not download that file.",
+          message: "Patcher did not download that file.",
         };
       }
       try {

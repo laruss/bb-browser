@@ -390,7 +390,7 @@ export function SkillsLibrary() {
   const closeSkillDetail = useCallback(() => {
     navigate(getToolsOwnedCollectionRoutePath("skills"));
   }, [navigate]);
-  // Create via prompt: open the composer seeded with the bb-skill prompt; the
+  // Create via prompt: open the composer seeded with the patcher-skill prompt; the
   // spawned thread authors the SKILL.md.
   const handleCreateSkill = useCallback(
     (prompt?: string) => {

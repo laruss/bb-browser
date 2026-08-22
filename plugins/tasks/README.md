@@ -1,6 +1,6 @@
 # Tasks
 
-Tasks is a Linear-style tracker inside bb for planning work, delegating it to
+Tasks is a Linear-style tracker inside Patcher for planning work, delegating it to
 agents, and keeping the task record connected to the threads doing the work.
 It provides projects and folders, task keys, statuses and priorities, labels,
 subtasks, Markdown comments, attachments, agent presets, and a full CLI.
@@ -19,7 +19,7 @@ skill that teaches workers how to report progress back to tasks.
 ## Quick start
 
 Install the plugin with `bb plugin install tasks`. Then use the `bb tasks` CLI
-to create a tracker project. Link it to the bb project where delegated agents
+to create a tracker project. Link it to the Patcher project where delegated agents
 will run:
 
 ```sh
@@ -40,10 +40,10 @@ bb tasks preset list
 bb tasks delegate PROD-1 --preset "GPT-5.6 · high"
 ```
 
-When the CLI runs inside a linked bb project, `create` and `list` infer the
+When the CLI runs inside a linked Patcher project, `create` and `list` infer the
 tracker project, so `--project` can be omitted. Task keys are case-insensitive
 at the CLI boundary. You can also delegate from a task's **Delegate** menu,
-choose or create presets under **Manage → Presets**, and type `@` in the bb
+choose or create presets under **Manage → Presets**, and type `@` in the Patcher
 composer to send a task mention to an agent.
 
 The comment composer shows a **Notify last responding agent** switch. When the
@@ -68,7 +68,7 @@ target another enrolled machine.
 | Command                                        | Purpose                                                                                                                             |
 | ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | `bb tasks status`                              | Show the installed Tasks plugin name and version.                                                                                   |
-| `bb tasks project create\|list\|show\|update`  | Manage tracker projects, folders, colors, prefixes, and bb-project links.                                                           |
+| `bb tasks project create\|list\|show\|update`  | Manage tracker projects, folders, colors, prefixes, and patcher-project links.                                                      |
 | `bb tasks folder create\|list\|update`         | Organize tracker projects into nested folders.                                                                                      |
 | `bb tasks create`                              | Create a task with description, priority, labels, due date, optional parent, and file attachments (repeatable `--attach <path>`).   |
 | `bb tasks list`                                | Page/filter tasks by project, status, priority, label, active agents, or search text; supports `--sort`, `--limit`, and `--cursor`. |
@@ -79,7 +79,7 @@ target another enrolled machine.
 | `bb tasks preset list\|create\|update\|delete` | Manage reusable agent execution presets.                                                                                            |
 | `bb tasks delegate <key>`                      | Start and attach a new agent thread using a preset.                                                                                 |
 | `bb tasks attach <key-or-id>`                  | Attach the current bb thread to a task when it was not delegated from Tasks.                                                        |
-| `bb tasks threads <key>`                       | List the bb threads attached to a task.                                                                                             |
+| `bb tasks threads <key>`                       | List the Patcher threads attached to a task.                                                                                        |
 | `bb tasks label create\|list\|delete`          | Manage project-scoped labels.                                                                                                       |
 | `bb tasks seed-demo --yes`                     | Create sample folders, projects, labels, tasks, and comments for evaluation.                                                        |
 
@@ -96,13 +96,13 @@ than traversing an inconsistent snapshot.
 
 ## Agents, delegation, and presets
 
-Linking a Tasks project to a bb project enables delegation. Open a task, choose
+Linking a Tasks project to a Patcher project enables delegation. Open a task, choose
 **Delegate**, select a preset, and optionally add instructions. A preset
 defines the provider, model, reasoning level, permission mode, and reusable
 instructions. Presets are user-defined, so create the worker profiles your team
 uses repeatedly before dispatching work.
 
-Delegation creates a worker thread in the linked bb project, attaches that
+Delegation creates a worker thread in the linked Patcher project, attaches that
 thread to the task, and advances a `backlog` or `todo` task to `in_progress`.
 The worker receives the task description, subtasks, attachments, recent
 comments, preset instructions, and a report-back contract. Its installed Tasks
@@ -114,7 +114,7 @@ thread with `bb tasks attach KEY`.
 
 ## Task mentions
 
-Type `@` in the bb composer and select **Tasks** to search by task key or title.
+Type `@` in the Patcher composer and select **Tasks** to search by task key or title.
 Sending the mention gives the agent the task's description, status, priority,
 labels, subtasks, attachments, recent comments, attached threads, and CLI
 action contract as context. Tasks linked to the current bb project rank first.

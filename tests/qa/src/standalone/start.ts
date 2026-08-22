@@ -57,9 +57,9 @@ async function main() {
     fallbackPid: process.ppid,
   });
 
-  const tmpRoot = await fs.mkdtemp(path.join(tmpdir(), "bb-standalone-"));
+  const tmpRoot = await fs.mkdtemp(path.join(tmpdir(), "patcher-standalone-"));
   const logsDir = path.join(tmpRoot, "logs");
-  const patcherRoot = path.join(tmpRoot, "bb-root");
+  const patcherRoot = path.join(tmpRoot, "patcher-root");
   const serverDataDir = path.join(tmpRoot, "server-data");
   const projectRoot = path.join(tmpRoot, "repos", "test-project");
   const statePath = path.join(tmpRoot, "standalone-state.json");

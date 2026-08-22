@@ -1,6 +1,6 @@
 # Docs
 
-Docs is a filesystem-first document library for bb. Documents remain ordinary
+Docs is a filesystem-first document library for Patcher. Documents remain ordinary
 Markdown, HTML, and asset files while the plugin adds nested navigation,
 multi-host vaults, rich editing, images, sandboxed HTML, automation, chat
 mentions, and links that open inside a thread.
@@ -73,7 +73,7 @@ provider, and directive are all Docs.
 The plugin ships `skills/docs/SKILL.md`. Installed agents are taught to use the
 Docs CLI, understand that a Docs `@`-mention is user-provided document context,
 store plans and HTML artifacts in a vault when asked, and return `::docs` links
-that the user can open in bb.
+that the user can open in Patcher.
 
 ## CLI
 

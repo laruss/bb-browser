@@ -286,7 +286,7 @@ export function PluginsOverview() {
   return (
     <ResourceCollectionPage
       id="plugins-collection"
-      description="Customize bb with plugins. Plugins can add app surfaces, commands, services, schedules, and skills."
+      description="Customize Patcher with plugins. Plugins can add app surfaces, commands, services, schedules, and skills."
       modes={modes}
       activeMode={activeMode}
       onModeChange={changeMode}

@@ -544,7 +544,7 @@ describe("plugin install flows", () => {
       expect(entry?.version).toBe("0.1.0");
     });
 
-    // bb now builds a git plugin's server bundle itself, so a committed
+    // Patcher now builds a git plugin's server bundle itself, so a committed
     // dist/ is not authoritative for git the way it is for npm: whatever the
     // author checked in is replaced by a bundle built against this SDK.
     // `validatePluginArtifactMeta` still guards npm artifacts; it is covered
@@ -588,7 +588,7 @@ describe("plugin install flows", () => {
 
       const source = `git:${repoDir}@main`;
       await expect(service.install(source)).rejects.toThrowError(
-        /install refused.*requires bb >=99\.0\.0/,
+        /install refused.*requires Patcher >=99\.0\.0/,
       );
       expect(service.list()).toHaveLength(0);
       const managed = join(
@@ -682,7 +682,7 @@ describe("plugin install flows", () => {
         await writeFile(
           join(depDir, "package.json"),
           JSON.stringify({
-            name: "bb-test-greeter",
+            name: "patcher-test-greeter",
             version: "1.0.0",
             main: "index.js",
           }),
@@ -702,12 +702,12 @@ describe("plugin install flows", () => {
           manifestPath,
           JSON.stringify({
             ...(manifest as Record<string, unknown>),
-            dependencies: { "bb-test-greeter": `file:${depDir}` },
+            dependencies: { "patcher-test-greeter": `file:${depDir}` },
           }),
         );
         await writeFile(
           join(repoDir, "server.ts"),
-          `import { greet } from "bb-test-greeter";\n` +
+          `import { greet } from "patcher-test-greeter";\n` +
             `export default function plugin(patcher: any) { patcher.log.info(greet()); }`,
         );
         await initGitRepo(repoDir);
@@ -728,7 +728,7 @@ describe("plugin install flows", () => {
   });
 
   describe("plugin artifact metadata validation", () => {
-    // Guards npm artifacts, which bb never builds. Covered directly because
+    // Guards npm artifacts, which Patcher never builds. Covered directly because
     // git installs now overwrite any committed dist/ metadata.
     it("rejects an artifact whose pluginId does not match the manifest", () => {
       expect(
@@ -968,7 +968,7 @@ describe("plugin install flows", () => {
     expect(getInstalledPluginRegistration(db, "side-chat")).toBeUndefined();
   });
 
-  it("the bb plugin new scaffold installs and loads through the plugin service", async () => {
+  it("the Patcher plugin new scaffold installs and loads through the plugin service", async () => {
     const targetDir = join(workDir, "patcher-plugin-scaffolded");
     await scaffoldPlugin({
       targetDir,

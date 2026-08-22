@@ -18,7 +18,7 @@ const runtime = createAgentRuntime({
   env: { OPENAI_API_KEY: "..." },       // passed to all provider processes
   bridgeBundleDir: "/path/to/bundled-bridges", // optional; used when bridges are packaged outside src/dist
   onEvent: (event) => {
-    // Every event has event.threadId (bb ID) and event.providerThreadId (provider's internal ID)
+    // Every event has event.threadId (Patcher ID) and event.providerThreadId (provider's internal ID)
     // See ProviderThreadEvent in @patcher/domain for the full type
   },
   onToolCall: async (req) => { /* ToolCallRequest → ToolCallResponse */ },
@@ -62,7 +62,7 @@ await runtime.shutdown();
 
 ### Event types
 
-Events from provider processes are `ProviderThreadEvent` — they carry both `threadId` (bb ID) and `providerThreadId` (provider's internal ID). Events from the server/system layer are `SystemThreadEvent` — they only have `threadId`. Both are part of the `ThreadEvent` union from `@patcher/domain`.
+Events from provider processes are `ProviderThreadEvent` — they carry both `threadId` (Patcher ID) and `providerThreadId` (provider's internal ID). Events from the server/system layer are `SystemThreadEvent` — they only have `threadId`. Both are part of the `ThreadEvent` union from `@patcher/domain`.
 
 ### Fail-fast behavior
 
@@ -76,7 +76,7 @@ The runtime fails fast when providers crash or are unavailable:
 
 ### Multi-thread / multi-provider
 
-A single runtime can manage multiple threads across multiple providers simultaneously. Each provider process is spawned once and shared across threads. The runtime stamps every event with the correct bb `threadId` and `providerThreadId` regardless of how the provider internally identifies threads.
+A single runtime can manage multiple threads across multiple providers simultaneously. Each provider process is spawned once and shared across threads. The runtime stamps every event with the correct Patcher `threadId` and `providerThreadId` regardless of how the provider internally identifies threads.
 
 ## Running Tests
 

@@ -145,7 +145,7 @@ function threadMentionResource(
 
 const agentInitiatedMessage = buildMessage(
   [
-    '[bb message from thread:thr_ux3h8sxg65; reply with `bb thread tell thr_ux3h8sxg65 "<your response>"`]',
+    '[Patcher message from thread:thr_ux3h8sxg65; reply with `bb thread tell thr_ux3h8sxg65 "<your response>"`]',
     "",
     "Fixed both blockers on @apps/server/src/services/manager/manager-system-messages.ts. No merge or push.",
     "",
@@ -181,7 +181,7 @@ const agentInitiatedMessage = buildMessage(
 
 const agentSteerMessage = buildMessage(
   [
-    '[bb message from thread:thr_h4u3fgr6be; reply with `bb thread tell thr_h4u3fgr6be "<your response>"`]',
+    '[Patcher message from thread:thr_h4u3fgr6be; reply with `bb thread tell thr_h4u3fgr6be "<your response>"`]',
     "",
     "Committed the two scoped fixes touching @apps/app/src/components/thread/timeline/ConversationMessageContent.tsx. Worktree is clean.",
   ].join("\n"),
@@ -294,7 +294,7 @@ const parentChildSystemMessageFixtures = [
       renderTemplate("systemMessageChildThreadNeedsAttention", {
         blockerSummary: [
           "Blocked on command approval:",
-          "Command: git push origin bb/child-thread-parent-message-plan",
+          "Command: git push origin patcher/child-thread-parent-message-plan",
         ].join("\n"),
         threadMention: "@thread:thr_deployer",
       }),
@@ -421,7 +421,7 @@ const parentChildSystemMessageFixtures = [
 
 const longSystemMessage = buildMessage(
   [
-    "[bb system]",
+    "[Patcher system]",
     "",
     "@thread:thr_cpf5sq7pyr completed:",
     "",
@@ -506,7 +506,7 @@ const mentionedMessageMentions: PromptTextMention[] = [
     resource: {
       kind: "thread",
       threadId: "thr_parent",
-      projectId: "proj_bb",
+      projectId: "proj_patcher",
       label: "Prompt UX thread",
     },
   }),
@@ -587,7 +587,7 @@ export function Overview() {
             text={mentionedMessageText}
             attachments={null}
             mentions={mentionedMessageMentions}
-            projectId="proj_bb"
+            projectId="proj_patcher"
             turnRequest={acceptedMessage}
             onAddToChat={handleAddToChat}
           />

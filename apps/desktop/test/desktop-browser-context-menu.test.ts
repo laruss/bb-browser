@@ -78,7 +78,7 @@ describe("buildBrowserContextMenuTemplate", () => {
     ]);
   });
 
-  it("drops the external entry when bb is itself the default browser", () => {
+  it("drops the external entry when Patcher is itself the default browser", () => {
     const template = buildBrowserContextMenuTemplate({
       actions: actions(),
       canOpenExternally: false,

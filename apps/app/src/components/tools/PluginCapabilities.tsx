@@ -562,7 +562,7 @@ export function PluginServices({ plugin }: { plugin: PluginListItem }) {
   );
 }
 
-/** Work the plugin has asked bb to run on a timer. */
+/** Work the plugin has asked Patcher to run on a timer. */
 export function PluginSchedules({ plugin }: { plugin: PluginListItem }) {
   return (
     <PluginDetailTable>

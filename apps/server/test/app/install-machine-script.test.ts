@@ -42,7 +42,7 @@ const SCRIPT_RUN_TIMEOUT_MS = 30_000;
 const createdDirectories: string[] = [];
 
 function createFixture(): { binDir: string; dataDir: string; homeDir: string } {
-  const root = mkdtempSync(join(tmpdir(), "bb-install-script-test-"));
+  const root = mkdtempSync(join(tmpdir(), "patcher-install-script-test-"));
   createdDirectories.push(root);
   const binDir = join(root, "bin");
   const dataDir = join(root, "data");
@@ -565,12 +565,12 @@ fi
     const plist = readFileSync(
       join(
         fixture.homeDir,
-        "Library/LaunchAgents/app.getbb.host-daemon.machine-getbb-app.plist",
+        "Library/LaunchAgents/app.patcher.host-daemon.machine-getbb-app.plist",
       ),
       "utf8",
     );
     expect(plist).toContain(
-      "<string>app.getbb.host-daemon.machine-getbb-app</string>",
+      "<string>app.patcher.host-daemon.machine-getbb-app</string>",
     );
     expect(plist).toContain("<string>host-daemon</string>");
     expect(plist).toContain("<string>--auto-update</string>");
@@ -597,7 +597,7 @@ fi
       join(fixture.binDir, "systemctl"),
       `#!/bin/sh
 printf '%s\n' "$*" >>"${join(fixture.dataDir, "systemctl.log")}"
-if [ "$*" = "--user restart bb-host-daemon-machine-getbb-app.service" ]; then
+if [ "$*" = "--user restart patcher-host-daemon-machine-getbb-app.service" ]; then
   port=$(sed -n '1p' "${join(fixture.dataDir, "host-daemon-port")}")
   PATCHER_DATA_DIR="${fixture.dataDir}" "${join(fixture.binDir, "bb-app")}" host-daemon --host-daemon-port "$port" --server-url https://machine.getbb.app >/dev/null 2>&1 &
   echo $! >"${join(fixture.dataDir, "service-daemon.pid")}"
@@ -622,7 +622,7 @@ fi
     const unit = readFileSync(
       join(
         fixture.homeDir,
-        ".config/systemd/user/bb-host-daemon-machine-getbb-app.service",
+        ".config/systemd/user/patcher-host-daemon-machine-getbb-app.service",
       ),
       "utf8",
     );
@@ -634,7 +634,7 @@ fi
       `host-daemon --auto-update --host-daemon-port "${selectedPort}" --server-url "https://machine.getbb.app"`,
     );
     expect(readFileSync(join(fixture.dataDir, "systemctl.log"), "utf8")).toBe(
-      "--user daemon-reload\n--user enable bb-host-daemon-machine-getbb-app.service\n--user restart bb-host-daemon-machine-getbb-app.service\n",
+      "--user daemon-reload\n--user enable patcher-host-daemon-machine-getbb-app.service\n--user restart patcher-host-daemon-machine-getbb-app.service\n",
     );
   }, SCRIPT_RUN_TIMEOUT_MS);
 });

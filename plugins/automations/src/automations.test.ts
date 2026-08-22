@@ -464,7 +464,9 @@ describe("automation service", () => {
 
   it("removes a stored script directory after switching to agent execution", async () => {
     const db = createTestDb();
-    const pluginDataDir = await mkdtemp(join(tmpdir(), "bb-auto-service-"));
+    const pluginDataDir = await mkdtemp(
+      join(tmpdir(), "patcher-auto-service-"),
+    );
     const automation = createAutomation(db, {
       id: "auto_script_to_agent",
       projectId: "proj_test",
@@ -513,7 +515,9 @@ describe("automation service", () => {
 
   it("removes only a superseded stored script file after a filename change", async () => {
     const db = createTestDb();
-    const pluginDataDir = await mkdtemp(join(tmpdir(), "bb-auto-service-"));
+    const pluginDataDir = await mkdtemp(
+      join(tmpdir(), "patcher-auto-service-"),
+    );
     const automation = createAutomation(db, {
       id: "auto_script_rename",
       projectId: "proj_test",
@@ -567,7 +571,9 @@ describe("automation service", () => {
 
   it("removes a newly staged filename when the database update fails", async () => {
     const db = createTestDb();
-    const pluginDataDir = await mkdtemp(join(tmpdir(), "bb-auto-service-"));
+    const pluginDataDir = await mkdtemp(
+      join(tmpdir(), "patcher-auto-service-"),
+    );
     const automation = createAutomation(db, {
       id: "auto_script_rollback",
       projectId: "proj_test",
@@ -623,7 +629,9 @@ describe("automation service", () => {
 
   it("does not overwrite the active filename when the database update fails", async () => {
     const db = createTestDb();
-    const pluginDataDir = await mkdtemp(join(tmpdir(), "bb-auto-service-"));
+    const pluginDataDir = await mkdtemp(
+      join(tmpdir(), "patcher-auto-service-"),
+    );
     const automation = createAutomation(db, {
       id: "auto_script_same_name_rollback",
       projectId: "proj_test",
@@ -678,7 +686,7 @@ describe("automation service", () => {
   });
 });
 
-describe("bb CLI injection for script runs", () => {
+describe("Patcher CLI injection for script runs", () => {
   it("prefers the env pointers over PATH and macOS install locations", () => {
     expect(
       patcherBinaryCandidates({
@@ -734,7 +742,7 @@ describe("bb CLI injection for script runs", () => {
     ).toEqual(["/opt/homebrew/bin/bb", "/usr/local/bin/bb"]);
   });
 
-  it("prepends bb's directory to PATH only when it is absolute", () => {
+  it("prepends Patcher's directory to PATH only when it is absolute", () => {
     expect(scriptPathEnv("/daemon/bundle/bb", "/usr/bin:/bin")).toBe(
       "/daemon/bundle:/usr/bin:/bin",
     );
@@ -775,7 +783,7 @@ describe("script wake gate", () => {
 describe("legacy import", () => {
   it("ingests legacy rows, moves environment into agent execution, and imports scripts once", async () => {
     const db = createTestDb();
-    const pluginDataDir = await mkdtemp(join(tmpdir(), "bb-auto-plugin-"));
+    const pluginDataDir = await mkdtemp(join(tmpdir(), "patcher-auto-plugin-"));
     await mkdir(join(pluginDataDir, "import"), { recursive: true });
     await writeFile(
       join(pluginDataDir, "import", "legacy-automations.json"),

@@ -218,7 +218,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
   nightly-desktop:
-    name: Publish bb Nightly desktop
+    name: Publish Patcher Nightly desktop
     if: ${{ github.event_name == 'schedule' || (inputs.npm_tag == 'nightly' && inputs.dry_run == false) }}
     needs: publish
     runs-on: macos-15
@@ -314,7 +314,7 @@ jobs:
       - name: Upload nightly desktop workflow artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: bb-nightly-desktop-macos-arm64-${{ steps.nightly_version.outputs.version }}
+          name: patcher-nightly-desktop-macos-arm64-${{ steps.nightly_version.outputs.version }}
           retention-days: 14
           path: |
             apps/desktop/release/*.dmg
@@ -347,8 +347,8 @@ jobs:
           if gh release view "$nightly_tag" >/dev/null 2>&1; then
             gh release edit "$nightly_tag" \
               --target "$GITHUB_SHA" \
-              --title "bb Nightly" \
-              --notes "Latest automated bb Nightly build from main. Nightly builds may be unstable." \
+              --title "Patcher Nightly" \
+              --notes "Latest automated Patcher Nightly build from main. Nightly builds may be unstable." \
               --prerelease \
               --latest=false
 
@@ -362,8 +362,8 @@ jobs:
           else
             gh release create "$nightly_tag" "${release_assets[@]}" \
               --target "$GITHUB_SHA" \
-              --title "bb Nightly" \
-              --notes "Latest automated bb Nightly build from main. Nightly builds may be unstable." \
+              --title "Patcher Nightly" \
+              --notes "Latest automated Patcher Nightly build from main. Nightly builds may be unstable." \
               --prerelease \
               --latest=false
           fi
@@ -373,10 +373,10 @@ jobs:
           VERSION: ${{ steps.nightly_version.outputs.version }}
         run: |
           {
-            echo "## bb Nightly desktop"
+            echo "## Patcher Nightly desktop"
             echo
             echo "- version: \`$VERSION\`"
-            echo "- app identity: \`dev.bb.desktop.nightly\`"
+            echo "- app identity: \`app.patcher.desktop.nightly\`"
             echo "- release: https://github.com/get-bb/bb/releases/tag/desktop-nightly"
             echo "- update feed: https://github.com/get-bb/bb/releases/download/desktop-nightly/desktop-version.json"
             echo "- retention for workflow artifacts: 14 days"

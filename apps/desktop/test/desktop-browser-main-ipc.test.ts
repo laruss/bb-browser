@@ -1139,7 +1139,7 @@ describe("registerDesktopBrowserIpc", () => {
     expect(listener).toBeDefined();
     const event = {
       sender: page,
-      senderFrame: { url: "https://github.com/bb/pulls" },
+      senderFrame: { url: "https://github.com/patcher/pulls" },
       returnValue: undefined as unknown,
     };
 
@@ -1147,7 +1147,7 @@ describe("registerDesktopBrowserIpc", () => {
 
     // The payload's claim about where it is was not read at all.
     expect(manager.pageScriptBootstrapCalls).toEqual([
-      { webContentsId: page.id, url: "https://github.com/bb/pulls" },
+      { webContentsId: page.id, url: "https://github.com/patcher/pulls" },
     ]);
     expect(event.returnValue).toEqual({
       worlds: [{ pluginId: "site-tweaks", worldId: 9001, scripts: [] }],
@@ -1196,7 +1196,11 @@ describe("registerDesktopBrowserIpc", () => {
 
     const answer = await handler?.(
       { sender: page, senderFrame: { url: "https://github.com/" } },
-      { pluginId: "site-tweaks", method: "notes", input: '{"repo":"bb/bb"}' },
+      {
+        pluginId: "site-tweaks",
+        method: "notes",
+        input: '{"repo":"patcher/bb"}',
+      },
     );
 
     expect(manager.pageScriptRpcCalls).toEqual([
@@ -1206,7 +1210,7 @@ describe("registerDesktopBrowserIpc", () => {
         request: {
           pluginId: "site-tweaks",
           method: "notes",
-          input: '{"repo":"bb/bb"}',
+          input: '{"repo":"patcher/bb"}',
         },
       },
     ]);

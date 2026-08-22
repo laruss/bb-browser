@@ -46,9 +46,9 @@ describe("app keybindings", () => {
             shift: binding.shortcut.shift,
           })),
       ).toEqual([{ desktopOnly: false, key: "o", shift: true }]);
-      // Mod+N belongs to the browser: bb is one, and that chord opens a window
+      // Mod+N belongs to the browser: Patcher is one, and that chord opens a window
       // in every other. Mod+Shift+N stays unassigned on purpose — it is the
-      // incognito window everywhere else, and bb has yet to build one.
+      // incognito window everywhere else, and Patcher has yet to build one.
       expect(
         config.keybindings.find((binding) => binding.command === "window.new"),
       ).toMatchObject({
@@ -175,7 +175,7 @@ describe("app keybindings", () => {
         },
       });
       // The cycle chords must stay on plain Alt and share the scope of
-      // `modelPicker.toggle`. Alt is unused elsewhere in bb, so nothing shadows
+      // `modelPicker.toggle`. Alt is unused elsewhere in Patcher, so nothing shadows
       // them and they shadow nothing.
       expect(
         assignedDefaultKeybindings

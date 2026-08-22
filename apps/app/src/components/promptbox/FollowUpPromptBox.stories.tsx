@@ -67,7 +67,7 @@ export default {
 };
 
 const noop = () => {};
-const STORY_BRANCH_NAME = "bb/design-system-polish";
+const STORY_BRANCH_NAME = "patcher/design-system-polish";
 
 // FollowUp commits the provider — omit `onChange` so the picker renders the
 // provider segment as locked, and pass `displayName` so the static label

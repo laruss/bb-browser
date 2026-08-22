@@ -24,7 +24,7 @@ import {
   MACOS_WINDOW_DRAG_CLASS,
   shouldUseMacosDesktopChrome,
   SIDEBAR_TRIGGER_TRAILING_RESERVE_CLASS,
-} from "@/lib/bb-desktop";
+} from "@/lib/patcher-desktop";
 
 export function SectionSidebarIcon({ name }: { name: IconName }) {
   return <Icon name={name} className={COARSE_POINTER_ICON_SIZE_CLASS} />;

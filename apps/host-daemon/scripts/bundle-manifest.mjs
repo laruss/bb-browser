@@ -33,7 +33,7 @@ export const bundleTargets = [
       "bridge.ts",
     ),
     label: "claude-code bridge",
-    outfile: resolve(packageRoot, "dist", "bb-claude-code-bridge.mjs"),
+    outfile: resolve(packageRoot, "dist", "patcher-claude-code-bridge.mjs"),
   },
   {
     banner: NODE_ESM_REQUIRE_BANNER,
@@ -53,7 +53,7 @@ export const bundleTargets = [
       "@earendil-works/pi-coding-agent",
     ],
     label: "pi bridge",
-    outfile: resolve(packageRoot, "dist", "bb-pi-bridge.mjs"),
+    outfile: resolve(packageRoot, "dist", "patcher-pi-bridge.mjs"),
   },
   {
     banner: NODE_ESM_REQUIRE_BANNER,
@@ -67,13 +67,13 @@ export const bundleTargets = [
       "bridge.ts",
     ),
     label: "acp bridge",
-    outfile: resolve(packageRoot, "dist", "bb-acp-bridge.mjs"),
+    outfile: resolve(packageRoot, "dist", "patcher-acp-bridge.mjs"),
   },
   {
     banner: NODE_ESM_REQUIRE_BANNER,
     entryPoint: resolve(workspaceRoot, "apps", "cli", "src", "index.ts"),
     executable: true,
-    label: "bb cli",
+    label: "Patcher cli",
     outfile: resolve(packageRoot, "dist", "bb"),
   },
   {
@@ -89,6 +89,6 @@ export const bundleTargets = [
       "parcel-child-entry.ts",
     ),
     label: "parcel watcher child",
-    outfile: resolve(packageRoot, "dist", "bb-parcel-watcher-child.mjs"),
+    outfile: resolve(packageRoot, "dist", "patcher-parcel-watcher-child.mjs"),
   },
 ];

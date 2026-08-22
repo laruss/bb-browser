@@ -398,7 +398,7 @@ export function PluginsSettingsSection() {
       <div>
         <h2 className="text-sm font-semibold text-foreground">Plugins</h2>
         <p className="mt-0.5 text-xs leading-snug text-subtle-foreground/75">
-          Customize bb to your liking with plugins.
+          Customize Patcher to your liking with plugins.
         </p>
       </div>
       <div className="flex flex-wrap items-center justify-between gap-2">

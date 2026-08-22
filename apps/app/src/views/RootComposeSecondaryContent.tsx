@@ -30,7 +30,7 @@ import {
   MACOS_APP_REGION_NO_DRAG_CLASS,
   MACOS_WINDOW_DRAG_CLASS,
   shouldUseMacosDesktopChrome,
-} from "@/lib/bb-desktop";
+} from "@/lib/patcher-desktop";
 import { PluginHomepageSections } from "@/components/plugin/PluginHomepageSections";
 import { usePluginComposerHost } from "@/components/plugin/plugin-composer-host";
 import { cn } from "@patcher/shared-ui/lib/utils";

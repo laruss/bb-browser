@@ -351,7 +351,7 @@ describe("electron-builder signing config", () => {
 
   it("patches packaged node-pty helper path handling", async () => {
     const appOutDir = await mkdtemp(
-      resolve(tmpdir(), "bb-desktop-native-modules-"),
+      resolve(tmpdir(), "patcher-desktop-native-modules-"),
     );
     const nodePtyPackageDir = resolve(
       appOutDir,
@@ -455,7 +455,7 @@ describe("electron-builder signing config", () => {
     // the call fails whatever the user picked in Settings.
     //
     // Deliberately no `CFBundleDocumentTypes`: declaring `public.html` would
-    // make bb the opener for local HTML files, and the browsed view refuses
+    // make Patcher the opener for local HTML files, and the browsed view refuses
     // `file:` (`isAllowedBrowserUrl`), so a double-clicked document would open
     // a window that shows nothing.
     for (const channel of ["latest", "nightly"]) {
@@ -494,9 +494,11 @@ describe("electron-builder signing config", () => {
     });
     const nightlyRelease = createDesktopReleaseInfo("nightly");
 
-    expect(config.appId).toBe("dev.bb.desktop.nightly");
-    expect(config.productName).toBe("bb Nightly");
-    expect(config.artifactName).toBe("bb-nightly-${version}-${arch}.${ext}");
+    expect(config.appId).toBe("app.patcher.desktop.nightly");
+    expect(config.productName).toBe("Patcher Nightly");
+    expect(config.artifactName).toBe(
+      "patcher-nightly-${version}-${arch}.${ext}",
+    );
     expect(config.mac.icon).toBe("assets/icon-nightly.icns");
     await expect(
       access(resolve(desktopPackageRoot, config.mac.icon)),

@@ -251,11 +251,11 @@ export interface PluginSettingsSectionRegistration {
 /**
  * A panel on the window's **leading** edge — the end opposite the sidebar.
  *
- * bb puts nothing there itself. The edge exists for plugins and is absent
+ * Patcher puts nothing there itself. The edge exists for plugins and is absent
  * entirely when no plugin has asked for it: no empty column, no toggle for a
  * panel with nothing in it. What appears is decided by how many registrations
  * there are, not by configuration — one plugin gets the whole panel with no
- * chrome of bb's own around it, and a second one is what makes bb draw a rail
+ * chrome of Patcher's own around it, and a second one is what makes Patcher draw a rail
  * to switch between them.
  *
  * Unlike a `navPanel` this is not a route: it has no path, nothing links to it,
@@ -283,7 +283,7 @@ export interface PluginLeadingPanelRegistration {
    * behind. The host removes the column instead.
    *
    * Unlike `patcher.sites`, this costs no permission and is not checked against one:
-   * the panel is bb's own UI, and what it is told about the tab is the address
+   * the panel is Patcher's own UI, and what it is told about the tab is the address
    * the address bar is already showing.
    */
   matches?: string[];
@@ -440,11 +440,11 @@ export interface PluginSidebarFooterActionRegistration {
 // ---------------------------------------------------------------------------
 
 /**
- * The one status bb would paint for a thread, already resolved through the
+ * The one status Patcher would paint for a thread, already resolved through the
  * host's precedence (attention before work; plan and goal before the generic
  * spinner). Draw your own glyph for it — the SDK ships no status component.
  *
- * Treat an unrecognized value as "none": bb adds kinds over time, and an
+ * Treat an unrecognized value as "none": Patcher adds kinds over time, and an
  * older plugin must degrade to drawing nothing rather than throwing.
  *
  * "draft" and "working-draft" are never reported here: an unsubmitted composer
@@ -467,7 +467,7 @@ export type PluginSidebarThreadIndicator =
   | "none";
 
 /**
- * How a thread's environment presents its workspace: a worktree bb manages,
+ * How a thread's environment presents its workspace: a worktree Patcher manages,
  * a worktree the user manages, or anything else (a plain checkout).
  */
 export type PluginSidebarWorkspaceKind =
@@ -544,7 +544,7 @@ export interface PluginSidebarThread {
 
 /**
  * The pull request for a thread's branch, narrowed to what a sidebar row
- * needs. `attention` is bb's rolled-up "does this need you" signal, so a row
+ * needs. `attention` is Patcher's rolled-up "does this need you" signal, so a row
  * can colour a badge without reading checks, review, and mergeability itself.
  */
 export interface PluginSidebarPullRequest {
@@ -599,7 +599,7 @@ export interface PluginSidebarThreadsState {
  */
 export interface PluginSidebarThreadActions {
   /**
-   * Navigate to a thread. `split: true` applies bb's split placement rules —
+   * Navigate to a thread. `split: true` applies Patcher's split placement rules —
    * a right split by default, focus when the thread is already open, replace
    * at the pane cap — and falls back to plain navigation where splits are off.
    */
@@ -616,7 +616,7 @@ export interface PluginSidebarThreadActions {
   /** Archives the thread AND its children, closing any panes showing them. */
   archive(threadId: string): void;
   /**
-   * Opens bb's delete confirmation, which counts child threads first. Deletion
+   * Opens Patcher's delete confirmation, which counts child threads first. Deletion
    * is destructive and recursive, so the host owns the confirmation: there is
    * deliberately no silent `delete`.
    */
@@ -858,7 +858,7 @@ export interface PluginAppComposer {
   customize(registration: ComposerCustomization): void;
 }
 
-/** Stable lifecycle values for one content-script instance in one bb client. */
+/** Stable lifecycle values for one content-script instance in one Patcher client. */
 export interface PluginContentScriptContext {
   /** The id of the plugin that owns this script. */
   readonly pluginId: string;
@@ -907,13 +907,13 @@ export type PluginContentScriptDisposer = () => void | Promise<void>;
 
 /**
  * Trusted same-origin JavaScript/TypeScript mounted once per active frontend
- * generation in each bb app window or browser tab.
+ * generation in each Patcher app window or browser tab.
  */
 export interface PluginContentScriptRegistration {
   /** Unique within the plugin; letters, digits, `-`, `_`. */
   id: string;
   /**
-   * Install behavior into the bb app shell. The host awaits a returned
+   * Install behavior into the Patcher app shell. The host awaits a returned
    * promise, contains failures, and calls the returned disposer exactly once.
    */
   mount(
@@ -976,7 +976,7 @@ export interface PluginSettingsState {
   isLoading: boolean;
 }
 
-/** State of the app's shared realtime connection to the bb server. */
+/** State of the app's shared realtime connection to the Patcher server. */
 export type PluginRealtimeConnectionState =
   | "connecting"
   | "connected"
@@ -1276,7 +1276,7 @@ export interface NewThreadRequest {
 }
 
 /**
- * Props of the host-owned `experimental_NewThreadComposer` component — bb's
+ * Props of the host-owned `experimental_NewThreadComposer` component — Patcher's
  * full new-thread compose surface (prompt editor with @-mentions and expand,
  * attachments, provider/model/reasoning picker, voice, submit, and the row
  * beneath with project, environment, branch-from, and permission mode),
@@ -1377,7 +1377,7 @@ export interface NewThreadComposerProps {
 }
 
 /**
- * Props of the host-owned `Markdown` component — bb's chat message renderer
+ * Props of the host-owned `Markdown` component — Patcher's chat message renderer
  * (the same typography, spacing, and code styling as timeline messages).
  * Use it wherever plugin UI quotes or previews message content so it reads
  * like the rest of the chat. Like `ThreadChat`, this is a stable product

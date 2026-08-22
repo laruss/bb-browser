@@ -655,12 +655,15 @@ function formatReadyOutputRow(label: string, value: string): string {
 function warnExistingDaemonLock(lockDir: string): void {
   log(yellow("!"), "Daemon lock exists - waiting or reclaiming if stale");
   log(" ", dim(`lock: ${lockDir}`));
-  log(" ", dim("If startup fails, stop the other bb process or remove it."));
+  log(
+    " ",
+    dim("If startup fails, stop the other Patcher process or remove it."),
+  );
   process.stdout.write("\n");
 }
 
 function warnExistingRuntimeRecord(dataDir: string): void {
-  log(yellow("!"), "Another bb already runs on this data directory");
+  log(yellow("!"), "Another Patcher already runs on this data directory");
   log(" ", dim(`record: ${formatPatcherAppRuntimeFilePath(dataDir)}`));
   log(" ", dim("Run `bb-app stop` to stop it."));
   process.stdout.write("\n");
@@ -1699,7 +1702,7 @@ async function refreshRunningServerConfig(
     response = await fetch(reloadUrl, { method: "POST" });
   } catch {
     if (args.required) {
-      throw new Error(`Could not reach bb server at ${args.serverUrl}`);
+      throw new Error(`Could not reach Patcher server at ${args.serverUrl}`);
     }
     return false;
   }
@@ -1708,7 +1711,7 @@ async function refreshRunningServerConfig(
     return true;
   }
 
-  let message = `bb server rejected config reload with HTTP ${response.status}`;
+  let message = `Patcher server rejected config reload with HTTP ${response.status}`;
   try {
     const parsed = apiErrorResponseSchema.safeParse(await response.json());
     if (parsed.success) {
@@ -1777,12 +1780,12 @@ async function refreshRunningServerConfigAfterWrite(
     if (isStartupOnlyManagedKey(source, key)) {
       printStartupOnlyChangeNotice(key);
     } else {
-      process.stdout.write("Reloaded running bb server config.\n");
+      process.stdout.write("Reloaded running Patcher server config.\n");
     }
     return;
   }
   process.stdout.write(
-    `No running bb server found at ${serverUrl}; config will apply on next start.\n`,
+    `No running Patcher server found at ${serverUrl}; config will apply on next start.\n`,
   );
 }
 
@@ -1811,7 +1814,7 @@ async function runConfigCommand(args: RunConfigCommandArgs): Promise<void> {
       required: true,
       serverUrl: args.serverUrl,
     });
-    process.stdout.write("Reloaded running bb server config.\n");
+    process.stdout.write("Reloaded running Patcher server config.\n");
     const startupOnlyKeys = await readConfiguredStartupOnlyManagedKeys(
       args.dataDir,
     );
@@ -2008,22 +2011,22 @@ function requiredArtifactPaths(
   return [
     { label: "server entry", path: context.serverEntry },
     { label: "host daemon entry", path: context.daemonEntry },
-    { label: "bundled bb CLI", path: join(context.daemonBundleDir, "bb") },
+    { label: "bundled Patcher CLI", path: join(context.daemonBundleDir, "bb") },
     {
       label: "Claude Code bridge",
-      path: join(context.daemonBundleDir, "bb-claude-code-bridge.mjs"),
+      path: join(context.daemonBundleDir, "patcher-claude-code-bridge.mjs"),
     },
     {
       label: "Pi bridge",
-      path: join(context.daemonBundleDir, "bb-pi-bridge.mjs"),
+      path: join(context.daemonBundleDir, "patcher-pi-bridge.mjs"),
     },
     {
       label: "ACP bridge",
-      path: join(context.daemonBundleDir, "bb-acp-bridge.mjs"),
+      path: join(context.daemonBundleDir, "patcher-acp-bridge.mjs"),
     },
     {
       label: "parcel watcher child",
-      path: join(context.daemonBundleDir, "bb-parcel-watcher-child.mjs"),
+      path: join(context.daemonBundleDir, "patcher-parcel-watcher-child.mjs"),
     },
     { label: "web app", path: join(context.appDistDir, "index.html") },
   ];
@@ -2422,9 +2425,9 @@ function createServerEnv(args: CreateServerEnvArgs): NodeJS.ProcessEnv {
     ...args.env,
     PATCHER_APP_VERSION: args.context.appVersion,
     [APP_SURFACE_ENV_NAME]: APP_SURFACE_WEB,
-    // The daemon bundle holds the bb CLI. Server-side features that shell out
+    // The daemon bundle holds the Patcher CLI. Server-side features that shell out
     // — script automations put it on the script's PATH — otherwise have no way
-    // to find it: bb lives in the bundle directory, which is on no shell PATH.
+    // to find it: Patcher lives in the bundle directory, which is on no shell PATH.
     // PATCHER_CLI_DIR matches createDaemonEnv, which has always passed it through.
     //
     // PATCHER_CLI is set rather than inherited on purpose. Launching bb-app from an
@@ -2684,7 +2687,7 @@ async function runHostDaemonOnly(args: RunHostDaemonOnlyArgs): Promise<void> {
     env: daemonEnv,
   });
 
-  process.stdout.write(`\n  ${bold("bb host-daemon")}\n\n`);
+  process.stdout.write(`\n  ${bold("Patcher host-daemon")}\n\n`);
 
   if (existsSync(args.context.daemonLockDir)) {
     warnExistingDaemonLock(args.context.daemonLockDir);
@@ -2764,7 +2767,7 @@ async function runHostDaemonOnly(args: RunHostDaemonOnlyArgs): Promise<void> {
     endStep(green("✓"), "Host daemon running");
 
     process.stdout.write("\n");
-    log(green("●"), bold("bb host-daemon is ready"));
+    log(green("●"), bold("Patcher host-daemon is ready"));
     process.stdout.write("\n");
     log(" ", formatReadyOutputRow("server", cyan(serverUrl)));
     log(" ", formatReadyOutputRow("daemon", String(args.context.daemonPort)));
@@ -3078,7 +3081,7 @@ export async function completeFullStackSupervision(
 async function runStopCommand(args: { dataDir: string }): Promise<void> {
   const runtimeFile = await readPatcherAppRuntimeFile(args.dataDir);
   if (runtimeFile === null) {
-    log(dim("●"), `No running bb recorded in ${args.dataDir}`);
+    log(dim("●"), `No running Patcher recorded in ${args.dataDir}`);
     return;
   }
 
@@ -3098,7 +3101,7 @@ async function runStopCommand(args: { dataDir: string }): Promise<void> {
     });
     log(
       dim("●"),
-      `bb was not running (removed a stale record of pid ${String(runtimeFile.pid)})`,
+      `Patcher was not running (removed a stale record of pid ${String(runtimeFile.pid)})`,
     );
     return;
   }
@@ -3107,7 +3110,7 @@ async function runStopCommand(args: { dataDir: string }): Promise<void> {
     const detail =
       result.reason === "start-time"
         ? "started at a different time than the record"
-        : "does not look like bb";
+        : "does not look like Patcher";
     process.stderr.write(
       `Process ${String(runtimeFile.pid)} ${detail}, so it was left alone.\n`,
     );
@@ -3118,7 +3121,7 @@ async function runStopCommand(args: { dataDir: string }): Promise<void> {
   // Keep the record when the process survived, so a later stop can retry it.
   if (result.kind === "still-running") {
     process.stderr.write(
-      `bb (pid ${String(runtimeFile.pid)}) did not stop, even after SIGKILL.\n`,
+      `Patcher (pid ${String(runtimeFile.pid)}) did not stop, even after SIGKILL.\n`,
     );
     process.exitCode = 1;
     return;
@@ -3130,7 +3133,7 @@ async function runStopCommand(args: { dataDir: string }): Promise<void> {
   });
   log(
     green("✓"),
-    `Stopped bb (pid ${String(runtimeFile.pid)})${result.usedKill ? " with SIGKILL" : ""}`,
+    `Stopped Patcher (pid ${String(runtimeFile.pid)})${result.usedKill ? " with SIGKILL" : ""}`,
   );
 }
 
@@ -3255,7 +3258,7 @@ export async function runPatcherApp(
   // Publish this launcher before the server binds its port, so a desktop app
   // that probes the port can always describe and stop whatever it finds. A live
   // record from another launcher stays untouched: this start is about to fail on
-  // the port anyway, and overwriting would hide the bb that actually runs.
+  // the port anyway, and overwriting would hide the Patcher that actually runs.
   const runtimeRecordOwned = await claimPatcherAppRuntimeFile({
     dataDir: context.dataDir,
     entryPath: resolveLauncherEntryPath(),
@@ -3353,7 +3356,7 @@ export async function runPatcherApp(
     endStep(green("✓"), "Host daemon running");
 
     process.stdout.write("\n");
-    log(green("●"), bold("bb is ready"));
+    log(green("●"), bold("Patcher is ready"));
     process.stdout.write("\n");
     log(" ", formatReadyOutputRow("app", cyan(context.serverUrl)));
     log(" ", formatReadyOutputRow("daemon", String(context.daemonPort)));

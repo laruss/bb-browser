@@ -33,7 +33,7 @@ The complete manifest, with the optional fields SKILL.md leaves out:
   and git installs build it automatically at install time. Git installs also
   run `npm install --omit=dev` first (so a git plugin may use third-party
   packages) and keep node_modules, since bundling cannot inline data files read
-  at runtime. So every package your source imports that bb does not shim
+  at runtime. So every package your source imports that Patcher does not shim
   belongs in `dependencies`: a build-required package left in
   `devDependencies` makes the plugin uninstallable from git, and unbuildable
   after any install that omits dev deps — including the packaged CLI's own,
@@ -42,10 +42,10 @@ The complete manifest, with the optional fields SKILL.md leaves out:
   Installing or updating a git plugin needs `npm` on PATH; checking for
   updates does not, because a check reads the manifest and never builds. Path
   installs build from dependencies you have already installed.
-- Building yourself (CI, or verifying a build without a running bb): add
+- Building yourself (CI, or verifying a build without a running Patcher): add
   `bb-app` to `devDependencies` and set `"build": "bb plugin build"`.
   `bb plugin build` needs no server, and depending on `bb-app@X` builds
-  against exactly that release's shim configuration. bb downloads its build
+  against exactly that release's shim configuration. Patcher downloads its build
   toolchain on first use, so cache `<dataDir>/plugins/toolchain-*` in CI.
 - `patcher.permissions` (optional, but **undeclared means denied**) — what this
   plugin may reach through `patcher.browser` and `patcher.sdk`. Absent or `[]` reaches
@@ -116,7 +116,7 @@ The complete manifest, with the optional fields SKILL.md leaves out:
 
   `patcher.sites` is nothing to do with `patcher.hosts` in the plugin API, which is enrolled
   machines. Frontend `matches` on a leading panel is also unrelated and costs
-  nothing: that is bb's own chrome reacting to the address bar, not code reaching
+  nothing: that is Patcher's own chrome reacting to the address bar, not code reaching
   into a page.
 
   The same list applies to the loopback API, not only to the `patcher.sdk` object:
@@ -128,8 +128,8 @@ The complete manifest, with the optional fields SKILL.md leaves out:
   and `sdk.threadSections.list` also needs `workspace` (it reads a route that
   answers with every project).
 
-  These gate the bb API, not the process. A plugin is full-trust code in the
-  bb server and can still use `node:fs` or spawn a shell. Declaring less does
+  These gate the Patcher API, not the process. A plugin is full-trust code in the
+  Patcher server and can still use `node:fs` or spawn a shell. Declaring less does
   not sandbox a plugin — it records what the plugin uses, shows it to whoever
   installs it, and refuses calls it did not ask for. `patcher.log`, `patcher.settings`,
   `patcher.storage`, `patcher.http`, `patcher.rpc`, `patcher.realtime`, `patcher.background`,
@@ -146,7 +146,7 @@ The complete manifest, with the optional fields SKILL.md leaves out:
   injected into agent threads as the plugin skills tier.
 - `patcher.themes` (optional) — contributes palettes to Settings → Appearance and
   `bb theme list`. Each entry is
-  `{ id, name, description?, css: "./themes/name.css" }`; bb namespaces its
+  `{ id, name, description?, css: "./themes/name.css" }`; Patcher namespaces its
   selectable id as `plugin:<plugin-id>:<id>`. Only loaded plugins contribute.
 - `patcher.name` and `patcher.description` (required) — non-empty human-facing plugin
   identity. The top-level package `name` remains the package identity and
@@ -172,14 +172,14 @@ The complete manifest, with the optional fields SKILL.md leaves out:
   should contain only the intended transparent glyph shape. Do not duplicate
   the same artwork across `icon` and `logo`; reserve logos for intentionally
   different branded artwork and provide a dark variant when needed.
-- `engines.patcher` — optional semver range checked against the bb app version.
+- `engines.patcher` — optional semver range checked against the Patcher app version.
 - `engines.patcherPluginSdk` — optional semver range for the plugin SDK surface
   (currently `1.0.0`; the scaffold writes `"^1.0.0"`). Absent means a legacy
   manifest. Managed (`git:`/`npm:`) installs **refuse** a mismatch against
   the running SDK; path installs surface it as `incompatible` at load.
   Compatible updates (`bb plugin outdated` / `bb plugin update`) only select
   candidates that satisfy these ranges; newer incompatible releases are
-  reported as blocked rather than applied. Dev builds (bb `0.0.0`) skip
+  reported as blocked rather than applied. Dev builds (Patcher `0.0.0`) skip
   enforcing `engines.patcher` and annotate that on check results.
 - **Manual updates:** `bb plugin outdated` checks tracking sources and
   `bb plugin update` applies compatible candidates (reinstall of an already

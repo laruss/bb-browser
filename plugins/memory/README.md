@@ -5,7 +5,7 @@ provides:
 
 Because this memory store works across providers, we recommend turning off
 provider-native memory under Settings → Providers while using it. That avoids
-duplicated or conflicting memories split between Codex, Claude Code, and bb.
+duplicated or conflicting memories split between Codex, Claude Code, and Patcher.
 
 - plugin-private SQLite storage with append-only migrations;
 - global and current-project memory scopes;

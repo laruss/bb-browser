@@ -3,7 +3,7 @@ import { randomBytes, timingSafeEqual } from "node:crypto";
 /**
  * Who is calling `/api/v1`.
  *
- * `patcher.sdk` is an HTTP client for bb's own API and every plugin is handed the
+ * `patcher.sdk` is an HTTP client for Patcher's own API and every plugin is handed the
  * loopback URL in `patcher.server.loopbackBaseUrl`, so the API sees plugin traffic
  * and app traffic as the same thing: a local request from a trusted origin.
  * Gating the `patcher.sdk` object therefore gates the polite way in and nothing

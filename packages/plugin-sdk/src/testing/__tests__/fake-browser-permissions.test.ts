@@ -413,7 +413,7 @@ describe("contribution points", () => {
     );
   });
 
-  // bb has no palette, so a command with no chord could never be run — the double
+  // Patcher has no palette, so a command with no chord could never be run — the double
   // refuses it exactly like the host, or a plugin ships one that does nothing.
   it("refuses a command with no chord", () => {
     const { patcher } = createFakePluginHost({

@@ -5,7 +5,7 @@ import {
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from "react";
-import { getPatcherDesktopInfo, isDesktopBrowserAvailable } from "@/lib/bb-desktop";
+import { getPatcherDesktopInfo, isDesktopBrowserAvailable } from "@/lib/patcher-desktop";
 import {
   openUrlByPreference,
   useOpenLinksInAppBrowserPreference,

@@ -103,7 +103,7 @@ export async function createTestAppHarness(
     terminalCloseTimeoutMs,
     ...configOverrides
   } = overrides;
-  const dataDir = await mkdtemp(join(tmpdir(), "bb-server-test-"));
+  const dataDir = await mkdtemp(join(tmpdir(), "patcher-server-test-"));
   const db = initDb(":memory:");
   const hub = new NotificationHubImpl();
   const watchInterests = new WatchInterestCoordinator({ db, hub });
@@ -149,7 +149,7 @@ export async function createTestAppHarness(
       env: {},
     }),
     transcriptionModel: "test/mock-transcription",
-    appUrl: "https://bb.example.test",
+    appUrl: "https://patcher.example.test",
     ...configOverrides,
   };
   const terminalSessions = new TerminalSessionLifecycle({

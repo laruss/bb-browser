@@ -48,7 +48,8 @@ afterEach(async () => {
 describe("run-dev", () => {
   it("derives stable data and ports from a managed checkout", () => {
     const homeDir = "/Users/tester";
-    const repoRoot = "/Users/tester/.patcher-dev/projects/env_q7e5i54kxt/bb";
+    const repoRoot =
+      "/Users/tester/.patcher-dev/projects/env_q7e5i54kxt/patcher";
     const config = resolveDevInstanceConfig({ homeDir, repoRoot });
 
     expect(config.instanceId).toBe(
@@ -105,7 +106,7 @@ describe("run-dev", () => {
   it("overrides instance selectors while preserving unrelated environment", () => {
     const config = resolveDevInstanceConfig({
       homeDir: "/Users/tester",
-      repoRoot: "/Users/tester/.patcher-dev/projects/env_q7e5i54kxt/bb",
+      repoRoot: "/Users/tester/.patcher-dev/projects/env_q7e5i54kxt/patcher",
     });
     const baseEnv: NodeJS.ProcessEnv = {
       PATCHER_DATA_DIR: "/Users/tester/.patcher-dev",
@@ -127,10 +128,10 @@ describe("run-dev", () => {
     expect(env.PATCHER_DEV_APP_PORT).toBe(String(config.ports.appPort));
   });
 
-  it("inherits parent bb skills for managed worktree dev apps", () => {
+  it("inherits parent Patcher skills for managed worktree dev apps", () => {
     const homeDir = "/Users/tester";
     const repoRoot =
-      "/Users/tester/.patcher-dev/code-bb-abc123/worktrees/env_feature/bb";
+      "/Users/tester/.patcher-dev/code-bb-abc123/worktrees/env_feature/patcher";
     const config = resolveDevInstanceConfig({
       homeDir,
       repoRoot,
@@ -150,9 +151,9 @@ describe("run-dev", () => {
     });
   });
 
-  it("dedupes inherited bb skills for prod-managed worktree dev apps", () => {
+  it("dedupes inherited Patcher skills for prod-managed worktree dev apps", () => {
     const homeDir = "/Users/tester";
-    const repoRoot = "/Users/tester/.patcher/worktrees/env_feature/bb";
+    const repoRoot = "/Users/tester/.patcher/worktrees/env_feature/patcher";
     const config = resolveDevInstanceConfig({
       homeDir,
       repoRoot,
@@ -166,9 +167,9 @@ describe("run-dev", () => {
     });
   });
 
-  it("inherits prod bb skills for ordinary checkout dev apps", () => {
+  it("inherits prod Patcher skills for ordinary checkout dev apps", () => {
     const homeDir = "/Users/tester";
-    const repoRoot = "/Users/tester/src/bb";
+    const repoRoot = "/Users/tester/src/patcher";
     const config = resolveDevInstanceConfig({
       homeDir,
       repoRoot,
@@ -185,7 +186,7 @@ describe("run-dev", () => {
   it("strips parent thread context from dev child processes", () => {
     const config = resolveDevInstanceConfig({
       homeDir: "/Users/tester",
-      repoRoot: "/Users/tester/src/bb",
+      repoRoot: "/Users/tester/src/patcher",
     });
     const baseEnv: NodeJS.ProcessEnv = {
       PATCHER_ENVIRONMENT_ID: "env_parent",
@@ -223,19 +224,22 @@ describe("run-dev", () => {
   });
 
   it("migrates legacy flat dev data into the checkout instance", async () => {
-    const homeDir = await makeTempDir("bb-dev-home-");
+    const homeDir = await makeTempDir("patcher-dev-home-");
     const legacyDataDir = path.join(homeDir, ".patcher-dev");
     const config = resolveDevInstanceConfig({
       homeDir,
-      repoRoot: path.join(homeDir, "src", "bb"),
+      repoRoot: path.join(homeDir, "src", "patcher"),
     });
     await fs.mkdir(path.join(legacyDataDir, "logs"), { recursive: true });
     await fs.mkdir(path.join(legacyDataDir, "attachments", "proj_test"), {
       recursive: true,
     });
-    await fs.mkdir(path.join(legacyDataDir, "worktrees", "env_old", "bb"), {
-      recursive: true,
-    });
+    await fs.mkdir(
+      path.join(legacyDataDir, "worktrees", "env_old", "patcher"),
+      {
+        recursive: true,
+      },
+    );
     await fs.mkdir(path.join(legacyDataDir, "dev-supervisors"), {
       recursive: true,
     });
@@ -287,7 +291,7 @@ describe("run-dev", () => {
       ),
     ).resolves.toBe("image");
     await expect(
-      fs.access(path.join(legacyDataDir, "worktrees", "env_old", "bb")),
+      fs.access(path.join(legacyDataDir, "worktrees", "env_old", "patcher")),
     ).resolves.toBeUndefined();
     await expect(
       fs.access(path.join(legacyDataDir, "dev-supervisors", "server.pid")),
@@ -303,11 +307,11 @@ describe("run-dev", () => {
   });
 
   it("skips migration when the target instance already has data", async () => {
-    const homeDir = await makeTempDir("bb-dev-home-");
+    const homeDir = await makeTempDir("patcher-dev-home-");
     const legacyDataDir = path.join(homeDir, ".patcher-dev");
     const config = resolveDevInstanceConfig({
       homeDir,
-      repoRoot: path.join(homeDir, "src", "bb"),
+      repoRoot: path.join(homeDir, "src", "patcher"),
     });
     await fs.mkdir(legacyDataDir, { recursive: true });
     await fs.mkdir(config.dataDir, { recursive: true });
@@ -335,10 +339,10 @@ describe("run-dev", () => {
   });
 
   it("skips migration when legacy dev data is absent", async () => {
-    const homeDir = await makeTempDir("bb-dev-home-");
+    const homeDir = await makeTempDir("patcher-dev-home-");
     const config = resolveDevInstanceConfig({
       homeDir,
-      repoRoot: path.join(homeDir, "src", "bb"),
+      repoRoot: path.join(homeDir, "src", "patcher"),
     });
 
     await expect(migrateLegacyDevData({ config })).resolves.toEqual({
@@ -349,11 +353,11 @@ describe("run-dev", () => {
   });
 
   it("skips migration when legacy dev data has no migratable entries", async () => {
-    const homeDir = await makeTempDir("bb-dev-home-");
+    const homeDir = await makeTempDir("patcher-dev-home-");
     const legacyDataDir = path.join(homeDir, ".patcher-dev");
     const config = resolveDevInstanceConfig({
       homeDir,
-      repoRoot: path.join(homeDir, "src", "bb"),
+      repoRoot: path.join(homeDir, "src", "patcher"),
     });
     await fs.mkdir(legacyDataDir, { recursive: true });
     await fs.writeFile(path.join(legacyDataDir, "daemon.lock"), "lock", "utf8");
@@ -366,11 +370,11 @@ describe("run-dev", () => {
   });
 
   it("rolls back already moved entries when migration rename fails", async () => {
-    const homeDir = await makeTempDir("bb-dev-home-");
+    const homeDir = await makeTempDir("patcher-dev-home-");
     const legacyDataDir = path.join(homeDir, ".patcher-dev");
     const config = resolveDevInstanceConfig({
       homeDir,
-      repoRoot: path.join(homeDir, "src", "bb"),
+      repoRoot: path.join(homeDir, "src", "patcher"),
     });
     await fs.mkdir(legacyDataDir, { recursive: true });
     await fs.writeFile(
@@ -412,11 +416,11 @@ describe("run-dev", () => {
   });
 
   it("does not migrate legacy data while a legacy dev supervisor is running", async () => {
-    const homeDir = await makeTempDir("bb-dev-home-");
+    const homeDir = await makeTempDir("patcher-dev-home-");
     const legacyDataDir = path.join(homeDir, ".patcher-dev");
     const config = resolveDevInstanceConfig({
       homeDir,
-      repoRoot: path.join(homeDir, "src", "bb"),
+      repoRoot: path.join(homeDir, "src", "patcher"),
     });
     await fs.mkdir(path.join(legacyDataDir, "dev-supervisors"), {
       recursive: true,

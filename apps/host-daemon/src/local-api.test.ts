@@ -95,7 +95,9 @@ describe("local API server", () => {
   });
 
   it("lists workspace open targets and delegates target-aware open requests", async () => {
-    const workspacePath = await mkdtemp(path.join(tmpdir(), "bb-workspace-"));
+    const workspacePath = await mkdtemp(
+      path.join(tmpdir(), "patcher-workspace-"),
+    );
     const targets: WorkspaceOpenTarget[] = [
       {
         capabilities: {
@@ -160,7 +162,9 @@ describe("local API server", () => {
   });
 
   it("allows configured remote origins and resolves remote SSH open requests", async () => {
-    const dataDir = await mkdtemp(path.join(tmpdir(), "bb-client-config-"));
+    const dataDir = await mkdtemp(
+      path.join(tmpdir(), "patcher-client-config-"),
+    );
     await writeFile(
       path.join(dataDir, "client.json"),
       JSON.stringify({
@@ -238,7 +242,9 @@ describe("local API server", () => {
   });
 
   it("returns setup guidance for remote SSH opens without a mapping", async () => {
-    const dataDir = await mkdtemp(path.join(tmpdir(), "bb-client-config-"));
+    const dataDir = await mkdtemp(
+      path.join(tmpdir(), "patcher-client-config-"),
+    );
     await writeFile(
       path.join(dataDir, "client.json"),
       JSON.stringify({

@@ -138,7 +138,7 @@ function snapshotAll(
   state: BrowserSurfaceTabsState,
   deps: BrowserCommandDeps,
 ): BrowserTabSnapshot[] {
-  // Web tabs only, here and in `resolveTab`. The strip also carries bb's own
+  // Web tabs only, here and in `resolveTab`. The strip also carries Patcher's own
   // screens (Settings, Extensions, a plugin's panel), and those have no page for
   // an agent to read, navigate or screenshot — listing them would be offering
   // tools that cannot work on them.
@@ -583,7 +583,7 @@ export async function executeBrowserCommand(
   deps: BrowserCommandDeps,
 ): Promise<BrowserCommandOutcome> {
   // The command originated from a language model, so it is parsed like any
-  // other untrusted payload rather than trusted for having come from bb.
+  // other untrusted payload rather than trusted for having come from Patcher.
   const parsed = browserCommandSchema.safeParse(rawCommand);
   if (!parsed.success) {
     return failure(

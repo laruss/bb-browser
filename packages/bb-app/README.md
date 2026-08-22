@@ -6,23 +6,23 @@
   </picture>
 </p>
 
-# bb
+# Patcher
 
 [![npm version](https://img.shields.io/npm/v/bb-app.svg)](https://www.npmjs.com/package/bb-app)
 
-bb is an agentic IDE that builds itself. It can control, customize, and automate
+Patcher is an agentic IDE that builds itself. It can control, customize, and automate
 itself, laying the groundwork for your own software factory.
 
 This package provides the `npx bb-app` launcher, bundled `bb` CLI entry, and
 Node SDK export. Every surface — the web app, CLI, and HTTP API — is a
-first-class way to drive bb. Work runs in threads you can follow live, steer at
+first-class way to drive Patcher. Work runs in threads you can follow live, steer at
 any point, or hand off to another agent.
 
-> Note: bb is in active development. Workflows and surfaces are still evolving.
+> Note: Patcher is in active development. Workflows and surfaces are still evolving.
 
 ## Quick Start
 
-bb runs from npm and orchestrates coding agents you already have installed.
+Patcher runs from npm and orchestrates coding agents you already have installed.
 
 ### Prerequisites
 
@@ -30,7 +30,7 @@ bb runs from npm and orchestrates coding agents you already have installed.
 - Git.
 - At least one supported agent provider: [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [Codex](https://developers.openai.com/codex/cli), Cursor via ACP, [Pi](https://github.com/earendil-works/pi/tree/main/packages/coding-agent), or another ACP-compatible agent.
 
-If you already use one of these providers, bb will pick up your existing
+If you already use one of these providers, Patcher will pick up your existing
 credentials. If you use multiple providers, you can mix and match per task.
 
 ### Supported host environments
@@ -70,12 +70,12 @@ Nightly versions are built from `main` and may be unstable. The `nightly`
 dist-tag moves independently of the stable `latest` tag.
 
 `npx bb-app@latest` downloads the published `bb-app` package, starts the server and
-local host daemon, and serves the web app. It stores bb-managed state under
+local host daemon, and serves the web app. It stores Patcher-managed state under
 `~/.patcher/` by default. If either managed child process exits unexpectedly, the
 launcher restarts that child without stopping the other one. Press `Ctrl+C` in
 the terminal to stop both processes and exit with status `0`.
 
-To stop a bb that runs in another terminal or in the background:
+To stop a Patcher that runs in another terminal or in the background:
 
 ```bash
 npx bb-app stop
@@ -83,14 +83,14 @@ npx bb-app stop
 
 `stop` reads `bb-app-runtime.json` from the data directory, confirms that the
 recorded process really is that launcher, then stops it. Pass `--data-dir` when
-the bb you want to stop does not use the default `~/.patcher/`.
+the Patcher you want to stop does not use the default `~/.patcher/`.
 
 From the app, add or open a project, start a thread, and choose the provider
 you want that thread to use.
 
 ## CLI
 
-The package also exposes the `bb` CLI for an already-running bb server:
+The package also exposes the `bb` CLI for an already-running Patcher server:
 
 ```bash
 npx --package bb-app bb --help
@@ -103,16 +103,16 @@ unset, it targets the default local packaged server at
 ## Scripting with the SDK
 
 The package also exposes a Node SDK for scripts that drive an already-running
-bb server:
+Patcher server:
 
 ```ts
 import { BBSdk } from "bb-app";
 
-const bb = new BBSdk();
+const Patcher = new BBSdk();
 const thread = await bb.threads.spawn({
   projectId: "proj_personal",
   environment: { type: "host", workspace: { type: "personal" } },
-  prompt: "Summarize my active bb work.",
+  prompt: "Summarize my active Patcher work.",
 });
 await bb.threads.wait({ threadId: String(thread.id), status: "idle" });
 console.log(await bb.threads.output({ threadId: String(thread.id) }));
@@ -120,12 +120,12 @@ console.log(await bb.threads.output({ threadId: String(thread.id) }));
 
 `new BBSdk()` uses the same `PATCHER_SERVER_URL` and bb config resolution as the
 CLI. Pass `new BBSdk({ baseUrl: "http://host:38986" })` for remote or test
-targets (see the remote-access note below). Scripts launched by bb already receive `PATCHER_SERVER_URL` and
+targets (see the remote-access note below). Scripts launched by Patcher already receive `PATCHER_SERVER_URL` and
 `PATCHER_THREAD_ID` in their environment.
 
 ## Provider Credentials
 
-bb uses whichever providers you have configured. Common providers:
+Patcher uses whichever providers you have configured. Common providers:
 
 | Provider       | Setup                                                                                                                                                                                     |
 | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -184,11 +184,11 @@ explicit, security-sensitive `--server-bind-host 0.0.0.0` compatibility option;
 see the multiple-devices guide.
 
 Use `bb-app client ssh-target` to configure local editor opens for remote
-bb servers under `~/.patcher/client.json`. The target is the value that works after
+Patcher servers under `~/.patcher/client.json`. The target is the value that works after
 `ssh`, such as `devbox` or `user@devbox`:
 
 ```bash
-npx bb-app client ssh-target set https://bb.example.test devbox
+npx bb-app client ssh-target set https://patcher.example.test devbox
 npx bb-app client ssh-target list
 ```
 
@@ -200,8 +200,8 @@ npx bb-app env list
 npx bb-app env unset OPENAI_API_KEY
 ```
 
-`env list` redacts all values. Config and env writes ask a running local bb
-server to reload; if bb is stopped, the values apply on the next start.
+`env list` redacts all values. Config and env writes ask a running local Patcher
+server to reload; if Patcher is stopped, the values apply on the next start.
 
 For all config keys, precedence, startup flags, and source-development `.env`
 behavior, see the
@@ -212,5 +212,5 @@ behavior, see the
 - [Main README](https://github.com/get-bb/bb#readme)
 - [Platform support](https://github.com/get-bb/bb/blob/main/docs/platform-support.md)
 - [Configuration](https://github.com/get-bb/bb/blob/main/docs/configuration.md)
-- [Using bb on multiple devices](https://github.com/get-bb/bb/blob/main/docs/multiple-devices.md)
+- [Using Patcher on multiple devices](https://github.com/get-bb/bb/blob/main/docs/multiple-devices.md)
 - [Worktrees and setup scripts](https://github.com/get-bb/bb/blob/main/docs/worktrees.md)

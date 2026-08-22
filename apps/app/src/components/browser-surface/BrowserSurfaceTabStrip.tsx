@@ -44,7 +44,7 @@ import {
   shouldReserveMacosTrafficLights,
   shouldUseMacosDesktopChrome,
   SIDEBAR_TRIGGER_TRAILING_RESERVE_CLASS,
-} from "@/lib/bb-desktop";
+} from "@/lib/patcher-desktop";
 import { resolveAppTabIconName } from "@/lib/app-surface-tabs";
 import {
   isAppSurfaceTab,
@@ -343,8 +343,8 @@ function BrowserSurfaceTabStripTab({
     useSortable({ id: tab.id, disabled: !isDraggable });
   // An app tab is a remembered route rather than a live page, so two of the
   // browser's own entries do not apply to one: duplicating it would leave two
-  // tabs claiming one route, and there is no page of its own to silence — a bb
-  // screen shares the app's `webContents`, so muting it would mute bb.
+  // tabs claiming one route, and there is no page of its own to silence — a Patcher
+  // screen shares the app's `webContents`, so muting it would mute Patcher.
   const canDuplicate = !isApp;
   const canMute = !isApp && tab.url.length > 0;
   return (
@@ -425,7 +425,7 @@ function BrowserSurfaceTabStripTab({
               // tab in desktop chrome.
               className="absolute inset-y-1 right-1 flex items-center rounded px-0.5 opacity-0 transition-opacity hover:bg-state-active group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
-              {/* Same size bb's other tab close affordance uses (see
+              {/* Same size Patcher's other tab close affordance uses (see
                   TAB_PILL_AFFORDANCE_ICON_CLASS): the control reads as a
                   secondary mark on the tab rather than a second glyph
                   competing with the title. */}
@@ -434,7 +434,7 @@ function BrowserSurfaceTabStripTab({
           )}
         </div>
       </ContextMenuTrigger>
-      {/* bb's own entries first, then whatever plugins added — the same order
+      {/* Patcher's own entries first, then whatever plugins added — the same order
           the page's context menu uses, so a plugin cannot displace the entry a
           user is reaching for. */}
       <ContextMenuContent className="w-52">

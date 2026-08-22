@@ -216,7 +216,7 @@ const POPUP_RATE_MAX_IN_WINDOW = 3;
  * Where the isolated worlds page scripts run in start.
  *
  * High on purpose. Chromium hands out the world ids behind
- * `Page.createIsolatedWorld` — the mechanism behind bb's own automation world —
+ * `Page.createIsolatedWorld` — the mechanism behind Patcher's own automation world —
  * from a low counter, so starting here keeps the two apart. Measured on Electron
  * 41.7.0: with world 9001 in use, a CDP-created world came back as 5, and neither
  * could see the other's globals.
@@ -224,13 +224,13 @@ const POPUP_RATE_MAX_IN_WINDOW = 3;
 const PAGE_SCRIPT_WORLD_BASE = 9001;
 
 /** Identifies the browsing session's page-script preload, for unregistering. */
-const PAGE_SCRIPT_PRELOAD_ID = "bb-page-scripts";
+const PAGE_SCRIPT_PRELOAD_ID = "patcher-page-scripts";
 
 /**
  * How long a page script's `patcher.rpc` waits.
  *
  * A backstop rather than a policy: the answer travels through this window's
- * renderer to the bb server and back, and nothing in that path has a deadline of
+ * renderer to the Patcher server and back, and nothing in that path has a deadline of
  * its own, so without this a plugin that never answers leaves a page script
  * awaiting a promise for the life of the tab.
  */
@@ -240,7 +240,7 @@ const PAGE_SCRIPT_CALL_TIMEOUT_MS = 30_000;
  * The sliding window on `patcher.rpc`, same shape as the popup limiter above.
  *
  * Generous enough for a script answering clicks and typing, and bounded because
- * a page script in a loop would otherwise be a page driving the bb server.
+ * a page script in a loop would otherwise be a page driving the Patcher server.
  */
 const PAGE_SCRIPT_RATE_WINDOW_MS = 10_000;
 const PAGE_SCRIPT_RATE_MAX_IN_WINDOW = 60;
@@ -348,7 +348,7 @@ function truncate(value: string, max: number): string {
 
 /**
  * Isolated, persistent partition for the in-app browser. Cookies/storage never
- * touch the bb app session (`defaultSession`) or the user's real browser.
+ * touch the Patcher app session (`defaultSession`) or the user's real browser.
  */
 export const PATCHER_BROWSER_PARTITION = "persist:bb-browser";
 
@@ -420,7 +420,7 @@ interface BrowserViewEntry {
    * sliding-window limiter the popups use.
    *
    * Per view rather than per plugin: what this bounds is how much one page can
-   * ask of the bb server, and a page with two plugins' scripts on it is still
+   * ask of the Patcher server, and a page with two plugins' scripts on it is still
    * one page.
    */
   pageScriptCallTimestamps: number[];
@@ -661,9 +661,9 @@ export interface CreateDesktopBrowserViewManagerArgs {
   /** Hand a link to the user's real browser. */
   openExternalUrl: (url: string) => void;
   /**
-   * Whether there is a browser other than bb to hand a link to. Asked per
+   * Whether there is a browser other than Patcher to hand a link to. Asked per
    * right-click rather than captured once: the user can change their default
-   * browser while bb runs, and the shell hears about it on activation.
+   * browser while Patcher runs, and the shell hears about it on activation.
    */
   canOpenExternalUrl?: () => boolean;
   /**
@@ -2703,7 +2703,7 @@ export function createDesktopBrowserViewManager(
    * Whether the browsing session currently carries the page-script preload.
    *
    * The load-bearing property of this whole surface: while no plugin declares a
-   * page script, no preload is installed, so a browsed renderer holds no bb code
+   * page script, no preload is installed, so a browsed renderer holds no Patcher code
    * at all and the shell's standing rule needs no qualification. Measured: after
    * `unregisterPreloadScript`, the next document has no preload and the isolated
    * world is empty.
@@ -2859,7 +2859,9 @@ export function createDesktopBrowserViewManager(
 
     const hostWindow = entry.hostWindow;
     if (hostWindow.webContents.isDestroyed()) {
-      return refusePageScriptCall("patcher.rpc: this tab's bb window is gone.");
+      return refusePageScriptCall(
+        "patcher.rpc: this tab's Patcher window is gone.",
+      );
     }
     const callId = `page-script-${(pageScriptCallSequence += 1)}`;
     return await new Promise<PatcherDesktopPageScriptRpcAnswer>((resolve) => {
@@ -3189,7 +3191,7 @@ export function createDesktopBrowserViewManager(
         });
       });
     });
-    // Network firewall: untrusted pages must not invisibly reach bb's loopback
+    // Network firewall: untrusted pages must not invisibly reach Patcher's loopback
     // services or the user's LAN. Top-level http(s) navigation remains allowed;
     // subresources, fetch/XHR, iframes, and WebSockets are guarded here.
     browserSession.webRequest.onBeforeRequest((details, callback) => {
@@ -3433,7 +3435,7 @@ export function createDesktopBrowserViewManager(
       });
       if (command === null) return;
       // Prevent both the untrusted page and Electron's application menu from
-      // also handling a chord that bb resolved as a browser command.
+      // also handling a chord that Patcher resolved as a browser command.
       event.preventDefault();
       // Commands whose *next* keystroke has to land in the app rather than in
       // the page. The address bar is the obvious one; the tab switcher is the
@@ -3688,7 +3690,7 @@ export function createDesktopBrowserViewManager(
     // The three questions the network asks that only a human can answer. Each
     // one is a documented Electron event whose *default* is to refuse silently,
     // which is what made them dead ends: the page simply failed with no way to
-    // tell whether bb had decided something or nothing had happened at all.
+    // tell whether Patcher had decided something or nothing had happened at all.
 
     webContents.on("login", (event, details, authInfo, callback) => {
       // Electron's default cancels every challenge. Taking it over means this
@@ -4008,7 +4010,7 @@ export function createDesktopBrowserViewManager(
     webContents.on("page-title-updated", refresh);
     // A page's favicon URL is still never forwarded: the renderer receives only a
     // `data:` URI the shell built from bytes it fetched in the browsing session,
-    // so the trusted bb app neither sees nor requests anything the page chose.
+    // so the trusted Patcher app neither sees nor requests anything the page chose.
     // `desktop-browser-favicon.ts` carries the reasoning and the limits.
     webContents.on("page-favicon-updated", (_event, urls) => {
       void updateFavicon(hostWindow, tabId, entry, urls);
@@ -4106,7 +4108,7 @@ export function createDesktopBrowserViewManager(
           // the user's.
           disableHtmlFullscreenWindowResize: true,
           // Intentionally NO preload: browsed pages are untrusted and must never
-          // receive a bb bridge.
+          // receive a Patcher bridge.
         },
       });
     const entry: BrowserViewEntry = {
@@ -4755,7 +4757,7 @@ export function createDesktopBrowserViewManager(
         if (entry.view.webContents.getURL().length === 0) {
           return;
         }
-        // The dialog is owned by the app window, so it blocks bb while it is up
+        // The dialog is owned by the app window, so it blocks Patcher while it is up
         // — including an agent waiting on a browser command. That is the right
         // trade for a chord the user just pressed and the wrong one for
         // anything else, which is why this is reachable only from
@@ -4972,7 +4974,7 @@ export function createDesktopBrowserViewManager(
         return {
           ok: false,
           reason: "unknown-path",
-          message: "bb did not download that file.",
+          message: "Patcher did not download that file.",
         };
       }
       if (action === "reveal") {

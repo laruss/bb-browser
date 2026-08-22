@@ -15,7 +15,7 @@ export const CREATE_PLUGIN_PROMPT = "Create a new bb plugin that ";
 interface Example {
   label: string;
   icon: IconName;
-  /** Completes the "Create a new bb {kind} …" prompt; also shown on the card. */
+  /** Completes the "Create a new Patcher {kind} …" prompt; also shown on the card. */
   description: string;
 }
 
@@ -26,13 +26,13 @@ interface KindConfig {
 }
 
 // The description completes the prompt prefix, so each card both teaches and
-// seeds the composer. Skills are standard Agent Skills whose bb edge is being
+// seeds the composer. Skills are standard Agent Skills whose Patcher edge is being
 // cross-provider; automations run scripts and can escalate to threads.
 const CONFIG: Record<CreateViaPromptKind, KindConfig> = {
   skill: {
     prefix: CREATE_SKILL_PROMPT,
     explainer:
-      "Write a skill once, and every agent in bb can run it, whatever the provider.",
+      "Write a skill once, and every agent in Patcher can run it, whatever the provider.",
     examples: [
       {
         label: "PR review",
@@ -75,7 +75,7 @@ const CONFIG: Record<CreateViaPromptKind, KindConfig> = {
         label: "Project commands",
         icon: "Terminal",
         description:
-          "adds bb CLI commands for the team's deploy and rollback workflow",
+          "adds Patcher CLI commands for the team's deploy and rollback workflow",
       },
       {
         label: "Issue mentions",

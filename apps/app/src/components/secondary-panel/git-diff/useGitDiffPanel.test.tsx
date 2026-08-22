@@ -53,7 +53,7 @@ const noop = () => undefined;
 function makeEnvironment(id: string, mergeBaseBranch: string): Environment {
   return {
     baseBranch: null,
-    branchName: `bb/${id}`,
+    branchName: `patcher/${id}`,
     createdAt: 1,
     defaultBranch: "main",
     hostId: "host-1",

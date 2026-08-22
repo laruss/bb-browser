@@ -8,10 +8,10 @@ import type {
  * What a plugin declares it will use, and what the host lets it reach.
  *
  * Read this before adding one: **in-process, these are not a security boundary
- * and cannot be.** A plugin's `server.ts` is a Node module loaded into the bb
+ * and cannot be.** A plugin's `server.ts` is a Node module loaded into the Patcher
  * server, so it can `import("node:child_process")`, read another plugin's
  * secrets off disk, or skip `patcher.sdk` entirely and call the loopback API it is
- * handed in `patcher.server.loopbackBaseUrl`. A gate on the `bb` object stops none
+ * handed in `patcher.server.loopbackBaseUrl`. A gate on the `patcher` object stops none
  * of that. Plan §9 asks for isolation and plan Phase 7 is where it comes from.
  *
  * What these are for until then, in the order the value actually arrives:
@@ -111,12 +111,12 @@ export const PLUGIN_PERMISSIONS = [
   /** Supply credentials for a site's HTTP authentication challenge. */
   "auth.provide",
   /**
-   * Decide where a link the *system* hands bb goes, when bb is the user's
+   * Decide where a link the *system* hands Patcher goes, when Patcher is the user's
    * default browser — rewrite it, or take it over entirely.
    *
    * Its own permission rather than part of `tabs.modify`, on the house rule the
    * rest of this group follows: what the holder *sees* is every address the user
-   * opens from outside bb — Mail, Slack, a terminal — which is a standing read of
+   * opens from outside Patcher — Mail, Slack, a terminal — which is a standing read of
    * where the user goes, in the same class as `toolbar.register`. That it can
    * also redirect one is the smaller half.
    */
@@ -170,7 +170,7 @@ export function canonicalPermissions(
  * Which permission opens each `patcher.sdk` area, keyed by area name.
  *
  * Here rather than beside the server's gate because two hosts enforce it: the
- * bb server and `@patcher/plugin-sdk/testing`'s fake. A second copy would drift,
+ * Patcher server and `@patcher/plugin-sdk/testing`'s fake. A second copy would drift,
  * and a drifting copy is exactly how a plugin's tests start lying about what
  * its manifest needs.
  *

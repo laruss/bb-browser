@@ -73,7 +73,7 @@ describe("describeBrowserDownload", () => {
   });
 
   // Three failures a user must be able to tell apart: they stopped it, the
-  // network stopped it, or bb refused.
+  // network stopped it, or Patcher refused.
   it("distinguishes cancelled, interrupted and refused", () => {
     expect(describeBrowserDownload(download({ state: "cancelled" }))).toMatchObject(
       { title: "Download cancelled: report.pdf", tone: "message" },

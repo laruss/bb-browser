@@ -1,6 +1,6 @@
 # Agent Browser Tools
 
-Phase 5 of [`docs/PROJECT_PLAN.md`](../PROJECT_PLAN.md) §18: bb agents can read
+Phase 5 of [`docs/PROJECT_PLAN.md`](../PROJECT_PLAN.md) §18: Patcher agents can read
 and operate browser state, through Browser APIs rather than Electron internals.
 
 ## The gap this had to cross
@@ -8,7 +8,7 @@ and operate browser state, through Browser APIs rather than Electron internals.
 Phases 1–4 put the browser in the app ([browser-surface.md](browser-surface.md),
 [omnibox.md](omnibox.md)). Phase 5 ran into something none of them did:
 
-- Plugin **agent tool handlers execute in the bb server process**
+- Plugin **agent tool handlers execute in the Patcher server process**
   (`apps/server/src/internal/tool-calls.ts` → `invokePluginAgentTool`), with a
   context of only `{ threadId, projectId, signal }`.
 - **The browser is nowhere near the server.** Tabs are renderer state
@@ -38,7 +38,7 @@ apps/desktop/src/desktop-browser-view.ts             isolated-world read
 ```
 
 Every hop copies something already in the tree. Nothing here is a new idea about
-how bb talks to itself.
+how Patcher talks to itself.
 
 ## Why the tools are a plugin
 

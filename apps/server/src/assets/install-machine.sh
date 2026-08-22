@@ -87,7 +87,7 @@ server_host=$(node -e '
 service_slug=$(printf '%s' "$server_host" | tr '.' '-')
 
 # Each server gets its own data dir and daemon instance, so one machine can
-# serve several bb servers and a full local bb install keeps ~/.patcher to itself.
+# serve several Patcher servers and a full local Patcher install keeps ~/.patcher to itself.
 data_dir=${PATCHER_DATA_DIR:-"$HOME/.patcher-machines/$server_host"}
 mkdir -p "$data_dir"
 mkdir -p "$data_dir/logs"
@@ -228,7 +228,7 @@ if [ -n "$requested_host_daemon_port" ]; then
     exit 2
   fi
   if ! claim_port_for_data_dir "$requested_host_daemon_port" "$canonical_data_dir"; then
-    echo "Host daemon local API port $requested_host_daemon_port is reserved by another bb enrollment." >&2
+    echo "Host daemon local API port $requested_host_daemon_port is reserved by another Patcher enrollment." >&2
     echo "Choose another value for --host-daemon-port and rerun this command." >&2
     exit 1
   fi
@@ -364,7 +364,7 @@ if [ "$already_joined" = no ]; then
     fi
     if ! kill -0 "$join_pid" 2>/dev/null; then
       wait "$join_pid" || true
-      echo "bb host daemon exited before it connected to $server_url. See $join_log" >&2
+      echo "Patcher host daemon exited before it connected to $server_url. See $join_log" >&2
       exit 1
     fi
     attempts=$((attempts + 1))
@@ -411,7 +411,7 @@ systemd_escape() {
 
 if [ "$platform" = darwin ]; then
   service_dir="$HOME/Library/LaunchAgents"
-  service_label="app.getbb.host-daemon.$service_slug"
+  service_label="app.patcher.host-daemon.$service_slug"
   service_file="$service_dir/$service_label.plist"
   mkdir -p "$service_dir"
   escaped_node_bin=$(xml_escape "$node_bin")
@@ -446,18 +446,18 @@ if [ "$platform" = darwin ]; then
 EOF
   launchctl bootout "gui/$(id -u)" "$service_file" >/dev/null 2>&1 || true
   if ! launchctl_error=$(launchctl bootstrap "gui/$(id -u)" "$service_file" 2>&1); then
-    echo "Could not register the bb host-daemon launch agent $service_label." >&2
+    echo "Could not register the Patcher host-daemon launch agent $service_label." >&2
     [ -z "$launchctl_error" ] || echo "launchctl: $launchctl_error" >&2
     exit 1
   fi
   if ! launchctl_error=$(launchctl kickstart -k "gui/$(id -u)/$service_label" 2>&1); then
-    echo "The bb host-daemon launch agent was registered, but the daemon did not start." >&2
+    echo "The Patcher host-daemon launch agent was registered, but the daemon did not start." >&2
     [ -z "$launchctl_error" ] || echo "launchctl: $launchctl_error" >&2
     echo "See $data_dir/logs/launchd.log for the daemon error." >&2
     exit 1
   fi
   if ! wait_for_daemon_connection; then
-    echo "The bb host-daemon launch agent started but did not connect to $server_url." >&2
+    echo "The Patcher host-daemon launch agent started but did not connect to $server_url." >&2
     echo "See $data_dir/logs/launchd.log for the daemon error." >&2
     exit 1
   fi
@@ -466,7 +466,7 @@ EOF
   echo "Uninstall: launchctl bootout gui/$(id -u) '$service_file' && rm '$service_file'"
 else
   service_dir="$HOME/.config/systemd/user"
-  service_name="bb-host-daemon-$service_slug"
+  service_name="patcher-host-daemon-$service_slug"
   service_file="$service_dir/$service_name.service"
   mkdir -p "$service_dir"
   escaped_node_bin=$(systemd_escape "$node_bin")
@@ -475,7 +475,7 @@ else
   escaped_data_dir=$(systemd_escape "$data_dir")
   cat >"$service_file" <<EOF
 [Unit]
-Description=bb host daemon for $server_host
+Description=Patcher host daemon for $server_host
 After=network-online.target
 Wants=network-online.target
 
@@ -490,19 +490,19 @@ WantedBy=default.target
 EOF
   systemctl --user daemon-reload
   if ! systemctl_error=$(systemctl --user enable "$service_name.service" 2>&1); then
-    echo "The bb host-daemon systemd service could not be enabled." >&2
+    echo "The Patcher host-daemon systemd service could not be enabled." >&2
     [ -z "$systemctl_error" ] || echo "systemctl: $systemctl_error" >&2
     echo "Inspect it with: journalctl --user -u $service_name.service" >&2
     exit 1
   fi
   if ! systemctl_error=$(systemctl --user restart "$service_name.service" 2>&1); then
-    echo "The bb host-daemon systemd service was enabled, but it could not be restarted." >&2
+    echo "The Patcher host-daemon systemd service was enabled, but it could not be restarted." >&2
     [ -z "$systemctl_error" ] || echo "systemctl: $systemctl_error" >&2
     echo "Inspect it with: journalctl --user -u $service_name.service" >&2
     exit 1
   fi
   if ! wait_for_daemon_connection; then
-    echo "The bb host-daemon systemd service started but did not connect to $server_url." >&2
+    echo "The Patcher host-daemon systemd service started but did not connect to $server_url." >&2
     echo "Inspect it with: journalctl --user -u $service_name.service" >&2
     exit 1
   fi

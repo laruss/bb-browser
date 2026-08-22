@@ -49,7 +49,7 @@ export function renderPluginCommandsSkill(
   return [
     "---",
     `name: ${SKILL_NAME}`,
-    "description: CLI commands contributed by installed BB plugins. Use when a task involves one of the plugin commands listed here; run them with bash like any other bb command.",
+    "description: CLI commands contributed by installed BB plugins. Use when a task involves one of the plugin commands listed here; run them with bash like any other Patcher command.",
     "---",
     "",
     "# Plugin Commands",

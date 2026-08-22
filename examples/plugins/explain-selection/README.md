@@ -19,7 +19,7 @@ What it demonstrates:
 - **`patcher.browser.registerTabAction`** — the same explanation from the tab strip's
   own menu. A tab action has no `when` (it is offered on every tab), so the entry
   decides for itself what it can work with: its context reports `url: null` for a
-  bb screen and `""` for a tab with no page yet, and neither is a page to explain.
+  Patcher screen and `""` for a tab with no page yet, and neither is a page to explain.
   It also carries `pinned`, `muted` and `active`, which is where a plugin is told
   the tab state that `patcher.browser.tabs.list()` does not report.
 - **`patcher.sdk.threads.spawn`** — the handler spawns a BB thread whose prompt quotes
@@ -69,7 +69,7 @@ nothing it writes can undo "to the end of the message".
 
 ## Tests
 
-`server.test.ts` runs against `@patcher/plugin-sdk/testing` — no bb server, no
+`server.test.ts` runs against `@patcher/plugin-sdk/testing` — no Patcher server, no
 browser. The end-to-end path (install → contributions → picked entry → spawned
 thread → the selection in the agent's first message) is covered by `hero plugin:
 explain-selection` in `apps/server/test/services/plugins/heroes.test.ts`, which

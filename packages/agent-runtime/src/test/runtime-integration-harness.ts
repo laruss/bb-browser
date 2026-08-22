@@ -870,7 +870,7 @@ export function createTestRuntime(
 ): TestContext {
   const tmpDir =
     opts?.workspacePath ??
-    mkdtempSync(join(tmpdir(), `bb-integ-${providerId}-`));
+    mkdtempSync(join(tmpdir(), `patcher-integ-${providerId}-`));
   const ownsTmpDir = !opts?.workspacePath;
   const events: ThreadEvent[] = [];
   const toolCalls: ToolCallRequest[] = [];

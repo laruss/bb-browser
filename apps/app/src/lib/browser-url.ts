@@ -211,7 +211,7 @@ export function resolveBrowserAddressInput(
  *
  * `local` is plain http that never leaves this machine — loopback. Calling that
  * "insecure" was a lie in the other direction: there is no network for anyone to
- * listen on, and bb's own pages are served exactly this way.
+ * listen on, and Patcher's own pages are served exactly this way.
  */
 export type BrowserUrlSecurity = "secure" | "insecure" | "local" | "none";
 

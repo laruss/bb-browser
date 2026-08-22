@@ -1,7 +1,7 @@
 /**
  * Codex provider adapter.
  *
- * Maps between bb's ProviderAdapter contract and the OpenAI Codex app-server
+ * Maps between Patcher's ProviderAdapter contract and the OpenAI Codex app-server
  * JSON-RPC protocol. Validates the outer JSON-RPC envelope before translating
  * the provider-specific payloads.
  *
@@ -1838,7 +1838,7 @@ export function createCodexProviderAdapter(
             kind: "request",
             method: "initialize",
             params: {
-              clientInfo: { name: "bb", version: "1.0.0", title: null },
+              clientInfo: { name: "Patcher", version: "1.0.0", title: null },
               capabilities: { experimentalApi: true },
             },
           };
@@ -1872,7 +1872,7 @@ export function createCodexProviderAdapter(
             ...resolveCodexInstructionOverrides(command),
             model: command.options?.model ?? undefined,
             serviceTier: toCodexServiceTier(command.options?.serviceTier),
-            // bb reaps idle thread-scoped Codex processes and later resumes by
+            // Patcher reaps idle thread-scoped Codex processes and later resumes by
             // provider thread id, so the rollout must exist on disk. Codex
             // already defaults to non-ephemeral; pin the value so a future
             // default flip cannot silently break resume.

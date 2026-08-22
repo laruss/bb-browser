@@ -157,7 +157,7 @@ async function runRequest(
 ): Promise<PluginCliResult> {
   const parsed = parseRequest(argv);
   if (!ctx.threadId)
-    throw new Error("bb secret request must run from a bb thread.");
+    throw new Error("bb secret request must run from a Patcher thread.");
   if (!ctx.cwd)
     throw new Error(
       "bb secret request requires the invoking working directory.",

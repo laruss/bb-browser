@@ -32,7 +32,9 @@ interface CreateAccessTokenArgs {
 }
 
 async function makeTempHome(): Promise<string> {
-  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "bb-codex-auth-"));
+  const tempDir = await fs.mkdtemp(
+    path.join(os.tmpdir(), "patcher-codex-auth-"),
+  );
   tempDirs.push(tempDir);
   vi.stubEnv("HOME", tempDir);
   return tempDir;

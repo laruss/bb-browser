@@ -18,9 +18,9 @@ export function resolveDesktopReleaseChannel(env) {
 export function createDesktopReleaseConfig(channel) {
   if (channel === "nightly") {
     return {
-      appId: "dev.bb.desktop.nightly",
-      applicationName: "bb Nightly",
-      artifactName: "bb-nightly-${version}-${arch}.${ext}",
+      appId: "app.patcher.desktop.nightly",
+      applicationName: "Patcher Nightly",
+      artifactName: "patcher-nightly-${version}-${arch}.${ext}",
       iconFileName: "icon-nightly.png",
       macIconPath: "assets/icon-nightly.icns",
       releaseTag: "desktop-nightly",
@@ -29,8 +29,8 @@ export function createDesktopReleaseConfig(channel) {
   }
 
   return {
-    appId: "dev.bb.desktop",
-    applicationName: "bb",
+    appId: "app.patcher.desktop",
+    applicationName: "Patcher",
     artifactName: "${productName}-${version}-${arch}.${ext}",
     iconFileName: "icon.png",
     macIconPath: "assets/icon.icns",

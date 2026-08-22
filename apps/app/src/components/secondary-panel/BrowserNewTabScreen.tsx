@@ -119,7 +119,7 @@ export function BrowserNewTabScreen({
             </ul>
           </section>
         )}
-        {/* After bb's own list: the browser's recents are what a new tab has
+        {/* After Patcher's own list: the browser's recents are what a new tab has
             always shown, and a plugin adds to that rather than displacing it. */}
         <BrowserNewTabPluginSections
           onNavigate={onNavigateInput}

@@ -29,7 +29,7 @@ export function patcherProjectLinkStateFor(
   return { selection: linkedPatcherProjectId };
 }
 
-/** The bb project id the state resolves to; "" means not linked. */
+/** The Patcher project id the state resolves to; "" means not linked. */
 export function resolvePatcherProjectLink(
   state: PatcherProjectLinkState,
 ): string {
@@ -60,7 +60,7 @@ export function PatcherProjectLinkPicker({
         onStateChange({ selection: value === NO_LINK ? null : value })
       }
     >
-      <SelectTrigger aria-label="Linked bb project" className="h-8">
+      <SelectTrigger aria-label="Linked Patcher project" className="h-8">
         <SelectValue>
           {patcherProjects.find((project) => project.id === state.selection)
             ?.name ??

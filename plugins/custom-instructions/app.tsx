@@ -137,7 +137,7 @@ export default definePluginApp((app) => {
   app.slots.settingsSection({
     id: "custom-instructions",
     description:
-      "Give agents extra instructions and context for tasks on this bb host.",
+      "Give agents extra instructions and context for tasks on this Patcher host.",
     component: CustomInstructionsSettings,
   });
 });

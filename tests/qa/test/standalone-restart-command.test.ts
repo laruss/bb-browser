@@ -245,11 +245,11 @@ describe("standalone restart command", () => {
           PATH: "/usr/bin",
         },
         overrides: {
-          PATCHER_DATA_DIR: "/tmp/standalone/bb-root",
+          PATCHER_DATA_DIR: "/tmp/standalone/patcher-root",
         },
       }),
     ).toEqual({
-      PATCHER_DATA_DIR: "/tmp/standalone/bb-root",
+      PATCHER_DATA_DIR: "/tmp/standalone/patcher-root",
       PATH: "/usr/bin",
     });
   });
@@ -339,7 +339,7 @@ describe("standalone restart command", () => {
       cwd: "/repo",
       daemonPid: null,
       daemonPort: 456,
-      dataDir: "/tmp/bb-root",
+      dataDir: "/tmp/patcher-root",
       entrypoint: "/repo/apps/host-daemon/dist/index.js",
       envFilePath: null,
       hostId: "host_123",
@@ -356,7 +356,7 @@ describe("standalone restart command", () => {
 
   it("starts a replacement daemon that survives caller hangup", async () => {
     const tempDir = await fs.mkdtemp(
-      path.join(tmpdir(), "bb-restart-command-"),
+      path.join(tmpdir(), "patcher-restart-command-"),
     );
     const pidPath = path.join(tempDir, "daemon.pid");
     const logPath = path.join(tempDir, "host-daemon.log");
@@ -395,7 +395,7 @@ describe("standalone restart command", () => {
         cwd: tempDir,
         daemonPid: null,
         daemonPort: 456,
-        dataDir: path.join(tempDir, "bb-root"),
+        dataDir: path.join(tempDir, "patcher-root"),
         entrypoint,
         envFilePath: null,
         hostId: "host_123",

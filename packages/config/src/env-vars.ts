@@ -184,7 +184,7 @@ export const PATCHER_HOST_DAEMON_PORT_ENV = defineEnvVar<number>({
 });
 
 export const PATCHER_SERVER_URL_ENV = defineEnvVar<string>({
-  description: "URL of the bb server",
+  description: "URL of the Patcher server",
   name: "PATCHER_SERVER_URL",
   parse: parseRequiredUrlEnvValue,
 });
@@ -295,14 +295,14 @@ export const PATCHER_DEV_APP_PORT_ENV = defineEnvVar<number | undefined>({
 
 export const PATCHER_CLI_DIR_ENV = defineEnvVar<string | undefined>({
   description:
-    "Directory containing the bb CLI executable to inject into runtime shells",
+    "Directory containing the Patcher CLI executable to inject into runtime shells",
   name: "PATCHER_CLI_DIR",
   parse: parseOptionalTrimmedStringEnvValue,
 });
 
 export const PATCHER_CLI_ENV = defineEnvVar<string | undefined>({
   description:
-    "Absolute path to the daemon-managed bb CLI (injected into agent shells; official entrypoints re-exec here when set)",
+    "Absolute path to the daemon-managed Patcher CLI (injected into agent shells; official entrypoints re-exec here when set)",
   name: "PATCHER_CLI",
   parse: parseOptionalTrimmedStringEnvValue,
 });
@@ -323,7 +323,7 @@ export const PATCHER_BRIDGE_DIR_ENV = defineEnvVar<string | undefined>({
 
 export const PATCHER_HOST_ENROLL_KEY_ENV = defineEnvVar<string | undefined>({
   description:
-    "One-time enrollment token used to bootstrap a host daemon with the bb server",
+    "One-time enrollment token used to bootstrap a host daemon with the Patcher server",
   name: "PATCHER_HOST_ENROLL_KEY",
   parse: parseOptionalTrimmedStringEnvValue,
 });

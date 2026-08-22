@@ -6,17 +6,17 @@ A much faster app on your phone, message editing, manual context compaction, sha
 
 ### Mobile is much faster
 
-Every tap used to make bb measure the whole page before it could respond. On a phone, that froze the app for seconds at a time. This release removes that work.
+Every tap used to make Patcher measure the whole page before it could respond. On a phone, that froze the app for seconds at a time. This release removes that work.
 
 - Taps answer at once. The sidebar, the right panel, and the timeline all open without a stall.
 - The sidebar keeps its scroll position when you close it and open it again.
 - A long thread stays smooth while an agent streams into it.
-- A remote session over bb connect no longer lags behind your typing.
+- A remote session over Patcher connect no longer lags behind your typing.
 - The prompt box no longer collapses while you scroll.
 
 ### Edit a message you already sent
 
-Turn on **Edit messages** in Settings → Experiments. You can then edit any message you already sent. Nothing changes until you submit the edit. bb then rewinds the conversation to that point and runs the turn again, and your workspace keeps its changes. Codex, Claude Code, and Pi support it. Agents can do the same with `bb thread edit-message`.
+Turn on **Edit messages** in Settings → Experiments. You can then edit any message you already sent. Nothing changes until you submit the edit. Patcher then rewinds the conversation to that point and runs the turn again, and your workspace keeps its changes. Codex, Claude Code, and Pi support it. Agents can do the same with `bb thread edit-message`.
 
 ### Compact a long thread
 
@@ -24,14 +24,14 @@ Type `/compact` in the composer to compact a thread that has grown too long. Cod
 
 ### Skills
 
-- bb now looks for skills in the places each agent already reads, so your existing skills appear without a copy.
+- Patcher now looks for skills in the places each agent already reads, so your existing skills appear without a copy.
 - Cursor project skills in `.cursor/skills` are found, including a link to a shared folder such as `.agents/skills`.
 - You can point every agent at one shared skill folder instead of a copy for each provider.
 - A custom ACP agent can declare its own skill folders.
 
 ### An archive you can undo
 
-An accidental archive no longer destroys your worktree. bb waits five minutes before it removes the worktree. The archive toast offers **Undo**, and **Unarchive** on the thread brings back the same environment. A thread you delete still cleans up at once.
+An accidental archive no longer destroys your worktree. Patcher waits five minutes before it removes the worktree. The archive toast offers **Undo**, and **Unarchive** on the thread brings back the same environment. A thread you delete still cleans up at once.
 
 ### Threads and turns
 
@@ -50,7 +50,7 @@ An accidental archive no longer destroys your worktree. bb waits five minutes be
 - An agent with no reasoning levels no longer offers a false one.
 - A custom model entry works for any ACP agent, and one bad entry no longer breaks the rest.
 - Cursor starts the right CLI even when another `agent` command comes first on your `PATH`.
-- bb finds the Claude CLI where you installed it, and it explains the problem when it cannot.
+- Patcher finds the Claude CLI where you installed it, and it explains the problem when it cannot.
 - A required Codex update is now hard to miss, with an **Update Codex** button.
 - A Pi thread no longer sticks on "Working…" because an extension printed a message.
 - Provider chatter no longer shows up as unknown events in the timeline.
@@ -59,7 +59,7 @@ An accidental archive no longer destroys your worktree. bb waits five minutes be
 ### Faster elsewhere
 
 - A desktop sidebar with many threads uses much less memory.
-- bb no longer stalls on a cold start with a large history.
+- Patcher no longer stalls on a cold start with a large history.
 - A very large thread list loads instead of failing.
 - Plugin pages load faster.
 - The Keyboard settings page stays responsive while you record a shortcut.
@@ -119,8 +119,8 @@ A faster web app, a more reliable terminal, steadier model catalogs, and a long 
 
 The server used to listen on every network interface, which exposed its unauthenticated API to any host that could reach the machine. It now binds `127.0.0.1`. Use `--server-bind-host 0.0.0.0` or `PATCHER_SERVER_BIND_HOST` to opt back in, only behind a trusted network boundary.
 
-- **Action needed before you upgrade** if a browser or an enrolled machine reaches bb at a direct address such as `http://<LAN-IP>:38986` or `http://<machine>.<tailnet>.ts.net:38986`. Move the route first, then upgrade. This release also raises the host daemon protocol, so every enrolled daemon must update itself — and a daemon that lost its route cannot.
-- Move to bb connect, or put bb behind Tailscale Serve, then remove and re-add each machine in Settings → Machines so its installer records the new route. Setup steps: https://github.com/get-bb/bb/blob/main/docs/multiple-devices.md
+- **Action needed before you upgrade** if a browser or an enrolled machine reaches Patcher at a direct address such as `http://<LAN-IP>:38986` or `http://<machine>.<tailnet>.ts.net:38986`. Move the route first, then upgrade. This release also raises the host daemon protocol, so every enrolled daemon must update itself — and a daemon that lost its route cannot.
+- Move to Patcher connect, or put Patcher behind Tailscale Serve, then remove and re-add each machine in Settings → Machines so its installer records the new route. Setup steps: https://github.com/get-bb/bb/blob/main/docs/multiple-devices.md
 - The desktop app, the `bb` CLI, agents, plugins, and the host daemon on the same machine reach the server over loopback. They need no change.
 
 ### Machines and threads
@@ -170,7 +170,7 @@ The server used to listen on every network interface, which exposed its unauthen
 - Long filenames fit in the Add Project dialog, tab overflow controls are back, and right panel resize is less sensitive.
 - File links work in side chat timelines.
 - The mobile PWA shell tracks the iOS keyboard, and mobile voice recording controls work again.
-- bb connect relays DELETE request bodies.
+- Patcher connect relays DELETE request bodies.
 - First-run onboarding is behind an experiment while it settles.
 - New `pnpm dev:status` command for source development.
 
@@ -185,14 +185,14 @@ Much of this release came from outside the core team. Thank you:
 
 ## 0.35.0
 
-Plugins ship in this release, enabled by default. Much of bb is already built with them — and an agent inside bb can now write one for you.
+Plugins ship in this release, enabled by default. Much of Patcher is already built with them — and an agent inside Patcher can now write one for you.
 
 ### Plugins
 
 - **Plugins leave experiments and are on by default.** Browse and install them in Settings → Plugins, from the store or from a git URL, an npm package, or a local path.
-- **bb can extend itself.** A built-in plugin-authoring skill and the `bb plugin` commands let an agent in a thread scaffold, build, install, and reload a plugin without leaving the conversation. Ask bb for something it does not do, and it can write the plugin that does it.
-- A plugin can add agent tools and skills, a `bb` CLI subcommand, sidebar pages and panels, homepage and settings sections, thread header controls, message actions, @-mention providers, background services and scheduled jobs, HTTP and RPC endpoints with realtime push, and its own SQLite storage. New this release: a plugin can render bb's full new-thread composer, and it can **replace the sidebar thread list** outright.
-- **Much of bb is already a plugin.** Automations, Side chat, bb connect, Custom instructions, Inline visualizations, and Secrets ship built-in and enabled. Workflows and Ask User Question ship built-in and off by default. GitHub, Docs, Memory, and Tasks install from the store.
+- **Patcher can extend itself.** A built-in plugin-authoring skill and the `bb plugin` commands let an agent in a thread scaffold, build, install, and reload a plugin without leaving the conversation. Ask Patcher for something it does not do, and it can write the plugin that does it.
+- A plugin can add agent tools and skills, a `bb` CLI subcommand, sidebar pages and panels, homepage and settings sections, thread header controls, message actions, @-mention providers, background services and scheduled jobs, HTTP and RPC endpoints with realtime push, and its own SQLite storage. New this release: a plugin can render Patcher's full new-thread composer, and it can **replace the sidebar thread list** outright.
+- **Much of Patcher is already a plugin.** Automations, Side chat, Patcher connect, Custom instructions, Inline visualizations, and Secrets ship built-in and enabled. Workflows and Ask User Question ship built-in and off by default. GitHub, Docs, Memory, and Tasks install from the store.
 - Side chat is now entirely the plugin. Existing side chats migrate over and gain their own permission mode and worktree.
 - Plugin pages sit in flat sidebar rows you can reorder or hide, and **Automations** is now separate from **Extensions**, which manages Skills and Plugins.
 
@@ -203,18 +203,18 @@ Plugins ship in this release, enabled by default. Much of bb is already built wi
 
 ### Performance
 
-Long thread timelines no longer stall while scrolling, streaming stays stable and unclipped inside a long turn, and threads load faster over bb connect.
+Long thread timelines no longer stall while scrolling, streaming stays stable and unclipped inside a long turn, and threads load faster over Patcher connect.
 
 ### Nightly builds
 
-- New automated nightly channel. Install `bb-app@nightly`, or the separate **bb Nightly** desktop app, which sits beside stable bb and updates from its own feed. A nightly build never moves a stable release pointer.
+- New automated nightly channel. Install `bb-app@nightly`, or the separate **Patcher Nightly** desktop app, which sits beside stable Patcher and updates from its own feed. A nightly build never moves a stable release pointer.
 
 ### Fixes and polish
 
 - The iOS standalone PWA fills the screen again, instead of leaving a dead band at the bottom and pushing content under the status bar.
-- Browser tab shortcuts are preserved on web: `Mod+number` stays with the browser, and bb uses `Control+number` on macOS and `Ctrl+Shift+number` on Windows and Linux. Desktop is unchanged.
+- Browser tab shortcuts are preserved on web: `Mod+number` stays with the browser, and Patcher uses `Control+number` on macOS and `Ctrl+Shift+number` on Windows and Linux. Desktop is unchanged.
 - A host daemon that fails to shut down now force-exits after 15 seconds so the service manager can restart it. This frees machines that stranded on an old protocol version after a self-update.
-- The desktop app asks before it attaches to a bb that is already running, and it can stop that copy for you. `npx bb-app stop` gives agents the same ability.
+- The desktop app asks before it attaches to a Patcher that is already running, and it can stop that copy for you. `npx bb-app stop` gives agents the same ability.
 - Settings → Updates is redesigned around a quieter hierarchy, and updates keep running when you navigate off the page.
 - The New thread surface sits flush with the window edges.
 - The mobile landing page header no longer overflows.
@@ -226,9 +226,9 @@ This release refreshes the model catalogs behind Pi and Claude, gives every prov
 
 ### Models
 
-- The Pi provider moves to Pi 0.82. Model resolution, authentication, and catalog refresh now share one runtime, so the picker reflects each model's real reasoning levels — including `max` — and newly published models appear without waiting for a bb release.
+- The Pi provider moves to Pi 0.82. Model resolution, authentication, and catalog refresh now share one runtime, so the picker reflects each model's real reasoning levels — including `max` — and newly published models appear without waiting for a Patcher release.
 - Opus 5 (1M) is available in the curated Claude Code model list.
-- bb's curated Claude models are always offered, and the picker preloads so it opens with the list already populated.
+- Patcher's curated Claude models are always offered, and the picker preloads so it opens with the list already populated.
 - The Claude Code bridge no longer silently drops requests.
 - **Node.js 22.19 is now the minimum.** 22.19, 24, and 26 are the tested lines. Node 20 is no longer supported.
 
@@ -263,12 +263,12 @@ This release brings updates into one quiet place, simplifies approval settings, 
 ### Clearer updates and approvals
 
 - Permission modes are now clearer approval presets: Accept Edits, Approve for me, and Full Access. Codex and Claude use their native automatic-review behavior while keeping workspace sandboxing in place.
-- A quiet Updates badge replaces stacked notifications. Settings → Updates now brings together bb, desktop, connected-machine, Codex, and Claude Code updates, with clearer progress and retry actions.
+- A quiet Updates badge replaces stacked notifications. Settings → Updates now brings together Patcher, desktop, connected-machine, Codex, and Claude Code updates, with clearer progress and retry actions.
 - Connected machines recover from failed updates faster and can be retried from Settings or with `bb machine retry-update`.
 
 ### Experiments
 
-- Try the new Side Chat experiment, rebuilt on bb's plugin system. Side chats are lightweight hidden forks that inherit the source thread's execution settings, can be opened as full threads, and can send useful results back to the main conversation.
+- Try the new Side Chat experiment, rebuilt on Patcher's plugin system. Side chats are lightweight hidden forks that inherit the source thread's execution settings, can be opened as full threads, and can send useful results back to the main conversation.
 - Quiet Workflows workers no longer fail just because they have not produced output; they wait until the overall run timeout, cancellation, or a real failure.
 
 ### Fixes and polish
@@ -278,7 +278,7 @@ This release brings updates into one quiet place, simplifies approval settings, 
 - Threads recover cleanly when a previously selected Claude model is no longer available to the signed-in account.
 - Active turns are less likely to be interrupted when a connected machine's daemon encounters a lock or update problem.
 - Daemons now shut down cleanly after a startup failure instead of leaving a broken process behind.
-- Adding a machine now works correctly when bb Connect is not paired.
+- Adding a machine now works correctly when Patcher Connect is not paired.
 - Assistant-authored thread mentions render as navigable thread-title pills.
 - The model and reasoning picker stays open so both settings can be changed together.
 - Removed misleading Codex timeline errors and polished keyboard hints and queued messages.
@@ -313,17 +313,17 @@ This release brings split views to everyone and redesigns queued messages in the
 - Fixed desktop light/dark switching when following the system theme.
 - Fixed scrolling of long agent questions and sidebar safe-area coverage on mobile.
 - Fixed a performance issue with animations.
-- Improved bb Connect reliability.
+- Improved Patcher Connect reliability.
 - Worktree setup now runs with your resolved shell PATH.
 
 ## 0.0.30
 
-This release introduces multi-machine workflows and bb Connect, adds more ways to customize how bb works, and gives you clearer visibility into what agents are doing.
+This release introduces multi-machine workflows and Patcher Connect, adds more ways to customize how Patcher works, and gives you clearer visibility into what agents are doing.
 
 ### Work across threads and machines
 
-- Multi-machine support lets you add computers to bb and choose which machine runs each task.
-- bb Connect lets you securely access bb from other devices and share previews or local servers from any enrolled machine.
+- Multi-machine support lets you add computers to Patcher and choose which machine runs each task.
+- Patcher Connect lets you securely access Patcher from other devices and share previews or local servers from any enrolled machine.
 
 ### New features
 
@@ -347,7 +347,7 @@ This release introduces multi-machine workflows and bb Connect, adds more ways t
 ### Experiments
 
 - Split views let you arrange up to four chats in one workspace. Drag threads from the sidebar, resize and rearrange panes, or use keyboard shortcuts to move between them.
-- The new plugin ecosystem includes the BB Official catalog, compatibility-aware updates, richer chat and panel experiences, plugin themes, and consistent icons throughout bb.
+- The new plugin ecosystem includes the BB Official catalog, compatibility-aware updates, richer chat and panel experiences, plugin themes, and consistent icons throughout Patcher.
 - Install Docs for filesystem-backed documents with folders, images, Markdown editing, and HTML previews in an editable side panel.
 - Install Memory to carry durable global or project-specific context across Codex and Claude Code.
 
@@ -358,12 +358,12 @@ This release introduces multi-machine workflows and bb Connect, adds more ways t
 - Fixed subagent token usage inflating the parent thread's context report.
 - Local images now render in assistant Markdown, queued prompts preserve formatting, and file previews refresh reliably.
 - Improved narrow and short thread layouts, including the composer, Docs sidebar, split indicators, and inactive-pane contrast.
-- Sped up production startup when running bb from source.
+- Sped up production startup when running Patcher from source.
 - Refined plugin icons, theme behavior, menu alignment, and sidebar drag interactions throughout the app.
 
 ## 0.0.29
 
-This release expands agent and model support, introduces a redesigned Settings experience, and includes workflow improvements and reliability fixes across bb.
+This release expands agent and model support, introduces a redesigned Settings experience, and includes workflow improvements and reliability fixes across Patcher.
 
 ### More agents, models, and skills
 
@@ -375,9 +375,9 @@ This release expands agent and model support, introduces a redesigned Settings e
 ### Redesigned Settings
 
 - Settings now uses dedicated pages with sidebar navigation.
-- Choose which microphone bb uses for voice input.
+- Choose which microphone Patcher uses for voice input.
 - Manually check for updates from Settings → Updates.
-- On macOS, enable Caffeinate to keep the machine awake while bb is running.
+- On macOS, enable Caffeinate to keep the machine awake while Patcher is running.
 - Discord and GitHub links now live under Settings → Community.
 
 ### Workflow improvements
@@ -399,4 +399,4 @@ This release expands agent and model support, introduces a redesigned Settings e
 
 ### Experiments
 
-New experiment to let you connect to bb from other computers.
+New experiment to let you connect to Patcher from other computers.

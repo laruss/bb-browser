@@ -25,7 +25,7 @@ const OMNIBOX_SEARCH_FALLBACK_SCORE = 0.4;
  * edit to this one.
  */
 export function createOmniboxSearchProvider(args: {
-  /** The chosen engine's template — bb's own or one a plugin declared. */
+  /** The chosen engine's template — Patcher's own or one a plugin declared. */
   searchUrlTemplate: string;
 }): OmniboxProvider {
   return {

@@ -90,7 +90,9 @@ describe("dispatch target rail control", () => {
       {
         rpc: detailRpc(null, {
           listPatcherProjects: () => ({
-            patcherProjects: [{ id: PATCHER_PROJECT_ID, name: "bb monorepo" }],
+            patcherProjects: [
+              { id: PATCHER_PROJECT_ID, name: "Patcher monorepo" },
+            ],
           }),
           updateProject: (input: Record<string, unknown>) => {
             updateCalls.push(input);
@@ -106,8 +108,10 @@ describe("dispatch target rail control", () => {
     fireEvent.click(
       await slot.findByRole("button", { name: "Edit dispatch target" }),
     );
-    fireEvent.click(await slot.findByLabelText("Linked bb project"));
-    fireEvent.click(await slot.findByRole("option", { name: "bb monorepo" }));
+    fireEvent.click(await slot.findByLabelText("Linked Patcher project"));
+    fireEvent.click(
+      await slot.findByRole("option", { name: "Patcher monorepo" }),
+    );
     fireEvent.click(slot.getByRole("button", { name: "Save" }));
     await waitFor(() => expect(updateCalls).toHaveLength(1));
     expect(updateCalls[0]).toEqual({
@@ -116,7 +120,7 @@ describe("dispatch target rail control", () => {
     });
   });
 
-  it("shows the linked bb project's name and unlinks it", async () => {
+  it("shows the linked Patcher project's name and unlinks it", async () => {
     const updateCalls: Array<Record<string, unknown>> = [];
     const slot = renderSlot(
       app.navPanels[0]!,
@@ -124,7 +128,9 @@ describe("dispatch target rail control", () => {
       {
         rpc: detailRpc(PATCHER_PROJECT_ID, {
           listPatcherProjects: () => ({
-            patcherProjects: [{ id: PATCHER_PROJECT_ID, name: "bb monorepo" }],
+            patcherProjects: [
+              { id: PATCHER_PROJECT_ID, name: "Patcher monorepo" },
+            ],
           }),
           updateProject: (input: Record<string, unknown>) => {
             updateCalls.push(input);
@@ -140,7 +146,7 @@ describe("dispatch target rail control", () => {
     const trigger = await slot.findByRole("button", {
       name: "Edit dispatch target",
     });
-    await slot.findByText("bb monorepo");
+    await slot.findByText("Patcher monorepo");
 
     fireEvent.click(trigger);
     fireEvent.click(await slot.findByRole("button", { name: "Unlink" }));

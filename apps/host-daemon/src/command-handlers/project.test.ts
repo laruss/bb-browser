@@ -9,7 +9,9 @@ import { cloneProject, resolveProjectCloneDefaultPath } from "./project.js";
 const tempDirs: string[] = [];
 
 async function tempDir(): Promise<string> {
-  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "bb-project-clone-"));
+  const dir = await fs.mkdtemp(
+    path.join(os.tmpdir(), "patcher-project-clone-"),
+  );
   tempDirs.push(dir);
   return dir;
 }
@@ -26,7 +28,7 @@ async function createRemoteRepo(root: string): Promise<string> {
       "-c",
       "user.name=BB Test",
       "-c",
-      "user.email=bb@example.test",
+      "user.email=patcher@example.test",
       "commit",
       "-m",
       "initial",

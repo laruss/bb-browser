@@ -21,7 +21,7 @@ export interface BrowserNewTabPluginSectionsProps {
 }
 
 /**
- * Plugin sections on the new-tab screen (`browser.newTab.widgets`), after bb's
+ * Plugin sections on the new-tab screen (`browser.newTab.widgets`), after Patcher's
  * own recently-visited list.
  *
  * Rows are links the plugin already resolved, so clicking one navigates without

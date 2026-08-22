@@ -139,10 +139,10 @@ function createUpdateInfo(version: string): UpdateInfo {
     files: [
       {
         sha512: "BASE64_SHA512",
-        url: `bb-${version}-universal.zip`,
+        url: `Patcher-${version}-universal.zip`,
       },
     ],
-    path: `bb-${version}-universal.zip`,
+    path: `Patcher-${version}-universal.zip`,
     releaseDate: checkedAt,
     sha512: "BASE64_SHA512",
     version,

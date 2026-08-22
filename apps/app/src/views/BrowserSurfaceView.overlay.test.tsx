@@ -14,7 +14,7 @@ import { AppCommandProvider } from "@/components/commands/AppCommandProvider";
 import {
   createPatcherDesktopApi,
   createNoopDesktopBrowserApi,
-} from "@/test/bb-desktop-test-utils";
+} from "@/test/patcher-desktop-test-utils";
 import { createQueryClientTestHarness } from "@/test/queryClientTestHarness";
 import { useBrowserDownloadNotifications } from "@/lib/browser-downloads";
 import { getBrowserSurfaceTabsStorageKey } from "@/lib/browser-surface-tabs";

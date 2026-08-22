@@ -17,7 +17,7 @@ export const TOGGLE_DEVELOPER_TOOLS_ACCELERATOR = "Command+Option+I";
 export const RELOAD_ACCELERATOR = "CommandOrControl+R";
 export const FORCE_RELOAD_ACCELERATOR = "CommandOrControl+Shift+R";
 export const SERVER_MENU_LABEL = "Server";
-export const SERVER_MENU_ITEM_ID = "bb-server-menu";
+export const SERVER_MENU_ITEM_ID = "patcher-server-menu";
 export const SET_SERVER_URL_MENU_LABEL = "Set Server URL…";
 
 export interface ApplicationMenuServerItem {

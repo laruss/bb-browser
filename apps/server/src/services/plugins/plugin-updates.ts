@@ -140,7 +140,7 @@ export function createPluginUpdates(
     // releases, so point the user at a store reinstall instead of erroring.
     if (
       args.row.sourceKind === "npm" &&
-      args.row.sourceNpmRegistry?.includes("bb-source=github-release")
+      args.row.sourceNpmRegistry?.includes("patcher-source=github-release")
     ) {
       return {
         outcome: "unavailable",

@@ -247,7 +247,7 @@ describe("AddPluginDialog", () => {
   it("surfaces the server's install error (e.g. incompatible source) as a toast", async () => {
     const errorToast = vi.spyOn(appToast, "error").mockReturnValue("toast");
     stubFetch(
-      { ok: false, error: "requires bb >= 0.15 — you have 0.14.1" },
+      { ok: false, error: "requires Patcher >= 0.15 — you have 0.14.1" },
       422,
     );
     renderDialog();
@@ -261,7 +261,7 @@ describe("AddPluginDialog", () => {
       expect(errorToast).toHaveBeenCalledWith(
         "Installing the plugin failed",
         expect.objectContaining({
-          description: "requires bb >= 0.15 — you have 0.14.1",
+          description: "requires Patcher >= 0.15 — you have 0.14.1",
         }),
       );
     });

@@ -99,7 +99,8 @@ export default function plugin(patcher: any): void {
   patcher.browser.registerTabAction({
     id: "file",
     title: "File this tab",
-    run: (ctx: { url: string | null }) => `filing ${ctx.url ?? "a bb screen"}`,
+    run: (ctx: { url: string | null }) =>
+      `filing ${ctx.url ?? "a Patcher screen"}`,
   });
 
   patcher.browser.registerSiteInfoProvider({

@@ -1,14 +1,14 @@
 // The preload a browsed page gets when — and only when — a plugin has declared a
 // page script for the site it is on.
 //
-// Every other preload in this app runs in a window bb built. This one runs in a
+// Every other preload in this app runs in a window Patcher built. This one runs in a
 // renderer that is also running a website, so it is written to a different
 // standard, and three properties are the whole design:
 //
 //   * **Nothing is exposed to the page.** The APIs go into per-plugin *isolated
 //     worlds* via `contextBridge.exposeInIsolatedWorld`. The page's own world
 //     gets nothing — no `bb`, no `require`, no `process` — which is what keeps
-//     the shell's standing rule (a browsed page never receives a bb bridge)
+//     the shell's standing rule (a browsed page never receives a Patcher bridge)
 //     true even though a preload now exists.
 //   * **The shell decides what runs here.** This asks, synchronously, at document
 //     start, and the shell answers from the frame URL *it* resolved. A renderer
@@ -87,7 +87,7 @@ function buildApi(pluginId: string): PageScriptApi {
     },
     ready(callback: () => void): void {
       // Deliberately not wrapped in try/catch: a throw from the script's own
-      // callback belongs in the page's console, where bb's observation log
+      // callback belongs in the page's console, where Patcher's observation log
       // collects it and an agent debugging the plugin can read it. Swallowing it
       // here would make a broken page script indistinguishable from one that ran.
       //

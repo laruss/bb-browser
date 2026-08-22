@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { PatcherDesktopBrowserFindAction } from "@patcher/desktop-contract";
-import { getDesktopBrowserApi } from "./bb-desktop";
+import { getDesktopBrowserApi } from "./patcher-desktop";
 
 // Find in page, as the browser surface drives it.
 //

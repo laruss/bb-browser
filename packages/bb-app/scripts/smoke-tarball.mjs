@@ -405,16 +405,26 @@ async function smokeProviderBridgeBundles(packageDir) {
       packageDir,
       "host-daemon",
       "dist",
-      "bb-claude-code-bridge.mjs",
+      "patcher-claude-code-bridge.mjs",
     ),
     label: "Claude Code bridge model/list",
   });
   await smokeBridgeModelList({
-    bridgePath: join(packageDir, "host-daemon", "dist", "bb-pi-bridge.mjs"),
+    bridgePath: join(
+      packageDir,
+      "host-daemon",
+      "dist",
+      "patcher-pi-bridge.mjs",
+    ),
     label: "Pi bridge model/list",
   });
   await smokeBridgeModelList({
-    bridgePath: join(packageDir, "host-daemon", "dist", "bb-acp-bridge.mjs"),
+    bridgePath: join(
+      packageDir,
+      "host-daemon",
+      "dist",
+      "patcher-acp-bridge.mjs",
+    ),
     label: "ACP bridge model/list",
   });
 }
@@ -511,8 +521,8 @@ async function smokePiUserConfiguration(packageDir) {
     join(projectConfigDir, "settings.json"),
     JSON.stringify(
       {
-        defaultModel: "bb-config-e2e-model",
-        defaultProvider: "bb-config-e2e",
+        defaultModel: "patcher-config-e2e-model",
+        defaultProvider: "patcher-config-e2e",
         defaultThinkingLevel: "high",
         extensions: [extensionPath],
       },
@@ -526,7 +536,7 @@ async function smokePiUserConfiguration(packageDir) {
     packageDir,
     "host-daemon",
     "dist",
-    "bb-pi-bridge.mjs",
+    "patcher-pi-bridge.mjs",
   );
   const childProcess = spawn(process.execPath, [bridgePath], {
     cwd: maintenanceDir,
@@ -579,7 +589,8 @@ async function smokePiUserConfiguration(packageDir) {
       !Array.isArray(modelListResponse.result.models) ||
       !modelListResponse.result.models.some(
         (model) =>
-          isRecord(model) && model.id === "bb-config-e2e/bb-config-e2e-model",
+          isRecord(model) &&
+          model.id === "patcher-config-e2e/patcher-config-e2e-model",
       )
     ) {
       throw new Error(
@@ -659,8 +670,8 @@ async function smokePiUserConfiguration(packageDir) {
 
     const sessionMarker = JSON.parse(await readFile(sessionMarkerPath, "utf8"));
     if (
-      sessionMarker.provider !== "bb-config-e2e" ||
-      sessionMarker.model !== "bb-config-e2e-model" ||
+      sessionMarker.provider !== "patcher-config-e2e" ||
+      sessionMarker.model !== "patcher-config-e2e-model" ||
       sessionMarker.thinkingLevel !== "high"
     ) {
       throw new Error(
@@ -706,7 +717,7 @@ async function smokeHelpCommands(tarballPath) {
   await runCommand({
     args: createNpxArgs(tarballPath, "bb", ["--help"]),
     command: "npx",
-    label: "bb cli help",
+    label: "Patcher cli help",
   });
   await runCommand({
     args: createNpxArgs(tarballPath, "bb-server", ["--help"]),
@@ -741,7 +752,7 @@ async function smokeConfigCommand(tarballPath) {
       "config",
       "set",
       "PATCHER_APP_URL",
-      "https://bb.example.test",
+      "https://patcher.example.test",
     ]),
     command: "npx",
     label: "bb-app config PATCHER_APP_URL",
@@ -754,7 +765,7 @@ async function smokeConfigCommand(tarballPath) {
   if (envJson.env?.OPENAI_API_KEY !== "test-openai-key") {
     throw new Error("Expected bb-app env to persist OPENAI_API_KEY");
   }
-  if (configJson.config?.PATCHER_APP_URL !== "https://bb.example.test") {
+  if (configJson.config?.PATCHER_APP_URL !== "https://patcher.example.test") {
     throw new Error("Expected bb-app config to persist PATCHER_APP_URL");
   }
 }
@@ -793,7 +804,7 @@ async function smokeSdkPackage(tarballPath) {
     [
       'import { BBSdk, PatcherHttpError } from "bb-app";',
       "",
-      'const bb = new BBSdk({ baseUrl: "http://127.0.0.1:38986" });',
+      'const Patcher = new BBSdk({ baseUrl: "http://127.0.0.1:38986" });',
       "const error: typeof PatcherHttpError = PatcherHttpError;",
       "void bb.status.get();",
       "void error;",
@@ -901,7 +912,7 @@ async function smokeFullStack(tarballPath, sdkDir) {
       args: createNpxArgs(tarballPath, "bb", ["status"]),
       command: "npx",
       env: cliEnv,
-      label: "bb cli status",
+      label: "Patcher cli status",
     });
     await smokeBuiltinPluginsRunning({ cliEnv, tarballPath });
     await runCommand({
@@ -910,7 +921,7 @@ async function smokeFullStack(tarballPath, sdkDir) {
         "-e",
         [
           'import { BBSdk } from "bb-app";',
-          "const bb = new BBSdk({ baseUrl: process.env.PATCHER_SERVER_URL });",
+          "const Patcher = new BBSdk({ baseUrl: process.env.PATCHER_SERVER_URL });",
           "await bb.status.get();",
         ].join("\n"),
       ],

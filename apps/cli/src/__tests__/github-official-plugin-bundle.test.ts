@@ -16,7 +16,7 @@ import {
  * devDependencies, so tests never download one.
  */
 function testToolchain() {
-  return resolvePluginBuildToolchain(join(tmpdir(), "bb-toolchain-unused"));
+  return resolvePluginBuildToolchain(join(tmpdir(), "patcher-toolchain-unused"));
 }
 
 
@@ -43,7 +43,7 @@ describe("GitHub official plugin frontend bundle", () => {
   let root: string;
 
   beforeEach(async () => {
-    root = await mkdtemp(join(tmpdir(), "bb-github-bundle-"));
+    root = await mkdtemp(join(tmpdir(), "patcher-github-bundle-"));
   });
 
   afterEach(async () => {

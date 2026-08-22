@@ -11,7 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createPatcherDesktopApi,
   createNoopDesktopBrowserApi,
-} from "@/test/bb-desktop-test-utils";
+} from "@/test/patcher-desktop-test-utils";
 import type { PluginOmniboxSuggestGroup } from "@/hooks/queries/plugin-contribution-queries";
 import {
   createOmniboxNavigationProvider,

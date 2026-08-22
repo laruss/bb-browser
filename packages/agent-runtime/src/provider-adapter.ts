@@ -329,7 +329,7 @@ export interface ProviderAdapter {
    * Called when a thread detaches because its provider process exited or the
    * runtime is shutting down. Returns events reconciling adapter state that
    * cannot survive the process — e.g. open background tasks settled as
-   * interrupted. Events must carry the real bb threadId; the runtime emits
+   * interrupted. Events must carry the real Patcher threadId; the runtime emits
    * them before clearing the thread's runtime state.
    */
   buildThreadDetachedEvents?(args: { threadId: string }): ThreadEvent[];

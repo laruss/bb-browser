@@ -418,7 +418,7 @@ interface AssertUnmanagedHostPathIsAttachableArgs {
 /**
  * The environment claim on a path is project-scoped, but the directory is
  * physical and shared. Guard the two things that scoping cannot: attaching in
- * place to another project's bb-managed worktree, and rewriting the working
+ * place to another project's Patcher-managed worktree, and rewriting the working
  * tree while another project works in the same folder.
  */
 function assertUnmanagedHostPathIsAttachable(

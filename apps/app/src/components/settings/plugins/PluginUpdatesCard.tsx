@@ -27,7 +27,7 @@ import { UpdatePluginDialog } from "@/components/plugin/management/UpdatePluginD
  * disclosure deeper under "Source details".
  *
  * Bundled plugins — auto builtins and store-installed officials alike — are
- * pinned to the copy shipped inside the app and update with bb releases, so
+ * pinned to the copy shipped inside the app and update with Patcher releases, so
  * none of these surfaces render for them.
  */
 export function pluginHasUpdateSurfaces(plugin: PluginListItem): boolean {
@@ -77,7 +77,7 @@ export function PluginUpdateBanner({ plugin }: { plugin: PluginListItem }) {
             Update available — {availableVersion}
           </p>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Compatible with your bb.
+            Compatible with your Patcher.
           </p>
         </div>
         <Button
@@ -184,7 +184,7 @@ export function PluginUpdatesSourceCard({
                               key: "Requires",
                               value: [
                                 source.engines.patcher !== null
-                                  ? `bb ${source.engines.patcher}`
+                                  ? `Patcher ${source.engines.patcher}`
                                   : null,
                                 source.engines.patcherPluginSdk !== null
                                   ? `sdk ${source.engines.patcherPluginSdk}`
@@ -256,7 +256,7 @@ export function PluginUpdatesSourceCard({
             // toast — just the explanation one click away.
             <div className="pt-3">
               <SettingsWithControl
-                label={`${blockedVersion} isn't compatible with this bb`}
+                label={`${blockedVersion} isn't compatible with this Patcher`}
                 description={
                   plugin.updateState.blockedReasons[0] ??
                   `Staying on ${plugin.version}.`

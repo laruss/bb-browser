@@ -11,18 +11,18 @@ environments, and the provider/model catalog.
 
 ## Environment setup script
 
-- To make a repo work with bb worktrees, run `bb guide environments`. It
+- To make a repo work with Patcher worktrees, run `bb guide environments`. It
   documents the repo-level `.patcher-env-setup.sh` setup hook and the
   `.worktreeinclude` file.
 - A new worktree checks out tracked files only. Commit a `.worktreeinclude`
-  file at the repo root to list untracked files, such as `.env`, that bb must
-  copy from the source checkout. It uses gitignore pattern syntax. bb copies
+  file at the repo root to list untracked files, such as `.env`, that Patcher must
+  copy from the source checkout. It uses gitignore pattern syntax. Patcher copies
   the matches before it runs `.patcher-env-setup.sh`.
 
 ## Remote client
 
 - `bb-app client ssh-target set <server-origin> <ssh-target>` configures the
-  local helper to open files from a remote bb server in local editors. The SSH
+  local helper to open files from a remote Patcher server in local editors. The SSH
   target is the value that works after `ssh`, such as `devbox` or
   `user@devbox`.
 - These mappings live on the client machine in `<dataDir>/client.json`;
@@ -84,7 +84,7 @@ status|install` to inspect or install provider CLIs on a selected machine.
   `bb project content --json` returns UTF-8 text or base64 binary content with
   an explicit `contentEncoding`.
 - Use `bb project attachment upload <project-id> --client-file <path>` when the
-  bytes live on the CLI machine, including when the CLI and bb server are on
+  bytes live on the CLI machine, including when the CLI and Patcher server are on
   different hosts. It reads locally and sends multipart bytes through the
   configured `PATCHER_SERVER_URL` (and its enrolled-machine authentication proxy),
   returning the stable server attachment DTO. Optional `--filename` and
@@ -116,13 +116,13 @@ environment pull-request show <id>`. Diff commands require an explicit target
   can link to `.agents/skills`. `bb skill list` shows linked Cursor skills under
   `cursor-project` and keeps them read-only.
 - Custom ACP agents can be registered in the app data-dir `config.json` under
-  `customAcpAgents`. The user supplies a slug `id`; bb exposes it as provider
+  `customAcpAgents`. The user supplies a slug `id`; Patcher exposes it as provider
   id `acp-<id>`. Custom config wins if it uses the same provider id as a known
   ACP agent, so overriding `acp-opencode` uses `"id": "opencode"`. This list
   has no set/unset CLI surface, so edit the JSON and run `bb-app config refresh`
-  or restart bb. The configured command is local code execution and only works
+  or restart Patcher. The configured command is local code execution and only works
   with a co-located daemon. Optional `logo` accepts an SVG, PNG, or WebP path;
-  relative paths resolve from the bb data dir. Custom ACP agents can use
+  relative paths resolve from the Patcher data dir. Custom ACP agents can use
   `modelCli` for CLI model listing/selection, `reasoningCli` for launch-time
   reasoning flags, and `nativeReasoning` for ACP `session/set_config_option`
   reasoning. Optional
@@ -134,9 +134,9 @@ environment pull-request show <id>`. Diff commands require an explicit target
   id. The provider must still accept the id: `claude-code` and `codex` accept
   unlisted ids, while an ACP agent can reject an unknown id at session start.
   OpenCode rejects unlisted ids; add the model to the OpenCode config instead
-  and bb discovers it automatically. An OpenCode agent is a session mode, not
-  a model, and cannot be selected through bb. This list also has no set/unset
-  CLI surface; edit the JSON and run `bb-app config refresh` or restart bb.
+  and Patcher discovers it automatically. An OpenCode agent is a session mode, not
+  a model, and cannot be selected through Patcher. This list also has no set/unset
+  CLI surface; edit the JSON and run `bb-app config refresh` or restart Patcher.
 - Top-level `sharedSkillRoots` uses the same relative `user` and `project`
-  paths. bb lists these skills as read-only. bb injects them into each provider,
-  so one physical skill collection can support bb and standalone provider CLIs.
+  paths. Patcher lists these skills as read-only. Patcher injects them into each provider,
+  so one physical skill collection can support Patcher and standalone provider CLIs.

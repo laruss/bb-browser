@@ -230,7 +230,7 @@ async function startIntegrationServer(
     inferenceModel: "test/mock-model",
     inheritedSkillsRootPaths: [],
     openAiApiKey: process.env.OPENAI_API_KEY ?? "test-openai-key",
-    appUrl: "https://bb.example.test",
+    appUrl: "https://patcher.example.test",
     serverPort: 0,
     sharedSkillRoots: { user: [], project: [] },
     threadStorageRootPath,
@@ -417,7 +417,7 @@ export async function createIntegrationHarness(
   options: CreateHarnessOptions = {},
 ): Promise<IntegrationHarness> {
   await loadProjectEnvFile();
-  const tmpRoot = await fs.mkdtemp(path.join(tmpdir(), "bb-integration-"));
+  const tmpRoot = await fs.mkdtemp(path.join(tmpdir(), "patcher-integration-"));
   await fs.writeFile(
     path.join(tmpRoot, "parent.pid"),
     `${process.pid}\n`,

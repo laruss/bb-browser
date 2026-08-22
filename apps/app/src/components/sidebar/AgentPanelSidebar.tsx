@@ -15,7 +15,7 @@ import {
   MACOS_WINDOW_DRAG_CLASS,
   shouldUseMacosDesktopChrome,
   SIDEBAR_TRIGGER_TRAILING_RESERVE_CLASS,
-} from "@/lib/bb-desktop";
+} from "@/lib/patcher-desktop";
 
 /**
  * The side panel while an agent screen owns it: New thread, or a thread.

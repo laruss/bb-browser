@@ -144,7 +144,7 @@ describe("public project command typeahead route", () => {
         });
         expect(stub.skillRequests[0]?.command).toEqual({
           type: "host.list_skills",
-          providerId: "bb-shared",
+          providerId: "patcher-shared",
           cwd: "/tmp/shared-skills",
           nativeSkillRoots: {
             user: [".agents/skills"],
@@ -523,7 +523,9 @@ describe("public project command typeahead route", () => {
       const stub = registerCommandRpc(harness, {
         hostId: host.id,
         sessionId: session.id,
-        commands: [skill("bb-cli", "user", { description: "Use the bb CLI" })],
+        commands: [
+          skill("bb-cli", "user", { description: "Use the Patcher CLI" }),
+        ],
       });
 
       const response = await harness.app.request(

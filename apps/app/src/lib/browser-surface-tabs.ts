@@ -3,7 +3,7 @@ import { atom, useAtom, useSetAtom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 import { nanoid } from "nanoid";
 import { z } from "zod";
-import { getDesktopWindowKey } from "./bb-desktop";
+import { getDesktopWindowKey } from "./patcher-desktop";
 import {
   createLocalStorageSyncStorage,
   rawStringLocalStorage,
@@ -37,7 +37,7 @@ export const BROWSER_SURFACE_SCOPE_ID = "browser-surface";
 export const BROWSER_SURFACE_NEW_TAB_URL = "";
 
 /**
- * A bb screen carried in the strip beside web pages — Settings, Extensions, a
+ * A Patcher screen carried in the strip beside web pages — Settings, Extensions, a
  * plugin's panel.
  *
  * The record is a **remembered route**, not a live view: the strip holds many

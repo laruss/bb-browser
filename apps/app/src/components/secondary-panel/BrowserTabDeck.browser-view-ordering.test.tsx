@@ -13,7 +13,7 @@ import type { BrowserFixedPanelTab } from "@/lib/fixed-panel-tabs-state";
 import {
   createPatcherDesktopApi,
   createNoopDesktopBrowserApi,
-} from "@/test/bb-desktop-test-utils";
+} from "@/test/patcher-desktop-test-utils";
 import { POINTER_COARSE_QUERY } from "@patcher/shared-ui/hooks/use-pointer-coarse";
 import { createQueryClientTestHarness } from "@/test/queryClientTestHarness";
 import { BrowserTabDeck } from "./BrowserTabDeck";

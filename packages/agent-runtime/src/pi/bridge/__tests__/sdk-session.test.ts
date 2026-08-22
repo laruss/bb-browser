@@ -397,7 +397,7 @@ describe("PiSdkSession", () => {
   });
 
   it("resolves a bare model id that names no provider", async () => {
-    // Selections stored before bb prefixed aggregator models keep this shape.
+    // Selections stored before Patcher prefixed aggregator models keep this shape.
     mockGetModel.mockReturnValue(undefined);
     mockGetModels.mockReturnValue([
       { id: "deepseek/deepseek-v4-flash-0731", provider: "openrouter" },

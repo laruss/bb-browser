@@ -19,25 +19,25 @@ function buildPluginCommand(): Command {
 }
 
 describe("plugins guide chapter", () => {
-  it("mentions every bb plugin subcommand", () => {
+  it("mentions every Patcher plugin subcommand", () => {
     const plugin = buildPluginCommand();
     const names = plugin.commands.map((command) => command.name());
     expect(names.length).toBeGreaterThan(0);
 
-    const guide = renderTemplate("bbGuidePlugins", {});
+    const guide = renderTemplate("patcherGuidePlugins", {});
     for (const name of names) {
       // Allow pipe-joined forms like "bb plugin enable|disable <id>".
       const pattern = new RegExp(`bb plugin (?:[a-z-]+\\|)*${name}\\b`);
       expect(
         guide,
-        `"bb plugin ${name}" is not documented in bb-guide-plugins.md`,
+        `"bb plugin ${name}" is not documented in patcher-guide-plugins.md`,
       ).toMatch(pattern);
     }
   });
 
   it("mentions every declared bb plugin option flag", () => {
     const plugin = buildPluginCommand();
-    const guide = renderTemplate("bbGuidePlugins", {});
+    const guide = renderTemplate("patcherGuidePlugins", {});
     let optionCount = 0;
     for (const command of plugin.commands) {
       for (const option of command.options) {
@@ -50,7 +50,7 @@ describe("plugins guide chapter", () => {
         expect(forms.length).toBeGreaterThan(0);
         expect(
           forms.some((form) => guide.includes(form)),
-          `"bb plugin ${command.name()}" flag "${option.flags}" is not documented in bb-guide-plugins.md`,
+          `"bb plugin ${command.name()}" flag "${option.flags}" is not documented in patcher-guide-plugins.md`,
         ).toBe(true);
       }
     }

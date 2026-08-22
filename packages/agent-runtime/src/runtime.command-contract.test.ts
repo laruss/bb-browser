@@ -174,10 +174,10 @@ function createRuntimeLinkedWorktreeFixture(
   const rootPath = realpathSync.native(args.rootPath);
   const workspacePath = join(rootPath, "worktree");
   const commonDir = join(rootPath, "repo.git");
-  const gitDir = join(commonDir, "worktrees", "bb1");
-  const headRef = "refs/heads/bb/probe";
-  const headRefParent = join(commonDir, "refs", "heads", "bb");
-  const headLogParent = join(commonDir, "logs", "refs", "heads", "bb");
+  const gitDir = join(commonDir, "worktrees", "patcher1");
+  const headRef = "refs/heads/patcher/probe";
+  const headRefParent = join(commonDir, "refs", "heads", "patcher");
+  const headLogParent = join(commonDir, "logs", "refs", "heads", "patcher");
 
   mkdirSync(workspacePath, { recursive: true });
   mkdirSync(gitDir, { recursive: true });
@@ -205,7 +205,7 @@ describe("createAgentRuntime command contracts", () => {
   let scriptPath: string;
 
   beforeEach(() => {
-    tmpDir = mkdtempSync(join(tmpdir(), "bb-runtime-test-"));
+    tmpDir = mkdtempSync(join(tmpdir(), "patcher-runtime-test-"));
     scriptPath = fakeProviderScriptPath;
   });
 
@@ -435,10 +435,10 @@ rl.on("line", (line) => {
         threadId: "t1",
       });
 
-      expect(readFileSync(renameLogPath, "utf8")).toBe("[bb] New Title");
+      expect(readFileSync(renameLogPath, "utf8")).toBe("[Patcher] New Title");
       expect(events).not.toContainEqual(
         expect.objectContaining({
-          threadName: "[bb] New Title",
+          threadName: "[Patcher] New Title",
           type: "thread/name/updated",
         }),
       );
@@ -1050,7 +1050,7 @@ rl.on("line", (line) => {
   });
 
   // The fake keys its archived set on the exact provider thread id it was
-  // asked to unarchive, so a call that succeeds proves bb unarchived the
+  // asked to unarchive, so a call that succeeds proves Patcher unarchived the
   // right session before it retried.
   it("unarchives Codex sessions before retrying a resume", async () => {
     const runtime = createArchivedSessionRuntime();
@@ -1105,7 +1105,7 @@ rl.on("line", (line) => {
     }
   });
 
-  // A provider that dies while bb recovers cannot be unarchived or retried.
+  // A provider that dies while Patcher recovers cannot be unarchived or retried.
   // The caller must still get the archived-session error, because it names the
   // session and the CLI command that fixes it. A process-level error such as
   // `Provider "codex" has exited` tells the user nothing actionable.

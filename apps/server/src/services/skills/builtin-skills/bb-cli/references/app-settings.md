@@ -1,11 +1,11 @@
-# bb app settings reference
+# Patcher app settings reference
 
 Server-backed preferences in Settings. They are persisted on the server, so
 every window and client sees the same value.
 
 ## Caffeinate (macOS only)
 
-- Keeps the Mac awake while bb is running: when enabled, the server asks the
+- Keeps the Mac awake while Patcher is running: when enabled, the server asks the
   primary host daemon to run `/usr/bin/caffeinate -i -w <daemon-pid>`. Turning
   it off stops that process.
 - It only blocks idle sleep: closing a laptop lid or choosing Sleep manually
@@ -23,21 +23,21 @@ every window and client sees the same value.
   disable the shortcuts themselves.
 - Settings → Keyboard records sparse per-command chord overrides. `Mod` means
   Command on macOS and Control on Windows/Linux.
-- Reset removes the override and follows bb's current default. Clear stores an
+- Reset removes the override and follows Patcher's current default. Clear stores an
   explicit disabled value.
 - Bindings for non-native actions apply in browser and desktop clients. Command
   contexts and native-only availability remain server-owned. Reusing a chord
   can be intentional when contexts do not overlap; the UI identifies reuse.
 - New Thread, New Window, New Tab, Close, and Settings in the desktop menu use
   the same resolved shortcuts as renderer commands.
-- The complete default table is in `docs/configuration.md` in the bb source
+- The complete default table is in `docs/configuration.md` in the Patcher source
   repository.
 
 ## Unhandled provider events
 
 - `showUnhandledProviderEvents` defaults to false. Set it with
   `bb settings general showUnhandledProviderEvents <true|false>`.
-- When enabled, packaged builds show raw provider events that bb has persisted
+- When enabled, packaged builds show raw provider events that Patcher has persisted
   but does not yet understand. These diagnostic payloads can be noisy.
 - Development builds always show unhandled provider events regardless of the
   saved preference.

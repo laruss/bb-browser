@@ -75,7 +75,7 @@ export function Overview() {
             matches={[]}
             onActive={noop}
             onSelect={noop}
-            projectName="bb"
+            projectName="Patcher"
             thread={recentThread}
           />
         </Stage>
@@ -91,7 +91,7 @@ export function Overview() {
             matches={[]}
             onActive={noop}
             onSelect={noop}
-            projectName="bb"
+            projectName="Patcher"
             sectionLabel="Infra › CI"
             thread={recentThread}
           />
@@ -118,7 +118,7 @@ export function Overview() {
             ]}
             onActive={noop}
             onSelect={noop}
-            projectName="bb"
+            projectName="Patcher"
             thread={titleMatchThread}
           />
         </Stage>
@@ -141,7 +141,7 @@ export function Overview() {
             ]}
             onActive={noop}
             onSelect={noop}
-            projectName="bb"
+            projectName="Patcher"
             thread={messageMatchThread}
           />
         </Stage>
@@ -170,7 +170,7 @@ export function Overview() {
             matches={[]}
             onActive={noop}
             onSelect={noop}
-            projectName="bb"
+            projectName="Patcher"
             thread={recentThread}
           />
         </Stage>

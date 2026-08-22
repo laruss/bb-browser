@@ -38,7 +38,7 @@ export function createBrowserPatcherSdk(
   });
 }
 
-export const bb = createBrowserPatcherSdk();
+export const Patcher = createBrowserPatcherSdk();
 
 export { PatcherHttpError, PatcherRequestTimeoutError } from "./response.js";
 export type { PatcherHttpErrorArgs } from "./response.js";

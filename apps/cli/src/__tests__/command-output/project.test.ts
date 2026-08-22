@@ -44,7 +44,7 @@ describe("bb project command output", () => {
   });
 
   it("uploads binary bytes read on a remote CLI machine with explicit metadata", async () => {
-    const clientDir = await mkdtemp(join(tmpdir(), "bb-cli-attachment-"));
+    const clientDir = await mkdtemp(join(tmpdir(), "patcher-cli-attachment-"));
     try {
       const clientPath = join(clientDir, "payload.bin");
       const bytes = new Uint8Array([0, 255, 1, 128, 42]);
@@ -111,7 +111,7 @@ describe("bb project command output", () => {
   });
 
   it("downloads attachment bytes to an explicit client-local path", async () => {
-    const clientDir = await mkdtemp(join(tmpdir(), "bb-cli-attachment-"));
+    const clientDir = await mkdtemp(join(tmpdir(), "patcher-cli-attachment-"));
     try {
       const outputPath = join(clientDir, "downloaded.bin");
       const bytes = new Uint8Array([3, 2, 1, 0, 255]);
@@ -156,7 +156,7 @@ describe("bb project command output", () => {
   });
 
   it("prints the server attachment limit envelope without rewriting it", async () => {
-    const clientDir = await mkdtemp(join(tmpdir(), "bb-cli-attachment-"));
+    const clientDir = await mkdtemp(join(tmpdir(), "patcher-cli-attachment-"));
     try {
       const clientPath = join(clientDir, "huge.png");
       await writeFile(clientPath, new Uint8Array([1]));

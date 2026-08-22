@@ -19,9 +19,9 @@ const THREAD_LIMIT = 400;
 
 /**
  * The composer's resolved `NewThreadRequest`, arriving over HTTP — the one
- * genuinely unknowable boundary here. A structural check narrows it; bb's own
+ * genuinely unknowable boundary here. A structural check narrows it; Patcher's own
  * `threads.spawn` re-validates every field against the real create-thread
- * schema, so this deliberately does not restate bb's enums (they would drift).
+ * schema, so this deliberately does not restate Patcher's enums (they would drift).
  */
 function isNewThreadRequest(value: unknown): value is NewThreadRequest {
   if (typeof value !== "object" || value === null) return false;
@@ -46,7 +46,7 @@ function isNewThreadRequest(value: unknown): value is NewThreadRequest {
 }
 
 const newThreadRequestSchema = z.custom<NewThreadRequest>(isNewThreadRequest, {
-  message: "Expected a NewThreadRequest from the bb composer",
+  message: "Expected a NewThreadRequest from the Patcher composer",
 });
 
 const namedSchema = z.object({ id: z.string(), name: z.string() });

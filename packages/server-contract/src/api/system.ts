@@ -133,10 +133,10 @@ export const onboardingAgentSchema = z.object({
   status: z.enum(["connected", "unauthenticated", "expired", "not_installed"]),
   planLabel: z.string().min(1).nullable(),
   accountEmail: z.string().nullable(),
-  /** True only where bb has a managed installer, so only these may be offered. */
+  /** True only where Patcher has a managed installer, so only these may be offered. */
   canInstall: z.boolean(),
   /**
-   * The agent's own sign-in command, when it has one. bb deliberately does not
+   * The agent's own sign-in command, when it has one. Patcher deliberately does not
    * drive another tool's login: it shows the command and re-checks, so
    * credentials only ever pass through the agent itself.
    */
@@ -226,7 +226,7 @@ export const systemConfigResponseSchema = z.object({
   primaryHostId: z.string().nullable(),
   primaryHostPlatform: hostPlatformSchema.nullable(),
   voiceTranscriptionEnabled: z.boolean(),
-  /** Absolute path of the active bb data directory (where ui/, theme/, the DB live). */
+  /** Absolute path of the active Patcher data directory (where ui/, theme/, the DB live). */
   dataDir: z.string(),
 });
 export type SystemConfigResponse = z.infer<typeof systemConfigResponseSchema>;
@@ -281,7 +281,7 @@ export const systemConfigReloadResponseSchema = z.object({
 });
 
 /**
- * Whether a machine's copy of the built-in bb CLI skills matches what this
+ * Whether a machine's copy of the built-in Patcher CLI skills matches what this
  * server would install. "unknown" covers a disconnected machine or one that
  * could not be asked.
  */
@@ -314,7 +314,7 @@ export type SystemCliSkillsStatusResponse = z.infer<
   typeof systemCliSkillsStatusResponseSchema
 >;
 
-/** The machines to copy the built-in bb CLI skills onto. */
+/** The machines to copy the built-in Patcher CLI skills onto. */
 export const systemInstallCliSkillsRequestSchema = z.object({
   hostIds: z.array(z.string().min(1)).min(1).max(64),
 });

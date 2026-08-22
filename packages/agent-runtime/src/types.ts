@@ -107,7 +107,7 @@ export interface AgentRuntimeOptions {
   skillRoots?: readonly AgentRuntimeSkillRoot[];
 
   /** Called when a provider emits a translated event.
-   *  Every event has `threadId` (bb ID) and `providerThreadId` (provider's internal ID). */
+   *  Every event has `threadId` (Patcher ID) and `providerThreadId` (provider's internal ID). */
   onEvent: (event: ThreadEvent) => void;
 
   /** Called when a provider needs to execute a tool.
@@ -115,7 +115,7 @@ export interface AgentRuntimeOptions {
   onToolCall: (request: ToolCallRequest) => Promise<ToolCallResponse>;
 
   /** Called when a provider pauses for user permission or approval.
-   *  The runtime converts provider-native requests into bb's shared pending-interaction contract. */
+   *  The runtime converts provider-native requests into Patcher's shared pending-interaction contract. */
   onInteractiveRequest?: (
     request: PendingInteractionCreate,
   ) => Promise<PendingInteractionResolution>;

@@ -196,7 +196,7 @@ export function WorkspacePath() {
         <RowStage>
           <WorkspacePathRow
             environment={makeEnvironment({
-              path: "/Users/michael/.patcher-dev/worktrees/env_demo/bb",
+              path: "/Users/michael/.patcher-dev/worktrees/env_demo/patcher",
             })}
           />
         </RowStage>
@@ -205,7 +205,7 @@ export function WorkspacePath() {
         <RowStage>
           <WorkspacePathRow
             environment={makeEnvironment({
-              path: "/Users/michael/.patcher-dev/worktrees/env_7m3cieyz6q/bb/apps/app/src/components/right-panel",
+              path: "/Users/michael/.patcher-dev/worktrees/env_7m3cieyz6q/patcher/apps/app/src/components/right-panel",
             })}
           />
         </RowStage>
@@ -225,7 +225,7 @@ export function WorkspacePath() {
         <RowStage>
           <WorkspacePathRow
             environment={makeEnvironment({
-              path: "/Users/michael/Projects/bb",
+              path: "/Users/michael/Projects/patcher",
               isWorktree: false,
               workspaceProvisionType: "personal",
             })}

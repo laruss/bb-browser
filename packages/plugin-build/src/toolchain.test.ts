@@ -13,7 +13,7 @@ describe("plugin build toolchain", () => {
   let baseDir: string;
 
   beforeEach(async () => {
-    baseDir = await mkdtemp(join(tmpdir(), "bb-toolchain-"));
+    baseDir = await mkdtemp(join(tmpdir(), "patcher-toolchain-"));
   });
 
   afterEach(async () => {

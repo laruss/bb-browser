@@ -26,7 +26,7 @@ import {
 } from "@/lib/split-layout";
 import type { PaneContent, SplitLayout } from "@/lib/split-layout";
 import { usePromptDraftStorage } from "@/hooks/usePromptDraftStorage";
-import { createPatcherDesktopApi } from "@/test/bb-desktop-test-utils";
+import { createPatcherDesktopApi } from "@/test/patcher-desktop-test-utils";
 import { resourceRouteLabelAtom } from "@/components/layout/resourceRouteLabelAtom";
 import {
   resetPluginSlotStoreForTest,

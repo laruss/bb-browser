@@ -55,7 +55,7 @@ export function makePullRequest(
     state: "open",
     url: "https://github.com/acme/bb/pull/128",
     baseRefName: "main",
-    headRefName: "bb/pr-info-panel",
+    headRefName: "patcher/pr-info-panel",
     updatedAt: "2026-06-16T12:30:00Z",
     checks: {
       state: "passing",
@@ -80,7 +80,7 @@ export function makePullRequest(
 
 export const baseProps: ThreadMetadataContentProps = {
   thread: makeThread(),
-  projectId: "proj_bb",
+  projectId: "proj_patcher",
   parentThreadDisplayName: null,
   parentThreads,
   canAssignToParent: true,

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { decodeClaudeCodeJsonRpcRequest } from "../commands.js";
 
 const baseThreadStartParams = {
-  threadId: "bb-thread-1",
+  threadId: "patcher-thread-1",
   cwd: "/tmp/worktree",
   baseInstructions: "test",
   permissionMode: "default",

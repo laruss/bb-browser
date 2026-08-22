@@ -44,7 +44,7 @@ function ResponsivePromptStage({ children }: { children: ReactNode }) {
 }
 
 // ---------------------------------------------------------------------------
-// Realistic bb-flavored fixtures
+// Realistic Patcher-flavored fixtures
 // ---------------------------------------------------------------------------
 
 function makeQueuedMessage({

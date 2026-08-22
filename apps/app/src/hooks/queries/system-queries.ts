@@ -174,7 +174,7 @@ export function useSystemConfig(options?: QueryOptions) {
 }
 
 /**
- * Per-machine install state of bb's built-in CLI skills. Each read asks every
+ * Per-machine install state of Patcher's built-in CLI skills. Each read asks every
  * enrolled machine's daemon, so it is fetched on demand (the settings section)
  * rather than kept fresh in the background.
  */

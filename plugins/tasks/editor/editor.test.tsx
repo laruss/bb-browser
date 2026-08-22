@@ -56,7 +56,7 @@ describe("markdown round-trip", () => {
     ["task list", "- [ ] open task\n- [x] done task"],
     ["code block", "```ts\nconst answer = 42;\n```"],
     ["blockquote", "> quoted wisdom"],
-    ["link", "Read the [bb guide](https://example.com/guide)."],
+    ["link", "Read the [Patcher guide](https://example.com/guide)."],
     ["image", "![diagram](https://example.com/diagram.png)"],
     ["mention", "Blocked on [TSK-42](patchertask://TSK-42) for review."],
     [
@@ -74,7 +74,7 @@ describe("markdown round-trip", () => {
 });
 
 describe("mention extension", () => {
-  it("parses a bbtask link into a pill node and serializes it back", () => {
+  it("parses a patchertask link into a pill node and serializes it back", () => {
     const editor = new Editor({
       extensions: createEditorExtensions(),
       content: "Ping [TSK-42](patchertask://TSK-42) today.",
@@ -210,7 +210,7 @@ describe("mention extension", () => {
 });
 
 describe("thread mention extension", () => {
-  it("parses a bbthread link into a pill and serializes it back", () => {
+  it("parses a patcherthread link into a pill and serializes it back", () => {
     const editor = new Editor({
       extensions: createEditorExtensions(),
       content: "See [Fix login flow](patcherthread://thr_a82u8wp8qq).",

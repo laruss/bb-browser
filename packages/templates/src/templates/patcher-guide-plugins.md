@@ -1,24 +1,24 @@
 ---
 kind: instruction
-title: bb Guide — Plugins
-summary: Command reference for installing, configuring, running, and authoring bb plugins and their contributed CLI commands.
-intent: Provide complete plugin command documentation plus an authoring walkthrough for agents and humans building bb plugins.
+title: Patcher Guide — Plugins
+summary: Command reference for installing, configuring, running, and authoring Patcher plugins and their contributed CLI commands.
+intent: Provide complete plugin command documentation plus an authoring walkthrough for agents and humans building Patcher plugins.
 editingNotes: Keep flags accurate against the CLI implementation (apps/cli/src/commands/plugin.ts) and the server plugin service; a CLI test asserts every `bb plugin` subcommand appears in this chapter. The full authoring reference is the patcher-plugin-authoring builtin skill.
 ---
 Plugin commands
 
-A bb plugin is a TypeScript package that extends the bb server in-process:
+A Patcher plugin is a TypeScript package that extends the Patcher server in-process:
 background services, cron schedules, HTTP/RPC endpoints, thread lifecycle
 handlers, settings, storage — and `bb` CLI subcommands that agents and humans
 run like any other command. Plugins are full-trust code inside the server.
 
-Plugins are on by default. Builtin plugins (`builtin:<name>`) ship with bb;
+Plugins are on by default. Builtin plugins (`builtin:<name>`) ship with Patcher;
 user-installed plugins come from `bb plugin install` or the official store.
-Plugin state lives under `<bb-data-dir>/plugins/<id>/` (per-plugin SQLite file,
+Plugin state lives under `<patcher-data-dir>/plugins/<id>/` (per-plugin SQLite file,
 secrets, logs).
 
 The builtin Custom instructions plugin adds a multiline editor under Settings
-→ Custom instructions. Saved text is persisted on this bb host and included in
+→ Custom instructions. Saved text is persisted on this Patcher host and included in
 agent task instructions; blank text contributes nothing.
 
 The opt-in builtin Provider retry plugin continues Codex and Claude Code
@@ -168,7 +168,7 @@ added/updated/unchanged counts.
                                  updates (table; --json for raw results).
                                  Columns: installed, latest compatible,
                                  blocked newer (incompatible releases not
-                                 selected), status. Dev builds (bb 0.0.0)
+                                 selected), status. Dev builds (Patcher 0.0.0)
                                  annotate that engines.patcher is not enforced
   bb plugin update <id> | --all  Apply compatible updates for one plugin or
                                  every tracking plugin with an update. Same
@@ -194,7 +194,7 @@ added/updated/unchanged counts.
                                  dependencies (no server required; --app adds
                                  a frontend entry, app.tsx, plus a
                                  typecheck-only tsconfig.json)
-  bb plugin types [path]         Write this bb's @patcher/plugin-sdk declarations
+  bb plugin types [path]         Write this Patcher's @patcher/plugin-sdk declarations
                                  into the plugin's types/ (default: cwd);
                                  --check reports staleness and writes nothing
   bb plugin build [path]         Compile the plugin into dist/ — the backend
@@ -203,7 +203,7 @@ added/updated/unchanged counts.
                                  (app.js, app.css, app.meta.json). Each
                                  *.meta.json is stamped with SDK major/version,
                                  artifactFormatVersion, pluginId, pluginVersion,
-                                 and builtWith (bb + plugin SDK versions); no
+                                 and builtWith (Patcher + plugin SDK versions); no
                                  server required
   bb plugin dev [path]           Watch a plugin's sources (default: cwd) and
                                  on every change rebuild its frontend bundle
@@ -231,7 +231,7 @@ branch), and Git branches track compatible updates.
 
 `bb plugin search <query>` matches id, display name, description, and
 category across the bundled official plugins (status: installed / compatible
-/ requires newer bb). Install an official plugin by its bare name. Direct
+/ requires newer Patcher). Install an official plugin by its bare name. Direct
 HTTP(S) Git repository URLs, `path:`, `npm:`, `git:`, and `builtin:`
 sources—and path-like syntax—continue to bypass official-plugin resolution.
 
@@ -239,23 +239,23 @@ Builds are automatic once installed. Git installs run `npm install`
 (lifecycle scripts disabled), then compile both bundles — so a git plugin may
 depend on third-party packages. node_modules is kept, because bundling cannot
 inline data files a dependency reads at runtime. A committed dist/ is always
-replaced by the bundles bb builds. Path installs compile dist/ at install time
+replaced by the bundles Patcher builds. Path installs compile dist/ at install time
 from dependencies you have already installed. A build failure fails the
 install. npm packages must ship a metadata-validated prebuilt app or the
-install is refused. The server rebuilds source-built apps after a bb upgrade.
+install is refused. The server rebuilds source-built apps after a Patcher upgrade.
 
 Installing or updating a git plugin requires `npm` on PATH. Checking for
 updates does not: a check reads the candidate's manifest and stops, so
 polling never resolves a dependency tree or builds. A candidate that fails to
 build is reported as available and fails when you apply it.
 
-bb ships no build toolchain. The first time a git or path plugin is built on
-a machine, bb downloads a pinned esbuild + Tailwind set into
+Patcher ships no build toolchain. The first time a git or path plugin is built on
+a machine, Patcher downloads a pinned esbuild + Tailwind set into
 `<dataDir>/plugins/toolchain-<versions>/` and reuses it afterwards. Installing
 a prebuilt npm plugin never triggers that download.
 
 To build a plugin yourself — in CI, or to check it compiles without a running
-bb — depend on the published `bb-app` package and call the CLI:
+Patcher — depend on the published `bb-app` package and call the CLI:
 
 ```jsonc
 // your plugin's package.json
@@ -266,7 +266,7 @@ bb — depend on the published `bb-app` package and call the CLI:
 `bb plugin build` talks to no server. Depending on `bb-app@X` builds with
 exactly that release's shim configuration, so the bundle cannot be built
 against a mismatched host runtime. Cache the toolchain directory in CI to skip
-the download on later runs. Only `bb plugin dev` needs a running bb, because
+the download on later runs. Only `bb plugin dev` needs a running Patcher, because
 it reloads the installed plugin after each rebuild.
 
 The backend half is prebuilt too: when a builtin/official/git/npm install
@@ -363,7 +363,7 @@ least `icon` or `logo.light`, `patcher.server`
 (backend entry, loaded as TypeScript — no build step), optional `patcher.app`
 (frontend entry), optional `patcher.skills` (static skill directories auto-imported
 into agent threads unless filtered by `patcher.agents.configure`; default
-`skills/`), `engines.patcher` (supported bb range),
+`skills/`), `engines.patcher` (supported Patcher range),
 and optional `engines.patcherPluginSdk` (supported plugin SDK range; scaffold
 writes `"^1.0.0"` for SDK 1.0.0). Use `patcher-plugin-hello` for the package name by
 default. Scoped names such as `@acme/patcher-plugin-hello` are also supported. The
@@ -374,7 +374,7 @@ Plugins can contribute palettes with `patcher.themes`: an array of
 `{ id, name, description?, css }`, where `css` is a plugin-relative `.css`
 file. Loaded plugin palettes appear in Settings → Appearance and `bb theme
 list`; their selectable id is `plugin:<plugin-id>:<theme-id>`. Disabling or
-removing the owning plugin makes bb fall back to the default palette.
+removing the owning plugin makes Patcher fall back to the default palette.
 
 Branding is explicit. Declare `patcher.branding.icon` as either the plugin's
 canonical BB icon name or a plugin-relative compact SVG such as
@@ -399,10 +399,10 @@ The backend entry default-exports a factory receiving the full plugin API:
 
 The import is type-only and erased at load; the scaffold ships the full API
 as bundled .d.ts in types/ (tsconfig maps @patcher/plugin-sdk to them), so
-`npm install && npx tsc --noEmit` typechecks anywhere — no bb checkout
+`npm install && npx tsc --noEmit` typechecks anywhere — no Patcher checkout
 needed. Those files are ordinary readable declarations, not a minified
 bundle: read them for an exact signature. The SDK surface grows every
-release, so `bb plugin types` rewrites them from the running bb — run it in a
+release, so `bb plugin types` rewrites them from the running Patcher — run it in a
 cloned or older plugin, and `bb plugin types --check` in CI. `bb plugin
 build` and `bb plugin dev` refresh them for you. Need a symbol the types
 don't explain? Clone the repo: https://github.com/get-bb/bb. The API in
@@ -410,7 +410,7 @@ one line each — patcher.log (plugin-scoped logger behind `bb plugin logs`);
 patcher.settings.define (declarative settings incl. secrets, editable via
 `bb plugin config`); patcher.storage.kv (JSON rows ≤256KB) and
 patcher.storage.database()+migrate (the plugin's own database); patcher.sdk (the full
-bb SDK — handlers/services only, not the factory; spawned threads are
+Patcher SDK — handlers/services only, not the factory; spawned threads are
 attributed to the plugin; `visibility: "hidden"` creates directly addressable
 background workers omitted from sidebar organization and unread/pending
 favicon attention, with other behavior unchanged; a child thread inherits

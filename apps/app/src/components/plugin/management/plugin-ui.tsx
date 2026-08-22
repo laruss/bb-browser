@@ -202,8 +202,8 @@ export function FullTrustWarning() {
     >
       <Icon name="Lock" className="mt-0.5 size-3 shrink-0" />
       <span>
-        Plugins run as full-trust code with access to all local bb data. Only
-        install sources you trust.
+        Plugins run as full-trust code with access to all local Patcher data.
+        Only install sources you trust.
       </span>
     </p>
   );
@@ -225,7 +225,7 @@ export function RollbackNote({
       <Icon name="RotateCcw" className="mt-0.5 size-3.5 shrink-0" />
       <span>
         Your plugin data is snapshotted first — if {toVersion} fails to start,
-        bb restores {fromVersion} and its data automatically.
+        Patcher restores {fromVersion} and its data automatically.
       </span>
     </div>
   );

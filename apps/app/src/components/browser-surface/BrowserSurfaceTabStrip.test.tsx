@@ -3,13 +3,13 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { PatcherDesktopInfo } from "@patcher/desktop-contract";
-import { createPatcherDesktopApi } from "@/test/bb-desktop-test-utils";
+import { createPatcherDesktopApi } from "@/test/patcher-desktop-test-utils";
 import type { BrowserFixedPanelTab } from "@/lib/fixed-panel-tabs-state";
 import { createAppSurfaceTab } from "@/lib/browser-surface-tabs";
 import {
   MACOS_TRAFFIC_LIGHT_LEADING_RESERVE_CLASS,
   SIDEBAR_TRIGGER_TRAILING_RESERVE_CLASS,
-} from "@/lib/bb-desktop";
+} from "@/lib/patcher-desktop";
 import type { BrowserSurfaceTab } from "@/lib/browser-surface-tabs";
 import type { PluginBrowserTabStatus } from "@patcher/plugin-sdk";
 import {
@@ -336,7 +336,7 @@ describe("browser surface tab strip separators", () => {
   });
 });
 
-// Chromium shows the page's own icon; bb's shell fetches it and hands over a
+// Chromium shows the page's own icon; Patcher's shell fetches it and hands over a
 // data URI, so the strip renders bytes rather than a page-supplied URL.
 describe("browser surface tab strip icons", () => {
   const ICON_DATA_URL = "data:image/png;base64,aWNvbg==";
@@ -386,11 +386,11 @@ describe("browser surface tab strip icons", () => {
   });
 });
 
-// bb's own screens ride the same strip as web pages. They have no page icon and
+// Patcher's own screens ride the same strip as web pages. They have no page icon and
 // never will, so they carry a mark of their own — otherwise a Settings tab
 // would be indistinguishable from a page that has not loaded its favicon yet.
 describe("app tabs in the strip", () => {
-  it("names a screen by its title and marks it as bb's own", () => {
+  it("names a screen by its title and marks it as Patcher's own", () => {
     const settings = createAppSurfaceTab({
       path: "/settings/servers",
       title: "Settings",
@@ -437,9 +437,9 @@ describe("browser surface tab menu", () => {
     expect(screen.getByText("Close tab")).not.toBeNull();
   });
 
-  // A bb screen is a remembered route with no page of its own: duplicating it
+  // A Patcher screen is a remembered route with no page of its own: duplicating it
   // would leave two tabs claiming one route, and its audio is the app's.
-  it("leaves duplicate and mute off a bb screen", () => {
+  it("leaves duplicate and mute off a Patcher screen", () => {
     renderStrip([
       createAppSurfaceTab({ path: "/settings", title: "Settings" }),
     ]);

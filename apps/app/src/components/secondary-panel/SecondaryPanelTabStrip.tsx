@@ -40,7 +40,7 @@ import { cn } from "@patcher/shared-ui/lib/utils";
 import {
   MACOS_APP_REGION_NO_DRAG_CLASS,
   MACOS_WINDOW_NO_DRAG_CLASS,
-} from "@/lib/bb-desktop";
+} from "@/lib/patcher-desktop";
 import type {
   SecondaryPanelFileTab,
   SecondaryPanelTabReorderHandler,

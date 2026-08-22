@@ -76,27 +76,27 @@ const OVERVIEW_ENTRIES: AutomationsOverviewResponse["automations"] = [
   },
   {
     automation: automation("release", "Release readiness", {
-      projectId: "proj_bb",
+      projectId: "proj_patcher",
       lastRunStatus: "running",
       nextRunAt: now + 3_600_000,
     }),
-    project: { id: "proj_bb", name: "bb" },
+    project: { id: "proj_patcher", name: "Patcher" },
   },
   {
     automation: automation("pending-reminder", "A pending launch reminder", {
-      projectId: "proj_bb",
+      projectId: "proj_patcher",
       trigger: { triggerType: "once", runAt: now + 86_400_000 },
       nextRunAt: now + 86_400_000,
     }),
-    project: { id: "proj_bb", name: "bb" },
+    project: { id: "proj_patcher", name: "Patcher" },
   },
   {
     automation: automation("dependencies", "Dependency drift", {
-      projectId: "proj_bb",
+      projectId: "proj_patcher",
       enabled: false,
       nextRunAt: null,
     }),
-    project: { id: "proj_bb", name: "bb" },
+    project: { id: "proj_patcher", name: "Patcher" },
   },
   {
     automation: automation("one-shot", "Prepare launch notes", {
@@ -286,7 +286,7 @@ const DETAIL_AUTOMATION = automation("nightly-digest", "Nightly digest", {
 
 const PROJECT_AUTOMATION: AutomationResponse = {
   ...DETAIL_AUTOMATION,
-  projectId: "proj_bb",
+  projectId: "proj_patcher",
   lastRunAt: now,
   runCount: 3,
   lastRunStatus: "running",
@@ -388,13 +388,13 @@ mkdir -p "$output_dir"
 for repository in api app docs integrations; do
   echo "Collecting $repository activity for $report_date"
   gh pr list \\
-    --repo "bb/$repository" \\
+    --repo "patcher/$repository" \\
     --state all \\
     --json number,title,state,updatedAt \\
     > "$output_dir/$repository-$report_date.json"
 
   gh issue list \\
-    --repo "bb/$repository" \\
+    --repo "patcher/$repository" \\
     --state all \\
     --json number,title,state,updatedAt \\
     > "$output_dir/$repository-issues-$report_date.json"
@@ -581,7 +581,7 @@ export function DetailStates() {
         >
           <AutomationDetail
             value={PROJECT_AUTOMATION}
-            projectLabel="bb"
+            projectLabel="Patcher"
             runs={PROJECT_RUNS}
           />
         </DetailState>
@@ -689,7 +689,9 @@ export function ProviderIdentities() {
           >
             <AutomationDetail
               value={value}
-              projectLabel={value.projectId === "proj_bb" ? "bb" : "Local"}
+              projectLabel={
+                value.projectId === "proj_patcher" ? "Patcher" : "Local"
+              }
             />
           </DetailState>
         ))}

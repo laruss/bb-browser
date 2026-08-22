@@ -557,7 +557,7 @@ Status: passed
 Validated:
 
 - Ran a live Claude Code SDK query from `packages/agent-runtime` with `effort: "high"` and `thinking: { type: "adaptive", display: "summarized" }`. The stream emitted 4 thinking deltas, 207 thinking characters, 1 final thinking block, and a successful result.
-- Ran a live query through bb's Claude bridge session helpers, using `buildSessionOptions` plus `SdkSession` from the built `@patcher/agent-runtime` output. The resolved options included `thinking: { type: "adaptive", display: "summarized" }` and `effort: "high"`. The stream emitted 6 thinking deltas, 284 thinking characters, 1 final thinking block, and a successful result.
+- Ran a live query through Patcher's Claude bridge session helpers, using `buildSessionOptions` plus `SdkSession` from the built `@patcher/agent-runtime` output. The resolved options included `thinking: { type: "adaptive", display: "summarized" }` and `effort: "high"`. The stream emitted 6 thinking deltas, 284 thinking characters, 1 final thinking block, and a successful result.
 
 Notes:
 
@@ -665,4 +665,4 @@ Fixes made during the pass:
 Cleanup:
 
 - Standalone teardown and cleanup succeeded after the final manual rerun.
-- No `/tmp/bb-standalone-*` roots remained after cleanup.
+- No `/tmp/patcher-standalone-*` roots remained after cleanup.

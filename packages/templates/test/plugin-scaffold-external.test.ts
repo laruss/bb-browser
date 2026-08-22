@@ -256,7 +256,7 @@ describe("external plugin scaffold types", () => {
   let workDir: string;
 
   beforeEach(async () => {
-    workDir = await mkdtemp(join(tmpdir(), "bb-external-scaffold-"));
+    workDir = await mkdtemp(join(tmpdir(), "patcher-external-scaffold-"));
   });
 
   afterEach(async () => {

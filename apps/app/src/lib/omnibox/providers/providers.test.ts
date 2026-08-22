@@ -281,7 +281,7 @@ describe("built-in provider ordering", () => {
   });
 });
 
-// bb's own screens are reachable from the address bar the way Chromium's
+// Patcher's own screens are reachable from the address bar the way Chromium's
 // chrome:// pages are — by name, not by knowing the path they live at.
 describe("app routes provider", () => {
   const provider = createOmniboxAppRouteProvider({
@@ -303,9 +303,9 @@ describe("app routes provider", () => {
       type: "open-app-tab",
       path: "/tools/plugins",
     });
-    // Attributed to bb rather than left as a plain "Go": the row leads out of
+    // Attributed to Patcher rather than left as a plain "Go": the row leads out of
     // the web and into the app, and that is worth seeing before Enter.
-    expect(suggestion?.sourceLabel).toBe("bb");
+    expect(suggestion?.sourceLabel).toBe("Patcher");
   });
 
   it("stays out of the way of a real address", async () => {

@@ -31,7 +31,7 @@ describe("finding an encoder", () => {
 
   it("ignores a relative override rather than resolving it", () => {
     // Against the server's cwd, which has nothing to do with the caller's — the
-    // same rule every other bb path override follows.
+    // same rule every other Patcher path override follows.
     expect(ffmpegCandidates({ PATCHER_FFMPEG: "./ffmpeg" })).toEqual(
       ffmpegCandidates({}),
     );

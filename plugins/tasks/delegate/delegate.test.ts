@@ -49,7 +49,7 @@ describe("task delegation", () => {
       name: "Tasks plugin",
       prefix: "TASK",
       color: "blue",
-      linkedPatcherProjectId: "proj_bb",
+      linkedPatcherProjectId: "proj_patcher",
     });
     const task = store.tasks.createTask({
       projectId: project.id,
@@ -72,7 +72,7 @@ describe("task delegation", () => {
     expect(harness.sdk.callsTo("threads.spawn")).toEqual([
       [
         expect.objectContaining({
-          projectId: "proj_bb",
+          projectId: "proj_patcher",
           environment: { type: "project-default" },
           providerId: "claude-code",
           model: "claude-sonnet-5",
@@ -144,7 +144,7 @@ describe("task delegation", () => {
       name: "Fast delegation",
       prefix: "FAST",
       color: "blue",
-      linkedPatcherProjectId: "proj_bb",
+      linkedPatcherProjectId: "proj_patcher",
     });
     const task = store.tasks.createTask({
       projectId: project.id,
@@ -331,7 +331,7 @@ describe("task delegation", () => {
     await harness.dispose();
   });
 
-  it("fails before spawning when the task project is not linked to bb", async () => {
+  it("fails before spawning when the task project is not linked to Patcher", async () => {
     const { patcher, harness } = createFakePluginHost({
       permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
@@ -354,7 +354,7 @@ describe("task delegation", () => {
       harness.callRpc("delegate", { taskId: task.id, presetId: preset.id }),
     ).rejects.toMatchObject({
       code: "handler_error",
-      message: 'Task project "Unlinked" is not linked to a bb project',
+      message: 'Task project "Unlinked" is not linked to a Patcher project',
     });
     expect(harness.sdk.callsTo("threads.spawn")).toEqual([]);
 
@@ -506,7 +506,7 @@ describe("delegation seed prompt", () => {
       ## Project context
 
       - Name: Tasks plugin
-      - Linked bb project: proj_tasks
+      - Linked Patcher project: proj_tasks
 
       ## Sub-tasks
 
@@ -529,7 +529,7 @@ describe("delegation seed prompt", () => {
 
       ## Report-back contract
 
-      You are working on task TASK-1. Use the bb tasks CLI: comment substantive updates (bb tasks comment TASK-1 --body ...), attach result artifacts, set status when done (bb tasks update TASK-1 --status in_review) or explain blockage in a comment. Your thread is already attached to the task.
+      You are working on task TASK-1. Use the Patcher tasks CLI: comment substantive updates (bb tasks comment TASK-1 --body ...), attach result artifacts, set status when done (bb tasks update TASK-1 --status in_review) or explain blockage in a comment. Your thread is already attached to the task.
 
       ## Preset instructions
 

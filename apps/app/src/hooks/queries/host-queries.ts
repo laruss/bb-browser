@@ -18,7 +18,7 @@ interface QueryOptions {
 /**
  * Hosts known to the server, with live connection status. Server-derived, so it
  * resolves from any device on the tailnet — unlike the loopback host-daemon
- * probe, which only answers on the machine actually running bb.
+ * probe, which only answers on the machine actually running Patcher.
  */
 export function useHosts(options?: QueryOptions) {
   const enabled = options?.enabled ?? true;
@@ -33,7 +33,7 @@ export function useHosts(options?: QueryOptions) {
 }
 
 /**
- * The host bb defaults work to. The server-resolved `primaryHostId` from
+ * The host Patcher defaults work to. The server-resolved `primaryHostId` from
  * `/system/config` is authoritative — with several connected machines the
  * first-connected guess can crown the wrong one. The connected-first
  * heuristic remains only for a null id (fresh server, or config still

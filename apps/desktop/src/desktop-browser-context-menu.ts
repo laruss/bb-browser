@@ -77,11 +77,11 @@ export interface BrowserContextMenuActions {
 export interface BuildBrowserContextMenuArgs {
   actions: BrowserContextMenuActions;
   /**
-   * False when bb is itself the browser macOS opens links with. The entry would
+   * False when Patcher is itself the browser macOS opens links with. The entry would
    * then hand the link to Launch Services, which would hand it straight back as
    * a new tab — which is what "Open Link in New Tab" above already does, without
    * claiming to have left the app. Defaults to true, which is what every build
-   * before bb could be a default browser did.
+   * before Patcher could be a default browser did.
    */
   canOpenExternally?: boolean;
   /** Contributed by plugins; already capped by the wire schema. */

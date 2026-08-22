@@ -188,7 +188,7 @@ const SKILL_PATH = "/Users/you/.patcher/skills/writing-voice/SKILL.md";
 /**
  * The leading slot carries the skill's provider, exactly as the real library
  * rows and detail route do — a provider logo when the skill is discovered
- * under one, the bb mark when it is not. Omitting it here would make every
+ * under one, the Patcher mark when it is not. Omitting it here would make every
  * state below misrepresent the page.
  */
 function SkillLeading({ provider }: { provider: SkillProvider | null }) {
@@ -257,7 +257,7 @@ export function SkillDetailStates() {
 
       <State
         name="Provider-owned"
-        note="A skill discovered under Claude Code or Codex carries that provider's logo where a bb-owned skill carries the bb mark."
+        note="A skill discovered under Claude Code or Codex carries that provider's logo where a Patcher-owned skill carries the Patcher mark."
       >
         <Skill provider="claude-code" />
       </State>
@@ -284,12 +284,12 @@ export function SkillDetailStates() {
 
       <State
         name="BB Official"
-        note="A skill that ships with bb uses the same publisher badge as a BB Official plugin. Its read-only behavior remains a separate permission fact."
+        note="A skill that ships with Patcher uses the same publisher badge as a BB Official plugin. Its read-only behavior remains a separate permission fact."
       >
         <Skill
           titleBadge={{
             label: "BB Official",
-            tooltip: "Ships with bb",
+            tooltip: "Ships with Patcher",
           }}
         />
       </State>
@@ -314,7 +314,7 @@ export function SkillDetailStates() {
 
       <State
         name="Imported"
-        note="Ownership is passive: a skill bb cannot write shows its origin as a status, with no edit or acquisition control."
+        note="Ownership is passive: a skill Patcher cannot write shows its origin as a status, with no edit or acquisition control."
       >
         <Skill
           provider="claude-code"
@@ -391,7 +391,8 @@ const PLUGIN: PluginListItem = {
   enabled: true,
   status: "running",
   statusDetail: null,
-  description: "Browse GitHub issues and pull requests without leaving bb.",
+  description:
+    "Browse GitHub issues and pull requests without leaving Patcher.",
   name: "GitHub",
   icon: "Github",
   compactIconUrl: null,
@@ -491,7 +492,7 @@ const AWKWARD_PLUGIN: PluginListItem = {
   rootDir:
     "/Users/you/.patcher/plugins/enterprise-issue-tracker-synchronization/packages/runtime",
   description:
-    "Keeps issues, pull requests, review comments, and release checklists synchronized between bb threads and your issue tracker, including bidirectional status mapping, attachment mirroring, and per-project field translation.",
+    "Keeps issues, pull requests, review comments, and release checklists synchronized between Patcher threads and your issue tracker, including bidirectional status mapping, attachment mirroring, and per-project field translation.",
   cliCommand: {
     name: "enterprise-issue-tracker-sync",
     summary:
@@ -557,7 +558,7 @@ const BUNDLED_PLUGIN: PluginListItem = {
   source: "builtin:github",
   rootDir: "/managed/plugins/github",
   provenance: "builtin",
-  sourceDisplay: "Ships with bb",
+  sourceDisplay: "Ships with Patcher",
   capabilities: STATIC_CAPABILITIES,
 };
 
@@ -565,7 +566,8 @@ const UNINSTALLED_CATALOG_PLUGIN = {
   entryId: "github",
   pluginId: "github",
   displayName: "GitHub",
-  description: "Browse GitHub issues and pull requests without leaving bb.",
+  description:
+    "Browse GitHub issues and pull requests without leaving Patcher.",
   icon: "Github",
   category: "Developer tools",
   source: "builtin:github",
@@ -580,7 +582,9 @@ const COMPATIBILITY_BLOCKED_PLUGIN: PluginListItem = {
   updateState: {
     ...EMPTY_PLUGIN_UPDATE_STATE,
     blockedVersion: "2.0.0",
-    blockedReasons: ["Requires bb 0.20 or newer, and this bb is 0.18."],
+    blockedReasons: [
+      "Requires Patcher 0.20 or newer, and this Patcher is 0.18.",
+    ],
   },
 };
 
@@ -742,7 +746,7 @@ export function PluginDetailStates() {
     <PluginStoryQueryBoundary>
       <Story
         title="Plugin detail states"
-        description="An uninstalled BB Official plugin shows the catalog facts bb can verify and offers Install. Once installed, the page adds runtime capabilities, settings, services, and schedules when they apply."
+        description="An uninstalled BB Official plugin shows the catalog facts Patcher can verify and offers Install. Once installed, the page adds runtime capabilities, settings, services, and schedules when they apply."
       >
         <State
           name="Before ownership"
@@ -759,7 +763,7 @@ export function PluginDetailStates() {
             entry={{
               ...UNINSTALLED_CATALOG_PLUGIN,
               compatible: false,
-              incompatibleReason: "Requires bb 0.20 or newer.",
+              incompatibleReason: "Requires Patcher 0.20 or newer.",
             }}
           />
         </State>
@@ -827,14 +831,14 @@ export function PluginDetailStates() {
 
         <State
           name="BB Official · catalog"
-          note="Installed from bb's catalog. It shares the BB Official badge with built-in plugins, while its install date and ownership menu preserve the lifecycle difference."
+          note="Installed from Patcher's catalog. It shares the BB Official badge with built-in plugins, while its install date and ownership menu preserve the lifecycle difference."
         >
           <Plugin plugin={CATALOG_PLUGIN} />
         </State>
 
         <State
           name="BB Official · built-in"
-          note="Ships with bb. The badge matches catalog-installed official plugins; the missing install date and ownership menu show that it cannot be uninstalled separately."
+          note="Ships with Patcher. The badge matches catalog-installed official plugins; the missing install date and ownership menu show that it cannot be uninstalled separately."
         >
           <Plugin plugin={BUNDLED_PLUGIN} />
         </State>
@@ -855,7 +859,7 @@ export function PluginDetailStates() {
 
         <State
           name="Compatibility blocked"
-          note="A newer release requires a newer bb. A dedicated Update row explains the requirement and preserved version; there is no unavailable action or modal."
+          note="A newer release requires a newer Patcher. A dedicated Update row explains the requirement and preserved version; there is no unavailable action or modal."
         >
           <Plugin plugin={COMPATIBILITY_BLOCKED_PLUGIN} />
         </State>
@@ -934,13 +938,13 @@ export function PluginBannerStates() {
 
         <State
           name="Health · Incompatible"
-          note="The installed plugin cannot run with this version of bb. The banner directs the user to install a compatible version without repeating the server's raw compatibility string."
+          note="The installed plugin cannot run with this version of Patcher. The banner directs the user to install a compatible version without repeating the server's raw compatibility string."
         >
           <Plugin
             plugin={{
               ...PLUGIN,
               status: "incompatible",
-              statusDetail: "requires bb 0.20 or newer",
+              statusDetail: "requires Patcher 0.20 or newer",
             }}
           />
         </State>
@@ -1022,7 +1026,7 @@ export function PluginReleaseStates() {
 
         <State
           name="Release · update blocked"
-          note="Not a banner and not a failed attempt. The Update row names the bb-version requirement and preserved installed version; there is no unavailable action or dialog to dismiss."
+          note="Not a banner and not a failed attempt. The Update row names the patcher-version requirement and preserved installed version; there is no unavailable action or dialog to dismiss."
         >
           <Plugin plugin={COMPATIBILITY_BLOCKED_PLUGIN} />
         </State>
@@ -1117,7 +1121,7 @@ const pluginLocalItems = [
   { label: "Open source", icon: "ExternalLink" as const, onSelect: noop },
   { kind: "separator" as const },
   {
-    label: "Remove from bb",
+    label: "Remove from Patcher",
     icon: "Trash2" as const,
     tone: "destructive" as const,
     onSelect: noop,
@@ -1203,7 +1207,7 @@ export function ResourceControlStates() {
                 onAction={noop}
               />
             }
-            meaning="Creates a new bb-owned skill from a registry source on the skill detail page."
+            meaning="Creates a new Patcher-owned skill from a registry source on the skill detail page."
           />
           <ControlRow
             state="Skill · forking"
@@ -1228,22 +1232,22 @@ export function ResourceControlStates() {
           <ControlRow
             state="Plugin · BB Official catalog"
             control={<PluginProvenancePill plugin={CATALOG_PLUGIN} />}
-            meaning="Published by bb and installed from the catalog."
+            meaning="Published by Patcher and installed from the catalog."
           />
           <ControlRow
             state="Plugin · BB Official built-in"
             control={<PluginProvenancePill plugin={BUNDLED_PLUGIN} />}
-            meaning="Ships with bb. The same badge communicates publisher; lifecycle differences remain in metadata and actions."
+            meaning="Ships with Patcher. The same badge communicates publisher; lifecycle differences remain in metadata and actions."
           />
           <ControlRow
             state="Skill · BB Official"
             control={
               <SkillOwnershipBadge
                 label="BB Official"
-                tooltip="Ships with bb"
+                tooltip="Ships with Patcher"
               />
             }
-            meaning="A skill that ships with bb."
+            meaning="A skill that ships with Patcher."
           />
           <ControlRow
             state="Skill · Included"
@@ -1335,7 +1339,7 @@ export function ResourceControlStates() {
                 items={pluginLocalItems}
               />
             }
-            meaning="Local sources can be edited, opened, or removed from bb without deleting the source directory."
+            meaning="Local sources can be edited, opened, or removed from Patcher without deleting the source directory."
           />
           <ControlRow
             state="BB Official built-in actions"
@@ -1390,7 +1394,7 @@ export function ResourceControlStates() {
                 items={skillLocalItems}
               />
             }
-            meaning="A bb-owned skill can be edited, opened, or deleted."
+            meaning="A Patcher-owned skill can be edited, opened, or deleted."
           />
           <ControlRow
             state="Read-only actions"

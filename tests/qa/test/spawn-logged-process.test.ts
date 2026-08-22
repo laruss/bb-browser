@@ -247,7 +247,7 @@ describe("spawnLoggedProcess", () => {
     expect(spawnMockState.invocations[0]?.options.detached).toBe(true);
   });
 
-  it("keeps standalone server runtime env isolated from inherited bb and ambient OpenAI env", async () => {
+  it("keeps standalone server runtime env isolated from inherited Patcher and ambient OpenAI env", async () => {
     vi.stubEnv("PATCHER_APP_URL", "https://inherited-app.example.test");
     vi.stubEnv("PATCHER_DATA_DIR", "/Users/example/.patcher-dev");
     vi.stubEnv("PATCHER_SERVER_PORT", "3334");
@@ -312,7 +312,7 @@ describe("spawnLoggedProcess", () => {
         capturedBody = typeof init?.body === "string" ? init.body : null;
         return new Response(
           JSON.stringify({
-            enrollKey: "bbde_standalone",
+            enrollKey: "patcherde_standalone",
             expiresAt: Date.now() + 60_000,
             hostId: "host_standalone",
           }),
@@ -329,7 +329,7 @@ describe("spawnLoggedProcess", () => {
     await expect(
       createStandaloneHostEnrollKey("http://127.0.0.1:4567"),
     ).resolves.toMatchObject({
-      enrollKey: "bbde_standalone",
+      enrollKey: "patcherde_standalone",
       hostId: "host_standalone",
     });
     expect(capturedBody).toBe(JSON.stringify({}));
@@ -371,7 +371,7 @@ describe("cleanupStandaloneOrphans", () => {
   it("skips a standalone root whose parent process exists but is not signalable", async () => {
     const tmpDir = useIsolatedStandaloneTmpDir();
     const tmpRoot = createStandaloneRoot({
-      name: "bb-standalone-unowned",
+      name: "patcher-standalone-unowned",
       state: {
         daemon: { pid: 1111 },
         parentPid: 1,
@@ -403,7 +403,7 @@ describe("cleanupStandaloneOrphans", () => {
   it("removes stale standalone roots whose parent process is gone", async () => {
     const tmpDir = useIsolatedStandaloneTmpDir();
     const tmpRoot = createStandaloneRoot({
-      name: "bb-standalone-owned-stale",
+      name: "patcher-standalone-owned-stale",
       state: {
         daemon: { pid: 1111 },
         parentPid: 4242,

@@ -16,7 +16,7 @@ import type {
 import {
   createPatcherDesktopApi,
   createNoopDesktopBrowserApi,
-} from "@/test/bb-desktop-test-utils";
+} from "@/test/patcher-desktop-test-utils";
 import { useBrowserDownloadNotifications } from "@/lib/browser-downloads";
 import { createQueryClientTestHarness } from "@/test/queryClientTestHarness";
 import { BrowserSurfaceChrome } from "./BrowserSurfaceChrome";

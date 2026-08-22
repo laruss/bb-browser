@@ -38,7 +38,7 @@ import {
   emptyPatcherProjectLinkState,
   resolvePatcherProjectLink,
   type PatcherProjectLinkState,
-} from "./bb-project-link.js";
+} from "./patcher-project-link.js";
 
 const NO_FOLDER = "__none__";
 const NEW_FOLDER = "__new__";
@@ -274,8 +274,8 @@ export function NewProjectDialog({ open, onOpenChange }: NewProjectDialogProps) 
             ) : null}
           </Field>
           <Field
-            label="Linked bb project"
-            hint="Optional. Linking a bb project enables dispatching to agents."
+            label="Linked Patcher project"
+            hint="Optional. Linking a Patcher project enables dispatching to agents."
           >
             <PatcherProjectLinkPicker
               state={linkState}

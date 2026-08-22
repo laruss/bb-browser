@@ -302,7 +302,7 @@ export class PatcherRealtimeClient implements PatcherRealtime {
       try {
         void this.connectSocket().catch((error) => {
           if (listener.active) {
-            console.error("bb realtime connection failed", error);
+            console.error("Patcher realtime connection failed", error);
           }
         });
       } catch (error) {
@@ -440,7 +440,7 @@ export class PatcherRealtimeClient implements PatcherRealtime {
       }
       this.socket = null;
       this.clearSocketReadyPromise(
-        new Error("bb realtime socket closed before it became ready."),
+        new Error("Patcher realtime socket closed before it became ready."),
       );
       if (this.targetSubscriptions.size === 0) {
         // A socket that was already CLOSING when the last listener
@@ -485,10 +485,10 @@ export class PatcherRealtimeClient implements PatcherRealtime {
         // contain it here to keep the process alive.
         try {
           void this.connectSocket().catch((error) => {
-            console.error("bb realtime reconnect failed", error);
+            console.error("Patcher realtime reconnect failed", error);
           });
         } catch (error) {
-          console.error("bb realtime reconnect failed", error);
+          console.error("Patcher realtime reconnect failed", error);
         }
       }, reconnectDelayMs);
     };
@@ -514,7 +514,7 @@ export class PatcherRealtimeClient implements PatcherRealtime {
     this.reconnectDelayMs = INITIAL_RECONNECT_DELAY_MS;
     this.clearSocketReadyPromise(
       new Error(
-        "bb realtime socket closed because there are no active targets.",
+        "Patcher realtime socket closed because there are no active targets.",
       ),
     );
     if (
@@ -551,7 +551,7 @@ export class PatcherRealtimeClient implements PatcherRealtime {
     try {
       parsedMessage = JSON.parse(event.data);
     } catch (error) {
-      console.error("bb realtime ignored malformed websocket message", error);
+      console.error("Patcher realtime ignored malformed websocket message", error);
       return;
     }
 
@@ -572,7 +572,7 @@ export class PatcherRealtimeClient implements PatcherRealtime {
     const parseResult = serverMessageLenientSchema.safeParse(parsedMessage);
     if (!parseResult.success) {
       console.error(
-        "bb realtime ignored invalid websocket message",
+        "Patcher realtime ignored invalid websocket message",
         parseResult.error,
       );
       return;
@@ -651,7 +651,7 @@ export class PatcherRealtimeClient implements PatcherRealtime {
 
   private resetSocketReadyPromise(): void {
     this.clearSocketReadyPromise(
-      new Error("bb realtime socket closed before it became ready."),
+      new Error("Patcher realtime socket closed before it became ready."),
     );
     this.socketReadyPromise = new Promise((resolve, reject) => {
       this.resolveSocketReady = resolve;
@@ -718,7 +718,7 @@ export class PatcherRealtimeClient implements PatcherRealtime {
     try {
       callback(event);
     } catch (error) {
-      console.error("bb realtime listener failed", error);
+      console.error("Patcher realtime listener failed", error);
     }
   }
 }

@@ -45,7 +45,7 @@ function createServerRuntimeEnv(
   overrides: NodeJS.ProcessEnv = {},
 ): NodeJS.ProcessEnv {
   return {
-    PATCHER_DATA_DIR: "/tmp/bb-data",
+    PATCHER_DATA_DIR: "/tmp/patcher-data",
     PATCHER_HOST_DAEMON_PORT: "5555",
     PATCHER_SERVER_PORT: "4444",
     NODE_ENV: "development",
@@ -96,7 +96,7 @@ describe("common config", () => {
 
   it("resolves development defaults from the checkout instance", () => {
     const homeDir = "/Users/tester";
-    const repoRoot = "/Users/tester/src/bb";
+    const repoRoot = "/Users/tester/src/patcher";
 
     expect(
       loadCommonConfig({
@@ -106,7 +106,7 @@ describe("common config", () => {
         homeDir,
         repoRoot,
       }).PATCHER_DATA_DIR,
-    ).toBe("/Users/tester/.patcher-dev/src-bb-9039de53a76a");
+    ).toBe("/Users/tester/.patcher-dev/src-patcher-94f81823a531");
   });
 
   it("expands home-directory overrides for PATCHER_DATA_DIR", () => {
@@ -170,7 +170,7 @@ describe("data-dir helpers", () => {
 
   it("resolves development defaults from the current checkout instance", () => {
     const homeDir = "/Users/tester";
-    const repoRoot = "/Users/tester/src/bb";
+    const repoRoot = "/Users/tester/src/patcher";
 
     expect(
       resolveRuntimeDataDir({
@@ -179,7 +179,7 @@ describe("data-dir helpers", () => {
         mode: "dev",
         repoRoot,
       }),
-    ).toBe("/Users/tester/.patcher-dev/src-bb-9039de53a76a");
+    ).toBe("/Users/tester/.patcher-dev/src-patcher-94f81823a531");
   });
 
   it("keeps the legacy fallback label for degenerate checkout labels", () => {
@@ -299,7 +299,7 @@ describe("consumer-specific config", () => {
 
     expect(serverConfig.PATCHER_SERVER_PORT).toBe(4444);
     expect(serverConfig.PATCHER_HOST_DAEMON_PORT).toBe(5555);
-    expect(serverConfig.databasePath).toBe("/tmp/bb-data/patcher.db");
+    expect(serverConfig.databasePath).toBe("/tmp/patcher-data/patcher.db");
     expect(serverConfig.PATCHER_APP_URL).toBe("");
     expect(serverConfig.PATCHER_APP_SURFACE).toBe("web");
     expect(serverConfig.PATCHER_APP_VERSION).toBe("0.0.0-dev");
@@ -463,13 +463,13 @@ describe("consumer-specific config", () => {
   it("derives the database path from data dir without validating unrelated server env", () => {
     const databaseConfig = loadDatabaseConfig({
       env: {
-        PATCHER_DATA_DIR: "/tmp/bb-data",
+        PATCHER_DATA_DIR: "/tmp/patcher-data",
         PATCHER_EXTERNAL_URL: "not-a-url",
         NODE_ENV: "development",
       },
     });
 
-    expect(databaseConfig.databasePath).toBe("/tmp/bb-data/patcher.db");
+    expect(databaseConfig.databasePath).toBe("/tmp/patcher-data/patcher.db");
   });
 
   it("requires provider/model format for PATCHER_INFERENCE", () => {
@@ -580,14 +580,14 @@ describe("consumer-specific config", () => {
   it("builds full host-daemon config when the daemon entrypoint owns data dir", () => {
     const hostDaemonConfig = loadHostDaemonConfig({
       env: {
-        PATCHER_DATA_DIR: "/tmp/bb-data",
+        PATCHER_DATA_DIR: "/tmp/patcher-data",
         PATCHER_HOST_DAEMON_PORT: "3999",
         PATCHER_SERVER_URL: "http://localhost:9999",
         NODE_ENV: "development",
       },
     });
 
-    expect(hostDaemonConfig.PATCHER_DATA_DIR).toBe("/tmp/bb-data");
+    expect(hostDaemonConfig.PATCHER_DATA_DIR).toBe("/tmp/patcher-data");
     expect(hostDaemonConfig.PATCHER_SERVER_URL).toBe("http://localhost:9999");
     expect(hostDaemonConfig.PATCHER_HOST_DAEMON_PORT).toBe(3999);
   });
@@ -596,14 +596,14 @@ describe("consumer-specific config", () => {
     const hostDaemonStartConfig = loadHostDaemonStartConfig({
       enableLocalApi: true,
       env: {
-        PATCHER_DATA_DIR: "/tmp/bb-data",
+        PATCHER_DATA_DIR: "/tmp/patcher-data",
         PATCHER_HOST_DAEMON_PORT: "3999",
         PATCHER_SERVER_URL: "http://localhost:9999",
         NODE_ENV: "development",
       },
     });
 
-    expect(hostDaemonStartConfig.dataDir).toBe("/tmp/bb-data");
+    expect(hostDaemonStartConfig.dataDir).toBe("/tmp/patcher-data");
     expect(hostDaemonStartConfig.connectionConfig?.PATCHER_SERVER_URL).toBe(
       "http://localhost:9999",
     );
@@ -614,7 +614,7 @@ describe("consumer-specific config", () => {
 
   it("skips host-daemon env loading when explicit start options are complete", () => {
     const hostDaemonStartConfig = loadHostDaemonStartConfig({
-      dataDir: "/tmp/bb-data",
+      dataDir: "/tmp/patcher-data",
       enableLocalApi: false,
       env: {
         PATCHER_SERVER_URL: "not-a-url",
@@ -624,7 +624,7 @@ describe("consumer-specific config", () => {
     });
 
     expect(hostDaemonStartConfig).toEqual({
-      dataDir: "/tmp/bb-data",
+      dataDir: "/tmp/patcher-data",
     });
   });
 

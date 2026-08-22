@@ -21,7 +21,7 @@
  */
 
 /** Name of the isolated world these run in; visible only in a CDP trace. */
-export const PATCHER_BROWSER_AUTOMATION_WORLD_NAME = "bb-automation";
+export const PATCHER_BROWSER_AUTOMATION_WORLD_NAME = "patcher-automation";
 
 /**
  * How long to keep waiting for an element to become actionable. Long enough for

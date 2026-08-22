@@ -71,7 +71,7 @@ function walk(root: object, prefix: string): Map<string, string> {
   return found;
 }
 
-describe("PLUGIN_HOST_CALLS covers the bb object", () => {
+describe("PLUGIN_HOST_CALLS covers the Patcher object", () => {
   let harness: TestAppHarness;
 
   beforeEach(async () => {
@@ -115,7 +115,7 @@ describe("PLUGIN_HOST_CALLS covers the bb object", () => {
     });
   }
 
-  it("names every member a plugin can reach on bb", () => {
+  it("names every member a plugin can reach on Patcher", () => {
     const handle = buildApi();
     const reachable = walk(handle.api, "");
     // The settings handle has no path on `bb` — it only exists once a plugin

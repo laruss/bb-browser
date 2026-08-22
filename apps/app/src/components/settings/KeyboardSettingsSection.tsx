@@ -58,7 +58,7 @@ import {
   filterPluginCommands,
   PluginShortcutsGroup,
 } from "./PluginShortcutsGroup";
-import { getPatcherDesktopInfo } from "@/lib/bb-desktop";
+import { getPatcherDesktopInfo } from "@/lib/patcher-desktop";
 
 const EMPTY_KEYBINDINGS: AppDefaultKeybindings = [];
 const EMPTY_PLUGIN_COMMANDS: readonly PluginCommandContribution[] = [];
@@ -529,7 +529,7 @@ export function KeyboardSettingsSection() {
   }, [search]);
 
   // A plugin row that matched is still a match, so "nothing matches" below has
-  // to account for the group that renders after bb's own. The same cached query
+  // to account for the group that renders after Patcher's own. The same cached query
   // the group itself reads, so this costs nothing extra.
   const pluginCommands =
     usePluginContributions().data?.commands ?? EMPTY_PLUGIN_COMMANDS;
@@ -627,7 +627,7 @@ export function KeyboardSettingsSection() {
           Reset all
         </Button>
       }
-      description="Click a shortcut, then press its new keys. Changes sync to every bb window."
+      description="Click a shortcut, then press its new keys. Changes sync to every Patcher window."
       title="Keyboard shortcuts"
     >
       <div className="space-y-5">
@@ -691,7 +691,7 @@ export function KeyboardSettingsSection() {
               </div>
             </section>
           ))}
-          {/* After bb's own: a plugin adds to the list rather than mixing into
+          {/* After Patcher's own: a plugin adds to the list rather than mixing into
               the groups the user knows. */}
           <PluginShortcutsGroup
             keybindings={

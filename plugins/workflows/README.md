@@ -72,7 +72,7 @@ an inline `script`, a workspace `scriptPath`, or a workflow `name`. The older
 `.patcher/workflows/<name>.js`. There is no plugin-bundled workflow discovery.
 
 File and name sources are resolved on the workflow origin environment's host,
-not on the bb server machine. BB reads them through the environment `hostId`
+not on the Patcher server machine. BB reads them through the environment `hostId`
 with `rootPath` confinement to its workspace. Traversal and outside absolute or
 UNC paths, missing workspace roots, non-UTF-8 content, and sources larger than
 512 KiB are rejected. QuickJS receives only the resolved source text and never

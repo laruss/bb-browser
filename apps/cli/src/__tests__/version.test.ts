@@ -8,7 +8,7 @@ describe("resolvePatcherAppVersion", () => {
   let tempRoot: string;
 
   beforeEach(async () => {
-    tempRoot = await mkdtemp(join(tmpdir(), "bb-cli-version-"));
+    tempRoot = await mkdtemp(join(tmpdir(), "patcher-cli-version-"));
   });
 
   afterEach(async () => {
@@ -55,7 +55,7 @@ describe("resolvePatcherAppVersion", () => {
     await mkdir(cliDistDir, { recursive: true });
     await writeFile(
       join(repoRoot, "package.json"),
-      JSON.stringify({ name: "bb", version: "0.0.0", private: true }),
+      JSON.stringify({ name: "Patcher", version: "0.0.0", private: true }),
     );
     await writeFile(
       join(repoRoot, "apps", "cli", "package.json"),

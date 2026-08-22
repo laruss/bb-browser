@@ -1,7 +1,7 @@
 {
   "name": "bb-app",
   "version": "0.37.0",
-  "description": "bb app launcher for npx",
+  "description": "Patcher app launcher for npx",
   "keywords": [
     "bb",
     "coding-agent",
@@ -47,10 +47,10 @@
     "dist",
     "!dist/*.map",
     "host-daemon/dist/bb",
-    "host-daemon/dist/bb-acp-bridge.mjs",
-    "host-daemon/dist/bb-claude-code-bridge.mjs",
-    "host-daemon/dist/bb-parcel-watcher-child.mjs",
-    "host-daemon/dist/bb-pi-bridge.mjs",
+    "host-daemon/dist/patcher-acp-bridge.mjs",
+    "host-daemon/dist/patcher-claude-code-bridge.mjs",
+    "host-daemon/dist/patcher-parcel-watcher-child.mjs",
+    "host-daemon/dist/patcher-pi-bridge.mjs",
     "host-daemon/dist/daemon-bundle.mjs",
     "server/dist",
     "!server/dist/index.js.map",

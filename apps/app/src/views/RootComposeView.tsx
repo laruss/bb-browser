@@ -148,7 +148,7 @@ import { resolveAbsoluteFilePath } from "@/lib/absolute-file-path";
 import { getBrowserUrlHost } from "@/lib/browser-url";
 import {
   isDesktopBrowserAvailable,
-} from "@/lib/bb-desktop";
+} from "@/lib/patcher-desktop";
 import {
   useFixedPanelTabsState,
   useFixedPanelTabsStorageMaintenance,

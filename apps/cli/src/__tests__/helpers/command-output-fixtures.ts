@@ -134,7 +134,7 @@ export function makeEnvironment(overrides: MakeEnvironmentArgs): Environment {
     isGitRepo: true,
     isWorktree: false,
     workspaceProvisionType: "unmanaged",
-    branchName: "bb/thread",
+    branchName: "patcher/thread",
     defaultBranch: "main",
     baseBranch: null,
     mergeBaseBranch: null,

@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { PatcherDesktopInfo } from "@patcher/desktop-contract";
-import { createPatcherDesktopApi } from "@/test/bb-desktop-test-utils";
+import { createPatcherDesktopApi } from "@/test/patcher-desktop-test-utils";
 import {
   MACOS_TRAFFIC_LIGHT_LEADING_RESERVE_CLASS,
   MACOS_TRAFFIC_LIGHT_RESERVE_OFFSET_CLASS,
   SIDEBAR_TRIGGER_TRAILING_INSET_CLASS,
   SIDEBAR_TRIGGER_TRAILING_RESERVE_CLASS,
   shouldReserveMacosTrafficLights,
-} from "./bb-desktop";
+} from "./patcher-desktop";
 
 const desktopInfo: PatcherDesktopInfo = {
   lastCheckedAt: null,

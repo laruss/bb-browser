@@ -31,8 +31,8 @@ const SERVER_SKILL_FILE_LIMIT = 200;
 const SERVER_SKILL_CONTENT_LIMIT_BYTES = 25 * 1024 * 1024;
 
 /**
- * Providers with a skill surface. A bb skill is discovered under each, so the
- * listing queries all of them and de-dupes provider-agnostic bb skills by path.
+ * Providers with a skill surface. A Patcher skill is discovered under each, so the
+ * listing queries all of them and de-dupes provider-agnostic Patcher skills by path.
  */
 export const SKILL_COMMAND_SURFACE_PROVIDERS: readonly SkillProvider[] = [
   "claude-code",
@@ -42,8 +42,8 @@ export const SKILL_COMMAND_SURFACE_PROVIDERS: readonly SkillProvider[] = [
 
 /** Deterministic page grouping order; also keeps listing output test-stable. */
 const SKILL_SCOPE_ORDER: readonly SkillScope[] = [
-  "bb-project",
-  "bb-user",
+  "patcher-project",
+  "patcher-user",
   "patcher-builtin",
   "shared-project",
   "shared-user",
@@ -74,14 +74,14 @@ function isBundledProviderSkill(filePath: string): boolean {
 
 interface MappedScope {
   scope: SkillScope;
-  /** `null` for provider-agnostic bb scopes. */
+  /** `null` for provider-agnostic Patcher scopes. */
   provider: SkillProvider | null;
   manageable: boolean;
 }
 
 /**
  * Product policy: map the daemon's raw `(provider, rootKind)` to a user-facing
- * scope. bb scopes are provider-agnostic (`provider: null`); provider roots
+ * scope. Patcher scopes are provider-agnostic (`provider: null`); provider roots
  * retain project/user identity. User-owned provider roots are manageable;
  * bundled provider and plugin roots remain protected.
  */
@@ -91,10 +91,10 @@ export function mapSkillScope(
   filePath: string,
 ): MappedScope {
   switch (rootKind) {
-    case "bb-project":
-      return { scope: "bb-project", provider: null, manageable: true };
-    case "bb-data-dir":
-      return { scope: "bb-user", provider: null, manageable: true };
+    case "patcher-project":
+      return { scope: "patcher-project", provider: null, manageable: true };
+    case "patcher-data-dir":
+      return { scope: "patcher-user", provider: null, manageable: true };
     case "patcher-builtin":
       return { scope: "patcher-builtin", provider: null, manageable: false };
     case "provider-project":
@@ -152,7 +152,7 @@ function compareSkillSummaries(
 
 /**
  * Assemble the per-provider daemon results into the listing: map each record to
- * its product scope and de-dupe by absolute `filePath` so a bb skill discovered
+ * its product scope and de-dupe by absolute `filePath` so a Patcher skill discovered
  * under both providers is listed once. Output is sorted by scope then name.
  */
 export function assembleSkillList(
@@ -190,7 +190,7 @@ function skillId(identitySeed: string, logicalPath: string): string {
     .digest("hex")}`;
 }
 
-/** List bb-global resources from the same server-owned roots runtime injection uses. */
+/** List patcher-global resources from the same server-owned roots runtime injection uses. */
 function listServerOwnedSkills(deps: AppDeps): SkillSummary[] {
   return resolveServerOwnedSkillCatalogEntries({
     builtinSkillsRootPath: deps.config.builtinSkillsRootPath,
@@ -209,11 +209,14 @@ function listServerOwnedSkills(deps: AppDeps): SkillSummary[] {
       );
       const logicalPath = `${runtimeSource.name}/${runtimeSource.entryPath}`;
       return {
-        id: skillId(builtin ? "patcher-builtin" : "bb-data-dir", logicalPath),
+        id: skillId(
+          builtin ? "patcher-builtin" : "patcher-data-dir",
+          logicalPath,
+        ),
         name: runtimeSource.name,
         description: runtimeSource.description,
         provider: null,
-        scope: builtin ? "patcher-builtin" : "bb-user",
+        scope: builtin ? "patcher-builtin" : "patcher-user",
         pluginId: null,
         filePath: path.join(rootPath, runtimeSource.entryPath),
         manageable: !builtin,
@@ -224,7 +227,7 @@ function listServerOwnedSkills(deps: AppDeps): SkillSummary[] {
     .sort(compareSkillSummaries);
 }
 
-/** List active skills contributed by running bb plugins from the runtime catalog. */
+/** List active skills contributed by running Patcher plugins from the runtime catalog. */
 function listPatcherPluginSkills(deps: AppDeps): SkillSummary[] {
   return resolveSkillCatalog(deps)
     .map(({ provenance, runtimeSource }): SkillSummary | null => {
@@ -294,7 +297,7 @@ function isServerOwnedSkill(deps: AppDeps, skill: SkillSummary): boolean {
   ) {
     return true;
   }
-  if (skill.scope === "bb-user") {
+  if (skill.scope === "patcher-user") {
     return (
       path.dirname(skillDirectoryPath) ===
       resolveDataDirSkillsRootPath(deps.config.dataDir)
@@ -504,17 +507,20 @@ export async function writeProjectSkill(
     throw new ApiError(
       403,
       "forbidden",
-      "Bundled skills cannot be edited in bb",
+      "Bundled skills cannot be edited in Patcher",
     );
   }
-  if (editableScope.data === "bb-project" && args.workspace.cwd === null) {
+  if (editableScope.data === "patcher-project" && args.workspace.cwd === null) {
     throw new ApiError(
       409,
       "invalid_request",
       "No workspace resolved for this project's skills",
     );
   }
-  if (editableScope.data === "bb-user" && isServerOwnedSkill(deps, skill)) {
+  if (
+    editableScope.data === "patcher-user" &&
+    isServerOwnedSkill(deps, skill)
+  ) {
     const skillFilePath = await resolveServerSkillFile(skill, SKILL_FILE_NAME);
     const currentContents = await fs.readFile(skillFilePath);
     const currentRevision = createHash("sha256")
@@ -551,7 +557,10 @@ export async function writeProjectSkill(
     const revision = createHash("sha256").update(args.content).digest("hex");
     return { filePath: skillFilePath, revision };
   }
-  if (editableScope.data !== "bb-user" && editableScope.data !== "bb-project") {
+  if (
+    editableScope.data !== "patcher-user" &&
+    editableScope.data !== "patcher-project"
+  ) {
     const result = await callHostOnlineRpc(deps, {
       hostId: args.workspace.hostId,
       timeoutMs: COMMAND_TIMEOUT_MS,
@@ -589,7 +598,7 @@ export async function writeProjectSkill(
 }
 
 /**
- * Delete a user-owned local skill via the daemon's confined primitive. bb roots
+ * Delete a user-owned local skill via the daemon's confined primitive. Patcher roots
  * are resolved host-side from scope; provider roots come from the authoritative
  * server-side listing and are re-confined by the daemon. Uses the non-retryable
  * RPC so a transient failure never re-issues the delete.
@@ -607,17 +616,20 @@ export async function deleteProjectSkill(
     throw new ApiError(
       403,
       "forbidden",
-      "Bundled skills cannot be deleted in bb",
+      "Bundled skills cannot be deleted in Patcher",
     );
   }
-  if (editableScope.data === "bb-project" && args.workspace.cwd === null) {
+  if (editableScope.data === "patcher-project" && args.workspace.cwd === null) {
     throw new ApiError(
       409,
       "invalid_request",
       "No workspace resolved for this project's skills",
     );
   }
-  if (editableScope.data === "bb-user" && isServerOwnedSkill(deps, skill)) {
+  if (
+    editableScope.data === "patcher-user" &&
+    isServerOwnedSkill(deps, skill)
+  ) {
     const skillsRootPath = resolveDataDirSkillsRootPath(deps.config.dataDir);
     const skillDirectoryPath = path.dirname(skill.filePath);
     const [realRootPath, realSkillPath] = await Promise.all([
@@ -647,7 +659,10 @@ export async function deleteProjectSkill(
   }
   let daemonName = skill.name;
   let rootPath: string | null = null;
-  if (editableScope.data !== "bb-user" && editableScope.data !== "bb-project") {
+  if (
+    editableScope.data !== "patcher-user" &&
+    editableScope.data !== "patcher-project"
+  ) {
     const skillDirPath = hostPathDirname(skill.filePath);
     daemonName = hostPathBasename(skillDirPath);
     rootPath = hostPathDirname(skillDirPath);

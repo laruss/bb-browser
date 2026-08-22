@@ -165,7 +165,7 @@ import { Icon } from "@patcher/shared-ui/icon";
 import {
   getPatcherDesktopInfo,
   isDesktopBrowserAvailable,
-} from "@/lib/bb-desktop";
+} from "@/lib/patcher-desktop";
 import {
   openUrlByPreference,
   useOpenLinksInAppBrowserPreference,

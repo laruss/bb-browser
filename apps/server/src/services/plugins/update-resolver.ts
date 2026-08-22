@@ -11,7 +11,7 @@ export type NpmSpecKind = "default" | "exact" | "tag" | "range";
 export type GitRefKind = "branch" | "tag" | "commit";
 
 export interface CompatibilityProblem {
-  engine: "bb" | "patcherPluginSdk";
+  engine: "patcher" | "patcherPluginSdk";
   required: string;
   actual: string;
   message: string;
@@ -211,17 +211,17 @@ export function evaluateCompatibility(args: {
   if (args.patcherRange !== undefined) {
     if (semver.validRange(args.patcherRange) === null) {
       patcherProblems.push({
-        engine: "bb",
+        engine: "patcher",
         required: args.patcherRange,
         actual: appVersion.version,
         message: `declares invalid engines.patcher range ${JSON.stringify(args.patcherRange)}`,
       });
     } else if (!semver.satisfies(appVersion, args.patcherRange)) {
       patcherProblems.push({
-        engine: "bb",
+        engine: "patcher",
         required: args.patcherRange,
         actual: appVersion.version,
-        message: `requires bb ${args.patcherRange}, running bb is ${appVersion.version}`,
+        message: `requires Patcher ${args.patcherRange}, running Patcher is ${appVersion.version}`,
       });
     }
   }

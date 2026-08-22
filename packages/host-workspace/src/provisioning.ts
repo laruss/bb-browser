@@ -450,7 +450,7 @@ function summarizePaths(paths: readonly string[]): string {
  * and report the result in the provisioning transcript. This runs before the
  * setup script so the script can read a copied `.env`.
  *
- * A failure here never fails provisioning: the transcript reports what bb
+ * A failure here never fails provisioning: the transcript reports what Patcher
  * skipped and the thread still starts. Only cancellation propagates.
  */
 async function copyIncludedFiles(args: {

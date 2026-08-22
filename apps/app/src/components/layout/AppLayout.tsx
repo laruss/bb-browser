@@ -74,7 +74,7 @@ import {
   MACOS_WINDOW_DRAG_CLASS,
   shouldUseMacosDesktopChrome,
   SIDEBAR_TRIGGER_TRAILING_INSET_CLASS,
-} from "@/lib/bb-desktop";
+} from "@/lib/patcher-desktop";
 import {
   BROWSER_SURFACE_ROUTE_PATH,
   getLegacyProjectComposeRoutePath,
@@ -413,7 +413,7 @@ function SidebarTriggerOverlay({
 }
 
 const routeTitles: Record<string, { title: string; subtitle?: string }> = {
-  "/": { title: "bb" },
+  "/": { title: "Patcher" },
   "/settings": { title: "Settings" },
   "/automations": { title: "Automations" },
   "/skills": { title: "Skills" },
@@ -991,7 +991,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     document.title = documentTitle;
   }, [documentTitle]);
 
-  // bb's own screens: the shared header, then the route's output. Composed once
+  // Patcher's own screens: the shared header, then the route's output. Composed once
   // and placed in one of two hosts — inside the browser's active tab on desktop,
   // or straight into the content shell on the web build, which has no surface.
   const appScreen = (

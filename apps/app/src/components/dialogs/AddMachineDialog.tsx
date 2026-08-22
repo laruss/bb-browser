@@ -196,7 +196,7 @@ function AddMachineDialogContent({
               ) : null}
             </div>
             <p className="text-xs text-subtle-foreground/75">
-              This installs bb, enrolls the daemon, and configures it to
+              This installs Patcher, enrolls the daemon, and configures it to
               reconnect automatically on the other machine.
             </p>
           </div>

@@ -136,7 +136,7 @@ export function createPluginActivation(context: PluginActivationContext) {
       );
     }
     await disposeOne(snapshot.pluginId);
-    // Rollback is intentionally limited to bb-owned state. Effects the
+    // Rollback is intentionally limited to Patcher-owned state. Effects the
     // candidate already caused in external systems cannot be reversed.
     await restorePluginStateSnapshot({
       db: deps.db,

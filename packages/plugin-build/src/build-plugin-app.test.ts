@@ -12,7 +12,7 @@ import { resolvePluginBuildToolchain } from "./toolchain.js";
  * devDependencies of this package and performs no download.
  */
 function testToolchain() {
-  return resolvePluginBuildToolchain(join(tmpdir(), "bb-toolchain-unused"));
+  return resolvePluginBuildToolchain(join(tmpdir(), "patcher-toolchain-unused"));
 }
 
 function precedingScopeBounds(

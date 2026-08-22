@@ -27,7 +27,7 @@ describe("bb thread show command output", () => {
       state: "open",
       url: "https://github.com/example/bb/pull/42",
       baseRefName: "main",
-      headRefName: "bb/thread-show-pr",
+      headRefName: "patcher/thread-show-pr",
       updatedAt: "2026-06-24T12:00:00.000Z",
       checks: {
         state: "passing",
@@ -327,7 +327,7 @@ describe("bb thread show command output", () => {
       id: "env-show-pr",
       projectId: "proj-1",
       hostId: "host-1",
-      branchName: "bb/thread-show-pr",
+      branchName: "patcher/thread-show-pr",
       createdAt: 1,
       updatedAt: 2,
     });
@@ -360,7 +360,7 @@ describe("bb thread show command output", () => {
     );
     expect(output).toContain("#42 open - Show pull requests in thread show");
     expect(output).toContain("https://github.com/example/bb/pull/42");
-    expect(output).toContain("Branch:       bb/thread-show-pr -> main");
+    expect(output).toContain("Branch:       patcher/thread-show-pr -> main");
     expect(output).toContain(
       "Checks:       passing (3 passed, 0 failed, 0 pending, 3 total)",
     );

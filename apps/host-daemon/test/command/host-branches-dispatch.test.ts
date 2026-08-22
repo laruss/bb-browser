@@ -20,10 +20,10 @@ afterEach(cleanupTempDirs);
 const GIT_REPO_TEST_TIMEOUT_MS = 45_000;
 
 async function initBranchRepo(): Promise<string> {
-  const repoPath = await makeTempDir("bb-host-branches-repo-");
+  const repoPath = await makeTempDir("patcher-host-branches-repo-");
   await runGitCommand(["init", "-b", "develop"], { cwd: repoPath });
   await runGitCommand(["config", "user.name", "BB Tests"], { cwd: repoPath });
-  await runGitCommand(["config", "user.email", "bb@example.com"], {
+  await runGitCommand(["config", "user.email", "patcher@example.com"], {
     cwd: repoPath,
   });
   await fs.writeFile(path.join(repoPath, "README.md"), "hello\n", "utf8");
@@ -64,7 +64,7 @@ describe("host.list_branches dispatch", () => {
 
   it("lists remote branches separately from local checkout branches", async () => {
     const repoPath = await initBranchRepo();
-    const remotePath = await makeTempDir("bb-host-branches-remote-");
+    const remotePath = await makeTempDir("patcher-host-branches-remote-");
     await runGitCommand(["init", "--bare"], { cwd: remotePath });
     await runGitCommand(["remote", "add", "upstream", remotePath], {
       cwd: repoPath,
@@ -89,13 +89,13 @@ describe("host.list_branches dispatch", () => {
 
   it("pins origin default branch first in remote branch results", async () => {
     const repoPath = await initBranchRepo();
-    const remotePath = await makeTempDir("bb-host-branches-origin-");
+    const remotePath = await makeTempDir("patcher-host-branches-origin-");
     await runGitCommand(["init", "--bare"], { cwd: remotePath });
     await runGitCommand(["remote", "add", "origin", remotePath], {
       cwd: repoPath,
     });
-    await runGitCommand(["branch", "bb/aardvark"], { cwd: repoPath });
-    await runGitCommand(["push", "origin", "bb/aardvark", "main"], {
+    await runGitCommand(["branch", "patcher/aardvark"], { cwd: repoPath });
+    await runGitCommand(["push", "origin", "patcher/aardvark", "main"], {
       cwd: repoPath,
     });
     await runGitCommand(["fetch", "origin"], { cwd: repoPath });
@@ -113,7 +113,7 @@ describe("host.list_branches dispatch", () => {
 
   it("classifies a selected branch before filtering and pagination", async () => {
     const repoPath = await initBranchRepo();
-    const remotePath = await makeTempDir("bb-host-branches-remote-");
+    const remotePath = await makeTempDir("patcher-host-branches-remote-");
     await runGitCommand(["init", "--bare"], { cwd: remotePath });
     await runGitCommand(["remote", "add", "upstream", remotePath], {
       cwd: repoPath,
@@ -161,20 +161,20 @@ describe("host.list_branches dispatch", () => {
 
   it("refreshes remote branches before filtering branch lists", async () => {
     const repoPath = await initBranchRepo();
-    const remotePath = await makeTempDir("bb-host-branches-fetch-remote-");
+    const remotePath = await makeTempDir("patcher-host-branches-fetch-remote-");
     await runGitCommand(["init", "--bare"], { cwd: remotePath });
     await runGitCommand(["remote", "add", "origin", remotePath], {
       cwd: repoPath,
     });
     await runGitCommand(["push", "origin", "main"], { cwd: repoPath });
     await runGitCommand(["fetch", "origin"], { cwd: repoPath });
-    const cloneParent = await makeTempDir("bb-host-branches-fetch-clone-");
+    const cloneParent = await makeTempDir("patcher-host-branches-fetch-clone-");
     const clonePath = path.join(cloneParent, "repo");
     await runGitCommand(["clone", remotePath, clonePath], { cwd: cloneParent });
     await runGitCommand(["config", "user.name", "BB Tests"], {
       cwd: clonePath,
     });
-    await runGitCommand(["config", "user.email", "bb@example.com"], {
+    await runGitCommand(["config", "user.email", "patcher@example.com"], {
       cwd: clonePath,
     });
     await runGitCommand(["switch", "-c", "feature/remote-only"], {
@@ -250,7 +250,7 @@ describe("host.list_branches dispatch", () => {
   }, GIT_REPO_TEST_TIMEOUT_MS);
 
   it("returns an empty list for non-git directories", async () => {
-    const dirPath = await makeTempDir("bb-host-branches-nongit-");
+    const dirPath = await makeTempDir("patcher-host-branches-nongit-");
     const harness = createHarness();
 
     const result = await dispatchOnlineRpcCommand(
@@ -274,7 +274,7 @@ describe("host.list_branches dispatch", () => {
   }, GIT_REPO_TEST_TIMEOUT_MS);
 
   it("returns an empty list for missing paths", async () => {
-    const parentPath = await makeTempDir("bb-host-branches-missing-parent-");
+    const parentPath = await makeTempDir("patcher-host-branches-missing-parent-");
     const harness = createHarness();
 
     const result = await dispatchOnlineRpcCommand(

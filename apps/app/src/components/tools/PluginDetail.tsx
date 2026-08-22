@@ -71,7 +71,7 @@ export function pluginIsLocalSource(plugin: PluginListItem): boolean {
 }
 
 export function pluginRemovalLabel(plugin: PluginListItem): string {
-  return pluginIsLocalSource(plugin) ? "Remove from bb" : "Uninstall";
+  return pluginIsLocalSource(plugin) ? "Remove from Patcher" : "Uninstall";
 }
 
 function PluginPath({ path }: { path: string }) {
@@ -172,7 +172,7 @@ export function CatalogPluginDetailBanner({
     <PluginBannerBar
       tone="warning"
       icon="AlertTriangle"
-      title="Update bb to install this plugin"
+      title="Update Patcher to install this plugin"
       detail={entry.incompatibleReason}
     />
   );
@@ -303,11 +303,11 @@ export function PluginDetail({
   const canEditSource = pluginIsLocalSource(plugin);
   // Delivery policy comes from the source itself. Source detail is auxiliary:
   // a missing or still-loading install date must never make a managed plugin
-  // look as though it ships with bb.
+  // look as though it ships with Patcher.
   const updatesWithPatcher = plugin.source.startsWith("builtin:");
   const installedAt = sourceQuery.data?.installedAt ?? null;
   const installedValue = updatesWithPatcher
-    ? "Updates with bb"
+    ? "Updates with Patcher"
     : installedAt !== null
       ? formatAbsoluteDate(installedAt)
       : sourceQuery.isPending

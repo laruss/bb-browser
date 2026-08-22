@@ -12,7 +12,7 @@ function rawPullRequest(
     url: "https://github.com/acme/bb/pull/42",
     isDraft: false,
     baseRefName: "main",
-    headRefName: "bb/add-pr-section",
+    headRefName: "patcher/add-pr-section",
     updatedAt: "2026-06-16T12:30:00Z",
     checks: [],
     reviewDecision: null,
@@ -31,7 +31,7 @@ describe("assembleThreadPullRequest", () => {
       url: "https://github.com/acme/bb/pull/42",
       state: "open",
       baseRefName: "main",
-      headRefName: "bb/add-pr-section",
+      headRefName: "patcher/add-pr-section",
       updatedAt: "2026-06-16T12:30:00Z",
       checks: {
         state: "no_checks",

@@ -14,7 +14,7 @@ Everything `bb thread` and `bb terminal` do beyond the essentials in SKILL.md.
 - Use `bb thread spawn --project <project-id> --prompt "..."` to create another
   thread. Pass the intended project explicitly; the CLI does not infer it from
   context variables. Omitted execution flags use remembered project defaults;
-  without a remembered model, bb uses the explicitly requested provider or
+  without a remembered model, Patcher uses the explicitly requested provider or
   Codex and resolves its provider-reported default model on the target machine.
 - Add repeatable `--file <path>` / `--image <path>` flags for structured prompt
   attachments, and `--section <id>` to add the new thread to a section. These
@@ -86,7 +86,7 @@ isolated|reuse`, or anchor with `--source-seq-end`. Permission mode inherits
 
 - Use `bb terminal ...` for long-running commands the user may need to inspect
   or stop later: dev servers, watch tasks, REPLs, database consoles, and similar
-  processes. The terminal is a real persistent PTY shown in the bb UI.
+  processes. The terminal is a real persistent PTY shown in the Patcher UI.
 - `list` and `create` require exactly one explicit scope: `--thread <id>`,
   `--environment <id>`, or `--machine <id-or-name>` (`--host` is an alias).
   Add `--cwd <path>` only to a machine scope. Machine targets resolve to an
@@ -115,7 +115,7 @@ isolated|reuse`, or anchor with `--source-seq-end`. Permission mode inherits
   its execution settings remain available. Prior output or tool activity does
   not block recovery. Enable it with
   `bb plugin enable provider-retry` or under Extensions → Plugins. Its timers
-  last only while the current bb server/plugin process is running. Inspect it
+  last only while the current Patcher server/plugin process is running. Inspect it
   with `bb provider-retry status [thread-id]`, or cancel one with
   `bb provider-retry cancel <thread-id>`. Automatic waits default to six hours;
   configure longer waits with

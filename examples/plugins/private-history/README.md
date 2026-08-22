@@ -59,5 +59,5 @@ screen, not a substitute for an incognito profile the browser does not have yet.
 bun run --cwd examples/plugins/private-history test
 ```
 
-Against `@patcher/plugin-sdk/testing`: no bb server, no browser. The harness holds
+Against `@patcher/plugin-sdk/testing`: no Patcher server, no browser. The harness holds
 the registered filter, so the tests call it directly with a visit.

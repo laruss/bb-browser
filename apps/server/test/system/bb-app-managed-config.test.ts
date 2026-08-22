@@ -316,7 +316,7 @@ describe("bb-app managed config", () => {
   });
 
   it("reloads config file changes and notifies clients", async () => {
-    const dataDir = mkdtempSync(join(tmpdir(), "bb-managed-config-"));
+    const dataDir = mkdtempSync(join(tmpdir(), "patcher-managed-config-"));
     const socket = createMockHubSocket();
     const config = {
       ...createRuntimeConfig(),
@@ -358,7 +358,7 @@ describe("bb-app managed config", () => {
   });
 
   it("reloads mixed valid and invalid custom ACP agents with per-entry warnings and notification", async () => {
-    const dataDir = mkdtempSync(join(tmpdir(), "bb-managed-config-"));
+    const dataDir = mkdtempSync(join(tmpdir(), "patcher-managed-config-"));
     const socket = createMockHubSocket();
     const config = {
       ...createRuntimeConfig(),
@@ -421,7 +421,7 @@ describe("bb-app managed config", () => {
   });
 
   it("ignores corrupt managed config during initial startup reload", async () => {
-    const dataDir = mkdtempSync(join(tmpdir(), "bb-managed-config-"));
+    const dataDir = mkdtempSync(join(tmpdir(), "patcher-managed-config-"));
     const config = {
       ...createRuntimeConfig(),
       dataDir,
@@ -448,7 +448,7 @@ describe("bb-app managed config", () => {
   });
 
   it("throws on invalid managed config during explicit reload", async () => {
-    const dataDir = mkdtempSync(join(tmpdir(), "bb-managed-config-"));
+    const dataDir = mkdtempSync(join(tmpdir(), "patcher-managed-config-"));
     const config = {
       ...createRuntimeConfig(),
       dataDir,

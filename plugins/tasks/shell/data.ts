@@ -173,7 +173,7 @@ export function useSidebarSummary() {
 
 /**
  * @-mention source for TasksEditor: tasks matched by key/title/description
- * via the server-side `listTasks` search, followed by bb threads from
+ * via the server-side `listTasks` search, followed by Patcher threads from
  * `searchThreads`. A thread-search failure must not take task mentions down
  * with it, so it degrades to an empty section.
  */

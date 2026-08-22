@@ -32,7 +32,7 @@ Server-backed configuration an agent can read and change from the CLI.
   macOS-only "Caffeinate" toggle. For details, read
   [app-settings.md](app-settings.md).
 - The `showUnhandledProviderEvents` General preference defaults to false and
-  exposes raw provider events that bb does not yet understand in packaged
+  exposes raw provider events that Patcher does not yet understand in packaged
   builds. Development builds always show those diagnostic rows. Update it with
   `bb settings general showUnhandledProviderEvents <true|false>`.
 - The `steerActiveThreadOnEnter` General preference defaults to false. Outside
@@ -47,7 +47,7 @@ Server-backed configuration an agent can read and change from the CLI.
   The `showKeyboardHints` preference controls the delayed badges shown while
   holding Command or Control and defaults to true; update it with
   `bb settings keyboard hints <true|false>`.
-  Reset returns to bb's current default; Clear disables the command. Non-native
+  Reset returns to Patcher's current default; Clear disables the command. Non-native
   actions apply in browser and desktop clients, and desktop menu accelerators
   use the same resolved bindings. For details, read
   [app-settings.md](app-settings.md).
@@ -79,13 +79,13 @@ Server-backed configuration an agent can read and change from the CLI.
 
 ## Agent instructions
 
-- Add `AGENTS.md` to the bb data dir (usually `~/.patcher/AGENTS.md`) to inject
+- Add `AGENTS.md` to the Patcher data dir (usually `~/.patcher/AGENTS.md`) to inject
   user-level default instructions for every provider-backed thread across all
   projects.
 - Add `.patcher/AGENTS.md` at a workspace root to inject repo-specific instructions
   into every thread that runs there. Track the workspace file with git so fresh
   managed worktrees include it.
-- bb appends data-dir instructions first, then workspace instructions, to the
+- Patcher appends data-dir instructions first, then workspace instructions, to the
   thread system prompt for all providers when a provider session starts.
 - Only the plural `AGENTS.md` is read, only from those exact locations (no
   parent-directory walk); an empty file is ignored. Run
@@ -106,9 +106,9 @@ Server-backed configuration an agent can read and change from the CLI.
   the bounded file preview with `bb skill registry detail <registry-skill-id>`.
   Install with `bb skill install <registry-skill-id>`; never infer an install
   source from a display name.
-- `bb skill install-cli-skills` copies bb's built-in CLI skills into a machine's
+- `bb skill install-cli-skills` copies Patcher's built-in CLI skills into a machine's
   global agent skill roots (`~/.agents/skills` and `~/.claude/skills`) so agents
-  outside bb can drive bb. It targets every connected machine unless you pass
+  outside Patcher can drive Patcher. It targets every connected machine unless you pass
   the repeatable `--machine <id-or-name>`, and reports each machine's outcome.
   Settings → Skills has the same action; it confirms first, and asks which
   machines only when more than one is enrolled.

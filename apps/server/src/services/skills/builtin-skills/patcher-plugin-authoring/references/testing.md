@@ -1,7 +1,7 @@
 # Testing a plugin, and the plugins worth reading
 
 The vitest harness for backend and frontend, the live loop against a running
-bb, and the shipped plugins to copy patterns from.
+Patcher, and the shipped plugins to copy patterns from.
 
 ## Unit tests with `@patcher/plugin-sdk/testing`
 
@@ -12,7 +12,7 @@ types, so add `@patcher/plugin-sdk` as a devDependency when tests import the
 testing harness (plus its optional peers: `better-sqlite3` for backend tests;
 React, React DOM, Testing Library, and jsdom for frontend tests).
 
-The fake plugin host's `bb` satisfies `PatcherPluginApi` with host-faithful
+The fake plugin host's `patcher` satisfies `PatcherPluginApi` with host-faithful
 semantics: real better-sqlite3 temporary storage (never mock the db), the kv
 256KB cap, schema-RPC validation/error/strict-JSON behavior, additive events,
 keyed registration failures, atomic reload, conditional agent configuration,
@@ -55,7 +55,7 @@ await harness.behavior.emitThreadEvent("thread.idle", {
 });
 await harness.behavior.callAgentTool("lookup_doc", { query: "x" }); // parse (zod) + execute
 await harness.behavior.resolveAgentConfiguration(context); // validated tools/skills/instructions
-await harness.lifecycle.dispose(); // abort services, hooks LIFO, close database; stale bb throws
+await harness.lifecycle.dispose(); // abort services, hooks LIFO, close database; stale Patcher throws
 ```
 
 New tests should use the named views: `harness.behavior` drives host inputs,
@@ -136,7 +136,7 @@ frontend harness validates registrations and JSON/composer behavior but does
 not reproduce BB layout/CSS, persistence, routing, crash boundaries, or
 multi-plugin arbitration. Use a live loop for those host boundaries.
 
-## Live loop against a running bb
+## Live loop against a running Patcher
 
 - `bb plugin dev` is the loop: save → rebuild (if `patcher.app`) → reload; open
   app pages pick new UI up live. Build/reload failures print and keep
@@ -148,9 +148,9 @@ multi-plugin arbitration. Use a live loop for those host boundaries.
 application/json" -d '{}' <server>/api/v1/plugins/<id>/rpc/<method>`,
   `bb <command> …` for the CLI, `bb plugin run <id> …` as the explicit form.
 - Keep pure logic in plain functions/modules so it is unit-testable without
-  a bb server; the factory file should mostly wire registrations.
+  a Patcher server; the factory file should mostly wire registrations.
 
-BB Official plugins in `plugins/` (a bb checkout):
+BB Official plugins in `plugins/` (a Patcher checkout):
 
 - `github` — a gh-CLI-backed issue/PR browser in a single navPanel (with
   `headerContent`), subPath-based sub-navigation, shared-ui

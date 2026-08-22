@@ -143,7 +143,7 @@ describe("PluginDetail official catalog lifecycle", () => {
     const incompatibleEntry = {
       ...GITHUB_CATALOG_ENTRY,
       compatible: false,
-      incompatibleReason: "Requires bb 0.20 or newer.",
+      incompatibleReason: "Requires Patcher 0.20 or newer.",
     };
     render(
       <>
@@ -154,15 +154,15 @@ describe("PluginDetail official catalog lifecycle", () => {
 
     expect(screen.queryByRole("alert")).toBeNull();
     const compatibilityStatus = screen
-      .getByText("Update bb to install this plugin")
+      .getByText("Update Patcher to install this plugin")
       .closest("div[class*='bg-surface-recessed']");
     expect(compatibilityStatus).not.toBeNull();
     if (compatibilityStatus === null) return;
     expect(compatibilityStatus.textContent).toContain(
-      "Update bb to install this plugin",
+      "Update Patcher to install this plugin",
     );
     expect(compatibilityStatus.textContent).toContain(
-      "Requires bb 0.20 or newer.",
+      "Requires Patcher 0.20 or newer.",
     );
     expect(compatibilityStatus.className).toContain("bg-surface-recessed/55");
     expect(compatibilityStatus.className).toContain("border-b");
@@ -262,7 +262,7 @@ describe("PluginDetail official catalog lifecycle", () => {
         "/Users/you/.patcher/plugins/github",
       );
     });
-    expect(screen.getByText("Updates with bb")).toBeTruthy();
+    expect(screen.getByText("Updates with Patcher")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Check now" })).toBeNull();
 
     expect(container.querySelector('[data-icon="Github"]')).not.toBeNull();
@@ -382,7 +382,7 @@ describe("PluginDetail official catalog lifecycle", () => {
 
     expect(screen.getByRole("rowheader", { name: "Installed" })).toBeTruthy();
     expect(screen.getByText("Install date unavailable")).toBeTruthy();
-    expect(screen.queryByText("Updates with bb")).toBeNull();
+    expect(screen.queryByText("Updates with Patcher")).toBeNull();
   });
 
   it.each([
@@ -405,7 +405,7 @@ describe("PluginDetail official catalog lifecycle", () => {
       updateState: {
         ...EMPTY_PLUGIN_UPDATE_STATE,
         blockedVersion: "2.0.0",
-        blockedReasons: ["Requires bb 0.20 or newer."],
+        blockedReasons: ["Requires Patcher 0.20 or newer."],
       },
       expected: "Update blocked",
       actionName: null,
@@ -602,7 +602,7 @@ describe("PluginDetail banner precedence", () => {
       ...EMPTY_PLUGIN_UPDATE_STATE,
       availableVersion: "1.5.0",
       blockedVersion: "2.0.0",
-      blockedReasons: ["Requires a newer bb."],
+      blockedReasons: ["Requires a newer Patcher."],
       lastFailure: {
         version: "1.4.5",
         at: null,
@@ -836,7 +836,7 @@ describe("PluginDetail runtime health", () => {
       "Wait a moment, then reload the plugin.",
     );
     expect(alert.textContent).not.toContain("issue-sync");
-    expect(alert.textContent).not.toContain("Restart bb");
+    expect(alert.textContent).not.toContain("Restart Patcher");
     expect(screen.getByRole("button", { name: "Reload" })).toBeTruthy();
   });
 
@@ -866,13 +866,13 @@ describe("PluginDetail runtime health", () => {
   it.each([
     [
       "incompatible",
-      "This plugin version isn't compatible with your version of bb.",
-      "Update bb to load a compatible bundled plugin.",
+      "This plugin version isn't compatible with your version of Patcher.",
+      "Update Patcher to load a compatible bundled plugin.",
     ],
     [
       "missing",
       "The plugin's files are missing.",
-      "Restart bb. If the files are still missing, reinstall bb.",
+      "Restart Patcher. If the files are still missing, reinstall Patcher.",
     ],
   ] as const)(
     "explains the %s condition and a supported recovery",
@@ -895,7 +895,7 @@ describe("PluginDetail runtime health", () => {
     const alert = screen.getByRole("alert");
     expect(alert.textContent).toContain("An API token is required.");
     expect(alert.textContent).toContain(
-      "Complete the Settings section; bb reloads the plugin after you save.",
+      "Complete the Settings section; Patcher reloads the plugin after you save.",
     );
     expect(screen.queryByRole("button", { name: "Reload" })).toBeNull();
   });

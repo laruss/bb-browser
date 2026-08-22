@@ -73,7 +73,7 @@ async function withPlatform<T>(
 async function createFakeCliPackage(
   options: FakeCliPackageOptions = {},
 ): Promise<FakeCliPackage> {
-  const cliPackageRoot = await makeTempDir("bb-cli-package-");
+  const cliPackageRoot = await makeTempDir("patcher-cli-package-");
   const executablePath = options.executablePath ?? "./dist/bin/bb";
   const cliEntryPath = path.resolve(cliPackageRoot, executablePath);
 
@@ -167,7 +167,7 @@ describe("resolveLocalPatcherExecutableDirectory", () => {
         cliExecutablePath: cliEntryPath,
       }),
     ).rejects.toThrow(
-      `Missing built bb CLI entry at ${cliEntryPath}. Build @patcher/cli before starting the host daemon.`,
+      `Missing built Patcher CLI entry at ${cliEntryPath}. Build @patcher/cli before starting the host daemon.`,
     );
   });
 
@@ -181,7 +181,7 @@ describe("resolveLocalPatcherExecutableDirectory", () => {
         cliExecutablePath: cliEntryPath,
       }),
     ).rejects.toThrow(
-      `Resolved bb CLI entry is not executable: ${cliEntryPath}. Build @patcher/cli before starting the host daemon.`,
+      `Resolved Patcher CLI entry is not executable: ${cliEntryPath}. Build @patcher/cli before starting the host daemon.`,
     );
   });
 
@@ -202,7 +202,7 @@ describe("resolveLocalPatcherExecutableDirectory", () => {
 
 describe("resolveUserShellPath", () => {
   it("settles when the shell env probe times out even if the shell ignores SIGTERM", async () => {
-    const shellDir = await makeTempDir("bb-shell-timeout-");
+    const shellDir = await makeTempDir("patcher-shell-timeout-");
     const shellPath = path.join(shellDir, "ignore-term-shell");
     await fs.writeFile(
       shellPath,
@@ -353,7 +353,10 @@ describe("resolveUserShellPath", () => {
 
 describe("prepareRuntimeShellEnv", () => {
   it("uses the daemon proxy URL without exporting its machine credential", () => {
-    vi.stubEnv("PATCHER_CONNECT_MACHINE_CREDENTIAL", "bbcm_durable_secret");
+    vi.stubEnv(
+      "PATCHER_CONNECT_MACHINE_CREDENTIAL",
+      "patchercm_durable_secret",
+    );
 
     const env = prepareRuntimeShellEnv({
       patcherExecutableDirectory: "/tmp/bb-bin",
@@ -365,7 +368,7 @@ describe("prepareRuntimeShellEnv", () => {
     expect(env).not.toHaveProperty("PATCHER_CONNECT_MACHINE_CREDENTIAL");
   });
 
-  it("prepends the configured bb executable directory to PATH and sets PATCHER_CLI", () => {
+  it("prepends the configured Patcher executable directory to PATH and sets PATCHER_CLI", () => {
     expect(
       prepareRuntimeShellEnv({
         patcherExecutableDirectory: "/tmp/bb-bin",

@@ -1617,7 +1617,7 @@ describe("DesktopBrowserViewManager favicons", () => {
     await settleFavicons();
 
     // Fetched by the shell, through the session that owns the page's cookies and
-    // the network firewall — never by the bb app origin.
+    // the network firewall — never by the Patcher app origin.
     expect(requireFakeSession().fetchedUrls).toEqual([
       "https://example.com/icon.png",
     ]);
@@ -5943,9 +5943,9 @@ describe("browser download actions", () => {
     ).resolves.toEqual({
       ok: false,
       reason: "unknown-path",
-      message: "bb did not download that file.",
+      message: "Patcher did not download that file.",
     });
-    // Even a path inside the downloads folder is refused unless bb wrote it.
+    // Even a path inside the downloads folder is refused unless Patcher wrote it.
     await expect(
       manager.downloadAction({
         action: "reveal",
@@ -7442,7 +7442,7 @@ describe("plugin page styles", () => {
     await Promise.resolve();
     view.webContents.insertedCss.length = 0;
 
-    view.webContents.emitDidNavigate("https://github.com/bb/pulls");
+    view.webContents.emitDidNavigate("https://github.com/patcher/pulls");
     await Promise.resolve();
 
     expect(view.webContents.insertedCss).toEqual([".feed { display: none }"]);
@@ -7460,7 +7460,7 @@ describe("plugin page styles", () => {
   });
 
   // A pattern only names a website because `patcher.sites` normalised it, and that
-  // happened two processes away — so the shell decides for itself that bb's own
+  // happened two processes away — so the shell decides for itself that Patcher's own
   // blank page is not a site. `**` is the pattern that shows it: a style for
   // "everything" must not restyle the app's own pages.
   it("treats a page that is not a site as no page at all", async () => {
@@ -7519,13 +7519,15 @@ describe("plugin page styles", () => {
   // but the address moved, and that is where one site's pattern stops matching.
   it("reconciles when a same-document navigation leaves the matching path", async () => {
     const { hostWindow, manager, view } = attachTab(
-      "https://github.com/bb/pulls",
+      "https://github.com/patcher/pulls",
     );
-    view.webContents.emitDidNavigate("https://github.com/bb/pulls");
+    view.webContents.emitDidNavigate("https://github.com/patcher/pulls");
     manager.setPageStyles({
       hostWindow,
       request: {
-        styles: [{ ...GITHUB_STYLE, matches: ["https://github.com/bb/**"] }],
+        styles: [
+          { ...GITHUB_STYLE, matches: ["https://github.com/patcher/**"] },
+        ],
       },
     });
     await Promise.resolve();
@@ -7552,7 +7554,7 @@ describe("plugin page styles", () => {
 
     // The page commits while the first insertion is still open, and the new
     // document's own insertion answers first.
-    view.webContents.emitDidNavigate("https://github.com/bb/pulls");
+    view.webContents.emitDidNavigate("https://github.com/patcher/pulls");
     await Promise.resolve();
     expect(view.webContents.deferredInsertions).toHaveLength(2);
     view.webContents.deferredInsertions[1]?.();
@@ -7581,7 +7583,7 @@ describe("plugin page styles", () => {
     manager.setPageStyles({ hostWindow, request: { styles: [GITHUB_STYLE] } });
     await Promise.resolve();
 
-    view.webContents.emitDidNavigate("https://github.com/bb/pulls");
+    view.webContents.emitDidNavigate("https://github.com/patcher/pulls");
     await Promise.resolve();
     expect(view.webContents.deferredInsertions).toHaveLength(2);
     // The old document's insertion fails first, while the new one is still open.
@@ -7699,7 +7701,7 @@ describe("plugin page scripts", () => {
   }
 
   // The property the whole surface rests on: a user with no page-script plugin
-  // runs a browser whose pages hold no bb code at all.
+  // runs a browser whose pages hold no Patcher code at all.
   it("installs no preload until a script is declared, and removes it again", () => {
     const { hostWindow, manager } = attachTab("https://github.com/");
     const browserSession = requireFakeSession();
@@ -7737,7 +7739,7 @@ describe("plugin page scripts", () => {
 
     const bootstrap = manager.pageScriptBootstrap({
       webContentsId: view.webContents.id,
-      url: "https://github.com/bb/pulls",
+      url: "https://github.com/patcher/pulls",
     });
 
     expect(bootstrap.worlds).toEqual([
@@ -7774,7 +7776,7 @@ describe("plugin page scripts", () => {
 
   // A pattern is only known to name a website because `patcher.sites` normalised it,
   // and normalising happens two processes away. So the shell decides for itself
-  // that a blank page, a `file://` document and bb's own pages are not sites —
+  // that a blank page, a `file://` document and Patcher's own pages are not sites —
   // `**` reaching them would be a plugin on every page a tab can show.
   it("hands nothing to a page that is not a site", () => {
     const { hostWindow, manager, view } = attachTab("about:blank");
@@ -7817,7 +7819,7 @@ describe("plugin page scripts", () => {
 
     const answer = manager.pageScriptRpc({
       webContentsId: view.webContents.id,
-      url: "https://github.com/bb/pulls",
+      url: "https://github.com/patcher/pulls",
       request: {
         pluginId: "site-tweaks",
         method: "addNote",
@@ -7834,7 +7836,7 @@ describe("plugin page scripts", () => {
         pluginId: "site-tweaks",
         method: "addNote",
         input: '{"body":"hi"}',
-        url: "https://github.com/bb/pulls",
+        url: "https://github.com/patcher/pulls",
       },
     ]);
 
@@ -7980,7 +7982,7 @@ describe("plugin page scripts", () => {
       request: { scripts: [GITHUB_SCRIPT] },
     });
     expect([...browserSession.preloadScripts.keys()]).toEqual([
-      "bb-page-scripts",
+      "patcher-page-scripts",
     ]);
   });
 });

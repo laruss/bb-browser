@@ -70,7 +70,7 @@ import {
 
 /**
  * `@patcher/plugin-sdk/testing/app` — the frontend plugin test harness. Tests a
- * plugin's `app.tsx` source directly under vitest + jsdom, without the bb
+ * plugin's `app.tsx` source directly under vitest + jsdom, without the Patcher
  * host or the esbuild bundle:
  *
  * - {@link installTestPluginRuntime} fills `globalThis.__patcherPluginRuntime.
@@ -321,7 +321,7 @@ function TestNewThreadComposer({
   const [text, setText] = useState(initialPrompt ?? "");
   return (
     <div
-      data-testid="bb-new-thread-composer"
+      data-testid="patcher-new-thread-composer"
       data-default-project-id={defaultProjectId ?? ""}
       data-default-provider-id={defaultProviderId ?? ""}
       data-default-model={defaultModel ?? ""}
@@ -339,14 +339,14 @@ function TestNewThreadComposer({
       className={className}
     >
       <textarea
-        data-testid="bb-new-thread-composer-input"
+        data-testid="patcher-new-thread-composer-input"
         placeholder={placeholder}
         value={text}
         onChange={(event) => setText(event.target.value)}
       />
       <button
         type="button"
-        data-testid="bb-new-thread-composer-submit"
+        data-testid="patcher-new-thread-composer-submit"
         onClick={() => {
           // Untouched submits echo the `default*` seeds back, mirroring the
           // real composer's round-trip guarantee so plugin tests can cover

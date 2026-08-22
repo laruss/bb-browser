@@ -75,7 +75,7 @@ export async function resolveSharedSkills(
     timeoutMs: COMMAND_TIMEOUT_MS,
     command: {
       type: "host.list_skills",
-      providerId: "bb-shared",
+      providerId: "patcher-shared",
       cwd: args.cwd,
       nativeSkillRoots: roots,
     },

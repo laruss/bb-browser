@@ -43,7 +43,7 @@ import {
 } from "@/lib/route-paths";
 
 const PRIMARY_REMOVE_DISABLED_REASON =
-  "This machine runs bb and can't be removed.";
+  "This machine runs Patcher and can't be removed.";
 
 const PERMISSION_LIMIT_DESCRIPTION =
   "Highest permission mode any thread on this machine may run with. Threads that ask for more resolve down to it, and a provider that supports nothing this low can't run here.";

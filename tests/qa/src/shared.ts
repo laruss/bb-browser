@@ -26,7 +26,7 @@ const execFile = promisify(execFileCallback);
 export const STANDALONE_INSTANCE_ENV = "PATCHER_STANDALONE_INSTANCE";
 export const STANDALONE_PARENT_PID_ENV = "PATCHER_STANDALONE_PARENT_PID";
 export const STANDALONE_OPENAI_API_KEY_ENV = "PATCHER_QA_OPENAI_API_KEY";
-const STANDALONE_TMP_PREFIX = "bb-standalone-";
+const STANDALONE_TMP_PREFIX = "patcher-standalone-";
 const PROCESS_SCAN_MAX_BUFFER = 10 * 1024 * 1024;
 
 type EnvironmentMap = Record<string, string>;

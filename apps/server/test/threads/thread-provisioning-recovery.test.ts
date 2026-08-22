@@ -461,7 +461,7 @@ describe("thread provisioning recovery", () => {
         }
         await reportQueuedCommandSuccess(harness, provisionCommand, {
           path: "/tmp/error-retry-before-late-ready",
-          branchName: `bb/${thread.id}`,
+          branchName: `patcher/${thread.id}`,
           defaultBranch: "main",
           isGitRepo: true,
           isWorktree: true,

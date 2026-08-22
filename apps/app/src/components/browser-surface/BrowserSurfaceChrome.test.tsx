@@ -12,7 +12,7 @@ import type { PatcherDesktopBrowserApi } from "@patcher/desktop-contract";
 import {
   createPatcherDesktopApi,
   createNoopDesktopBrowserApi,
-} from "@/test/bb-desktop-test-utils";
+} from "@/test/patcher-desktop-test-utils";
 import {
   createOmniboxHistoryProvider,
   createOmniboxNavigationProvider,
@@ -336,7 +336,7 @@ describe("BrowserSurfaceChrome", () => {
   });
 
   // A page served from this machine has no network to be insecure on, and the
-  // old glyph warned about bb's own pages.
+  // old glyph warned about Patcher's own pages.
   it("does not warn about a loopback page", () => {
     renderChrome("http://localhost:5173/");
 

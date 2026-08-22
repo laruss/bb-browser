@@ -384,7 +384,7 @@ describe("cli", () => {
         summary: "nope",
         run: () => ({ exitCode: 0 }),
       }),
-    ).toThrow('cli command name "thread" is reserved by the bb CLI');
+    ).toThrow('cli command name "thread" is reserved by the Patcher CLI');
   });
 
   it("rejects a duplicate registration like the production host", () => {

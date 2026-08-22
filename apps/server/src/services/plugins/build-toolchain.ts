@@ -14,7 +14,7 @@ import type { PluginServiceDeps } from "./plugin-service-internal.js";
 const byDataDir = new Map<string, Promise<PluginBuildToolchain>>();
 
 /**
- * Resolve the pinned esbuild/Tailwind set bb builds plugin bundles with,
+ * Resolve the pinned esbuild/Tailwind set Patcher builds plugin bundles with,
  * downloading it on first use.
  *
  * Shipped artifacts carry no build toolchain: it is fetched into

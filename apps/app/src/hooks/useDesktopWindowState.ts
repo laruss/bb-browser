@@ -3,7 +3,7 @@ import type { PatcherDesktopWindowState } from "@patcher/desktop-contract";
 import {
   DEFAULT_DESKTOP_WINDOW_STATE,
   getPatcherDesktopInfo,
-} from "@/lib/bb-desktop";
+} from "@/lib/patcher-desktop";
 
 export function useDesktopWindowState(): PatcherDesktopWindowState {
   const [windowState, setWindowState] = useState<PatcherDesktopWindowState>(

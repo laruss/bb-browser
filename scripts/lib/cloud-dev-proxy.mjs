@@ -14,7 +14,7 @@ export function createCloudDevProxy({ reportError = console.error } = {}) {
     connection?.destroy?.();
     if (!isClosedConnectionError(error)) {
       reportError(
-        `bb Cloud dev proxy: ${error instanceof Error ? error.message : String(error)}`,
+        `Patcher Cloud dev proxy: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   });

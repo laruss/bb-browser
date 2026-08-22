@@ -21,7 +21,7 @@ import {
  */
 function testToolchain() {
   return resolvePluginBuildToolchain(
-    path.join(os.tmpdir(), "bb-toolchain-unused"),
+    path.join(os.tmpdir(), "patcher-toolchain-unused"),
   );
 }
 

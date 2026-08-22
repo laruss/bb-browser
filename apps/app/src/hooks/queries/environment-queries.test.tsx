@@ -32,7 +32,7 @@ const pullRequestFixture: ThreadPullRequest = {
   state: "open",
   url: "https://github.com/acme/bb/pull/128",
   baseRefName: "main",
-  headRefName: "bb/pr-refresh",
+  headRefName: "patcher/pr-refresh",
   updatedAt: "2026-06-16T12:30:00Z",
   checks: {
     state: "passing",

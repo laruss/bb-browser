@@ -71,7 +71,7 @@ import {
   MACOS_WINDOW_NO_DRAG_CLASS,
   shouldReserveMacosTrafficLights,
   shouldUseMacosDesktopChrome,
-} from "@/lib/bb-desktop";
+} from "@/lib/patcher-desktop";
 import { useDesktopWindowState } from "@/hooks/useDesktopWindowState";
 import { IframeDragGuardOverlay } from "@/lib/iframe-drag-guard";
 import type { SecondaryFixedPanelTab } from "@/lib/fixed-panel-tabs-state";
@@ -616,7 +616,7 @@ export function ThreadSecondaryPanel({
             // collapsed, on either thread surface), reserve the traffic-light
             // safe area so the leading controls clear the lights. It rides this
             // element rather than the leading group below because it replaces
-            // one side of the `px-4` above — see `lib/bb-desktop.ts`; on the
+            // one side of the `px-4` above — see `lib/patcher-desktop.ts`; on the
             // inner element it would have added to it instead, and no single
             // value is right for both spellings.
             //

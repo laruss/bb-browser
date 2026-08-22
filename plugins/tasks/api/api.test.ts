@@ -427,7 +427,7 @@ describe("Tasks RPC domain API", () => {
     await harness.dispose();
   });
 
-  it("lists bb workspace projects as id/name options", async () => {
+  it("lists Patcher workspace projects as id/name options", async () => {
     const { patcher, harness } = createFakePluginHost({
       permissions: pluginPermissionsFromManifest(import.meta.url),
       pluginId: "tasks",
@@ -435,7 +435,7 @@ describe("Tasks RPC domain API", () => {
         projects: {
           list: async () => [
             { id: "proj_personal", name: "Personal", extra: "dropped" },
-            { id: "proj_bb", name: "bb" },
+            { id: "proj_patcher", name: "Patcher" },
           ],
         },
       },
@@ -447,7 +447,7 @@ describe("Tasks RPC domain API", () => {
     );
     expect(result.patcherProjects).toEqual([
       { id: "proj_personal", name: "Personal" },
-      { id: "proj_bb", name: "bb" },
+      { id: "proj_patcher", name: "Patcher" },
     ]);
     expect(harness.sdk.callsTo("projects.list")).toEqual([
       [{ includePersonal: true }],
@@ -1661,7 +1661,7 @@ function makePullRequest(
     state: "open" as const,
     url: "https://github.com/acme/bb/pull/12",
     baseRefName: "main",
-    headRefName: "bb/fix-the-pill",
+    headRefName: "patcher/fix-the-pill",
     updatedAt: "2026-07-15T10:00:00.000Z",
     checks: {
       state: "passing" as const,

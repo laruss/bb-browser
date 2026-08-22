@@ -25,7 +25,7 @@ function nonEmptyString(value: JsonValue | undefined): string | null {
 
 /**
  * Reads both the current typed event and the legacy provider/unhandled shape
- * persisted before bb normalized Claude's model fallback system messages.
+ * persisted before Patcher normalized Claude's model fallback system messages.
  */
 export function getProviderModelFallbackData(
   event: ThreadEvent,

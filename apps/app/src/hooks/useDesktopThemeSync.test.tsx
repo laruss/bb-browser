@@ -6,7 +6,7 @@ import type {
   PatcherDesktopInfo,
   PatcherDesktopTheme,
 } from "@patcher/desktop-contract";
-import { createPatcherDesktopApi } from "@/test/bb-desktop-test-utils";
+import { createPatcherDesktopApi } from "@/test/patcher-desktop-test-utils";
 
 const desktopInfo: PatcherDesktopInfo = {
   lastCheckedAt: null,

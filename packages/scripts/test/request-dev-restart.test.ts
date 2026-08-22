@@ -47,7 +47,7 @@ describe("request-dev-restart", () => {
   });
 
   it("reads a valid running supervisor pid", async () => {
-    const dataDir = await makeTempDir("bb-request-restart-");
+    const dataDir = await makeTempDir("patcher-request-restart-");
     const serviceDir = join(dataDir, "dev-supervisors");
     const pidPath = join(serviceDir, "server.pid");
     await fs.mkdir(serviceDir, { recursive: true });
@@ -162,7 +162,7 @@ describe("request-dev-restart", () => {
   });
 
   it("removes stale pid files", async () => {
-    const dataDir = await makeTempDir("bb-request-restart-");
+    const dataDir = await makeTempDir("patcher-request-restart-");
     const serviceDir = join(dataDir, "dev-supervisors");
     const pidPath = join(serviceDir, "server.pid");
     await fs.mkdir(serviceDir, { recursive: true });

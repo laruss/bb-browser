@@ -26,7 +26,7 @@ describe("local Cloud proxy errors", () => {
     ).not.toThrow();
     expect(connection.destroy).toHaveBeenCalledOnce();
     expect(reportError).toHaveBeenCalledWith(
-      "bb Cloud dev proxy: unexpected failure",
+      "Patcher Cloud dev proxy: unexpected failure",
     );
   });
 });

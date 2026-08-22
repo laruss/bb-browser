@@ -97,7 +97,7 @@ export function resolveInstalledRegistrySkill(
   return (
     installedSkills.find((installedSkill) => {
       return (
-        installedSkill.scope === "bb-user" &&
+        installedSkill.scope === "patcher-user" &&
         installedSkill.provider === null &&
         installedSkill.manageable &&
         installedSkill.registrySkillId === registrySkill.id

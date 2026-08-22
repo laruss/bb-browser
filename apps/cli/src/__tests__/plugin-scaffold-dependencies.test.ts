@@ -98,7 +98,7 @@ describe("scaffold dependency classification", () => {
   let workDir: string;
 
   beforeEach(async () => {
-    workDir = await mkdtemp(join(tmpdir(), "bb-scaffold-deps-"));
+    workDir = await mkdtemp(join(tmpdir(), "patcher-scaffold-deps-"));
   });
 
   afterEach(async () => {

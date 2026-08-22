@@ -74,7 +74,7 @@ browser_tabs_*          browser_page_get_text
 ```
 
 Everything else (cookies, storage, routes, tracing, video, PDF, vision) is
-reachable as `bb browser …`. bb agents run with shell access, so this costs them
+reachable as `bb browser …`. Patcher agents run with shell access, so this costs them
 nothing, and it keeps the provider's tool list from ballooning past the point
 where models pick well.
 
@@ -504,15 +504,15 @@ separate, optional step over an artifact that is already complete.
 
 ### The encoder decision
 
-**bb ships no encoder and downloads none. `--encode` runs the ffmpeg the machine
+**Patcher ships no encoder and downloads none. `--encode` runs the ffmpeg the machine
 already has.** The alternatives, and why each lost:
 
 - **Bundling ffmpeg** — 40–80MB in every auto-update payload for a mac-arm64-only
   app, a GPL build inside the distribution, and another binary to sign once
   notarization is turned on (today `identity: null`, `notarize: false`). Real
   costs, for a feature most sessions never use.
-- **Downloading one on demand** — worse, not better. bb would execute a binary
-  that was never part of a bb release: responsibly done that means a pinned URL,
+- **Downloading one on demand** — worse, not better. Patcher would execute a binary
+  that was never part of a Patcher release: responsibly done that means a pinned URL,
   a checksum, and a story for updates, and on Apple Silicon it also means
   depending on how a third party signed their build, with a quarantine flag to
   strip if it comes to that. Writing code whose job is to remove a Gatekeeper
@@ -577,7 +577,7 @@ other.
 
 What the trace does not record, stated because a reader will assume otherwise:
 anything the *user* does in the same browser while it runs, and any navigation a
-*page* starts by itself. It records the commands bb was asked to run.
+*page* starts by itself. It records the commands Patcher was asked to run.
 
 Done when: a session an agent drove can be reviewed after the fact. ✅ (against
 fakes, as with A through E)
@@ -709,7 +709,7 @@ carries its timings.
 would mean running Homebrew from a test suite — the candidate lists and the
 messages are covered, the `brew install` is not. The encode path *is* covered,
 against a stand-in binary the test writes: what is worth pinning there is the
-argv bb passes and that it checks a file appeared, neither of which needs a real
+argv Patcher passes and that it checks a file appeared, neither of which needs a real
 encoder, and a test that encodes video is a test that fails on a machine without
 one. Also untested: the argument normalizers in the server's plugin
 API — the observation defaults (JPEG at 80, a limit of 100), Stage D's cookie
@@ -843,7 +843,7 @@ which needs a channel, and what an older shell does with the difference.
 ## Upload, and what it does not add
 
 `upload` hands a web page the contents of local files by absolute path, which
-reads like an exfiltration primitive and deserves saying out loud. In bb's threat
+reads like an exfiltration primitive and deserves saying out loud. In Patcher's threat
 model it is not a new one: an agent with these tools already has shell access and
 could `curl` the same file to the same host. What it adds is a path where the
 agent never sees the bytes it moved.

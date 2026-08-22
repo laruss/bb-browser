@@ -10,7 +10,7 @@ export default defineWorkspaceTestConfig({
     include: ["src/**/*.test.ts", "test/**/*.test.ts"],
     exclude: ["dist/**", "node_modules/**"],
     env: {
-      PATCHER_DATA_DIR: "/tmp/bb-host-daemon-test",
+      PATCHER_DATA_DIR: "/tmp/patcher-host-daemon-test",
       PATCHER_SERVER_URL: "http://127.0.0.1:49161",
       PATCHER_HOST_DAEMON_PORT: "49162",
     },

@@ -39,7 +39,7 @@ async function writeFileEnsuringDir(
 async function makeWorkspaceFixture(): Promise<WorkspaceFixture> {
   const cwd = path.join(tempRoot, "workspace");
   const builtinSkillsRootPath = path.join(tempRoot, "builtin-skills");
-  const dataDir = path.join(tempRoot, "bb-data");
+  const dataDir = path.join(tempRoot, "patcher-data");
   const homeDir = path.join(tempRoot, "home");
   const codexHome = path.join(homeDir, ".codex");
   await mkdir(cwd, { recursive: true });
@@ -96,7 +96,7 @@ function fromSlashPath(rootPath: string, relativePath: string): string {
 }
 
 beforeEach(async () => {
-  tempRoot = await mkdtemp(path.join(tmpdir(), "bb-command-discovery-"));
+  tempRoot = await mkdtemp(path.join(tmpdir(), "patcher-command-discovery-"));
 });
 
 afterEach(async () => {
@@ -105,7 +105,7 @@ afterEach(async () => {
 });
 
 describe("discoverProviderCommands (claude-code)", () => {
-  it("leaves bb-managed skills to the server catalog", async () => {
+  it("leaves Patcher-managed skills to the server catalog", async () => {
     const fixture = await makeWorkspaceFixture();
     await writeFileEnsuringDir(
       path.join(fixture.cwd, ".patcher", "skills", "project-bb", "SKILL.md"),
@@ -117,7 +117,7 @@ describe("discoverProviderCommands (claude-code)", () => {
     );
     await writeFileEnsuringDir(
       path.join(fixture.builtinSkillsRootPath, "bb-cli", "SKILL.md"),
-      "---\nname: bb-cli\ndescription: Built-in bb CLI skill\n---\n",
+      "---\nname: bb-cli\ndescription: Built-in Patcher CLI skill\n---\n",
     );
 
     const commands = await discoverClaude(fixture, fixture.cwd);
@@ -874,7 +874,7 @@ describe("discoverProviderCommands (claude-code)", () => {
 });
 
 describe("discoverProviderCommands (codex)", () => {
-  it("leaves bb-managed skills to the server catalog", async () => {
+  it("leaves Patcher-managed skills to the server catalog", async () => {
     const fixture = await makeWorkspaceFixture();
     await writeFileEnsuringDir(
       path.join(fixture.cwd, ".patcher", "skills", "project-bb", "SKILL.md"),
@@ -886,7 +886,7 @@ describe("discoverProviderCommands (codex)", () => {
     );
     await writeFileEnsuringDir(
       path.join(fixture.builtinSkillsRootPath, "bb-cli", "SKILL.md"),
-      "---\nname: bb-cli\ndescription: Built-in bb CLI skill\n---\n",
+      "---\nname: bb-cli\ndescription: Built-in Patcher CLI skill\n---\n",
     );
 
     const commands = await discoverCodex(fixture, fixture.cwd);
@@ -1274,7 +1274,7 @@ describe("resolveCommandScanRoots", () => {
     expect(roots.map((root) => root.origin)).toEqual(["user"]);
   });
 
-  it("does not accept synchronized bb skills", async () => {
+  it("does not accept synchronized Patcher skills", async () => {
     const sourceRootPath = path.join(tempRoot, "server-skill", "synced-skill");
     const skillFilePath = path.join(sourceRootPath, "SKILL.md");
     await writeFileEnsuringDir(

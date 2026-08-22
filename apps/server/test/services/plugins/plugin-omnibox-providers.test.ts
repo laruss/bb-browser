@@ -328,7 +328,7 @@ describe("omnibox suggest time box", () => {
   let service: PluginService;
 
   beforeEach(async () => {
-    workDir = await mkdtemp(join(tmpdir(), "bb-omnibox-timeout-"));
+    workDir = await mkdtemp(join(tmpdir(), "patcher-omnibox-timeout-"));
     db = createConnection(join(workDir, "patcher.db"));
     migrate(db);
     service = createPluginService({

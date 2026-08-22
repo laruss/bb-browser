@@ -7,7 +7,7 @@ import {
   resolvePatcherAppProcessRuntime,
   startPatcherAppProcess,
   type PatcherAppProcess,
-} from "../src/bb-process.js";
+} from "../src/patcher-process.js";
 
 interface TempScript {
   path: string;
@@ -30,7 +30,7 @@ const processes: PatcherAppProcess[] = [];
 async function createTempScript(
   args: CreateTempScriptArgs,
 ): Promise<TempScript> {
-  const root = await mkdtemp(join(tmpdir(), "bb-desktop-process-"));
+  const root = await mkdtemp(join(tmpdir(), "patcher-desktop-process-"));
   const path = join(root, "child.mjs");
   await writeFile(path, args.contents, "utf8");
   const script = { path, root };
@@ -70,7 +70,7 @@ afterEach(async () => {
   }
 });
 
-describe("bb app process", () => {
+describe("Patcher app process", () => {
   it("uses the dev Node executable without Electron node mode", () => {
     const env = createPatcherAppProcessEnv({
       env: {
@@ -86,11 +86,11 @@ describe("bb app process", () => {
     const runtime = resolvePatcherAppProcessRuntime({
       env: {},
       isPackaged: true,
-      processExecPath: "/Applications/bb.app/Contents/MacOS/bb",
+      processExecPath: "/Applications/Patcher.app/Contents/MacOS/bb",
     });
 
     expect(runtime).toEqual({
-      executablePath: "/Applications/bb.app/Contents/MacOS/bb",
+      executablePath: "/Applications/Patcher.app/Contents/MacOS/bb",
       mode: "electron-node",
     });
     expect(

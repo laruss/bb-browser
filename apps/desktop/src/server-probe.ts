@@ -8,7 +8,7 @@ const healthResponseSchema = z
 
 const systemConfigResponseSchema = z
   .object({
-    // Optional on purpose: the probed server can be an older bb that predates
+    // Optional on purpose: the probed server can be an older Patcher that predates
     // this field, and it is still compatible enough to attach to.
     dataDir: z.string().min(1).optional(),
     hostDaemonPort: z.number().int().min(1).max(65_535),
@@ -27,7 +27,7 @@ export type ServerProbeFetch = (
 ) => Promise<Response>;
 
 export interface CompatibleServerProbeResult {
-  /** Data directory the probed server reports, or null on an older bb. */
+  /** Data directory the probed server reports, or null on an older Patcher. */
   dataDir: string | null;
   kind: "compatible";
   serverUrl: string;
@@ -244,7 +244,7 @@ export async function waitForCompatibleServer(
 
   return {
     kind: "unavailable",
-    reason: `Timed out after ${args.timeoutMs}ms waiting for bb server. Last probe: ${lastResult.reason}`,
+    reason: `Timed out after ${args.timeoutMs}ms waiting for Patcher server. Last probe: ${lastResult.reason}`,
     serverUrl: args.serverUrl,
   };
 }

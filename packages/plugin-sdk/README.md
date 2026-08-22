@@ -30,7 +30,7 @@ controls to actions or the plus menu and larger content to banners.
 ## Trusted frontend content scripts
 
 Use `app.contentScripts.register({ id, mount })` for ordinary
-bundled TypeScript/JavaScript that enhances the bb app shell without rendering
+bundled TypeScript/JavaScript that enhances the Patcher app shell without rendering
 a React slot. The host supplies `{ pluginId, generation, signal }`, awaits
 mount setup, and owns abort plus exact-once reverse-order disposal across hash
 reload, disable, removal, failed replacement, and app-window teardown. The old

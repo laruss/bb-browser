@@ -1,7 +1,7 @@
 /**
  * Pi provider adapter.
  *
- * Maps between bb's ProviderAdapter contract and the Pi coding agent bridge
+ * Maps between Patcher's ProviderAdapter contract and the Pi coding agent bridge
  * process. The bridge owns provider SDK interactions such as model discovery.
  * The adapter owns event translation: it takes raw `AgentSessionEvent` from
  * the Pi SDK and produces `ThreadEvent[]`.
@@ -198,7 +198,7 @@ interface PiContextWindowModel {
 }
 
 // Keep Pi's SDK-level turn_start/turn_end outside the translated event union
-// until replay proves they represent bb turn boundaries rather than internal
+// until replay proves they represent Patcher turn boundaries rather than internal
 // provider subturns.
 const piEventTypeSchema = z
   .object({
@@ -684,7 +684,7 @@ export interface CreatePiProviderAdapterOptions {
   bridgeNodeExecutablePath?: string;
   /** Override context-window resolution. Used by unit tests to avoid real catalogs. */
   resolveModelContextWindow?: PiModelContextWindowResolver;
-  /** Prefix for bb-owned turn ids emitted by this adapter instance. */
+  /** Prefix for Patcher-owned turn ids emitted by this adapter instance. */
   turnIdPrefix?: string;
 }
 
@@ -1312,7 +1312,7 @@ export function createPiProviderAdapter(
       command: opts?.bridgeNodeExecutablePath ?? "node",
       args: resolveBridgeProcessArgs({
         bridgeBundleDir: opts?.bridgeBundleDir,
-        bundleFileName: "bb-pi-bridge.mjs",
+        bundleFileName: "patcher-pi-bridge.mjs",
         importMetaUrl: import.meta.url,
         bridgeRelativePath: "bridge/bridge.js",
       }),
@@ -1327,7 +1327,7 @@ export function createPiProviderAdapter(
           return {
             kind: "request",
             method: "initialize",
-            params: { clientInfo: { name: "bb", version: "1.0.0" } },
+            params: { clientInfo: { name: "Patcher", version: "1.0.0" } },
           };
         case "model/list":
           return {
@@ -1455,7 +1455,7 @@ export function createPiProviderAdapter(
             },
           };
         case "thread/fork": {
-          // Pi's provider identity == the bb threadId, so the source pi session
+          // Pi's provider identity == the Patcher threadId, so the source pi session
           // id is command.sourceProviderThreadId (the source bb thread id). The
           // new thread keeps command.threadId as its identity; the bridge forks
           // the source session's full history into the new thread's

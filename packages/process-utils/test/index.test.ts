@@ -44,7 +44,7 @@ describe("process utils", () => {
       "uncaughtExceptionMonitor",
     );
     const logsDir = join(
-      mkdtempSync(join(tmpdir(), "bb-process-utils-report-")),
+      mkdtempSync(join(tmpdir(), "patcher-process-utils-report-")),
       "logs",
     );
 
@@ -76,7 +76,7 @@ describe("process utils", () => {
 
   it("writes env-safe diagnostic reports", () => {
     const logsDir = join(
-      mkdtempSync(join(tmpdir(), "bb-process-utils-report-")),
+      mkdtempSync(join(tmpdir(), "patcher-process-utils-report-")),
       "logs",
     );
     const originalOpenAiApiKey = process.env.OPENAI_API_KEY;
@@ -110,7 +110,7 @@ describe("process utils", () => {
 
   it("writes nested error causes", () => {
     const logsDir = join(
-      mkdtempSync(join(tmpdir(), "bb-process-utils-report-")),
+      mkdtempSync(join(tmpdir(), "patcher-process-utils-report-")),
       "logs",
     );
     const connectionError = new Error(
@@ -143,7 +143,7 @@ describe("process utils", () => {
 
   it("truncates cyclic error causes", () => {
     const logsDir = join(
-      mkdtempSync(join(tmpdir(), "bb-process-utils-report-")),
+      mkdtempSync(join(tmpdir(), "patcher-process-utils-report-")),
       "logs",
     );
     const firstError = new Error("first");
@@ -176,7 +176,7 @@ describe("process utils", () => {
 
   it("truncates error causes that exceed the depth limit", () => {
     const logsDir = join(
-      mkdtempSync(join(tmpdir(), "bb-process-utils-report-")),
+      mkdtempSync(join(tmpdir(), "patcher-process-utils-report-")),
       "logs",
     );
     const rootError = new Error("cause-0");
@@ -204,7 +204,7 @@ describe("process utils", () => {
 
   it("writes bounded AggregateError details", () => {
     const logsDir = join(
-      mkdtempSync(join(tmpdir(), "bb-process-utils-report-")),
+      mkdtempSync(join(tmpdir(), "patcher-process-utils-report-")),
       "logs",
     );
     const connectionErrors = Array.from({ length: 10 }, (_, index) => {
@@ -280,9 +280,9 @@ describe("process utils", () => {
     ).toBeNull();
   });
 
-  it("scrubs inherited bb runtime env vars and node mode", () => {
+  it("scrubs inherited Patcher runtime env vars and node mode", () => {
     const env: NodeJS.ProcessEnv = {
-      PATCHER_DATA_DIR: "/tmp/bb-data",
+      PATCHER_DATA_DIR: "/tmp/patcher-data",
       PATCHER_HOST_DAEMON_PORT: "38987",
       NODE_ENV: "development",
       NODE_OPTIONS: "--enable-source-maps",
@@ -302,7 +302,7 @@ describe("process utils", () => {
 
   it("does not mutate the inherited env", () => {
     const env: NodeJS.ProcessEnv = {
-      PATCHER_DATA_DIR: "/tmp/bb-data",
+      PATCHER_DATA_DIR: "/tmp/patcher-data",
       NODE_ENV: "development",
       PATH: "/bin",
     };

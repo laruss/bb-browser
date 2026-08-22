@@ -23,7 +23,10 @@ import {
   COARSE_POINTER_TEXT_SM_CLASS,
 } from "@patcher/shared-ui/coarse-pointer-sizing";
 import { Icon } from "@patcher/shared-ui/icon";
-import { getPatcherDesktopInfo, getDesktopBrowserApi } from "@/lib/bb-desktop";
+import {
+  getPatcherDesktopInfo,
+  getDesktopBrowserApi,
+} from "@/lib/patcher-desktop";
 import { cn } from "@patcher/shared-ui/lib/utils";
 import {
   getBrowserUrlSecurity,
@@ -124,8 +127,8 @@ interface BrowserChromeProps {
   onForward: () => void;
   onReloadOrStop: () => void;
   /**
-   * False when bb is macOS's own default browser: the link would go to Launch
-   * Services and come straight back as a bb tab, so the control says nothing
+   * False when Patcher is macOS's own default browser: the link would go to Launch
+   * Services and come straight back as a Patcher tab, so the control says nothing
    * true and is not drawn.
    */
   canOpenExternal: boolean;
@@ -164,8 +167,8 @@ interface BrowserViewAttachIdentity {
 interface BrowserPageLoadErrorProps {
   errorText: string;
   /**
-   * False when bb is macOS's own default browser: the link would go to Launch
-   * Services and come straight back as a bb tab, so the control says nothing
+   * False when Patcher is macOS's own default browser: the link would go to Launch
+   * Services and come straight back as a Patcher tab, so the control says nothing
    * true and is not drawn.
    */
   canOpenExternal: boolean;
@@ -423,7 +426,7 @@ function BrowserUnavailable() {
           COARSE_POINTER_TEXT_SM_CLASS,
         )}
       >
-        The in-app web browser runs in the bb desktop app. Open this thread
+        The in-app web browser runs in the Patcher desktop app. Open this thread
         there to browse the web.
       </p>
     </div>
@@ -947,7 +950,7 @@ export function BrowserTabContent({
     100,
   );
 
-  // Whether "open this elsewhere" can mean anything: when bb is the default
+  // Whether "open this elsewhere" can mean anything: when Patcher is the default
   // browser, elsewhere is here.
   const { status: defaultBrowserStatus } = useDefaultBrowserStatus();
   const canOpenExternal = !defaultBrowserStatus.isDefault;

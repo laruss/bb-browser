@@ -480,7 +480,7 @@ describe("events", () => {
   it("drops orphan provider/unhandled events instead of failing the batch", () => {
     const { db, thread } = setup();
 
-    // A provider can label its own internal traffic with a turn id bb never
+    // A provider can label its own internal traffic with a turn id Patcher never
     // started (Codex tags automatic-compaction events "auto-compact-N"). An
     // unhandled passthrough event is diagnostic only, so dropping it is always
     // cheaper than rolling back the batch it rode in with — which the daemon

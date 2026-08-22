@@ -28,7 +28,7 @@ function createPackageJson({ name, version }) {
 }
 
 function createTestRepo({ patcherAppVersion, desktopVersion }) {
-  const repoRoot = mkdtempSync(join(tmpdir(), "bb-bump-version-"));
+  const repoRoot = mkdtempSync(join(tmpdir(), "patcher-bump-version-"));
   testRoots.push(repoRoot);
 
   mkdirSync(join(repoRoot, "packages", "bb-app"), { recursive: true });

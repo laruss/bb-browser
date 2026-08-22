@@ -15,10 +15,10 @@ async function makeTempDir(prefix: string): Promise<string> {
 }
 
 async function initRepo(): Promise<string> {
-  const repoPath = await makeTempDir("bb-diff-repo-");
+  const repoPath = await makeTempDir("patcher-diff-repo-");
   await runGit(["init", "-b", "main"], { cwd: repoPath });
   await runGit(["config", "user.name", "BB Tests"], { cwd: repoPath });
-  await runGit(["config", "user.email", "bb@example.com"], { cwd: repoPath });
+  await runGit(["config", "user.email", "patcher@example.com"], { cwd: repoPath });
   await runGit(["config", "core.autocrlf", "false"], { cwd: repoPath });
   return repoPath;
 }

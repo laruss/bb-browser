@@ -2,7 +2,7 @@ export const SIDEBAR_COLLAPSED_STORAGE_KEY = "patcher-tasks:sidebar-collapsed";
 
 /**
  * The Tasks sidebar is a client-local layout preference. Keeping it in the
- * browser profile avoids changing another client connected to the same bb
+ * browser profile avoids changing another client connected to the same Patcher
  * server. Missing, invalid, or unavailable storage preserves the existing
  * first-use default: expanded.
  */

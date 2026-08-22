@@ -39,7 +39,7 @@ import {
   resolveRightPanelFileVisual,
 } from "./rightPanelFileVisuals";
 import { cn } from "@patcher/shared-ui/lib/utils";
-import { isDesktopBrowserAvailable } from "@/lib/bb-desktop";
+import { isDesktopBrowserAvailable } from "@/lib/patcher-desktop";
 import { formatRelativeTime } from "@/lib/relative-time";
 import {
   LAUNCHER_ACTION_ROW_BASE_CLASS,

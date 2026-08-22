@@ -10,9 +10,9 @@ const branches = [
   "main",
   "develop",
   "staging",
-  "bb/feat/review-flow",
-  "bb/fix/timeline-pagination",
-  "bb/implement-server-daemon-protocol-simplification-thr_qfk8ksbxkk",
+  "patcher/feat/review-flow",
+  "patcher/fix/timeline-pagination",
+  "patcher/implement-server-daemon-protocol-simplification-thr_qfk8ksbxkk",
 ] as const;
 
 const remoteBranches = [
@@ -105,11 +105,12 @@ const newBranchPicker: BranchPickerStoryConfig = {
 };
 
 const longBranchPicker: BranchPickerStoryConfig = {
-  value: "bb/implement-server-daemon-protocol-simplification-thr_qfk8ksbxkk",
+  value:
+    "patcher/implement-server-daemon-protocol-simplification-thr_qfk8ksbxkk",
   triggerLabel:
-    "bb/implement-server-daemon-protocol-simplification-thr_qfk8ksbxkk",
+    "patcher/implement-server-daemon-protocol-simplification-thr_qfk8ksbxkk",
   triggerTitle:
-    "Branch: bb/implement-server-daemon-protocol-simplification-thr_qfk8ksbxkk",
+    "Branch: patcher/implement-server-daemon-protocol-simplification-thr_qfk8ksbxkk",
   defaultOpen: true,
   modal: false,
 };

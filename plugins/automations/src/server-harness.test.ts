@@ -901,7 +901,7 @@ describe("automations server plugin harness", () => {
     await harness.dispose();
   });
 
-  it("dispose aborts the sweep service and poisons stale bb handles", async () => {
+  it("dispose aborts the sweep service and poisons stale Patcher handles", async () => {
     const { patcher, harness } = await bootAutomationsPlugin();
     const service = harness.runService("automation-sweep");
 

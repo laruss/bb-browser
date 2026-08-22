@@ -1,6 +1,6 @@
 ---
 kind: instruction
-title: bb Guide — Machines
+title: Patcher Guide — Machines
 summary: Command reference for listing and targeting execution machines.
 intent: Explain execution-machine discovery and selection from the CLI.
 editingNotes: Keep the user-facing noun machine; internal APIs and types use Host.
@@ -14,7 +14,7 @@ The server listens on loopback by default. Remote execution machines need a
 server URL they can actually reach — a private Tailscale Serve URL, for example;
 generate their installer while using that reachable server URL.
 
-The Settings installer first uses the exact `bb-app` tarball served by that bb
+The Settings installer first uses the exact `bb-app` tarball served by that Patcher
 server at `/install/bb-app.tgz`; only servers that do not implement the route
 (HTTP 404) fall back to npm. Installed launchd/systemd services pass
 `--auto-update`. On a newer server protocol mismatch, the daemon downloads that
@@ -52,7 +52,7 @@ show` report the current limit.
 
 Updates commands
 
-One consolidated view of bb and provider CLI updates across machines — the
+One consolidated view of Patcher and provider CLI updates across machines — the
 CLI counterpart of Settings → Updates and the sidebar Updates badge.
 
   bb updates [status]                     Show bb-app and provider CLI update

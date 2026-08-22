@@ -90,7 +90,7 @@ export function clampPatcherDesktopBrowserViewBounds(
  * Create-or-update the view for a browser tab. `url` may be empty to mean "no
  * page yet" (the renderer shows its new-tab screen and keeps the view hidden).
  *
- * Version-skew warning: the desktop shell attaches to any already-running bb
+ * Version-skew warning: the desktop shell attaches to any already-running Patcher
  * server that passes its health probe (no version handshake — see
  * apps/desktop/src/server-probe.ts) and loads the SPA that server serves, so
  * the renderer and the shell's main process routinely come from different
@@ -291,11 +291,11 @@ export type PatcherDesktopBrowserScopedOpenTabRequest = z.infer<
 >;
 
 /**
- * The links macOS handed the shell because bb is the user's default browser,
+ * The links macOS handed the shell because Patcher is the user's default browser,
  * answered to the surface that asked for them and emptied in the asking.
  *
  * An answer rather than a push: `open-url` fires before there is a renderer at
- * all when the click is what launched bb, so the shell queues and the surface
+ * all when the click is what launched Patcher, so the shell queues and the surface
  * pulls when it mounts. Same URL bound as a popup request, for the same reason
  * — the address comes from outside this app either way.
  */
@@ -352,7 +352,7 @@ export const PATCHER_DESKTOP_BROWSER_MAX_FAVICON_DATA_URL_LENGTH = 196_608;
  *
  * `dataUrl` is built by the shell from bytes **it** fetched inside the browsing
  * session, and its media type comes from the shell's allowlist rather than from
- * the response. The page-controlled favicon URL never reaches the trusted bb app,
+ * the response. The page-controlled favicon URL never reaches the trusted Patcher app,
  * which is what keeps a tab icon from becoming a beacon on the app's own origin,
  * a loopback/LAN probe carrying app credentials, or a `javascript:`/`data:`
  * payload of the page's choosing. See `resolveBrowserFaviconDataUrl` in
@@ -1024,7 +1024,7 @@ export const patcherDesktopBrowserInteractionSchema = z.discriminatedUnion(
       /**
        * Absolute paths on the machine running the shell. This hands a web page
        * the contents of local files; see docs/architecture/browser-automation.md
-       * for what that does and does not add to bb's threat model.
+       * for what that does and does not add to Patcher's threat model.
        */
       paths: z
         .array(z.string().min(1).max(1024))
@@ -2064,7 +2064,7 @@ export const PATCHER_DESKTOP_BROWSER_MAX_PAGE_SCRIPT_JSON_LENGTH = 128_000;
  * A page script asking its own plugin something, forwarded main → renderer.
  *
  * The shell cannot answer this itself: reaching a plugin means an authenticated
- * call to the bb server, and the shell deliberately holds no credentials for it.
+ * call to the Patcher server, and the shell deliberately holds no credentials for it.
  * So the trusted renderer performs the call, which also puts a second check in
  * the path — it re-derives from its own contribution list that this plugin really
  * does claim this page.
@@ -2097,7 +2097,7 @@ export type PatcherDesktopBrowserPageScriptCallHandler = (
  *
  * `message` is shown to nobody: it becomes the rejection reason of the promise
  * the page script is awaiting, which is the only place it can be acted on. It
- * therefore says what the *script author* did wrong, and nothing about bb.
+ * therefore says what the *script author* did wrong, and nothing about Patcher.
  */
 export const patcherDesktopBrowserPageScriptResultSchema = z.discriminatedUnion(
   "ok",
@@ -2483,19 +2483,19 @@ export interface PatcherDesktopBrowserApi {
     listener: PatcherDesktopBrowserScopedOpenTabHandler,
   ): PatcherDesktopBrowserUnsubscribe;
   /**
-   * Take the links macOS handed the shell because bb is the user's default
+   * Take the links macOS handed the shell because Patcher is the user's default
    * browser, emptying the queue as they are taken.
    *
    * Optional for the same version skew as
    * {@link PatcherDesktopBrowserApi.onScopedOpenTab}: an older shell has no queue and
    * feature-detection is the negotiation. Call it once when a surface mounts —
-   * that is the cold-start path, where the click that launched bb arrived before
+   * that is the cold-start path, where the click that launched Patcher arrived before
    * this renderer existed — and again on
    * {@link PatcherDesktopBrowserApi.onExternalUrlsPending}.
    */
   takeExternalUrls?(): Promise<string[]>;
   /**
-   * Subscribe to "there are links waiting" nudges, for the case where bb was
+   * Subscribe to "there are links waiting" nudges, for the case where Patcher was
    * already running when the user clicked one. Carries no payload on purpose:
    * the queue is the single source, so a nudge that raced a mount cannot open
    * the same link twice.

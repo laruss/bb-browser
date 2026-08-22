@@ -11,7 +11,7 @@ What plugin components are built from. Registration and slot props live in
 
 ## Host components
 
-- `ThreadChat` — bb's complete chat surface for an existing thread, rendered
+- `ThreadChat` — Patcher's complete chat surface for an existing thread, rendered
   wherever plugin React runs (nav panels, thread-panel tabs, homepage and
   settings sections). This is the deliberate exception to the
   no-host-components rule: a stable product capability, not a UI kit. Props:
@@ -40,13 +40,13 @@ className?, leadingContent?, messageActions? }` —
   host owns timeline loading, streaming, drafts, send/queue/steer/stop,
   attachments, execution controls, pending interactions, and read tracking —
   do not proxy thread data through your own RPC or rebuild the composer.
-- `Markdown` — bb's chat-message markdown renderer (same typography,
+- `Markdown` — Patcher's chat-message markdown renderer (same typography,
   spacing, and code styling as timeline messages). Props:
   `{ content, className? }`. Use it wherever plugin UI quotes or previews
   message content (e.g. a reply header) so it reads like the rest of the
   chat instead of a differently-styled bundled renderer. Renderer options
   beyond content/className stay host-internal.
-- `experimental_NewThreadComposer` — bb's complete compose surface for
+- `experimental_NewThreadComposer` — Patcher's complete compose surface for
   CREATING a thread (the create-side counterpart to `ThreadChat`): prompt
   editor with @-mentions and expand, `+` attachments,
   provider/model/reasoning picker, voice, submit, and the row beneath with
@@ -245,7 +245,7 @@ only `definePluginApp` + the hooks):
   variables (`bg-background`, `text-muted-foreground`, `rounded-lg`, and
   `animate-in`/`fade-in-0` via tw-animate-css) — derive colors from theme
   tokens, never hardcoded grays.
-- The old bb extras (`EmptyState`, `Markdown`, `PageBody`, `Spinner`) are
+- The old Patcher extras (`EmptyState`, `Markdown`, `PageBody`, `Spinner`) are
   gone — write your own (each is a few lines; see
   `plugins/github/components/` for reference implementations).
 

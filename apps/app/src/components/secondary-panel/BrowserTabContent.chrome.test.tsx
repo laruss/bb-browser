@@ -15,7 +15,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   createPatcherDesktopApi,
   createNoopDesktopBrowserApi,
-} from "@/test/bb-desktop-test-utils";
+} from "@/test/patcher-desktop-test-utils";
 import { createQueryClientTestHarness } from "@/test/queryClientTestHarness";
 import { BrowserTabContent } from "./BrowserTabContent";
 

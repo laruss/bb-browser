@@ -32,7 +32,7 @@ interface ParentFixture {
   projectId: string;
 }
 
-// A parent/manager thread that can receive a `[bb system]` turn: a ready
+// A parent/manager thread that can receive a `[Patcher system]` turn: a ready
 // environment plus runtime state (provider thread id) so the dispatch resolves
 // to a `turn.submit`.
 function seedParentFixture(

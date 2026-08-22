@@ -5,7 +5,7 @@
 //   ::inline-vis{file="demo.html"}
 // and calls `prepareHtmlPreview` with the message's threadId plus the file
 // attribute. This backend preflights the file for a clean inline error; the
-// frontend then points its iframe at bb's path-shaped worktree preview route so
+// frontend then points its iframe at Patcher's path-shaped worktree preview route so
 // relative assets work exactly as they do in the sidebar HTML preview.
 import path from "node:path";
 import { defineRpcContract, type PatcherPluginApi } from "@patcher/plugin-sdk";

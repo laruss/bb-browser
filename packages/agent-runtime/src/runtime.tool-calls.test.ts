@@ -40,7 +40,7 @@ describe("createAgentRuntime tool calls", () => {
   let scriptPath: string;
 
   beforeEach(() => {
-    tmpDir = mkdtempSync(join(tmpdir(), "bb-runtime-test-"));
+    tmpDir = mkdtempSync(join(tmpdir(), "patcher-runtime-test-"));
     scriptPath = fakeProviderScriptPath;
   });
 

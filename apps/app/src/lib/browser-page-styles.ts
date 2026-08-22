@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { PATCHER_DESKTOP_BROWSER_MAX_PAGE_STYLES } from "@patcher/desktop-contract";
 import { usePluginContributions } from "@/hooks/queries/plugin-contribution-queries";
-import { getDesktopBrowserApi } from "./bb-desktop";
+import { getDesktopBrowserApi } from "./patcher-desktop";
 
 /**
  * Hands the shell the page styles plugins declared, and keeps it current.

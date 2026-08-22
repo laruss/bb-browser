@@ -559,7 +559,7 @@ Direct control — these skip what makes the commands above safe
 
 Recording — what was done, and what it looked like
   tracing-start [--screenshots]
-                             Log every command bb runs from here on
+                             Log every command Patcher runs from here on
   tracing-stop [dir]         End it; with a dir, write trace.json and its images
   video-start [--fps n]      Film the tab (default 5/s; it must stay visible)
   video-chapter <title>      Mark a moment in the film
@@ -865,7 +865,7 @@ export function registerBrowserToolsCli(patcher: PatcherPluginApi): void {
       },
       {
         name: "tracing-start",
-        summary: "Start logging the browser commands bb runs",
+        summary: "Start logging the browser commands Patcher runs",
         usage: "bb browser tracing-start [--screenshots]",
       },
       {
@@ -890,7 +890,7 @@ export function registerBrowserToolsCli(patcher: PatcherPluginApi): void {
       },
       {
         name: "install-ffmpeg",
-        summary: "Install the video encoder with Homebrew (bb ships none)",
+        summary: "Install the video encoder with Homebrew (Patcher ships none)",
         usage: "bb browser install-ffmpeg",
       },
       {
@@ -1664,7 +1664,7 @@ export function registerBrowserToolsCli(patcher: PatcherPluginApi): void {
             );
             return {
               exitCode: 0,
-              stdout: `Tracing. Everything bb drives from here is recorded${
+              stdout: `Tracing. Everything Patcher drives from here is recorded${
                 parsed.screenshots ? ", with a picture after each step" : ""
               }; tracing-stop is how you read it.\n`,
             };
@@ -1770,7 +1770,7 @@ export function registerBrowserToolsCli(patcher: PatcherPluginApi): void {
               };
             }
 
-            // bb ships no encoder and downloads none; see ffmpeg.ts. The frames
+            // Patcher ships no encoder and downloads none; see ffmpeg.ts. The frames
             // are already on disk either way, so a missing ffmpeg costs the
             // convenience and not the recording.
             const ffmpeg = await resolveFfmpeg(process.env);

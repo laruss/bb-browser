@@ -38,8 +38,8 @@ const commandApproval: PendingInteraction = {
     subject: {
       kind: "command",
       itemId: "item_cmd",
-      command: "git push origin bb/promptbox-stories",
-      cwd: "/Users/michael/Projects/bb",
+      command: "git push origin patcher/promptbox-stories",
+      cwd: "/Users/michael/Projects/patcher",
       actions: [],
       sessionGrant: null,
     },
@@ -58,7 +58,7 @@ const longCommandApproval: PendingInteraction = {
       itemId: "item_cmd_long",
       command:
         "pnpm exec turbo run typecheck --filter=@patcher/app --filter=@patcher/server --filter=@patcher/domain --filter=@patcher/server-contract --force",
-      cwd: "/Users/michael/Projects/bb",
+      cwd: "/Users/michael/Projects/patcher",
       actions: [],
       sessionGrant: null,
     },

@@ -21,7 +21,7 @@ afterEach(() => {
 });
 
 describe("archive-codex-tmp-patcher-sessions", () => {
-  it("defaults to archiving bb test temp dirs from ~/.codex", () => {
+  it("defaults to archiving Patcher test temp dirs from ~/.codex", () => {
     const parsedArgs = parseArchiveTmpPatcherSessionsArgs(
       [],
       { CODEX_BIN: "/custom/codex" },
@@ -35,9 +35,9 @@ describe("archive-codex-tmp-patcher-sessions", () => {
       concurrency: 25,
       dryRun: false,
       patterns: [
-        "*/bb-standalone-*",
-        "*/bb-integration-*",
-        "*/bb-integ-*",
+        "*/patcher-standalone-*",
+        "*/patcher-integration-*",
+        "*/patcher-integ-*",
         "*/bb-qa-smoke-*",
       ],
       yes: false,
@@ -108,9 +108,9 @@ describe("archive-codex-tmp-patcher-sessions", () => {
   it("documents the command and default pattern", () => {
     const help = renderHelpText();
     expect(help).toContain("bun run codex:archive-tmp-patcher-sessions");
-    expect(help).toContain("*/bb-standalone-*");
-    expect(help).toContain("*/bb-integration-*");
-    expect(help).toContain("*/bb-integ-*");
+    expect(help).toContain("*/patcher-standalone-*");
+    expect(help).toContain("*/patcher-integration-*");
+    expect(help).toContain("*/patcher-integ-*");
     expect(help).toContain("*/bb-qa-smoke-*");
     expect(help).toContain("repeatable");
     expect(help).toContain("state_<n>.sqlite");
@@ -150,12 +150,12 @@ describe("archive-codex-tmp-patcher-sessions", () => {
 
   it("ORs multiple GLOB patterns in the WHERE clause", () => {
     const sql = buildMatchingThreadIdsSql([
-      "*/bb-standalone-*",
-      "*/bb-integration-*",
-      "*/bb-integ-*",
+      "*/patcher-standalone-*",
+      "*/patcher-integration-*",
+      "*/patcher-integ-*",
     ]);
     expect(sql).toContain(
-      "archived=0 AND (cwd GLOB '*/bb-standalone-*' OR cwd GLOB '*/bb-integration-*' OR cwd GLOB '*/bb-integ-*')",
+      "archived=0 AND (cwd GLOB '*/patcher-standalone-*' OR cwd GLOB '*/patcher-integration-*' OR cwd GLOB '*/patcher-integ-*')",
     );
   });
 

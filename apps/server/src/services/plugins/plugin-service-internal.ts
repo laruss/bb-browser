@@ -254,7 +254,7 @@ export interface PluginSiteInfoSection {
 
 /**
  * A search engine a plugin offered (`browser.searchEngines`), for the app to put
- * in the setting's list beside bb's own.
+ * in the setting's list beside Patcher's own.
  */
 export interface PluginSearchEngineContribution {
   pluginId: string;
@@ -349,9 +349,9 @@ export interface PluginNewTabSection {
 /**
  * A command a plugin added, with the chord that runs it (`app.commands`).
  *
- * Not part of bb's keybinding config, deliberately: bb's command ids are a closed
+ * Not part of Patcher's keybinding config, deliberately: Patcher's command ids are a closed
  * enum that the settings UI, the palette metadata and the override store all key
- * on, and widening it for ids bb has never seen would trade a compile-time
+ * on, and widening it for ids Patcher has never seen would trade a compile-time
  * guarantee for a string. The app matches these after every one of its own.
  */
 export interface PluginCommandContribution {

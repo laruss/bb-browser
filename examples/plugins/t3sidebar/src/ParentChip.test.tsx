@@ -59,7 +59,7 @@ function render(
       sidebarThreads: {
         status: "ready",
         threads,
-        projects: [{ id: "proj_1", name: "bb", isPersonal: false }],
+        projects: [{ id: "proj_1", name: "Patcher", isPersonal: false }],
       },
     },
   );

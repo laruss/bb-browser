@@ -144,7 +144,7 @@ afterEach(() => {
 });
 
 describe("buildProviderCliIssue", () => {
-  it("keeps an external update visible when bb cannot apply it", () => {
+  it("keeps an external update visible when Patcher cannot apply it", () => {
     const actionable = issueForProvider("claudeCode");
     const issue = buildProviderCliIssue({
       provider: "claudeCode",

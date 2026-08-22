@@ -5,10 +5,10 @@ import { z } from "zod";
 /**
  * A running `bb-app start` writes this file into its data directory and removes
  * it on exit. It lets another process on the same machine identify the running
- * bb, describe it to a person, and stop it.
+ * Patcher, describe it to a person, and stop it.
  *
  * The desktop app reads it after a server probe succeeds, so it can offer to
- * quit the other copy instead of attaching to it. A bb that predates this file
+ * quit the other copy instead of attaching to it. A Patcher that predates this file
  * simply writes nothing; readers must treat a missing file as "unknown", not as
  * "not running".
  */
@@ -77,9 +77,9 @@ export async function writePatcherAppRuntimeFile(
  *
  * Ownership is decided by liveness alone. A record whose process is gone is
  * stale and gets replaced. This is not an exclusive lock: the daemon lock and
- * the server port are what actually prevent two bb instances on one data
+ * the server port are what actually prevent two Patcher instances on one data
  * directory. The check only stops a doomed second start from erasing the record
- * of the bb that is running.
+ * of the Patcher that is running.
  */
 export async function claimPatcherAppRuntimeFile(
   args: WritePatcherAppRuntimeFileArgs & {
@@ -108,7 +108,7 @@ export async function clearPatcherAppRuntimeFile(
 /**
  * Remove the record only while it still names `pid`. A second launcher that
  * overwrote the file must not delete the live launcher's record when it exits,
- * because `bb-app stop` would then be unable to find the bb that is running.
+ * because `bb-app stop` would then be unable to find the Patcher that is running.
  */
 export async function clearOwnPatcherAppRuntimeFile(args: {
   dataDir: string;
@@ -128,7 +128,7 @@ export async function clearOwnPatcherAppRuntimeFile(args: {
  * reports the command line as it was typed, so a launcher started with a
  * relative path never shows the absolute form.
  *
- * These tokens do not establish identity on their own: every bb launcher on the
+ * These tokens do not establish identity on their own: every Patcher launcher on the
  * machine shares the same file name. The caller must also compare the recorded
  * start time, which is what separates this launcher from another one and from a
  * recycled PID.

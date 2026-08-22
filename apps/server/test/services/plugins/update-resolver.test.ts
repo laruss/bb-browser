@@ -82,7 +82,7 @@ describe("npm update candidate selection", () => {
       candidate: { version: "1.2.0" },
       blocked: {
         version: { version: "1.3.0" },
-        reasons: [{ engine: "bb", required: ">=2" }],
+        reasons: [{ engine: "patcher", required: ">=2" }],
       },
     });
   });
@@ -163,7 +163,7 @@ describe("npm update candidate selection", () => {
       devMode: true,
       candidate: { version: "2.0.0" },
       blocked: { version: { version: "3.0.0" } },
-      packagedBuildProblems: [{ engine: "bb", required: ">=99" }],
+      packagedBuildProblems: [{ engine: "patcher", required: ">=99" }],
     });
   });
 
@@ -205,7 +205,7 @@ const GIT_TEST_TIMEOUT_MS = 30_000;
 
 describe("git update resolution", () => {
   it("classifies tags and branches, detects a moved branch, and reports current", async () => {
-    const repo = await mkdtemp(join(tmpdir(), "bb-update-resolver-git-"));
+    const repo = await mkdtemp(join(tmpdir(), "patcher-update-resolver-git-"));
     cleanup.push(repo);
     await mkdir(repo, { recursive: true });
     await run("git", ["init", "-q", "-b", "main"], { cwd: repo });

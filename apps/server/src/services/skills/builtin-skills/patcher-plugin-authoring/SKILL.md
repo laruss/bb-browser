@@ -1,16 +1,16 @@
 ---
 name: patcher-plugin-authoring
-description: Write, build, and install bb plugins. Use whenever the task is to create a bb plugin, extend bb itself, or add a bb CLI command, agent tool, background service, settings, panel, mention provider, or other bb surface via a plugin. Covers the entire backend PatcherPluginApi and the frontend @patcher/plugin-sdk/app contract with working patterns.
+description: Write, build, and install Patcher plugins. Use whenever the task is to create a Patcher plugin, extend Patcher itself, or add a Patcher CLI command, agent tool, background service, settings, panel, mention provider, or other Patcher surface via a plugin. Covers the entire backend PatcherPluginApi and the frontend @patcher/plugin-sdk/app contract with working patterns.
 ---
 
-# Authoring bb plugins
+# Authoring Patcher plugins
 
-A bb plugin is a TypeScript package running in-process inside the bb server.
+A Patcher plugin is a TypeScript package running in-process inside the Patcher server.
 Its backend entry default-exports a factory that receives the full plugin API
-(`bb`); an optional frontend entry registers React UI inside the bb app.
-Plugins are full-trust code: they can read all local bb data.
+(`bb`); an optional frontend entry registers React UI inside the Patcher app.
+Plugins are full-trust code: they can read all local Patcher data.
 
-Plugins are on by default. Builtin plugins ship with bb; a few sit behind
+Plugins are on by default. Builtin plugins ship with Patcher; a few sit behind
 their own product gates. `bb plugin list` shows each plugin's status.
 
 This file is the map. Each surface has a reference file next to it — read the
@@ -70,7 +70,7 @@ This skill is a guide, not the contract. For an exact signature or a symbol it
 does not cover:
 
 1. **`bb plugin types`**, run in the plugin directory (or given its path),
-   rewrites that plugin's `types/*.d.ts` from the running bb — no server
+   rewrites that plugin's `types/*.d.ts` from the running Patcher — no server
    needed. The scaffold seeds them once, so a cloned or older plugin can be
    thousands of lines behind. `--check` reports staleness without writing;
    `bb plugin build` and `bb plugin dev` refresh them too.
@@ -81,7 +81,7 @@ does not cover:
    a reference implementation: `packages/plugin-sdk/src/`,
    `apps/server/src/services/plugins/`, `plugins/`.
 
-Never answer an API question from a built bundle — `dist/*.js` and the bb app's
+Never answer an API question from a built bundle — `dist/*.js` and the Patcher app's
 own JavaScript are minified. If you are grepping minified JavaScript, go back
 to step 1.
 
@@ -122,7 +122,7 @@ bundled by `bb plugin build`).
 | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [references/manifest.md](references/manifest.md)                 | `package.json`, `patcher.permissions`, branding/logos, engines, dependencies, `bb plugin build` artifacts, install/update/distribution                                                                                                          |
 | [references/backend-core.md](references/backend-core.md)         | `patcher.log`, `patcher.settings`, `patcher.storage` (kv + SQLite + migrations), `patcher.server`, `patcher.events.on` thread lifecycle, `patcher.status`, `patcher.onDispose` and the reload lifecycle                                         |
-| [references/backend-sdk.md](references/backend-sdk.md)           | `patcher.sdk` — reading or changing bb's own threads, projects, environments, hosts, files, terminals, providers, skills                                                                                                                        |
+| [references/backend-sdk.md](references/backend-sdk.md)           | `patcher.sdk` — reading or changing Patcher's own threads, projects, environments, hosts, files, terminals, providers, skills                                                                                                                   |
 | [references/backend-surfaces.md](references/backend-surfaces.md) | `patcher.http`, `patcher.rpc`, `patcher.realtime`, `patcher.background` services/schedules, `patcher.cli` commands, `patcher.ui.requestInput`, `patcher.agents` tools and session configuration, `patcher.ui` mention providers and keybindings |
 | [references/browser.md](references/browser.md)                   | `patcher.browser` — omnibox, context menu, find bar, HTTP auth, PDF text, downloads, and driving tabs/pages                                                                                                                                     |
 | [references/frontend-slots.md](references/frontend-slots.md)     | the `patcher.app` entry, every `app.slots.*` registration and its props, content scripts, crash isolation                                                                                                                                       |
@@ -155,9 +155,9 @@ bundled by `bb plugin build`).
   is needed for the error class.
 - Schedules only fire while the plugin is loaded (rows are durable, the
   runner is not).
-- CLI `run(argv)` argv excludes the command name; core bb command names
+- CLI `run(argv)` argv excludes the command name; core Patcher command names
   are reserved; workspace-sandboxed agent threads (Accept Edits / Approve
-  for me) may fail to reach the bb CLI when the provider sandbox blocks
+  for me) may fail to reach the Patcher CLI when the provider sandbox blocks
   loopback network (Claude's macOS sandbox permits it; Linux and other
   providers may not).
 - A CLI `run` executes on the SERVER, so a path argument names a file on the
@@ -175,7 +175,7 @@ bundled by `bb plugin build`).
   credential access rather than settings — never log or persist it.
 - The frontend Tailwind pass emits default-theme utilities only — style
   with host token classes, no custom `@theme` colors, no hand-set oklch.
-- `onDispose` hooks run LIFO; stale `bb` handles from before a reload throw
+- `onDispose` hooks run LIFO; stale `patcher` handles from before a reload throw
   on use.
 - Backend API imports normally remain type-only. The root runtime exports
   `defineRpcContract` plus `PLUGIN_CLI_OUTPUT_MAX_BYTES`; validator imports are

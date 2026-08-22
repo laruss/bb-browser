@@ -6,7 +6,7 @@ import type {
 } from "@patcher/desktop-contract";
 import { appToast, type AppToastTone } from "@/components/ui/app-toast";
 import { reportPluginBrowserDownload } from "@/hooks/queries/plugin-contribution-queries";
-import { getDesktopBrowserApi } from "./bb-desktop";
+import { getDesktopBrowserApi } from "./patcher-desktop";
 
 // Downloads, as the browser surface shows them: a toolbar button that appears
 // once something has been downloaded, and the list behind it.

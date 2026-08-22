@@ -9,7 +9,7 @@
 //     plugin's own backend, which is the part a userscript cannot do: a page has
 //     no database and no credentials of its own;
 //   * a leading panel scoped with `matches` (see app.tsx) — the part a userscript
-//     cannot do at all either, because it is bb's own chrome rather than injected
+//     cannot do at all either, because it is Patcher's own chrome rather than injected
 //     DOM.
 //
 // Put together, that is the whole loop: a button on github.com writes a row in this
@@ -194,9 +194,9 @@ export default function plugin(patcher: PatcherPluginApi) {
     matches: [GITHUB],
     code: `
       function mount() {
-        if (document.getElementById("bb-note-page")) return;
+        if (document.getElementById("patcher-note-page")) return;
         const button = document.createElement("button");
-        button.id = "bb-note-page";
+        button.id = "patcher-note-page";
         button.textContent = "Note this page";
         button.style.cssText =
           "position:fixed;right:16px;bottom:16px;z-index:9999;padding:6px 10px;" +

@@ -16,14 +16,14 @@ import { syncPluginTypes } from "../src/plugin-scaffold.js";
 /**
  * `bb plugin new` seeds types/ once, but the SDK surface grows every release,
  * so a plugin scaffolded months ago typechecks against declarations that no
- * longer describe the running bb. syncPluginTypes is the refresh; these guard
+ * longer describe the running Patcher. syncPluginTypes is the refresh; these guard
  * the behavior the CLI (`bb plugin types`, build, dev) depends on.
  */
 describe("syncPluginTypes", () => {
   let rootDir: string;
 
   beforeEach(async () => {
-    rootDir = await mkdtemp(join(tmpdir(), "bb-sync-types-"));
+    rootDir = await mkdtemp(join(tmpdir(), "patcher-sync-types-"));
   });
 
   afterEach(async () => {
@@ -137,7 +137,7 @@ describe("syncPluginTypes", () => {
     await syncPluginTypes({ rootDir, app: true });
 
     const entries = await readdir(join(rootDir, "types"));
-    expect(entries.filter((name) => name.includes("bb-tmp"))).toEqual([]);
+    expect(entries.filter((name) => name.includes("patcher-tmp"))).toEqual([]);
   });
 
   it("check mode reports stale files and writes nothing", async () => {

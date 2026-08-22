@@ -13,8 +13,8 @@ const AUTH_SECRET_FILE_NAME = "auth-secret";
 const DAEMON_ENROLL_CONFIG_ID = "daemon-enroll";
 const DAEMON_HOST_CONFIG_ID = "daemon-host";
 const ENROLL_KEY_TTL_SECONDS = 60 * 15;
-const MACHINE_AUTH_SYSTEM_USER_ID = "bb-machine-auth-system-user";
-const MACHINE_AUTH_SYSTEM_USER_EMAIL = "machine-auth@bb.internal";
+const MACHINE_AUTH_SYSTEM_USER_ID = "patcher-machine-auth-system-user";
+const MACHINE_AUTH_SYSTEM_USER_EMAIL = "machine-auth@patcher.internal";
 const MACHINE_AUTH_SYSTEM_USER_NAME = "Machine Auth System";
 
 const machineAuthSchema = {
@@ -154,7 +154,7 @@ export async function createMachineAuthService(
       apiKey([
         {
           configId: DAEMON_ENROLL_CONFIG_ID,
-          defaultPrefix: "bbde_",
+          defaultPrefix: "patcherde_",
           enableMetadata: true,
           keyExpiration: {
             defaultExpiresIn: ENROLL_KEY_TTL_SECONDS,
@@ -164,7 +164,7 @@ export async function createMachineAuthService(
         },
         {
           configId: DAEMON_HOST_CONFIG_ID,
-          defaultPrefix: "bbdh_",
+          defaultPrefix: "patcherdh_",
           enableMetadata: true,
           references: "user",
           requireName: false,

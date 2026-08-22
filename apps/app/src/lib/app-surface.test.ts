@@ -1,6 +1,6 @@
 import { APP_SURFACE_HEADER_NAME } from "@patcher/config/app-surface";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createPatcherDesktopApi } from "@/test/bb-desktop-test-utils";
+import { createPatcherDesktopApi } from "@/test/patcher-desktop-test-utils";
 import { appSurfaceRequestInit, getAppSurface } from "./app-surface";
 
 const desktopInfo = {

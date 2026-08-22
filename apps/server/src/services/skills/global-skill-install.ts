@@ -16,7 +16,7 @@ import { resolveServerOwnedSkillCatalogEntries } from "./injected-skills.js";
 
 /**
  * The built-in skills published to a machine's global agent skill roots so
- * agents running outside bb can drive bb through its CLI.
+ * agents running outside Patcher can drive Patcher through its CLI.
  */
 export const GLOBAL_CLI_SKILL_NAMES: readonly string[] = ["bb-cli"];
 
@@ -140,7 +140,7 @@ export async function readGlobalCliSkillStatus(
       } catch (error) {
         deps.logger.debug(
           { hostId: host.id, err: error },
-          "Could not read the bb CLI skill status from a machine",
+          "Could not read the Patcher CLI skill status from a machine",
         );
         return { ...base, status: "unknown" as const };
       }
@@ -156,7 +156,7 @@ function installFailureMessage(error: unknown): string {
 }
 
 /**
- * Copy the built-in bb CLI skills onto each requested machine. The server picks
+ * Copy the built-in Patcher CLI skills onto each requested machine. The server picks
  * the skills; each daemon owns the destinations. Machines install concurrently
  * and independently, so one offline machine never blocks the others.
  */
@@ -180,7 +180,7 @@ export async function installGlobalCliSkills(
     throw new ApiError(
       500,
       "cli_skill_unavailable",
-      "The built-in bb CLI skill is unavailable on this server",
+      "The built-in Patcher CLI skill is unavailable on this server",
     );
   }
 
@@ -201,7 +201,7 @@ export async function installGlobalCliSkills(
       } catch (error) {
         deps.logger.warn(
           { hostId: host.id, err: error },
-          "Failed to install the bb CLI skills on a machine",
+          "Failed to install the Patcher CLI skills on a machine",
         );
         return {
           ok: false as const,

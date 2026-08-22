@@ -231,7 +231,7 @@ export interface PatcherAppUpdateRowsProps {
 }
 
 /**
- * The bb app's own row: on desktop the shell auto-downloads and applies on
+ * The Patcher app's own row: on desktop the shell auto-downloads and applies on
  * relaunch; on web/npm installs the server can't replace itself, so the row
  * surfaces the upgrade command instead of a fake update button.
  */
@@ -245,7 +245,7 @@ export function PatcherAppUpdateRows({
   if (isDesktop && desktopInfo === null) {
     return (
       <UpdatesRow>
-        <RowName name="bb desktop" current={null} latest={null} />
+        <RowName name="Patcher desktop" current={null} latest={null} />
         <RowActions>
           <RowStatus live>Checking…</RowStatus>
         </RowActions>
@@ -259,7 +259,7 @@ export function PatcherAppUpdateRows({
     const latest = desktopInfo.updateAvailable ? pendingVersion : null;
     const name = (
       <RowName
-        name="bb desktop"
+        name="Patcher desktop"
         current={desktopInfo.version}
         latest={latest}
       />
@@ -531,7 +531,7 @@ export function MachineUpdatesRows({
           }
         >
           <span className="text-xs text-destructive-text">
-            Can't connect — its bb agent is out of date
+            Can't connect — its Patcher agent is out of date
           </span>
           <span className="text-2xs text-subtle-foreground">
             Usually it updates itself.
@@ -642,7 +642,7 @@ function useNow(intervalMs: number): number {
 }
 
 /**
- * Settings → Updates: one consolidated, per-machine view of bb and provider
+ * Settings → Updates: one consolidated, per-machine view of Patcher and provider
  * CLI updates. Replaces the stacked update/provider-health toasts (BB-48).
  */
 export function UpdatesSettingsSection() {
@@ -748,7 +748,7 @@ export function UpdatesSettingsSection() {
   return (
     <>
       <UpdatesSection
-        title="bb"
+        title="Patcher"
         footnote="Connected machines follow the server version automatically."
         action={
           <>

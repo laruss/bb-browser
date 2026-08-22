@@ -244,7 +244,7 @@ describe("bb plugin catalog", () => {
     const output = collectLogPayloads(vi.mocked(console.log)).join("\n");
     // No manifest on disk in this test, so the declaration line is absent —
     // what must survive is the statement that the gate is not the process.
-    expect(output).toContain("Declared permissions gate the bb API");
+    expect(output).toContain("Declared permissions gate the Patcher API");
   });
 
   it("no longer advertises the remote catalog command group", async () => {

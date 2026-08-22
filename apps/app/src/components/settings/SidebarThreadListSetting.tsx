@@ -19,7 +19,7 @@ import { usePluginSlots } from "@/lib/plugin-slots";
 
 const BUILT_IN_OPTION = {
   key: BUILT_IN_THREAD_LIST_PROVIDER,
-  title: "bb (built-in)",
+  title: "Patcher (built-in)",
   description: "Projects, sections, and nested threads.",
 } as const;
 

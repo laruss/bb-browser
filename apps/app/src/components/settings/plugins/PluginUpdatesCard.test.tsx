@@ -191,7 +191,7 @@ describe("PluginUpdatesSourceCard source details", () => {
           updateState: {
             ...EMPTY_PLUGIN_UPDATE_STATE,
             blockedVersion: "1.9.0",
-            blockedReasons: ["requires bb >= 0.15"],
+            blockedReasons: ["requires Patcher >= 0.15"],
           },
         })}
       />,
@@ -199,12 +199,12 @@ describe("PluginUpdatesSourceCard source details", () => {
     );
 
     expect(
-      screen.getByText("1.9.0 isn't compatible with this bb"),
+      screen.getByText("1.9.0 isn't compatible with this Patcher"),
     ).toBeTruthy();
-    expect(screen.getByText("requires bb >= 0.15")).toBeTruthy();
+    expect(screen.getByText("requires Patcher >= 0.15")).toBeTruthy();
   });
 
-  it("renders nothing for builtins (their update channel is the bb release)", () => {
+  it("renders nothing for builtins (their update channel is the Patcher release)", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => jsonResponse({ error: "not found" }, 404)),

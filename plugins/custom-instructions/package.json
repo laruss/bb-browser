@@ -3,13 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Add persistent custom instructions to agent tasks on this bb host.",
+  "description": "Add persistent custom instructions to agent tasks on this Patcher host.",
   "engines": {
     "patcher": ">=0.0"
   },
   "patcher": {
     "name": "Custom instructions",
-    "description": "Add persistent custom instructions to agent tasks on this bb host.",
+    "description": "Add persistent custom instructions to agent tasks on this Patcher host.",
     "branding": {
       "icon": "EditFile"
     },

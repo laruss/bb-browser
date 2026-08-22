@@ -68,7 +68,7 @@ function writeNotFound(response: ServerResponse): void {
 function renderSmokePage(expectedDesktopVersion: string): string {
   return `<!doctype html>
 <meta charset="utf-8">
-<title>bb desktop smoke</title>
+<title>Patcher desktop smoke</title>
 <main>desktop smoke</main>
 <script>
 (async () => {
@@ -387,7 +387,7 @@ describe("desktop build", () => {
       return;
     }
 
-    const smokeRoot = await mkdtemp(join(tmpdir(), "bb-desktop-smoke-"));
+    const smokeRoot = await mkdtemp(join(tmpdir(), "patcher-desktop-smoke-"));
     const smokeServer = await startDesktopSmokeServer({
       dataDir: join(smokeRoot, "data"),
       expectedDesktopVersion: desktopVersion,

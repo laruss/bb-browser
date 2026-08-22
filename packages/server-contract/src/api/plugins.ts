@@ -144,7 +144,7 @@ export const pluginAppStateSchema = z.object({
 });
 
 /**
- * A user-recognizable thing a plugin contributes to bb, as shown in the plugin
+ * A user-recognizable thing a plugin contributes to Patcher, as shown in the plugin
  * detail "Includes" section. These are product facts, not server internals:
  * RPC methods, HTTP routes, event handlers, and databases are deliberately
  * absent.

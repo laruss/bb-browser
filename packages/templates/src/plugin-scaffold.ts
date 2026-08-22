@@ -73,7 +73,7 @@ export interface SyncedPluginTypeFile {
  * `bb plugin new` seeds these once, but the SDK surface grows with every BB
  * release, so a copy scaffolded months ago silently under-reports the API.
  * `bb plugin types`, `bb plugin build`, and `bb plugin dev` all call this so
- * the local declarations track the bb that is actually running the plugin.
+ * the local declarations track the Patcher that is actually running the plugin.
  * Files are compared before writing, so an already-current plugin reports
  * `unchanged` and keeps its mtime.
  */
@@ -152,7 +152,7 @@ async function statNoFollow(
 /**
  * Reject a `types/` that is a link, is not a directory, or resolves outside
  * the plugin. Resolving both sides keeps a plugin inside a symlinked checkout
- * (a bb worktree, for example) working.
+ * (a Patcher worktree, for example) working.
  */
 async function assertWritableTypesDir(
   rootDir: string,
@@ -377,7 +377,7 @@ function HelloCard() {
 // The default export must be definePluginApp(...); BB interprets it after
 // loading the bundle. Register general UI under app.slots and composer actions,
 // plus-menu rows, banners, or rich-text rules with app.composer.customize(...)
-// (see the bb guide's plugins chapter).
+// (see the Patcher guide's plugins chapter).
 export default definePluginApp((app) => {
   app.slots.homepageSection({
     id: "${id}-hello",
@@ -479,7 +479,7 @@ ${componentsSection}
   plugin-relative compact SVG, or declare \`logo.light\` (with optional
   \`logo.dark\`). Logo assets must be relative \`.svg\`, \`.png\`, or
   \`.webp\` files.
-- \`engines.patcher\` — supported bb app version range.
+- \`engines.patcher\` — supported Patcher app version range.
 - \`engines.patcherPluginSdk\` — supported plugin SDK range (scaffold: \`^${PLUGIN_SDK_VERSION}\`).
 - \`dependencies\` — every package your source imports that BB does not provide.
   \`bb plugin build\` inlines them into \`dist/\`, and git installs resolve this
@@ -495,7 +495,7 @@ ${componentsSection}
 the first call to something missing throws with the permission named, so add
 entries as you need them and \`bb plugin reload ${id}\` after.
 
-They gate the bb API, not the process: a plugin is full-trust code and can
+They gate the Patcher API, not the process: a plugin is full-trust code and can
 still reach the machine directly. They exist so what a plugin uses is written
 down, shown to whoever installs it, and refused when it was not asked for.
 

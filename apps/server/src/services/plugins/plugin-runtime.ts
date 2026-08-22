@@ -839,7 +839,7 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
       return undefined;
     }
     if (!semver.satisfies(version, manifest.patcherEngineRange)) {
-      return `requires bb ${manifest.patcherEngineRange}, this is ${version.version}`;
+      return `requires Patcher ${manifest.patcherEngineRange}, this is ${version.version}`;
     }
     return undefined;
   }

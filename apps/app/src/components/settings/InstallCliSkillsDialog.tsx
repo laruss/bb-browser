@@ -68,7 +68,7 @@ export function InstallCliSkillsDialogContent({
   return (
     <>
       <DialogHeader>
-        <DialogTitle>Install bb CLI skills</DialogTitle>
+        <DialogTitle>Install Patcher CLI skills</DialogTitle>
         <DialogDescription>
           {choosable
             ? "Choose the machines to install them onto. Each one gets the skills in ~/.agents/skills and ~/.claude/skills, replacing any copy already there."

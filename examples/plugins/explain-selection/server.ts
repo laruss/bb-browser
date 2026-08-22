@@ -152,7 +152,7 @@ export default async function plugin(patcher: PatcherPluginApi) {
   });
 
   // The tab menu's version. No `when` to declare — a tab action is offered on
-  // every tab — so the entry itself decides what it has to work with: a bb
+  // every tab — so the entry itself decides what it has to work with: a Patcher
   // screen reports a null url, and a tab with no page yet reports an empty one.
   // Neither is a page to explain.
   patcher.browser.registerTabAction({

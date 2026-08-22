@@ -162,7 +162,8 @@ export function seedEnvironment(
     isWorktree:
       args.isWorktree ?? args.workspaceProvisionType === "managed-worktree",
     workspaceProvisionType: args.workspaceProvisionType ?? "unmanaged",
-    branchName: args.branchName !== undefined ? args.branchName : "bb/test",
+    branchName:
+      args.branchName !== undefined ? args.branchName : "patcher/test",
     baseBranch: args.baseBranch !== undefined ? args.baseBranch : null,
     defaultBranch:
       args.defaultBranch !== undefined ? args.defaultBranch : "main",

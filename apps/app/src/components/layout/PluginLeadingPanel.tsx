@@ -28,21 +28,21 @@ import {
   MACOS_WINDOW_DRAG_CLASS,
   shouldReserveMacosTrafficLights,
   shouldUseMacosDesktopChrome,
-} from "@/lib/bb-desktop";
+} from "@/lib/patcher-desktop";
 
 /**
  * The window's leading edge, which belongs to plugins.
  *
- * bb contributes nothing here, and that is the point: with no registrations
- * there is no panel, no rail and no toggle — an empty column would be bb
+ * Patcher contributes nothing here, and that is the point: with no registrations
+ * there is no panel, no rail and no toggle — an empty column would be Patcher
  * claiming an edge it has no use for. What the panel looks like follows from
  * how many plugins asked for it rather than from anything anyone configured:
  *
  * - **none** — nothing renders, and the shell's leading edge is the main area's.
- * - **one** — that plugin gets the panel whole, with no chrome of bb's own
+ * - **one** — that plugin gets the panel whole, with no chrome of Patcher's own
  *   around it. A rail to switch between one thing is a control that does
  *   nothing.
- * - **two or more** — bb draws a rail of icons, because now there is a choice
+ * - **two or more** — Patcher draws a rail of icons, because now there is a choice
  *   to make and only the host can offer it.
  *
  * Unlike the sidebar this panel is not collapsible: it exists only when a
@@ -158,7 +158,7 @@ function useActiveBrowserUrl(): string | null {
  * site the active tab is not on.
  *
  * Filtered here rather than left to each component, because what is at stake is
- * whether bb draws the column at all — a panel that renders nothing still
+ * whether Patcher draws the column at all — a panel that renders nothing still
  * reserves an edge, and on macOS still claims the traffic lights.
  */
 function useApplicableLeadingPanels(): readonly PluginLeadingPanelSlot[] {

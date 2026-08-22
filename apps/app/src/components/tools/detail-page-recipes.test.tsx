@@ -1092,7 +1092,7 @@ describe("Automation detail recipe", () => {
         <AutomationDetailView
           automation={{
             ...AUTOMATION,
-            projectId: "proj_bb",
+            projectId: "proj_patcher",
             execution: {
               mode: "agent",
               prompt: "Summarize yesterday's commits.",
@@ -1113,7 +1113,7 @@ describe("Automation detail recipe", () => {
               },
             },
           }}
-          projectLabel="bb"
+          projectLabel="Patcher"
           runsState={{
             runs: [],
             nextCursor: null,
@@ -1141,7 +1141,7 @@ describe("Automation detail recipe", () => {
     ) as HTMLElement;
     expect(promptShell.textContent).toContain("Claude");
     expect(promptShell.textContent).toContain("Opus 5");
-    expect(promptFooter.textContent).toContain("bb");
+    expect(promptFooter.textContent).toContain("Patcher");
     expect(promptFooter.textContent).toContain("~/Code/bb");
     expect(promptFooter.textContent).toContain("Approve for me");
     expect(promptShell.textContent).not.toContain("Reasoning");

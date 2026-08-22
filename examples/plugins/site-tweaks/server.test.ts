@@ -1,5 +1,5 @@
 // Backend tests for the site-tweaks example, against the official harness
-// (`@patcher/plugin-sdk/testing`) — no bb server and no browser, but a real SQLite file
+// (`@patcher/plugin-sdk/testing`) — no Patcher server and no browser, but a real SQLite file
 // in a temp directory and the *same refusals the install makes*, which is the
 // point of running the double rather than mocking `bb`.
 import { describe, expect, it } from "vitest";
@@ -54,11 +54,15 @@ describe("the page style", () => {
 
 describe("repoFromUrl", () => {
   it("reads owner/repo out of any page inside a repository", () => {
-    expect(repoFromUrl("https://github.com/bb/browser")).toBe("bb/browser");
-    expect(repoFromUrl("https://github.com/bb/browser/pull/42")).toBe(
-      "bb/browser",
+    expect(repoFromUrl("https://github.com/patcher/browser")).toBe(
+      "patcher/browser",
     );
-    expect(repoFromUrl("https://github.com/bb/browser.git")).toBe("bb/browser");
+    expect(repoFromUrl("https://github.com/patcher/browser/pull/42")).toBe(
+      "patcher/browser",
+    );
+    expect(repoFromUrl("https://github.com/patcher/browser.git")).toBe(
+      "patcher/browser",
+    );
   });
 
   it("answers null for github pages that are not a repository", () => {
@@ -72,8 +76,8 @@ describe("repoFromUrl", () => {
   // The panel is scoped by the host, but `browserUrl` is still a page address
   // rather than a promise about the page, so this has to hold on its own.
   it("answers null for anything that is not github over https", () => {
-    expect(repoFromUrl("https://gitlab.com/bb/browser")).toBeNull();
-    expect(repoFromUrl("http://github.com/bb/browser")).toBeNull();
+    expect(repoFromUrl("https://gitlab.com/patcher/browser")).toBeNull();
+    expect(repoFromUrl("http://github.com/patcher/browser")).toBeNull();
     expect(repoFromUrl("not a url")).toBeNull();
   });
 });
@@ -83,11 +87,11 @@ describe("repo notes", () => {
     const host = await load();
 
     await host.harness.callRpc("addNote", {
-      repo: "bb/browser",
+      repo: "patcher/browser",
       body: "check the overlay owner",
     });
     await host.harness.callRpc("addNote", {
-      repo: "bb/browser",
+      repo: "patcher/browser",
       body: "second",
     });
     await host.harness.callRpc("addNote", {
@@ -97,7 +101,7 @@ describe("repo notes", () => {
 
     expect(
       (
-        (await host.harness.callRpc("notes", { repo: "bb/browser" })) as {
+        (await host.harness.callRpc("notes", { repo: "patcher/browser" })) as {
           notes: { body: string }[];
         }
       ).notes.map((note) => note.body),
@@ -115,7 +119,7 @@ describe("repo notes", () => {
     const host = await load();
 
     const result = (await host.harness.callRpc("addNote", {
-      repo: "bb/browser",
+      repo: "patcher/browser",
       body: "   ",
     })) as { notes: unknown[] };
 
@@ -126,9 +130,12 @@ describe("repo notes", () => {
   // another's row would be a capability the UI never offers.
   it("refuses to delete a note belonging to another repository", async () => {
     const host = await load();
-    await host.harness.callRpc("addNote", { repo: "bb/browser", body: "keep" });
+    await host.harness.callRpc("addNote", {
+      repo: "patcher/browser",
+      body: "keep",
+    });
     const { notes } = (await host.harness.callRpc("notes", {
-      repo: "bb/browser",
+      repo: "patcher/browser",
     })) as { notes: { id: number }[] };
     const id = notes[0]?.id ?? 0;
 
@@ -136,7 +143,7 @@ describe("repo notes", () => {
 
     expect(
       (
-        (await host.harness.callRpc("notes", { repo: "bb/browser" })) as {
+        (await host.harness.callRpc("notes", { repo: "patcher/browser" })) as {
           notes: unknown[];
         }
       ).notes,
@@ -179,22 +186,22 @@ describe("the page script", () => {
     const host = await load();
 
     const answer = await host.harness.callRpc("notePage", {
-      url: "https://github.com/bb/browser/pull/42",
-      body: "Fix the thing by bb · Pull Request #42",
+      url: "https://github.com/patcher/browser/pull/42",
+      body: "Fix the thing by Patcher · Pull Request #42",
     });
 
-    expect(answer).toEqual({ repo: "bb/browser" });
+    expect(answer).toEqual({ repo: "patcher/browser" });
     expect(
       (
-        (await host.harness.callRpc("notes", { repo: "bb/browser" })) as {
+        (await host.harness.callRpc("notes", { repo: "patcher/browser" })) as {
           notes: { body: string }[];
         }
       ).notes.map((note) => note.body),
-    ).toEqual(["Fix the thing by bb · Pull Request #42"]);
+    ).toEqual(["Fix the thing by Patcher · Pull Request #42"]);
     // What closes the loop: the panel is listening on this channel, so the note
     // appears in the browser's own chrome as the click lands in the page.
     expect(host.harness.realtimeSignals).toEqual([
-      { channel: "notes", payload: { repo: "bb/browser" } },
+      { channel: "notes", payload: { repo: "patcher/browser" } },
     ]);
   });
 

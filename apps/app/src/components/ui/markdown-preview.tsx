@@ -1095,7 +1095,7 @@ function buildMarkdownComponents({
   }
 
   if (messageDirectives !== undefined) {
-    components["bb-message-directive"] = buildMessageDirectiveComponent({
+    components["patcher-message-directive"] = buildMessageDirectiveComponent({
       mounts: messageDirectives.mounts,
       message: messageDirectives.message,
       openWorkspaceFile: messageDirectives.openWorkspaceFile,

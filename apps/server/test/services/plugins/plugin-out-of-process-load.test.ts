@@ -212,7 +212,7 @@ describe("loading a plugin into a plugin process", () => {
 
   // The one place the difference is visible, and it is visible on purpose:
   // there is no in-process `bb` to hand back.
-  it("has no local bb object for it", async () => {
+  it("has no local Patcher object for it", async () => {
     await start(() => true);
     const rootDir = await writePlugin(
       join(harness.config.dataDir, "fixtures"),

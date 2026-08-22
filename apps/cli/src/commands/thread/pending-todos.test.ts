@@ -141,7 +141,7 @@ describe("fetchThreadPendingTodos", () => {
     return {
       requestUrls,
       sdk: createNodePatcherSdk({
-        baseUrl: "http://bb.test",
+        baseUrl: "http://patcher.test",
         fetch: fetchMock,
       }),
     };
@@ -162,7 +162,7 @@ describe("fetchThreadPendingTodos", () => {
     });
     expect(result).toEqual(snapshot);
     expect(requestUrls).toEqual([
-      "http://bb.test/api/v1/threads/thread-1/timeline?summaryOnly=true",
+      "http://patcher.test/api/v1/threads/thread-1/timeline?summaryOnly=true",
     ]);
   });
 

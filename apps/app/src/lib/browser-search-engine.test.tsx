@@ -30,7 +30,7 @@ const KAGI = {
  * A known-good engine every test with contributions also sends, so a `waitFor`
  * can key on *its* arrival.
  *
- * Waiting on "there are options" would prove nothing: bb's own are there before
+ * Waiting on "there are options" would prove nothing: Patcher's own are there before
  * any request is made, so every assertion about what a contribution did — or was
  * refused — would run before the fetch landed and pass for the wrong reason.
  */
@@ -89,7 +89,7 @@ afterEach(() => {
 });
 
 describe("the chosen browser search engine", () => {
-  it("searches with bb's own by default", async () => {
+  it("searches with Patcher's own by default", async () => {
     const { result } = mount({ engineId: "google", engines: [] });
 
     await waitFor(() => {
@@ -113,7 +113,7 @@ describe("the chosen browser search engine", () => {
   });
 
   // The setting outlives the plugin that put the engine in it.
-  it("falls back to bb's own when the setting names an engine nobody offers", async () => {
+  it("falls back to Patcher's own when the setting names an engine nobody offers", async () => {
     const { result } = mount({ engineId: "kagi", engines: [BEACON] });
 
     await waitFor(() => {
@@ -123,7 +123,7 @@ describe("the chosen browser search engine", () => {
   });
 
   // A plugin must not quietly become the engine the setting already names.
-  it("keeps bb's own engine when a plugin claims its id", async () => {
+  it("keeps Patcher's own engine when a plugin claims its id", async () => {
     const { result } = mount({
       engineId: "google",
       engines: [{ ...KAGI, id: "google", name: "Not Google" }, BEACON],

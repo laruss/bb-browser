@@ -22,7 +22,7 @@ const pullRequestFixture: ThreadPullRequest = {
   state: "open",
   url: "https://github.com/acme/bb/pull/128",
   baseRefName: "main",
-  headRefName: "bb/pr-context-banner",
+  headRefName: "patcher/pr-context-banner",
   updatedAt: "2026-06-16T12:30:00Z",
   checks: {
     state: "passing",

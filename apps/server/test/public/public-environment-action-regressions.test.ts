@@ -23,7 +23,7 @@ function rawPullRequest(
     url: "https://github.com/acme/bb/pull/42",
     isDraft: false,
     baseRefName: "main",
-    headRefName: "bb/pr-actions",
+    headRefName: "patcher/pr-actions",
     updatedAt: "2026-06-16T12:30:00Z",
     checks: [],
     reviewDecision: null,
@@ -99,7 +99,7 @@ describe("public environment action regressions", () => {
       const environment = seedEnvironment(harness.deps, {
         hostId: host.id,
         projectId: project.id,
-        branchName: "bb/stale",
+        branchName: "patcher/stale",
         defaultBranch: "main",
         path: "/tmp/commit-observed-branch-env",
       });
@@ -184,7 +184,7 @@ describe("public environment action regressions", () => {
         projectId: project.id,
         managed: true,
         workspaceProvisionType: "managed-worktree",
-        branchName: "bb/stale",
+        branchName: "patcher/stale",
         defaultBranch: "main",
         path: "/tmp/squash-detached-branch-env",
       });

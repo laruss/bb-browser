@@ -1,6 +1,6 @@
 # Site tweaks example
 
-Three things a Chrome extension is usually reached for, done as one bb plugin with
+Three things a Chrome extension is usually reached for, done as one Patcher plugin with
 no change to the browser:
 
 - **Change how a site looks.** `patcher.browser.registerPageStyle` puts CSS into
@@ -19,7 +19,7 @@ page, the row is in the plugin's database, and the note appears in the browser's
 own chrome as the click lands — over `patcher.realtime.publish`, with neither end
 knowing about the other.
 
-The third one is the part a userscript cannot do at all: it is bb's own chrome,
+The third one is the part a userscript cannot do at all: it is Patcher's own chrome,
 so it survives navigation, cannot be broken by the page, and does not have to
 fight the site's stylesheet.
 
@@ -43,7 +43,7 @@ They are two permissions over one list on purpose: a plugin the user let restyle
 GitHub has not thereby been let read what they are doing there.
 
 The panel's own `matches` costs nothing and is checked against nothing: it decides
-whether bb draws one of its own columns, not what the plugin may reach.
+whether Patcher draws one of its own columns, not what the plugin may reach.
 
 ## What the browser promises about the css
 

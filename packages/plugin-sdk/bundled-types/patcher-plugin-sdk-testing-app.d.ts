@@ -11,7 +11,7 @@ import { PluginHomepageSectionRegistration, PluginSettingsSectionRegistration, P
 
 /**
  * `@patcher/plugin-sdk/testing/app` — the frontend plugin test harness. Tests a
- * plugin's `app.tsx` source directly under vitest + jsdom, without the bb
+ * plugin's `app.tsx` source directly under vitest + jsdom, without the Patcher
  * host or the esbuild bundle:
  *
  * - {@link installTestPluginRuntime} fills `globalThis.__patcherPluginRuntime.

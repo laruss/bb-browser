@@ -91,7 +91,7 @@ async function writeInjectedSkillSource(
 async function setupBusySkillCatalogEnvironment(args: {
   activeThreadId: string;
 }): Promise<BusySkillCatalogFixture> {
-  const dataDir = await makeTempDir("bb-command-dispatch-skills-");
+  const dataDir = await makeTempDir("patcher-command-dispatch-skills-");
   const source = await writeInjectedSkillSource({
     dataDir,
     token: "first-token",
@@ -268,7 +268,7 @@ async function runSuccessfulClaudeCodeUpdateVerification(args: {
   before: ProviderCliStatus;
   after: ProviderCliStatus;
 }) {
-  const dataDir = await makeTempDir("bb-command-dispatch-provider-cli-");
+  const dataDir = await makeTempDir("patcher-command-dispatch-provider-cli-");
   const manager = new RuntimeManager({
     dataDir,
     createRuntime,
@@ -339,7 +339,7 @@ describe("dispatchCommand", () => {
     };
     let resolved = false;
     const dispatchPromise = dispatchCommand(command, {
-      dataDir: "/tmp/bb-data",
+      dataDir: "/tmp/patcher-data",
       eventSink: {
         emit: vi.fn(),
         flush,
@@ -387,7 +387,7 @@ describe("dispatchCommand", () => {
         expectedTurnId: "turn-1",
       },
       {
-        dataDir: "/tmp/bb-data",
+        dataDir: "/tmp/patcher-data",
         eventSink: { emit: vi.fn(), flush },
         fetchProjectAttachment: async () => {
           throw new Error("Unexpected project attachment fetch");
@@ -423,7 +423,7 @@ describe("dispatchCommand", () => {
         expectedTurnId: "turn-plan-1",
       },
       {
-        dataDir: "/tmp/bb-data",
+        dataDir: "/tmp/patcher-data",
         eventSink: { emit: vi.fn(), flush },
         fetchProjectAttachment: async () => {
           throw new Error("Unexpected project attachment fetch");
@@ -459,7 +459,7 @@ describe("dispatchCommand", () => {
         expectedTurnId: "turn-plan-1",
       },
       {
-        dataDir: "/tmp/bb-data",
+        dataDir: "/tmp/patcher-data",
         eventSink: { emit: vi.fn(), flush },
         fetchProjectAttachment: async () => {
           throw new Error("Unexpected project attachment fetch");
@@ -512,7 +512,7 @@ describe("dispatchCommand", () => {
     };
 
     const result = await dispatchCommand(command, {
-      dataDir: "/tmp/bb-data",
+      dataDir: "/tmp/patcher-data",
       eventSink: { emit: vi.fn(), flush },
       fetchProjectAttachment: async () => {
         throw new Error("Unexpected project attachment fetch");
@@ -586,7 +586,7 @@ describe("dispatchCommand", () => {
     };
 
     const result = await dispatchCommand(command, {
-      dataDir: "/tmp/bb-data",
+      dataDir: "/tmp/patcher-data",
       eventSink: {
         emit: vi.fn(),
         flush: vi.fn(async () => undefined),
@@ -643,7 +643,7 @@ describe("dispatchCommand", () => {
     const flush = vi.fn(async () => undefined);
 
     const result = await dispatchCommand(command, {
-      dataDir: "/tmp/bb-data",
+      dataDir: "/tmp/patcher-data",
       eventSink: { emit: vi.fn(), flush },
       fetchProjectAttachment: async () => {
         throw new Error("Unexpected project attachment fetch");
@@ -672,7 +672,7 @@ describe("dispatchCommand", () => {
 
     await expect(
       dispatchCommand(command, {
-        dataDir: "/tmp/bb-data",
+        dataDir: "/tmp/patcher-data",
         eventSink: { emit: vi.fn(), flush: vi.fn(async () => undefined) },
         fetchProjectAttachment: async () => {
           throw new Error("Unexpected project attachment fetch");
@@ -703,7 +703,7 @@ describe("dispatchCommand", () => {
     };
 
     const result = await dispatchCommand(command, {
-      dataDir: "/tmp/bb-data",
+      dataDir: "/tmp/patcher-data",
       eventSink: { emit: vi.fn(), flush: vi.fn(async () => undefined) },
       fetchProjectAttachment: async () => {
         throw new Error("Unexpected project attachment fetch");
@@ -738,7 +738,7 @@ describe("dispatchCommand", () => {
     };
 
     const result = await dispatchCommand(command, {
-      dataDir: "/tmp/bb-data",
+      dataDir: "/tmp/patcher-data",
       eventSink: { emit: vi.fn(), flush: vi.fn(async () => undefined) },
       fetchProjectAttachment: async () => {
         throw new Error("Unexpected project attachment fetch");
@@ -783,7 +783,7 @@ describe("dispatchCommand", () => {
     };
 
     const result = await dispatchCommand(command, {
-      dataDir: "/tmp/bb-data",
+      dataDir: "/tmp/patcher-data",
       eventSink: { emit: vi.fn(), flush: vi.fn(async () => undefined) },
       fetchProjectAttachment: async () => {
         throw new Error("Unexpected project attachment fetch");
@@ -850,7 +850,7 @@ describe("dispatchCommand", () => {
 
     await expect(
       dispatchCommand(command, {
-        dataDir: "/tmp/bb-data",
+        dataDir: "/tmp/patcher-data",
         eventSink: { emit: vi.fn(), flush: vi.fn(async () => undefined) },
         fetchProjectAttachment: async () => {
           throw new Error("Unexpected project attachment fetch");
@@ -877,7 +877,7 @@ describe("dispatchCommand", () => {
     };
 
     const result = await dispatchCommand(command, {
-      dataDir: "/tmp/bb-data",
+      dataDir: "/tmp/patcher-data",
       eventSink: {
         emit: vi.fn(),
         flush: vi.fn(async () => undefined),
@@ -950,7 +950,7 @@ describe("dispatchCommand", () => {
 
     await expect(
       dispatchCommand(command, {
-        dataDir: "/tmp/bb-data",
+        dataDir: "/tmp/patcher-data",
         eventSink: {
           emit: vi.fn(),
           flush: vi.fn(async () => undefined),
@@ -1007,7 +1007,7 @@ describe("dispatchCommand", () => {
     });
 
     const result = await dispatchCommand(command, {
-      dataDir: "/tmp/bb-data",
+      dataDir: "/tmp/patcher-data",
       eventSink: {
         emit: vi.fn(),
         flush: vi.fn(async () => undefined),
@@ -1077,7 +1077,7 @@ describe("dispatchCommand", () => {
 
     await expect(
       dispatchCommand(command, {
-        dataDir: "/tmp/bb-data",
+        dataDir: "/tmp/patcher-data",
         eventSink: {
           emit: vi.fn(),
           flush: vi.fn(async () => undefined),
@@ -1102,7 +1102,7 @@ describe("dispatchCommand", () => {
       dispatchCommand(
         { ...command, leaseId: "lease-old-codex" },
         {
-          dataDir: "/tmp/bb-data",
+          dataDir: "/tmp/patcher-data",
           eventSink: {
             emit: vi.fn(),
             flush: vi.fn(async () => undefined),
@@ -1131,7 +1131,7 @@ describe("dispatchCommand", () => {
           leaseId: "lease-1",
         },
         {
-          dataDir: "/tmp/bb-data",
+          dataDir: "/tmp/patcher-data",
           eventSink: {
             emit: vi.fn(),
             flush: vi.fn(async () => undefined),
@@ -1150,7 +1150,7 @@ describe("dispatchCommand", () => {
   });
 
   it("invalidates the provider maintenance runtime after a successful Codex CLI update", async () => {
-    const dataDir = await makeTempDir("bb-command-dispatch-provider-cli-");
+    const dataDir = await makeTempDir("patcher-command-dispatch-provider-cli-");
     const staleRuntime = createRuntime();
     const freshRuntime = createRuntime();
     const createRuntimeSpy = vi.fn(() => staleRuntime);
@@ -1249,7 +1249,9 @@ describe("dispatchCommand", () => {
     ];
 
     for (const testCase of cases) {
-      const dataDir = await makeTempDir("bb-command-dispatch-provider-cli-");
+      const dataDir = await makeTempDir(
+        "patcher-command-dispatch-provider-cli-",
+      );
       const runtime = createRuntime();
       const createRuntimeSpy = vi.fn(() => runtime);
       const manager = new RuntimeManager({
@@ -1313,7 +1315,7 @@ describe("dispatchCommand", () => {
   });
 
   it("reports a successful Claude update command as failed when the active executable stays old", async () => {
-    const dataDir = await makeTempDir("bb-command-dispatch-provider-cli-");
+    const dataDir = await makeTempDir("patcher-command-dispatch-provider-cli-");
     const runtime = createRuntime();
     const manager = new RuntimeManager({
       createRuntime: () => runtime,

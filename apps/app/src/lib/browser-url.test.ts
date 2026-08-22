@@ -190,7 +190,7 @@ describe("getBrowserUrlSecurity", () => {
 
   // Plain http that never leaves the machine. Warning about it was the same kind
   // of lie as a padlock on an unverified certificate, pointed the other way — and
-  // bb's own pages are served exactly like this.
+  // Patcher's own pages are served exactly like this.
   it("does not warn about loopback", () => {
     for (const url of [
       "http://localhost:5173/",

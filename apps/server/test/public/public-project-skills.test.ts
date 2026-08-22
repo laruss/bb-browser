@@ -257,7 +257,7 @@ describe("public project skills route", () => {
           hostId: host.id,
           sessionId: session.id,
           skillsByProvider: {
-            "bb-shared": [
+            "patcher-shared": [
               discovered(
                 "portable-review",
                 "shared-project",
@@ -680,7 +680,7 @@ describe("public project skills route", () => {
     });
   });
 
-  it("imports a registry package into server-owned bb user storage", async () => {
+  it("imports a registry package into server-owned Patcher user storage", async () => {
     await withTestHarness(async (harness) => {
       const filePath = "/data/skills/find-skills/SKILL.md";
       installServerRegistrySkillMock.mockResolvedValueOnce({ filePath });
@@ -833,7 +833,7 @@ describe("public project skills route", () => {
     });
   });
 
-  it("maps scope, de-dupes shared bb skills, and sorts the listing", async () => {
+  it("maps scope, de-dupes shared Patcher skills, and sorts the listing", async () => {
     await withTestHarness(async (harness) => {
       const { host, session } = seedHostSession(harness.deps, {
         id: "host-skills",
@@ -847,12 +847,12 @@ describe("public project skills route", () => {
         projectId: project.id,
         path: "/tmp/skills-env",
       });
-      // The same bb skill (identical filePath) is discovered under both
+      // The same Patcher skill (identical filePath) is discovered under both
       // providers; it must be listed once with provider:null.
       const patcherSkill = discovered(
-        "bb-helper",
-        "bb-data-dir",
-        "/data/skills/bb-helper/SKILL.md",
+        "patcher-helper",
+        "patcher-data-dir",
+        "/data/skills/patcher-helper/SKILL.md",
       );
       const stub = registerSkillRpc(harness, {
         hostId: host.id,
@@ -900,13 +900,13 @@ describe("public project skills route", () => {
       const body = skillListResponseSchema.parse(await readJson(response));
       expect(body.skills).toEqual([
         {
-          id: skillId("/data/skills/bb-helper/SKILL.md"),
-          name: "bb-helper",
-          description: "bb-helper skill",
+          id: skillId("/data/skills/patcher-helper/SKILL.md"),
+          name: "patcher-helper",
+          description: "patcher-helper skill",
           provider: null,
-          scope: "bb-user",
+          scope: "patcher-user",
           pluginId: null,
-          filePath: "/data/skills/bb-helper/SKILL.md",
+          filePath: "/data/skills/patcher-helper/SKILL.md",
           manageable: true,
           registrySkillId: null,
         },
@@ -1048,17 +1048,17 @@ describe("public project skills route", () => {
           {
             filePath: join(registrySkillDirectory, "SKILL.md"),
             registrySkillId: "github.com/vercel-labs/skills/find-skills",
-            scope: "bb-user",
+            scope: "patcher-user",
           },
         ]),
       );
       expect(
         listed.skills.find((skill) => skill.name === "manual-skill"),
-      ).toMatchObject({ scope: "bb-user", registrySkillId: null });
+      ).toMatchObject({ scope: "patcher-user", registrySkillId: null });
     });
   });
 
-  it("lists and reads a bb plugin skill from the authoritative runtime catalog", async () => {
+  it("lists and reads a Patcher plugin skill from the authoritative runtime catalog", async () => {
     const workDir = await mkdtemp(
       join(tmpdir(), "patcher-plugin-skill-route-"),
     );
@@ -1129,7 +1129,7 @@ describe("public project skills route", () => {
     }
   });
 
-  it("deletes a bb skill via the confined daemon primitive", async () => {
+  it("deletes a Patcher skill via the confined daemon primitive", async () => {
     await withTestHarness(async (harness) => {
       const { host, session } = seedHostSession(harness.deps, {
         id: "host-skill-delete",
@@ -1149,13 +1149,13 @@ describe("public project skills route", () => {
         skillsByProvider: {
           "claude-code": [
             discovered(
-              "bb-helper",
-              "bb-data-dir",
-              "/data/skills/bb-helper/SKILL.md",
+              "patcher-helper",
+              "patcher-data-dir",
+              "/data/skills/patcher-helper/SKILL.md",
             ),
           ],
         },
-        deletedPath: "/data/skills/bb-helper",
+        deletedPath: "/data/skills/patcher-helper",
       });
 
       const response = await harness.app.request(
@@ -1164,7 +1164,7 @@ describe("public project skills route", () => {
           method: "DELETE",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
-            skillId: skillId("/data/skills/bb-helper/SKILL.md"),
+            skillId: skillId("/data/skills/patcher-helper/SKILL.md"),
             environmentId: environment.id,
           }),
         },
@@ -1172,15 +1172,15 @@ describe("public project skills route", () => {
 
       expect(response.status).toBe(200);
       expect(await readJson(response)).toEqual({
-        deletedPath: "/data/skills/bb-helper",
+        deletedPath: "/data/skills/patcher-helper",
       });
       const deleteCommand = stub.requests
         .map((request) => request.command)
         .find((command) => command.type === "host.delete_skill");
       expect(deleteCommand).toEqual({
         type: "host.delete_skill",
-        scope: "bb-user",
-        name: "bb-helper",
+        scope: "patcher-user",
+        name: "patcher-helper",
         cwd: "/tmp/skill-delete-env",
         rootPath: null,
       });
@@ -1408,7 +1408,7 @@ describe("public project skills route", () => {
     });
   });
 
-  it("returns 409 for stale bb and provider skill revisions", async () => {
+  it("returns 409 for stale Patcher and provider skill revisions", async () => {
     await withTestHarness(async (harness) => {
       const { host, session } = seedHostSession(harness.deps, {
         id: "host-stale-skill-edit",
@@ -1424,7 +1424,7 @@ describe("public project skills route", () => {
         sessionId: session.id,
         skillsByProvider: {
           "claude-code": [
-            discovered("review", "bb-data-dir", patcherPath),
+            discovered("review", "patcher-data-dir", patcherPath),
             discovered("review", "provider-user", providerPath),
           ],
         },
@@ -1450,7 +1450,7 @@ describe("public project skills route", () => {
 
       expect(stub.requests.map((request) => request.command)).toContainEqual({
         type: "host.write_skill",
-        scope: "bb-user",
+        scope: "patcher-user",
         name: "review",
         cwd: "/tmp/stale-skill-edit-project",
         content: "# Stale",
@@ -1468,7 +1468,7 @@ describe("public project skills route", () => {
     });
   });
 
-  it("rejects a bb-project delete when no workspace resolves", async () => {
+  it("rejects a patcher-project delete when no workspace resolves", async () => {
     await withTestHarness(async (harness) => {
       // Primary host A is connected; the project's source lives on host B, so a
       // request without an environment resolves no cwd.
@@ -1487,9 +1487,9 @@ describe("public project skills route", () => {
         skillsByProvider: {
           "claude-code": [
             discovered(
-              "bb-helper",
-              "bb-project",
-              "/missing/.patcher/skills/bb-helper/SKILL.md",
+              "patcher-helper",
+              "patcher-project",
+              "/missing/.patcher/skills/patcher-helper/SKILL.md",
             ),
           ],
         },
@@ -1501,7 +1501,9 @@ describe("public project skills route", () => {
           method: "DELETE",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
-            skillId: skillId("/missing/.patcher/skills/bb-helper/SKILL.md"),
+            skillId: skillId(
+              "/missing/.patcher/skills/patcher-helper/SKILL.md",
+            ),
             environmentId: null,
           }),
         },

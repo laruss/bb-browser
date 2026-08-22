@@ -3799,7 +3799,7 @@ describe("public thread data routes", () => {
                 path:
                   environment.path ??
                   "/tmp/queued-message-immediate-reprovision",
-                branchName: `bb/${thread.id}`,
+                branchName: `patcher/${thread.id}`,
                 defaultBranch: "main",
                 isGitRepo: true,
                 isWorktree: true,
@@ -3948,7 +3948,7 @@ describe("public thread data routes", () => {
 
       await reportQueuedCommandSuccess(harness, provisionCommand, {
         path: "/tmp/grouped-queued-message-reprovision",
-        branchName: `bb/${thread.id}`,
+        branchName: `patcher/${thread.id}`,
         defaultBranch: "main",
         isGitRepo: true,
         isWorktree: true,

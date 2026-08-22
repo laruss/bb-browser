@@ -91,12 +91,12 @@ const dirtyUncommittedStatus: WorkspaceStatus = {
     deletions: 47,
   },
   branch: {
-    currentBranch: "bb/promptbox-stories",
+    currentBranch: "patcher/promptbox-stories",
     defaultBranch: "main",
   },
   checkout: {
     kind: "branch",
-    branchName: "bb/promptbox-stories",
+    branchName: "patcher/promptbox-stories",
     headSha: null,
   },
   mergeBase: null,
@@ -228,12 +228,12 @@ const dirtyUncommittedManyStatus: WorkspaceStatus = {
     deletions: 312,
   },
   branch: {
-    currentBranch: "bb/promptbox-stories",
+    currentBranch: "patcher/promptbox-stories",
     defaultBranch: "main",
   },
   checkout: {
     kind: "branch",
-    branchName: "bb/promptbox-stories",
+    branchName: "patcher/promptbox-stories",
     headSha: null,
   },
   mergeBase: null,
@@ -261,12 +261,12 @@ const untrackedOnlyStatus: WorkspaceStatus = {
     deletions: 0,
   },
   branch: {
-    currentBranch: "bb/promptbox-stories",
+    currentBranch: "patcher/promptbox-stories",
     defaultBranch: "main",
   },
   checkout: {
     kind: "branch",
-    branchName: "bb/promptbox-stories",
+    branchName: "patcher/promptbox-stories",
     headSha: null,
   },
   mergeBase: null,
@@ -281,12 +281,12 @@ const committedUnmergedStatus: WorkspaceStatus = {
     deletions: 0,
   },
   branch: {
-    currentBranch: "bb/promptbox-stories",
+    currentBranch: "patcher/promptbox-stories",
     defaultBranch: "main",
   },
   checkout: {
     kind: "branch",
-    branchName: "bb/promptbox-stories",
+    branchName: "patcher/promptbox-stories",
     headSha: null,
   },
   mergeBase: {
@@ -379,7 +379,7 @@ function buildPullRequestFixture(
     state: "open",
     url: "https://github.com/acme/bb/pull/128",
     baseRefName: "main",
-    headRefName: "bb/pr-context-banner",
+    headRefName: "patcher/pr-context-banner",
     updatedAt: "2026-06-16T12:30:00Z",
     checks: {
       state: "failing",

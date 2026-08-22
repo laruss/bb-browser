@@ -767,7 +767,7 @@ async function handleThreadResume(
   await startPiThreadSession({ id, params, threadId: params.threadId });
 }
 
-// Pi keeps no provider-minted session id: provider identity == bb threadId, and
+// Pi keeps no provider-minted session id: provider identity == Patcher threadId, and
 // the session file is the deterministic path for that threadId. Forking therefore
 // means materializing the source thread's full history at the NEW thread's
 // deterministic path, then launching like thread/start (which SessionManager.open's

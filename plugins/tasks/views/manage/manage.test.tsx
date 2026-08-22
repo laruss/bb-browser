@@ -263,7 +263,7 @@ describe("NewTaskDialog attachments", () => {
       }
       if (url.includes("/attachments/upload")) {
         fetchCalls.push(url);
-        const query = new URL(url, "http://bb.test").searchParams;
+        const query = new URL(url, "http://patcher.test").searchParams;
         if (uploadGate && query.get("fileName") === uploadGate.fileName) {
           await uploadGate.promise;
         }
@@ -345,7 +345,7 @@ describe("NewTaskDialog attachments", () => {
     );
     // Only the still-staged file uploaded, to the freshly created task.
     expect(fetchCalls).toHaveLength(1);
-    const query = new URL(fetchCalls[0]!, "http://bb.test").searchParams;
+    const query = new URL(fetchCalls[0]!, "http://patcher.test").searchParams;
     expect(query.get("taskId")).toBe(TASK_ID);
     expect(query.get("fileName")).toBe("shot.png");
   });
@@ -386,7 +386,7 @@ describe("NewTaskDialog attachments", () => {
         options: { subPath: "task/TSK-5" },
       }),
     );
-    const retryQuery = new URL(fetchCalls.at(-1)!, "http://bb.test")
+    const retryQuery = new URL(fetchCalls.at(-1)!, "http://patcher.test")
       .searchParams;
     expect(retryQuery.get("taskId")).toBe(TASK_ID);
     expect(retryQuery.get("fileName")).toBe("bad.bin");
@@ -821,7 +821,7 @@ describe("NewProjectDialog", () => {
     fireEvent.change(await slot.findByPlaceholderText("e.g. Tasks Plugin"), {
       target: { value: "Personal Tasks" },
     });
-    fireEvent.click(slot.getByLabelText("Linked bb project"));
+    fireEvent.click(slot.getByLabelText("Linked Patcher project"));
     fireEvent.click(await slot.findByRole("option", { name: "Personal" }));
     fireEvent.click(slot.getByRole("button", { name: "Create project" }));
 

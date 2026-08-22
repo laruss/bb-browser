@@ -61,7 +61,7 @@ function pluginSiteInfoHost(url: string): string {
 
 /**
  * A picked tab-menu entry. The URL and title came from a page, so both are
- * capped; a null url is a bb screen rather than a web page, which is what tells
+ * capped; a null url is a Patcher screen rather than a web page, which is what tells
  * an action the two kinds apart.
  */
 const pluginTabActionInvokeSchema = z
@@ -79,7 +79,7 @@ const pluginTabActionInvokeSchema = z
 
 /**
  * A pressed toolbar control. Unlike a tab action, the url is not nullable: the
- * toolbar is not drawn over bb's own screens, so a press without a page is a
+ * toolbar is not drawn over Patcher's own screens, so a press without a page is a
  * client that has invented one.
  */
 const pluginToolbarInvokeSchema = z
@@ -143,7 +143,7 @@ const pluginBrowserPdfDocumentSchema = z
   .strict();
 
 /**
- * A link the system handed bb because it is the user's default browser. Capped
+ * A link the system handed Patcher because it is the user's default browser. Capped
  * like the rest, and validated as its own schema rather than borrowed from the
  * desktop contract: the server does not depend on that boundary, and the route
  * has to defend itself against any caller.
@@ -355,7 +355,7 @@ export function registerPluginRoutes(
 
   app.get("/plugins", (context) => context.json({ plugins: plugins.list() }));
 
-  // Fast metadata for the bb CLI's help/proxy path and the app's
+  // Fast metadata for the Patcher CLI's help/proxy path and the app's
   // host-rendered UI contributions: no plugin code runs; empty (not an
   // error) while the experiment is off.
   app.get("/plugins/contributions", (context) =>
@@ -761,7 +761,7 @@ export function registerPluginRoutes(
   // the same local-origin guard as the rest, and is registered before the
   // /plugins/:id/* routes so "browser" cannot be captured as a plugin id.
   //
-  // The app reports; it does not ask. bb has already written the file and told
+  // The app reports; it does not ask. Patcher has already written the file and told
   // the user, so a failure here costs the hand-over and nothing else — which is
   // why the response says how many handlers ran rather than what they did.
   app.post("/plugins/browser/downloads", async (context) => {
@@ -791,7 +791,7 @@ export function registerPluginRoutes(
   app.post("/plugins/:id/cli", async (context) => {
     // Same local-origin/CSRF guard as the rpc dispatcher: this route executes
     // plugin code with full server capabilities, so a cross-origin simple
-    // POST must not reach it. The bb CLI sends application/json from
+    // POST must not reach it. The Patcher CLI sends application/json from
     // loopback, which passes.
     const authProblem = localAuthProblem(context, deps);
     if (authProblem) {

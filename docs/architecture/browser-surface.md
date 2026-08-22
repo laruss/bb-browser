@@ -5,7 +5,7 @@ browser stops being a panel inside a thread and becomes a surface of its own.
 
 ## What was added, and what was deliberately reused
 
-Phase 0 found that bb already contains a working embedded browser (see
+Phase 0 found that Patcher already contains a working embedded browser (see
 [bb-migration.md](bb-migration.md)), so this milestone adds only what was
 genuinely missing and reuses the rest unchanged:
 
@@ -126,9 +126,9 @@ behaviour; the type system will carry the rename whenever it happens.
 
 ## Layout, for now
 
-The surface renders inside `AppLayout`, so bb's sidebar is still present and it
+The surface renders inside `AppLayout`, so Patcher's sidebar is still present and it
 is reachable from a footer button next to Settings. That is deliberate for
-Milestone A — plan §14 says to reuse bb surfaces until replacement is
+Milestone A — plan §14 says to reuse Patcher surfaces until replacement is
 necessary. The dedicated browser window (its own Electron window, no agent-
 workspace chrome) is a later step, and the plan's target layout — tabs on top,
 page left, agent panel right — arrives with it.
@@ -253,16 +253,16 @@ Two things fall out and are worth stating:
 ### The leading edge belongs to plugins
 
 The window now has chrome at both ends, and they are owned by different people.
-The trailing edge is bb's: the sidebar, the agent screens, the pinned trigger.
+The trailing edge is Patcher's: the sidebar, the agent screens, the pinned trigger.
 The leading edge is nobody's until a plugin claims it — `PluginLeadingPanel`
 renders **nothing at all** with no registrations, because an empty column and a
-toggle for a panel with nothing in it would be bb claiming an edge it has no use
+toggle for a panel with nothing in it would be Patcher claiming an edge it has no use
 for.
 
 What the host draws there follows from how many plugins asked, not from
 configuration:
 
-- **one** gets the panel whole, with no chrome of bb's own around it. A rail to
+- **one** gets the panel whole, with no chrome of Patcher's own around it. A rail to
   switch between one thing is a control that does nothing.
 - **two or more** get a rail of icons, because now there is a choice to make and
   only the host can offer it.
@@ -323,7 +323,7 @@ Two consequences worth knowing before changing this:
   cannot be read _beside_ Settings the way it can beside a web page. That is the
   price of one router, and it is the thing a per-tab router would buy.
 
-An agent's tools see web tabs only (`getBrowserSurfaceWebTabs`): bb's own screens
+An agent's tools see web tabs only (`getBrowserSurfaceWebTabs`): Patcher's own screens
 have no page to read, navigate or screenshot, and listing them would offer tools
 that cannot work on them.
 
@@ -342,7 +342,7 @@ same rule as `AppPageHeader`
 (`resolveTabStripChromeReserveClassName`). Two things break if that reserve
 drifts, both silently: on the web build the sidebar toggle covers the first tab,
 and in the macOS desktop app the traffic lights do — which is BB-46, a bug this
-repo has already had once (see `lib/bb-desktop.ts` for the paired geometry).
+repo has already had once (see `lib/patcher-desktop.ts` for the paired geometry).
 A strip shorter than the row would also let those controls spill onto the omnibox
 row below, so the height is part of the contract, not styling.
 
@@ -352,7 +352,7 @@ side of a `px-*` on the same element but _add_ to a `px-*` on an ancestor, so a
 reserve written as "the surface's 16px plus N" is right on whichever spelling it
 was measured against and 16px wrong on the other. Both spellings were in the tree
 at once, and both overlaps followed: the new-tab button under the sidebar
-trigger, and the first tab under the traffic lights. `bb-desktop.test.ts` now
+trigger, and the first tab under the traffic lights. `patcher-desktop.test.ts` now
 locks each token to its target rather than to a sum, and the two surfaces that
 had the reserve on an inner element (the page header, the secondary panel's top
 chrome) carry it on the inset element instead.
@@ -431,16 +431,16 @@ covers both controls anyway.
 
 The shell used to forward no favicons at all, and the comment saying so was a
 security decision, not an omission: _"a remote, attacker-controlled favicon URL
-must never be rendered (or fetched) by the trusted bb app surface."_ A browser
+must never be rendered (or fetched) by the trusted Patcher app surface."_ A browser
 without tab icons is a worse browser, so the icons are now shown — and the
 property that comment protected is still intact, because **the app never touches
 the page's URL**:
 
 - The **shell** fetches the icon, through `session.fetch` on the browsing
-  partition. So the request carries that session's cookies rather than bb's, and
+  partition. So the request carries that session's cookies rather than Patcher's, and
   it passes the session's own network firewall — `shouldBlockBrowserRequest`
   already refuses LAN hosts outright and loopback without frame attribution, which
-  is what stops an icon from being a credentialed probe of bb's own services.
+  is what stops an icon from being a credentialed probe of Patcher's own services.
 - The renderer receives a `data:` URI the shell built, with a media type taken
   from the shell's **allowlist** rather than from the response. A page cannot put a
   scheme, a URL, or a media type of its choosing into the strip's `<img>`.
@@ -499,13 +499,13 @@ none touching the active tab, which is bounded by its own fill.
 
 ## Browser-first startup
 
-A starting app opens the browser rather than bb's home
+A starting app opens the browser rather than Patcher's home
 (`useBrowserFirstStartupRoute`). Two things keep that from turning into "the home
 screen is gone":
 
 - It fires **once per app load**, so navigating home later in the session goes
   home and stays there. That is why it is an effect with a one-shot guard rather
-  than a `<Navigate>` on `/` — `/` is still bb's home route, and the plan's own
+  than a `<Navigate>` on `/` — `/` is still Patcher's home route, and the plan's own
   target has the agent app and the browser sharing the shell.
 - It **replaces** the entry instead of pushing, so Back does not walk the user out
   of the browser into a screen they never asked for.
@@ -679,9 +679,9 @@ overlay machinery below is exactly what it needs — but it is a separate featur
 
 ## The tab menu: pin, duplicate, mute
 
-Right-clicking a tab opens bb's own entries — Duplicate, Pin / Unpin, Mute /
+Right-clicking a tab opens Patcher's own entries — Duplicate, Pin / Unpin, Mute /
 Unmute, Close — followed by whatever plugins contributed. The menu is
-renderer-drawn (Radix), unlike the page's, which is Chromium's: the strip is bb's
+renderer-drawn (Radix), unlike the page's, which is Chromium's: the strip is Patcher's
 own DOM, so there is no native menu to extend here.
 
 Two entries do not apply to every tab, and both refusals are reasons rather than
@@ -690,8 +690,8 @@ taste:
 - **Duplicate is web-only.** An app tab is a _remembered route_ (see
   `AppSurfaceTab`), and two tabs holding one route cannot both be the one the
   window's router is rendering.
-- **Mute is web-only, and only with a page.** A bb screen shares the app's own
-  `webContents`, so "mute this tab" would mute bb. A tab with no page yet has
+- **Mute is web-only, and only with a page.** A Patcher screen shares the app's own
+  `webContents`, so "mute this tab" would mute Patcher. A tab with no page yet has
   nothing to silence.
 
 ### Pinning is a block, not a flag
@@ -733,7 +733,7 @@ The record lives in `sessionStorage` — for the reason page icons do
 shell's views survive, and a strip that stopped marking a page that is still
 silent would be lying. It dies with the window, which is exactly as long as the
 `webContents` it describes. The consequence, stated rather than hidden: a restart
-brings restored tabs back audible. Chromium remembers mute per site; bb does not,
+brings restored tabs back audible. Chromium remembers mute per site; Patcher does not,
 because a mute stored against a page that has not loaded is a promise about
 something that does not exist.
 
@@ -808,7 +808,7 @@ already makes:
   context-menu items: the shell (here, the strip) holds the list so a right-click
   opens without waiting on a server, and only the click travels. The context an
   action receives carries the tab's id, url, title, `pinned`, `muted` and
-  `active`. A **null** url means a bb screen — a tab with no page at all, which
+  `active`. A **null** url means a Patcher screen — a tab with no page at all, which
   an action has to be able to tell from a tab with no page _yet_ (empty string).
   New permission: `tabMenu.register`, beside `contextMenu.register` rather than
   folded into it, because the house rule here is one permission per contributed
@@ -855,14 +855,14 @@ The padlock was a decoration: `getBrowserUrlSecurity` read the scheme out of the
 address bar, so anything `https` got a green lock and anything `http` got a
 warning triangle. Both halves were wrong in a way that mattered.
 
-- **A certificate the user waved through still got the lock.** bb asks before
+- **A certificate the user waved through still got the lock.** Patcher asks before
   proceeding past a certificate error and remembers the answer for the session
   (`acceptedCertificates`, keyed `host|fingerprint`) — so a page can be encrypted
   and completely unidentified, and the omnibox called it secure. Worse, the
   exception is the _manager's_: a second tab reaching the same host is let
   through without being asked, and its padlock claimed the same thing.
 - **Loopback got the warning.** `http://localhost:5173` never touches a network,
-  and bb's own pages are served exactly that way, so the triangle warned about the
+  and Patcher's own pages are served exactly that way, so the triangle warned about the
   one class of page with nothing to warn about.
 
 So the padlock now has one source (`browser-page-security.ts`) that combines what
@@ -914,7 +914,7 @@ renders no content, so a provider that does real work to answer is not asked whi
 nobody is looking. Permission: `siteInfo.register`, its own for the reason
 `tabMenu.register` is its own.
 
-**Not built, and named rather than implied**: per-site permission toggles (bb's
+**Not built, and named rather than implied**: per-site permission toggles (Patcher's
 permission policy is fixed in the shell, so there is nothing per-site to toggle
 yet), a cookie count, and "clear data for this site". The panel says what is true
 today.
@@ -927,8 +927,8 @@ is gone even though it makes no new claim.
 
 ## The toolbar: the first surface asked about a page nobody clicked
 
-The address row had bb's own controls and nothing else. `patcher.browser.registerToolbarItem`
-puts a plugin's control there — between the address bar and bb's downloads and
+The address row had Patcher's own controls and nothing else. `patcher.browser.registerToolbarItem`
+puts a plugin's control there — between the address bar and Patcher's downloads and
 open-externally buttons, which is where a browser keeps other people's things and
 leaves its own where the user learned them.
 
@@ -952,7 +952,7 @@ Every field of a state is optional, and every one has a declared default, becaus
 the answer arrives after the control is on screen. That is also why the **icon is
 fixed at registration**: a per-state icon would mean the first paint shows the
 wrong glyph and swaps it a moment later. `active` renders as an accent on the
-declared icon instead — bb's own downloads button already tints itself the same way
+declared icon instead — Patcher's own downloads button already tints itself the same way
 — and `aria-pressed` carries it to a screen reader.
 
 Pressing runs server-side, time-boxed like a picked menu entry, with one
@@ -984,7 +984,7 @@ to be pressed with no second thing to say.
 
 ## The new-tab screen, and the sections plugins add to it
 
-A fresh tab shows what bb knows: recently visited pages. `patcher.browser.registerNewTabWidget`
+A fresh tab shows what Patcher knows: recently visited pages. `patcher.browser.registerNewTabWidget`
 adds a section under that — saved pages, a reading list, yesterday's closed tabs.
 Permission: `newTab.register`, which is the cheapest of the browser's permissions
 to reason about, because a new tab has no page: nothing about the user's browsing
@@ -1020,34 +1020,34 @@ fastest way to see what they cost a plugin author.
 
 ## Commands a plugin owns
 
-`patcher.ui.registerKeybinding` rebinds a command bb already has. `patcher.ui.registerCommand`
-adds one bb has never heard of, with the chord that runs it — the last thing the
+`patcher.ui.registerKeybinding` rebinds a command Patcher already has. `patcher.ui.registerCommand`
+adds one Patcher has never heard of, with the chord that runs it — the last thing the
 bookmarks-shaped features were waiting on, since `Cmd+D` cannot belong to a plugin
 otherwise.
 
-**The chord is not in bb's keybinding config, deliberately.** bb's command ids are
+**The chord is not in Patcher's keybinding config, deliberately.** Patcher's command ids are
 a closed enum (`APP_COMMAND_IDS`) that the settings UI, the palette metadata and
-the user's override store all key on, and widening it for ids bb has never seen
+the user's override store all key on, and widening it for ids Patcher has never seen
 would trade a compile-time guarantee for a string in every one of those places.
 Plugin commands ride the contributions channel instead, where every other plugin
-surface already lives, and the app matches them **after** every one of bb's own
+surface already lives, and the app matches them **after** every one of Patcher's own
 bindings in the same loop — one place decides precedence, rather than two listeners
 racing on the window.
 
 What follows from that ordering, and is worth stating because it is a limit:
 
-- **bb wins a contested chord**, the user's own rebindings included. A plugin
+- **Patcher wins a contested chord**, the user's own rebindings included. A plugin
   cannot take `Cmd+T` away from the browser.
 - **Between plugins, the lowest plugin id wins**, the same rule contested
   keybinding overrides already use, so nothing depends on load order.
 - **Settings → Keyboard lists plugin commands** under their own heading, read-only,
-  and names bb's own command when it shares the chord. It says "where both apply,
-  bb's wins" rather than "this will not run", because bb's bindings are _scoped_:
+  and names Patcher's own command when it shares the chord. It says "where both apply,
+  Patcher's wins" rather than "this will not run", because Patcher's bindings are _scoped_:
   `Mod+D` is `diff.toggle` everywhere except a focused browser, which is exactly
   where the bookmarks example's `Cmd+D` wants to work. A row that claimed the
   command was dead would be the same kind of lie the padlock used to tell, in the
   other direction.
-- **A chord never fires while the user is typing or a dialog is open** — bb's own
+- **A chord never fires while the user is typing or a dialog is open** — Patcher's own
   scope rule, applied unchanged.
 
 `run` is handed **no context**, which is the decision worth defending: passing the
@@ -1091,8 +1091,8 @@ impersonate, is not a plugin's call to make. `patcher.sites` is unrelated to `pa
 in the plugin API, which is enrolled machines; these are websites.
 
 Not to be confused with the _frontend_ `contentScripts.register`, which is trusted
-code in bb's own page. This is CSS in a browsed page, and it was the first of the two
-things a Chrome extension does that bb could not. The second — the plugin's own code
+code in Patcher's own page. This is CSS in a browsed page, and it was the first of the two
+things a Chrome extension does that Patcher could not. The second — the plugin's own code
 in a browsed page — is [below](#a-plugins-own-code-in-a-browsed-page).
 
 ### What the browser can promise about applying it, measured
@@ -1135,7 +1135,7 @@ Two things follow that are worth knowing:
   where one site's pattern stops matching and another's starts.
 - **A page that is not a site gets nothing.** A fresh view is on the empty URL, and
   `https://**/**` is a pattern a plugin may declare, so "every site" must not be
-  read as claiming bb's own blank page.
+  read as claiming Patcher's own blank page.
 
 ### A panel that comes and goes with the site
 
@@ -1153,7 +1153,7 @@ leaves an empty resizable edge behind — on macOS, one that owns the traffic li
 The host removes the column instead. Filtering also decides the rail: with one of two
 panels out of scope there is no choice left to offer.
 
-This costs no permission and is checked against none. The panel is bb's own UI, and
+This costs no permission and is checked against none. The panel is Patcher's own UI, and
 what it is told about the tab is the address the address bar is already showing —
 whereas `patcher.sites` governs something else entirely, code and styling _inside_ a page.
 
@@ -1200,11 +1200,11 @@ the one situation where somebody is debugging them.
 So the shell registers a **session preload** for the browsing partition instead —
 and registers it _only while at least one plugin declares a page script_. That last
 part is the load-bearing property: a user with no such plugin runs a browser whose
-pages carry no bb code at all, which is the state the shell was in before this
+pages carry no Patcher code at all, which is the state the shell was in before this
 existed. Measured: after `unregisterPreloadScript`, the next document has no preload
 and the isolated world is empty.
 
-The standing rule that a browsed page never receives a bb bridge survives, because
+The standing rule that a browsed page never receives a Patcher bridge survives, because
 the preload exposes nothing into the page's own world. It calls
 `contextBridge.exposeInIsolatedWorld` for a world **per plugin**, and
 `webFrame.executeJavaScriptInIsolatedWorld` runs the plugin's source there. Measured
@@ -1224,7 +1224,7 @@ API or what the documentation is allowed to claim:
   every time.
 - **A world per plugin, invisible in both directions.** Two scripts of one plugin
   share a world (measured: the second sees the first's globals); two plugins do not
-  (each sees `undefined` where the other's marker is). bb's own CDP automation world
+  (each sees `undefined` where the other's marker is). Patcher's own CDP automation world
   is a third world again and shares nothing with either — measured, because a page
   script that could see the automation world, or vice versa, would be a hole in both.
 - **Main frame only.** A session preload does not run in subframes without
@@ -1238,7 +1238,7 @@ API or what the documentation is allowed to claim:
   client-side navigation is _not_ a new document: it replaces the page's content and
   takes the script's elements with it, and re-mounting is the script's job.
 - **A throwing script is contained.** The error lands in the page's console — which
-  bb's observation log already collects, so an agent can read it — the injection
+  Patcher's observation log already collects, so an agent can read it — the injection
   promise rejects, and the next script still runs. One caveat the implementation has
   to respect: a second `exposeInIsolatedWorld` for the same world throws _and aborts
   the rest of the preload_, so every step there is wrapped.
@@ -1247,7 +1247,7 @@ API or what the documentation is allowed to claim:
 
 `patcher.rpc(method, input)` reaches the plugin's own rpc and nothing else. Getting there
 crosses three processes, because no shorter path exists: the browsed page cannot
-hold credentials, and the shell deliberately holds none for the bb server either. So
+hold credentials, and the shell deliberately holds none for the Patcher server either. So
 the page asks the shell, the shell asks that window's renderer, the renderer performs
 the authenticated call, and the answer walks back. JSON text end to end, bounded in
 both directions.
@@ -1262,7 +1262,7 @@ renderer re-derives the same answer from its own contribution list before callin
 two checks of one rule, in two processes that would have to be wrong together.
 
 Two bounds on top: a per-tab sliding window (60 calls / 10s), because a script in a
-loop would otherwise be a page driving the bb server, and a 30-second backstop on an
+loop would otherwise be a page driving the Patcher server, and a 30-second backstop on an
 unanswered call, because nothing else in that path has a deadline and a page script
 awaiting a promise forever looks like a hung page.
 
@@ -1607,7 +1607,7 @@ That decides almost everything else about the feature:
   2's shape (the request schemas are wire-frozen). A shell that predates it never
   hears it and keeps the old coupling; an app that never sends it gets the same,
   which is what the thread browser — where "Inspect" can open DevTools with no
-  panel of bb's own — still relies on.
+  panel of Patcher's own — still relies on.
 - **Both directions are reported.** DevTools open without the app asking
   ("Inspect" from the page menu) and close from their own toolbar, so
   `devtools-opened` / `devtools-closed` are pushed rather than assumed.
