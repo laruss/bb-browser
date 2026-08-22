@@ -190,7 +190,7 @@ export function CreateViaPromptExamples({
 
 export interface CreateWithTemplatesButtonProps {
   kind: CreateViaPromptKind;
-  /** Main-button text, e.g. "New automation" or "New patcher skill". */
+  /** Main-button text, e.g. "New automation" or "New Patcher skill". */
   label: string;
   menuActions?: readonly ResourceCreateMenuAction[];
   /** Blank when called with no argument; seeded when given an example prompt. */

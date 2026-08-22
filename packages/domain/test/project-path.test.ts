@@ -11,9 +11,9 @@ import {
 } from "../src/project-path.js";
 
 describe("project-path", () => {
-  const windowsProjectPath = "C:\\\\Users\\\\michael\\\\patcher";
+  const windowsProjectPath = "C:\\Users\\michael\\patcher";
   const windowsRootPath = "C:\\";
-  const uncProjectPath = "\\\\server\\share\\\\patcher";
+  const uncProjectPath = "\\\\server\\share\\patcher";
 
   it("derives a project name from POSIX paths", () => {
     expect(deriveProjectNameFromPath("/srv/repos/patcher")).toBe("patcher");
@@ -39,7 +39,7 @@ describe("project-path", () => {
     expect(isAbsoluteProjectPath("/mnt/c/Users/michael/patcher")).toBe(true);
     expect(isAbsoluteProjectPath(windowsProjectPath)).toBe(false);
     expect(isAbsoluteProjectPath(uncProjectPath)).toBe(false);
-    expect(isAbsoluteProjectPath("C:Users\\\\michael\\\\patcher")).toBe(false);
+    expect(isAbsoluteProjectPath("C:Users\\michael\\patcher")).toBe(false);
     expect(isAbsoluteProjectPath("relative/path")).toBe(false);
   });
 

@@ -459,7 +459,7 @@ export function SkillsOverview({
       actions={
         <CreateWithTemplatesButton
           kind="skill"
-          label="New patcher skill"
+          label="New Patcher skill"
           onCreate={onCreateSkill}
         />
       }

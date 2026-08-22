@@ -171,7 +171,7 @@ describe("registry skill formatting", () => {
   it("builds an editable prompt that preserves source identity without copying it", () => {
     expect(buildRegistrySkillReferencePrompt(registrySkill)).toBe(
       [
-        "Create a new, distinct patcher skill using the skills.sh entry below as a reference.",
+        "Create a new, distinct Patcher skill using the skills.sh entry below as a reference.",
         "",
         'Reference name: "Useful skill"',
         'Reference skill ID: "owner/repo/useful-skill"',

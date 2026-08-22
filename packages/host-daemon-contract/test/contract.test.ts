@@ -1054,11 +1054,11 @@ describe("host-daemon local schemas", () => {
 describe("host-daemon command schemas", () => {
   // Version 108 renamed the daemon's environment contract. The daemon builds
   // the agent shell itself: it injects the thread-context variables, strips
-  // inherited ones by prefix, and puts the CLI shim on PATH. A 107 daemon
-  // injects `BB_*` and a `patcher` shim, so a thread the server started would run
-  // agents that cannot see their own thread id. Nothing on the wire changed,
-  // which is why the version has to say it — enrolled machines must update
-  // rather than connect and quietly break.
+  // inherited ones by prefix, and puts the CLI shim on PATH. A pre-rename
+  // daemon injects `BB_*` and a `bb` shim, so a thread the server started
+  // would run agents that cannot see their own thread id. Nothing on the wire
+  // changed, which is why the version has to say it — enrolled machines must
+  // update rather than connect and quietly break.
   it("uses protocol version 108 after renaming the daemon environment", () => {
     expect(HOST_DAEMON_PROTOCOL_VERSION).toBe(108);
   });

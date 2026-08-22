@@ -1,8 +1,8 @@
-# patcher → Patcher: Migration Map
+# bb → Patcher: Migration Map
 
 Phase 0 deliverable of [`docs/PROJECT_PLAN.md`](../PROJECT_PLAN.md) §18.
 
-Purpose: record what this fork inherits from `laruss/patcher-browser`, what each inherited
+Purpose: record what this fork inherits from `get-bb/bb`, what each inherited
 system is worth to a browser-first product, and which invariants must survive
 the transformation. Written before implementation so later phases can argue with
 a written baseline instead of rediscovering the codebase.
@@ -153,15 +153,16 @@ top-level browser surface, browser tab model independent of threads,
 `OmniboxController` with a provider interface, browser plugin contribution
 points, plugin permissions, plugin host process, browser tools for agents.
 
-**Out of product scope, retained untouched**: `apps/web` — per the recovered
-overview, the getbb.app marketing site plus Patcher connect auth/dashboard on
+**Out of product scope, removed in the Patcher rename** (see
+[rename-to-patcher.md](rename-to-patcher.md)): `apps/web` — per the recovered
+overview, the getbb.app marketing site plus bb connect auth/dashboard on
 Cloudflare Workers — and `apps/connect`. Plan §17 forbids removing inherited
 systems before their dependencies are understood; neither has been audited.
 
 ## Invariants that must not break
 
 1. **`HOST_DAEMON_PROTOCOL_VERSION`** (`packages/host-daemon-contract/src/commands.ts`,
-   currently `106`) must be incremented whenever anything on the server ↔ daemon
+   currently `108`) must be incremented whenever anything on the server ↔ daemon
    wire can change. A passing TypeScript build is not evidence of wire
    compatibility: enrolled machines may still run an older daemon, and the
    version mismatch is what triggers their update. Without a bump an old daemon
@@ -762,7 +763,7 @@ on Node and 3/8 on Bun. Bun issue 4290 is the one to watch.
   without a contract change.
 - **Toolchain**: Bun replaces pnpm as package manager and script runner. The
   runtime stays Node — plan §6 Stage 1 and §20 both warn against migrating a
-  runtime for consistency alone. Upstream `laruss/patcher-browser` will not be merged, so
+  runtime for consistency alone. Upstream `get-bb/bb` will not be merged, so
   replacing the lockfile costs nothing.
 - **Plugin host (plan Phase 7)**: every plugin runs outside the server process,
   builtin and third-party alike, on **Node**. One runtime for all of them, with

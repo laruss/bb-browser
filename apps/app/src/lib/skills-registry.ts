@@ -115,7 +115,7 @@ export function buildRegistrySkillReferencePrompt(
   skill: RegistrySkill,
 ): string {
   return [
-    "Create a new, distinct patcher skill using the skills.sh entry below as a reference.",
+    "Create a new, distinct Patcher skill using the skills.sh entry below as a reference.",
     "",
     `Reference name: ${JSON.stringify(skill.name)}`,
     `Reference skill ID: ${JSON.stringify(skill.id)}`,

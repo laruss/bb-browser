@@ -107,7 +107,7 @@ export function SidebarUpdatesBadge({ onNavigate }: SidebarUpdatesBadgeProps) {
   const patcherLabel =
     patcherUpdateCount === 1
       ? "Patcher update available"
-      : "patcher updates available";
+      : "Patcher updates available";
   const providerLabel = `${joinNames(
     staleProviders.map((stale) => stale.displayName),
   )} ${staleProviders.length === 1 ? "update" : "updates"} available`;

@@ -262,7 +262,7 @@ describe("SkillsOverview", () => {
     expect(markup).toContain("Library");
     expect(markup).toContain("Browse");
     expect(markup).toContain("Patcher Official");
-    expect(markup).toContain("New patcher skill");
+    expect(markup).toContain("New Patcher skill");
     expect(markup).not.toContain('aria-label="Open zz-official-skill"');
     expect(markup.indexOf("Library")).toBeLessThan(
       markup.indexOf('placeholder="Search skills"'),
@@ -734,7 +734,7 @@ describe("SkillsLibrary library detail routing", () => {
     renderLibrarySkillRoute();
 
     expect(screen.getByText("Loading skill")).toBeTruthy();
-    expect(screen.queryByText("New patcher skill")).toBeNull();
+    expect(screen.queryByText("New Patcher skill")).toBeNull();
   });
 
   it("shows a retryable detail error when the skill library fails to load", async () => {
@@ -746,7 +746,7 @@ describe("SkillsLibrary library detail routing", () => {
 
     expect(await screen.findByText("Couldn't load skill.")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Retry" })).toBeTruthy();
-    expect(screen.queryByText("New patcher skill")).toBeNull();
+    expect(screen.queryByText("New Patcher skill")).toBeNull();
   });
 
   it("shows not found on an unknown library skill detail route", async () => {
@@ -758,7 +758,7 @@ describe("SkillsLibrary library detail routing", () => {
     // Skill detail-route states use the same detail-width treatment as the
     // plugin and automation routes rather than a list-shaped empty state.
     expect(notFound.closest("[data-resource-detail-state]")).not.toBeNull();
-    expect(screen.queryByText("New patcher skill")).toBeNull();
+    expect(screen.queryByText("New Patcher skill")).toBeNull();
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });

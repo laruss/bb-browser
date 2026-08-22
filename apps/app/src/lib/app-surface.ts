@@ -4,12 +4,12 @@ import {
   APP_SURFACE_WEB,
   type AppSurface,
 } from "@patcher/config/app-surface";
+import { getPatcherDesktopInfo } from "./patcher-desktop";
 
 export function getAppSurface(): AppSurface {
-  if (
-    typeof window !== "undefined" &&
-    (window.patcherDesktop ?? window.bbDesktop) !== undefined
-  ) {
+  // Through the accessor, so the `patcherDesktop` → `bbDesktop` fallback that
+  // an older shell depends on lives in exactly one place.
+  if (getPatcherDesktopInfo() !== null) {
     return APP_SURFACE_DESKTOP;
   }
   return APP_SURFACE_WEB;

@@ -133,7 +133,7 @@ export const PATCHER_APP_TAB_DESTINATIONS: readonly {
     id: "settings",
     keywords: ["settings", "preferences", "options"],
     path: SETTINGS_ROUTE_PATH,
-    subtitle: "patcher settings",
+    subtitle: "Patcher settings",
     title: "Settings",
   },
   {
