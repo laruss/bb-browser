@@ -55,6 +55,14 @@ const PREBUILT_SERVER_JS = `export default async function plugin(patcher) {
 }
 `;
 
+// What a bundle built against a newer SDK does when it reaches an export this
+// host does not have: the shim resolves it to `undefined` and the factory dies
+// on a property of it. The message names neither the SDK nor the artifact.
+const SDK_AHEAD_SERVER_JS = `export default async function plugin(patcher) {
+  patcher.somethingAddedLater.use();
+}
+`;
+
 describe("prebuilt server bundle loading", () => {
   let db: DbConnection;
   let workDir: string;
@@ -85,7 +93,7 @@ describe("prebuilt server bundle loading", () => {
 
   async function writePrebuiltPlugin(
     name: string,
-    options: { sdkMajor?: number; sdkVersion?: string } = {},
+    options: { sdkMajor?: number; sdkVersion?: string; distJs?: string } = {},
   ): Promise<string> {
     const rootDir = join(workDir, name);
     await mkdir(join(rootDir, "dist"), { recursive: true });
@@ -103,7 +111,10 @@ describe("prebuilt server bundle loading", () => {
       }),
     );
     await writeFile(join(rootDir, "server.ts"), THROWING_SERVER_TS);
-    await writeFile(join(rootDir, "dist", "server.js"), PREBUILT_SERVER_JS);
+    await writeFile(
+      join(rootDir, "dist", "server.js"),
+      options.distJs ?? PREBUILT_SERVER_JS,
+    );
     await writeFile(
       join(rootDir, "dist", "server.meta.json"),
       JSON.stringify({
@@ -169,6 +180,40 @@ describe("prebuilt server bundle loading", () => {
     // The throwing source did NOT run: past 1.0 a matching major is the whole
     // compatibility test, so the dist is imported even at a different minor.
     expect(entry?.status).toBe("running");
+  });
+
+  it("blames the SDK gap when an artifact built ahead of this host fails to load", async () => {
+    const rootDir = await writePrebuiltPlugin("patcher-plugin-aheaddist", {
+      sdkMajor: PLUGIN_SDK_MAJOR,
+      sdkVersion: `${PLUGIN_SDK_MAJOR}.999.0`,
+      distJs: SDK_AHEAD_SERVER_JS,
+    });
+    upsertInstalledPlugin(db, {
+      ...gitPersistence(
+        "https://github.com/acme/patcher-plugin-aheaddist",
+        "v1",
+      ),
+      id: "aheaddist",
+      source: "git:github.com/acme/patcher-plugin-aheaddist@v1",
+      rootDir,
+      version: "0.1.0",
+      enabled: true,
+    });
+    await service.reload("aheaddist");
+
+    const entry = service.list().find((plugin) => plugin.id === "aheaddist");
+    expect(entry?.status).toBe("error");
+    // The runtime's own message does not even name the namespace that was
+    // missing — it reads "Cannot read properties of undefined (reading 'use')",
+    // which is the whole reason the SDK gap has to be appended.
+    expect(entry?.statusDetail).toContain(
+      "Cannot read properties of undefined",
+    );
+    expect(entry?.statusDetail).not.toContain("somethingAddedLater");
+    expect(entry?.statusDetail).toContain(
+      `built against plugin SDK ${PLUGIN_SDK_MAJOR}.999.0`,
+    );
+    expect(entry?.statusDetail).toContain(`runs ${PLUGIN_SDK_VERSION}`);
   });
 
   it("falls back to source when the dist meta's SDK major mismatches", async () => {

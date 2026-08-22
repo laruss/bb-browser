@@ -972,6 +972,17 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
   }
 
   /**
+   * A same-major artifact built against a *newer* SDK than this host runs is
+   * accepted above, deliberately: semver says a 1.4 bundle runs on a 1.x host,
+   * and `engines.patcherPluginSdk` is where an author states otherwise. What
+   * semver cannot promise is that every export the bundle imports exists here —
+   * a 1.4-only export resolves to `undefined` through the runtime shim, and the
+   * factory dies on a TypeError that names a property and not the reason. This
+   * records the version gap so the load failure can say it.
+   */
+  const prebuiltServerSdkAhead = new Map<string, string>();
+
+  /**
    * The backend entry to import for this load. Managed (git:/npm:) installs
    * prefer a fresh, SDK-compatible prebuilt `dist/server.js` (design
    * §3 loader amendment, §6 prebuilt distribution) so consumers never need
@@ -981,7 +992,11 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
    * as their manifest entry and still load that artifact. A present-but-stale
    * or meta-less managed dist falls back to source with one warning. Now that
    * the SDK is past 1.0 a matching major is the whole test; before it, minor
-   * bumps were breaking, so compatibility demanded the exact SDK version.
+   * bumps were breaking, so compatibility demanded the exact SDK version — and
+   * because the major was 0, the effective rule was an exact match. Widening it
+   * gave up the fall-back-to-source safety net for same-major artifacts, so a
+   * newer-minor dist that reaches an export this host lacks now dies at load
+   * instead. `prebuiltServerSdkAhead` below is what makes that failure legible.
    */
   async function resolveServerEntry(
     row: InstalledPluginRow,
@@ -1016,7 +1031,13 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
       logger.warn(
         `plugin ${row.id}: ignoring prebuilt dist/server.js (built with SDK ${meta?.sdkVersion ?? "unknown"}, running SDK is ${PLUGIN_SDK_VERSION}) — loading from source`,
       );
+      prebuiltServerSdkAhead.delete(row.id);
       return manifest.serverEntry;
+    }
+    if (meta !== null && semver.gt(meta.sdkVersion, PLUGIN_SDK_VERSION)) {
+      prebuiltServerSdkAhead.set(row.id, meta.sdkVersion);
+    } else {
+      prebuiltServerSdkAhead.delete(row.id);
     }
     return distJsPath;
   }
@@ -1308,6 +1329,10 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
         if (/ERR_DLOPEN_FAILED|\.node/.test(message)) {
           message +=
             " (native dependencies are not supported in Patcher plugins)";
+        }
+        const aheadSdkVersion = prebuiltServerSdkAhead.get(row.id);
+        if (aheadSdkVersion !== undefined) {
+          message += ` (its prebuilt dist/server.js was built against plugin SDK ${aheadSdkVersion}, and this server runs ${PLUGIN_SDK_VERSION} — an export added after ${PLUGIN_SDK_VERSION} is undefined here)`;
         }
         if (previous !== undefined) {
           setStatus(row.id, "running", `reload failed: ${message}`);
