@@ -9,7 +9,10 @@ import {
   createHostJoinCodeResponseSchema,
   type CreateHostJoinCodeResponse,
 } from "@patcher/server-contract";
-import { HOST_DAEMON_PROTOCOL_VERSION } from "@patcher/host-daemon-contract";
+import {
+  FIRST_PATCHER_ARTIFACT_PROTOCOL_VERSION,
+  HOST_DAEMON_PROTOCOL_VERSION,
+} from "@patcher/host-daemon-contract";
 import { describe, expect, it, vi } from "vitest";
 import { readJson } from "../helpers/json.js";
 import {
@@ -206,6 +209,26 @@ describe("public host management", () => {
       expect(await readJson(newerDaemon)).toMatchObject({
         code: "host_cannot_self_update",
       });
+
+      // Older than the install artifact's rename: the daemon asks for
+      // /install/bb-app.tgz, which this server answers with 410, so a queued
+      // retry could only fail again. Note the case above uses
+      // HOST_DAEMON_PROTOCOL_VERSION - 1, which is still allowed to retry —
+      // the artifact rename landed inside that version without a bump, so it
+      // gets the benefit of the doubt.
+      updateHost(harness.db, harness.hub, host.id, {
+        lastRejectedProtocolVersion:
+          FIRST_PATCHER_ARTIFACT_PROTOCOL_VERSION - 1,
+      });
+      const preRenameDaemon = await harness.app.request(
+        `${API}/hosts/${host.id}/retry-update`,
+        { method: "POST" },
+      );
+      expect(preRenameDaemon.status).toBe(409);
+      expect(await readJson(preRenameDaemon)).toMatchObject({
+        code: "host_must_re_enroll",
+      });
+      expect(harness.hub.takeHostProtocolUpdateRetry(host.id)).toBe(false);
     });
   });
 

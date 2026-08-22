@@ -100,6 +100,30 @@ describe("server skeleton", () => {
     }
   });
 
+  it("tells a pre-rename daemon to re-enrol instead of 404ing its artifact", async () => {
+    const harness = await createTestAppHarness();
+    const tarballPath = join(harness.config.dataDir, "fixture.tgz");
+    writeFileSync(tarballPath, "tarball-bytes");
+    const getTarballPath = vi.fn(async () => tarballPath);
+    const { app } = createApp(harness.deps, {
+      patcherAppArtifactService: {
+        getTarballPath,
+        getVersion: async () => "test",
+      },
+    });
+    try {
+      const response = await app.request("/install/bb-app.tgz");
+      expect(response.status).toBe(410);
+      expect(await response.text()).toContain("enrol the machine again");
+      // Emphatically not the tarball: installing a package now named
+      // patcher-app would leave the bb-app bin the service invokes in place,
+      // and the daemon would restart into the same version that asked.
+      expect(getTarballPath).not.toHaveBeenCalled();
+    } finally {
+      await harness.cleanup();
+    }
+  });
+
   it("serves public routes without auth", async () => {
     await withTestHarness(async (harness) => {
       const response = await harness.app.request("/api/v1/hosts");

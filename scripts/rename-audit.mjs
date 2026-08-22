@@ -188,6 +188,18 @@ const ALLOW = [
     path: /^packages\/thread-view\/(?:src\/agent-message-envelope\.ts|test\/user-message-parsing\.test\.ts)$/u,
   },
 
+  {
+    // Every one of these is the *old* name used deliberately, because the thing
+    // being named is a machine or a browser that still carries it: the artifact
+    // path a pre-rename daemon fetches, the global skill directories installed
+    // under the old product name, and the browser-storage prefix an unmoved
+    // origin still holds. Bound to the files that do that work, so the same
+    // token elsewhere still fails.
+    why: "the pre-rename artifact, skill and storage names, used to reach installations that still carry them",
+    word: /^(?:bb|bb-app|bb-era|bb-cli|bb-plugin-authoring)$/u,
+    path: /^(?:apps\/server\/src\/(?:server\.ts|internal\/session\.ts)|apps\/server\/test\/(?:app\/skeleton|public\/public-host-management)\.test\.ts|apps\/host-daemon\/src\/command-handlers\/install-global-skills(?:\.test)?\.ts|apps\/app\/src\/lib\/legacy-storage-adoption(?:\.test)?\.ts|apps\/app\/src\/components\/sidebar\/sidebarCollapsedAtoms\.ts|packages\/host-daemon-contract\/src\/commands\.ts)$/u,
+  },
+
   // --- History: things that happened under the old name --------------------
   {
     why: "the migration map names what this fork migrated from; patcher-migration.md would misdescribe it",

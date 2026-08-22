@@ -38,6 +38,26 @@ import {
 
 export const HOST_DAEMON_PROTOCOL_VERSION = 109 as const;
 
+/**
+ * The first protocol version whose daemon can install this server's artifact.
+ *
+ * A daemon self-updates by fetching `/install/patcher-app.tgz`. Before the
+ * rename it fetched `/install/bb-app.tgz`, and that URL is baked into the
+ * installed binary — so a daemon older than this cannot be updated by this
+ * server at all: the old path 410s, and serving the tarball there would be
+ * worse, because the package is now named `patcher-app` and installing it
+ * leaves the `bb-app` global bin the service invokes untouched. Such a machine
+ * has to be enrolled again, and the UI has to say so instead of offering a
+ * retry that cannot succeed.
+ *
+ * 108 rather than 109 because the artifact rename landed *inside* 108 without a
+ * bump of its own: a 108 daemon may ask for either path and the version cannot
+ * tell which. 108 therefore gets the benefit of the doubt — a retry that fails
+ * costs a log line, while a wrong "re-enroll" costs the user a real machine
+ * setup. Anything below 108 certainly asks for the bb-era artifact.
+ */
+export const FIRST_PATCHER_ARTIFACT_PROTOCOL_VERSION = 108 as const;
+
 export {
   BRANCH_LIST_LIMIT_MAX,
   BRANCH_LIST_QUERY_MAX_LENGTH,

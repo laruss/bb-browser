@@ -6,6 +6,7 @@ import {
   updateHost,
 } from "@patcher/db";
 import {
+  FIRST_PATCHER_ARTIFACT_PROTOCOL_VERSION,
   HOST_DAEMON_PROTOCOL_VERSION,
   hostDaemonProjectAttachmentContentQuerySchema,
   hostDaemonSessionOpenRequestSchema,
@@ -52,7 +53,9 @@ export function registerInternalSessionRoutes(app: Hono, deps: AppDeps): void {
             daemonProtocolVersion: payload.protocolVersion,
             serverProtocolVersion: HOST_DAEMON_PROTOCOL_VERSION,
           },
-          "Rejecting daemon session: protocol version mismatch. An older auto-update-enabled daemon will install this server's patcher-app; a newer daemon requires the server to be updated.",
+          payload.protocolVersion < FIRST_PATCHER_ARTIFACT_PROTOCOL_VERSION
+            ? "Rejecting daemon session: protocol version mismatch. This daemon predates the install artifact's rename, so it will keep asking for /install/bb-app.tgz and cannot update itself — the machine has to be enrolled again."
+            : "Rejecting daemon session: protocol version mismatch. An older auto-update-enabled daemon will install this server's patcher-app; a newer daemon requires the server to be updated.",
         );
         throw new ApiError(
           400,

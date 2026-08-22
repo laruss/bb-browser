@@ -43,9 +43,16 @@ export const DEFAULT_SIDEBAR_SECTION_ORDER: readonly string[] = [
 ];
 
 // The folder-era keys these atoms used to adopt (`bb.sidebar.folderSectionOrder`
-// and `bb.sidebar.collapsedFolders`) are gone rather than renamed. The rename
-// moved the prod origin, so no browser reaching this build has them; renaming
-// them would have left a migration that reads a key nothing ever wrote.
+// and `bb.sidebar.collapsedFolders`) are gone rather than renamed, because the
+// folders → sections migration they carried is older than this rename and its
+// window has long closed.
+//
+// The reason first recorded here was wrong and is worth stating so nobody
+// rebuilds on it: "the rename moved the prod origin, so no browser reaching this
+// build has them". That holds only for the loopback default. An install reached
+// over a stable origin — Tailscale Serve, a fixed proxy, the shell pointed at a
+// custom URL — kept its origin and every `bb.*` key with it, which is why
+// `lib/legacy-storage-adoption.ts` now renames them at boot instead.
 
 export const collapsedProjectIdsAtom = atomWithStorage<string[]>(
   COLLAPSED_PROJECTS_STORAGE_KEY,

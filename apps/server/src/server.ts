@@ -350,6 +350,24 @@ export function createApp(
       },
     });
   });
+  // The path a pre-rename daemon asks for. Answered, rather than left to fall
+  // through to a bare 404, because the 404 said nothing and the daemon retries
+  // forever on the 5-minute backoff cap.
+  //
+  // It must NOT serve the tarball. The package is named `patcher-app` now, so
+  // `npm install -g <tarball>` installs the `patcher*` bins and leaves the
+  // `bb-app` bin the machine's service file invokes exactly where it was — the
+  // restart would re-run the very daemon that asked, and the loud loop would
+  // become a silent one. Re-enrolling the machine is the only way forward, so
+  // that is what the body says, for whoever reads the daemon's log or curls the
+  // URL by hand.
+  app.get("/install/bb-app.tgz", (context) => {
+    return context.text(
+      "This server no longer publishes bb-app. The daemon on this machine predates the rename to Patcher and cannot update itself: enrol the machine again to replace it.\n",
+      410,
+      { "cache-control": "no-store" },
+    );
+  });
   app.use("/api/v1/*", async (context, next) => {
     const startedAt = performance.now();
     await next();

@@ -5,7 +5,10 @@ import {
   type PublicApiSchema,
 } from "@patcher/server-contract";
 import type { Hono } from "hono";
-import { HOST_DAEMON_PROTOCOL_VERSION } from "@patcher/host-daemon-contract";
+import {
+  FIRST_PATCHER_ARTIFACT_PROTOCOL_VERSION,
+  HOST_DAEMON_PROTOCOL_VERSION,
+} from "@patcher/host-daemon-contract";
 import type { AppDeps } from "../types.js";
 import { COMMAND_TIMEOUT_MS } from "../constants.js";
 import { ApiError } from "../errors.js";
@@ -127,6 +130,20 @@ export function registerHostRoutes(app: Hono, deps: AppDeps): void {
         409,
         "host_cannot_self_update",
         "The machine daemon is not older than this server",
+      );
+    }
+    // Older than the artifact rename: the daemon fetches a path this server
+    // answers with 410, and there is nothing a retry can do about it (see
+    // FIRST_PATCHER_ARTIFACT_PROTOCOL_VERSION). Refusing here rather than
+    // queueing a retry keeps the API from promising what the UI already stopped
+    // offering.
+    if (
+      host.lastRejectedProtocolVersion < FIRST_PATCHER_ARTIFACT_PROTOCOL_VERSION
+    ) {
+      throw new ApiError(
+        409,
+        "host_must_re_enroll",
+        `The machine daemon speaks protocol ${host.lastRejectedProtocolVersion}, which predates this server's install artifact. Enrol the machine again.`,
       );
     }
     deps.hub.requestHostProtocolUpdateRetry(hostId);

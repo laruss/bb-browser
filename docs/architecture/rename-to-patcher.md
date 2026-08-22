@@ -17,15 +17,33 @@ six were renamed anyway, are under [Unfrozen](#unfrozen-the-six-values-that-were
 
 ## Decisions this plan is built on
 
-| Decision                           | Choice                                                                                                                                                                             |
-| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Compatibility with bb installs     | **Clean break.** No dual reads, no fallbacks, no state migration. Old bb data stays where it is and is ignored.                                                                    |
-| Naming style                       | **Full words**: `PATCHER_*` env, `@patcher/*` scope, `patcher` binary, `~/.patcher`.                                                                                               |
-| Cloud (`apps/web`, `apps/connect`) | **Removed from the fork**, along with the tunnel/connect packages and the `connect` plugin. Done in phase 1.                                                                       |
-| Wire strings                       | **Frozen — then not.** Six values were held back; all six were renamed once their reasons were checked. See [Unfrozen](#unfrozen-the-six-values-that-were-going-to-keep-their-bb). |
+| Decision                           | Choice                                                                                                                                                                              |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Compatibility with bb installs     | **Clean break, one exception.** No dual reads, no fallbacks. Old bb data stays where it is and is ignored — except browser storage, whose address is the origin as much as the key. |
+| Naming style                       | **Full words**: `PATCHER_*` env, `@patcher/*` scope, `patcher` binary, `~/.patcher`.                                                                                                |
+| Cloud (`apps/web`, `apps/connect`) | **Removed from the fork**, along with the tunnel/connect packages and the `connect` plugin. Done in phase 1.                                                                        |
+| Wire strings                       | **Frozen — then not.** Six values were held back; all six were renamed once their reasons were checked. See [Unfrozen](#unfrozen-the-six-values-that-were-going-to-keep-their-bb).  |
 
-The clean break is what makes this plan tractable: every "how do we migrate the
-user's X" question collapses into "pick the new name." The Frozen table was the
+**Browser storage is the exception, and why is worth stating.** Every other "how
+do we migrate the user's X" question collapses into "pick the new name" because
+Patcher owns a _path_ to the old state and can simply not read it: `~/.bb` is
+left alone, a new install gets a new database. A browser key is not addressed by
+name alone — the origin is half of it. On the loopback default the origin moved
+with the port, so there is nothing to adopt and the clean break is literally
+true. On an install reached over a stable origin (Tailscale Serve, a fixed
+reverse proxy, the desktop shell pointed at a custom URL) the origin did not
+move, and "ignore the old state" means abandoning the in-app browser's open tabs,
+every collapsed sidebar section and every unsent composer draft in place, while
+the user keeps visiting the same URL. `apps/app/src/lib/legacy-storage-adoption.ts`
+renames those keys once at boot and deletes the originals — not a dual read,
+because nothing goes on reading the old name.
+
+The justification first recorded for deleting the old adoption path — "the rename
+moved the prod origin, so no browser reaching this build has them" — was true
+only of the default, and is left in place as the mistake it was.
+
+Otherwise the clean break is what makes this plan tractable: every "how do we
+migrate the user's X" question collapses into "pick the new name." The Frozen table was the
 one deliberate exception, and it did not survive contact with the code: three of
 its six reasons described a boundary that is not where they said it was, and a
 fourth priced a cost the rename had already paid.

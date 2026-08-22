@@ -102,6 +102,60 @@ describe("install global skills", () => {
     }
   });
 
+  it("removes the copies installed under the old product name", async () => {
+    const dataDir = await makeTempDir();
+    const homeDir = await makeTempDir();
+    const payload = createTreePayload("patcher-cli", "new body");
+
+    // What a machine enrolled before the rename actually carries.
+    for (const root of [".agents", ".claude"]) {
+      const legacyPath = path.join(homeDir, root, "skills", "bb-cli");
+      await mkdir(legacyPath, { recursive: true });
+      await writeFile(
+        path.join(legacyPath, "SKILL.md"),
+        "---\nname: bb-cli\ndescription: Control bb itself from the command line.\n---\n\nRun bb status.\n",
+      );
+    }
+    // Same name, someone else's skill: it does not claim to be ours, so it stays.
+    const impostorPath = path.join(
+      homeDir,
+      ".claude",
+      "skills",
+      "bb-plugin-authoring",
+    );
+    await mkdir(impostorPath, { recursive: true });
+    await writeFile(
+      path.join(impostorPath, "SKILL.md"),
+      "---\nname: my-own-notes\n---\n\nMine.\n",
+    );
+
+    await installGlobalSkills(
+      {
+        type: "host.install_global_skills",
+        skills: [
+          {
+            name: "patcher-cli",
+            treeHash: payload.treeHash,
+            entryPath: "SKILL.md",
+          },
+        ],
+      },
+      { dataDir, fetchSkillTree: async () => payload, homeDir },
+    );
+
+    for (const root of [".agents", ".claude"]) {
+      await expect(
+        readdir(path.join(homeDir, root, "skills")),
+      ).resolves.not.toContain("bb-cli");
+    }
+    await expect(
+      readFile(path.join(impostorPath, "SKILL.md"), "utf8"),
+    ).resolves.toContain("my-own-notes");
+    await expect(
+      readdir(path.join(homeDir, ".claude", "skills")),
+    ).resolves.toContain("patcher-cli");
+  });
+
   it("replaces a stale copy without leaving its removed files or staging dirs behind", async () => {
     const dataDir = await makeTempDir();
     const homeDir = await makeTempDir();
