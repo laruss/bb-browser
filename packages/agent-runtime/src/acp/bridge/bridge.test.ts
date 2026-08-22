@@ -1104,9 +1104,8 @@ describe("acp bridge", () => {
       configText.slice(configPrefix.length),
     ) as { env: { name: string; value: string }[] }[];
     expect(
-      mcpServerConfig?.env.find(
-        ({ name }) => name === "ELECTRON_RUN_AS_NODE",
-      )?.value,
+      mcpServerConfig?.env.find(({ name }) => name === "ELECTRON_RUN_AS_NODE")
+        ?.value,
     ).toBe("1");
 
     sendRequest("turn/start", {
@@ -1867,12 +1866,14 @@ describe("acp bridge", () => {
     const id = sendRequest("thread/start", {
       threadId: "thread-missing-agent",
       cwd: workspaceDir,
-      agent: { command: "definitely-not-a-real-binary-bb", args: [] },
+      agent: { command: "definitely-not-a-real-binary-patcher", args: [] },
       permissionMode: "full",
       permissionEscalation: null,
       workspaceWriteRoots: [workspaceDir],
     });
     const response = await waitForResponse(id);
-    expect(response.error?.message).toMatch(/definitely-not-a-real-binary-bb/);
+    expect(response.error?.message).toMatch(
+      /definitely-not-a-real-binary-patcher/,
+    );
   });
 });

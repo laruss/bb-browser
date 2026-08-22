@@ -63,7 +63,7 @@ describe("archive-codex-tmp-patcher-sessions", () => {
         "--dry-run",
         "--yes",
         "--pattern",
-        "/tmp/custom-bb-*",
+        "/tmp/custom-patcher-*",
         "--codex-home=~/custom-codex",
         "--codex-bin",
         "~/bin/codex",
@@ -78,19 +78,22 @@ describe("archive-codex-tmp-patcher-sessions", () => {
       codexHome: path.join("/Users/tester", "custom-codex"),
       concurrency: 7,
       dryRun: true,
-      patterns: ["/tmp/custom-bb-*"],
+      patterns: ["/tmp/custom-patcher-*"],
       yes: true,
     });
   });
 
   it("accumulates repeated --pattern flags and replaces the defaults", () => {
     const parsedArgs = parseArchiveTmpPatcherSessionsArgs(
-      ["--pattern", "*/bb-foo-*", "--pattern=*/bb-bar-*"],
+      ["--pattern", "*/patcher-foo-*", "--pattern=*/patcher-bar-*"],
       {},
       "/Users/tester",
     );
 
-    expect(parsedArgs.options.patterns).toEqual(["*/bb-foo-*", "*/bb-bar-*"]);
+    expect(parsedArgs.options.patterns).toEqual([
+      "*/patcher-foo-*",
+      "*/patcher-bar-*",
+    ]);
   });
 
   it("rejects unknown or incomplete options", () => {

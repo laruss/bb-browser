@@ -7,7 +7,7 @@ frontend, from an agent, from the CLI, from a timer, or from the outside world.
 - [patcher.rpc — the frontend data plane](#patcherrpc--the-frontend-data-plane)
 - [patcher.realtime](#patcherrealtime)
 - [patcher.background — services and schedules](#patcherbackground--services-and-schedules)
-- [patcher.cli — an agent-facing `patcher` subcommand](#patchercli--an-agent-facing-bb-subcommand)
+- [patcher.cli — an agent-facing `patcher` subcommand](#patchercli--an-agent-facing-patcher-subcommand)
 - [patcher.ui.requestInput](#patcheruirequestinput--replace-the-composer-with-a-blocking-plugin-form)
 - [patcher.agents — native tools and session configuration](#patcheragents--native-tools-and-conditional-session-configuration)
 - [patcher.ui — host-rendered UI](#patcherui--host-rendered-ui-no-frontend-bundle-needed)

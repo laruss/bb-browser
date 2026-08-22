@@ -131,14 +131,14 @@ describe("run-dev", () => {
   it("inherits parent Patcher skills for managed worktree dev apps", () => {
     const homeDir = "/Users/tester";
     const repoRoot =
-      "/Users/tester/.patcher-dev/code-bb-abc123/worktrees/env_feature/patcher";
+      "/Users/tester/.patcher-dev/code-patcher-abc123/worktrees/env_feature/patcher";
     const config = resolveDevInstanceConfig({
       homeDir,
       repoRoot,
     });
 
     const inheritedSkillsRootPaths = [
-      "/Users/tester/.patcher-dev/code-bb-abc123/skills",
+      "/Users/tester/.patcher-dev/code-patcher-abc123/skills",
       "/Users/tester/.patcher/skills",
     ];
     expect(resolveInheritedDevSkillsRootPaths({ homeDir, repoRoot })).toEqual(

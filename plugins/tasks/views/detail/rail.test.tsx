@@ -24,7 +24,7 @@ const app = await loadPluginApp(() => import("../../app"));
 afterEach(cleanup);
 
 const PROJECT_ID = "01HZZZZZZZZZZZZZZZZZZZZZP1";
-const PATCHER_PROJECT_ID = "proj_bb0000000000000000000001";
+const PATCHER_PROJECT_ID = "proj_pa0000000000000000000001";
 
 function projectRow(linkedPatcherProjectId: string | null) {
   return {

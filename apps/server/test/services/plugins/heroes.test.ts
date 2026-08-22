@@ -250,7 +250,7 @@ describe("hero plugin: slack-bot", () => {
       });
 
       // An app_mention spawns an attributed Patcher thread and records the
-      // Slack-thread ↔ BB-thread mapping in kv.
+      // Slack-thread ↔ Patcher-thread mapping in kv.
       const mentionBody = JSON.stringify({
         type: "event_callback",
         event: {

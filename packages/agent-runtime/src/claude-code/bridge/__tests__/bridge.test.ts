@@ -887,7 +887,7 @@ describe("bridge", () => {
         permissionMode: "default",
         permissionScope: "workspace",
       },
-      { HOME: homeDir, PATH: "/nonexistent-bb-test-dir" },
+      { HOME: homeDir, PATH: "/nonexistent-patcher-test-dir" },
     );
 
     expect(options.pathToClaudeCodeExecutable).toBe(executablePath);
@@ -2245,7 +2245,7 @@ describe("bridge", () => {
     });
 
     const originalHome = process.env.HOME;
-    process.env.HOME = "/Users/test-bb";
+    process.env.HOME = "/Users/test-patcher";
     try {
       bridge.sendRequest(1, "thread/start", {
         workflowsEnabled: false,
@@ -2262,7 +2262,7 @@ describe("bridge", () => {
       await bridge.waitForResponse(1);
 
       const queryOptions = getLatestQueryOptions();
-      expect(queryOptions.env?.HOME).toBe("/Users/test-bb");
+      expect(queryOptions.env?.HOME).toBe("/Users/test-patcher");
       // Sessions report as the Claude CLI entrypoint (renders `sdk-cli` on the
       // wire), with no `client-app/...` user-agent segment.
       expect(queryOptions.env?.CLAUDE_CODE_ENTRYPOINT).toBe("cli");

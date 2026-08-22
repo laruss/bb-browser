@@ -256,7 +256,12 @@ describe("pull request lookup for differently named upstream branches", () => {
       outcome: "found",
     });
     await runGit(
-      ["remote", "set-url", forkRemote, "git@github.com:other-owner/bb.git"],
+      [
+        "remote",
+        "set-url",
+        forkRemote,
+        "git@github.com:other-owner/patcher.git",
+      ],
       { cwd: workspacePath },
     );
     await expect(workspace.getPullRequest()).resolves.toMatchObject({

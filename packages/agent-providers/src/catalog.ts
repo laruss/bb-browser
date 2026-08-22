@@ -145,7 +145,7 @@ const ACP_COMPOSER_ACTIONS: ProviderComposerAction[] = [
 ];
 
 // Shared by all ACP (Agent Client Protocol) providers: the external agent owns
-// its own model selection, tool execution, and session naming, so BB-side
+// its own model selection, tool execution, and session naming, so Patcher-side
 // capabilities stay minimal. Permission modes are enforced cooperatively by
 // the ACP bridge (permission-request policy + client fs write policy).
 // Cursor exposes a `-fast` service tail per model; the bridge resolves it from

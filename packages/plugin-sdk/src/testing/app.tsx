@@ -1098,7 +1098,7 @@ export interface RenderedSlotLifecycleControls {
 }
 
 /**
- * Testing Library result plus BB-specific helpers. Direct members are
+ * Testing Library result plus Patcher-specific helpers. Direct members are
  * retained for compatibility; named views make intent explicit in new tests.
  */
 export interface RenderedSlot

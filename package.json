@@ -37,6 +37,7 @@
     "format": "prettier . --write --ignore-unknown",
     "format:check": "prettier . --check --ignore-unknown",
     "storybook": "turbo run storybook --filter=@patcher/app",
+    "audit:rename": "node scripts/rename-audit.mjs",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test --concurrency=2",

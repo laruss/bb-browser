@@ -41,6 +41,14 @@ jobs:
       - name: Check app boot-payload budget
         run: node apps/app/scripts/check-bundle-budget.mjs
 
+      # Guards the rename (docs/architecture/rename-to-patcher.md). Every old
+      # token left in the tree is either frozen on the wire, a physical
+      # database name, history, or an English word, and each one is answered by
+      # a rule that says which. A new one is a regression, and so is a
+      # `patcher` welded into the middle of a word.
+      - name: Audit the Patcher rename
+        run: node scripts/rename-audit.mjs
+
   # Tests run on their own runners instead of inside the checks job: the big
   # suites are CPU-bound and previously fought each other (and the builds) for
   # the same 4 vCPUs, which made tests the critical path of every run.

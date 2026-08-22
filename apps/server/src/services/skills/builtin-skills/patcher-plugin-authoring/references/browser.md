@@ -754,7 +754,7 @@ Two more rules worth building around:
   anything you build on them. Routes and `setOffline` last only as long as the
   tab's debugger session, so do not treat them as configuration.
 - **`patcher.browser.recording` produces artifacts, and it is two different things.**
-  `traceStart`/`traceStop` log the browser commands _bb_ runs while the trace is
+  `traceStart`/`traceStop` log the browser commands _Patcher_ runs while the trace is
   open — one at a time, and stopping it is the only way to read it. It is Patcher's
   own JSON, not a Playwright trace, and no Playwright viewer opens it.
   `videoStart`/`videoStop` film one tab through the browser's screencast, which

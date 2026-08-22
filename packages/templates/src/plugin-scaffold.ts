@@ -458,7 +458,7 @@ npx shadcn add @patcher/dialog @patcher/select
 \`\`\`
 
 Run \`npm install\` once before \`patcher plugin build\` — the vendored components'
-npm deps bundle into your dist. React, and BB-shimmed packages like the
+npm deps bundle into your dist. React, and Patcher-shimmed packages like the
 radix portal primitives and \`sonner\` (\`import { toast } from "sonner"\`
 reaches Patcher's own toaster), are provided by the Patcher app at runtime and never
 bundled. Ship \`dist/\` (npm tarball or committed for git installs) so

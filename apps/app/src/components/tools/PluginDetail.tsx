@@ -362,7 +362,7 @@ export function PluginDetail({
       leading={<PluginLogo plugin={plugin} className="size-4" />}
       title={pluginName}
       // Provenance is a label, not a control: it sits flush to the name as a
-      // passive badge. Default owned sources need no label; only BB-published
+      // passive badge. Default owned sources need no label; only Patcher-published
       // plugins carry provenance here. It used to render as a green
       // "Installed"/"Patcher Official"
       // button that swapped to a red Uninstall on hover — a status that
