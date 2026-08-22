@@ -41,15 +41,12 @@ function requireMutableHost(deps: AppDeps, hostId: string) {
 }
 
 /**
- * Host management is owner-only, and "owner" means anything that is not a
- * paired machine's credential: a browser session on this account, or a process
- * already running on the server machine. A local caller carries no gate header
- * and passes — deliberately, and identically to rename, remove, and join-code
- * minting. Anything running on the server machine can already read the data
- * directory and restart the server, so the permission limit defends against
- * *other* machines, not against local code. Reaching this route from another
- * machine requires the connect gate, which stamps `machine` and is refused
- * both there and here.
+ * Host management shares the public API's single trust boundary. The
+ * machine-credential distinction these routes used to enforce came in over the
+ * connect gate, which no longer exists in this fork — there is no longer any
+ * caller class the server can tell apart here, so the checks that split them
+ * were removed with it rather than left as no-ops. Anything that can reach the
+ * public API can already read the data directory and restart the server.
  */
 export function registerHostRoutes(app: Hono, deps: AppDeps): void {
   const { del, get, patch, post } = typedRoutes<PublicApiSchema>(app, {

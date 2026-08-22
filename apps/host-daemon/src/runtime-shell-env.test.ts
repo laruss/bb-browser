@@ -352,11 +352,12 @@ describe("resolveUserShellPath", () => {
 });
 
 describe("prepareRuntimeShellEnv", () => {
-  it("uses the daemon proxy URL without exporting its machine credential", () => {
-    vi.stubEnv(
-      "PATCHER_CONNECT_MACHINE_CREDENTIAL",
-      "patchercm_durable_secret",
-    );
+  it("exports the server URL and nothing else it was not asked for", () => {
+    // The shell env is an allow-list, not a filtered copy of process.env: a
+    // secret in the daemon's own environment must not reach an agent shell.
+    // The credential this once named is gone with the cloud, so the guard is
+    // stated against an arbitrary secret instead of a dead variable name.
+    vi.stubEnv("PATCHER_SOME_DAEMON_SECRET", "durable_secret");
 
     const env = prepareRuntimeShellEnv({
       patcherExecutableDirectory: "/tmp/patcher-bin",
@@ -365,7 +366,7 @@ describe("prepareRuntimeShellEnv", () => {
     });
 
     expect(env.PATCHER_SERVER_URL).toBe("http://127.0.0.1:43123");
-    expect(env).not.toHaveProperty("PATCHER_CONNECT_MACHINE_CREDENTIAL");
+    expect(env).not.toHaveProperty("PATCHER_SOME_DAEMON_SECRET");
   });
 
   it("prepends the configured Patcher executable directory to PATH and sets PATCHER_CLI", () => {

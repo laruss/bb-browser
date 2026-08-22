@@ -93,12 +93,13 @@ describe("pluginProxyCandidate", () => {
   });
 
   it("proxies the builtin plugin commands the kernel no longer owns", () => {
-    // `automation` and `connect` moved into builtin plugins: they must not
-    // be reserved, and the real program must not register them, so the
-    // proxy resolves them against the running server.
+    // `automation` moved into a builtin plugin: it must not be reserved, and
+    // the real program must not register it, so the proxy resolves it against
+    // the running server. (`connect` was here too until its plugin was
+    // removed with the cloud.)
     const names = new Set(topLevelCommandNames(buildProgram()));
     names.add("help");
-    for (const moved of ["automation", "connect"]) {
+    for (const moved of ["automation"]) {
       expect(RESERVED_PATCHER_CLI_COMMANDS).not.toContain(moved);
       expect(pluginProxyCandidate(moved, names)).toBe(moved);
     }

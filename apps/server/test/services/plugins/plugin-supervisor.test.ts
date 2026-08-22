@@ -498,11 +498,6 @@ describe("the plugin supervisor", () => {
       requestInteraction: async () => ({ ok: true }),
       requestBrowserCommand: async () => null,
       getBrowserHostStatus: () => ({ connected: false, hostCount: 0 }),
-      ensureSharedPortTunnel: async () => ({ label: "l", baseDomain: "d" }),
-      validateSharedPortDeclaration: (_h: string, ports: readonly number[]) =>
-        ports,
-      declareSharedPorts: () => {},
-      replaceDeclaredSharedPorts: () => {},
     } as unknown as PluginHostCapabilities;
     const hostCalls = createPluginHostCallServer(capabilities);
     const sharedDataDir = await dataDir();
