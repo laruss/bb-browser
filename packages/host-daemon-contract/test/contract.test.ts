@@ -1052,7 +1052,14 @@ describe("host-daemon local schemas", () => {
 });
 
 describe("host-daemon command schemas", () => {
-  // Two renames, two bumps, neither of which changed a message shape.
+  // Three bumps from the inherited 106, and only the first changed a message
+  // shape.
+  //
+  // 107 removed the cloud: the `connect-tunnel.ensure-identity` online RPC and
+  // the `connect-shares.replace` daemon message are gone, and `session.open`
+  // no longer accepts `connectMachineId` or `hasMachineCredential`. A pre-107
+  // daemon still sends those fields, which the current schema rejects — the
+  // version gate is what stops it reaching payload validation at all.
   //
   // 108 renamed the daemon's environment contract. The daemon builds the agent
   // shell itself: it injects the thread-context variables, strips inherited
@@ -1064,8 +1071,8 @@ describe("host-daemon command schemas", () => {
   // pass the version check and then be refused the socket with a 400 it has no
   // way to read, so the version is what turns that into "Needs update".
   //
-  // Nothing on the wire changed either time, which is why the version has to
-  // say it — enrolled machines must update rather than connect and quietly
+  // Nothing on the wire changed for those last two, which is why the version has
+  // to say it — enrolled machines must update rather than connect and quietly
   // break.
   it("uses protocol version 109 after renaming the daemon subprotocol", () => {
     expect(HOST_DAEMON_PROTOCOL_VERSION).toBe(109);

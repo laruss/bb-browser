@@ -119,9 +119,9 @@ export default definePluginApp((app) => {
     component: CredentialForm,
   });
   app.slots.sidebarFooterAction({
-    id: "remote",
-    title: "Remote access",
-    icon: "Smartphone",
+    id: "reconnect",
+    title: "Reconnect",
+    icon: "Key",
     run: ({ openSettings }) => openSettings(),
   });
   app.slots.messageDirective({ id: "inline-vis", component: InlineVis });

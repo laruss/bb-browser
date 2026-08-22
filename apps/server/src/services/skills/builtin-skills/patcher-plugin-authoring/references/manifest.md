@@ -198,7 +198,7 @@ The complete manifest, with the optional fields SKILL.md leaves out:
   package-name component minus the `patcher-plugin-` prefix, so both forms use
   `hello`; it namespaces routes, storage, settings, and CLI commands. Builtin
   ids such as
-  `automations`, `connect`, `custom-instructions`, `inline-vis`, and `secrets`
+  `automations`, `custom-instructions`, `inline-vis`, `secrets`, and `side-chat`
   cannot use a non-`builtin:` source — use `builtin:<name>` instead.
 
 ## Distributing a plugin

@@ -269,29 +269,40 @@ describe("user message parsing", () => {
     });
   });
 
-  it("recovers agent attribution from a legacy cross-thread envelope", () => {
-    const factory = createTimelineEventFactory({ threadId: "thread-1" });
-    const row = factory.clientTurnRequested({
-      initiator: "user",
-      senderThreadId: null,
-      target: { kind: "new-turn" },
-      text: "[Patcher message from thread:thr_legacy; reply later]\n\nLegacy handoff",
-    });
-    const { event, meta } = decodeThreadEventRow(row);
+  // A row with no `senderThreadId` was necessarily written by a build that
+  // predates that metadata — and therefore also predates the rename, so its
+  // text carries the `[bb …]` envelope. Asserted as those exact bytes: with the
+  // new spelling here the case is unreachable in production and the test proves
+  // nothing.
+  it.each([
+    ["[bb message from thread:thr_legacy; reply later]\n\nLegacy handoff"],
+    ["[Patcher message from thread:thr_legacy; reply later]\n\nLegacy handoff"],
+  ])(
+    "recovers agent attribution from a legacy cross-thread envelope",
+    (text) => {
+      const factory = createTimelineEventFactory({ threadId: "thread-1" });
+      const row = factory.clientTurnRequested({
+        initiator: "user",
+        senderThreadId: null,
+        target: { kind: "new-turn" },
+        text,
+      });
+      const { event, meta } = decodeThreadEventRow(row);
 
-    const message = parseUserFromClientRequest({
-      decoded: event,
-      meta,
-      options: standardProjectionOptions,
-    });
+      const message = parseUserFromClientRequest({
+        decoded: event,
+        meta,
+        options: standardProjectionOptions,
+      });
 
-    expect(message).toMatchObject({
-      kind: "user",
-      initiator: "agent",
-      senderThreadId: "thr_legacy",
-      text: "[Patcher message from thread:thr_legacy; reply later]\n\nLegacy handoff",
-    });
-  });
+      expect(message).toMatchObject({
+        kind: "user",
+        initiator: "agent",
+        senderThreadId: "thr_legacy",
+        text,
+      });
+    },
+  );
 
   it("populates initiator for system-initiated messages with a turnRequest", () => {
     const { event, meta } = decodeThreadEventRow(systemMessageRequest());

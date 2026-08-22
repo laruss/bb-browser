@@ -45,6 +45,14 @@ const appPublicDir = join(repoRoot, "apps", "app", "public");
 const iconSource = await readFile(join(assetsDir, "patcher-icon.svg"), "utf8");
 const logoSource = await readFile(join(assetsDir, "patcher-logo.svg"), "utf8");
 
+/**
+ * `String.replace` reads `$&`, `$1` and `$'` in its replacement, and the
+ * substitutions below deliberately use `$1`. A value interpolated *into* one of
+ * them must not: `logoViewBox()` comes out of an SVG file, so a `$` in it would
+ * silently produce a different attribute instead of the one it names.
+ */
+const asReplacementLiteral = (value) => String(value).replaceAll("$", "$$$$");
+
 function substitute(svg, pattern, replacement, what) {
   const matches = svg.match(new RegExp(pattern, "gu"))?.length ?? 0;
   if (matches !== 1) {
@@ -63,7 +71,7 @@ function iconSvg({ plate, radius } = {}) {
     svg = substitute(
       svg,
       '(<rect width="64" height="64"[^>]*fill=)"[^"]*"',
-      `$1"${plate}"`,
+      `$1"${asReplacementLiteral(plate)}"`,
       "plate fill",
     );
   }
@@ -71,7 +79,7 @@ function iconSvg({ plate, radius } = {}) {
     svg = substitute(
       svg,
       '(<rect width="64" height="64"[^>]*)rx="[^"]*"',
-      `$1rx="${radius}"`,
+      `$1rx="${asReplacementLiteral(radius)}"`,
       "plate corner radius",
     );
   }
@@ -96,7 +104,7 @@ function colourGlyphSvg() {
   const cropped = substitute(
     iconSource,
     'viewBox="0 0 64 64"',
-    `viewBox="${logoViewBox()}"`,
+    `viewBox="${asReplacementLiteral(logoViewBox())}"`,
     "icon viewBox",
   );
   return substitute(
@@ -189,6 +197,16 @@ async function macIcon(plate) {
 /** iconutil wants a full .iconset directory, not a single PNG. */
 async function writeIcns(sourcePng, outputPath) {
   const workDir = await mkdtemp(join(tmpdir(), "patcher-icns-"));
+  try {
+    await writeIconset(workDir, sourcePng, outputPath);
+  } finally {
+    // `iconutil` is macOS-only, so this rejects on any other machine. Without
+    // the finally the iconset survives in $TMPDIR on every failed run.
+    await rm(workDir, { recursive: true, force: true });
+  }
+}
+
+async function writeIconset(workDir, sourcePng, outputPath) {
   const iconsetDir = join(workDir, "icon.iconset");
   await mkdir(iconsetDir);
   const entries = [
@@ -216,7 +234,6 @@ async function writeIcns(sourcePng, outputPath) {
     outputPath,
     iconsetDir,
   ]);
-  await rm(workDir, { recursive: true, force: true });
 }
 
 const written = [];

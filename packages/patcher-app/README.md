@@ -180,8 +180,9 @@ npx patcher-app config refresh
 ```
 
 For remote access, publish the default loopback listener with Tailscale Serve. Direct tailnet or LAN access to port `38986` requires the
-explicit, security-sensitive `--server-bind-host 0.0.0.0` compatibility option;
-see the multiple-devices guide.
+explicit, security-sensitive `--server-bind-host 0.0.0.0` compatibility option,
+and a trusted network boundary in front of it: the public API is
+unauthenticated.
 
 Use `patcher-app client ssh-target` to configure local editor opens for remote
 Patcher servers under `~/.patcher/client.json`. The target is the value that works after
@@ -204,13 +205,9 @@ npx patcher-app env unset OPENAI_API_KEY
 server to reload; if Patcher is stopped, the values apply on the next start.
 
 For all config keys, precedence, startup flags, and source-development `.env`
-behavior, see the
-[configuration docs](https://github.com/laruss/patcher-browser/blob/main/docs/configuration.md).
+behavior, run `npx patcher-app config --help` and `npx patcher-app env --help`.
 
 ## Further Reading
 
 - [Main README](https://github.com/laruss/patcher-browser#readme)
-- [Platform support](https://github.com/laruss/patcher-browser/blob/main/docs/platform-support.md)
-- [Configuration](https://github.com/laruss/patcher-browser/blob/main/docs/configuration.md)
-- [Using Patcher on multiple devices](https://github.com/laruss/patcher-browser/blob/main/docs/multiple-devices.md)
-- [Worktrees and setup scripts](https://github.com/laruss/patcher-browser/blob/main/docs/worktrees.md)
+- [Architecture notes](https://github.com/laruss/patcher-browser/tree/main/docs/architecture)

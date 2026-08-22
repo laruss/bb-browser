@@ -50,9 +50,12 @@ import {
   selectInitialPatchPaths,
 } from "./diff-tiering.js";
 
+// All three land in the user's real git log, so they share one spelling. The
+// rename split them — one capitalised, two not — where the inherited prefix had
+// been uniform across the three.
 const COMMIT_FALLBACK_MESSAGE = "Patcher: automated commit";
-const SQUASH_MERGE_FALLBACK_MESSAGE = "patcher: squash merge";
-const PRE_MERGE_COMMIT_MESSAGE = "patcher: pre-merge commit";
+const SQUASH_MERGE_FALLBACK_MESSAGE = "Patcher: squash merge";
+const PRE_MERGE_COMMIT_MESSAGE = "Patcher: pre-merge commit";
 
 /** Caps for diffs sent to the inference model for commit message generation. */
 const AI_MAX_DIFF_BYTES = 32_000;

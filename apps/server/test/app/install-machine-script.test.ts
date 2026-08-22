@@ -495,7 +495,10 @@ describe("machine install script", () => {
           }
           reject(error);
         });
-        occupied.listen(38888, "127.0.0.1", () => {
+        // The floor the scan actually starts at. It moved 38888 -> 38988 with
+        // the prod port pair; occupying the old floor made this test pass
+        // without ever exercising the availability probe it exists to cover.
+        occupied.listen(38988, "127.0.0.1", () => {
           occupiedByTest = true;
           resolve();
         });
@@ -515,7 +518,7 @@ describe("machine install script", () => {
           join(fixture.dataDir, "host-daemon-port"),
           "utf8",
         ).trim();
-        expect(selectedPort).not.toBe("38888");
+        expect(selectedPort).not.toBe("38988");
         expect(readFileSync(invocationPath, "utf8")).toContain(
           `--host-daemon-port\n${selectedPort}\n`,
         );

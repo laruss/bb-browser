@@ -209,7 +209,7 @@ the caller cancels the request.
 To give agents standing knowledge (conventions, workflows), ship a
 `skills/` directory. For schema'd capabilities, register a native tool.
 For a short, per-resolution instruction block (e.g. "the user is viewing
-Patcher remotely — share tunnel URLs"), use `contributeInstructions`:
+Patcher over a private proxy URL"), use `contributeInstructions`:
 
 ```ts
 import { z } from "zod"; // runtime import — declare zod as a plugin dependency
@@ -245,7 +245,7 @@ patcher.agents.configure((context) => ({
 // threads never receive plugin instructions.
 patcher.agents.contributeInstructions(({ threadId, projectId }) => {
   if (!shouldAdviseRemoteUrls()) return null;
-  return "The user is viewing Patcher remotely — share tunnel URLs, not localhost.";
+  return "The user is viewing Patcher over its proxy URL — do not share localhost links.";
 });
 ```
 

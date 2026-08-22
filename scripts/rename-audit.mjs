@@ -54,8 +54,13 @@ const HEX_DIGEST = /^(?:[0-9a-f]{32}|[0-9a-f]{40}|[0-9a-f]{64})$/iu;
 const HEX_COLOUR = /^[0-9a-f]{6}(?:[0-9a-f]{2})?$/iu;
 const isHexColour = (word, line) =>
   HEX_COLOUR.test(word) && line.includes(`#${word}`);
+// Only the prefixes that actually occur. `env`, `msg`, `proj`, `run` and `src`
+// were in this list and justified nothing, so all they did was pardon their own
+// plausible leftovers anywhere in the tree — `env_bb_prefix`, `src-bb-source-path`
+// and `run_bb_server` all walked through a rule whose reason mentions provider
+// ids. An unused alternative is a hole, not a spare.
 const OPAQUE_ID =
-  /^(?:toolu|call|req|msg|turn|ws|thr|env|proj|src|run|sha256|sha512)[_-][A-Za-z0-9_-]{6,}$/u;
+  /^(?:toolu|call|req|turn|ws|thr|sha256|sha512)[_-][A-Za-z0-9_-]{6,}$/u;
 // A long alphanumeric run that also carries a shouted uppercase run or several
 // digits is a base64 or minified fragment, not an identifier someone typed.
 // Length alone is not enough: `BbSomethingLongEnough` is 21 characters and
@@ -84,13 +89,16 @@ const ENGLISH_DOUBLE_B = new RegExp(ENGLISH_DOUBLE_B_SOURCE, "iu");
 const ENGLISH_DOUBLE_B_ALL = new RegExp(ENGLISH_DOUBLE_B_SOURCE, "giu");
 // A word ending in b abutting one starting with B — `tabButton`, `WebBrowser`.
 // Stripped and re-checked like the English list above, for the same reason.
+// The `B` is captured so the strip can leave a separator behind: deleting the
+// seam outright consumed both of the b's that made the word match, so `subBb`
+// and `tabBbLeftover` were pardoned by the seam that only explains one of them.
 const CAMEL_SEAM_SOURCE =
-  "(?:[Tt]ab|[Ww]eb|[Ss]ub|[Ll]ab|[Cc]ab|[Nn]ub|[Rr]ib|[Tt]humb|[Cc]rumb)B";
+  "(?:[Tt]ab|[Ww]eb|[Ss]ub|[Ll]ab|[Cc]ab|[Nn]ub|[Rr]ib|[Tt]humb|[Cc]rumb)(B)";
 const CAMEL_SEAM = new RegExp(CAMEL_SEAM_SOURCE, "u");
 const CAMEL_SEAM_ALL = new RegExp(CAMEL_SEAM_SOURCE, "gu");
 /** True when stripping `pattern` from `word` leaves no double b behind. */
-const seamExplainsWord = (word, pattern) =>
-  !/[Bb][Bb]/u.test(word.replace(pattern, ""));
+const seamExplainsWord = (word, pattern, replacement = "") =>
+  !/[Bb][Bb]/u.test(word.replace(pattern, replacement));
 
 /**
  * Each rule may constrain the matched word, the path it sits in, and the line
@@ -174,6 +182,11 @@ const ALLOW = [
     word: /^bb$/u,
     line: /bb\.sidebar\.folderSectionOrder|bb\.sidebar\.collapsedFolders/u,
   },
+  {
+    why: "the cross-thread envelope a pre-rename build wrote into thread event text, matched by the legacy-attribution recovery path and by the test that pins those bytes",
+    word: /^bb$/u,
+    path: /^packages\/thread-view\/(?:src\/agent-message-envelope\.ts|test\/user-message-parsing\.test\.ts)$/u,
+  },
 
   // --- History: things that happened under the old name --------------------
   {
@@ -202,8 +215,13 @@ const ALLOW = [
     // "hash-mismatch" for every database that already ran it. Editing even a
     // comment stops the server booting on such a database, so the prose stays
     // exactly as it was written.
+    // Bound to comment lines. Declaring only `path` pardoned every token in
+    // every migration, including ones this fork has not written yet, so a future
+    // schema change could add a live `bb_`-named table or column with the gate
+    // green — the opposite of what the reason claims to excuse.
     why: "prose inside an already-applied drizzle migration, whose bytes are hashed in the ledger",
     path: /^packages\/db\/drizzle\/\d{4}_[a-z_]+\.sql$/u,
+    line: /^\s*--/u,
   },
   {
     why: "recorded agent transcripts captured on an upstream machine, replayed verbatim as fixtures",
@@ -255,7 +273,7 @@ const ALLOW = [
     // seam and require that no `bb` survives.
     why: "a camelCase seam: a word ending in b followed by one starting with B",
     word: CAMEL_SEAM,
-    test: (word) => seamExplainsWord(word, CAMEL_SEAM_ALL),
+    test: (word) => seamExplainsWord(word, CAMEL_SEAM_ALL, "_$1"),
   },
   {
     why: "BBEdit, an editor Patcher can open a workspace in",
@@ -317,16 +335,26 @@ const ALLOW = [
 
 const REVERSE_ALLOW = [
   {
-    why: "dispatcher and CommandDispatchError; ~190 of them and none is rename damage",
-    word: /dispatch/iu,
+    // Strip-and-recheck, not an anchor. Anchoring to the whole word looked
+    // stricter and was not: `dispatchApatcherREV` is letters end to end, so
+    // `^[A-Za-z]*[Dd]ispatch[A-Za-z]*$` still matched it. The `patcher` this
+    // rule is here to excuse is the one inside `dispatch|er`, so remove every
+    // `dispatch` and require that nothing named `patcher` survives — which is
+    // the same shape the forward scan's English-words rule uses.
+    why: "dispatcher and its relatives; none of them is rename damage (--list counts them)",
+    word: /[Dd]ispatch|DISPATCH/u,
+    test: (word) =>
+      !/patcher|PATCHER/u.test(word.replace(/[Dd]ispatch|DISPATCH/gu, "")),
   },
   {
-    // The scan looks one character left of `patcher` and cannot tell a regex
-    // escape from the tail of a word. Narrowed to the escape itself, so
-    // `bpatcher` anywhere else still fails.
-    why: "a `\\b` word-boundary escape immediately before `patcher` in a regex literal",
-    word: /^bpatcher$/u,
-    line: /\\bpatcher/u,
+    // The scan looks one character left of `patcher` and cannot tell an escape
+    // from the tail of a word: a regex `\bpatcher`, and — once the line-length
+    // cap came off — the `\npatcher` that a newline before "patcher" becomes
+    // inside the generated template bodies. Narrowed to the escape itself, so
+    // `npatcher` with no backslash in front of it anywhere else still fails.
+    why: "a string or regex escape whose letter fuses onto a following `patcher`",
+    test: (word, line) =>
+      /^[bfnrtv]patcher/u.test(word) && line.includes(`\\${word}`),
   },
 ];
 
@@ -358,12 +386,19 @@ function justification(rules, word, path, line) {
 }
 
 const FORWARD_WORD = /[A-Za-z0-9_-]*[Bb][Bb][A-Za-z0-9_-]*/gu;
-const REVERSE_WORD = /[A-Za-z0-9_-]*patcher[A-Za-z0-9_-]*/gu;
-// A letter, digit or underscore welded to the left of `patcher`. The lookbehind
-// was `[a-z0-9]`, which saw only damage from the lowercase pass — but the rename
-// ran three substitutions (bb, Bb, BB), so `ApatcherREV` out of `ABBREV` was
+const REVERSE_WORD = /[A-Za-z0-9_-]*(?:patcher|PATCHER)[A-Za-z0-9_-]*/gu;
+// A letter or digit welded to the left of `patcher`. The lookbehind was
+// `[a-z0-9]`, which saw only damage from the lowercase pass — but the rename ran
+// three substitutions (bb, Bb, BB), so `ApatcherREV` out of `ABBREV` was
 // invisible to this scan and, having lost its `bb`, to the forward one too.
-const REVERSE_FUSED = /(?<=[A-Za-z0-9])patcher/u;
+//
+// The uppercase pass needs its own alternative rather than an `i` flag: `PATCHER`
+// welded to a letter is always damage (`APATCHERREV` out of `ABBREV_…`, and the
+// tree holds no legitimate one), while `Patcher` welded to a letter is ordinary
+// PascalCase — `createPatcherSdk` and ~200 more — so matching it case-insensitively
+// would drown the signal it exists to carry. Underscore is deliberately not
+// welded: `__patcher*` globals and `PATCHER_*` env names are the correct shape.
+const REVERSE_FUSED = /(?<=[A-Za-z0-9])(?:patcher|PATCHER)/u;
 
 const findings = [];
 const allowed = new Map();
@@ -387,21 +422,34 @@ for (const path of trackedFiles()) {
   } catch {
     continue;
   }
-  if (raw.includes(0)) continue; // binary by content, whatever the extension
+  // Binary by content, whatever the extension — but decided from a bounded
+  // prefix, not the whole file. Testing every byte excluded two ordinary
+  // TypeScript sources that use a literal NUL as a template-string delimiter
+  // (`PluginNewThreadComposer.tsx`, `packages/db/src/data/events.ts`): they were
+  // read in full and thrown away, so a residual anywhere in either passed the
+  // gate. A real binary is not clean for its first 8 KB.
+  if (raw.subarray(0, 8192).includes(0)) continue;
   const lines = raw.toString("utf8").split("\n");
   for (const [index, line] of lines.entries()) {
-    if (line.length > 4000) continue; // a minified or base64 line, not source
     // Both patterns start with `[A-Za-z0-9_-]*`, so matchAll backtracks from
     // every offset in every line. The overwhelming majority of lines hold
     // neither token; skipping those first is ~10x on the whole scan and
     // cannot change the result, because a match requires one of these
     // substrings to be present.
+    //
+    // This filter is why there is no length cap. A `> 4000` skip sat above it
+    // and silently exempted the generated template and starter-file sources,
+    // whose bodies are single lines of 4 KB to 29 KB carrying the app's own
+    // user-facing prose. Sixteen lines in the tree are that long and hold one
+    // of these substrings, so the backtracking the cap was protecting against
+    // is paid on sixteen lines rather than avoided on all of them.
     if (
       !line.includes("bb") &&
       !line.includes("bB") &&
       !line.includes("Bb") &&
       !line.includes("BB") &&
-      !line.includes("patcher")
+      !line.includes("patcher") &&
+      !line.includes("PATCHER")
     ) {
       continue;
     }

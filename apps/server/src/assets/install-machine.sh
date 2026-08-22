@@ -184,6 +184,12 @@ release_port_for_data_dir() {
 # Migrate reservations from installs created before the global registry. Each
 # per-port mkdir is the allocation lock: concurrent installers cannot claim the
 # same port even after its availability probe closes.
+#
+# The scan covers this fork's own enrollments only. A pre-rename enrollment holds
+# its claim under the old machines directory, which is invisible here, so a
+# stopped daemon's port can be handed out twice and both units then fight over it
+# on restart. That is the cost of moving the directory, which is the point of the
+# rename; the fix if it bites is to pass --host-daemon-port explicitly.
 register_existing_default_ports() {
   for existing_data_dir in "$HOME/.patcher-machines"/*; do
     [ -d "$existing_data_dir" ] || continue

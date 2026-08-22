@@ -21,6 +21,7 @@ import {
   APP_SURFACE_DESKTOP,
   APP_SURFACE_ENV_NAME,
 } from "@patcher/config/app-surface";
+import { PATCHER_PROD_DATA_DIR_NAME } from "@patcher/config/runtime";
 import type { AppKeybindings } from "@patcher/domain";
 import {
   patcherDesktopThemeSchema,
@@ -469,7 +470,8 @@ function createDesktopLogger(): DesktopAutoUpdateLogger {
 function resolveDataDirFromEnv(args: ResolveDataDirFromEnvArgs): string {
   const rawDataDir = args.env.PATCHER_DATA_DIR?.trim();
   if (rawDataDir === undefined || rawDataDir.length === 0) {
-    return join(args.homeDir, ".patcher");
+    // Derived, not restated — same reason as the prod port in types.ts.
+    return join(args.homeDir, PATCHER_PROD_DATA_DIR_NAME);
   }
   if (rawDataDir === "~") {
     return args.homeDir;

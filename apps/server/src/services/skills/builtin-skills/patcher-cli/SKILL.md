@@ -24,9 +24,9 @@ all of them.
   targets. The Add machine installer injects its enrolled daemon's selected
   local API port automatically and atomically reserves it across default and
   custom machine data directories.
-- The main server and source Vite app bind to loopback by default. Use Patcher
-  connect or a private Tailscale Serve URL for remote browsers and execution
-  machines. `--server-bind-host 0.0.0.0` is a compatibility escape hatch only:
+- The main server and source Vite app bind to loopback by default. Use a
+  private Tailscale Serve URL (or an equivalent private reverse proxy) for
+  remote browsers and execution machines. `--server-bind-host 0.0.0.0` is a compatibility escape hatch only:
   the public API is unauthenticated and permits command execution and file
   reads, so wildcard binding requires a trusted network boundary.
 

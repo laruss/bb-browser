@@ -64,8 +64,10 @@ describe("run-dev", () => {
     expect(Object.values(config.ports)).not.toContain(5173);
     expect(Object.values(config.ports)).not.toContain(3334);
     expect(Object.values(config.ports)).not.toContain(3002);
-    expect(Object.values(config.ports)).not.toContain(38986);
-    expect(Object.values(config.ports)).not.toContain(38987);
+    expect(Object.values(config.ports)).not.toContain(PATCHER_PROD_SERVER_PORT);
+    expect(Object.values(config.ports)).not.toContain(
+      PATCHER_PROD_HOST_DAEMON_PORT,
+    );
   });
 
   // What `reservePackagedAppPorts` used to guard: the cloud's dev port range

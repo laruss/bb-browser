@@ -235,7 +235,10 @@ old value on purpose, because the old value is the argument for the new one.
 
 New ports matter even under a clean break: they are what lets a bb install and a
 Patcher install run side by side. `reservePackagedAppPorts()` in `runtime.ts`
-special-cases both prod ports and must move with them.
+special-cased both prod ports and had to move with them — it went with the cloud
+in phase 1 instead (see below), because the only band it protected was the
+cloud's. The property it enforced is now asserted directly in
+`packages/scripts/test/run-dev.test.ts`.
 
 Deliberately **not** renamed: the drizzle column `rollback_bb_version` (62), the
 table `bb_connect` (37), and the tasks plugin's own column

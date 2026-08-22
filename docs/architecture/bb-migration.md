@@ -156,8 +156,10 @@ points, plugin permissions, plugin host process, browser tools for agents.
 **Out of product scope, removed in the Patcher rename** (see
 [rename-to-patcher.md](rename-to-patcher.md)): `apps/web` — per the recovered
 overview, the getbb.app marketing site plus bb connect auth/dashboard on
-Cloudflare Workers — and `apps/connect`. Plan §17 forbids removing inherited
-systems before their dependencies are understood; neither has been audited.
+Cloudflare Workers — and `apps/connect`. Plan §17 forbade removing them before
+their dependencies were understood; the rename's phase 1 did that audit and
+removed both, along with `plugins/connect`, `packages/connect-db`,
+`packages/connect-client` and the tunnel packages.
 
 ## Invariants that must not break
 
@@ -566,19 +568,24 @@ is now 0 errors, 151 warnings — the warning count the baseline had.
 ### Finding 8: a global override cannot express "only this major"
 
 Pinning the test toolchain the same way looked correct and was not. `overrides`
-applies to every consumer, and this workspace runs **two majors on purpose**:
-most packages declare `vitest@^4.1.1`, but `packages/tunnel-client` and
-`packages/tunnel-contract` declare `^3.0.0` (the baseline resolved both 3.2.6 and
-4.1.1). A blanket `"vitest": "4.1.1"` dragged those two across a major boundary
-and broke `packages/tunnel-contract`'s typecheck — `@types/node` had reached
-it through vitest 3's graph, so `Buffer` stopped existing. `vite` has the same
-shape (6.x transitively, 8.x declared).
+applies to every consumer, and at the time this workspace ran **two majors on
+purpose**: most packages declared `vitest@^4.1.1`, but `packages/tunnel-client`
+and `packages/tunnel-contract` declared `^3.0.0` (the baseline resolved both
+3.2.6 and 4.1.1). A blanket `"vitest": "4.1.1"` dragged those two across a major
+boundary and broke `packages/tunnel-contract`'s typecheck — `@types/node` had
+reached it through vitest 3's graph, so `Buffer` stopped existing. `vite` has the
+same shape (6.x transitively, 8.x declared).
 
 The pins for `vitest` and `vite` were dropped. What they were meant to achieve
 happened anyway: once installed, the lockfile records `vitest@4.1.1` and
-`vite@8.0.12` for the `^4`/`^8` consumers while `tunnel-*` keeps vitest 3, which
+`vite@8.0.12` for the `^4`/`^8` consumers while `tunnel-*` kept vitest 3, which
 is exactly the baseline's shape. `jsdom` and `msw` stayed pinned — each has a
 single declared major across the workspace, so there is no boundary to cross.
+
+**Since the Patcher rename**, the two `tunnel-*` packages are gone with the
+cloud and every one of the workspace's remaining `vitest` declarations is
+`^4.1.1`, so the boundary this finding is about no longer exists. The rule below
+is why it is still worth reading, not the vitest example.
 
 Rule for later: check every declared range in the workspace before adding an
 override, not just the one that drifted.

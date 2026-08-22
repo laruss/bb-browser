@@ -93,9 +93,12 @@ export function registerHostRoutes(app: Hono, deps: AppDeps): void {
     return context.json(requireNonDestroyedHostWithStatus(deps, updated.id));
   });
 
-  // Owner-session only, and deliberately absent from the SDK and the `patcher` CLI:
-  // this ceiling is what stops one paired machine from running privileged work
-  // on another, so an agent on any machine must not be able to raise it.
+  // Deliberately absent from the SDK and the `patcher` CLI: this ceiling is what
+  // stops one paired machine from running privileged work on another, so nothing
+  // an agent can reach should raise it. The server-side half of that — refusing
+  // a machine credential here — went with the connect gate that stamped the
+  // caller kind, so this route now sits on the public API's single trust
+  // boundary like the rest of the file.
   patch(routes.updatePermissionCeiling, (context, payload) => {
     const hostId = context.req.param("id");
     requireMutableHost(deps, hostId);

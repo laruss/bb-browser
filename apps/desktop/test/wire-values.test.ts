@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import * as browserIpc from "../src/desktop-browser-ipc.js";
 import * as defaultBrowser from "../src/desktop-default-browser.js";
 import * as existingServerDialogIpc from "../src/existing-server-dialog-ipc.js";
+import * as logViewerIpc from "../src/log-viewer-contract.js";
 import * as serverUrlDialogIpc from "../src/server-url-dialog-ipc.js";
 import * as updateIpc from "../src/desktop-update-ipc.js";
 import * as windowCommandIpc from "../src/desktop-window-command-ipc.js";
@@ -44,6 +45,24 @@ describe("desktop wire values", () => {
       }
     },
   );
+
+  // Not in the map above: these four sit on the `patcher:` prefix rather than
+  // `patcher-desktop:`, so the shape assertion cannot carry them and leaving
+  // them out left the log viewer's whole main <-> preload surface unpinned.
+  // Stated as the values, which is what the boundary actually agrees on.
+  it("keeps the log-viewer channels on their renamed names", () => {
+    expect({
+      append: logViewerIpc.LOG_VIEWER_APPEND_CHANNEL,
+      copy: logViewerIpc.LOG_VIEWER_COPY_CHANNEL,
+      openLogsFolder: logViewerIpc.LOG_VIEWER_OPEN_LOGS_FOLDER_CHANNEL,
+      snapshot: logViewerIpc.LOG_VIEWER_SNAPSHOT_CHANNEL,
+    }).toEqual({
+      append: "patcher:log-viewer:append",
+      copy: "patcher:log-viewer:copy",
+      openLogsFolder: "patcher:log-viewer:open-logs-folder",
+      snapshot: "patcher:log-viewer:snapshot",
+    });
+  });
 
   it("keeps the browsed-page partition on its own name", () => {
     expect(PATCHER_BROWSER_PARTITION).toBe("persist:patcher-browser");

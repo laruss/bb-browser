@@ -1002,6 +1002,11 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
     row: InstalledPluginRow,
     manifest: PluginManifest,
   ): Promise<string> {
+    // Every path that does not end up loading a prebuilt bundle clears the note,
+    // including these two: a plugin reinstalled from a path, or updated to a
+    // version that ships no `dist/server.js`, otherwise keeps the version gap
+    // recorded for the artifact it no longer loads, and the next unrelated load
+    // failure is reported as an SDK mismatch.
     if (
       row.sourceKind === "path" ||
       (row.sourceKind === "builtin" &&
@@ -1011,12 +1016,14 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
           rootDir: row.rootDir,
         }))
     ) {
+      prebuiltServerSdkAhead.delete(row.id);
       return manifest.serverEntry;
     }
     const distJsPath = join(row.rootDir, "dist", "server.js");
     try {
       await stat(distJsPath);
     } catch {
+      prebuiltServerSdkAhead.delete(row.id);
       return manifest.serverEntry; // no prebuilt bundle shipped — normal
     }
     let meta: { sdkMajor: number; sdkVersion: string } | null = null;
