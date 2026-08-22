@@ -193,7 +193,7 @@ list only the reader can judge. `sites` is on the wire (`InstalledPlugin.sites`)
 ready for that surface; until it exists, a plugin installed through the app's own
 dialog discloses its sites nowhere the user will look.
 
-Not to be confused with `patcher.hosts` in the plugin API, which is enrolled machines.
+Not to be confused with `patcher.sdk.hosts`, which is enrolled machines.
 These are websites.
 
 #### Two permissions over one list

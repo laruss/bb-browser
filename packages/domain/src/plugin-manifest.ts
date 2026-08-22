@@ -70,8 +70,8 @@ export const pluginPatcherManifestSchema = z
      * *where*, not *what* — and because it is the line the user reads before
      * installing. `https` only, except loopback over plain http.
      *
-     * Not to be confused with `patcher.hosts` in the plugin API, which is the
-     * enrolled machines a plugin can reach; these are websites.
+     * Not to be confused with `patcher.sdk.hosts`, which is the enrolled
+     * machines a plugin can reach; these are websites.
      */
     sites: z.array(z.string()).optional(),
     skills: z.array(requiredManifestString).optional(),

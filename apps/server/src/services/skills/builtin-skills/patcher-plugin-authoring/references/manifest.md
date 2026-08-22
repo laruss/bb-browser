@@ -114,7 +114,7 @@ The complete manifest, with the optional fields SKILL.md leaves out:
   — membership, not containment — so code picks from what the user read and cannot
   widen it. Declare a second pattern rather than trying to broaden one.
 
-  `patcher.sites` is nothing to do with `patcher.hosts` in the plugin API, which is enrolled
+  `patcher.sites` is nothing to do with `patcher.sdk.hosts`, which is enrolled
   machines. Frontend `matches` on a leading panel is also unrelated and costs
   nothing: that is Patcher's own chrome reacting to the address bar, not code reaching
   into a page.
@@ -133,7 +133,7 @@ The complete manifest, with the optional fields SKILL.md leaves out:
   not sandbox a plugin — it records what the plugin uses, shows it to whoever
   installs it, and refuses calls it did not ask for. `patcher.log`, `patcher.settings`,
   `patcher.storage`, `patcher.http`, `patcher.rpc`, `patcher.realtime`, `patcher.background`,
-  `patcher.cli`, `patcher.agents`, `patcher.ui`, `patcher.events`, `patcher.hosts` and
+  `patcher.cli`, `patcher.agents`, `patcher.ui`, `patcher.events` and
   `patcher.browser.getStatus()` are ungated: they reach the plugin's own resources
   or report only whether a browser window is connected.
 

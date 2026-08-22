@@ -324,7 +324,7 @@ answer is a list of sites rather than a capability:
 one without the other reaches nothing. `patcher.sites` takes URL globs — `**` crosses
 `/`, `*` stops at one — `https` only, except loopback over plain http
 (`http://localhost:5173/**`). Anything else is refused by the manifest, before the
-install. Unrelated to `patcher.hosts` in this API, which is enrolled machines; these are
+install. Unrelated to `patcher.sdk.hosts`, which is enrolled machines; these are
 websites.
 
 ```ts
@@ -555,7 +555,9 @@ patcher.browser.registerExternalLinkHandler((link) => {
   }
   // ...file a paper away without opening anything.
   if (host === "arxiv.org") {
-    void patcher.kv.set(`reading:${link.url}`, { addedAt: Date.now() });
+    void patcher.storage.kv.set(`reading:${link.url}`, {
+      addedAt: Date.now(),
+    });
     return { handled: true };
   }
   return null; // declines, and the next handler is asked

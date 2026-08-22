@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { pluginPatcherManifestSchema } from "@patcher/domain";
 import * as pluginSdkApp from "@patcher/plugin-sdk/app";
 import {
   type PatcherPluginApi,
@@ -389,6 +390,36 @@ describe("patcher-plugin-authoring skill", () => {
         `patcher.${key}`,
       );
     }
+  });
+
+  // The other direction, and the one that was missing. The assertion above
+  // proves the skill covers the API; nothing proved the API covers the skill,
+  // so a namespace the fork *removed* went on being documented and CI stayed
+  // green. An agent with this skill loaded then emits a call that throws.
+  //
+  // `patcher.<x>` is legitimately three things in this text: a member of
+  // PatcherPluginApi, a field of the manifest's `patcher` block, and the
+  // page-script global's `ready`. All three are derived rather than listed —
+  // the manifest fields come out of the schema's own shape — so the only
+  // hand-maintained part is the page-script name.
+  it("documents no plugin API that does not exist", () => {
+    const manifestFields = Object.keys(pluginPatcherManifestSchema.shape);
+    const pageScriptMembers = ["ready", "rpc"];
+    const known = new Set<string>([
+      ...PATCHER_PLUGIN_API_KEYS,
+      ...manifestFields,
+      ...pageScriptMembers,
+    ]);
+
+    const documented = new Set(
+      [...skill.matchAll(/\bpatcher\.([A-Za-z][A-Za-z0-9]*)/gu)].map(
+        (match) => match[1],
+      ),
+    );
+
+    expect([...documented].filter((name) => !known.has(name)).sort()).toEqual(
+      [],
+    );
   });
 
   it("documents every @patcher/plugin-sdk/app runtime export", () => {

@@ -1087,8 +1087,8 @@ list the user read before installing and cannot widen it, and nobody has to trus
 answer to "is this glob inside that glob". `https` only, except loopback over plain
 http, for the reason a registered search engine's template is: standing access to a
 site the user is signed in to, over a connection anyone on the path can
-impersonate, is not a plugin's call to make. `patcher.sites` is unrelated to `patcher.hosts`
-in the plugin API, which is enrolled machines; these are websites.
+impersonate, is not a plugin's call to make. `patcher.sites` is unrelated to
+`patcher.sdk.hosts`, which is enrolled machines; these are websites.
 
 Not to be confused with the _frontend_ `contentScripts.register`, which is trusted
 code in Patcher's own page. This is CSS in a browsed page, and it was the first of the two

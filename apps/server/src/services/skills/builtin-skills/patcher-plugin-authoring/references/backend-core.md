@@ -48,7 +48,8 @@ give non-secrets defaults and handle missing secrets explicitly.
 
 ## patcher.storage
 
-- `patcher.storage.kv` — namespaced JSON key-value rows in patcher.db:
+- `patcher.storage.kv` — namespaced JSON key-value rows in the plugin's own
+  database:
   `get<T>(key)`, `set(key, value)`, `delete(key)`, `list(prefix?)`. Values
   are capped at **256KB each** — kv is for cursors, links, and small state;
   caches and datasets go in the plugin database.

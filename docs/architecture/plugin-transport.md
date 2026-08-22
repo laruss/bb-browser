@@ -178,21 +178,23 @@ Building it surfaced something the catalogue had no field for.
 `createPluginApi` takes three capabilities as **synchronous** functions, and
 the `patcher` members behind them do not await:
 
-| Path                       | Why it cannot be a request                                 |
-| -------------------------- | ---------------------------------------------------------- |
-| `browser.getStatus`        | read from `patcher.agents.configure()`, which cannot await |
-| `agents.registerTool`      | rejects a name another plugin took, at registration        |
-| `hosts.declareSharedPorts` | validates against host policy and returns void             |
+| Path                  | Why it cannot be a request                                 |
+| --------------------- | ---------------------------------------------------------- |
+| `browser.getStatus`   | read from `patcher.agents.configure()`, which cannot await |
+| `agents.registerTool` | rejects a name another plugin took, at registration        |
 
 Their arguments and results serialise perfectly, which is exactly why they were
-easy to miss. `synchronousHostState` now marks them, and the answers differ:
-the first two get a pushed copy (a stale copy can only produce a worse error
-message, never a wrong decision, and the host stays authoritative for tool
-names because it is the only process that sees every plugin). The third must
-not — a port policy is a decision, not a fact — so the host validates what it
-is told and a refusal reaches the plugin as a log line rather than a throw.
-**That is the one place this boundary is not transparent**, and it is recorded
-rather than smoothed over.
+easy to miss. `synchronousHostState` marks them, and both get a pushed copy: a
+stale copy can only produce a worse error message, never a wrong decision, and
+the host stays authoritative for tool names because it is the only process that
+sees every plugin.
+
+There was a third, `hosts.declareSharedPorts`, and it was the one place this
+boundary was not transparent: a port policy is a decision rather than a fact, so
+the host validated what it was told and a refusal reached the plugin as a log
+line rather than a throw. Shared ports went with the cloud, and the asymmetry
+went with them — recorded here because the shape will come back the first time a
+plugin needs a decision rather than a value.
 
 ## Topology, decided by measurement
 

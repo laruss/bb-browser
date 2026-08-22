@@ -251,6 +251,14 @@ const REVERSE_ALLOW = [
     why: "dispatcher and CommandDispatchError; ~190 of them and none is rename damage",
     word: /dispatch/iu,
   },
+  {
+    // The scan looks one character left of `patcher` and cannot tell a regex
+    // escape from the tail of a word. Narrowed to the escape itself, so
+    // `bpatcher` anywhere else still fails.
+    why: "a `\\b` word-boundary escape immediately before `patcher` in a regex literal",
+    word: /^bpatcher$/u,
+    line: /\\bpatcher/u,
+  },
 ];
 
 // ---------------------------------------------------------------------------
