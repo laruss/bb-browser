@@ -87,6 +87,16 @@ the frozen `bb.ready`. `apps` 3 569 / 665 files, `packages` 3 016 / 298,
 `plugins` 719 / 89, `examples` 182 / 42, `docs` 245 / 12, `qa` 240 / 4,
 `tests` 56 / 16, `scripts` 25 / 8, `.github` 65 / 5.
 
+After phase 6 the tree is at **4 410 occurrences across 746 files**, and 2 291
+of those are the bare `bb` of a CLI invocation — `bb thread`, `bb plugin` and
+friends, which phase 7 renames with the binary. The rest is `bb-app` 380,
+`bb-cli` 86, the 78 frozen `bb-desktop:*` channel values, `bb_connect` 32,
+`bb.ready` 15, `bb-migration.md` 14, `bbDesktop` 13, and a short tail of
+release-artifact names and traps. `apps` 1 737 / 404 files, `packages`
+1 460 / 200, `plugins` 574 / 68, `qa` 233 / 4 (all `bb thread` smoke scripts),
+`docs` 107 / 12, `examples` 81 / 28, `tests` 15 / 7, `scripts` 11 / 6,
+`.github` 49 / 5.
+
 ## Traps
 
 These are the reasons this is a phased plan and not one `sed`.
@@ -117,12 +127,13 @@ These are the reasons this is a phased plan and not one `sed`.
 
 Renamed as identifiers, **not** as values.
 
-| What                                    | Where                                          | Why                                                                                                                                                                                                                                                                                     |
-| --------------------------------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 74 × `"bb-desktop:*"` IPC channel names | `apps/desktop/src/desktop-browser-ipc.ts` etc. | bb-migration.md invariant 2, and it applies to Patcher against itself: the shell attaches to any healthy server with **no version handshake**, so renderer and main process routinely come from different builds. Renaming a channel value breaks old-SPA/new-shell instantly.          |
-| `exposeInMainWorld("bbDesktop")`        | `apps/desktop/src/preload.ts`                  | Same mixed-build boundary. **`bbLogViewer` was listed here and does not belong**: the log viewer's HTML is a template literal built by the same main process that installs its preload and handed to `loadURL`, so both sides are always one build. It was renamed outright in phase 3. |
-| `exposeInIsolatedWorld(..., "bb", ...)` | `apps/desktop/src/page-script-preload.ts:112`  | Public page-script API (`bb.ready`). Same boundary.                                                                                                                                                                                                                                     |
-| `persist:bb-browser`                    | `apps/desktop/src/desktop-browser-view.ts:353` | The partition name is the on-disk directory. Renaming it wipes every site cookie and session. No user-facing value in changing it.                                                                                                                                                      |
+| What                                    | Where                                             | Why                                                                                                                                                                                                                                                                                                                                                            |
+| --------------------------------------- | ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 74 × `"bb-desktop:*"` IPC channel names | `apps/desktop/src/desktop-browser-ipc.ts` etc.    | bb-migration.md invariant 2, and it applies to Patcher against itself: the shell attaches to any healthy server with **no version handshake**, so renderer and main process routinely come from different builds. Renaming a channel value breaks old-SPA/new-shell instantly.                                                                                 |
+| `exposeInMainWorld("bbDesktop")`        | `apps/desktop/src/preload.ts`                     | Same mixed-build boundary. **`bbLogViewer` was listed here and does not belong**: the log viewer's HTML is a template literal built by the same main process that installs its preload and handed to `loadURL`, so both sides are always one build. It was renamed outright in phase 3.                                                                        |
+| `exposeInIsolatedWorld(..., "bb", ...)` | `apps/desktop/src/page-script-preload.ts:112`     | Public page-script API (`bb.ready`). Same boundary.                                                                                                                                                                                                                                                                                                            |
+| `"bb-host-daemon.v1"`                   | `packages/host-daemon-contract/src/session.ts:32` | The WebSocket subprotocol, and the only frozen string phase 6 discovered. It is negotiated **before** the protocol-version handshake, so renaming it turns an out-of-date daemon's "Needs update" into a socket error with nothing to read. The version number is what should reject an old daemon; the subprotocol is what lets it get far enough to be told. |
+| `persist:bb-browser`                    | `apps/desktop/src/desktop-browser-view.ts:353`    | The partition name is the on-disk directory. Renaming it wipes every site cookie and session. No user-facing value in changing it.                                                                                                                                                                                                                             |
 
 **Refinement, not a rename:** where the frozen string is a _developer-facing
 API_ — `bbDesktop` and the page-script `bb` — expose the new name **in addition**
@@ -618,25 +629,98 @@ files that have never been prettier-clean and only looked new because they had
 just been renamed. Regenerating put them back, and the tree settles at 417
 pre-existing failures.
 
-### Phase 6 — Product identity
+### Phase 6 — Product identity — **done** (`c4c65f27e`), except the artwork
 
-- README, CHANGELOG, CONTRIBUTING, `docs/**`, `qa/**`, `AGENTS.md`.
-- `packages/templates/src/templates/bb-guide-*.md` (11 files, ~430 mentions) —
-  product surface, not repo docs: they are served to agents and users through
-  the `guide` SDK area (`packages/sdk/src/areas/guide.ts`) and the CLI. Their
-  template keys (`bbGuideThreads`, …) rename with them; the guide slugs
-  (`threads`, `plugins`, …) carry no `bb` and stay.
-- `packages/templates/src/plugin-scaffold.ts` (99).
-- UI copy: `create-via-prompt-examples.tsx`, `AddMachineDialog.tsx`, settings
-  sections, browser-surface comments.
-- `<title>`, `apple-mobile-web-app-title`, the 9 `manifest*.webmanifest` files
-  and `apps/app/scripts/generate-pwa-icons.mjs`.
-- Electron `productName`, `applicationName`, window title, appId, icons.
-- New logo and icon artwork (7 raster + 1 SVG source).
+758 files, +3 970 / −3 723, 20 renames. By tree: `apps` 459, `packages` 183,
+`plugins` 47, `examples` 31, `tests` 12, `docs` 10, `scripts` 5, `qa` 3,
+`.github` 2, six at the root.
 
-**Verify:** `bunx turbo run build`; `smoke:packaged`; register the packaged
-bundle with `lsregister`, confirm Launch Services reports Patcher as an
-available default browser, then restore.
+**The line this phase runs along: the product renames, the binary does not.**
+`bb` in prose is the product; `bb` in front of a subcommand is the executable,
+and that is phase 7. So the pass renames on a 33-name subcommand list, with an
+article rule in front of it so "a bb plugin" and "the bb thread" — noun
+phrases, not invocations — move anyway. The result reads correctly and stays
+true: docs say Patcher does X and still tell you to run `bb foo`, which is the
+command that exists until the bins move. 2 291 invocations are left standing
+on purpose.
+
+**A bare `bb` corrupted 17 binary assets, and the build caught it.** The
+byte-preserving latin1 applier that carried phases 2–5 has no binary guard; it
+never needed one, because `BB_`, `@bb/` and `bb-plugin` do not occur in
+compressed data. A two-byte `bb` next to arbitrary bytes occurs constantly.
+Eight PNGs, two ICNS files and the screenshot came back as
+`pngload: libspng read error` from `@patcher/app:build`, were restored from
+`HEAD`, and the applier now skips any file with a NUL byte **unless** it has a
+text extension — the qualifier matters, because `PluginNewThreadComposer.tsx`
+and `packages/db/src/data/events.ts` carry literal NULs and still have to be
+rewritten (trap 2 of phase 2).
+
+**The anchor that protected code also protected the assertions.** To spare
+URLs, binaries and CLI strings, the prose rule refused a `bb` preceded by `/`,
+`"`, `'` or a backtick. Those are exactly the characters that open a string or
+a regex literal, so the _source_ moved and the _expectation_ did not: six
+consecutive full test runs each surfaced one more package with a stale literal
+— `/bb’s own shortcut wins/u`, `"Provider: bb"`, `refs/heads/bb/probe`,
+`/tmp/bb-claude-code-bridge.mjs`, `github.com/bb/browser`, `"## bb acme"`.
+Each fix was one line; the lesson is to follow the anchored pass with a second
+one restricted to test files, with the quote characters allowed.
+
+**Names that turned out to be more than prose.**
+
+- **`bb/` is a git branch prefix** written into the _user's_ repository by
+  `thread-create-helpers.ts`. Now `patcher/`.
+- **`[bb system]` is parsed, not decorative.** `computeMutedPrefixLength`
+  matches `startsWith("[bb")` to find where a generated message's chrome ends,
+  and a test hard-coded the prefix length. Now `[Patcher …]`, with the two
+  lengths recomputed (13 → 18, 12 → 17).
+- **`PATCHER_THREAD_NAME_TAG = "bb"`** is the `[bb]` tag put on thread titles
+  forwarded to a provider, and stripped on the way back. Now `Patcher`.
+- **`machine-auth@bb.internal`** is the persisted system-user email; `bbde_`
+  and `bbdh_` are the prefixes on issued enroll and host keys; `bb-shared` is a
+  skill provider id that crosses the daemon wire; `bb-global-skills-v1` is fed
+  into a hash. All moved — the daemon wire is covered by the 108 bump, the rest
+  by the clean break.
+- **The skills provider sentinel `"bb"`** was both the filter value and its own
+  display label. Split: value `patcher`, label `Patcher`.
+
+**Phase-5 residue this phase found:** `engine: "bb" | "patcherPluginSdk"` in
+the update resolver — the discriminant that names which `engines` field failed,
+left behind when `engines.bb` became `engines.patcher` — and eight doc comments
+still calling the plugin API object `` `bb` ``.
+
+**A gap for phase 7:** `headers.set("originator", "bb")` goes to the ChatGPT
+backend from two places, next to a `bb-host-daemon` User-Agent. Outbound
+identity to a third party, so it belongs with the skills-registry UA in phase 7
+rather than here.
+
+**Deliberately kept.** `docs/architecture/bb-migration.md` keeps its filename:
+it names the thing being migrated _from_, and `patcher-migration.md` would
+misdescribe it. Its title is now `bb → Patcher: Migration Map` — the prose pass
+had made it `Patcher → Agent Browser`, which is nonsense in both halves. Add
+the filename to the phase-8 allow-list.
+
+**The appId is applied but still provisional.** `dev.bb.desktop` →
+`app.patcher.desktop`, and the launchd label follows to
+`app.patcher.host-daemon.*`. Nothing has shipped as Patcher yet, so changing it
+again before the first release costs nothing; after that it is a new
+application.
+
+**Not done: the artwork.** `assets/bb-logo*.{png,svg}` (5) and
+`apps/desktop/assets/icon*.{png,icns}` (5) still carry the old mark. Their
+names were left alone on purpose — renaming a file to `patcher-logo.svg` while
+the image still says bb hides an unfinished deliverable from both the reader
+and the phase-8 audit. They need design, not a rename.
+
+**Verified** on Node 22.20.0: `typecheck --force` 54/54, `lint` clean (0
+errors, 152 pre-existing warnings), `build` 13/13,
+`env -u CLAUDE_CONFIG_DIR bun run test` 54/54, generated set with no drift. A
+later run showed a single `@patcher/host-watcher` failure that passed alone at
+20/20 — the load-sensitivity caveat. `smoke:packaged` and the `lsregister`
+default-browser check are deferred with the artwork: both exercise a packaged
+bundle whose icons are the part still outstanding.
+
+Formatting: 493 files fail prettier, 417 already at the parent commit; 76 were
+formatted.
 
 ### Phase 7 — External identity
 
@@ -682,5 +766,6 @@ Add `scripts/rename-audit.mjs`, wired into CI:
 
 - The new GitHub org/repo name.
 - npm availability of `patcher-app` and of the `@patcher` scope.
-- The desktop appId — `app.patcher.desktop` is a proposal.
+- The desktop appId — `app.patcher.desktop` is applied but provisional; it
+  is free to change until the first Patcher release, not after.
 - Logo and icon artwork: eight files that need design, not a rename.
