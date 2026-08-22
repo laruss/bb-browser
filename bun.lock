@@ -155,7 +155,7 @@
       "name": "@patcher/cli",
       "version": "0.0.1",
       "bin": {
-        "bb": "./bin/bb",
+        "patcher": "./bin/patcher",
         "title": "./bin/title",
       },
       "dependencies": {
@@ -188,8 +188,8 @@
       "name": "@patcher/desktop",
       "version": "0.37.0",
       "dependencies": {
-        "bb-app": "workspace:*",
         "electron-updater": "^6.8.3",
+        "patcher-app": "workspace:*",
         "semver": "^7.7.0",
         "zod": "^4.3.6",
       },
@@ -515,43 +515,6 @@
         "vitest": "^4.1.1",
       },
     },
-    "packages/bb-app": {
-      "name": "bb-app",
-      "version": "0.37.0",
-      "bin": {
-        "bb-app": "dist/bb-app.js",
-        "bb": "dist/bb.js",
-        "bb-server": "dist/bb-server.js",
-        "bb-host-daemon": "dist/bb-host-daemon.js",
-      },
-      "dependencies": {
-        "@earendil-works/pi-agent-core": "0.84.0",
-        "@earendil-works/pi-ai": "0.84.0",
-        "@earendil-works/pi-coding-agent": "0.84.0",
-        "@earendil-works/pi-tui": "0.84.0",
-        "@parcel/watcher": "2.5.6",
-        "better-sqlite3": "12.10.0",
-        "hono": "^4.7.0",
-        "jiti": "^2.6.1",
-        "node-pty": "1.1.0",
-        "pino": "^9.6.0",
-        "pino-pretty": "^13.0.0",
-        "pino-roll": "^4.0.0",
-        "zod": "4.3.6",
-      },
-      "devDependencies": {
-        "@patcher/config": "workspace:*",
-        "@patcher/sdk": "workspace:*",
-        "@patcher/tsconfig": "workspace:*",
-        "@types/node": "^22.0.0",
-        "rimraf": "^6.1.0",
-        "rollup": "^4.62.2",
-        "rollup-plugin-dts": "^6.4.1",
-        "typescript": "^6.0.2",
-        "typescript-7": "npm:typescript@^7.0.2",
-        "vitest": "^4.1.1",
-      },
-    },
     "packages/config": {
       "name": "@patcher/config",
       "version": "0.0.1",
@@ -729,6 +692,43 @@
         "@types/node": "^22.0.0",
         "typescript": "^6.0.2",
         "typescript-7": "npm:typescript@^7.0.2",
+      },
+    },
+    "packages/patcher-app": {
+      "name": "patcher-app",
+      "version": "0.37.0",
+      "bin": {
+        "patcher-app": "dist/patcher-app.js",
+        "patcher": "dist/patcher.js",
+        "patcher-server": "dist/patcher-server.js",
+        "patcher-host-daemon": "dist/patcher-host-daemon.js",
+      },
+      "dependencies": {
+        "@earendil-works/pi-agent-core": "0.84.0",
+        "@earendil-works/pi-ai": "0.84.0",
+        "@earendil-works/pi-coding-agent": "0.84.0",
+        "@earendil-works/pi-tui": "0.84.0",
+        "@parcel/watcher": "2.5.6",
+        "better-sqlite3": "12.10.0",
+        "hono": "^4.7.0",
+        "jiti": "^2.6.1",
+        "node-pty": "1.1.0",
+        "pino": "^9.6.0",
+        "pino-pretty": "^13.0.0",
+        "pino-roll": "^4.0.0",
+        "zod": "4.3.6",
+      },
+      "devDependencies": {
+        "@patcher/config": "workspace:*",
+        "@patcher/sdk": "workspace:*",
+        "@patcher/tsconfig": "workspace:*",
+        "@types/node": "^22.0.0",
+        "rimraf": "^6.1.0",
+        "rollup": "^4.62.2",
+        "rollup-plugin-dts": "^6.4.1",
+        "typescript": "^6.0.2",
+        "typescript-7": "npm:typescript@^7.0.2",
+        "vitest": "^4.1.1",
       },
     },
     "packages/plugin-build": {
@@ -2757,8 +2757,6 @@
 
     "baseline-browser-mapping": ["baseline-browser-mapping@2.11.13", "", { "bin": { "baseline-browser-mapping": "dist/cli.cjs" } }, "sha512-k9HNuUVMlqVjQ9UHzfPjIqiDbWw7WqT1AoT7GL8VwvF3r0ZfArtgiSPAlmupyNquNgOJHTuH4CKYf8ttMTWBTQ=="],
 
-    "bb-app": ["bb-app@workspace:packages/bb-app"],
-
     "bcp-47-match": ["bcp-47-match@2.0.3", "", {}, "sha512-JtTezzbAibu8G0R9op9zb3vcWZd9JF6M0xOYGPn0fNCd7wOpRB1mU2mH9T8gaBGbAAyIIVgB2G7xG0GP98zMAQ=="],
 
     "better-auth": ["better-auth@1.6.27", "", { "dependencies": { "@better-auth/core": "1.6.27", "@better-auth/drizzle-adapter": "1.6.27", "@better-auth/kysely-adapter": "1.6.27", "@better-auth/memory-adapter": "1.6.27", "@better-auth/mongo-adapter": "1.6.27", "@better-auth/prisma-adapter": "1.6.27", "@better-auth/telemetry": "1.6.27", "@better-auth/utils": "0.4.2", "@better-fetch/fetch": "1.3.1", "@noble/ciphers": "^2.1.1", "@noble/hashes": "^2.0.1", "better-call": "1.4.0", "defu": "^6.1.4", "jose": "^6.1.3", "kysely": "^0.28.17 || ^0.29.0", "nanostores": "^1.1.1", "zod": "^4.3.6" }, "peerDependencies": { "@lynx-js/react": "*", "@prisma/client": "^5.0.0 || ^6.0.0 || ^7.0.0", "@sveltejs/kit": "^2.0.0", "@tanstack/react-start": "^1.0.0", "@tanstack/solid-start": "^1.0.0", "better-sqlite3": "^12.0.0", "drizzle-kit": ">=0.31.4", "drizzle-orm": "^0.45.2", "mongodb": "^6.0.0 || ^7.0.0", "mysql2": "^3.0.0", "next": "^14.0.0 || ^15.0.0 || ^16.0.0", "pg": "^8.0.0", "prisma": "^5.0.0 || ^6.0.0 || ^7.0.0", "react": "^18.0.0 || ^19.0.0", "react-dom": "^18.0.0 || ^19.0.0", "solid-js": "^1.0.0", "svelte": "^4.0.0 || ^5.0.0", "vitest": "^2.0.0 || ^3.0.0 || ^4.0.0", "vue": "^3.0.0" }, "optionalPeers": ["@lynx-js/react", "@prisma/client", "@sveltejs/kit", "@tanstack/react-start", "@tanstack/solid-start", "better-sqlite3", "drizzle-kit", "drizzle-orm", "mongodb", "mysql2", "next", "pg", "prisma", "react", "react-dom", "solid-js", "svelte", "vitest", "vue"] }, "sha512-x3jyxpAiBSsMO/DaXMFSVwM8bTqnYZlCKsZxBV43zL3ZtsGa/CzeUuNKxPT2Lsz7ahTBY90Ku1tibN6nRpVEbw=="],
@@ -3878,6 +3876,8 @@
     "partial-json": ["partial-json@0.1.7", "", {}, "sha512-Njv/59hHaokb/hRUjce3Hdv12wd60MtM9Z5Olmn+nehe0QDAsRtRbJPvJ0Z91TusF0SuZRIvnM+S4l6EIP8leA=="],
 
     "partysocket": ["partysocket@1.3.0", "", { "dependencies": { "event-target-polyfill": "^0.0.4" }, "peerDependencies": { "react": ">=17" }, "optionalPeers": ["react"] }, "sha512-1zToNyolZFK/7nuAw/K2bZrNzFqaZyRoCEkS+9vG6WSC5ikrN6qWRe96q6ImU51uptz2r+dAwSkwhJVdQi4LiA=="],
+
+    "patcher-app": ["patcher-app@workspace:packages/patcher-app"],
 
     "patcher-plugin-agent-enrichment": ["patcher-plugin-agent-enrichment@workspace:examples/plugins/agent-enrichment"],
 
