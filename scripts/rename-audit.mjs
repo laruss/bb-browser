@@ -37,19 +37,40 @@ const BINARY_EXTENSIONS =
   /\.(png|jpg|jpeg|gif|webp|avif|ico|icns|woff2?|ttf|otf|eot|zip|gz|tgz|pdf|mp4|mov|webm|wasm|node|db|sqlite)$/iu;
 
 // --- shared shapes ---------------------------------------------------------
-// A digest, a UUID, or one of the opaque provider ids that litter recorded
-// fixtures. None of these is a name anyone chose, so `bb` inside one is noise.
-const HEX_OR_UUID = /^[0-9a-f]{6,}$|^[0-9a-f-]{20,}$/iu;
+// A digest, a UUID, a colour, or one of the opaque provider ids that litter
+// recorded fixtures. None of these is a name anyone chose, so `bb` inside one
+// is noise.
+//
+// Stated as the exact shapes rather than as "six or more hex characters", which
+// is what this was and which let `bbdeadbeef` through — a plausible CSS class or
+// fixture id, spelled entirely in hex letters. Measured before narrowing: the
+// loose rule justified 134 occurrences and these three shapes justify the same
+// 134, so the precision costs nothing.
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
+// md5, sha1, sha256. A digest of another length is not one anyone pasted.
+const HEX_DIGEST = /^(?:[0-9a-f]{32}|[0-9a-f]{40}|[0-9a-f]{64})$/iu;
+// #rrggbb or #rrggbbaa, and only where the `#` is actually written: the theme
+// files are full of these and `b8bb26` is a real gruvbox green.
+const HEX_COLOUR = /^[0-9a-f]{6}(?:[0-9a-f]{2})?$/iu;
+const isHexColour = (word, line) =>
+  HEX_COLOUR.test(word) && line.includes(`#${word}`);
 const OPAQUE_ID =
   /^(?:toolu|call|req|msg|turn|ws|thr|env|proj|src|run|sha256|sha512)[_-][A-Za-z0-9_-]{6,}$/u;
 // A long alphanumeric run that also carries a shouted uppercase run or several
 // digits is a base64 or minified fragment, not an identifier someone typed.
 // Length alone is not enough: `BbSomethingLongEnough` is 21 characters and
-// would have walked straight through.
+// would have walked straight through. Neither is the census: an ordinary
+// camelCase name with a port or a version in it (`bbHostDaemonPort38986`)
+// satisfies the digit branch, so the rule using this is bound to the paths that
+// actually hold opaque bytes rather than trusted anywhere in the tree.
 const isBase64ish = (word) =>
   word.length >= 16 &&
   /^[A-Za-z0-9+/=]+$/u.test(word) &&
   (/[A-Z]{4,}/u.test(word) || (word.match(/\d/gu) ?? []).length >= 2);
+// Where opaque bytes legitimately live: the lockfile's integrity digests,
+// recorded provider fixtures, and the story fixtures that embed a data URI.
+const OPAQUE_VALUE_PATHS =
+  /^bun\.lock$|__fixtures__\/|\.stories\.tsx$|\.ndjson$/u;
 // aaa / bbb / BBBB / bbb2222 — the second item in a list of placeholders. Three
 // repeats, not two: at two this matches a bare `bb` and quietly excuses the
 // whole thing the audit exists to find.
@@ -61,6 +82,15 @@ const ENGLISH_DOUBLE_B_SOURCE =
   "bubble|clobber|stubbed|stubborn|grabb|abbrev|tabbab|tabbed|tabbing|rubber|globby|robbie|dabble|nibble|scribble|wobble";
 const ENGLISH_DOUBLE_B = new RegExp(ENGLISH_DOUBLE_B_SOURCE, "iu");
 const ENGLISH_DOUBLE_B_ALL = new RegExp(ENGLISH_DOUBLE_B_SOURCE, "giu");
+// A word ending in b abutting one starting with B — `tabButton`, `WebBrowser`.
+// Stripped and re-checked like the English list above, for the same reason.
+const CAMEL_SEAM_SOURCE =
+  "(?:[Tt]ab|[Ww]eb|[Ss]ub|[Ll]ab|[Cc]ab|[Nn]ub|[Rr]ib|[Tt]humb|[Cc]rumb)B";
+const CAMEL_SEAM = new RegExp(CAMEL_SEAM_SOURCE, "u");
+const CAMEL_SEAM_ALL = new RegExp(CAMEL_SEAM_SOURCE, "gu");
+/** True when stripping `pattern` from `word` leaves no double b behind. */
+const seamExplainsWord = (word, pattern) =>
+  !/[Bb][Bb]/u.test(word.replace(pattern, ""));
 
 /**
  * Each rule may constrain the matched word, the path it sits in, and the line
@@ -135,6 +165,11 @@ const ALLOW = [
     path: /^apps\/server\/(?:src\/services\/plugins\/plugin-state-snapshot\.ts|test\/services\/plugins\/plugin-state-snapshot\.test\.ts)$/u,
   },
   {
+    why: "the synthetic registry marker the retired GitHub-Release marketplace wrote into source_npm_registry, and the fixture that proves the branch matches it",
+    word: /^(?:bb|bb-source)$/u,
+    line: /bb-source=github-release/u,
+  },
+  {
     why: "the comment naming the folder-era localStorage keys this build deliberately does not read",
     word: /^bb$/u,
     line: /bb\.sidebar\.folderSectionOrder|bb\.sidebar\.collapsedFolders/u,
@@ -160,6 +195,15 @@ const ALLOW = [
   {
     why: "a drizzle migration filename; the words are generated, the file is immutable",
     word: /^0063_broken_robbie_robertson$/u,
+  },
+  {
+    // An applied migration's bytes are its identity: drizzle records a sha256
+    // of the whole file, and `validateAppliedMigrationHistory` throws
+    // "hash-mismatch" for every database that already ran it. Editing even a
+    // comment stops the server booting on such a database, so the prose stays
+    // exactly as it was written.
+    why: "prose inside an already-applied drizzle migration, whose bytes are hashed in the ledger",
+    path: /^packages\/db\/drizzle\/\d{4}_[a-z_]+\.sql$/u,
   },
   {
     why: "recorded agent transcripts captured on an upstream machine, replayed verbatim as fixtures",
@@ -201,20 +245,37 @@ const ALLOW = [
     // `bb` survives, so the rule excuses the word only when the English word
     // is the *reason* the word matched.
     why: "English words and library names that happen to contain a double b",
-    test: (word) => !/[Bb][Bb]/u.test(word.replace(ENGLISH_DOUBLE_B_ALL, "")),
     word: ENGLISH_DOUBLE_B,
+    test: (word) => seamExplainsWord(word, ENGLISH_DOUBLE_B_ALL),
   },
   {
+    // Same fail-open, same fix: the old pattern allowed a free
+    // `[A-Za-z0-9_]*` prefix, so `bbTabButton`, `__bbTabBar` and
+    // `bbWebBrowser` all rode in on the seam that followed them. Strip every
+    // seam and require that no `bb` survives.
     why: "a camelCase seam: a word ending in b followed by one starting with B",
-    word: /^[A-Za-z0-9_]*(?:[Tt]ab|[Ww]eb|[Ss]ub|[Ll]ab|[Cc]ab|[Nn]ub|[Rr]ib|[Tt]humb|[Cc]rumb)B[A-Za-z0-9_]*$/u,
+    word: CAMEL_SEAM,
+    test: (word) => seamExplainsWord(word, CAMEL_SEAM_ALL),
   },
   {
     why: "BBEdit, an editor Patcher can open a workspace in",
     word: /^bbedit/iu,
   },
   {
+    // The scanner never sees the backslash, so an escape's own `b` fuses onto
+    // the word after it. Declaring only `line` made this a blanket pardon for
+    // every other token on that line — one Tailwind `/\\bborder-b/` assertion
+    // bought immunity for a real leftover beside it. Require that the line hold
+    // the escape immediately before *this* word, and that the word stop
+    // matching once the escape is removed.
     why: "a regex or unicode escape whose backslash-b is followed by a b-initial word",
-    line: /\\(?:b|u[0-9A-Fa-f]{4})[Bb]/u,
+    test: (word, line) => {
+      if (!line.includes(`\\${word}`)) return false;
+      const escape = word.match(/^(?:b|u[0-9A-Fa-f]{4})/u)?.[0];
+      return (
+        escape !== undefined && !/[Bb][Bb]/u.test(word.slice(escape.length))
+      );
+    },
   },
 
   // --- Placeholders and opaque values --------------------------------------
@@ -231,9 +292,17 @@ const ALLOW = [
     word: /^bb71-authored-decoration$/u,
   },
   {
-    why: "a hex digest, UUID, opaque provider id, or base64 fragment",
-    test: (word) =>
-      HEX_OR_UUID.test(word) || OPAQUE_ID.test(word) || isBase64ish(word),
+    why: "a hex digest, UUID, hex colour, or opaque provider id",
+    test: (word, line) =>
+      UUID.test(word) ||
+      HEX_DIGEST.test(word) ||
+      OPAQUE_ID.test(word) ||
+      isHexColour(word, line),
+  },
+  {
+    why: "a base64 or minified fragment in the lockfile or a recorded fixture",
+    path: OPAQUE_VALUE_PATHS,
+    test: (word) => isBase64ish(word),
   },
   {
     why: "a piece of an npm integrity digest; bun.lock hashes are base64 and split into words wherever a + or / falls",
@@ -282,7 +351,7 @@ function justification(rules, word, path, line) {
     if (rule.word !== undefined && !rule.word.test(word)) continue;
     if (rule.path !== undefined && !rule.path.test(path)) continue;
     if (rule.line !== undefined && !rule.line.test(line)) continue;
-    if (rule.test !== undefined && !rule.test(word)) continue;
+    if (rule.test !== undefined && !rule.test(word, line)) continue;
     return rule.why;
   }
   return null;
@@ -290,7 +359,11 @@ function justification(rules, word, path, line) {
 
 const FORWARD_WORD = /[A-Za-z0-9_-]*[Bb][Bb][A-Za-z0-9_-]*/gu;
 const REVERSE_WORD = /[A-Za-z0-9_-]*patcher[A-Za-z0-9_-]*/gu;
-const REVERSE_FUSED = /(?<=[a-z0-9])patcher/u;
+// A letter, digit or underscore welded to the left of `patcher`. The lookbehind
+// was `[a-z0-9]`, which saw only damage from the lowercase pass — but the rename
+// ran three substitutions (bb, Bb, BB), so `ApatcherREV` out of `ABBREV` was
+// invisible to this scan and, having lost its `bb`, to the forward one too.
+const REVERSE_FUSED = /(?<=[A-Za-z0-9])patcher/u;
 
 const findings = [];
 const allowed = new Map();

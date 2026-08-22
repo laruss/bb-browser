@@ -1632,6 +1632,7 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
     agentToolProblems.delete(id);
     placementFallbacks.delete(id);
     placementQuarantine.delete(id);
+    prebuiltServerSdkAhead.delete(id);
   }
 
   /**

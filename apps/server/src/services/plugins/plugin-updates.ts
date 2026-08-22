@@ -138,9 +138,14 @@ export function createPluginUpdates(
     // synthetic api.github.com registry URL no npm resolver can serve. The
     // plugin keeps running from its cached artifact; updates now ride app
     // releases, so point the user at a store reinstall instead of erroring.
+    //
+    // Not renamed: the marker is in a `source_npm_registry` value an *older*
+    // build wrote into the user's database. Renaming the needle does not break
+    // a build — it makes this branch unreachable, which is the quietest way to
+    // lose it.
     if (
       args.row.sourceKind === "npm" &&
-      args.row.sourceNpmRegistry?.includes("patcher-source=github-release")
+      args.row.sourceNpmRegistry?.includes("bb-source=github-release")
     ) {
       return {
         outcome: "unavailable",
