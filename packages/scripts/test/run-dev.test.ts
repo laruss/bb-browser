@@ -3,6 +3,8 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  PATCHER_PROD_HOST_DAEMON_PORT,
+  PATCHER_PROD_SERVER_PORT,
   resolveDevInstanceConfig,
   resolveInheritedDevSkillsRootPaths,
   toDevProcessEnv,
@@ -66,7 +68,13 @@ describe("run-dev", () => {
     expect(Object.values(config.ports)).not.toContain(38987);
   });
 
-  it("keeps Cloud gateway ports out of the worker band and packaged ports", () => {
+  // What `reservePackagedAppPorts` used to guard: the cloud's dev port range
+  // straddled the packaged pair, so a dev instance could land on it. The cloud
+  // is gone and the three surviving bands sit below the pair, but that is a
+  // property of the bases and the bucket count, not a law — assert it at both
+  // ends of the offset range so moving a base or widening the buckets fails
+  // here instead of at a user's "port already in use".
+  it("keeps every dev port band clear of the packaged prod pair", () => {
     const rootsByOffset = new Map([
       [0, "/repo/port-13604"],
       [1, "/repo/port-3079"],
@@ -82,6 +90,7 @@ describe("run-dev", () => {
       ]),
     );
 
+    // Distinct within an instance, and distinct across instances.
     expect(
       new Set(
         [...portsByOffset.values()].flatMap(({ appPort, serverPort }) => [
@@ -90,6 +99,16 @@ describe("run-dev", () => {
         ]),
       ),
     ).toHaveLength(rootsByOffset.size * 2);
+
+    for (const [offset, ports] of portsByOffset) {
+      for (const [name, port] of Object.entries(ports)) {
+        expect(
+          port,
+          `dev ${name} at offset ${offset} collides with a packaged port`,
+        ).not.toBe(PATCHER_PROD_SERVER_PORT);
+        expect(port).not.toBe(PATCHER_PROD_HOST_DAEMON_PORT);
+      }
+    }
   });
 
   it("uses the home-relative checkout path for non-managed checkout paths", () => {

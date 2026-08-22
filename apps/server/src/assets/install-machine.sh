@@ -199,8 +199,12 @@ register_existing_default_ports() {
   done
 }
 
+# The scan starts above the packaged prod pair (38986/38987) so an enrolled
+# daemon can never claim a port a full local Patcher install needs. The claim is
+# durable — it outlives the probe — so landing on a prod port while the local
+# server happens to be down would pin it permanently.
 find_and_claim_available_host_daemon_port() {
-  candidate_port=38888
+  candidate_port=38988
   while [ "$candidate_port" -le 65535 ]; do
     if claim_port_for_data_dir "$candidate_port" "$canonical_data_dir"; then
       if port_is_available "$candidate_port"; then
