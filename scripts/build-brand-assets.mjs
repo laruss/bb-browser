@@ -11,13 +11,14 @@
 // The second command is not optional. apps/app/public holds five hand-authored
 // bases and forty generated tints derived from them, behind a --check gate that
 // fails the app's tests when they drift.
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { execFile } from "node:child_process";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
+import { createDesktopReleaseConfig } from "../apps/desktop/scripts/desktop-release-channel.mjs";
 
 const execFileAsync = promisify(execFile);
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -33,35 +34,85 @@ const assetsDir = join(repoRoot, "assets");
 const desktopAssetsDir = join(repoRoot, "apps", "desktop", "assets");
 const appPublicDir = join(repoRoot, "apps", "app", "public");
 
-// The mark, as geometry rather than a file read, so a channel can restate the
-// plate colour without a second source SVG. Kept identical to
-// assets/patcher-icon.svg — change both together.
-const PLATE_CREAM = "#F5F1E8";
-const INK = "#111111";
-const PATCH = "#EF2B1F";
-const P_PATH =
-  "M13 11h24c10 0 17 6.6 17 16s-7 16-17 16H25v10H13V11Zm12 11v10h11.5c3.4 0 5.5-1.9 5.5-5s-2.1-5-5.5-5H25Z";
-const PATCH_RECT = { x: 44.5, y: 43.5, size: 11 };
-// Glyph bounding box inside the 64-unit grid, used to render the mark on its
-// own with predictable padding.
-const GLYPH_BOX = { x: 13, y: 11, width: 42.5, height: 43.5 };
+// The two source SVGs, read rather than restated. The header above promises the
+// artwork can be revised in one place, and it was not true while the path data
+// lived here as well: editing either file changed no raster, and the glyph box
+// this script used had already drifted from the logo's own viewBox.
+//
+// Every derivation below is a substitution on a shape asserted to be present,
+// so an SVG rewritten into a shape this script cannot read fails loudly instead
+// of rendering something almost right.
+const iconSource = await readFile(join(assetsDir, "patcher-icon.svg"), "utf8");
+const logoSource = await readFile(join(assetsDir, "patcher-logo.svg"), "utf8");
 
-/** The plate mark: rounded square, ink P, red patch. */
-function iconSvg({ plate = PLATE_CREAM, radius = 14 } = {}) {
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="${radius}" fill="${plate}"/>
-  <path fill="${INK}" fill-rule="evenodd" d="${P_PATH}"/>
-  <rect x="${PATCH_RECT.x}" y="${PATCH_RECT.y}" width="${PATCH_RECT.size}" height="${PATCH_RECT.size}" fill="${PATCH}"/>
-</svg>`;
+function substitute(svg, pattern, replacement, what) {
+  const matches = svg.match(new RegExp(pattern, "gu"))?.length ?? 0;
+  if (matches !== 1) {
+    throw new Error(
+      `build-brand-assets: expected exactly one ${what} in the source SVG, found ${matches}. ` +
+        `The artwork changed shape — update the substitution, not the raster.`,
+    );
+  }
+  return svg.replace(new RegExp(pattern, "u"), replacement);
 }
 
-/** The glyph alone, cropped to its own bounds. One fill unless a patch colour is given. */
-function glyphSvg(fill, patchFill = fill) {
-  const { x, y, width, height } = GLYPH_BOX;
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${x} ${y} ${width} ${height}">
-  <path fill="${fill}" fill-rule="evenodd" d="${P_PATH}"/>
-  <rect x="${PATCH_RECT.x}" y="${PATCH_RECT.y}" width="${PATCH_RECT.size}" height="${PATCH_RECT.size}" fill="${patchFill}"/>
-</svg>`;
+/** The plate mark from patcher-icon.svg: rounded square, ink P, red patch. */
+function iconSvg({ plate, radius } = {}) {
+  let svg = iconSource;
+  if (plate !== undefined) {
+    svg = substitute(
+      svg,
+      '(<rect width="64" height="64"[^>]*fill=)"[^"]*"',
+      `$1"${plate}"`,
+      "plate fill",
+    );
+  }
+  if (radius !== undefined) {
+    svg = substitute(
+      svg,
+      '(<rect width="64" height="64"[^>]*)rx="[^"]*"',
+      `$1rx="${radius}"`,
+      "plate corner radius",
+    );
+  }
+  return svg;
+}
+
+/**
+ * The glyph alone from patcher-logo.svg, which is already cropped to the mark
+ * and single-fill by design (it is rendered through `dark:invert`), so one
+ * colour is the whole API.
+ */
+function glyphSvg(fill) {
+  return logoSource.replaceAll(/fill="#[0-9A-Fa-f]{3,8}"/gu, `fill="${fill}"`);
+}
+
+/**
+ * The full-colour glyph — ink P, red patch — cropped the way the logo is. Taken
+ * from the icon SVG with its plate removed rather than by recolouring the logo,
+ * so the red comes from the file that defines it.
+ */
+function colourGlyphSvg() {
+  const cropped = substitute(
+    iconSource,
+    'viewBox="0 0 64 64"',
+    `viewBox="${logoViewBox()}"`,
+    "icon viewBox",
+  );
+  return substitute(
+    cropped,
+    '\\s*<rect width="64" height="64"[^>]*/>',
+    "",
+    "plate rect",
+  );
+}
+
+function logoViewBox() {
+  const viewBox = /viewBox="([^"]*)"/u.exec(logoSource)?.[1];
+  if (viewBox === undefined) {
+    throw new Error("build-brand-assets: patcher-logo.svg has no viewBox.");
+  }
+  return viewBox;
 }
 
 const TRANSPARENT = { r: 0, g: 0, b: 0, alpha: 0 };
@@ -78,7 +129,7 @@ function render(svg, size) {
 /** The full-colour mark inset on a flat plate that fills the canvas. */
 async function insetMark({ size, plate, coverage, opaque }) {
   const markSize = Math.round(size * coverage);
-  const mark = await render(glyphSvg(INK, PATCH), markSize);
+  const mark = await render(colourGlyphSvg(), markSize);
   const offset = Math.round((size - markSize) / 2);
   const buffer = await sharp({
     create: { width: size, height: size, channels: 4, background: plate },
@@ -116,7 +167,7 @@ async function macIcon(plate) {
   const canvas = 1024;
   const art = 824;
   const inset = Math.round((canvas - art) / 2);
-  const plateBuffer = await sharp(Buffer.from(iconSvg({ plate, radius: 14 })), {
+  const plateBuffer = await sharp(Buffer.from(iconSvg({ plate })), {
     density: 2400,
   })
     .resize(art, art)
@@ -177,31 +228,33 @@ async function emit(path, buffer) {
 // --- Repository brand assets ------------------------------------------------
 // The plate icon as a raster: both READMEs embed it, and GitHub and npm are
 // unreliable about rendering an SVG through an <img>, so PNG is the safe one.
+// The source SVG unmodified — its plate colour and corner radius are the
+// canonical ones, so overriding them here would be the duplication again.
 await emit(
   join(assetsDir, "patcher-icon.png"),
-  await plateIcon({
-    size: 1024,
-    plate: PLATE_CREAM,
-    radius: 14,
-    opaque: false,
-  }),
-);
-await emit(
-  join(assetsDir, "patcher-logo.png"),
-  await render(glyphSvg(INK), 1024),
-);
-await emit(
-  join(assetsDir, "patcher-logo-white.png"),
-  await render(glyphSvg(PLATE_CREAM), 1024),
+  await plateIcon({ size: 1024, opaque: false }),
 );
 
 // --- Desktop app icons ------------------------------------------------------
 // One mark, three plates. The plate colour is the only channel signal, so a
 // nightly and a stable build are told apart in the Dock at a glance.
+//
+// The two release channels' filenames come from the release config that
+// electron-builder reads, rather than being restated here: a channel that
+// renames its icon would otherwise ship without one. `icon-dev.png` is not a
+// release channel — apps/desktop/src/app-paths.ts picks it for an unpackaged
+// run — so it is named here, where nothing else owns it.
+const releaseChannels = ["latest", "nightly"].map((channel) => {
+  const config = createDesktopReleaseConfig(channel);
+  return {
+    png: config.iconFileName,
+    icns: config.macIconPath.replace(/^assets\//u, ""),
+  };
+});
 const desktopChannels = [
-  { plate: PLATE_CREAM, png: "icon.png", icns: "icon.icns" },
+  { plate: undefined, ...releaseChannels[0] },
   { plate: "#378055", png: "icon-dev.png", icns: null },
-  { plate: "#F9D71C", png: "icon-nightly.png", icns: "icon-nightly.icns" },
+  { plate: "#F9D71C", ...releaseChannels[1] },
 ];
 for (const channel of desktopChannels) {
   const buffer = await macIcon(channel.plate);
@@ -214,8 +267,12 @@ for (const channel of desktopChannels) {
 }
 
 // --- PWA base icons ---------------------------------------------------------
-// Square, full bleed: the platform supplies the corner mask. generate-pwa-icons
-// derives forty tinted variants from these five, and its luma mask treats
+// Square, full bleed: the platform supplies the corner mask. The five base
+// filenames are also listed in apps/app/scripts/generate-pwa-icons.mjs, which
+// owns them; it runs on import so the list cannot be shared, but its --check
+// gate fails the app's tests if a base stops being written here.
+// generate-pwa-icons derives forty tinted variants from these five, and its
+// luma mask treats
 // anything at or above 245 as backing — which is why the plate here is a lighter
 // cream than the desktop plate. At 512px the difference is invisible; at the
 // mask it is the difference between tinting the glyph and tinting the tile.
