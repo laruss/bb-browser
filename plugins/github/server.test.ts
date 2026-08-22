@@ -74,9 +74,9 @@ function assertGithubFrontendInference(
     }>
   >();
 
-  // @ts-expect-error issue numbers must be numeric.
   void client.call("getIssue", {
     repo: "laruss/patcher-browser",
+    // @ts-expect-error issue numbers must be numeric.
     number: "694",
   });
   // @ts-expect-error unknown filter values are rejected by the contract.
