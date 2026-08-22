@@ -5,7 +5,7 @@
   "type": "module",
   "engines": {
     "patcher": ">=0.0",
-    "patcherPluginSdk": "^0.4.0"
+    "patcherPluginSdk": "^1.0.0"
   },
   "patcher": {
     "name": "ThreadChat demo",

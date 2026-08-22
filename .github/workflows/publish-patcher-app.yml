@@ -120,15 +120,28 @@ jobs:
           const isAlpha = /-alpha\.\d+$/u.test(version);
           const isBeta = /-beta\.\d+$/u.test(version);
           const isNightly = /-nightly\.\d+\.\d+$/u.test(version);
-          const versionsRaw = execFileSync(
-            "npm",
-            ["view", "patcher-app", "versions", "--json"],
-            { encoding: "utf8" },
-          );
-          const parsedVersions = JSON.parse(versionsRaw);
-          const publishedVersions = Array.isArray(parsedVersions)
-            ? parsedVersions
-            : [parsedVersions];
+          // `npm view` exits non-zero (E404) for a package with no published
+          // versions, and execFileSync throws on that. patcher-app has never
+          // been published, so an unguarded call fails this step before the
+          // first release can ever run. No published versions is the answer,
+          // not an error.
+          let publishedVersions = [];
+          try {
+            const versionsRaw = execFileSync(
+              "npm",
+              ["view", "patcher-app", "versions", "--json"],
+              { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
+            );
+            const parsedVersions = JSON.parse(versionsRaw);
+            publishedVersions = Array.isArray(parsedVersions)
+              ? parsedVersions
+              : [parsedVersions];
+          } catch (error) {
+            const stderr = String(error.stderr ?? "");
+            if (!stderr.includes("E404") && !stderr.includes("404 Not Found")) {
+              throw error;
+            }
+          }
 
           if (publishedVersions.includes(version)) {
             fail(`patcher-app@${version} already exists on npm.`);

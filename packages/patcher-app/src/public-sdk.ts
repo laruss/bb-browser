@@ -41,6 +41,12 @@ export type {
   WorkspaceArgs,
 } from "@patcher/sdk/node";
 export type { CallerExecutionInputSource as ExecutionInputSource } from "@patcher/sdk/node";
+// The canonical SDK contract is itself named `PatcherSdk`, so the class below
+// shadows it in the `export type *` above and it reaches the published `.d.ts`
+// under no name at all. Before the rename the interface and the class differed
+// in case, which is what kept both exported. Name the interface explicitly so
+// callers can still type a variable by the contract, not by the concrete class.
+export type { PatcherSdkContract };
 
 export type PatcherSdkOptions = CreateNodePatcherSdkArgs;
 export type PatcherSdkRealtimeSubscribeArgs = PatcherRealtimeSubscribeArgs;
