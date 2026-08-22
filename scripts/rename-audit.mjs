@@ -54,6 +54,13 @@ const isBase64ish = (word) =>
 // repeats, not two: at two this matches a bare `bb` and quietly excuses the
 // whole thing the audit exists to find.
 const REPEATED_PLACEHOLDER = /^([A-Za-z])\1{2,}[0-9]*$/u;
+// English words and library names that legitimately carry a double b. Two
+// copies on purpose: `.test()` on a /g/ regex advances lastIndex, so the rule
+// below must not share one object between its match and its strip.
+const ENGLISH_DOUBLE_B_SOURCE =
+  "bubble|clobber|stubbed|stubborn|grabb|abbrev|tabbab|tabbed|tabbing|rubber|globby|robbie|dabble|nibble|scribble|wobble";
+const ENGLISH_DOUBLE_B = new RegExp(ENGLISH_DOUBLE_B_SOURCE, "iu");
+const ENGLISH_DOUBLE_B_ALL = new RegExp(ENGLISH_DOUBLE_B_SOURCE, "giu");
 
 /**
  * Each rule may constrain the matched word, the path it sits in, and the line
@@ -102,7 +109,12 @@ const ALLOW = [
     word: /^rollback_bb_version$/u,
   },
   {
-    why: "drizzle table left behind by the cloud removal, never read",
+    // `bb_connect` is a `system_experiments` column, dropped back in
+    // 0070_swift_rattler.sql — the name survives only in that migration.
+    // `_bb_connect_machine_id_pending` is live: migrate.ts stages the
+    // `connect_machine_id` rename through it, so it is read on every startup
+    // that has not yet applied 0065.
+    why: "a dropped drizzle column named in its own migration, and the staging column migrate.ts renames through",
     word: /^(?:bb_connect|_bb_connect_machine_id_pending)$/u,
   },
   {
@@ -140,8 +152,11 @@ const ALLOW = [
     path: /^docs\/architecture\/bb-migration\.md$/u,
   },
   {
-    why: "a comment naming the old env prefix on purpose, so the 107 -> 108 protocol bump reads",
-    word: /^BB_$/u,
+    // Both tokens on that line describe what the *pre-rename* daemon injects,
+    // so both have to keep the old name or the sentence inverts and claims the
+    // old daemon already spoke the new contract.
+    why: "a comment naming the old env prefix and shim on purpose, so the protocol bump's reason reads",
+    word: /^(?:BB_|bb)$/u,
     line: /injects `BB_\*`/u,
   },
   {
@@ -162,8 +177,14 @@ const ALLOW = [
 
   // --- English, libraries, and camelCase seams -----------------------------
   {
+    // Matching the substring alone fails open: `bb-tabbed-panel` contains
+    // `tabbed`, and `-` is a word character here, so a genuine leftover rides
+    // in on an English neighbour. Strip every English hit and require that no
+    // `bb` survives, so the rule excuses the word only when the English word
+    // is the *reason* the word matched.
     why: "English words and library names that happen to contain a double b",
-    word: /bubble|clobber|stubbed|stubborn|grabb|abbrev|tabbab|tabbed|tabbing|rubber|globby|robbie|dabble|nibble|scribble|wobble/iu,
+    test: (word) => !/[Bb][Bb]/u.test(word.replace(ENGLISH_DOUBLE_B_ALL, "")),
+    word: ENGLISH_DOUBLE_B,
   },
   {
     why: "a camelCase seam: a word ending in b followed by one starting with B",
@@ -271,6 +292,20 @@ for (const path of trackedFiles()) {
   const lines = raw.toString("utf8").split("\n");
   for (const [index, line] of lines.entries()) {
     if (line.length > 4000) continue; // a minified or base64 line, not source
+    // Both patterns start with `[A-Za-z0-9_-]*`, so matchAll backtracks from
+    // every offset in every line. The overwhelming majority of lines hold
+    // neither token; skipping those first is ~10x on the whole scan and
+    // cannot change the result, because a match requires one of these
+    // substrings to be present.
+    if (
+      !line.includes("bb") &&
+      !line.includes("bB") &&
+      !line.includes("Bb") &&
+      !line.includes("BB") &&
+      !line.includes("patcher")
+    ) {
+      continue;
+    }
     for (const match of line.matchAll(FORWARD_WORD)) {
       record(ALLOW, "bb", match[0], path, index + 1, line);
     }

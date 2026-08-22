@@ -891,8 +891,10 @@ check; both are covered in **Artwork** below.
 ### Phase 8 — Audit gate — **done** (`e240e5d19`)
 
 `scripts/rename-audit.mjs`, `bun run audit:rename`, and a step in CI's `checks`
-job. 927 occurrences of `bb` remain in the tree and every one of them is
-answered by one of 29 rules that says why it stays.
+job. Every remaining occurrence of `bb` in the tree is answered by one rule in
+`ALLOW` that says why it stays; `--list` prints the current tally per rule. The
+count is deliberately not restated here — it moved the first time this file was
+edited, and a number in prose has no way to stay true.
 
 **The forward scan is blunt on purpose, against this plan's own advice.** The
 regex sketched here —
